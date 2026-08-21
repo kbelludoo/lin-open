@@ -165,15 +165,13 @@ fn make_number(f: f64) -> Value {
 }
 
 // JS AbstractRelationalComparison: string vs string -> lexicographic; else numeric; NaN -> false
-fn js_rel_lt(a: &Value, b: &Value) -> Option<bool> {
-    let psa = val_to_primitive_string(a);
-    let psb = val_to_primitive_string(b);
-    if let (Some(sa), Some(sb)) = (&psa, &psb) {
-        return Some(sa.as_str() < sb.as_str());
+fn js_rel_lt(a: &Value, b: &Value) -> bool {
+    if let (Value::String(sa), Value::String(sb)) = (a, b) {
+        return sa.as_str() < sb.as_str();
     }
     match (to_js_number(a), to_js_number(b)) {
-        (Some(na), Some(nb)) => Some(na < nb),
-        _ => None,
+        (Some(na), Some(nb)) => na < nb,
+        _ => false, // NaN comparison = false
     }
 }
 
@@ -214,7 +212,7 @@ fn js_add(v1: Value, v2: Value) -> Value {
         return Value::String(format!("{}{}", s1, s2));
     }
     match (to_js_number(&v1), to_js_number(&v2)) {
-        (Some(a), Some(b)) => make_number(a - b),
+        (Some(a), Some(b)) => make_number(a + b),
         _ => Value::Null,
     }
 }
@@ -243,6 +241,59 @@ pub fn eval_expr(expr: &str, scope: &mut Scope, module: &LinModule) -> Value {
         }
     }
 
+    if s == "true" { return Value::Bool(true); }
+    if s == "false" { return Value::Bool(false); }
+    if s == "null" || s == "undefined" { return Value::Null; }
+
+    if s.starts_with('!') && !s.starts_with("!=") {
+        let inner_val = eval_expr(&s[1..], scope, module);
+        return Value::Bool(!is_truthy(&inner_val));
+    }
+
+    // String literal: only match if it's a properly enclosed literal
+    // (no unescaped inner quotes of the same type)
+    if s.len() >= 2 {
+        let q = s.chars().next().unwrap();
+        if (q == '\'' || q == '"') && s.ends_with(q) {
+            // Verify no unescaped inner quote of same type
+            let inner = &s[1..s.len()-1];
+            let mut escape = false;
+            let mut valid = true;
+            for c in inner.chars() {
+                if escape { escape = false; continue; }
+                if c == '\\' { escape = true; continue; }
+                if c == q { valid = false; break; }
+            }
+            if valid {
+                return Value::String(inner.to_string());
+            }
+        }
+    }
+
+    if let Ok(n) = s.parse::<i64>() {
+        return Value::from(n);
+    }
+    if let Ok(f) = s.parse::<f64>() {
+        if let Some(v) = serde_json::Number::from_f64(f) {
+            return Value::Number(v);
+        }
+    }
+
+    if s.starts_with('[') && s.ends_with(']') {
+        let inner = &s[1..s.len() - 1].trim();
+        if inner.is_empty() { return Value::Array(Vec::new()); }
+        let items: Vec<Value> = split_aware(inner, ',')
+            .iter()
+            .map(|item| eval_expr(item, scope, module))
+            .collect();
+        return Value::Array(items);
+    }
+
+    if s == "{}" {
+        return Value::Object(serde_json::Map::new());
+    }
+
+    // 0. Curto-Circuito Lógico (&&, ||) com retorno do valor exato
     if let Some(pos) = find_binary_op(s, "||") {
         let v1 = eval_expr(&s[..pos], scope, module);
         if is_truthy(&v1) { return v1; }
@@ -254,6 +305,7 @@ pub fn eval_expr(expr: &str, scope: &mut Scope, module: &LinModule) -> Value {
         return eval_expr(&s[pos + 2..], scope, module);
     }
 
+    // 1. Comparações (==, !=, <=, >=, <, >) com coerção de tipos
     if let Some(pos) = find_binary_op(s, "==") {
         let v1 = eval_expr(&s[..pos], scope, module);
         let v2 = eval_expr(&s[pos + 2..], scope, module);
@@ -267,29 +319,41 @@ pub fn eval_expr(expr: &str, scope: &mut Scope, module: &LinModule) -> Value {
     if let Some(pos) = find_binary_op(s, "<=") {
         let lv = eval_expr(&s[..pos], scope, module);
         let rv = eval_expr(&s[pos + 2..], scope, module);
-        return Value::Bool(!js_rel_lt(&rv, &lv).unwrap_or(true));
+        return Value::Bool(!js_rel_lt(&rv, &lv) && js_rel_lt(&lv, &rv) || lv == rv || {
+            // JS <=: !(rv < lv) but if either is NaN, false
+            match (to_js_number(&lv), to_js_number(&rv)) {
+                (Some(a), Some(b)) => a <= b,
+                _ => if let (Value::String(sa), Value::String(sb)) = (&lv, &rv) { sa <= sb } else { false },
+            }
+        });
     }
     if let Some(pos) = find_binary_op(s, ">=") {
         let lv = eval_expr(&s[..pos], scope, module);
         let rv = eval_expr(&s[pos + 2..], scope, module);
-        return Value::Bool(!js_rel_lt(&lv, &rv).unwrap_or(true));
+        return Value::Bool(match (to_js_number(&lv), to_js_number(&rv)) {
+            (Some(a), Some(b)) => a >= b,
+            _ => if let (Value::String(sa), Value::String(sb)) = (&lv, &rv) { sa.as_str() >= sb.as_str() } else { false },
+        });
     }
     if let Some(pos) = find_binary_op(s, "<") {
         let lv = eval_expr(&s[..pos], scope, module);
         let rv = eval_expr(&s[pos + 1..], scope, module);
-        return Value::Bool(js_rel_lt(&lv, &rv).unwrap_or(false));
+        return Value::Bool(js_rel_lt(&lv, &rv));
     }
     if let Some(pos) = find_binary_op(s, ">") {
         let lv = eval_expr(&s[..pos], scope, module);
         let rv = eval_expr(&s[pos + 1..], scope, module);
-        return Value::Bool(js_rel_lt(&rv, &lv).unwrap_or(false));
+        return Value::Bool(js_rel_lt(&rv, &lv));
     }
 
+    // 2. Adição (+): JS semantics via js_add (string-concat or numeric, NaN->null)
     if let Some(pos) = find_binary_op(s, "+") {
         let v1 = eval_expr(&s[..pos], scope, module);
         let v2 = eval_expr(&s[pos + 1..], scope, module);
         return js_add(v1, v2);
     }
+
+    // 3. Subtração (-): NaN-aware
     if let Some(pos) = find_binary_op(s, "-") {
         let lv = eval_expr(&s[..pos], scope, module);
         let rv = eval_expr(&s[pos + 1..], scope, module);
@@ -329,11 +393,7 @@ pub fn eval_expr(expr: &str, scope: &mut Scope, module: &LinModule) -> Value {
         }
     }
 
-    if s.starts_with('!') {
-        let inner_val = eval_expr(&s[1..], scope, module);
-        return Value::Bool(!is_truthy(&inner_val));
-    }
-
+    // Dynamic Indexing: arr[0]
     if s.ends_with(']') {
         let mut depth = 0;
         let mut open_idx = None;
@@ -374,6 +434,7 @@ pub fn eval_expr(expr: &str, scope: &mut Scope, module: &LinModule) -> Value {
         }
     }
 
+    // Dot property
     if let Some((target_expr, prop)) = s.split_once('.') {
         let target_val = eval_expr(target_expr, scope, module);
         if prop == "length" {
@@ -389,38 +450,6 @@ pub fn eval_expr(expr: &str, scope: &mut Scope, module: &LinModule) -> Value {
         return Value::Null;
     }
 
-    if s == "true" { return Value::Bool(true); }
-    if s == "false" { return Value::Bool(false); }
-    if s == "null" || s == "undefined" { return Value::Null; }
-
-    if (s.starts_with('\'') && s.ends_with('\'') && s.len() >= 2) || 
-       (s.starts_with('"') && s.ends_with('"') && s.len() >= 2) {
-        return Value::String(s[1..s.len() - 1].to_string());
-    }
-
-    if let Ok(n) = s.parse::<i64>() {
-        return Value::from(n);
-    }
-    if let Ok(f) = s.parse::<f64>() {
-        if let Some(v) = serde_json::Number::from_f64(f) {
-            return Value::Number(v);
-        }
-    }
-
-    if s.starts_with('[') && s.ends_with(']') {
-        let inner = &s[1..s.len() - 1].trim();
-        if inner.is_empty() { return Value::Array(Vec::new()); }
-        let items: Vec<Value> = split_aware(inner, ',')
-            .iter()
-            .map(|item| eval_expr(item, scope, module))
-            .collect();
-        return Value::Array(items);
-    }
-
-    if s == "{}" {
-        return Value::Object(serde_json::Map::new());
-    }
-
     if let Some(val) = scope.vars.get(s) {
         return val.clone();
     }
@@ -430,10 +459,6 @@ pub fn eval_expr(expr: &str, scope: &mut Scope, module: &LinModule) -> Value {
 
 fn js_equals(v1: &Value, v2: &Value) -> bool {
     if v1 == v2 { return true; }
-    let is_null_or_undef = |v: &Value| matches!(v, Value::Null);
-    if is_null_or_undef(v1) || is_null_or_undef(v2) {
-        return false;
-    }
     if let (Some(n1), Some(n2)) = (to_js_number(v1), to_js_number(v2)) {
         return n1 == n2;
     }
@@ -501,27 +526,16 @@ fn find_binary_op(s: &str, op: &str) -> Option<usize> {
                 if op == "=" && (i > 0 && chars[i - 1] == '=' || i + 1 < len && chars[i + 1] == '=') { continue; }
                 if op == "!" && i + 1 < len && chars[i + 1] == '=' { continue; }
 
+                // Skip unary - and + (when preceded by an operator, open bracket, or start)
                 if op == "-" || op == "+" {
-                    let mut is_unary = false;
-                    let mut j = i;
-                    while j > 0 {
-                        j -= 1;
-                        if !chars[j].is_whitespace() {
-                            let prev = chars[j];
-                            if "+-*/%<>=!&|([{},?:".contains(prev) {
-                                is_unary = true;
-                            }
-                            break;
-                        }
-                    }
-                    if j == 0 && (i == 0 || chars[0].is_whitespace()) {
-                        is_unary = true;
-                    }
-                    if is_unary {
-                        continue;
-                    }
+                    let prev_non_ws = (0..i).rev().find(|&j| !chars[j].is_whitespace());
+                    let is_unary = match prev_non_ws {
+                        None => true, // start of expression
+                        Some(j) => "+-*/%<>=!&|([{,;".contains(chars[j]),
+                    };
+                    if is_unary { continue; }
                 }
-                
+
                 return Some(i);
             }
         }
