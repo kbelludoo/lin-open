@@ -1,26 +1,14 @@
 {
   "seed": 20260821,
   "total_programs": 10000,
-  "matches": 9759,
+  "matches": 9832,
   "categories": {
-    "STRING_NUMBER_COERCION": 2,
-    "BOOLEAN_SHORT_CIRCUIT_VALUE_PROPAGATION": 46,
+    "STRING_NUMBER_COERCION": 0,
+    "BOOLEAN_SHORT_CIRCUIT_VALUE_PROPAGATION": 1,
     "TYPE_MISMATCH_OBJECT_ARRAY": 0,
-    "OTHER": 193
+    "OTHER": 167
   },
   "sample_counterexamples": [
-    {
-      "case_id": 92,
-      "lin_code": "!prog_92(a,b,c){res=(!([\"str_37\",false,a]*[\"str_11\"]));^res}",
-      "args": [
-        8,
-        26,
-        0
-      ],
-      "js_expected": true,
-      "lin_actual": false,
-      "category": "OTHER"
-    },
     {
       "case_id": 108,
       "lin_code": "!prog_108(a,b,c){res=(((!43)-(\"str_6\"*false))+([\"str_8\",17,\"str_28\"]+(45!=-14)));^res}",
@@ -32,38 +20,6 @@
       "js_expected": "NaNstr_8,17,str_28true",
       "lin_actual": "0str_8,17,str_28true",
       "category": "OTHER"
-    },
-    {
-      "case_id": 160,
-      "lin_code": "!prog_160(a,b,c){res=([c,true,-17]-[50,c,38]);^res}",
-      "args": [
-        10,
-        24,
-        15
-      ],
-      "js_expected": null,
-      "lin_actual": [
-        15,
-        true,
-        null
-      ],
-      "category": "BOOLEAN_SHORT_CIRCUIT_VALUE_PROPAGATION"
-    },
-    {
-      "case_id": 167,
-      "lin_code": "!prog_167(a,b,c){res=(23&&([\"str_4\",false,\"str_38\"]-[18]));^res}",
-      "args": [
-        2,
-        -8,
-        10
-      ],
-      "js_expected": null,
-      "lin_actual": [
-        "str_4",
-        false,
-        null
-      ],
-      "category": "BOOLEAN_SHORT_CIRCUIT_VALUE_PROPAGATION"
     },
     {
       "case_id": 234,
@@ -150,55 +106,6 @@
       ],
       "lin_actual": [
         false
-      ],
-      "category": "OTHER"
-    },
-    {
-      "case_id": 486,
-      "lin_code": "!prog_486(a,b,c){res=([true,[true,false,47],[\"str_37\"]]+a);^res}",
-      "args": [
-        5,
-        0,
-        14
-      ],
-      "js_expected": "true,true,false,47,str_375",
-      "lin_actual": "true,[true,false,47],[\"str_37\"]5",
-      "category": "OTHER"
-    },
-    {
-      "case_id": 492,
-      "lin_code": "!prog_492(a,b,c){res=([19,false]<[b,a,-3]);^res}",
-      "args": [
-        10,
-        -9,
-        -1
-      ],
-      "js_expected": false,
-      "lin_actual": [
-        19,
-        false
-      ],
-      "category": "BOOLEAN_SHORT_CIRCUIT_VALUE_PROPAGATION"
-    },
-    {
-      "case_id": 508,
-      "lin_code": "!prog_508(a,b,c){res=[b,([a,b,8]<=[29,\"str_35\"])];^res}",
-      "args": [
-        6,
-        18,
-        12
-      ],
-      "js_expected": [
-        18,
-        false
-      ],
-      "lin_actual": [
-        18,
-        [
-          6,
-          18,
-          true
-        ]
       ],
       "category": "OTHER"
     },
@@ -299,18 +206,6 @@
       "category": "OTHER"
     },
     {
-      "case_id": 966,
-      "lin_code": "!prog_966(a,b,c){res=([c,[c,-2,a],(a<=\"str_28\")]+(!b));^res}",
-      "args": [
-        5,
-        -5,
-        8
-      ],
-      "js_expected": "8,8,-2,5,falsefalse",
-      "lin_actual": "8,[8,-2,5],falsefalse",
-      "category": "OTHER"
-    },
-    {
       "case_id": 968,
       "lin_code": "!prog_968(a,b,c){res=(((13*true)-[b,a])<=((true>=-11)==[b]));^res}",
       "args": [
@@ -320,27 +215,6 @@
       ],
       "js_expected": false,
       "lin_actual": true,
-      "category": "OTHER"
-    },
-    {
-      "case_id": 1015,
-      "lin_code": "!prog_1015(a,b,c){res=[([-2,\"str_40\"]*[30,\"str_45\",a]),8];^res}",
-      "args": [
-        30,
-        2,
-        6
-      ],
-      "js_expected": [
-        null,
-        8
-      ],
-      "lin_actual": [
-        [
-          -2,
-          null
-        ],
-        8
-      ],
       "category": "OTHER"
     },
     {
@@ -356,35 +230,6 @@
       "category": "OTHER"
     },
     {
-      "case_id": 1273,
-      "lin_code": "!prog_1273(a,b,c){res=([(false-false),(a-true)]+[c,(b*true)]);^res}",
-      "args": [
-        20,
-        -4,
-        30
-      ],
-      "js_expected": "0,1930,-4",
-      "lin_actual": [
-        0,
-        "(a-true)][c,(b*true)"
-      ],
-      "category": "BOOLEAN_SHORT_CIRCUIT_VALUE_PROPAGATION"
-    },
-    {
-      "case_id": 1274,
-      "lin_code": "!prog_1274(a,b,c){res=([[48,48,\"str_15\"]]>[(!a)]);^res}",
-      "args": [
-        8,
-        -10,
-        25
-      ],
-      "js_expected": false,
-      "lin_actual": [
-        false
-      ],
-      "category": "BOOLEAN_SHORT_CIRCUIT_VALUE_PROPAGATION"
-    },
-    {
       "case_id": 1352,
       "lin_code": "!prog_1352(a,b,c){res=((\"str_46\"-b)>(21&&-3));^res}",
       "args": [
@@ -397,37 +242,15 @@
       "category": "OTHER"
     },
     {
-      "case_id": 1364,
-      "lin_code": "!prog_1364(a,b,c){res=([(b-c),[36,c,b],[b,9]]||[(!c),\"str_2\"]);^res}",
+      "case_id": 1353,
+      "lin_code": "!prog_1353(a,b,c){res=(!([b]<=[true,b]));^res}",
       "args": [
-        23,
-        13,
-        -5
+        9,
+        1,
+        22
       ],
-      "js_expected": [
-        18,
-        [
-          36,
-          -5,
-          13
-        ],
-        [
-          13,
-          9
-        ]
-      ],
-      "lin_actual": [
-        18,
-        [
-          36,
-          -5,
-          13
-        ],
-        [
-          13,
-          "9]"
-        ]
-      ],
+      "js_expected": false,
+      "lin_actual": true,
       "category": "OTHER"
     },
     {
@@ -479,22 +302,6 @@
       "category": "OTHER"
     },
     {
-      "case_id": 1516,
-      "lin_code": "!prog_1516(a,b,c){res=([20,-2,\"str_29\"]-[a]);^res}",
-      "args": [
-        24,
-        5,
-        29
-      ],
-      "js_expected": null,
-      "lin_actual": [
-        20,
-        -2,
-        null
-      ],
-      "category": "BOOLEAN_SHORT_CIRCUIT_VALUE_PROPAGATION"
-    },
-    {
       "case_id": 1556,
       "lin_code": "!prog_1556(a,b,c){res=((\"str_10\"!=15)+(\"str_10\"-b));^res}",
       "args": [
@@ -505,21 +312,6 @@
       "js_expected": null,
       "lin_actual": 1,
       "category": "OTHER"
-    },
-    {
-      "case_id": 1602,
-      "lin_code": "!prog_1602(a,b,c){res=([\"str_33\",-9]==[a,a]);^res}",
-      "args": [
-        -2,
-        -2,
-        17
-      ],
-      "js_expected": false,
-      "lin_actual": [
-        "str_33",
-        false
-      ],
-      "category": "BOOLEAN_SHORT_CIRCUIT_VALUE_PROPAGATION"
     },
     {
       "case_id": 1679,
@@ -558,39 +350,15 @@
       "category": "OTHER"
     },
     {
-      "case_id": 1972,
-      "lin_code": "!prog_1972(a,b,c){res=[([50,c,\"str_24\"]*[false,b])];^res}",
+      "case_id": 1832,
+      "lin_code": "!prog_1832(a,b,c){res=([b,-15,false]<=[false]);^res}",
       "args": [
-        -2,
-        19,
-        10
+        -5,
+        29,
+        8
       ],
-      "js_expected": [
-        null
-      ],
-      "lin_actual": [
-        [
-          50,
-          10,
-          null
-        ]
-      ],
-      "category": "OTHER"
-    },
-    {
-      "case_id": 2004,
-      "lin_code": "!prog_2004(a,b,c){res=([6]||[true]);^res}",
-      "args": [
-        6,
-        21,
-        13
-      ],
-      "js_expected": [
-        6
-      ],
-      "lin_actual": [
-        "6]"
-      ],
+      "js_expected": true,
+      "lin_actual": false,
       "category": "OTHER"
     },
     {
@@ -654,62 +422,15 @@
       "category": "OTHER"
     },
     {
-      "case_id": 2229,
-      "lin_code": "!prog_2229(a,b,c){res=([\"str_19\",a]&&[16,29]);^res}",
+      "case_id": 2244,
+      "lin_code": "!prog_2244(a,b,c){res=([false,b]>[b,\"str_42\",c]);^res}",
       "args": [
-        -1,
-        24,
-        -4
+        2,
+        -2,
+        -1
       ],
-      "js_expected": [
-        16,
-        29
-      ],
-      "lin_actual": [
-        "str_19",
-        "[16,29"
-      ],
-      "category": "OTHER"
-    },
-    {
-      "case_id": 2311,
-      "lin_code": "!prog_2311(a,b,c){res=[[[47,\"str_45\",\"str_8\"],(!b)],-14,([a,true]&&[42,b,b])];^res}",
-      "args": [
-        -3,
-        0,
-        27
-      ],
-      "js_expected": [
-        [
-          [
-            47,
-            "str_45",
-            "str_8"
-          ],
-          true
-        ],
-        -14,
-        [
-          42,
-          0,
-          0
-        ]
-      ],
-      "lin_actual": [
-        [
-          [
-            47,
-            "str_45",
-            "str_8"
-          ],
-          true
-        ],
-        -14,
-        [
-          -3,
-          "[42,b,b"
-        ]
-      ],
+      "js_expected": true,
+      "lin_actual": false,
       "category": "OTHER"
     },
     {
@@ -722,6 +443,174 @@
       ],
       "js_expected": true,
       "lin_actual": false,
+      "category": "OTHER"
+    },
+    {
+      "case_id": 2358,
+      "lin_code": "!prog_2358(a,b,c){res=(!((\"str_36\"+\"str_3\")>=[b]));^res}",
+      "args": [
+        5,
+        7,
+        -4
+      ],
+      "js_expected": false,
+      "lin_actual": true,
+      "category": "OTHER"
+    },
+    {
+      "case_id": 2423,
+      "lin_code": "!prog_2423(a,b,c){res=((a>=37)>=[false]);^res}",
+      "args": [
+        10,
+        7,
+        -3
+      ],
+      "js_expected": false,
+      "lin_actual": true,
+      "category": "OTHER"
+    },
+    {
+      "case_id": 2501,
+      "lin_code": "!prog_2501(a,b,c){res=([false]>=(\"str_4\"--3));^res}",
+      "args": [
+        -9,
+        15,
+        30
+      ],
+      "js_expected": false,
+      "lin_actual": true,
+      "category": "OTHER"
+    },
+    {
+      "case_id": 2507,
+      "lin_code": "!prog_2507(a,b,c){res=((\"str_11\"*c)==(false==c));^res}",
+      "args": [
+        -9,
+        24,
+        14
+      ],
+      "js_expected": false,
+      "lin_actual": true,
+      "category": "OTHER"
+    },
+    {
+      "case_id": 2524,
+      "lin_code": "!prog_2524(a,b,c){res=([(\"str_37\"<a)]<[(true>false),false]);^res}",
+      "args": [
+        5,
+        -8,
+        30
+      ],
+      "js_expected": true,
+      "lin_actual": false,
+      "category": "OTHER"
+    },
+    {
+      "case_id": 2563,
+      "lin_code": "!prog_2563(a,b,c){res=((!(!c))>=([a,b]-b));^res}",
+      "args": [
+        -6,
+        8,
+        21
+      ],
+      "js_expected": false,
+      "lin_actual": true,
+      "category": "OTHER"
+    },
+    {
+      "case_id": 2576,
+      "lin_code": "!prog_2576(a,b,c){res=((-10!=a)>(\"str_21\"*46));^res}",
+      "args": [
+        28,
+        27,
+        -3
+      ],
+      "js_expected": false,
+      "lin_actual": true,
+      "category": "OTHER"
+    },
+    {
+      "case_id": 2887,
+      "lin_code": "!prog_2887(a,b,c){res=([a,a]>[26,c,a]);^res}",
+      "args": [
+        29,
+        28,
+        16
+      ],
+      "js_expected": true,
+      "lin_actual": false,
+      "category": "OTHER"
+    },
+    {
+      "case_id": 2909,
+      "lin_code": "!prog_2909(a,b,c){res=([false]!=(42&&0));^res}",
+      "args": [
+        -5,
+        -1,
+        14
+      ],
+      "js_expected": true,
+      "lin_actual": false,
+      "category": "OTHER"
+    },
+    {
+      "case_id": 2918,
+      "lin_code": "!prog_2918(a,b,c){res=((46<=(b<=a))*((\"str_42\"-true)*(!\"str_37\")));^res}",
+      "args": [
+        -9,
+        14,
+        5
+      ],
+      "js_expected": null,
+      "lin_actual": 0,
+      "category": "OTHER"
+    },
+    {
+      "case_id": 2944,
+      "lin_code": "!prog_2944(a,b,c){res=([(!c)]-c);^res}",
+      "args": [
+        -4,
+        18,
+        9
+      ],
+      "js_expected": null,
+      "lin_actual": -9,
+      "category": "OTHER"
+    },
+    {
+      "case_id": 3002,
+      "lin_code": "!prog_3002(a,b,c){res=((false<=c)+(\"str_48\"-a));^res}",
+      "args": [
+        18,
+        21,
+        -6
+      ],
+      "js_expected": null,
+      "lin_actual": 0,
+      "category": "OTHER"
+    },
+    {
+      "case_id": 3012,
+      "lin_code": "!prog_3012(a,b,c){res=((11+true)-[true]);^res}",
+      "args": [
+        -7,
+        21,
+        -9
+      ],
+      "js_expected": null,
+      "lin_actual": 11,
+      "category": "OTHER"
+    },
+    {
+      "case_id": 3137,
+      "lin_code": "!prog_3137(a,b,c){res=(b>(5*\"str_49\"));^res}",
+      "args": [
+        16,
+        30,
+        29
+      ],
+      "js_expected": false,
+      "lin_actual": true,
       "category": "OTHER"
     }
   ]

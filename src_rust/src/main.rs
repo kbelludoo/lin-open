@@ -180,10 +180,17 @@ fn val_to_primitive_string(v: &Value) -> Option<String> {
     match v {
         Value::String(s) => Some(s.clone()),
         Value::Array(arr) => {
-            let parts: Vec<String> = arr.iter().map(|item| match item {
-                Value::String(s) => s.clone(),
-                Value::Null => String::new(),
-                other => other.to_string(),
+            // JS Array.prototype.toString() is recursive join with ","
+            let parts: Vec<String> = arr.iter().map(|item| {
+                match val_to_primitive_string(item) {
+                    Some(s) => s,
+                    None => match item {
+                        Value::Bool(b) => b.to_string(),
+                        Value::Number(n) => n.to_string(),
+                        Value::Null => String::new(),
+                        _ => item.to_string(),
+                    }
+                }
             }).collect();
             Some(parts.join(","))
         },
@@ -280,13 +287,26 @@ pub fn eval_expr(expr: &str, scope: &mut Scope, module: &LinModule) -> Value {
     }
 
     if s.starts_with('[') && s.ends_with(']') {
-        let inner = &s[1..s.len() - 1].trim();
-        if inner.is_empty() { return Value::Array(Vec::new()); }
-        let items: Vec<Value> = split_aware(inner, ',')
-            .iter()
-            .map(|item| eval_expr(item, scope, module))
-            .collect();
-        return Value::Array(items);
+        // Verify the closing ] corresponds to the opening [ (fully enclosed)
+        let chars_v: Vec<char> = s.chars().collect();
+        let mut d = 0i32;
+        let mut fully_enclosed = false;
+        for (idx, &c) in chars_v.iter().enumerate() {
+            if c == '[' { d += 1; } else if c == ']' { d -= 1; }
+            if d == 0 {
+                if idx == chars_v.len() - 1 { fully_enclosed = true; }
+                break;
+            }
+        }
+        if fully_enclosed {
+            let inner = s[1..s.len() - 1].trim();
+            if inner.is_empty() { return Value::Array(Vec::new()); }
+            let items: Vec<Value> = split_aware(inner, ',')
+                .iter()
+                .map(|item| eval_expr(item, scope, module))
+                .collect();
+            return Value::Array(items);
+        }
     }
 
     if s == "{}" {
