@@ -1,0 +1,22 @@
+{
+  "protocol": "GATE_5_BLIND_GENERALIZATION_OOD",
+  "version": "1.0.0",
+  "status": "FROZEN",
+  "hypothesis": "H_OOD_01: LIN semantic representations achieve strict execution parity (EE_strict >= 99%) and statistically significant token reduction (alpha = 0.005) on unseen out-of-distribution algorithmic domains without prior exposure.",
+  "task_domain_families": [
+    "FINANCIAL_MATH",
+    "GEOSPATIAL_ALGORITHMS",
+    "DATA_STRUCTURES_GRAPH",
+    "STRING_CRYPTO_ENCODING",
+    "SIGNAL_PROCESSING_STATS"
+  ],
+  "sample_size": 100,
+  "metrics": [
+    "EE_strict_exact_execution_parity",
+    "token_reduction_ratio",
+    "latency_speedup",
+    "wilcoxon_signed_rank_p_value",
+    "bonferroni_significance_alpha_0_005"
+  ],
+  "statistical_test": "Paired Wilcoxon Signed-Rank Test with Bonferroni correction (alpha = 0.005)"
+}
