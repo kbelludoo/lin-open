@@ -1,0 +1,4 @@
+@RULEL:PACKAGE_MANIFEST:1.0
+~PKG{name="lin-lang" version="2.1.0" type="sovereign_lin" engine="zig"}
+.scripts{build="zig build-exe src/lin.zig -O ReleaseFast -femit-bin=bin/lin_native" check="zig run src/lin.zig -- check"}
+.keywords{k="lin" k="rulel" k="zig" k="compiler" k="sovereign"}
