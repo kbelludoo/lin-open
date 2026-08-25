@@ -1,0 +1,55 @@
+@RULEL:LIN_SEMANTIC_MERKLE_DAG:1.0.0
+~R{.m=meta .r=rule .f=forbid .a=allow .g=gate .w=when .c=contract .x=steps .p=path .s=score .d=design_principle .i=invariant .t=thesis}
+.m{lang=LIN status=SPEC repo="C:/Users/k/Documents/lia" date=2026-08-25 why=content_addressed_canonical_merkle_dag_and_proof_ledger}
+.d{
+  P0=agent_native_first
+  purpose=canonical_semantic_ir!merkle_dag!alpha_normalization!hashcons!proof_ledger
+  thesis="A program is a Directed Acyclic Graph of content-addressed canonical semantic nodes. Extraction, deduplication, incremental verification, and runtime materialization operate on Merkle semantic hashes."
+}
+
+.t{
+  H_CANONICAL_IDENTITY="Two syntactic expressions that exhibit identical observational semantics under alpha-conversion, explicit capture isolation, and effect tagging map to the exact same canonical Merkle hash."
+  H_OBSERVATIONAL_INTEGRITY="No naive commutative or associative reordering is permitted at the general canonicalizer level; evaluation order and JS semantics must be preserved."
+}
+
+.i{
+  NODE_HASH_FORMULA="H(node) = SHA256(version || opcode || type_signature || effect_signature || canonical_children_hashes || canonical_literals)"
+  MERKLE_TREE_INCLUSION="H(parent) incorporates the hashes of all its child nodes: H(parent) = Hash(Op || H(child_0) || H(child_1) ...)"
+  ALPHA_NORMALIZATION="All local variable and parameter identifiers are normalized to deterministic De Bruijn lexical indices ($0, $1, $2) before hashing"
+  EFFECT_IN_IDENTITY="Effect signature (Pure | Read | Mutate | IO) is baked directly into node identity; pure functions and effectful functions with identical bodies produce distinct hashes"
+  PROOF_LEDGER_INTEGRITY="Proof certificates include semantic_hash, canonicalization_version, source_lang, target, oracle, test_suite_hash, and behavior_eq"
+}
+
+.c{certificate_schema={
+  semantic_hash: "hex string (256-bit or 128-bit truncated)",
+  canonicalization_version: "string (e.g. 1.0)",
+  source_language: "string (e.g. javascript)",
+  target: "string (e.g. lin)",
+  oracle: "string (e.g. node_v24_js_oracle)",
+  test_suite_hash: "hex string of test vectors",
+  behavior_eq: "float (e.g. 1.0)",
+  timestamp: "iso8601 string"
+}}
+
+.g{
+  GATE_CANONICAL_COLLAPSE="100% of alpha-equivalent and formatting variations must collapse to identical Merkle hashes"
+  GATE_OBSERVATIONAL_DISTINCTION="100% of semantically non-equivalent programs (operand order, prefix/postfix, effect differences) must produce distinct Merkle hashes"
+  GATE_STRUCTURAL_DEDUPLICATION="Shared subgraphs across modules must yield deduplication ratio > 1.0 in Merkle DAG store"
+}
+
+.x{
+  1=serialize_ast_to_canonical_ir_with_de_bruijn_and_effect_annotations
+  2=compute_bottom_up_merkle_hashes_for_nodes_functions_and_app_root
+  3=store_nodes_in_hashcons_content_addressed_dag
+  4=run_canonicalization_oracle_differential_gate
+  5=integrate_merkle_dag_into_semantic_closure_pipeline
+  6=emit_proof_ledger_certificates
+}
+
+.p{
+  spec=spec/LIN_SEMANTIC_MERKLE_DAG.rulel
+  serializer=src/canonical_ir_serializer.mjs
+  hasher=src/semantic_merkle_hasher.mjs
+  dag=src/semantic_merkle_dag.mjs
+  gate=tests/canonical_merkle_oracle_test.mjs
+}
