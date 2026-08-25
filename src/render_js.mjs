@@ -18,12 +18,15 @@ export function renderProgramJs(prog, opts = {}) {
     parts.push(`const ${en.name} = {};`);
     const variantNames = new Set((en.variants || []).map(v => v.name));
     for (const v of en.variants || []) {
-      const valStr = v.value !== undefined ? String(v.value).replace(/\b([A-Za-z_$][\w$]*)\b/g, (m) => {
-        if (variantNames.has(m)) {
-          return `${en.name}[${JSON.stringify(m)}]`;
-        }
-        return m;
-      }) : JSON.stringify(v.name);
+      let valStr = v.value !== undefined ? String(v.value) : JSON.stringify(v.name);
+      if (!valStr.startsWith('"') && !valStr.startsWith("'")) {
+        valStr = valStr.replace(/\b([A-Za-z_$][\w$]*)\b/g, (m) => {
+          if (variantNames.has(m)) {
+            return `${en.name}[${JSON.stringify(m)}]`;
+          }
+          return m;
+        });
+      }
       parts.push(`${en.name}[${JSON.stringify(v.name)}] = ${valStr};`);
     }
   }

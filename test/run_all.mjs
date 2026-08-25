@@ -49,12 +49,16 @@ const { emitLinFromJs } = await import(path.join(root, 'src', 'emit_from_js.mjs'
 const { emitTs, emitPy, emitGo, emitRust, emitC, emitJava } = await import(path.join(root, 'src', 'emitters.mjs'));
 
 function readCorpus(rel) {
-  return fs.readFileSync(path.join(CORPUS, rel), 'utf8');
+  const p1 = path.join(CORPUS, rel);
+  if (fs.existsSync(p1)) return fs.readFileSync(p1, 'utf8');
+  const p2 = path.join(CORPUS, rel.replace(/\.lia$/, '.lin'));
+  if (fs.existsSync(p2)) return fs.readFileSync(p2, 'utf8');
+  return fs.readFileSync(p1, 'utf8');
 }
 
 console.log('T01 headers (LIN/LIA/AIL dual-read)');
 test('header + structure', () => {
-  const src = readCorpus('examples/safe-compare.lia');
+  const src = readCorpus('examples/safe-compare.lin');
   const prog = parseProgram(src);
   assert.equal(prog.header, '@LIN:L1c:0.2');
   assert.equal(prog.fns.length, 2);
@@ -71,7 +75,7 @@ test('header + structure', () => {
 
 console.log('T02 safe-compare behavior (in-memory)');
 test('safeCompare truth table', () => {
-  const src = readCorpus('examples/safe-compare.lia');
+  const src = readCorpus('examples/safe-compare.lin');
   const r = compile(src, { target: 'js', exportMode: 'single' });
   const fn = runInMemory(r.code);
   assert.equal(fn('ab', 'ab'), true);
@@ -83,7 +87,7 @@ test('safeCompare truth table', () => {
 
 console.log('T03 bytes format+parse exact');
 test('bytes npm parity', () => {
-  const src = readCorpus('examples/bytes.lia');
+  const src = readCorpus('examples/bytes.lin');
   const prelude = [
     'var formatThousandsRegExp=/\\B(?=(\\d{3})+(?!\\d))/g;',
     'var formatDecimalsRegExp=/(?:\\.0*|(\\.[^0]+))0+$/;',
@@ -135,7 +139,7 @@ test('literals, enum Option, wildcard, or-patterns, guards, tuples', () => {
   const m2 = runInMemory(compile(readCorpus(`${LEGACY_V1}/tests/m003_rust_match.lin`), { target: 'js' }).code);
   assert.deepEqual([m2(0), m2(1), m2(99)], [100, 200, 999]);
 
-  const omSrc = readCorpus(`${LEGACY_V1}/tests/option_match.lia`);
+  const omSrc = readCorpus(`${LEGACY_V1}/tests/option_match.lin`);
   const om = runInMemory(compile(omSrc, { target: 'js', exportMode: 'multiple' }).code);
   const some = { tag: 'Some', value: 42 };
   assert.equal(om.unwrapOr(some, 0), 42);
@@ -186,7 +190,7 @@ test('while-form, empty bodies, break/continue', () => {
 });
 
 console.log('T11 multi-target native execution');
-const arithSrc = fs.readFileSync(path.join(__dirname, 'fixtures', 'arith.lia'), 'utf8');
+const arithSrc = fs.readFileSync(path.join(__dirname, 'fixtures', 'arith.lin'), 'utf8');
 
 test('py: python3 runs emitted module', async () => {
   const prog = parseProgram(arithSrc);
@@ -223,7 +227,7 @@ func main() {
 });
 
 test('rust: rustc compiles + runs match fixture', () => {
-  const mnProg = parseProgram(fs.readFileSync(path.join(__dirname, 'fixtures', 'match_num.lia'), 'utf8'));
+  const mnProg = parseProgram(fs.readFileSync(path.join(__dirname, 'fixtures', 'match_num.lin'), 'utf8'));
   let rs = emitRust(mnProg);
   rs += '\nfn main() { println!("{}", match_number(0)); println!("{}", match_number(1)); println!("{}", match_number(99)); }\n';
   const dir = fs.mkdtempSync('/tmp/opencode/lintest-rs-');
@@ -299,7 +303,7 @@ test('emit subset → recompiles → same behavior', () => {
 
 console.log('T13 verifier gates');
 test('verify passes on good program with behavior fixtures', () => {
-  const src = fs.readFileSync(path.join(__dirname, 'fixtures', 'arith.lia'), 'utf8');
+  const src = fs.readFileSync(path.join(__dirname, 'fixtures', 'arith.lin'), 'utf8');
   const report = verify(src, {
     behavior: [
       { fn: 'add', args: [2, 3], want: 5 },
@@ -330,7 +334,7 @@ test('compile+run leaves the filesystem untouched', () => {
     return out;
   };
   const before = snap();
-  for (const rel of ['examples/safe-compare.lia', 'examples/bytes.lia', `${LEGACY_V1}/tests/m003_rust_match.lin`]) {
+  for (const rel of ['examples/safe-compare.lin', 'examples/bytes.lin', `${LEGACY_V1}/tests/m003_rust_match.lin`]) {
     const srcText = readCorpus(rel);
     const code = compile(srcText, { target: 'js' }).code;
     runInMemory(code);
