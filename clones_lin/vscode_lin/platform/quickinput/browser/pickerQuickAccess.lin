@@ -1,0 +1,20 @@
+@LIN:platform_quickinput_browser_pickerQuickAccess:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getTriggerActionEnum(){
+  ^{ enumName: "TriggerAction", members: ["/**
+	 * Do nothing after the button was clicked.
+	 */
+	NO_ACTION", "/**
+	 * Close the picker.
+	 */
+	CLOSE_PICKER", "/**
+	 * Update the results of the picker.
+	 */
+	REFRESH_PICKER", "/**
+	 * Remove the item from the picker.
+	 */
+	REMOVE_ITEM"] };
+}
+
+=ex{getTriggerActionEnum}

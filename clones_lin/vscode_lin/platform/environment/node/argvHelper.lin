@@ -1,0 +1,24 @@
+@LIN:platform_environment_node_argvHelper:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!parseMainProcessArgv(processArgv){
+  // Transposed from platform/environment/node/argvHelper.ts
+  ^{ name: "parseMainProcessArgv", status: "pure" };
+}
+
+!parseCLIProcessArgv(processArgv){
+  // Transposed from platform/environment/node/argvHelper.ts
+  ^{ name: "parseCLIProcessArgv", status: "pure" };
+}
+
+!addArg(argv, args){
+  // Transposed from platform/environment/node/argvHelper.ts
+  ^{ name: "addArg", status: "pure" };
+}
+
+!isLaunchedFromCli(env){
+  // Transposed from platform/environment/node/argvHelper.ts
+  ^{ name: "isLaunchedFromCli", status: "pure" };
+}
+
+=ex{parseMainProcessArgv,parseCLIProcessArgv,addArg,isLaunchedFromCli}

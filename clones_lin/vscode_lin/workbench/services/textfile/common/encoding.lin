@@ -1,0 +1,48 @@
+@LIN:workbench_services_textfile_common_encoding:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isUTFEncoding(encoding){
+  // Transposed from workbench/services/textfile/common/encoding.ts
+  ^{ name: "isUTFEncoding", status: "pure" };
+}
+
+!toDecodeStream(source, options){
+  // Transposed from workbench/services/textfile/common/encoding.ts
+  ^{ name: "toDecodeStream", status: "pure" };
+}
+
+!toEncodeReadable(readable, encoding, options?){
+  // Transposed from workbench/services/textfile/common/encoding.ts
+  ^{ name: "toEncodeReadable", status: "pure" };
+}
+
+!encodingExists(encoding){
+  // Transposed from workbench/services/textfile/common/encoding.ts
+  ^{ name: "encodingExists", status: "pure" };
+}
+
+!toNodeEncoding(enc){
+  // Transposed from workbench/services/textfile/common/encoding.ts
+  ^{ name: "toNodeEncoding", status: "pure" };
+}
+
+!detectEncodingByBOMFromBuffer(buffer, bytesRead){
+  // Transposed from workbench/services/textfile/common/encoding.ts
+  ^{ name: "detectEncodingByBOMFromBuffer", status: "pure" };
+}
+
+!toCanonicalName(enc){
+  // Transposed from workbench/services/textfile/common/encoding.ts
+  ^{ name: "toCanonicalName", status: "pure" };
+}
+
+!detectEncodingFromBuffer({ buffer, bytesRead }, autoGuessEncoding?, candidateGuessEncodings?){
+  // Transposed from workbench/services/textfile/common/encoding.ts
+  ^{ name: "detectEncodingFromBuffer", status: "pure" };
+}
+
+!createDecodeStreamError(...args){
+  ^{ className: "DecodeStreamError", methods: [] };
+}
+
+=ex{isUTFEncoding,toDecodeStream,toEncodeReadable,encodingExists,toNodeEncoding,detectEncodingByBOMFromBuffer,toCanonicalName,detectEncodingFromBuffer,createDecodeStreamError}

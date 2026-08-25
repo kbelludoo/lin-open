@@ -1,0 +1,16 @@
+@LIN:platform_undoRedo_common_undoRedo:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createResourceEditStackSnapshot(...args){
+  ^{ className: "ResourceEditStackSnapshot", methods: [] };
+}
+
+!createUndoRedoGroup(...args){
+  ^{ className: "UndoRedoGroup", methods: ["nextOrder", "if"] };
+}
+
+!createUndoRedoSource(...args){
+  ^{ className: "UndoRedoSource", methods: ["nextOrder", "if"] };
+}
+
+=ex{createResourceEditStackSnapshot,createUndoRedoGroup,createUndoRedoSource}

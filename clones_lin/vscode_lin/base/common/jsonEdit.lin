@@ -1,0 +1,24 @@
+@LIN:base_common_jsonEdit:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!removeProperty(text, path, formattingOptions){
+  // Transposed from base/common/jsonEdit.ts
+  ^{ name: "removeProperty", status: "pure" };
+}
+
+!withFormatting(text, edit, formattingOptions){
+  // Transposed from base/common/jsonEdit.ts
+  ^{ name: "withFormatting", status: "pure" };
+}
+
+!applyEdit(text, edit){
+  // Transposed from base/common/jsonEdit.ts
+  ^{ name: "applyEdit", status: "pure" };
+}
+
+!applyEdits(text, edits){
+  // Transposed from base/common/jsonEdit.ts
+  ^{ name: "applyEdits", status: "pure" };
+}
+
+=ex{removeProperty,withFormatting,applyEdit,applyEdits}

@@ -1,0 +1,54 @@
+@LIN:workbench_contrib_chat_common_promptSyntax_config_promptFileLocations:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isSkillFilename(filename){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/config/promptFileLocations.ts
+  ^{ name: "isSkillFilename", status: "pure" };
+}
+
+!isInClaudeAgentsFolder(fileUri){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/config/promptFileLocations.ts
+  ^{ name: "isInClaudeAgentsFolder", status: "pure" };
+}
+
+!isInCopilotAgentsFolder(fileUri){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/config/promptFileLocations.ts
+  ^{ name: "isInCopilotAgentsFolder", status: "pure" };
+}
+
+!isInClaudeRulesFolder(fileUri){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/config/promptFileLocations.ts
+  ^{ name: "isInClaudeRulesFolder", status: "pure" };
+}
+
+!getPromptFileType(fileUri){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/config/promptFileLocations.ts
+  ^{ name: "getPromptFileType", status: "pure" };
+}
+
+!isPromptOrInstructionsFile(fileUri){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/config/promptFileLocations.ts
+  ^{ name: "isPromptOrInstructionsFile", status: "pure" };
+}
+
+!getPromptFileExtension(type){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/config/promptFileLocations.ts
+  ^{ name: "getPromptFileExtension", status: "pure" };
+}
+
+!getPromptFileDefaultLocations(type){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/config/promptFileLocations.ts
+  ^{ name: "getPromptFileDefaultLocations", status: "pure" };
+}
+
+!getSkillFolderName(fileUri){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/config/promptFileLocations.ts
+  ^{ name: "getSkillFolderName", status: "pure" };
+}
+
+!getCleanPromptName(fileUri){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/config/promptFileLocations.ts
+  ^{ name: "getCleanPromptName", status: "pure" };
+}
+
+=ex{isSkillFilename,isInClaudeAgentsFolder,isInCopilotAgentsFolder,isInClaudeRulesFolder,getPromptFileType,isPromptOrInstructionsFile,getPromptFileExtension,getPromptFileDefaultLocations,getSkillFolderName,getCleanPromptName}

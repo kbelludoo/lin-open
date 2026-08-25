@@ -1,0 +1,24 @@
+@LIN:workbench_contrib_scm_browser_quickDiffWidget:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createQuickDiffPickerBaseAction(...args){
+  ^{ className: "QuickDiffPickerBaseAction", methods: ["run"] };
+}
+
+!createShowPreviousChangeAction(...args){
+  ^{ className: "ShowPreviousChangeAction", methods: ["run", "if", "if"] };
+}
+
+!createShowNextChangeAction(...args){
+  ^{ className: "ShowNextChangeAction", methods: ["run", "if", "if"] };
+}
+
+!createGotoPreviousChangeAction(...args){
+  ^{ className: "GotoPreviousChangeAction", methods: ["run", "if"] };
+}
+
+!createGotoNextChangeAction(...args){
+  ^{ className: "GotoNextChangeAction", methods: ["run", "if"] };
+}
+
+=ex{createQuickDiffPickerBaseAction,createShowPreviousChangeAction,createShowNextChangeAction,createGotoPreviousChangeAction,createGotoNextChangeAction}

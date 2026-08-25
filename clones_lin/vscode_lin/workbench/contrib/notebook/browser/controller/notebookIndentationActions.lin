@@ -1,0 +1,24 @@
+@LIN:workbench_contrib_notebook_browser_controller_notebookIndentationActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createNotebookIndentUsingTabs(...args){
+  ^{ className: "NotebookIndentUsingTabs", methods: ["run"] };
+}
+
+!createNotebookIndentUsingSpaces(...args){
+  ^{ className: "NotebookIndentUsingSpaces", methods: ["run"] };
+}
+
+!createNotebookChangeTabDisplaySize(...args){
+  ^{ className: "NotebookChangeTabDisplaySize", methods: ["run"] };
+}
+
+!createNotebookIndentationToSpacesAction(...args){
+  ^{ className: "NotebookIndentationToSpacesAction", methods: ["run"] };
+}
+
+!createNotebookIndentationToTabsAction(...args){
+  ^{ className: "NotebookIndentationToTabsAction", methods: ["run"] };
+}
+
+=ex{createNotebookIndentUsingTabs,createNotebookIndentUsingSpaces,createNotebookChangeTabDisplaySize,createNotebookIndentationToSpacesAction,createNotebookIndentationToTabsAction}

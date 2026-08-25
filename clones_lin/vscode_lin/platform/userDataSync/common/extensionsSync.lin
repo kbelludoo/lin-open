@@ -1,0 +1,18 @@
+@LIN:platform_userDataSync_common_extensionsSync:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!parseExtensions(syncData){
+  // Transposed from platform/userDataSync/common/extensionsSync.ts
+  ^{ name: "parseExtensions", status: "pure" };
+}
+
+!stringify(extensions, format){
+  // Transposed from platform/userDataSync/common/extensionsSync.ts
+  ^{ name: "stringify", status: "pure" };
+}
+
+!createLocalExtensionsProvider(...args){
+  ^{ className: "LocalExtensionsProvider", methods: ["getLocalExtensions", "if", "if", "catch", "updateLocalExtensions", "if", "if", "if", "if", "if", "if", "if", "if", "catch", "if", "for", "if", "if", "if", "for", "for", "updateExtensionState", "if"] };
+}
+
+=ex{parseExtensions,stringify,createLocalExtensionsProvider}

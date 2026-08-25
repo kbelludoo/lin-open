@@ -1,0 +1,12 @@
+@LIN:workbench_browser_parts_views_viewMenuActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createViewMenuActions(...args){
+  ^{ className: "ViewMenuActions", methods: ["getActions", "if", "isPrimaryActionGroup", "if", "if", "getPrimaryActions", "getSecondaryActions", "getContextMenuActions", "if"] };
+}
+
+!createViewContainerMenuActions(...args){
+  ^{ className: "ViewContainerMenuActions", methods: [] };
+}
+
+=ex{createViewMenuActions,createViewContainerMenuActions}

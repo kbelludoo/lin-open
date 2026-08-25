@@ -1,0 +1,9 @@
+@LIN:editor_common_commands_trimTrailingWhitespaceCommand:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!trimTrailingWhitespace(model, cursors, trimInRegexesAndStrings){
+  // Transposed from editor/common/commands/trimTrailingWhitespaceCommand.ts
+  ^{ name: "trimTrailingWhitespace", status: "pure" };
+}
+
+=ex{trimTrailingWhitespace}

@@ -1,0 +1,13 @@
+@LIN:workbench_contrib_files_browser_views_explorerViewer:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isCompressedFolderName(target){
+  // Transposed from workbench/contrib/files/browser/views/explorerViewer.ts
+  ^{ name: "isCompressedFolderName", status: "pure" };
+}
+
+!createPhantomExplorerItem(...args){
+  ^{ className: "PhantomExplorerItem", methods: [] };
+}
+
+=ex{isCompressedFolderName,createPhantomExplorerItem}

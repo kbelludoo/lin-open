@@ -1,0 +1,38 @@
+@LIN:workbench_contrib_scm_common_quickDiff:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getChangeType(change){
+  // Transposed from workbench/contrib/scm/common/quickDiff.ts
+  ^{ name: "getChangeType", status: "pure" };
+}
+
+!getChangeTypeColor(theme, changeType){
+  // Transposed from workbench/contrib/scm/common/quickDiff.ts
+  ^{ name: "getChangeTypeColor", status: "pure" };
+}
+
+!compareChanges(a, b){
+  // Transposed from workbench/contrib/scm/common/quickDiff.ts
+  ^{ name: "compareChanges", status: "pure" };
+}
+
+!getChangeHeight(change){
+  // Transposed from workbench/contrib/scm/common/quickDiff.ts
+  ^{ name: "getChangeHeight", status: "pure" };
+}
+
+!getModifiedEndLineNumber(change){
+  // Transposed from workbench/contrib/scm/common/quickDiff.ts
+  ^{ name: "getModifiedEndLineNumber", status: "pure" };
+}
+
+!lineIntersectsChange(lineNumber, change){
+  // Transposed from workbench/contrib/scm/common/quickDiff.ts
+  ^{ name: "lineIntersectsChange", status: "pure" };
+}
+
+!getChangeTypeEnum(){
+  ^{ enumName: "ChangeType", members: ["Modify", "Add", "Delete"] };
+}
+
+=ex{getChangeType,getChangeTypeColor,compareChanges,getChangeHeight,getModifiedEndLineNumber,lineIntersectsChange,getChangeTypeEnum}

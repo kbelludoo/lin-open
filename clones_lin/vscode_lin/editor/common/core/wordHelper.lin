@@ -1,0 +1,14 @@
+@LIN:editor_common_core_wordHelper:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!ensureValidWordDefinition(wordDefinition?){
+  // Transposed from editor/common/core/wordHelper.ts
+  ^{ name: "ensureValidWordDefinition", status: "pure" };
+}
+
+!getWordAtText(column, wordDefinition, text, textOffset, config?){
+  // Transposed from editor/common/core/wordHelper.ts
+  ^{ name: "getWordAtText", status: "pure" };
+}
+
+=ex{ensureValidWordDefinition,getWordAtText}

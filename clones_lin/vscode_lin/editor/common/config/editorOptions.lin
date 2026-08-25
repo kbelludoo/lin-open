@@ -1,0 +1,68 @@
+@LIN:editor_common_config_editorOptions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!boolean(value, defaultValue){
+  // Transposed from editor/common/config/editorOptions.ts
+  ^{ name: "boolean", status: "pure" };
+}
+
+!cursorBlinkingStyleFromString(cursorBlinkingStyle){
+  // Transposed from editor/common/config/editorOptions.ts
+  ^{ name: "cursorBlinkingStyleFromString", status: "pure" };
+}
+
+!cursorStyleToString(cursorStyle){
+  // Transposed from editor/common/config/editorOptions.ts
+  ^{ name: "cursorStyleToString", status: "pure" };
+}
+
+!cursorStyleFromString(cursorStyle){
+  // Transposed from editor/common/config/editorOptions.ts
+  ^{ name: "cursorStyleFromString", status: "pure" };
+}
+
+!filterValidationDecorations(options){
+  // Transposed from editor/common/config/editorOptions.ts
+  ^{ name: "filterValidationDecorations", status: "pure" };
+}
+
+!filterFontDecorations(options){
+  // Transposed from editor/common/config/editorOptions.ts
+  ^{ name: "filterFontDecorations", status: "pure" };
+}
+
+!createConfigurationChangedEvent(...args){
+  ^{ className: "ConfigurationChangedEvent", methods: ["hasChanged"] };
+}
+
+!createComputeOptionsMemory(...args){
+  ^{ className: "ComputeOptionsMemory", methods: [] };
+}
+
+!getTextEditorCursorStyleEnum(){
+  ^{ enumName: "TextEditorCursorStyle", members: ["/**
+	 * As a vertical line (sitting between two characters).
+	 */
+	Line", "/**
+	 * As a block (sitting on top of a character).
+	 */
+	Block", "/**
+	 * As a horizontal line (sitting under a character).
+	 */
+	Underline", "/**
+	 * As a thin vertical line (sitting between two characters).
+	 */
+	LineThin", "/**
+	 * As an outlined block (sitting on top of a character).
+	 */
+	BlockOutline", "/**
+	 * As a thin horizontal line (sitting under a character).
+	 */
+	UnderlineThin"] };
+}
+
+!getShowLightbulbIconModeEnum(){
+  ^{ enumName: "ShowLightbulbIconMode", members: ["Off", "OnCode", "On"] };
+}
+
+=ex{boolean,cursorBlinkingStyleFromString,cursorStyleToString,cursorStyleFromString,filterValidationDecorations,filterFontDecorations,createConfigurationChangedEvent,createComputeOptionsMemory,getTextEditorCursorStyleEnum,getShowLightbulbIconModeEnum}

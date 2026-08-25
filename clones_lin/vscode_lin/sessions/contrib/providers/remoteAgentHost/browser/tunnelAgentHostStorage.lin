@@ -1,0 +1,8 @@
+@LIN:sessions_contrib_providers_remoteAgentHost_browser_tunnelAgentHostStorage:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createTunnelAgentHostStorage(...args){
+  ^{ className: "TunnelAgentHostStorage", methods: ["getCachedTunnels", "if", "cacheTunnel", "removeCachedTunnel", "isAutoConnectSuppressed", "suppressAutoConnect", "clearAutoConnectSuppression", "notifyTunnelsChanged", "_storeCachedTunnels", "if", "_getAutoConnectSuppressedTunnels", "if", "_storeAutoConnectSuppressedTunnels", "if"] };
+}
+
+=ex{createTunnelAgentHostStorage}

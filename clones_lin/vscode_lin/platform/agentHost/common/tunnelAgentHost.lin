@@ -1,0 +1,37 @@
+@LIN:platform_agentHost_common_tunnelAgentHost:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!parseTunnelGatewayInventory(json){
+  // Transposed from platform/agentHost/common/tunnelAgentHost.ts
+  ^{ name: "parseTunnelGatewayInventory", status: "pure" };
+}
+
+!parseTunnelGatewaySelectionResponse(json){
+  // Transposed from platform/agentHost/common/tunnelAgentHost.ts
+  ^{ name: "parseTunnelGatewaySelectionResponse", status: "pure" };
+}
+
+!createTunnelGatewaySelectionRejectedError(message){
+  // Transposed from platform/agentHost/common/tunnelAgentHost.ts
+  ^{ name: "createTunnelGatewaySelectionRejectedError", status: "pure" };
+}
+
+!isTunnelGatewaySelectionRejectedError(error){
+  // Transposed from platform/agentHost/common/tunnelAgentHost.ts
+  ^{ name: "isTunnelGatewaySelectionRejectedError", status: "pure" };
+}
+
+!isTunnelHosted(sharingInfo, tunnel, 'tunnelId' | 'name'>){
+  // Transposed from platform/agentHost/common/tunnelAgentHost.ts
+  ^{ name: "isTunnelHosted", status: "pure" };
+}
+
+!createTunnelTags(...args){
+  ^{ className: "TunnelTags", methods: ["if", "for", "if", "if"] };
+}
+
+!createTunnelGatewayProtocolError(...args){
+  ^{ className: "TunnelGatewayProtocolError", methods: ["isPlainObject"] };
+}
+
+=ex{parseTunnelGatewayInventory,parseTunnelGatewaySelectionResponse,createTunnelGatewaySelectionRejectedError,isTunnelGatewaySelectionRejectedError,isTunnelHosted,createTunnelTags,createTunnelGatewayProtocolError}

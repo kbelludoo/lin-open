@@ -1,0 +1,37 @@
+@LIN:workbench_services_search_node_ripgrepTextSearchEngine:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getRgArgs(query, options){
+  // Transposed from workbench/services/search/node/ripgrepTextSearchEngine.ts
+  ^{ name: "getRgArgs", status: "pure" };
+}
+
+!unicodeEscapesToPCRE2(pattern){
+  // Transposed from workbench/services/search/node/ripgrepTextSearchEngine.ts
+  ^{ name: "unicodeEscapesToPCRE2", status: "pure" };
+}
+
+!fixRegexNewline(pattern){
+  // Transposed from workbench/services/search/node/ripgrepTextSearchEngine.ts
+  ^{ name: "fixRegexNewline", status: "pure" };
+}
+
+!fixNewline(pattern){
+  // Transposed from workbench/services/search/node/ripgrepTextSearchEngine.ts
+  ^{ name: "fixNewline", status: "pure" };
+}
+
+!performBraceExpansionForRipgrep(pattern){
+  // Transposed from workbench/services/search/node/ripgrepTextSearchEngine.ts
+  ^{ name: "performBraceExpansionForRipgrep", status: "pure" };
+}
+
+!createRipgrepTextSearchEngine(...args){
+  ^{ className: "RipgrepTextSearchEngine", methods: ["provideTextSearchResults", "provideTextSearchResultsWithRgOptions", "if", "if", "if", "if", "if"] };
+}
+
+!createRipgrepParser(...args){
+  ^{ className: "RipgrepParser", methods: ["cancel", "flush", "handleData", "if", "handleDecodedData", "if", "while", "handleLine", "if", "catch", "if", "if", "if", "createTextSearchMatch", "if", "if", "if", "createTextSearchContexts", "onResult"] };
+}
+
+=ex{getRgArgs,unicodeEscapesToPCRE2,fixRegexNewline,fixNewline,performBraceExpansionForRipgrep,createRipgrepTextSearchEngine,createRipgrepParser}

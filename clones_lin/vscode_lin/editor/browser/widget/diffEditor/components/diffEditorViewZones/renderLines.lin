@@ -1,0 +1,21 @@
+@LIN:editor_browser_widget_diffEditor_components_diffEditorViewZones_renderLines:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!renderLines(source, options, decorations, domNode, noExtra = false){
+  // Transposed from editor/browser/widget/diffEditor/components/diffEditorViewZones/renderLines.ts
+  ^{ name: "renderLines", status: "pure" };
+}
+
+!createLineSource(...args){
+  ^{ className: "LineSource", methods: [] };
+}
+
+!createRenderOptions(...args){
+  ^{ className: "RenderOptions", methods: ["fromEditor", "withSetWidth", "withScrollBeyondLastColumn"] };
+}
+
+!createRenderLinesResult(...args){
+  ^{ className: "RenderLinesResult", methods: ["getModelPositionAt", "if", "if", "for", "if", "if", "for", "if", "if", "if"] };
+}
+
+=ex{renderLines,createLineSource,createRenderOptions,createRenderLinesResult}

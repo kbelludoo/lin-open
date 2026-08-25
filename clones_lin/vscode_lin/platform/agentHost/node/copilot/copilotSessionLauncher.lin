@@ -1,0 +1,59 @@
+@LIN:platform_agentHost_node_copilot_copilotSessionLauncher:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isMcpServerExplicitlyProjected(server){
+  // Transposed from platform/agentHost/node/copilot/copilotSessionLauncher.ts
+  ^{ name: "isMcpServerExplicitlyProjected", status: "pure" };
+}
+
+!toSdkReasoningEffort(effort){
+  // Transposed from platform/agentHost/node/copilot/copilotSessionLauncher.ts
+  ^{ name: "toSdkReasoningEffort", status: "pure" };
+}
+
+!clientToolNamesFromSnapshot(snapshot){
+  // Transposed from platform/agentHost/node/copilot/copilotSessionLauncher.ts
+  ^{ name: "clientToolNamesFromSnapshot", status: "pure" };
+}
+
+!filterClientToolNames(names, availableTools, excludedTools){
+  // Transposed from platform/agentHost/node/copilot/copilotSessionLauncher.ts
+  ^{ name: "filterClientToolNames", status: "pure" };
+}
+
+!toSdkToolFilterPatterns(patterns){
+  // Transposed from platform/agentHost/node/copilot/copilotSessionLauncher.ts
+  ^{ name: "toSdkToolFilterPatterns", status: "pure" };
+}
+
+!isCopilotReasoningEffort(value){
+  // Transposed from platform/agentHost/node/copilot/copilotSessionLauncher.ts
+  ^{ name: "isCopilotReasoningEffort", status: "pure" };
+}
+
+!getCopilotReasoningEffort(model, effortOverride?){
+  // Transposed from platform/agentHost/node/copilot/copilotSessionLauncher.ts
+  ^{ name: "getCopilotReasoningEffort", status: "pure" };
+}
+
+!resolveConfiguredReasoningEffortOverride(model, configurationService, 'getRootValue'>, logService, sessionId){
+  // Transposed from platform/agentHost/node/copilot/copilotSessionLauncher.ts
+  ^{ name: "resolveConfiguredReasoningEffortOverride", status: "pure" };
+}
+
+!resolveCopilotReasoningEffort(model, configurationService, 'getRootValue'>, logService, sessionId){
+  // Transposed from platform/agentHost/node/copilot/copilotSessionLauncher.ts
+  ^{ name: "resolveCopilotReasoningEffort", status: "pure" };
+}
+
+!normalizeToolFilterPatterns(value){
+  // Transposed from platform/agentHost/node/copilot/copilotSessionLauncher.ts
+  ^{ name: "normalizeToolFilterPatterns", status: "pure" };
+}
+
+!getCopilotContextTier(model, longContextWindow?, freeLongContext?){
+  // Transposed from platform/agentHost/node/copilot/copilotSessionLauncher.ts
+  ^{ name: "getCopilotContextTier", status: "pure" };
+}
+
+=ex{isMcpServerExplicitlyProjected,toSdkReasoningEffort,clientToolNamesFromSnapshot,filterClientToolNames,toSdkToolFilterPatterns,isCopilotReasoningEffort,getCopilotReasoningEffort,resolveConfiguredReasoningEffortOverride,resolveCopilotReasoningEffort,normalizeToolFilterPatterns,getCopilotContextTier}

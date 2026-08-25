@@ -1,0 +1,13 @@
+@LIN:platform_agentHost_common_state_agentSubscription:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isActionEnvelopeRelevantToSubscriptionUris(envelope, subscribedUris){
+  // Transposed from platform/agentHost/common/state/agentSubscription.ts
+  ^{ name: "isActionEnvelopeRelevantToSubscriptionUris", status: "pure" };
+}
+
+!createAgentSubscriptionManager(...args){
+  ^{ className: "AgentSubscriptionManager", methods: ["rootState", "handleRootSnapshot", "getInflightSessionCreate", "trackSessionCreate", "if", "if", "if", "catch", "if", "_disposeSubscriptionEntry", "if", "_tryUnsubscribe", "catch", "receiveEnvelope", "dispatchOptimistic", "if", "if", "if", "if", "currentSubscriptionUris", "getActiveSubscriptions", "for", "_summarizeHolders", "getPendingActions", "if", "dropPendingAction", "if", "applyReconnectSnapshot", "if", "markSubscriptionsMissing", "for", "if", "if", "_createSubscription", "switch", "_releaseSubscription", "if", "dispose", "for"] };
+}
+
+=ex{isActionEnvelopeRelevantToSubscriptionUris,createAgentSubscriptionManager}

@@ -1,0 +1,51 @@
+@LIN:workbench_contrib_chat_browser_agentSessions_agentSessions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isBuiltInAgentSessionProvider(provider){
+  // Transposed from workbench/contrib/chat/browser/agentSessions/agentSessions.ts
+  ^{ name: "isBuiltInAgentSessionProvider", status: "pure" };
+}
+
+!getAgentSessionProvider(sessionResource){
+  // Transposed from workbench/contrib/chat/browser/agentSessions/agentSessions.ts
+  ^{ name: "getAgentSessionProvider", status: "pure" };
+}
+
+!getAgentSessionProviderName(provider){
+  // Transposed from workbench/contrib/chat/browser/agentSessions/agentSessions.ts
+  ^{ name: "getAgentSessionProviderName", status: "pure" };
+}
+
+!getAgentSessionProviderIcon(provider){
+  // Transposed from workbench/contrib/chat/browser/agentSessions/agentSessions.ts
+  ^{ name: "getAgentSessionProviderIcon", status: "pure" };
+}
+
+!isFirstPartyAgentSessionProvider(provider){
+  // Transposed from workbench/contrib/chat/browser/agentSessions/agentSessions.ts
+  ^{ name: "isFirstPartyAgentSessionProvider", status: "pure" };
+}
+
+!getAgentCanContinueIn(provider){
+  // Transposed from workbench/contrib/chat/browser/agentSessions/agentSessions.ts
+  ^{ name: "getAgentCanContinueIn", status: "pure" };
+}
+
+!getAgentSessionProviderDescription(provider){
+  // Transposed from workbench/contrib/chat/browser/agentSessions/agentSessions.ts
+  ^{ name: "getAgentSessionProviderDescription", status: "pure" };
+}
+
+!getAgentSessionProvidersEnum(){
+  ^{ enumName: "AgentSessionProviders", members: ["Local", "Background", "Cloud", "Codex", "Growth", "AgentHostCopilot", "AgentHostClaude", "AgentHostCodex"] };
+}
+
+!getAgentSessionsViewerOrientationEnum(){
+  ^{ enumName: "AgentSessionsViewerOrientation", members: ["Stacked", "SideBySide"] };
+}
+
+!getAgentSessionsViewerPositionEnum(){
+  ^{ enumName: "AgentSessionsViewerPosition", members: ["Left", "Right"] };
+}
+
+=ex{isBuiltInAgentSessionProvider,getAgentSessionProvider,getAgentSessionProviderName,getAgentSessionProviderIcon,isFirstPartyAgentSessionProvider,getAgentCanContinueIn,getAgentSessionProviderDescription,getAgentSessionProvidersEnum,getAgentSessionsViewerOrientationEnum,getAgentSessionsViewerPositionEnum}

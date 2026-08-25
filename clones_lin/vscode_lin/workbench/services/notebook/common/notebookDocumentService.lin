@@ -1,0 +1,29 @@
+@LIN:workbench_services_notebook_common_notebookDocumentService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!parse(cell){
+  // Transposed from workbench/services/notebook/common/notebookDocumentService.ts
+  ^{ name: "parse", status: "pure" };
+}
+
+!generate(notebook, handle){
+  // Transposed from workbench/services/notebook/common/notebookDocumentService.ts
+  ^{ name: "generate", status: "pure" };
+}
+
+!parseMetadataUri(metadata){
+  // Transposed from workbench/services/notebook/common/notebookDocumentService.ts
+  ^{ name: "parseMetadataUri", status: "pure" };
+}
+
+!generateMetadataUri(notebook){
+  // Transposed from workbench/services/notebook/common/notebookDocumentService.ts
+  ^{ name: "generateMetadataUri", status: "pure" };
+}
+
+!extractCellOutputDetails(uri){
+  // Transposed from workbench/services/notebook/common/notebookDocumentService.ts
+  ^{ name: "extractCellOutputDetails", status: "pure" };
+}
+
+=ex{parse,generate,parseMetadataUri,generateMetadataUri,extractCellOutputDetails}

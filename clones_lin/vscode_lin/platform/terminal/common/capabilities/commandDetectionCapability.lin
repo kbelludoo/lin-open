@@ -1,0 +1,9 @@
+@LIN:platform_terminal_common_capabilities_commandDetectionCapability:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getLinesForCommand(buffer, command, cols, outputMatcher?){
+  // Transposed from platform/terminal/common/capabilities/commandDetectionCapability.ts
+  ^{ name: "getLinesForCommand", status: "pure" };
+}
+
+=ex{getLinesForCommand}

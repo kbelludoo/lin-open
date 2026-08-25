@@ -1,0 +1,34 @@
+@LIN:editor_common_viewLayout_viewLineRenderer:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!renderViewLine(input, sb){
+  // Transposed from editor/common/viewLayout/viewLineRenderer.ts
+  ^{ name: "renderViewLine", status: "pure" };
+}
+
+!renderViewLine2(input){
+  // Transposed from editor/common/viewLayout/viewLineRenderer.ts
+  ^{ name: "renderViewLine2", status: "pure" };
+}
+
+!createRenderLineInput(...args){
+  ^{ className: "RenderLineInput", methods: ["isLTR", "if", "sameSelection", "if", "if", "if", "for", "equals"] };
+}
+
+!createDomPosition(...args){
+  ^{ className: "DomPosition", methods: [] };
+}
+
+!createCharacterMapping(...args){
+  ^{ className: "CharacterMapping", methods: ["getPartIndex", "getCharIndex", "setColumnInfo", "getHorizontalOffset", "if", "charOffsetToPartData", "if", "if", "if", "getDomPosition", "getColumn", "partDataToCharOffset", "if", "while", "if", "if", "if", "if", "if", "if", "if", "inflate", "for"] };
+}
+
+!createRenderLineOutput(...args){
+  ^{ className: "RenderLineOutput", methods: [] };
+}
+
+!createRenderLineOutput2(...args){
+  ^{ className: "RenderLineOutput2", methods: [] };
+}
+
+=ex{renderViewLine,renderViewLine2,createRenderLineInput,createDomPosition,createCharacterMapping,createRenderLineOutput,createRenderLineOutput2}

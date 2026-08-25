@@ -1,0 +1,27 @@
+@LIN:platform_actions_common_actions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isIMenuItem(item){
+  // Transposed from platform/actions/common/actions.ts
+  ^{ name: "isIMenuItem", status: "pure" };
+}
+
+!isISubmenuItem(item){
+  // Transposed from platform/actions/common/actions.ts
+  ^{ name: "isISubmenuItem", status: "pure" };
+}
+
+!registerAction2(ctor){
+  // Transposed from platform/actions/common/actions.ts
+  ^{ name: "registerAction2", status: "pure" };
+}
+
+!createMenuId(...args){
+  ^{ className: "MenuId", methods: ["for"] };
+}
+
+!createSubmenuItemAction(...args){
+  ^{ className: "SubmenuItemAction", methods: [] };
+}
+
+=ex{isIMenuItem,isISubmenuItem,registerAction2,createMenuId,createSubmenuItemAction}

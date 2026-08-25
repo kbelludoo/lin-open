@@ -1,0 +1,8 @@
+@LIN:base_test_common_event_test:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createEventCounter(...args){
+  ^{ className: "EventCounter", methods: ["reset", "onEvent", "setText", "dispose"] };
+}
+
+=ex{createEventCounter}

@@ -1,0 +1,13 @@
+@LIN:workbench_contrib_notebook_browser_contrib_cellStatusBar_executionStatusBarItemController:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!formatCellDuration(duration, showMilliseconds){
+  // Transposed from workbench/contrib/notebook/browser/contrib/cellStatusBar/executionStatusBarItemController.ts
+  ^{ name: "formatCellDuration", status: "pure" };
+}
+
+!createNotebookStatusBarController(...args){
+  ^{ className: "NotebookStatusBarController", methods: ["_updateEverything", "_updateVisibleCells", "if", "for", "for", "dispose"] };
+}
+
+=ex{formatCellDuration,createNotebookStatusBarController}

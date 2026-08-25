@@ -1,0 +1,19 @@
+@LIN:workbench_contrib_terminalContrib_suggest_browser_terminalCompletionItem:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!mapLspKindToTerminalKind(lspKind){
+  // Transposed from workbench/contrib/terminalContrib/suggest/browser/terminalCompletionItem.ts
+  ^{ name: "mapLspKindToTerminalKind", status: "pure" };
+}
+
+!createTerminalCompletionItem(...args){
+  ^{ className: "TerminalCompletionItem", methods: ["if", "if", "if", "if", "resolve", "if", "if", "if", "if", "if", "catch"] };
+}
+
+!getTerminalCompletionItemKindEnum(){
+  ^{ enumName: "TerminalCompletionItemKind", members: ["// Extension host kinds
+	File", "Folder", "Method", "Alias", "Argument", "Option", "OptionValue", "Flag", "SymbolicLinkFile", "SymbolicLinkFolder", "Commit", "Branch", "Tag", "Stash", "Remote", "PullRequest", "PullRequestDone", "// Core-only kinds
+	InlineSuggestion", "InlineSuggestionAlwaysOnTop"] };
+}
+
+=ex{mapLspKindToTerminalKind,createTerminalCompletionItem,getTerminalCompletionItemKindEnum}

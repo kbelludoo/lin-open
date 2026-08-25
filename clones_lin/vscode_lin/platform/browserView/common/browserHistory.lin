@@ -1,0 +1,16 @@
+@LIN:platform_browserView_common_browserHistory:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createBrowserHistoryEntriesStore(...args){
+  ^{ className: "BrowserHistoryEntriesStore", methods: ["items", "maxEntries", "setMaxEntries", "if", "add", "update", "if", "if", "delete", "if", "clear", "if", "serialize", "hydrate", "for", "for", "if", "_indexOf", "for", "if", "_evictIfNeeded", "if"] };
+}
+
+!createBrowserFaviconsStore(...args){
+  ^{ className: "BrowserFaviconsStore", methods: ["get", "register", "gc", "if", "if", "clear", "if", "serialize", "hydrate", "if", "if"] };
+}
+
+!createBrowserHistoryStore(...args){
+  ^{ className: "BrowserHistoryStore", methods: ["add", "if", "setMaxEntries", "clear", "_handleFor", "if", "if", "if", "_gcFavicons", "for", "if"] };
+}
+
+=ex{createBrowserHistoryEntriesStore,createBrowserFaviconsStore,createBrowserHistoryStore}

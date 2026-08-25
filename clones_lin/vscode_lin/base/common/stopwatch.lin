@@ -1,0 +1,8 @@
+@LIN:base_common_stopwatch:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createStopWatch(...args){
+  ^{ className: "StopWatch", methods: ["create", "stop", "reset", "elapsed", "if"] };
+}
+
+=ex{createStopWatch}

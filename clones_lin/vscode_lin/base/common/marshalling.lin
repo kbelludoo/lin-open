@@ -1,0 +1,14 @@
+@LIN:base_common_marshalling:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!stringify(obj){
+  // Transposed from base/common/marshalling.ts
+  ^{ name: "stringify", status: "pure" };
+}
+
+!parse(text){
+  // Transposed from base/common/marshalling.ts
+  ^{ name: "parse", status: "pure" };
+}
+
+=ex{stringify,parse}

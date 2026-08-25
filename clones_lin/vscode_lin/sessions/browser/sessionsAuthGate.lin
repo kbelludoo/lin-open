@@ -1,0 +1,29 @@
+@LIN:sessions_browser_sessionsAuthGate:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isAllowSignedOutWhenUsableEnabled(configurationService){
+  // Transposed from sessions/browser/sessionsAuthGate.ts
+  ^{ name: "isAllowSignedOutWhenUsableEnabled", status: "pure" };
+}
+
+!resolveSignedOutWindowGate(allowSignedOutWhenUsable, authRequirements){
+  // Transposed from sessions/browser/sessionsAuthGate.ts
+  ^{ name: "resolveSignedOutWindowGate", status: "pure" };
+}
+
+!shouldShowGitHubWorkspaceGroupSignIn(signedIn, allowSignedOutWhenUsable){
+  // Transposed from sessions/browser/sessionsAuthGate.ts
+  ^{ name: "shouldShowGitHubWorkspaceGroupSignIn", status: "pure" };
+}
+
+!conditionalAuthState(accountResolved, signedIn){
+  // Transposed from sessions/browser/sessionsAuthGate.ts
+  ^{ name: "conditionalAuthState", status: "pure" };
+}
+
+!observeAllowSignedOutWhenUsable(configurationService){
+  // Transposed from sessions/browser/sessionsAuthGate.ts
+  ^{ name: "observeAllowSignedOutWhenUsable", status: "pure" };
+}
+
+=ex{isAllowSignedOutWhenUsableEnabled,resolveSignedOutWindowGate,shouldShowGitHubWorkspaceGroupSignIn,conditionalAuthState,observeAllowSignedOutWhenUsable}

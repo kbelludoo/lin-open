@@ -1,0 +1,14 @@
+@LIN:editor_common_config_editorConfigurationSchema:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isEditorConfigurationKey(key){
+  // Transposed from editor/common/config/editorConfigurationSchema.ts
+  ^{ name: "isEditorConfigurationKey", status: "pure" };
+}
+
+!isDiffEditorConfigurationKey(key){
+  // Transposed from editor/common/config/editorConfigurationSchema.ts
+  ^{ name: "isDiffEditorConfigurationKey", status: "pure" };
+}
+
+=ex{isEditorConfigurationKey,isDiffEditorConfigurationKey}

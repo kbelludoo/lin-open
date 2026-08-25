@@ -1,0 +1,12 @@
+@LIN:editor_browser_gpu_taskQueue:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createPriorityTaskQueue(...args){
+  ^{ className: "PriorityTaskQueue", methods: ["_requestCallback", "_cancelCallback", "_createDeadline"] };
+}
+
+!createDebouncedIdleTask(...args){
+  ^{ className: "DebouncedIdleTask", methods: ["flush"] };
+}
+
+=ex{createPriorityTaskQueue,createDebouncedIdleTask}

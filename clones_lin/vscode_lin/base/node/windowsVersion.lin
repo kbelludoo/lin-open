@@ -1,0 +1,24 @@
+@LIN:base_node_windowsVersion:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getWindowsRelease(){
+  // Transposed from base/node/windowsVersion.ts
+  ^{ name: "getWindowsRelease", status: "pure" };
+}
+
+!getWindowsBuildNumberAsync(){
+  // Transposed from base/node/windowsVersion.ts
+  ^{ name: "getWindowsBuildNumberAsync", status: "pure" };
+}
+
+!getWindowsBuildNumberSync(){
+  // Transposed from base/node/windowsVersion.ts
+  ^{ name: "getWindowsBuildNumberSync", status: "pure" };
+}
+
+!getWindowsReleaseSync(){
+  // Transposed from base/node/windowsVersion.ts
+  ^{ name: "getWindowsReleaseSync", status: "pure" };
+}
+
+=ex{getWindowsRelease,getWindowsBuildNumberAsync,getWindowsBuildNumberSync,getWindowsReleaseSync}

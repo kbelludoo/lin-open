@@ -1,0 +1,21 @@
+@LIN:platform_configuration_common_configurationModels:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!mergeChanges(changes){
+  // Transposed from platform/configuration/common/configurationModels.ts
+  ^{ name: "mergeChanges", status: "pure" };
+}
+
+!createConfigurationModelParser(...args){
+  ^{ className: "ConfigurationModelParser", methods: ["configurationModel", "restrictedConfigurations", "errors", "parse", "reparse", "if", "parseRaw", "doParseContent", "onValue", "if", "if", "catch", "doParseRaw", "filter", "if", "for", "if", "shouldInclude", "if", "if", "if", "for"] };
+}
+
+!createUserSettings(...args){
+  ^{ className: "UserSettings", methods: ["loadConfiguration", "catch", "reparse", "if", "getRestrictedSettings"] };
+}
+
+!createConfiguration(...args){
+  ^{ className: "Configuration", methods: ["getValue", "updateValue", "if", "if", "if", "if", "for", "for", "keys", "updateDefaultConfiguration", "updatePolicyConfiguration", "updateApplicationConfiguration", "updateLocalUserConfiguration", "updateRemoteUserConfiguration", "updateWorkspaceConfiguration", "updateFolderConfiguration", "deleteFolderConfiguration", "compareAndUpdateDefaultConfiguration", "if", "for", "compareAndUpdatePolicyConfiguration", "if", "compareAndUpdateApplicationConfiguration", "if", "compareAndUpdateLocalUserConfiguration", "if", "compareAndUpdateRemoteUserConfiguration", "if", "compareAndUpdateWorkspaceConfiguration", "if", "compareAndUpdateFolderConfiguration", "if", "compareAndDeleteFolderConfiguration", "if", "defaults", "applicationConfiguration", "userConfiguration", "if", "localUserConfiguration", "remoteUserConfiguration", "workspaceConfiguration", "folderConfigurations", "getConsolidatedConfigurationModel", "if", "for", "getConsolidatedConfigurationModelForResource", "if", "if", "if", "getWorkspaceConsolidatedConfiguration", "if", "getFolderConsolidatedConfiguration", "if", "if", "getFolderConfigurationModelForResource", "if", "if", "toData", "allKeys", "allOverrideIdentifiers", "getAllKeysForOverrideIdentifier", "parse", "parseConfigurationModel"] };
+}
+
+=ex{mergeChanges,createConfigurationModelParser,createUserSettings,createConfiguration}

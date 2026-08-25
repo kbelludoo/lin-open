@@ -1,0 +1,36 @@
+@LIN:workbench_services_assignment_common_assignmentFilters:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getExtensionsFilterEnum(){
+  ^{ enumName: "ExtensionsFilter", members: ["/**
+	 * Version of the github.copilot extension.
+	 */
+	CopilotExtensionVersion", "/**
+	 * Version of the github.copilot-chat extension.
+	 */
+	CopilotChatExtensionVersion", "/**
+	 * Version of the completions version.
+	 */
+	CompletionsVersionInCopilotChat", "/**
+	 * SKU of the copilot entitlement.
+	 */
+	CopilotSku", "/**
+	 * The internal org of the user.
+	 */
+	MicrosoftInternalOrg", "/**
+	 * The tracking ID of the user from Copilot entitlement API.
+	 */
+	CopilotTrackingId", "/**
+	 * Whether the `sn` flag is set to `'1'` in the copilot token.
+	 */
+	CopilotIsSn", "/**
+	 * Whether the `fcv1` flag is set to `'1'` in the copilot token.
+	 */
+	CopilotIsFcv1"] };
+}
+
+!getGitHubAssignmentsFilterEnum(){
+  ^{ enumName: "GitHubAssignmentsFilter", members: ["CopilotTrackingId", "IsGhOrMsftStaff", "GhMsftOrExternal"] };
+}
+
+=ex{getExtensionsFilterEnum,getGitHubAssignmentsFilterEnum}

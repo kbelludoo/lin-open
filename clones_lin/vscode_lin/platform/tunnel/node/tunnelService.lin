@@ -1,0 +1,12 @@
+@LIN:platform_tunnel_node_tunnelService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createBaseTunnelService(...args){
+  ^{ className: "BaseTunnelService", methods: ["isPortPrivileged", "retainOrCreateTunnel", "if"] };
+}
+
+!createTunnelService(...args){
+  ^{ className: "TunnelService", methods: [] };
+}
+
+=ex{createBaseTunnelService,createTunnelService}

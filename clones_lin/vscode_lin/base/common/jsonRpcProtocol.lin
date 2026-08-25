@@ -1,0 +1,27 @@
+@LIN:base_common_jsonRpcProtocol:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isJsonRpcRequest(message){
+  // Transposed from base/common/jsonRpcProtocol.ts
+  ^{ name: "isJsonRpcRequest", status: "pure" };
+}
+
+!isJsonRpcResponse(message){
+  // Transposed from base/common/jsonRpcProtocol.ts
+  ^{ name: "isJsonRpcResponse", status: "pure" };
+}
+
+!isJsonRpcNotification(message){
+  // Transposed from base/common/jsonRpcProtocol.ts
+  ^{ name: "isJsonRpcNotification", status: "pure" };
+}
+
+!createJsonRpcError(...args){
+  ^{ className: "JsonRpcError", methods: [] };
+}
+
+!createJsonRpcProtocol(...args){
+  ^{ className: "JsonRpcProtocol", methods: ["sendNotification", "if", "if", "handleMessage", "for", "if", "cancelPendingRequest", "if", "cancelAllRequests", "for", "_handleMessage", "_handleResult", "if", "_handleError", "if", "if", "_handleRequest", "if", "catch", "if", "dispose", "createParseError"] };
+}
+
+=ex{isJsonRpcRequest,isJsonRpcResponse,isJsonRpcNotification,createJsonRpcError,createJsonRpcProtocol}

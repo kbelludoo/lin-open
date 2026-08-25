@@ -1,0 +1,14 @@
+@LIN:workbench_contrib_chat_common_customizationLockdown:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isStrictPluginOnlyCustomizationEnabled(value){
+  // Transposed from workbench/contrib/chat/common/customizationLockdown.ts
+  ^{ name: "isStrictPluginOnlyCustomizationEnabled", status: "pure" };
+}
+
+!isPromptTypeBlocked(value, type){
+  // Transposed from workbench/contrib/chat/common/customizationLockdown.ts
+  ^{ name: "isPromptTypeBlocked", status: "pure" };
+}
+
+=ex{isStrictPluginOnlyCustomizationEnabled,isPromptTypeBlocked}

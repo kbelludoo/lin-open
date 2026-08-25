@@ -1,0 +1,8 @@
+@LIN:workbench_contrib_testing_common_testExclusions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createTestExclusions(...args){
+  ^{ className: "TestExclusions", methods: ["hasAny", "all", "toggle", "contains", "clear"] };
+}
+
+=ex{createTestExclusions}

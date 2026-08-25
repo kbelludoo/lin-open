@@ -1,0 +1,112 @@
+@LIN:editor_contrib_wordOperations_browser_wordOperations:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createWordLeftCommand(...args){
+  ^{ className: "WordLeftCommand", methods: ["_move"] };
+}
+
+!createWordRightCommand(...args){
+  ^{ className: "WordRightCommand", methods: ["_move"] };
+}
+
+!createCursorWordStartLeft(...args){
+  ^{ className: "CursorWordStartLeft", methods: [] };
+}
+
+!createCursorWordEndLeft(...args){
+  ^{ className: "CursorWordEndLeft", methods: [] };
+}
+
+!createCursorWordLeft(...args){
+  ^{ className: "CursorWordLeft", methods: [] };
+}
+
+!createCursorWordStartLeftSelect(...args){
+  ^{ className: "CursorWordStartLeftSelect", methods: [] };
+}
+
+!createCursorWordEndLeftSelect(...args){
+  ^{ className: "CursorWordEndLeftSelect", methods: [] };
+}
+
+!createCursorWordLeftSelect(...args){
+  ^{ className: "CursorWordLeftSelect", methods: [] };
+}
+
+!createCursorWordAccessibilityLeft(...args){
+  ^{ className: "CursorWordAccessibilityLeft", methods: ["_move"] };
+}
+
+!createCursorWordAccessibilityLeftSelect(...args){
+  ^{ className: "CursorWordAccessibilityLeftSelect", methods: ["_move"] };
+}
+
+!createCursorWordStartRight(...args){
+  ^{ className: "CursorWordStartRight", methods: [] };
+}
+
+!createCursorWordEndRight(...args){
+  ^{ className: "CursorWordEndRight", methods: [] };
+}
+
+!createCursorWordRight(...args){
+  ^{ className: "CursorWordRight", methods: [] };
+}
+
+!createCursorWordStartRightSelect(...args){
+  ^{ className: "CursorWordStartRightSelect", methods: [] };
+}
+
+!createCursorWordEndRightSelect(...args){
+  ^{ className: "CursorWordEndRightSelect", methods: [] };
+}
+
+!createCursorWordRightSelect(...args){
+  ^{ className: "CursorWordRightSelect", methods: [] };
+}
+
+!createCursorWordAccessibilityRight(...args){
+  ^{ className: "CursorWordAccessibilityRight", methods: ["_move"] };
+}
+
+!createCursorWordAccessibilityRightSelect(...args){
+  ^{ className: "CursorWordAccessibilityRightSelect", methods: ["_move"] };
+}
+
+!createDeleteWordLeftCommand(...args){
+  ^{ className: "DeleteWordLeftCommand", methods: ["_delete", "if"] };
+}
+
+!createDeleteWordRightCommand(...args){
+  ^{ className: "DeleteWordRightCommand", methods: ["_delete", "if"] };
+}
+
+!createDeleteWordStartLeft(...args){
+  ^{ className: "DeleteWordStartLeft", methods: [] };
+}
+
+!createDeleteWordEndLeft(...args){
+  ^{ className: "DeleteWordEndLeft", methods: [] };
+}
+
+!createDeleteWordLeft(...args){
+  ^{ className: "DeleteWordLeft", methods: [] };
+}
+
+!createDeleteWordStartRight(...args){
+  ^{ className: "DeleteWordStartRight", methods: [] };
+}
+
+!createDeleteWordEndRight(...args){
+  ^{ className: "DeleteWordEndRight", methods: [] };
+}
+
+!createDeleteWordRight(...args){
+  ^{ className: "DeleteWordRight", methods: [] };
+}
+
+!createDeleteInsideWord(...args){
+  ^{ className: "DeleteInsideWord", methods: ["run"] };
+}
+
+=ex{createWordLeftCommand,createWordRightCommand,createCursorWordStartLeft,createCursorWordEndLeft,createCursorWordLeft,createCursorWordStartLeftSelect,createCursorWordEndLeftSelect,createCursorWordLeftSelect,createCursorWordAccessibilityLeft,createCursorWordAccessibilityLeftSelect,createCursorWordStartRight,createCursorWordEndRight,createCursorWordRight,createCursorWordStartRightSelect,createCursorWordEndRightSelect,createCursorWordRightSelect,createCursorWordAccessibilityRight,createCursorWordAccessibilityRightSelect,createDeleteWordLeftCommand,createDeleteWordRightCommand,createDeleteWordStartLeft,createDeleteWordEndLeft,createDeleteWordLeft,createDeleteWordStartRight,createDeleteWordEndRight,createDeleteWordRight,createDeleteInsideWord}

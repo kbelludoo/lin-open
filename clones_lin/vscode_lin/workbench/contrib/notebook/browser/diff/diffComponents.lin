@@ -1,0 +1,29 @@
+@LIN:workbench_contrib_notebook_browser_diff_diffComponents:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getOptimizedNestedCodeEditorWidgetOptions(){
+  // Transposed from workbench/contrib/notebook/browser/diff/diffComponents.ts
+  ^{ name: "getOptimizedNestedCodeEditorWidgetOptions", status: "pure" };
+}
+
+!createCellDiffPlaceholderElement(...args){
+  ^{ className: "CellDiffPlaceholderElement", methods: ["localize", "if"] };
+}
+
+!createNotebookDocumentMetadataElement(...args){
+  ^{ className: "NotebookDocumentMetadataElement", methods: ["buildBody", "if", "layoutNotebookCell", "updateBorders", "updateSourceEditor", "if", "if", "if", "if", "if", "if", "_initializeSourceDiffEditor", "if", "if", "if", "updateEditorOptionsForWhitespace", "if", "layout", "if", "if", "dispose", "if"] };
+}
+
+!createDeletedElement(...args){
+  ^{ className: "DeletedElement", methods: ["nestedCellViewModel", "readonly", "styleContainer", "layout", "if", "if", "if", "if", "_buildOutputRendererContainer", "if", "if", "_decorate", "_showOutputsRenderer", "if", "_hideOutputsRenderer", "if", "dispose", "if"] };
+}
+
+!createInsertElement(...args){
+  ^{ className: "InsertElement", methods: ["nestedCellViewModel", "readonly", "styleContainer", "_buildOutputRendererContainer", "if", "if", "_decorate", "_showOutputsRenderer", "if", "_hideOutputsRenderer", "if", "layout", "if", "if", "if", "if", "dispose", "if"] };
+}
+
+!createModifiedElement(...args){
+  ^{ className: "ModifiedElement", methods: ["init", "styleContainer", "buildBody", "if", "_disposeMetadata", "_buildMetadata", "_disposeOutput", "_buildOutput", "_buildOutputRendererContainer", "if", "if", "if", "if", "_decorate", "_showOutputsRenderer", "if", "_hideOutputsRenderer", "if", "updateSourceEditor", "if", "if", "if", "if", "if", "if", "_initializeSourceDiffEditor", "if", "if", "if", "updateEditorOptionsForWhitespace", "if", "if", "layout", "if", "if", "if", "if", "if", "if", "if", "dispose", "if", "if"] };
+}
+
+=ex{getOptimizedNestedCodeEditorWidgetOptions,createCellDiffPlaceholderElement,createNotebookDocumentMetadataElement,createDeletedElement,createInsertElement,createModifiedElement}

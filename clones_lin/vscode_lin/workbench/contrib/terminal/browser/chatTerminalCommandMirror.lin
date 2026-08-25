@@ -1,0 +1,28 @@
+@LIN:workbench_contrib_terminal_browser_chatTerminalCommandMirror:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!computeMaxBufferColumnWidth(buffer){
+  // Transposed from workbench/contrib/terminal/browser/chatTerminalCommandMirror.ts
+  ^{ name: "computeMaxBufferColumnWidth", status: "pure" };
+}
+
+!vtBoundaryMatches(newVT, oldVT, slicePoint, windowSize){
+  // Transposed from workbench/contrib/terminal/browser/chatTerminalCommandMirror.ts
+  ^{ name: "vtBoundaryMatches", status: "pure" };
+}
+
+!computeChatTerminalMirrorCols(availableWidthPx, font, devicePixelRatio, horizontalChromePx){
+  // Transposed from workbench/contrib/terminal/browser/chatTerminalCommandMirror.ts
+  ^{ name: "computeChatTerminalMirrorCols", status: "pure" };
+}
+
+!computeSnapshotLineCount(buffer){
+  // Transposed from workbench/contrib/terminal/browser/chatTerminalCommandMirror.ts
+  ^{ name: "computeSnapshotLineCount", status: "pure" };
+}
+
+!createDetachedTerminalSnapshotMirror(...args){
+  ^{ className: "DetachedTerminalSnapshotMirror", methods: ["then", "getRowHeightPx", "if", "_getTerminal", "if", "setOutput", "attach", "if", "if", "if", "if", "render", "layout", "if", "if", "if", "if", "_render", "if", "if", "if", "if", "if", "if", "slice", "if", "if", "_computeMaxColumnWidth", "_shouldComputeMaxColumnWidth", "_applyTheme", "if", "if", "if"] };
+}
+
+=ex{computeMaxBufferColumnWidth,vtBoundaryMatches,computeChatTerminalMirrorCols,computeSnapshotLineCount,createDetachedTerminalSnapshotMirror}

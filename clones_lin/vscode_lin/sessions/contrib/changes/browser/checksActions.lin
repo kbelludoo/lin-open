@@ -1,0 +1,44 @@
+@LIN:sessions_contrib_changes_browser_checksActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isFailedConclusion(conclusion){
+  // Transposed from sessions/contrib/changes/browser/checksActions.ts
+  ^{ name: "isFailedConclusion", status: "pure" };
+}
+
+!getCheckGroup(check){
+  // Transposed from sessions/contrib/changes/browser/checksActions.ts
+  ^{ name: "getCheckGroup", status: "pure" };
+}
+
+!getCheckStateLabel(check){
+  // Transposed from sessions/contrib/changes/browser/checksActions.ts
+  ^{ name: "getCheckStateLabel", status: "pure" };
+}
+
+!getFailedChecks(checks){
+  // Transposed from sessions/contrib/changes/browser/checksActions.ts
+  ^{ name: "getFailedChecks", status: "pure" };
+}
+
+!getPullRequestUrl(coords){
+  // Transposed from sessions/contrib/changes/browser/checksActions.ts
+  ^{ name: "getPullRequestUrl", status: "pure" };
+}
+
+!buildFixChecksPrompt(failedChecks, prUrl?){
+  // Transposed from sessions/contrib/changes/browser/checksActions.ts
+  ^{ name: "buildFixChecksPrompt", status: "pure" };
+}
+
+!buildFixCIPrompt(ciModel){
+  // Transposed from sessions/contrib/changes/browser/checksActions.ts
+  ^{ name: "buildFixCIPrompt", status: "pure" };
+}
+
+!submitFixCIChecks(ciModel, chatWidget){
+  // Transposed from sessions/contrib/changes/browser/checksActions.ts
+  ^{ name: "submitFixCIChecks", status: "pure" };
+}
+
+=ex{isFailedConclusion,getCheckGroup,getCheckStateLabel,getFailedChecks,getPullRequestUrl,buildFixChecksPrompt,buildFixCIPrompt,submitFixCIChecks}

@@ -1,0 +1,34 @@
+@LIN:platform_agentHost_common_agentHostUri:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!toAgentHostUri(originalUri, connectionAuthority){
+  // Transposed from platform/agentHost/common/agentHostUri.ts
+  ^{ name: "toAgentHostUri", status: "pure" };
+}
+
+!fromAgentHostUri(agentHostUri){
+  // Transposed from platform/agentHost/common/agentHostUri.ts
+  ^{ name: "fromAgentHostUri", status: "pure" };
+}
+
+!createAgentHostResourceUriMapper(connectionAuthority){
+  // Transposed from platform/agentHost/common/agentHostUri.ts
+  ^{ name: "createAgentHostResourceUriMapper", status: "pure" };
+}
+
+!normalizeRemoteAgentHostAddress(address){
+  // Transposed from platform/agentHost/common/agentHostUri.ts
+  ^{ name: "normalizeRemoteAgentHostAddress", status: "pure" };
+}
+
+!agentHostAuthority(address){
+  // Transposed from platform/agentHost/common/agentHostUri.ts
+  ^{ name: "agentHostAuthority", status: "pure" };
+}
+
+!agentHostLabelFormatter(authority, os){
+  // Transposed from platform/agentHost/common/agentHostUri.ts
+  ^{ name: "agentHostLabelFormatter", status: "pure" };
+}
+
+=ex{toAgentHostUri,fromAgentHostUri,createAgentHostResourceUriMapper,normalizeRemoteAgentHostAddress,agentHostAuthority,agentHostLabelFormatter}

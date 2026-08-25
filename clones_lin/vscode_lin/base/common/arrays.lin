@@ -1,0 +1,33 @@
+@LIN:base_common_arrays:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!move(array, from, to){
+  // Transposed from base/common/arrays.ts
+  ^{ name: "move", status: "pure" };
+}
+
+!isFalsyOrEmpty(obj){
+  // Transposed from base/common/arrays.ts
+  ^{ name: "isFalsyOrEmpty", status: "pure" };
+}
+
+!range(arg, to?){
+  // Transposed from base/common/arrays.ts
+  ^{ name: "range", status: "pure" };
+}
+
+!isLessThan(result){
+  // Transposed from base/common/arrays.ts
+  ^{ name: "isLessThan", status: "pure" };
+}
+
+!sum(array){
+  // Transposed from base/common/arrays.ts
+  ^{ name: "sum", status: "pure" };
+}
+
+!createPermutation(...args){
+  ^{ className: "Permutation", methods: ["inverse", "for"] };
+}
+
+=ex{move,isFalsyOrEmpty,range,isLessThan,sum,createPermutation}

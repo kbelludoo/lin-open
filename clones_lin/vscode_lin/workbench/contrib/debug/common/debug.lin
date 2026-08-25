@@ -1,0 +1,33 @@
+@LIN:workbench_contrib_debug_common_debug:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getStateLabel(state){
+  // Transposed from workbench/contrib/debug/common/debug.ts
+  ^{ name: "getStateLabel", status: "pure" };
+}
+
+!isFrameDeemphasized(frame){
+  // Transposed from workbench/contrib/debug/common/debug.ts
+  ^{ name: "isFrameDeemphasized", status: "pure" };
+}
+
+!isDebugConfig(thing){
+  // Transposed from workbench/contrib/debug/common/debug.ts
+  ^{ name: "isDebugConfig", status: "pure" };
+}
+
+!getDebugConfigurationProviderTriggerKindEnum(){
+  ^{ enumName: "DebugConfigurationProviderTriggerKind", members: ["/**
+	 *	`DebugConfigurationProvider.provideDebugConfigurations` is called to provide the initial debug configurations for a newly created launch.json.
+	 */
+	Initial", "/**
+	 * `DebugConfigurationProvider.provideDebugConfigurations` is called to provide dynamically generated debug configurations when the user asks for them through the UI (e.g. via the "Select and Start Debugging" command).
+	 */
+	Dynamic"] };
+}
+
+!getDebuggerStringEnum(){
+  ^{ enumName: "DebuggerString", members: ["UnverifiedBreakpoints"] };
+}
+
+=ex{getStateLabel,isFrameDeemphasized,isDebugConfig,getDebugConfigurationProviderTriggerKindEnum,getDebuggerStringEnum}

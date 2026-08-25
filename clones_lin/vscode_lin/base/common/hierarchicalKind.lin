@@ -1,0 +1,8 @@
+@LIN:base_common_hierarchicalKind:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createHierarchicalKind(...args){
+  ^{ className: "HierarchicalKind", methods: ["equals", "contains", "intersects", "append"] };
+}
+
+=ex{createHierarchicalKind}

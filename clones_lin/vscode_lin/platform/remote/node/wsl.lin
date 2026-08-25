@@ -1,0 +1,9 @@
+@LIN:platform_remote_node_wsl:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!hasWSLFeatureInstalled(refresh = false){
+  // Transposed from platform/remote/node/wsl.ts
+  ^{ name: "hasWSLFeatureInstalled", status: "pure" };
+}
+
+=ex{hasWSLFeatureInstalled}

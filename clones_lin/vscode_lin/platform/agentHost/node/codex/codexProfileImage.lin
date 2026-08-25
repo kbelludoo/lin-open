@@ -1,0 +1,28 @@
+@LIN:platform_agentHost_node_codex_codexProfileImage:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!fetchCodexProfileImage(accessToken, fetchFn){
+  // Transposed from platform/agentHost/node/codex/codexProfileImage.ts
+  ^{ name: "fetchCodexProfileImage", status: "pure" };
+}
+
+!getChatGPTProfileImageUrl(value){
+  // Transposed from platform/agentHost/node/codex/codexProfileImage.ts
+  ^{ name: "getChatGPTProfileImageUrl", status: "pure" };
+}
+
+!getCodexProfileImageUrl(value, accountId){
+  // Transposed from platform/agentHost/node/codex/codexProfileImage.ts
+  ^{ name: "getCodexProfileImageUrl", status: "pure" };
+}
+
+!getChatGPTAccountId(accessToken){
+  // Transposed from platform/agentHost/node/codex/codexProfileImage.ts
+  ^{ name: "getChatGPTAccountId", status: "pure" };
+}
+
+!createCodexProfileImageStore(...args){
+  ^{ className: "CodexProfileImageStore", methods: ["clear", "update", "if", "if"] };
+}
+
+=ex{fetchCodexProfileImage,getChatGPTProfileImageUrl,getCodexProfileImageUrl,getChatGPTAccountId,createCodexProfileImageStore}

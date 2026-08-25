@@ -1,0 +1,14 @@
+@LIN:platform_agentHost_common_agentHostWorkingDirectories:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isMultiRootSession(workingDirectories){
+  // Transposed from platform/agentHost/common/agentHostWorkingDirectories.ts
+  ^{ name: "isMultiRootSession", status: "pure" };
+}
+
+!findDeepestContainingWorkingDirectory(resource, workingDirectories){
+  // Transposed from platform/agentHost/common/agentHostWorkingDirectories.ts
+  ^{ name: "findDeepestContainingWorkingDirectory", status: "pure" };
+}
+
+=ex{isMultiRootSession,findDeepestContainingWorkingDirectory}

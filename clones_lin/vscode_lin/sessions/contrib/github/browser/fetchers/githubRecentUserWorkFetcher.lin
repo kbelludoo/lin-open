@@ -1,0 +1,8 @@
+@LIN:sessions_contrib_github_browser_fetchers_githubRecentUserWorkFetcher:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createGitHubRecentUserWorkFetcher(...args){
+  ^{ className: "GitHubRecentUserWorkFetcher", methods: ["getRecentAssignedIssues", "getRecentAuthoredPullRequests", "getPullRequestReviewThreads", "getIssuesWithLinkedPullRequests", "if", "issue", "closedByPullRequestsReferences", "IssueLinkage", "repository"] };
+}
+
+=ex{createGitHubRecentUserWorkFetcher}

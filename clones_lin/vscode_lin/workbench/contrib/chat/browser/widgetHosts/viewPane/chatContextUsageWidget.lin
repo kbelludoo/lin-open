@@ -1,0 +1,22 @@
+@LIN:workbench_contrib_chat_browser_widgetHosts_viewPane_chatContextUsageWidget:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!resolveContextWindowInputTokens(modelConfiguration, configurationSchema, maxInputTokens){
+  // Transposed from workbench/contrib/chat/browser/widgetHosts/viewPane/chatContextUsageWidget.ts
+  ^{ name: "resolveContextWindowInputTokens", status: "pure" };
+}
+
+!isSameContextUsageData(a, b){
+  // Transposed from workbench/contrib/chat/browser/widgetHosts/viewPane/chatContextUsageWidget.ts
+  ^{ name: "isSameContextUsageData", status: "pure" };
+}
+
+!createCircularProgressIndicator(...args){
+  ^{ className: "CircularProgressIndicator", methods: ["setProgress"] };
+}
+
+!createChatContextUsageWidget(...args){
+  ^{ className: "ChatContextUsageWidget", methods: ["isVisible", "if", "setChatWidget", "showDetails", "if", "_createDetails", "if", "_markOpened", "setupHover", "update", "if", "if", "updateSessionCost", "if", "onDidChange", "setSelectedModel", "if", "if", "resolveContextWindow", "if", "if", "if", "updateFromResponse", "if", "render", "if", "if", "show", "if", "if", "hide", "if"] };
+}
+
+=ex{resolveContextWindowInputTokens,isSameContextUsageData,createCircularProgressIndicator,createChatContextUsageWidget}

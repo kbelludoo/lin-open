@@ -1,0 +1,49 @@
+@LIN:workbench_contrib_chat_electron_browser_actions_voiceChatActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!parseNextChatResponseChunk(text, offset){
+  // Transposed from workbench/contrib/chat/electron-browser/actions/voiceChatActions.ts
+  ^{ name: "parseNextChatResponseChunk", status: "pure" };
+}
+
+!createVoiceChatInChatViewAction(...args){
+  ^{ className: "VoiceChatInChatViewAction", methods: [] };
+}
+
+!createHoldToVoiceChatInChatViewAction(...args){
+  ^{ className: "HoldToVoiceChatInChatViewAction", methods: ["run", "if", "if"] };
+}
+
+!createInlineVoiceChatAction(...args){
+  ^{ className: "InlineVoiceChatAction", methods: [] };
+}
+
+!createQuickVoiceChatAction(...args){
+  ^{ className: "QuickVoiceChatAction", methods: [] };
+}
+
+!createStartVoiceChatAction(...args){
+  ^{ className: "StartVoiceChatAction", methods: ["run", "if"] };
+}
+
+!createStopListeningAction(...args){
+  ^{ className: "StopListeningAction", methods: ["run"] };
+}
+
+!createStopListeningAndSubmitAction(...args){
+  ^{ className: "StopListeningAndSubmitAction", methods: ["run"] };
+}
+
+!createReadChatResponseAloud(...args){
+  ^{ className: "ReadChatResponseAloud", methods: ["run", "if", "if", "if", "if", "for", "if"] };
+}
+
+!createStopReadAloud(...args){
+  ^{ className: "StopReadAloud", methods: ["run"] };
+}
+
+!createStopReadChatItemAloud(...args){
+  ^{ className: "StopReadChatItemAloud", methods: ["run"] };
+}
+
+=ex{parseNextChatResponseChunk,createVoiceChatInChatViewAction,createHoldToVoiceChatInChatViewAction,createInlineVoiceChatAction,createQuickVoiceChatAction,createStartVoiceChatAction,createStopListeningAction,createStopListeningAndSubmitAction,createReadChatResponseAloud,createStopReadAloud,createStopReadChatItemAloud}

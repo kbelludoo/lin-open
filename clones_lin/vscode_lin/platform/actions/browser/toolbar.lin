@@ -1,0 +1,12 @@
+@LIN:platform_actions_browser_toolbar:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createWorkbenchToolBar(...args){
+  ^{ className: "WorkbenchToolBar", methods: ["if", "setActions", "if", "for", "if", "if", "if", "if", "if", "if", "for", "if", "if", "if", "if", "if", "if", "for", "if", "toAction", "if", "run", "if", "if", "if"] };
+}
+
+!createMenuWorkbenchToolBar(...args){
+  ^{ className: "MenuWorkbenchToolBar", methods: ["onDidChangeMenuItems", "if", "if", "add", "_updateToolbar", "refresh", "setActions"] };
+}
+
+=ex{createWorkbenchToolBar,createMenuWorkbenchToolBar}

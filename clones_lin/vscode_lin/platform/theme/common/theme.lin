@@ -1,0 +1,22 @@
+@LIN:platform_theme_common_theme:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isHighContrast(scheme){
+  // Transposed from platform/theme/common/theme.ts
+  ^{ name: "isHighContrast", status: "pure" };
+}
+
+!isDark(scheme){
+  // Transposed from platform/theme/common/theme.ts
+  ^{ name: "isDark", status: "pure" };
+}
+
+!getColorSchemeEnum(){
+  ^{ enumName: "ColorScheme", members: ["DARK", "LIGHT", "HIGH_CONTRAST_DARK", "HIGH_CONTRAST_LIGHT"] };
+}
+
+!getThemeTypeSelectorEnum(){
+  ^{ enumName: "ThemeTypeSelector", members: ["VS", "VS_DARK", "HC_BLACK", "HC_LIGHT"] };
+}
+
+=ex{isHighContrast,isDark,getColorSchemeEnum,getThemeTypeSelectorEnum}

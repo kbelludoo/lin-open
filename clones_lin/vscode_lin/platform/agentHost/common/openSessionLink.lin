@@ -1,0 +1,44 @@
+@LIN:platform_agentHost_common_openSessionLink:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createAgentSessionLinkPresentation(title, description, status, kind){
+  // Transposed from platform/agentHost/common/openSessionLink.ts
+  ^{ name: "createAgentSessionLinkPresentation", status: "pure" };
+}
+
+!isCreateSessionTool(toolName){
+  // Transposed from platform/agentHost/common/openSessionLink.ts
+  ^{ name: "isCreateSessionTool", status: "pure" };
+}
+
+!isCreateChatTool(toolName){
+  // Transposed from platform/agentHost/common/openSessionLink.ts
+  ^{ name: "isCreateChatTool", status: "pure" };
+}
+
+!isSendMessageTool(toolName){
+  // Transposed from platform/agentHost/common/openSessionLink.ts
+  ^{ name: "isSendMessageTool", status: "pure" };
+}
+
+!buildOpenSessionLinkUri(backendSession, chatId?){
+  // Transposed from platform/agentHost/common/openSessionLink.ts
+  ^{ name: "buildOpenSessionLinkUri", status: "pure" };
+}
+
+!parseOpenSessionLinkUri(uri){
+  // Transposed from platform/agentHost/common/openSessionLink.ts
+  ^{ name: "parseOpenSessionLinkUri", status: "pure" };
+}
+
+!parseOpenSessionLinkChatId(uri){
+  // Transposed from platform/agentHost/common/openSessionLink.ts
+  ^{ name: "parseOpenSessionLinkChatId", status: "pure" };
+}
+
+!buildOpenSessionLinkForChatResource(chatResource){
+  // Transposed from platform/agentHost/common/openSessionLink.ts
+  ^{ name: "buildOpenSessionLinkForChatResource", status: "pure" };
+}
+
+=ex{createAgentSessionLinkPresentation,isCreateSessionTool,isCreateChatTool,isSendMessageTool,buildOpenSessionLinkUri,parseOpenSessionLinkUri,parseOpenSessionLinkChatId,buildOpenSessionLinkForChatResource}

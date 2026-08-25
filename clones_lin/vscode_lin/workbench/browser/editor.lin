@@ -1,0 +1,14 @@
+@LIN:workbench_browser_editor:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!whenEditorClosed(accessor, resources){
+  // Transposed from workbench/browser/editor.ts
+  ^{ name: "whenEditorClosed", status: "pure" };
+}
+
+!computeEditorAriaLabel(input, index, group, groupCount){
+  // Transposed from workbench/browser/editor.ts
+  ^{ name: "computeEditorAriaLabel", status: "pure" };
+}
+
+=ex{whenEditorClosed,computeEditorAriaLabel}

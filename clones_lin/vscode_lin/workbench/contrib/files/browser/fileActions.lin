@@ -1,0 +1,71 @@
+@LIN:workbench_contrib_files_browser_fileActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!findValidPasteFileTarget(explorerService, fileService, dialogService, targetFolder, fileToPaste, incrementalNaming){
+  // Transposed from workbench/contrib/files/browser/fileActions.ts
+  ^{ name: "findValidPasteFileTarget", status: "pure" };
+}
+
+!incrementFileName(name, isFolder, incrementalNaming){
+  // Transposed from workbench/contrib/files/browser/fileActions.ts
+  ^{ name: "incrementFileName", status: "pure" };
+}
+
+!validateFileName(pathService, item, name, os){
+  // Transposed from workbench/contrib/files/browser/fileActions.ts
+  ^{ name: "validateFileName", status: "pure" };
+}
+
+!createGlobalCompareResourcesAction(...args){
+  ^{ className: "GlobalCompareResourcesAction", methods: ["run", "if"] };
+}
+
+!createToggleAutoSaveAction(...args){
+  ^{ className: "ToggleAutoSaveAction", methods: ["run"] };
+}
+
+!createSaveAllInGroupAction(...args){
+  ^{ className: "SaveAllInGroupAction", methods: ["class", "doRun"] };
+}
+
+!createCloseGroupAction(...args){
+  ^{ className: "CloseGroupAction", methods: ["run"] };
+}
+
+!createFocusFilesExplorer(...args){
+  ^{ className: "FocusFilesExplorer", methods: ["run"] };
+}
+
+!createShowActiveFileInExplorer(...args){
+  ^{ className: "ShowActiveFileInExplorer", methods: ["run", "if"] };
+}
+
+!createOpenActiveFileInEmptyWorkspace(...args){
+  ^{ className: "OpenActiveFileInEmptyWorkspace", methods: ["run"] };
+}
+
+!createCompareNewUntitledTextFilesAction(...args){
+  ^{ className: "CompareNewUntitledTextFilesAction", methods: ["run"] };
+}
+
+!createCompareWithClipboardAction(...args){
+  ^{ className: "CompareWithClipboardAction", methods: ["run", "if", "dispose"] };
+}
+
+!createSetActiveEditorReadonlyInSession(...args){
+  ^{ className: "SetActiveEditorReadonlyInSession", methods: [] };
+}
+
+!createSetActiveEditorWriteableInSession(...args){
+  ^{ className: "SetActiveEditorWriteableInSession", methods: [] };
+}
+
+!createToggleActiveEditorReadonlyInSession(...args){
+  ^{ className: "ToggleActiveEditorReadonlyInSession", methods: [] };
+}
+
+!createResetActiveEditorReadonlyInSession(...args){
+  ^{ className: "ResetActiveEditorReadonlyInSession", methods: [] };
+}
+
+=ex{findValidPasteFileTarget,incrementFileName,validateFileName,createGlobalCompareResourcesAction,createToggleAutoSaveAction,createSaveAllInGroupAction,createCloseGroupAction,createFocusFilesExplorer,createShowActiveFileInExplorer,createOpenActiveFileInEmptyWorkspace,createCompareNewUntitledTextFilesAction,createCompareWithClipboardAction,createSetActiveEditorReadonlyInSession,createSetActiveEditorWriteableInSession,createToggleActiveEditorReadonlyInSession,createResetActiveEditorReadonlyInSession}

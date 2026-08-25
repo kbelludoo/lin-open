@@ -1,0 +1,44 @@
+@LIN:platform_agentHost_node_wslRemoteAgentHostHelpers:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getWslExePath(){
+  // Transposed from platform/agentHost/node/wslRemoteAgentHostHelpers.ts
+  ^{ name: "getWslExePath", status: "pure" };
+}
+
+!isWSLSupported(){
+  // Transposed from platform/agentHost/node/wslRemoteAgentHostHelpers.ts
+  ^{ name: "isWSLSupported", status: "pure" };
+}
+
+!runWslCommand(args, options?){
+  // Transposed from platform/agentHost/node/wslRemoteAgentHostHelpers.ts
+  ^{ name: "runWslCommand", status: "pure" };
+}
+
+!decodeWslOutput(buffer){
+  // Transposed from platform/agentHost/node/wslRemoteAgentHostHelpers.ts
+  ^{ name: "decodeWslOutput", status: "pure" };
+}
+
+!parseWslListVerbose(output){
+  // Transposed from platform/agentHost/node/wslRemoteAgentHostHelpers.ts
+  ^{ name: "parseWslListVerbose", status: "pure" };
+}
+
+!parseRunningDistros(output){
+  // Transposed from platform/agentHost/node/wslRemoteAgentHostHelpers.ts
+  ^{ name: "parseRunningDistros", status: "pure" };
+}
+
+!composeAgentHostBootstrapScript(args){
+  // Transposed from platform/agentHost/node/wslRemoteAgentHostHelpers.ts
+  ^{ name: "composeAgentHostBootstrapScript", status: "pure" };
+}
+
+!validateDistroName(name){
+  // Transposed from platform/agentHost/node/wslRemoteAgentHostHelpers.ts
+  ^{ name: "validateDistroName", status: "pure" };
+}
+
+=ex{getWslExePath,isWSLSupported,runWslCommand,decodeWslOutput,parseWslListVerbose,parseRunningDistros,composeAgentHostBootstrapScript,validateDistroName}

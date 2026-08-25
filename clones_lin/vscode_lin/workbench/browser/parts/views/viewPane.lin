@@ -1,0 +1,16 @@
+@LIN:workbench_browser_parts_views_viewPane:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getLocationBasedViewColors(location){
+  // Transposed from workbench/browser/parts/views/viewPane.ts
+  ^{ name: "getLocationBasedViewColors", status: "pure" };
+}
+
+!getViewPaneShowActionsEnum(){
+  ^{ enumName: "ViewPaneShowActions", members: ["/** Show the actions when the view is hovered. This is the default behavior. */
+	Default", "/** Always shows the actions when the view is expanded */
+	WhenExpanded", "/** Always shows the actions */
+	Always"] };
+}
+
+=ex{getLocationBasedViewColors,getViewPaneShowActionsEnum}

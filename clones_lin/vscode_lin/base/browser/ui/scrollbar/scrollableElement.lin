@@ -1,0 +1,25 @@
+@LIN:base_browser_ui_scrollbar_scrollableElement:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!setGlobalDefaultScrollbarSize(size){
+  // Transposed from base/browser/ui/scrollbar/scrollableElement.ts
+  ^{ name: "setGlobalDefaultScrollbarSize", status: "pure" };
+}
+
+!createMouseWheelClassifier(...args){
+  ^{ className: "MouseWheelClassifier", methods: ["isPhysicalMouseWheel", "if", "if", "acceptStandardWheelEvent", "if", "accept", "if", "if", "_computeScore", "if", "if", "_isAlmostInt"] };
+}
+
+!createScrollableElement(...args){
+  ^{ className: "ScrollableElement", methods: ["setScrollPosition", "getScrollPosition"] };
+}
+
+!createSmoothScrollableElement(...args){
+  ^{ className: "SmoothScrollableElement", methods: ["setScrollPosition", "if", "getScrollPosition"] };
+}
+
+!createDomScrollableElement(...args){
+  ^{ className: "DomScrollableElement", methods: ["if", "if", "setScrollPosition", "getScrollPosition", "scanDomNode"] };
+}
+
+=ex{setGlobalDefaultScrollbarSize,createMouseWheelClassifier,createScrollableElement,createSmoothScrollableElement,createDomScrollableElement}

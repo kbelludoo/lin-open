@@ -1,0 +1,44 @@
+@LIN:workbench_contrib_chat_browser_copilotCliEventsUri:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!buildLocalEventsUri(userHome, rawSessionId, environment){
+  // Transposed from workbench/contrib/chat/browser/copilotCliEventsUri.ts
+  ^{ name: "buildLocalEventsUri", status: "pure" };
+}
+
+!buildLocalCopilotLogsUri(userHome, environment){
+  // Transposed from workbench/contrib/chat/browser/copilotCliEventsUri.ts
+  ^{ name: "buildLocalCopilotLogsUri", status: "pure" };
+}
+
+!buildLocalSessionStateUri(userHome, environment){
+  // Transposed from workbench/contrib/chat/browser/copilotCliEventsUri.ts
+  ^{ name: "buildLocalSessionStateUri", status: "pure" };
+}
+
+!buildRemoteEventsUri(connection, rawSessionId){
+  // Transposed from workbench/contrib/chat/browser/copilotCliEventsUri.ts
+  ^{ name: "buildRemoteEventsUri", status: "pure" };
+}
+
+!buildRemoteCopilotLogsUri(connection){
+  // Transposed from workbench/contrib/chat/browser/copilotCliEventsUri.ts
+  ^{ name: "buildRemoteCopilotLogsUri", status: "pure" };
+}
+
+!parseRemoteAuthorityFromScheme(scheme){
+  // Transposed from workbench/contrib/chat/browser/copilotCliEventsUri.ts
+  ^{ name: "parseRemoteAuthorityFromScheme", status: "pure" };
+}
+
+!getCopilotCliSessionRawId(sessionResource){
+  // Transposed from workbench/contrib/chat/browser/copilotCliEventsUri.ts
+  ^{ name: "getCopilotCliSessionRawId", status: "pure" };
+}
+
+!migratedCopilotCliResource(resource){
+  // Transposed from workbench/contrib/chat/browser/copilotCliEventsUri.ts
+  ^{ name: "migratedCopilotCliResource", status: "pure" };
+}
+
+=ex{buildLocalEventsUri,buildLocalCopilotLogsUri,buildLocalSessionStateUri,buildRemoteEventsUri,buildRemoteCopilotLogsUri,parseRemoteAuthorityFromScheme,getCopilotCliSessionRawId,migratedCopilotCliResource}

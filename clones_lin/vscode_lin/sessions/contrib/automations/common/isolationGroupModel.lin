@@ -1,0 +1,13 @@
+@LIN:sessions_contrib_automations_common_isolationGroupModel:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!normalizeAutomationBranchNames(names){
+  // Transposed from sessions/contrib/automations/common/isolationGroupModel.ts
+  ^{ name: "normalizeAutomationBranchNames", status: "pure" };
+}
+
+!createAutomationIsolationModel(...args){
+  ^{ className: "AutomationIsolationModel", methods: ["if", "isQuickChat", "folderUri", "isolationMode", "selectedBranch", "headBranch", "displayBranch", "persistedBranch", "if", "supportsWorktreeConfiguration", "branchPickerAvailable", "setSupportsWorktreeConfiguration", "selectIsolationMode", "setQuickChat", "if", "if", "if", "setWorkspace", "if", "if", "setHeadBranch", "selectBranch"] };
+}
+
+=ex{normalizeAutomationBranchNames,createAutomationIsolationModel}

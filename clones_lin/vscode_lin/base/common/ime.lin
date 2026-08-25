@@ -1,0 +1,8 @@
+@LIN:base_common_ime:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createIMEImpl(...args){
+  ^{ className: "IMEImpl", methods: ["enabled", "enable", "disable"] };
+}
+
+=ex{createIMEImpl}

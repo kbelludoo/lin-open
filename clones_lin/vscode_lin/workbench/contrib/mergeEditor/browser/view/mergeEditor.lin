@@ -1,0 +1,12 @@
+@LIN:workbench_contrib_mergeEditor_browser_view_mergeEditor:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createMergeEditorOpenHandlerContribution(...args){
+  ^{ className: "MergeEditorOpenHandlerContribution", methods: ["openCodeEditorFromMergeEditor"] };
+}
+
+!createMergeEditorResolverContribution(...args){
+  ^{ className: "MergeEditorResolverContribution", methods: [] };
+}
+
+=ex{createMergeEditorOpenHandlerContribution,createMergeEditorResolverContribution}

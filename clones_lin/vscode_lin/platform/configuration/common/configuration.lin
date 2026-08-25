@@ -1,0 +1,24 @@
+@LIN:platform_configuration_common_configuration:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isConfigurationOverrides(obj){
+  // Transposed from platform/configuration/common/configuration.ts
+  ^{ name: "isConfigurationOverrides", status: "pure" };
+}
+
+!isConfigurationUpdateOverrides(obj){
+  // Transposed from platform/configuration/common/configuration.ts
+  ^{ name: "isConfigurationUpdateOverrides", status: "pure" };
+}
+
+!removeFromValueTree(valueTree, key){
+  // Transposed from platform/configuration/common/configuration.ts
+  ^{ name: "removeFromValueTree", status: "pure" };
+}
+
+!merge(base, add, overwrite){
+  // Transposed from platform/configuration/common/configuration.ts
+  ^{ name: "merge", status: "pure" };
+}
+
+=ex{isConfigurationOverrides,isConfigurationUpdateOverrides,removeFromValueTree,merge}

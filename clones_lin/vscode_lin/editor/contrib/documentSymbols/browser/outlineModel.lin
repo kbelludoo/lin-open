@@ -1,0 +1,16 @@
+@LIN:editor_contrib_documentSymbols_browser_outlineModel:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createOutlineElement(...args){
+  ^{ className: "OutlineElement", methods: [] };
+}
+
+!createOutlineGroup(...args){
+  ^{ className: "OutlineGroup", methods: ["getItemEnclosingPosition", "_getItemEnclosingPosition", "for", "updateMarker", "for", "_updateMarker", "if", "if", "for", "if"] };
+}
+
+!createOutlineModel(...args){
+  ^{ className: "OutlineModel", methods: ["create", "then", "if", "_makeOutlineElement", "if", "for", "get", "while", "if", "_compact", "for", "if", "if", "for", "merge", "if", "getItemEnclosingPosition", "if", "while", "if", "for", "getItemById", "updateMarker", "for", "getTopLevelSymbols", "if", "asListOfDocumentSymbols", "_flattenDocumentSymbols", "for", "if"] };
+}
+
+=ex{createOutlineElement,createOutlineGroup,createOutlineModel}

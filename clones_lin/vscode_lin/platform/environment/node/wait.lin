@@ -1,0 +1,9 @@
+@LIN:platform_environment_node_wait:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createWaitMarkerFileSync(verbose?){
+  // Transposed from platform/environment/node/wait.ts
+  ^{ name: "createWaitMarkerFileSync", status: "pure" };
+}
+
+=ex{createWaitMarkerFileSync}

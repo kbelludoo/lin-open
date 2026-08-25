@@ -1,0 +1,16 @@
+@LIN:editor_contrib_inlineCompletions_browser_view_ghostText_ghostTextView:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createGhostTextWidgetWarning(...args){
+  ^{ className: "GhostTextWidgetWarning", methods: ["from", "if"] };
+}
+
+!createGhostTextView(...args){
+  ^{ className: "GhostTextView", methods: ["if", "if", "_register", "if", "if", "if", "getWarningWidgetContext", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "for", "if", "ownsViewZone"] };
+}
+
+!createAdditionalLinesWidget(...args){
+  ^{ className: "AdditionalLinesWidget", methods: ["viewZoneId", "viewZoneHeight", "if", "if", "dispose", "clear", "updateLines", "if", "if", "if", "addViewZone", "removeActiveViewZone", "if", "if", "keepCursorStable", "if", "if"] };
+}
+
+=ex{createGhostTextWidgetWarning,createGhostTextView,createAdditionalLinesWidget}

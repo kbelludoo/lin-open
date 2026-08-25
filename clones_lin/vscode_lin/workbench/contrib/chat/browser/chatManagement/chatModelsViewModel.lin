@@ -1,0 +1,28 @@
+@LIN:workbench_contrib_chat_browser_chatManagement_chatModelsViewModel:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getManageModelsProviderLabel(model){
+  // Transposed from workbench/contrib/chat/browser/chatManagement/chatModelsViewModel.ts
+  ^{ name: "getManageModelsProviderLabel", status: "pure" };
+}
+
+!isLanguageModelProviderEntry(entry){
+  // Transposed from workbench/contrib/chat/browser/chatManagement/chatModelsViewModel.ts
+  ^{ name: "isLanguageModelProviderEntry", status: "pure" };
+}
+
+!isLanguageModelGroupEntry(entry){
+  // Transposed from workbench/contrib/chat/browser/chatManagement/chatModelsViewModel.ts
+  ^{ name: "isLanguageModelGroupEntry", status: "pure" };
+}
+
+!isStatusEntry(entry){
+  // Transposed from workbench/contrib/chat/browser/chatManagement/chatModelsViewModel.ts
+  ^{ name: "isStatusEntry", status: "pure" };
+}
+
+!createChatModelsViewModel(...args){
+  ^{ className: "ChatModelsViewModel", methods: ["groupBy", "groupBy", "if", "viewModelEntries", "splice", "if", "shouldRefilter", "filter", "if", "if", "doFilter", "for", "if", "if", "if", "if", "filterModels", "if", "if", "if", "if", "for", "if", "if", "if", "if", "for", "if", "if", "if", "if", "getMatchingCapabilities", "if", "switch", "if", "if", "if", "if", "for", "groupModels", "if", "for", "if", "for", "if", "if", "if", "for", "if", "if", "if", "if", "createLanguageModelProviderEntry", "getVendors", "if", "if", "refresh", "refreshAllVendors", "refreshVendor", "if", "addVendorModels", "for", "if", "for", "if", "if", "getModelsForGroup", "toggleModelHidden", "toggleGroupHidden", "setModelsHidden", "refreshVisibility", "for", "getModelId", "getProviderGroupId", "toggleCollapsed", "if", "collapseAll", "for", "getConfiguredVendors", "for"] };
+}
+
+=ex{getManageModelsProviderLabel,isLanguageModelProviderEntry,isLanguageModelGroupEntry,isStatusEntry,createChatModelsViewModel}

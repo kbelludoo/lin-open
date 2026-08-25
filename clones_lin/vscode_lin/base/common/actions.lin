@@ -1,0 +1,13 @@
+@LIN:base_common_actions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!toAction(props){
+  // Transposed from base/common/actions.ts
+  ^{ name: "toAction", status: "pure" };
+}
+
+!createEmptySubmenuAction(...args){
+  ^{ className: "EmptySubmenuAction", methods: [] };
+}
+
+=ex{toAction,createEmptySubmenuAction}

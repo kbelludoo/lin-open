@@ -1,0 +1,47 @@
+@LIN:workbench_contrib_chat_browser_agentSessions_sessionTypeAvailability:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getSessionTypePickerAvailability(type, availability, allowSignedOutWhenUsable, hasSetupBanner){
+  // Transposed from workbench/contrib/chat/browser/agentSessions/sessionTypeAvailability.ts
+  ^{ name: "getSessionTypePickerAvailability", status: "pure" };
+}
+
+!getSessionTypeAvailability(chatSessionsService, chatEntitlementService, languageModelsService, type, allowSignedOutWhenUsable = false){
+  // Transposed from workbench/contrib/chat/browser/agentSessions/sessionTypeAvailability.ts
+  ^{ name: "getSessionTypeAvailability", status: "pure" };
+}
+
+!hasAnyModelTargetingSessionType(languageModelsService, type){
+  // Transposed from workbench/contrib/chat/browser/agentSessions/sessionTypeAvailability.ts
+  ^{ name: "hasAnyModelTargetingSessionType", status: "pure" };
+}
+
+!hasVisibleByokModelsTargetingSessionType(languageModelsService, type){
+  // Transposed from workbench/contrib/chat/browser/agentSessions/sessionTypeAvailability.ts
+  ^{ name: "hasVisibleByokModelsTargetingSessionType", status: "pure" };
+}
+
+!getSessionTypeUnavailableDescription(availability){
+  // Transposed from workbench/contrib/chat/browser/agentSessions/sessionTypeAvailability.ts
+  ^{ name: "getSessionTypeUnavailableDescription", status: "pure" };
+}
+
+!getSessionTypeUnavailableHover(availability){
+  // Transposed from workbench/contrib/chat/browser/agentSessions/sessionTypeAvailability.ts
+  ^{ name: "getSessionTypeUnavailableHover", status: "pure" };
+}
+
+!getSessionTypeUnavailableLabel(availability){
+  // Transposed from workbench/contrib/chat/browser/agentSessions/sessionTypeAvailability.ts
+  ^{ name: "getSessionTypeUnavailableLabel", status: "pure" };
+}
+
+!getSessionTypeAvailabilityEnum(){
+  ^{ enumName: "SessionTypeAvailability", members: ["/** Selectable — has an Auto fallback or at least one targeted/BYOK model. */
+	Available", "/** Unusable until the user signs in (the type needs a Copilot account and has no visible Agent Host BYOK model). */
+	SignInRequired", "/** Unusable", "but the user can resolve it by upgrading (Copilot Free / Student). */
+	UpgradeRequired", "/** Unusable with no upgrade path — no models target it and the user is already on a paid plan. */
+	NoModels"] };
+}
+
+=ex{getSessionTypePickerAvailability,getSessionTypeAvailability,hasAnyModelTargetingSessionType,hasVisibleByokModelsTargetingSessionType,getSessionTypeUnavailableDescription,getSessionTypeUnavailableHover,getSessionTypeUnavailableLabel,getSessionTypeAvailabilityEnum}

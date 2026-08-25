@@ -1,0 +1,134 @@
+@LIN:platform_agentHost_node_copilot_copilotToolDisplay:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isEditTool(toolName, command?){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "isEditTool", status: "pure" };
+}
+
+!getEditFilePath(parameters){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "getEditFilePath", status: "pure" };
+}
+
+!getEditFilePaths(parameters){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "getEditFilePaths", status: "pure" };
+}
+
+!isHiddenTool(toolName){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "isHiddenTool", status: "pure" };
+}
+
+!isAgentCoordinationTool(toolName){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "isAgentCoordinationTool", status: "pure" };
+}
+
+!isTaskCompleteTool(toolName){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "isTaskCompleteTool", status: "pure" };
+}
+
+!getTaskCompleteSummary(parameters, unknown> | undefined, toolOutput){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "getTaskCompleteSummary", status: "pure" };
+}
+
+!getTaskCompleteMarkdown(parameters, unknown> | undefined, toolOutput){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "getTaskCompleteMarkdown", status: "pure" };
+}
+
+!isMarkdownRenderedTool(toolName){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "isMarkdownRenderedTool", status: "pure" };
+}
+
+!getToolMarkdownContent(toolName, parameters, unknown> | undefined){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "getToolMarkdownContent", status: "pure" };
+}
+
+!isShellTool(toolName){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "isShellTool", status: "pure" };
+}
+
+!getShellIntention(toolName, parameters, unknown> | undefined){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "getShellIntention", status: "pure" };
+}
+
+!isCopilotSdkToolOutputFile(filePath){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "isCopilotSdkToolOutputFile", status: "pure" };
+}
+
+!parseCopilotStreamingToolInput(raw){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "parseCopilotStreamingToolInput", status: "pure" };
+}
+
+!getToolDisplayName(toolName){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "getToolDisplayName", status: "pure" };
+}
+
+!getInvocationMessage(toolName, displayName, parameters, unknown> | undefined, resolvePath){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "getInvocationMessage", status: "pure" };
+}
+
+!getStreamingInvocationMessage(toolName, displayName, parameters, resolvePath){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "getStreamingInvocationMessage", status: "pure" };
+}
+
+!getPastTenseMessage(toolName, displayName, parameters, unknown> | undefined, success, resultText?, resolvePath){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "getPastTenseMessage", status: "pure" };
+}
+
+!getSkillSyntheticToolCallId(eventId, data){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "getSkillSyntheticToolCallId", status: "pure" };
+}
+
+!synthesizeSkillToolCall(data, eventId){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "synthesizeSkillToolCall", status: "pure" };
+}
+
+!getToolInputString(toolName, parameters, unknown> | undefined, rawArguments){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "getToolInputString", status: "pure" };
+}
+
+!getToolKind(toolName, parameters?, unknown>){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "getToolKind", status: "pure" };
+}
+
+!getSubagentMetadata(parameters, unknown> | undefined){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "getSubagentMetadata", status: "pure" };
+}
+
+!getShellLanguage(toolName){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "getShellLanguage", status: "pure" };
+}
+
+!tryStringify(value){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "tryStringify", status: "pure" };
+}
+
+!getPermissionDisplay(request, workingDirectory?, isNewFile?){
+  // Transposed from platform/agentHost/node/copilot/copilotToolDisplay.ts
+  ^{ name: "getPermissionDisplay", status: "pure" };
+}
+
+=ex{isEditTool,getEditFilePath,getEditFilePaths,isHiddenTool,isAgentCoordinationTool,isTaskCompleteTool,getTaskCompleteSummary,getTaskCompleteMarkdown,isMarkdownRenderedTool,getToolMarkdownContent,isShellTool,getShellIntention,isCopilotSdkToolOutputFile,parseCopilotStreamingToolInput,getToolDisplayName,getInvocationMessage,getStreamingInvocationMessage,getPastTenseMessage,getSkillSyntheticToolCallId,synthesizeSkillToolCall,getToolInputString,getToolKind,getSubagentMetadata,getShellLanguage,tryStringify,getPermissionDisplay}

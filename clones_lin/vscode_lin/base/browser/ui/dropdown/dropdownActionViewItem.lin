@@ -1,0 +1,12 @@
+@LIN:base_browser_ui_dropdown_dropdownActionViewItem:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createDropdownMenuActionViewItem(...args){
+  ^{ className: "DropdownMenuActionViewItem", methods: ["onDidChangeVisibility", "if", "render", "if", "anchorAlignment", "renderLabel", "if", "if", "if", "setAriaLabelAttributes", "getTooltip", "if", "if", "setActionContext", "if", "if", "show", "updateEnabled"] };
+}
+
+!createActionWithDropdownActionViewItem(...args){
+  ^{ className: "ActionWithDropdownActionViewItem", methods: ["render", "if", "if", "blur", "setFocusable", "updateEnabled", "if"] };
+}
+
+=ex{createDropdownMenuActionViewItem,createActionWithDropdownActionViewItem}

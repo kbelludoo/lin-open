@@ -1,0 +1,29 @@
+@LIN:workbench_contrib_chat_browser_chatEditing_notebook_helpers:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!adjustCellDiffForKeepingADeletedCell(originalCellIndex, cellDiffInfo, applyEdits){
+  // Transposed from workbench/contrib/chat/browser/chatEditing/notebook/helpers.ts
+  ^{ name: "adjustCellDiffForKeepingADeletedCell", status: "pure" };
+}
+
+!adjustCellDiffForRevertingAnInsertedCell(modifiedCellIndex, cellDiffInfo, applyEdits){
+  // Transposed from workbench/contrib/chat/browser/chatEditing/notebook/helpers.ts
+  ^{ name: "adjustCellDiffForRevertingAnInsertedCell", status: "pure" };
+}
+
+!adjustCellDiffAndOriginalModelBasedOnCellMovements(event, cellDiffInfo){
+  // Transposed from workbench/contrib/chat/browser/chatEditing/notebook/helpers.ts
+  ^{ name: "adjustCellDiffAndOriginalModelBasedOnCellMovements", status: "pure" };
+}
+
+!getCorrespondingOriginalCellIndex(modifiedCellIndex, cellDiffInfo){
+  // Transposed from workbench/contrib/chat/browser/chatEditing/notebook/helpers.ts
+  ^{ name: "getCorrespondingOriginalCellIndex", status: "pure" };
+}
+
+!calculateNotebookRewriteRatio(cellsDiff, originalModel, modifiedModel){
+  // Transposed from workbench/contrib/chat/browser/chatEditing/notebook/helpers.ts
+  ^{ name: "calculateNotebookRewriteRatio", status: "pure" };
+}
+
+=ex{adjustCellDiffForKeepingADeletedCell,adjustCellDiffForRevertingAnInsertedCell,adjustCellDiffAndOriginalModelBasedOnCellMovements,getCorrespondingOriginalCellIndex,calculateNotebookRewriteRatio}

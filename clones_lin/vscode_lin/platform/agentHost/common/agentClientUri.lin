@@ -1,0 +1,14 @@
+@LIN:platform_agentHost_common_agentClientUri:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!toAgentClientUri(originalUri, clientId){
+  // Transposed from platform/agentHost/common/agentClientUri.ts
+  ^{ name: "toAgentClientUri", status: "pure" };
+}
+
+!fromAgentClientUri(agentClientUri){
+  // Transposed from platform/agentHost/common/agentClientUri.ts
+  ^{ name: "fromAgentClientUri", status: "pure" };
+}
+
+=ex{toAgentClientUri,fromAgentClientUri}

@@ -1,0 +1,42 @@
+@LIN:workbench_contrib_chat_browser_widget_chatTurnPills:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!previewKind(uri, htmlPreviewAvailable = !isWeb){
+  // Transposed from workbench/contrib/chat/browser/widget/chatTurnPills.ts
+  ^{ name: "previewKind", status: "pure" };
+}
+
+!diffStatsEqual(a, b){
+  // Transposed from workbench/contrib/chat/browser/widget/chatTurnPills.ts
+  ^{ name: "diffStatsEqual", status: "pure" };
+}
+
+!previewFilesEqual(a, b){
+  // Transposed from workbench/contrib/chat/browser/widget/chatTurnPills.ts
+  ^{ name: "previewFilesEqual", status: "pure" };
+}
+
+!openChatTurnFile(file, openerService, configurationService){
+  // Transposed from workbench/contrib/chat/browser/widget/chatTurnPills.ts
+  ^{ name: "openChatTurnFile", status: "pure" };
+}
+
+!isChatTurnStatusPillsEnabled(value){
+  // Transposed from workbench/contrib/chat/browser/widget/chatTurnPills.ts
+  ^{ name: "isChatTurnStatusPillsEnabled", status: "pure" };
+}
+
+!observeTurnStatusPillsEnabled(configurationService){
+  // Transposed from workbench/contrib/chat/browser/widget/chatTurnPills.ts
+  ^{ name: "observeTurnStatusPillsEnabled", status: "pure" };
+}
+
+!createChatTurnPillsProvider(...args){
+  ^{ className: "ChatTurnPillsProvider", methods: ["_showChanges", "_showArtifacts", "_openPrimaryArtifact"] };
+}
+
+!createChatTurnPillsWidget(...args){
+  ^{ className: "ChatTurnPillsWidget", methods: [] };
+}
+
+=ex{previewKind,diffStatsEqual,previewFilesEqual,openChatTurnFile,isChatTurnStatusPillsEnabled,observeTurnStatusPillsEnabled,createChatTurnPillsProvider,createChatTurnPillsWidget}

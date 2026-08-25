@@ -1,0 +1,12 @@
+@LIN:platform_userDataSync_common_userDataSyncStoreService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createUserDataSyncStoreClient(...args){
+  ^{ className: "UserDataSyncStoreClient", methods: ["donotMakeRequestsUntil", "then", "if", "setAuthToken", "updateUserDataSyncStoreUrl", "initDonotMakeRequestsUntil", "setDonotMakeRequestsUntil", "if", "if", "getAllCollections", "if", "createCollection", "if", "if", "deleteCollection", "if", "getAllResourceRefs", "if", "resolveResourceContent", "if", "deleteResource", "if", "deleteResources", "if", "readResource", "if", "if", "if", "if", "if", "if", "writeResource", "if", "if", "if", "manifest", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "clear", "if", "getLatestData", "if", "if", "if", "for", "if", "for", "for", "getActivityData", "if", "getResourceUrl", "clearSession", "request", "if", "catch", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "addSessionHeaders", "if", "if"] };
+}
+
+!createRequestsSession(...args){
+  ^{ className: "RequestsSession", methods: ["request", "if", "isExpired", "reset"] };
+}
+
+=ex{createUserDataSyncStoreClient,createRequestsSession}

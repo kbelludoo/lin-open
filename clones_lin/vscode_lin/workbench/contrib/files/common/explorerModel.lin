@@ -1,0 +1,12 @@
+@LIN:workbench_contrib_files_common_explorerModel:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createExplorerItem(...args){
+  ^{ className: "ExplorerItem", methods: ["isExcluded", "if", "if", "isExcluded", "if", "hasNests", "isDirectoryResolved", "isSymbolicLink", "isDirectory", "isReadonly", "mtime", "name", "isUnknown", "parent", "root", "if", "children", "updateName", "getId", "toString", "isRoot", "create", "if", "if", "for", "mergeLocalWithDisk", "if", "if", "if", "if", "forEach", "addChild", "getChild", "fetchChildren", "if", "if", "catch", "if", "if", "for", "if", "fileNester", "if", "removeChild", "forgetChildren", "getPlatformAwareName", "move", "updateResource", "if", "if", "if", "rename", "find", "startsWithIgnoreCase", "findByPath", "if", "while", "if", "if", "isMarkedAsFiltered", "markItemAndParentsAsFiltered", "unmarkItemAndChildren"] };
+}
+
+!createNewExplorerItem(...args){
+  ^{ className: "NewExplorerItem", methods: [] };
+}
+
+=ex{createExplorerItem,createNewExplorerItem}

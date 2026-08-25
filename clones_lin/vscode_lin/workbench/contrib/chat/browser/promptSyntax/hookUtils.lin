@@ -1,0 +1,19 @@
+@LIN:workbench_contrib_chat_browser_promptSyntax_hookUtils:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!findHookCommandSelection(content, hookType, index, fieldName){
+  // Transposed from workbench/contrib/chat/browser/promptSyntax/hookUtils.ts
+  ^{ name: "findHookCommandSelection", status: "pure" };
+}
+
+!findHookCommandInYaml(content, commandText){
+  // Transposed from workbench/contrib/chat/browser/promptSyntax/hookUtils.ts
+  ^{ name: "findHookCommandInYaml", status: "pure" };
+}
+
+!parseAllHookFiles(promptsService, fileService, labelService, workspaceRootUri, userHome, os, token, options?){
+  // Transposed from workbench/contrib/chat/browser/promptSyntax/hookUtils.ts
+  ^{ name: "parseAllHookFiles", status: "pure" };
+}
+
+=ex{findHookCommandSelection,findHookCommandInYaml,parseAllHookFiles}

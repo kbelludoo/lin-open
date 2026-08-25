@@ -1,0 +1,13 @@
+@LIN:sessions_contrib_sessions_browser_views_sessionsView:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!openSessionToTheSide(sessionsService, session, options?){
+  // Transposed from sessions/contrib/sessions/browser/views/sessionsView.ts
+  ^{ name: "openSessionToTheSide", status: "pure" };
+}
+
+!createSessionsView(...args){
+  ^{ className: "SessionsView", methods: ["renderBody", "getLocationBasedColors", "createControls", "if", "if", "if", "if", "_register", "if", "if", "minimumSize", "maximumSize", "_register", "if", "if", "focusCustomizations", "restoreLastSelectedSession", "if", "registerSessionTypeFilters", "for", "_register", "run", "registerStatusFilters", "for", "_register", "run", "add", "run", "_register", "run", "_register", "run", "layoutBody", "if", "layoutSidebarSplitView", "if", "if", "if", "if", "getCustomizationsPaneHeight", "if", "focus", "refresh", "openFind", "if", "updateHeaderLayout", "if", "if", "openSortGroupSheet", "then", "if", "if", "setGrouping", "if", "setSorting", "if"] };
+}
+
+=ex{openSessionToTheSide,createSessionsView}

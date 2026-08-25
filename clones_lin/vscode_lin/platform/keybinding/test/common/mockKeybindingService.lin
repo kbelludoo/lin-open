@@ -1,0 +1,8 @@
+@LIN:platform_keybinding_test_common_mockKeybindingService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createMockScopableContextKeyService(...args){
+  ^{ className: "MockScopableContextKeyService", methods: ["createScoped"] };
+}
+
+=ex{createMockScopableContextKeyService}

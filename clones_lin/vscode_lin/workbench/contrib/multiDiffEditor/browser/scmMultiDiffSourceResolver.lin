@@ -1,0 +1,12 @@
+@LIN:workbench_contrib_multiDiffEditor_browser_scmMultiDiffSourceResolver:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createScmMultiDiffSourceResolverContribution(...args){
+  ^{ className: "ScmMultiDiffSourceResolverContribution", methods: [] };
+}
+
+!createOpenScmGroupAction(...args){
+  ^{ className: "OpenScmGroupAction", methods: ["openMultiFileDiffEditor", "if", "run"] };
+}
+
+=ex{createScmMultiDiffSourceResolverContribution,createOpenScmGroupAction}

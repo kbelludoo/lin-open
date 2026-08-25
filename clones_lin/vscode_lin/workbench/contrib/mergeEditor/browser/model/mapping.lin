@@ -1,0 +1,24 @@
+@LIN:workbench_contrib_mergeEditor_browser_model_mapping:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createLineRangeMapping(...args){
+  ^{ className: "LineRangeMapping", methods: ["join", "extendInputRange", "join", "resultingDeltaFromOriginalToModified", "toString", "addOutputLineDelta", "addInputLineDelta", "reverse"] };
+}
+
+!createDocumentLineRangeMap(...args){
+  ^{ className: "DocumentLineRangeMap", methods: ["betweenOutputs", "project", "if", "outputLineCount", "reverse"] };
+}
+
+!createDetailedLineRangeMapping(...args){
+  ^{ className: "DetailedLineRangeMapping", methods: ["join", "addOutputLineDelta", "addInputLineDelta", "join", "getLineEdit", "getReverseLineEdit", "getOutputLines", "getInputLines"] };
+}
+
+!createRangeMapping(...args){
+  ^{ className: "RangeMapping", methods: ["toString", "rangeToString", "addOutputLineDelta", "addInputLineDelta", "reverse"] };
+}
+
+!createDocumentRangeMap(...args){
+  ^{ className: "DocumentRangeMap", methods: ["project", "if", "projectRange", "outputLineCount", "reverse"] };
+}
+
+=ex{createLineRangeMapping,createDocumentLineRangeMap,createDetailedLineRangeMapping,createRangeMapping,createDocumentRangeMap}

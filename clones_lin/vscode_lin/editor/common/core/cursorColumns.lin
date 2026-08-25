@@ -1,0 +1,8 @@
+@LIN:editor_common_core_cursorColumns:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createCursorColumns(...args){
+  ^{ className: "CursorColumns", methods: ["_nextVisibleColumn", "if", "visibleColumnFromColumn", "toStatusbarColumn", "if", "columnFromVisibleColumn", "if", "if", "if", "nextRenderTabStop", "nextIndentTabStop", "prevRenderTabStop", "prevIndentTabStop"] };
+}
+
+=ex{createCursorColumns}

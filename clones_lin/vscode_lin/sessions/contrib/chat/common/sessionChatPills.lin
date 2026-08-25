@@ -1,0 +1,23 @@
+@LIN:sessions_contrib_chat_common_sessionChatPills:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getSessionChatPillLabel(kind){
+  // Transposed from sessions/contrib/chat/common/sessionChatPills.ts
+  ^{ name: "getSessionChatPillLabel", status: "pure" };
+}
+
+!isSessionChatPillHideable(kind){
+  // Transposed from sessions/contrib/chat/common/sessionChatPills.ts
+  ^{ name: "isSessionChatPillHideable", status: "pure" };
+}
+
+!getSessionChatPillMenu(kindsWithData, hiddenKinds, targetKind?){
+  // Transposed from sessions/contrib/chat/common/sessionChatPills.ts
+  ^{ name: "getSessionChatPillMenu", status: "pure" };
+}
+
+!createSessionChatPillVisibility(...args){
+  ^{ className: "SessionChatPillVisibility", methods: ["readHiddenKinds", "isVisible", "hide", "toggle"] };
+}
+
+=ex{getSessionChatPillLabel,isSessionChatPillHideable,getSessionChatPillMenu,createSessionChatPillVisibility}

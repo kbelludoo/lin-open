@@ -1,0 +1,29 @@
+@LIN:workbench_contrib_chat_common_agentHostConfigPolicy:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isAutoApprovePolicyRestricted(configurationService){
+  // Transposed from workbench/contrib/chat/common/agentHostConfigPolicy.ts
+  ^{ name: "isAutoApprovePolicyRestricted", status: "pure" };
+}
+
+!isAssistedPermissionsEnabled(configurationService){
+  // Transposed from workbench/contrib/chat/common/agentHostConfigPolicy.ts
+  ^{ name: "isAssistedPermissionsEnabled", status: "pure" };
+}
+
+!isPermissionLevelVisible(value, assistedPermissionsEnabled){
+  // Transposed from workbench/contrib/chat/common/agentHostConfigPolicy.ts
+  ^{ name: "isPermissionLevelVisible", status: "pure" };
+}
+
+!isAutoApproveValuePolicyRestricted(value, policyRestricted){
+  // Transposed from workbench/contrib/chat/common/agentHostConfigPolicy.ts
+  ^{ name: "isAutoApproveValuePolicyRestricted", status: "pure" };
+}
+
+!normalizeSessionConfigValue(property, value, policyRestricted){
+  // Transposed from workbench/contrib/chat/common/agentHostConfigPolicy.ts
+  ^{ name: "normalizeSessionConfigValue", status: "pure" };
+}
+
+=ex{isAutoApprovePolicyRestricted,isAssistedPermissionsEnabled,isPermissionLevelVisible,isAutoApproveValuePolicyRestricted,normalizeSessionConfigValue}

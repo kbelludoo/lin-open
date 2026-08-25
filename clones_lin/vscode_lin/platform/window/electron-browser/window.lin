@@ -1,0 +1,23 @@
+@LIN:platform_window_electron_browser_window:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!applyZoom(zoomLevel, target){
+  // Transposed from platform/window/electron-browser/window.ts
+  ^{ name: "applyZoom", status: "pure" };
+}
+
+!zoomIn(target){
+  // Transposed from platform/window/electron-browser/window.ts
+  ^{ name: "zoomIn", status: "pure" };
+}
+
+!zoomOut(target){
+  // Transposed from platform/window/electron-browser/window.ts
+  ^{ name: "zoomOut", status: "pure" };
+}
+
+!getApplyZoomTargetEnum(){
+  ^{ enumName: "ApplyZoomTarget", members: ["ACTIVE_WINDOW", "ALL_WINDOWS"] };
+}
+
+=ex{applyZoom,zoomIn,zoomOut,getApplyZoomTargetEnum}

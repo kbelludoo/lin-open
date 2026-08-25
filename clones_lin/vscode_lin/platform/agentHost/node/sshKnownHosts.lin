@@ -1,0 +1,29 @@
+@LIN:platform_agentHost_node_sshKnownHosts:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!computeHostKeyFingerprint(keyBlob){
+  // Transposed from platform/agentHost/node/sshKnownHosts.ts
+  ^{ name: "computeHostKeyFingerprint", status: "pure" };
+}
+
+!readHostKeyType(keyBlob){
+  // Transposed from platform/agentHost/node/sshKnownHosts.ts
+  ^{ name: "readHostKeyType", status: "pure" };
+}
+
+!parseKnownHostsLine(line){
+  // Transposed from platform/agentHost/node/sshKnownHosts.ts
+  ^{ name: "parseKnownHostsLine", status: "pure" };
+}
+
+!parseKnownHosts(contents){
+  // Transposed from platform/agentHost/node/sshKnownHosts.ts
+  ^{ name: "parseKnownHosts", status: "pure" };
+}
+
+!matchKnownHosts(entries, host, port, keyType, keyBlob){
+  // Transposed from platform/agentHost/node/sshKnownHosts.ts
+  ^{ name: "matchKnownHosts", status: "pure" };
+}
+
+=ex{computeHostKeyFingerprint,readHostKeyType,parseKnownHostsLine,parseKnownHosts,matchKnownHosts}

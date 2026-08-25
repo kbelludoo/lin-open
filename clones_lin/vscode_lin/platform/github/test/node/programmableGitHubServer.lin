@@ -1,0 +1,63 @@
+@LIN:platform_github_test_node_programmableGitHubServer:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!gitHubRestStep(step, 'kind'>){
+  // Transposed from platform/github/test/node/programmableGitHubServer.ts
+  ^{ name: "gitHubRestStep", status: "pure" };
+}
+
+!gitHubGraphQLStep(step, 'kind'>){
+  // Transposed from platform/github/test/node/programmableGitHubServer.ts
+  ^{ name: "gitHubGraphQLStep", status: "pure" };
+}
+
+!gitHubJsonResponse(body, options, 'kind' | 'body'> = {}){
+  // Transposed from platform/github/test/node/programmableGitHubServer.ts
+  ^{ name: "gitHubJsonResponse", status: "pure" };
+}
+
+!gitHubTextResponse(body, options, 'kind' | 'body'> = {}){
+  // Transposed from platform/github/test/node/programmableGitHubServer.ts
+  ^{ name: "gitHubTextResponse", status: "pure" };
+}
+
+!gitHubRawResponse(body, options, 'kind' | 'body'> = {}){
+  // Transposed from platform/github/test/node/programmableGitHubServer.ts
+  ^{ name: "gitHubRawResponse", status: "pure" };
+}
+
+!gitHubNotModifiedResponse(options, 'kind'> = {}){
+  // Transposed from platform/github/test/node/programmableGitHubServer.ts
+  ^{ name: "gitHubNotModifiedResponse", status: "pure" };
+}
+
+!gitHubRedirectResponse(location, options, 'kind' | 'location'> = {}){
+  // Transposed from platform/github/test/node/programmableGitHubServer.ts
+  ^{ name: "gitHubRedirectResponse", status: "pure" };
+}
+
+!gitHubDisconnectResponse(){
+  // Transposed from platform/github/test/node/programmableGitHubServer.ts
+  ^{ name: "gitHubDisconnectResponse", status: "pure" };
+}
+
+!gitHubAbortResponse(){
+  // Transposed from platform/github/test/node/programmableGitHubServer.ts
+  ^{ name: "gitHubAbortResponse", status: "pure" };
+}
+
+!gitHubMalformedJsonResponse(options, 'kind'> = {}){
+  // Transposed from platform/github/test/node/programmableGitHubServer.ts
+  ^{ name: "gitHubMalformedJsonResponse", status: "pure" };
+}
+
+!gitHubRateLimitResponse(options, 'kind'> = {}){
+  // Transposed from platform/github/test/node/programmableGitHubServer.ts
+  ^{ name: "gitHubRateLimitResponse", status: "pure" };
+}
+
+!createProgrammableGitHubServer(...args){
+  ^{ className: "ProgrammableGitHubServer", methods: ["start", "origin", "enterpriseUri", "apiBaseUrl", "graphQlUrl", "requests", "remainingStepCount", "createEndpointService", "enqueue", "assertSatisfied", "if", "if", "if", "if", "disposeAsync", "dispose", "if", "for", "if", "_start", "if", "_handle", "if", "if", "if", "catch", "if", "if", "_captureRequest", "if", "catch", "_assertStep", "if", "if", "if", "if", "if", "for", "_waitForRelease", "_writeResponse", "switch", "if", "if", "if", "if", "if", "if", "_writeBodyResponse", "_applyHeaders", "_writeFailure", "_recordFailure"] };
+}
+
+=ex{gitHubRestStep,gitHubGraphQLStep,gitHubJsonResponse,gitHubTextResponse,gitHubRawResponse,gitHubNotModifiedResponse,gitHubRedirectResponse,gitHubDisconnectResponse,gitHubAbortResponse,gitHubMalformedJsonResponse,gitHubRateLimitResponse,createProgrammableGitHubServer}

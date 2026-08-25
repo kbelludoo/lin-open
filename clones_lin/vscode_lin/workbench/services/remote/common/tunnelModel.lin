@@ -1,0 +1,39 @@
+@LIN:workbench_services_remote_common_tunnelModel:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!parseAddress(address){
+  // Transposed from workbench/services/remote/common/tunnelModel.ts
+  ^{ name: "parseAddress", status: "pure" };
+}
+
+!makeAddress(host, port){
+  // Transposed from workbench/services/remote/common/tunnelModel.ts
+  ^{ name: "makeAddress", status: "pure" };
+}
+
+!isCandidatePort(candidate){
+  // Transposed from workbench/services/remote/common/tunnelModel.ts
+  ^{ name: "isCandidatePort", status: "pure" };
+}
+
+!createPortsAttributes(...args){
+  ^{ className: "PortsAttributes", methods: ["updateAttributes", "getAttributes", "while", "if", "if", "hasStartEnd", "hasHostAndPort", "findNextIndex", "if", "readSetting", "for", "if", "catch", "if", "if", "if", "sortAttributes", "getVal", "getOtherAttributes", "providedActionToAction", "switch", "addAttributes", "if", "for"] };
+}
+
+!createTunnelModel(...args){
+  ^{ className: "TunnelModel", methods: ["for", "if", "extensionHasActivationEvent", "checkExtensionActivationEvents", "if", "if", "if", "onTunnelClosed", "makeLocalUri", "addStorageKeyPostfix", "if", "getTunnelRestoreStorageKey", "getRestoreExpirationStorageKey", "getTunnelRestoreValue", "if", "if", "restoreForwarded", "for", "if", "if", "if", "cleanupExpiredTunnelsForRestore", "for", "storeForwarded", "if", "if", "showPortMismatchModalIfNeeded", "if", "if", "forward", "if", "doForward", "if", "if", "if", "mergeCachedAndUnrestoredProperties", "if", "if", "mergeAttributesIntoExistingTunnel", "if", "switch", "name", "if", "close", "address", "environmentTunnelsSet", "addEnvironmentTunnels", "if", "for", "setCandidates", "if", "updateInResponseToCandidates", "if", "if", "if", "if", "candidates", "candidatesOrUndefined", "updateAttributes", "if", "for", "if", "if", "getAttributes", "if", "if", "forEach", "if", "addAttributesProvider"] };
+}
+
+!getTunnelCloseReasonEnum(){
+  ^{ enumName: "TunnelCloseReason", members: ["Other", "User", "AutoForwardEnd"] };
+}
+
+!getTunnelSourceEnum(){
+  ^{ enumName: "TunnelSource", members: ["User", "Auto", "Extension"] };
+}
+
+!getOnPortForwardEnum(){
+  ^{ enumName: "OnPortForward", members: ["Notify", "OpenBrowser", "OpenBrowserOnce", "OpenPreview", "Silent", "Ignore"] };
+}
+
+=ex{parseAddress,makeAddress,isCandidatePort,createPortsAttributes,createTunnelModel,getTunnelCloseReasonEnum,getTunnelSourceEnum,getOnPortForwardEnum}

@@ -1,0 +1,25 @@
+@LIN:base_browser_ui_tree_abstractTree:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!contiguousFuzzyScore(patternLower, wordLower){
+  // Transposed from base/browser/ui/tree/abstractTree.ts
+  ^{ name: "contiguousFuzzyScore", status: "pure" };
+}
+
+!createFindToggles(...args){
+  ^{ className: "FindToggles", methods: ["states", "get", "if", "set", "if", "if"] };
+}
+
+!getRenderIndentGuidesEnum(){
+  ^{ enumName: "RenderIndentGuides", members: ["None", "OnHover", "Always"] };
+}
+
+!getTreeFindModeEnum(){
+  ^{ enumName: "TreeFindMode", members: ["Highlight", "Filter"] };
+}
+
+!getTreeFindMatchTypeEnum(){
+  ^{ enumName: "TreeFindMatchType", members: ["Fuzzy", "Contiguous"] };
+}
+
+=ex{contiguousFuzzyScore,createFindToggles,getRenderIndentGuidesEnum,getTreeFindModeEnum,getTreeFindMatchTypeEnum}

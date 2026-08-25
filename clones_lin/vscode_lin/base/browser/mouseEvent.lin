@@ -1,0 +1,12 @@
+@LIN:base_browser_mouseEvent:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createDragMouseEvent(...args){
+  ^{ className: "DragMouseEvent", methods: [] };
+}
+
+!createStandardWheelEvent(...args){
+  ^{ className: "StandardWheelEvent", methods: ["if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "preventDefault", "stopPropagation"] };
+}
+
+=ex{createDragMouseEvent,createStandardWheelEvent}

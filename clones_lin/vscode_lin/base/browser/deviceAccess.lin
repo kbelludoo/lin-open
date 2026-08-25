@@ -1,0 +1,19 @@
+@LIN:base_browser_deviceAccess:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!requestUsbDevice(options?){
+  // Transposed from base/browser/deviceAccess.ts
+  ^{ name: "requestUsbDevice", status: "pure" };
+}
+
+!requestSerialPort(options?){
+  // Transposed from base/browser/deviceAccess.ts
+  ^{ name: "requestSerialPort", status: "pure" };
+}
+
+!requestHidDevice(options?){
+  // Transposed from base/browser/deviceAccess.ts
+  ^{ name: "requestHidDevice", status: "pure" };
+}
+
+=ex{requestUsbDevice,requestSerialPort,requestHidDevice}

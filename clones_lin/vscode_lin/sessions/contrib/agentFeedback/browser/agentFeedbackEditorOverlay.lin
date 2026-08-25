@@ -1,0 +1,13 @@
+@LIN:sessions_contrib_agentFeedback_browser_agentFeedbackEditorOverlay:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getAgentFeedbackOverlayResourceCandidates(input){
+  // Transposed from sessions/contrib/agentFeedback/browser/agentFeedbackEditorOverlay.ts
+  ^{ name: "getAgentFeedbackOverlayResourceCandidates", status: "pure" };
+}
+
+!createAgentFeedbackOverlayController(...args){
+  ^{ className: "AgentFeedbackOverlayController", methods: ["for", "if", "if", "if", "dispose"] };
+}
+
+=ex{getAgentFeedbackOverlayResourceCandidates,createAgentFeedbackOverlayController}

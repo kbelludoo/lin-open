@@ -1,0 +1,14 @@
+@LIN:workbench_contrib_codeEditor_browser_toggleWordWrap:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!writeTransientState(model, state, codeEditorService){
+  // Transposed from workbench/contrib/codeEditor/browser/toggleWordWrap.ts
+  ^{ name: "writeTransientState", status: "pure" };
+}
+
+!readTransientState(model, codeEditorService){
+  // Transposed from workbench/contrib/codeEditor/browser/toggleWordWrap.ts
+  ^{ name: "readTransientState", status: "pure" };
+}
+
+=ex{writeTransientState,readTransientState}

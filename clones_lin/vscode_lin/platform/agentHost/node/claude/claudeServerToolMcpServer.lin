@@ -1,0 +1,19 @@
+@LIN:platform_agentHost_node_claude_claudeServerToolMcpServer:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!serverToolAllowList(toolNames){
+  // Transposed from platform/agentHost/node/claude/claudeServerToolMcpServer.ts
+  ^{ name: "serverToolAllowList", status: "pure" };
+}
+
+!extractServerToolName(toolName){
+  // Transposed from platform/agentHost/node/claude/claudeServerToolMcpServer.ts
+  ^{ name: "extractServerToolName", status: "pure" };
+}
+
+!buildServerToolMcpServer(host, chatUri, sdk, definitions){
+  // Transposed from platform/agentHost/node/claude/claudeServerToolMcpServer.ts
+  ^{ name: "buildServerToolMcpServer", status: "pure" };
+}
+
+=ex{serverToolAllowList,extractServerToolName,buildServerToolMcpServer}

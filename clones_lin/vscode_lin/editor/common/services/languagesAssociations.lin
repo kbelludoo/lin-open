@@ -1,0 +1,34 @@
+@LIN:editor_common_services_languagesAssociations:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!registerPlatformLanguageAssociation(association, warnOnOverwrite = false){
+  // Transposed from editor/common/services/languagesAssociations.ts
+  ^{ name: "registerPlatformLanguageAssociation", status: "pure" };
+}
+
+!registerConfiguredLanguageAssociation(association){
+  // Transposed from editor/common/services/languagesAssociations.ts
+  ^{ name: "registerConfiguredLanguageAssociation", status: "pure" };
+}
+
+!clearPlatformLanguageAssociations(){
+  // Transposed from editor/common/services/languagesAssociations.ts
+  ^{ name: "clearPlatformLanguageAssociations", status: "pure" };
+}
+
+!clearConfiguredLanguageAssociations(){
+  // Transposed from editor/common/services/languagesAssociations.ts
+  ^{ name: "clearConfiguredLanguageAssociations", status: "pure" };
+}
+
+!getMimeTypes(resource, firstLine?){
+  // Transposed from editor/common/services/languagesAssociations.ts
+  ^{ name: "getMimeTypes", status: "pure" };
+}
+
+!getLanguageIds(resource, firstLine?){
+  // Transposed from editor/common/services/languagesAssociations.ts
+  ^{ name: "getLanguageIds", status: "pure" };
+}
+
+=ex{registerPlatformLanguageAssociation,registerConfiguredLanguageAssociation,clearPlatformLanguageAssociations,clearConfiguredLanguageAssociations,getMimeTypes,getLanguageIds}

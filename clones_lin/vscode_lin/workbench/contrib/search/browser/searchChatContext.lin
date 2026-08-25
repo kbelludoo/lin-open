@@ -1,0 +1,14 @@
+@LIN:workbench_contrib_search_browser_searchChatContext:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!searchFilesAndFolders(workspace, pattern, fuzzyMatch, token, cacheKey, configurationService, searchService){
+  // Transposed from workbench/contrib/search/browser/searchChatContext.ts
+  ^{ name: "searchFilesAndFolders", status: "pure" };
+}
+
+!getTopLevelFolders(workspaces, fileService){
+  // Transposed from workbench/contrib/search/browser/searchChatContext.ts
+  ^{ name: "getTopLevelFolders", status: "pure" };
+}
+
+=ex{searchFilesAndFolders,getTopLevelFolders}

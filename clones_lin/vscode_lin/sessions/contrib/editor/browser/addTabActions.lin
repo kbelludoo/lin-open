@@ -1,0 +1,20 @@
+@LIN:sessions_contrib_editor_browser_addTabActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createNewFileTabAction(...args){
+  ^{ className: "NewFileTabAction", methods: ["run"] };
+}
+
+!createNewBrowserTabAction(...args){
+  ^{ className: "NewBrowserTabAction", methods: ["run"] };
+}
+
+!createNewSearchTabAction(...args){
+  ^{ className: "NewSearchTabAction", methods: ["run"] };
+}
+
+!createNewChangesTabAction(...args){
+  ^{ className: "NewChangesTabAction", methods: ["run"] };
+}
+
+=ex{createNewFileTabAction,createNewBrowserTabAction,createNewSearchTabAction,createNewChangesTabAction}

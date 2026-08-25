@@ -1,0 +1,13 @@
+@LIN:platform_agentHost_node_agentHostStateManager:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!resolveChatStateForUri(stateManager, chatUri){
+  // Transposed from platform/agentHost/node/agentHostStateManager.ts
+  ^{ name: "resolveChatStateForUri", status: "pure" };
+}
+
+!createAgentHostStateManager(...args){
+  ^{ className: "AgentHostStateManager", methods: ["_emitSessionSummaryChanged", "_emitSessionAdded", "hasActiveSessions", "hasActiveTurn", "rootState", "getSessionState", "if", "if", "isUnusedDraft", "if", "_markSessionUsed", "if", "_resolveOwningSession", "getSessionSummary", "getSurfacedSessionSummary", "_toSummary", "if", "if", "if", "if", "if", "if", "_summaryFieldsEqual", "getDefaultChatState", "getChatState", "getChatOrigin", "getChatInheritedTurnId", "resolveChatState", "if", "if", "if", "if", "if", "if", "if", "if", "updateChatProviderData", "if", "seedDefaultChatTurns", "if", "if", "serverSeq", "getSessionUris", "getOverlaySessionSummaries", "for", "isIdleProvisionalSession", "isEphemeralSession", "getSessionSurfaceMeta", "_isIdleProvisional", "getSessionUrisWithPrefix", "getSnapshot", "if", "if", "if", "getChangesetState", "onChangesetLivenessChanged", "createSession", "if", "if", "_newEntry", "markSessionPersisted", "if", "announceSurfacedSession", "updateSurfacedSessionTitle", "retractSurfacedSession", "if", "setSurfacedSessionStatusFlag", "if", "if", "setSessionSummaryPublished", "if", "if", "if", "prepareSessionSummariesForListing", "for", "if", "if", "_mergeLiveSummaryForListing", "getExposedExternalSessionKeys", "for", "restoreSession", "if", "warn", "_ensureDefaultChat", "if", "addChat", "if", "if", "registerRestoredChatSummary", "if", "if", "if", "_snapshotDefaultChatTitle", "if", "removeChat", "invalidateSessionChatResolutions", "if", "updateChatTitle", "if", "removeSession", "if", "for", "deleteSession", "if", "setSessionMeta", "setSessionConfig", "if", "setSessionCustomizations", "if", "registerChangeset", "setSessionSummaryChanges", "if", "setSessionChangesets", "if", "disposeChangeset", "disposeSessionChangesets", "if", "for", "disposeSessionAnnotations", "restoreAnnotations", "getAnnotationsState", "getActiveTurnId", "dispatchServerAction", "dispatchClientAction", "rejectClientAction", "_invalidateChatEntry", "if", "_synchronizeChatEntries", "for", "if", "if", "for", "_applyAndEmit", "if", "if", "equals", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "_removeChatActiveTurn", "if", "_onChatStateChanged", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "_aggregateChatSummaries", "if", "if", "if", "if", "_mergeSessionStatus", "emitProgress", "emitAuthRequired", "dispose"] };
+}
+
+=ex{resolveChatStateForUri,createAgentHostStateManager}

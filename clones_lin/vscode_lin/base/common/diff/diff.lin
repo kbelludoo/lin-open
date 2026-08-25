@@ -1,0 +1,18 @@
+@LIN:base_common_diff_diff:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!stringDiff(original, modified, pretty){
+  // Transposed from base/common/diff/diff.ts
+  ^{ name: "stringDiff", status: "pure" };
+}
+
+!computeLevenshteinDistance(firstString, secondString){
+  // Transposed from base/common/diff/diff.ts
+  ^{ name: "computeLevenshteinDistance", status: "pure" };
+}
+
+!createLcsDiff(...args){
+  ^{ className: "LcsDiff", methods: ["_isStringArray", "_getElements", "for", "if", "ElementsAreEqual", "if", "ElementsAreStrictEqual", "_getStrictElement", "if", "OriginalElementsAreEqual", "if", "ModifiedElementsAreEqual", "if", "ComputeDiff", "_ComputeDiff", "if", "ComputeDiffRecursive", "if", "if", "if", "if", "if", "if", "WALKTRACE", "if", "if", "if", "if", "if", "if", "if", "if", "ComputeRecursionPoint", "for", "if", "if", "for", "if", "if", "PrettifyChanges", "for", "if", "for", "if", "for", "if", "if", "if", "for", "if", "if", "if", "_findBetterContiguousSequence", "if", "for", "for", "if", "if", "_contiguousSequenceScore", "for", "_OriginalIsBoundary", "if", "_OriginalRegionIsBoundary", "if", "_ModifiedIsBoundary", "if", "_ModifiedRegionIsBoundary", "if", "_boundaryScore", "ConcatenateChanges", "if", "ChangesOverlap", "if", "if", "if", "ClipDiagonalBound", "if", "if"] };
+}
+
+=ex{stringDiff,computeLevenshteinDistance,createLcsDiff}

@@ -1,0 +1,18 @@
+@LIN:sessions_contrib_sessions_browser_sessionsTitleBarWidget:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!registerBlockedSessionsHeaderActions(){
+  // Transposed from sessions/contrib/sessions/browser/sessionsTitleBarWidget.ts
+  ^{ name: "registerBlockedSessionsHeaderActions", status: "pure" };
+}
+
+!registerBlockedSessionsHeaderCommands(){
+  // Transposed from sessions/contrib/sessions/browser/sessionsTitleBarWidget.ts
+  ^{ name: "registerBlockedSessionsHeaderCommands", status: "pure" };
+}
+
+!createSessionsTitleBarWidget(...args){
+  ^{ className: "SessionsTitleBarWidget", methods: ["if", "render", "setFocusable", "onClick", "_render", "if", "if", "if", "if", "if", "if", "if", "if", "_renderActiveSession", "if", "if", "if", "_renderRequiresInput", "if", "if", "_renderApproved", "localize", "if", "_activateDefaultAction", "if", "_triggerAttentionBlink", "if", "_toggleBlockedSessions", "if", "_showBlockedSessions", "if", "if", "_computeBlockedDropdownWidth", "_getBlockedDropdownAnchor", "_openBlockedSession", "if", "if", "_showSessionsPicker"] };
+}
+
+=ex{registerBlockedSessionsHeaderActions,registerBlockedSessionsHeaderCommands,createSessionsTitleBarWidget}

@@ -1,0 +1,17 @@
+@LIN:workbench_contrib_webview_browser_webview:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!areWebviewContentOptionsEqual(a, b){
+  // Transposed from workbench/contrib/webview/browser/webview.ts
+  ^{ name: "areWebviewContentOptionsEqual", status: "pure" };
+}
+
+!createWebviewOriginStore(...args){
+  ^{ className: "WebviewOriginStore", methods: ["getOrigin", "if", "_getKey"] };
+}
+
+!createExtensionKeyedWebviewOriginStore(...args){
+  ^{ className: "ExtensionKeyedWebviewOriginStore", methods: ["getOrigin"] };
+}
+
+=ex{areWebviewContentOptionsEqual,createWebviewOriginStore,createExtensionKeyedWebviewOriginStore}

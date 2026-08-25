@@ -1,0 +1,8 @@
+@LIN:base_browser_ui_scrollbar_verticalScrollbar:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createVerticalScrollbar(...args){
+  ^{ className: "VerticalScrollbar", methods: ["if", "_updateSlider", "_renderDomNode", "onDidScroll", "_pointerDownRelativePosition", "_sliderPointerPosition", "_sliderOrthogonalPointerPosition", "_updateScrollbarSize", "writeScrollPosition", "updateOptions"] };
+}
+
+=ex{createVerticalScrollbar}

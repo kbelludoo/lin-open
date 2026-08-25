@@ -1,0 +1,72 @@
+@LIN:workbench_contrib_extensions_browser_extensionsWidgets:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createExtensionIconWidget(...args){
+  ^{ className: "ExtensionIconWidget", methods: ["clear", "render", "if", "if", "if", "if", "if"] };
+}
+
+!createInstallCountWidget(...args){
+  ^{ className: "InstallCountWidget", methods: ["clear", "render", "if", "if", "if", "if", "getInstallLabel", "if", "if", "if", "if"] };
+}
+
+!createRatingsWidget(...args){
+  ^{ className: "RatingsWidget", methods: ["if", "clear", "render", "if", "if", "if", "if", "if", "if", "for", "if", "if", "if", "if"] };
+}
+
+!createPublisherWidget(...args){
+  ^{ className: "PublisherWidget", methods: ["clear", "render", "if", "if", "if", "if", "if", "if", "if"] };
+}
+
+!createSponsorWidget(...args){
+  ^{ className: "SponsorWidget", methods: ["render", "if"] };
+}
+
+!createRecommendationWidget(...args){
+  ^{ className: "RecommendationWidget", methods: ["clear", "render", "if"] };
+}
+
+!createPreReleaseBookmarkWidget(...args){
+  ^{ className: "PreReleaseBookmarkWidget", methods: ["clear", "render", "if"] };
+}
+
+!createRemoteBadgeWidget(...args){
+  ^{ className: "RemoteBadgeWidget", methods: ["clear", "render", "if"] };
+}
+
+!createExtensionIconBadge(...args){
+  ^{ className: "ExtensionIconBadge", methods: ["render", "if", "if", "if"] };
+}
+
+!createExtensionPackCountWidget(...args){
+  ^{ className: "ExtensionPackCountWidget", methods: ["clear", "render"] };
+}
+
+!createExtensionKindIndicatorWidget(...args){
+  ^{ className: "ExtensionKindIndicatorWidget", methods: ["then", "clear", "render", "if", "if", "if", "if", "if", "if"] };
+}
+
+!createSyncIgnoredWidget(...args){
+  ^{ className: "SyncIgnoredWidget", methods: ["render"] };
+}
+
+!createExtensionRestartRequiredWidget(...args){
+  ^{ className: "ExtensionRestartRequiredWidget", methods: ["render"] };
+}
+
+!createExtensionRuntimeStatusWidget(...args){
+  ^{ className: "ExtensionRuntimeStatusWidget", methods: ["render", "if", "if", "if", "if"] };
+}
+
+!createExtensionHoverWidget(...args){
+  ^{ className: "ExtensionHoverWidget", methods: ["render", "if", "catch", "getHoverMarkdown", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "localize", "localize", "if", "if", "for", "if", "if", "for", "if", "if", "if", "if", "getRecommendationMessage", "if", "if", "if", "getPreReleaseMessage", "if", "if", "if", "if"] };
+}
+
+!createExtensionStatusWidget(...args){
+  ^{ className: "ExtensionStatusWidget", methods: ["render", "if", "for", "if", "if"] };
+}
+
+!createExtensionRecommendationWidget(...args){
+  ^{ className: "ExtensionRecommendationWidget", methods: ["render", "if", "if", "getRecommendationStatus", "if", "if"] };
+}
+
+=ex{createExtensionIconWidget,createInstallCountWidget,createRatingsWidget,createPublisherWidget,createSponsorWidget,createRecommendationWidget,createPreReleaseBookmarkWidget,createRemoteBadgeWidget,createExtensionIconBadge,createExtensionPackCountWidget,createExtensionKindIndicatorWidget,createSyncIgnoredWidget,createExtensionRestartRequiredWidget,createExtensionRuntimeStatusWidget,createExtensionHoverWidget,createExtensionStatusWidget,createExtensionRecommendationWidget}

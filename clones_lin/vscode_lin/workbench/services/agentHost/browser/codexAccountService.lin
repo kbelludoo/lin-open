@@ -1,0 +1,29 @@
+@LIN:workbench_services_agentHost_browser_codexAccountService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!hasSignedInCodexChatGPTAccount(account, visible = true){
+  // Transposed from workbench/services/agentHost/browser/codexAccountService.ts
+  ^{ name: "hasSignedInCodexChatGPTAccount", status: "pure" };
+}
+
+!shouldShowCodexAccount(configurationService, isSessionsWindow){
+  // Transposed from workbench/services/agentHost/browser/codexAccountService.ts
+  ^{ name: "shouldShowCodexAccount", status: "pure" };
+}
+
+!createCodexAccountMenuActions(service, visible = true){
+  // Transposed from workbench/services/agentHost/browser/codexAccountService.ts
+  ^{ name: "createCodexAccountMenuActions", status: "pure" };
+}
+
+!openCodexAuthUrl(openerService, 'open'>, authUrl){
+  // Transposed from workbench/services/agentHost/browser/codexAccountService.ts
+  ^{ name: "openCodexAuthUrl", status: "pure" };
+}
+
+!readCodexProfileImageDataUri(connection, 'resourceRead'>, reference){
+  // Transposed from workbench/services/agentHost/browser/codexAccountService.ts
+  ^{ name: "readCodexProfileImageDataUri", status: "pure" };
+}
+
+=ex{hasSignedInCodexChatGPTAccount,shouldShowCodexAccount,createCodexAccountMenuActions,openCodexAuthUrl,readCodexProfileImageDataUri}

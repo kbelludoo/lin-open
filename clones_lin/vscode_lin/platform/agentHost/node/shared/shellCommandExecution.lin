@@ -1,0 +1,29 @@
+@LIN:platform_agentHost_node_shared_shellCommandExecution:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!shellTypeForExecutable(shellPath){
+  // Transposed from platform/agentHost/node/shared/shellCommandExecution.ts
+  ^{ name: "shellTypeForExecutable", status: "pure" };
+}
+
+!prefixForHistorySuppression(shellType){
+  // Transposed from platform/agentHost/node/shared/shellCommandExecution.ts
+  ^{ name: "prefixForHistorySuppression", status: "pure" };
+}
+
+!isMultilineCommand(command){
+  // Transposed from platform/agentHost/node/shared/shellCommandExecution.ts
+  ^{ name: "isMultilineCommand", status: "pure" };
+}
+
+!prepareOutputForModel(rawOutput){
+  // Transposed from platform/agentHost/node/shared/shellCommandExecution.ts
+  ^{ name: "prepareOutputForModel", status: "pure" };
+}
+
+!executeShellCommand(target, command, timeoutMs, terminalManager, logService){
+  // Transposed from platform/agentHost/node/shared/shellCommandExecution.ts
+  ^{ name: "executeShellCommand", status: "pure" };
+}
+
+=ex{shellTypeForExecutable,prefixForHistorySuppression,isMultilineCommand,prepareOutputForModel,executeShellCommand}

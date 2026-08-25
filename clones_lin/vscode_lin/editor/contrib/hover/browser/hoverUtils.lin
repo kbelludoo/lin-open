@@ -1,0 +1,19 @@
+@LIN:editor_contrib_hover_browser_hoverUtils:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isMousePositionWithinElement(element, posx, posy){
+  // Transposed from editor/contrib/hover/browser/hoverUtils.ts
+  ^{ name: "isMousePositionWithinElement", status: "pure" };
+}
+
+!shouldShowHover(hoverEnabled, multiCursorModifier, mouseEvent){
+  // Transposed from editor/contrib/hover/browser/hoverUtils.ts
+  ^{ name: "shouldShowHover", status: "pure" };
+}
+
+!isTriggerModifierPressed(multiCursorModifier, event){
+  // Transposed from editor/contrib/hover/browser/hoverUtils.ts
+  ^{ name: "isTriggerModifierPressed", status: "pure" };
+}
+
+=ex{isMousePositionWithinElement,shouldShowHover,isTriggerModifierPressed}

@@ -1,0 +1,34 @@
+@LIN:workbench_contrib_terminalContrib_chatAgentTools_browser_taskHelpers:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getTaskRepresentation(task){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/taskHelpers.ts
+  ^{ name: "getTaskRepresentation", status: "pure" };
+}
+
+!getTaskKey(task){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/taskHelpers.ts
+  ^{ name: "getTaskKey", status: "pure" };
+}
+
+!tasksMatch(a, b){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/taskHelpers.ts
+  ^{ name: "tasksMatch", status: "pure" };
+}
+
+!getTaskForTool(id, taskDefinition, workspaceFolder, configurationService, taskService, allowParentTask?){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/taskHelpers.ts
+  ^{ name: "getTaskForTool", status: "pure" };
+}
+
+!resolveDependencyTasks(parentTask, workspaceFolder, configurationService, taskService){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/taskHelpers.ts
+  ^{ name: "resolveDependencyTasks", status: "pure" };
+}
+
+!taskProblemPollFn(execution, token, taskService){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/taskHelpers.ts
+  ^{ name: "taskProblemPollFn", status: "pure" };
+}
+
+=ex{getTaskRepresentation,getTaskKey,tasksMatch,getTaskForTool,resolveDependencyTasks,taskProblemPollFn}

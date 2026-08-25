@@ -1,0 +1,113 @@
+@LIN:workbench_contrib_mcp_browser_mcpServerActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getContextMenuActions(mcpServer, isEditorAction, instantiationService){
+  // Transposed from workbench/contrib/mcp/browser/mcpServerActions.ts
+  ^{ name: "getContextMenuActions", status: "pure" };
+}
+
+!createButtonWithDropDownExtensionAction(...args){
+  ^{ className: "ButtonWithDropDownExtensionAction", methods: ["menuActions", "mcpServer", "mcpServer", "update", "if", "for", "if", "if", "run", "if", "getLabel"] };
+}
+
+!createButtonWithDropdownExtensionActionViewItem(...args){
+  ^{ className: "ButtonWithDropdownExtensionActionViewItem", methods: ["_register", "render", "updateClass", "if"] };
+}
+
+!createDropDownExtensionActionViewItem(...args){
+  ^{ className: "DropDownExtensionActionViewItem", methods: ["showMenu", "if", "getActions", "for"] };
+}
+
+!createInstallAction(...args){
+  ^{ className: "InstallAction", methods: ["update", "if", "if", "run", "if", "if"] };
+}
+
+!createInstallInWorkspaceAction(...args){
+  ^{ className: "InstallInWorkspaceAction", methods: ["update", "if", "if", "run", "if", "if", "if", "getConfigurationTarget", "if", "if"] };
+}
+
+!createInstallInRemoteAction(...args){
+  ^{ className: "InstallInRemoteAction", methods: ["update", "if", "if", "if", "if", "run", "if", "if"] };
+}
+
+!createInstallingLabelAction(...args){
+  ^{ className: "InstallingLabelAction", methods: ["update"] };
+}
+
+!createUninstallAction(...args){
+  ^{ className: "UninstallAction", methods: ["update", "if", "if", "if", "run", "if"] };
+}
+
+!createEnableMcpServerGloballyAction(...args){
+  ^{ className: "EnableMcpServerGloballyAction", methods: ["update", "if", "if", "run", "if"] };
+}
+
+!createEnableMcpServerForWorkspaceAction(...args){
+  ^{ className: "EnableMcpServerForWorkspaceAction", methods: ["update", "if", "if", "run", "if"] };
+}
+
+!createDisableMcpServerGloballyAction(...args){
+  ^{ className: "DisableMcpServerGloballyAction", methods: ["update", "if", "if", "run", "if"] };
+}
+
+!createDisableMcpServerForWorkspaceAction(...args){
+  ^{ className: "DisableMcpServerForWorkspaceAction", methods: ["update", "if", "if", "run", "if"] };
+}
+
+!createEnableMcpDropDownAction(...args){
+  ^{ className: "EnableMcpDropDownAction", methods: [] };
+}
+
+!createDisableMcpDropDownAction(...args){
+  ^{ className: "DisableMcpDropDownAction", methods: [] };
+}
+
+!createManageMcpServerAction(...args){
+  ^{ className: "ManageMcpServerAction", methods: ["run", "update", "if", "if"] };
+}
+
+!createStartServerAction(...args){
+  ^{ className: "StartServerAction", methods: ["update", "if", "run", "if", "getServer", "if", "if"] };
+}
+
+!createStopServerAction(...args){
+  ^{ className: "StopServerAction", methods: ["update", "if", "run", "if", "getServer", "if", "if"] };
+}
+
+!createRestartServerAction(...args){
+  ^{ className: "RestartServerAction", methods: ["update", "if", "run", "if", "getServer", "if", "if"] };
+}
+
+!createAuthServerAction(...args){
+  ^{ className: "AuthServerAction", methods: ["update", "if", "if", "run", "if", "if", "if", "if", "for", "getServer", "if", "if", "getAccountQuery", "if", "if", "if", "for"] };
+}
+
+!createShowServerOutputAction(...args){
+  ^{ className: "ShowServerOutputAction", methods: ["update", "if", "run", "if", "getServer", "if", "if"] };
+}
+
+!createShowServerConfigurationAction(...args){
+  ^{ className: "ShowServerConfigurationAction", methods: ["update", "if", "run", "if"] };
+}
+
+!createShowServerJsonConfigurationAction(...args){
+  ^{ className: "ShowServerJsonConfigurationAction", methods: ["update", "if", "run", "if", "getConfigurationTarget", "if", "if", "if"] };
+}
+
+!createConfigureModelAccessAction(...args){
+  ^{ className: "ConfigureModelAccessAction", methods: ["update", "if", "run", "if", "getServer", "if", "if"] };
+}
+
+!createShowSamplingRequestsAction(...args){
+  ^{ className: "ShowSamplingRequestsAction", methods: ["update", "if", "run", "if", "getServer", "if", "if"] };
+}
+
+!createBrowseResourcesAction(...args){
+  ^{ className: "BrowseResourcesAction", methods: ["update", "if", "run", "if", "getServer", "if", "if"] };
+}
+
+!createMcpServerStatusAction(...args){
+  ^{ className: "McpServerStatusAction", methods: ["status", "update", "computeAndUpdateStatus", "if", "if", "if", "updateStatus", "if", "if", "if", "if", "if", "if", "if", "if", "run", "if"] };
+}
+
+=ex{getContextMenuActions,createButtonWithDropDownExtensionAction,createButtonWithDropdownExtensionActionViewItem,createDropDownExtensionActionViewItem,createInstallAction,createInstallInWorkspaceAction,createInstallInRemoteAction,createInstallingLabelAction,createUninstallAction,createEnableMcpServerGloballyAction,createEnableMcpServerForWorkspaceAction,createDisableMcpServerGloballyAction,createDisableMcpServerForWorkspaceAction,createEnableMcpDropDownAction,createDisableMcpDropDownAction,createManageMcpServerAction,createStartServerAction,createStopServerAction,createRestartServerAction,createAuthServerAction,createShowServerOutputAction,createShowServerConfigurationAction,createShowServerJsonConfigurationAction,createConfigureModelAccessAction,createShowSamplingRequestsAction,createBrowseResourcesAction,createMcpServerStatusAction}

@@ -1,0 +1,8 @@
+@LIN:platform_storage_common_storageService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createRemoteStorageService(...args){
+  ^{ className: "RemoteStorageService", methods: ["createApplicationStorage", "createApplicationSharedStorage", "createProfileStorage", "createWorkspaceStorage", "if", "doInitialize", "getStorage", "switch", "getLogDetails", "switch", "close", "switchToProfile", "if", "switchToWorkspace", "hasScope"] };
+}
+
+=ex{createRemoteStorageService}

@@ -1,0 +1,12 @@
+@LIN:workbench_contrib_logs_electron_browser_logsActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createOpenLogsFolderAction(...args){
+  ^{ className: "OpenLogsFolderAction", methods: ["run"] };
+}
+
+!createOpenExtensionLogsFolderAction(...args){
+  ^{ className: "OpenExtensionLogsFolderAction", methods: ["run", "if"] };
+}
+
+=ex{createOpenLogsFolderAction,createOpenExtensionLogsFolderAction}

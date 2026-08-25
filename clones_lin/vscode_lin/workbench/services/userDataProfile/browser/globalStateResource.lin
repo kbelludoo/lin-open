@@ -1,0 +1,12 @@
+@LIN:workbench_services_userDataProfile_browser_globalStateResource:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createGlobalStateResourceExportTreeItem(...args){
+  ^{ className: "GlobalStateResourceExportTreeItem", methods: ["hasContent", "getContent", "isFromDefaultProfile"] };
+}
+
+!createGlobalStateResourceImportTreeItem(...args){
+  ^{ className: "GlobalStateResourceImportTreeItem", methods: ["getContent", "isFromDefaultProfile"] };
+}
+
+=ex{createGlobalStateResourceExportTreeItem,createGlobalStateResourceImportTreeItem}

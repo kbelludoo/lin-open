@@ -1,0 +1,20 @@
+@LIN:editor_contrib_inlineCompletions_browser_view_inlineEdits_inlineEditsViewInterface:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createInlineEditClickEvent(...args){
+  ^{ className: "InlineEditClickEvent", methods: ["create"] };
+}
+
+!createInlineCompletionViewData(...args){
+  ^{ className: "InlineCompletionViewData", methods: ["setLongDistanceViewData", "getData"] };
+}
+
+!getInlineEditTabActionEnum(){
+  ^{ enumName: "InlineEditTabAction", members: ["Jump", "Accept", "Inactive"] };
+}
+
+!getInlineCompletionViewKindEnum(){
+  ^{ enumName: "InlineCompletionViewKind", members: ["GhostText", "Custom", "SideBySide", "Deletion", "InsertionInline", "InsertionMultiLine", "WordReplacements", "LineReplacement", "Collapsed", "JumpTo"] };
+}
+
+=ex{createInlineEditClickEvent,createInlineCompletionViewData,getInlineEditTabActionEnum,getInlineCompletionViewKindEnum}

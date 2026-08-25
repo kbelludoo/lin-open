@@ -1,0 +1,13 @@
+@LIN:workbench_contrib_chat_browser_widget_input_sessionTargetPickerActionItem:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getConfiguredSessionTypePickerAvailability(type, configurationService, chatSessionsService, chatEntitlementService, languageModelsService, chatInputNotificationService){
+  // Transposed from workbench/contrib/chat/browser/widget/input/sessionTargetPickerActionItem.ts
+  ^{ name: "getConfiguredSessionTypePickerAvailability", status: "pure" };
+}
+
+!createSessionTypePickerActionItem(...args){
+  ^{ className: "SessionTypePickerActionItem", methods: ["for", "if", "if", "if", "if", "_run", "if", "if", "if", "_getSelectedSessionType", "_getAdditionalActions", "_getLearnMore", "_updateAgentSessionItems", "for", "if", "if", "if", "_getDefaultSessionType", "_isVisible", "_isSessionTypeEnabled", "if", "_getSessionCategory", "_getSessionDescription", "_getSessionIcon", "if", "render", "renderLabel"] };
+}
+
+=ex{getConfiguredSessionTypePickerAvailability,createSessionTypePickerActionItem}

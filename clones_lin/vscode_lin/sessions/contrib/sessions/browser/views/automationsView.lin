@@ -1,0 +1,16 @@
+@LIN:sessions_contrib_sessions_browser_views_automationsView:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createAutomationsCardsWidget(...args){
+  ^{ className: "AutomationsCardsWidget", methods: ["for", "if", "if", "layout", "focus"] };
+}
+
+!createAutomationsCustomView(...args){
+  ^{ className: "AutomationsCustomView", methods: ["render", "layout", "focus"] };
+}
+
+!createAutomationsCustomViewContribution(...args){
+  ^{ className: "AutomationsCustomViewContribution", methods: [] };
+}
+
+=ex{createAutomationsCardsWidget,createAutomationsCustomView,createAutomationsCustomViewContribution}

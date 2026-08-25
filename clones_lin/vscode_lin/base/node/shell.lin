@@ -1,0 +1,9 @@
+@LIN:base_node_shell:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getSystemShell(os, env){
+  // Transposed from base/node/shell.ts
+  ^{ name: "getSystemShell", status: "pure" };
+}
+
+=ex{getSystemShell}

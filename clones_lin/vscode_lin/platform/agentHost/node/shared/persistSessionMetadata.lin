@@ -1,0 +1,24 @@
+@LIN:platform_agentHost_node_shared_persistSessionMetadata:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!customChatTitleMetadataKey(chat){
+  // Transposed from platform/agentHost/node/shared/persistSessionMetadata.ts
+  ^{ name: "customChatTitleMetadataKey", status: "pure" };
+}
+
+!customChatTitleSourceMetadataKey(chat){
+  // Transposed from platform/agentHost/node/shared/persistSessionMetadata.ts
+  ^{ name: "customChatTitleSourceMetadataKey", status: "pure" };
+}
+
+!persistSessionMetadata(sessionDataService, logService, session, key, value){
+  // Transposed from platform/agentHost/node/shared/persistSessionMetadata.ts
+  ^{ name: "persistSessionMetadata", status: "pure" };
+}
+
+!persistSessionMetadataValues(sessionDataService, session, values, string>>){
+  // Transposed from platform/agentHost/node/shared/persistSessionMetadata.ts
+  ^{ name: "persistSessionMetadataValues", status: "pure" };
+}
+
+=ex{customChatTitleMetadataKey,customChatTitleSourceMetadataKey,persistSessionMetadata,persistSessionMetadataValues}

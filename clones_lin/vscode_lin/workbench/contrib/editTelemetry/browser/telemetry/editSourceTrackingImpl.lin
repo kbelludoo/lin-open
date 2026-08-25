@@ -1,0 +1,13 @@
+@LIN:workbench_contrib_editTelemetry_browser_telemetry_editSourceTrackingImpl:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getEditTelemetryCategory(source){
+  // Transposed from workbench/contrib/editTelemetry/browser/telemetry/editSourceTrackingImpl.ts
+  ^{ name: "getEditTelemetryCategory", status: "pure" };
+}
+
+!createEditSourceTrackingImpl(...args){
+  ^{ className: "EditSourceTrackingImpl", methods: [] };
+}
+
+=ex{getEditTelemetryCategory,createEditSourceTrackingImpl}

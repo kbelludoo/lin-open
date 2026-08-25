@@ -1,0 +1,13 @@
+@LIN:sessions_contrib_chat_browser_sessionChatInputToolbar:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getSessionChatPillKindForAction(actionId){
+  // Transposed from sessions/contrib/chat/browser/sessionChatInputToolbar.ts
+  ^{ name: "getSessionChatPillKindForAction", status: "pure" };
+}
+
+!createSessionChatInputToolbar(...args){
+  ^{ className: "SessionChatInputToolbar", methods: ["if", "if", "if", "if", "if", "if", "_register", "getChatPetPlatformElements", "setChat", "setSession", "setDebugData", "getDebugData", "_findOwningSession", "_openChanges", "if"] };
+}
+
+=ex{getSessionChatPillKindForAction,createSessionChatInputToolbar}

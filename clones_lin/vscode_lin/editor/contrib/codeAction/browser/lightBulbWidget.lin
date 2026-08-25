@@ -1,0 +1,13 @@
+@LIN:editor_contrib_codeAction_browser_lightBulbWidget:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!computeLightBulbInfo(actions, trigger, preferredKbLabel, quickFixKbLabel, forGutter){
+  // Transposed from editor/contrib/codeAction/browser/lightBulbWidget.ts
+  ^{ name: "computeLightBulbInfo", status: "pure" };
+}
+
+!createShowing(...args){
+  ^{ className: "Showing", methods: [] };
+}
+
+=ex{computeLightBulbInfo,createShowing}

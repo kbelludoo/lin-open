@@ -1,0 +1,18 @@
+@LIN:editor_standalone_browser_standaloneServices:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!updateConfigurationService(configurationService, source, isDiffEditor){
+  // Transposed from editor/standalone/browser/standaloneServices.ts
+  ^{ name: "updateConfigurationService", status: "pure" };
+}
+
+!initialize(overrides){
+  // Transposed from editor/standalone/browser/standaloneServices.ts
+  ^{ name: "initialize", status: "pure" };
+}
+
+!createStandaloneKeybindingService(...args){
+  ^{ className: "StandaloneKeybindingService", methods: ["if", "if", "for", "if", "addDynamicKeybinding", "addDynamicKeybindings", "for", "if", "updateResolver", "_getResolver", "if", "_documentHasFocus", "_toNormalizedKeybindingItems", "for", "if", "for", "resolveKeybinding", "resolveKeyboardEvent", "resolveUserBinding", "_dumpDebugInfo", "_dumpDebugInfoJSON", "registerSchemaContribution", "enableKeybindingHoldMode"] };
+}
+
+=ex{updateConfigurationService,initialize,createStandaloneKeybindingService}

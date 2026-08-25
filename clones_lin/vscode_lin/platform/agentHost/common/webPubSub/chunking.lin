@@ -1,0 +1,17 @@
+@LIN:platform_agentHost_common_webPubSub_chunking:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!chunk(payload, options){
+  // Transposed from platform/agentHost/common/webPubSub/chunking.ts
+  ^{ name: "chunk", status: "pure" };
+}
+
+!createChunkingError(...args){
+  ^{ className: "ChunkingError", methods: [] };
+}
+
+!createReassembler(...args){
+  ^{ className: "Reassembler", methods: ["ingest", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "catch", "if", "if", "if", "for", "if", "catch", "catch", "sweepExpired", "for", "if", "inFlightGroupCount", "inFlightBytes", "dropBuffer", "if"] };
+}
+
+=ex{chunk,createChunkingError,createReassembler}

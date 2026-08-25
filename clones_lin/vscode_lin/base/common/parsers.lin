@@ -1,0 +1,8 @@
+@LIN:base_common_parsers:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createValidationStatus(...args){
+  ^{ className: "ValidationStatus", methods: ["state", "state", "if", "isOK", "isFatal"] };
+}
+
+=ex{createValidationStatus}

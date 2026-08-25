@@ -1,0 +1,12 @@
+@LIN:editor_browser_controller_pointerHandler:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createPointerEventHandler(...args){
+  ^{ className: "PointerEventHandler", methods: ["if", "if", "onTap", "onChange", "if", "if", "_dispatchGesture", "if", "_onMouseDown"] };
+}
+
+!createPointerHandler(...args){
+  ^{ className: "PointerHandler", methods: ["if", "if", "getTargetAtClientPoint"] };
+}
+
+=ex{createPointerEventHandler,createPointerHandler}

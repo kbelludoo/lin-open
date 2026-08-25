@@ -1,0 +1,23 @@
+@LIN:workbench_contrib_chat_browser_widget_chatContentParts_chatSubagentOpenChat:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getSubagentEditorResource(context){
+  // Transposed from workbench/contrib/chat/browser/widget/chatContentParts/chatSubagentOpenChat.ts
+  ^{ name: "getSubagentEditorResource", status: "pure" };
+}
+
+!shouldShowSubagentModel(subagentModelName, parentModelId, parentModelName, parentModelMetadataId){
+  // Transposed from workbench/contrib/chat/browser/widget/chatContentParts/chatSubagentOpenChat.ts
+  ^{ name: "shouldShowSubagentModel", status: "pure" };
+}
+
+!shouldAnimateSubagentToolTransition(displayedToolCallId, displayedIsTool, targetToolCallId, targetIsTool){
+  // Transposed from workbench/contrib/chat/browser/widget/chatContentParts/chatSubagentOpenChat.ts
+  ^{ name: "shouldAnimateSubagentToolTransition", status: "pure" };
+}
+
+!createOpenSubagentChatActionViewItem(...args){
+  ^{ className: "OpenSubagentChatActionViewItem", methods: ["if", "render", "if", "if", "onClick", "_openToSide", "if", "setActionContext", "if", "_update", "if", "_restartEnabledTracker", "if", "_setEnabled", "_setModelName", "if", "_setAgentType", "if", "_updateStatus", "if", "_updateConfirmationCount", "if", "_updateDuration", "if", "localize", "if", "_setActiveTool", "if", "if", "_runToolTransition", "if", "if", "_completeToolTransition", "if", "if", "_finishToolTransition", "if", "_setDisplayedTool", "if", "_renderActiveToolIcon", "if", "if", "_clearToolTransitionClasses", "_restartToolTransition", "if", "if", "_setResolvedTitle", "if", "getTooltip", "if", "if", "if", "if", "updateTooltip", "updateEnabled", "if", "updateAriaLabel", "if"] };
+}
+
+=ex{getSubagentEditorResource,shouldShowSubagentModel,shouldAnimateSubagentToolTransition,createOpenSubagentChatActionViewItem}

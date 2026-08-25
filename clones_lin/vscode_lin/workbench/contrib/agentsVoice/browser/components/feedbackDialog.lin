@@ -1,0 +1,13 @@
+@LIN:workbench_contrib_agentsVoice_browser_components_feedbackDialog:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createFeedbackDialog(){
+  // Transposed from workbench/contrib/agentsVoice/browser/components/feedbackDialog.ts
+  ^{ name: "createFeedbackDialog", status: "pure" };
+}
+
+!createFeedbackDialogController(...args){
+  ^{ className: "FeedbackDialogController", methods: ["_render", "_handleSubmit", "if", "dispose"] };
+}
+
+=ex{createFeedbackDialog,createFeedbackDialogController}

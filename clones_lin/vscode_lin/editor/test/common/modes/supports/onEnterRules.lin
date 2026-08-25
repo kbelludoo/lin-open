@@ -1,0 +1,8 @@
+@LIN:editor_test_common_modes_supports_onEnterRules:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getIndentActionEnum(){
+  ^{ enumName: "IndentAction", members: ["None", "Indent", "IndentOutdent", "Outdent"] };
+}
+
+=ex{getIndentActionEnum}

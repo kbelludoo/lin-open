@@ -1,0 +1,154 @@
+@LIN:platform_agentPlugins_common_pluginParsers:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isEquals(a, b){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "isEquals", status: "pure" };
+}
+
+!detectPluginFormat(pluginUri, fileService){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "detectPluginFormat", status: "pure" };
+}
+
+!readPluginManifest(pluginUri, format, fileService){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "readPluginManifest", status: "pure" };
+}
+
+!getPluginManifestComponent(format, component, manifest, unknown> | undefined){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "getPluginManifestComponent", status: "pure" };
+}
+
+!resolvePluginComponentDirs(pluginUri, format, component, fallbackPath, manifestSection, boundaryUri?){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "resolvePluginComponentDirs", status: "pure" };
+}
+
+!makeMcpServerCustomization(definitionUri, name){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "makeMcpServerCustomization", status: "pure" };
+}
+
+!parseComponentPathConfig(raw){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "parseComponentPathConfig", status: "pure" };
+}
+
+!resolveComponentDirs(pluginUri, defaultDir, config, boundaryUri?){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "resolveComponentDirs", status: "pure" };
+}
+
+!resolveMcpServersMap(raw){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "resolveMcpServersMap", status: "pure" };
+}
+
+!normalizeMcpServerConfiguration(rawConfig){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "normalizeMcpServerConfiguration", status: "pure" };
+}
+
+!interpolateMcpPluginRoot(def, fsPath, tokens, envVars){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "interpolateMcpPluginRoot", status: "pure" };
+}
+
+!convertBareEnvVarsToVsCodeSyntax(def){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "convertBareEnvVarsToVsCodeSyntax", status: "pure" };
+}
+
+!parseHooksJson(hookUri, json, workspaceRoot, userHome){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "parseHooksJson", status: "pure" };
+}
+
+!interpolateHookPluginRoot(hookUri, json, pluginUri, workspaceRoot, userHome, token, envVar){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "interpolateHookPluginRoot", status: "pure" };
+}
+
+!readJsonFile(uri, fileService){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "readJsonFile", status: "pure" };
+}
+
+!pathExists(resource, fileService){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "pathExists", status: "pure" };
+}
+
+!readSkills(pluginRoot, dirs, fileService, options?){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "readSkills", status: "pure" };
+}
+
+!readPluginSkills(pluginRoot, dirs, format, fileService){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "readPluginSkills", status: "pure" };
+}
+
+!readMarkdownComponents(dirs, fileService, options?){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "readMarkdownComponents", status: "pure" };
+}
+
+!readInstructionComponents(dirs, fileService, options?){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "readInstructionComponents", status: "pure" };
+}
+
+!readAgentComponents(dirs, fileService, options?){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "readAgentComponents", status: "pure" };
+}
+
+!parseAgentFile(uri, fileService){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "parseAgentFile", status: "pure" };
+}
+
+!resolveAgentDisableModelInvocation(infer, disableModelInvocation, fallback?){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "resolveAgentDisableModelInvocation", status: "pure" };
+}
+
+!parseSkillFile(uri, fileService){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "parseSkillFile", status: "pure" };
+}
+
+!parseRuleFile(uri, fileService){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "parseRuleFile", status: "pure" };
+}
+
+!readPluginMcpServers(pluginUri, paths, format, fileService){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "readPluginMcpServers", status: "pure" };
+}
+
+!parseMcpServerDefinitionMap(definitionURI, raw, pluginRoot, formatConfig){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "parseMcpServerDefinitionMap", status: "pure" };
+}
+
+!parsePlugin(pluginUri, fileService, workspaceRoot, userHome, boundaryUri?){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "parsePlugin", status: "pure" };
+}
+
+!toParsedAgent(resource){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "toParsedAgent", status: "pure" };
+}
+
+!toParsedSkill(resource){
+  // Transposed from platform/agentPlugins/common/pluginParsers.ts
+  ^{ name: "toParsedSkill", status: "pure" };
+}
+
+=ex{isEquals,detectPluginFormat,readPluginManifest,getPluginManifestComponent,resolvePluginComponentDirs,makeMcpServerCustomization,parseComponentPathConfig,resolveComponentDirs,resolveMcpServersMap,normalizeMcpServerConfiguration,interpolateMcpPluginRoot,convertBareEnvVarsToVsCodeSyntax,parseHooksJson,interpolateHookPluginRoot,readJsonFile,pathExists,readSkills,readPluginSkills,readMarkdownComponents,readInstructionComponents,readAgentComponents,parseAgentFile,resolveAgentDisableModelInvocation,parseSkillFile,parseRuleFile,readPluginMcpServers,parseMcpServerDefinitionMap,parsePlugin,toParsedAgent,toParsedSkill}

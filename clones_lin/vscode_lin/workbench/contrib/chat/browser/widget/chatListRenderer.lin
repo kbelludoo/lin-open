@@ -1,0 +1,129 @@
+@LIN:workbench_contrib_chat_browser_widget_chatListRenderer:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!buildPlanReviewProgressContent(review, message){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "buildPlanReviewProgressContent", status: "pure" };
+}
+
+!shouldScheduleInitialHeightChange(normalizedHeight, allocatedHeight){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "shouldScheduleInitialHeightChange", status: "pure" };
+}
+
+!getFinalResponseStartIndex(content){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "getFinalResponseStartIndex", status: "pure" };
+}
+
+!getFinalResponseStartIndexAfterMovingResponseOutcomeTools(content){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "getFinalResponseStartIndexAfterMovingResponseOutcomeTools", status: "pure" };
+}
+
+!isFinalResponseRendered(content, finalResponseStartIndex){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "isFinalResponseRendered", status: "pure" };
+}
+
+!moveResponseOutcomeToolsAfterFinalResponse(content){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "moveResponseOutcomeToolsAfterFinalResponse", status: "pure" };
+}
+
+!formatCompletedResponseDisclosureLabel(stepCount, elapsedMs){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "formatCompletedResponseDisclosureLabel", status: "pure" };
+}
+
+!getVisibleCompletedResponseItemCount(nodes){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "getVisibleCompletedResponseItemCount", status: "pure" };
+}
+
+!formatResponseTokenStats(modelTotals, completedAt?){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "formatResponseTokenStats", status: "pure" };
+}
+
+!shouldCollapseCompletedResponsePart(part){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "shouldCollapseCompletedResponsePart", status: "pure" };
+}
+
+!getCompletedResponseCollapseEndIndex(content, finalResponseStartIndex){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "getCompletedResponseCollapseEndIndex", status: "pure" };
+}
+
+!reconcileChatItemHeight(normalizedHeight, currentRenderedHeight, isBeingRendered, allocatedHeight){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "reconcileChatItemHeight", status: "pure" };
+}
+
+!renderChatResponseDetails(container, details, completedAt, elapsedMs, verbose, tokenStatsAriaLabel?){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "renderChatResponseDetails", status: "pure" };
+}
+
+!renderChatRequestTimestamp(container, timestamp){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "renderChatRequestTimestamp", status: "pure" };
+}
+
+!shouldRenderInitialProgressiveContentImmediately(isComplete, hasMarkdownParts, hasRenderData){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "shouldRenderInitialProgressiveContentImmediately", status: "pure" };
+}
+
+!shouldStartNewCollapsedThinkingGroup(displayMode, existingGroup, incomingGroup){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "shouldStartNewCollapsedThinkingGroup", status: "pure" };
+}
+
+!shouldCreateGroupedThinkingPart(collapsedToolsMode, separatedFromReasoning){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "shouldCreateGroupedThinkingPart", status: "pure" };
+}
+
+!shouldShowFileChangesSummaryForSettings(isComplete, isLocalSession, showFileChanges){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "shouldShowFileChangesSummaryForSettings", status: "pure" };
+}
+
+!shouldShowPillsSummaryForSettings(isComplete, isAgentHostSession, turnStatusPills){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "shouldShowPillsSummaryForSettings", status: "pure" };
+}
+
+!shouldPinToolInvocationToThinking(state, hasConfirmationMessages, hasMcpAppData){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "shouldPinToolInvocationToThinking", status: "pure" };
+}
+
+!shouldHideChatUserIdentity(username, sessionResource, isResponse, isSessionsWindow, isSystemInitiatedRequest){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "shouldHideChatUserIdentity", status: "pure" };
+}
+
+!getWorkingProgressRelevantParts(parts){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "getWorkingProgressRelevantParts", status: "pure" };
+}
+
+!endsWithActiveSubagentContent(parts){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "endsWithActiveSubagentContent", status: "pure" };
+}
+
+!endsWithCompletedQuestionInteraction(parts){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "endsWithCompletedQuestionInteraction", status: "pure" };
+}
+
+!isWaitingForMcpServers(parts){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListRenderer.ts
+  ^{ name: "isWaitingForMcpServers", status: "pure" };
+}
+
+=ex{buildPlanReviewProgressContent,shouldScheduleInitialHeightChange,getFinalResponseStartIndex,getFinalResponseStartIndexAfterMovingResponseOutcomeTools,isFinalResponseRendered,moveResponseOutcomeToolsAfterFinalResponse,formatCompletedResponseDisclosureLabel,getVisibleCompletedResponseItemCount,formatResponseTokenStats,shouldCollapseCompletedResponsePart,getCompletedResponseCollapseEndIndex,reconcileChatItemHeight,renderChatResponseDetails,renderChatRequestTimestamp,shouldRenderInitialProgressiveContentImmediately,shouldStartNewCollapsedThinkingGroup,shouldCreateGroupedThinkingPart,shouldShowFileChangesSummaryForSettings,shouldShowPillsSummaryForSettings,shouldPinToolInvocationToThinking,shouldHideChatUserIdentity,getWorkingProgressRelevantParts,endsWithActiveSubagentContent,endsWithCompletedQuestionInteraction,isWaitingForMcpServers}

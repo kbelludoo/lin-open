@@ -1,0 +1,24 @@
+@LIN:sessions_browser_accountTitleBarState:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!resolveAccountInfo(defaultAccountService, authenticationService){
+  // Transposed from sessions/browser/accountTitleBarState.ts
+  ^{ name: "resolveAccountInfo", status: "pure" };
+}
+
+!getAccountProfileImageUrl(accountProviderId, accountName, accountIcon?){
+  // Transposed from sessions/browser/accountTitleBarState.ts
+  ^{ name: "getAccountProfileImageUrl", status: "pure" };
+}
+
+!getAccountTitleBarBadgeKey(state){
+  // Transposed from sessions/browser/accountTitleBarState.ts
+  ^{ name: "getAccountTitleBarBadgeKey", status: "pure" };
+}
+
+!getAccountTitleBarState(context){
+  // Transposed from sessions/browser/accountTitleBarState.ts
+  ^{ name: "getAccountTitleBarState", status: "pure" };
+}
+
+=ex{resolveAccountInfo,getAccountProfileImageUrl,getAccountTitleBarBadgeKey,getAccountTitleBarState}

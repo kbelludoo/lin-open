@@ -1,0 +1,49 @@
+@LIN:editor_contrib_format_browser_format:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getRealAndSyntheticDocumentFormattersOrdered(documentFormattingEditProvider, documentRangeFormattingEditProvider, model){
+  // Transposed from editor/contrib/format/browser/format.ts
+  ^{ name: "getRealAndSyntheticDocumentFormattersOrdered", status: "pure" };
+}
+
+!formatDocumentRangesWithSelectedProvider(accessor, editorOrModel, rangeOrRanges, mode, progress, token, userGesture){
+  // Transposed from editor/contrib/format/browser/format.ts
+  ^{ name: "formatDocumentRangesWithSelectedProvider", status: "pure" };
+}
+
+!formatDocumentRangesWithProvider(accessor, provider, editorOrModel, rangeOrRanges, token, userGesture){
+  // Transposed from editor/contrib/format/browser/format.ts
+  ^{ name: "formatDocumentRangesWithProvider", status: "pure" };
+}
+
+!formatDocumentWithSelectedProvider(accessor, editorOrModel, mode, progress, token, userGesture?){
+  // Transposed from editor/contrib/format/browser/format.ts
+  ^{ name: "formatDocumentWithSelectedProvider", status: "pure" };
+}
+
+!formatDocumentWithProvider(accessor, provider, editorOrModel, mode, token, userGesture?){
+  // Transposed from editor/contrib/format/browser/format.ts
+  ^{ name: "formatDocumentWithProvider", status: "pure" };
+}
+
+!getDocumentRangeFormattingEditsUntilResult(workerService, languageFeaturesService, model, range, options, token){
+  // Transposed from editor/contrib/format/browser/format.ts
+  ^{ name: "getDocumentRangeFormattingEditsUntilResult", status: "pure" };
+}
+
+!getDocumentFormattingEditsUntilResult(workerService, languageFeaturesService, model, options, token){
+  // Transposed from editor/contrib/format/browser/format.ts
+  ^{ name: "getDocumentFormattingEditsUntilResult", status: "pure" };
+}
+
+!getDocumentFormattingEditsWithSelectedProvider(workerService, languageFeaturesService, editorOrModel, mode, token){
+  // Transposed from editor/contrib/format/browser/format.ts
+  ^{ name: "getDocumentFormattingEditsWithSelectedProvider", status: "pure" };
+}
+
+!getOnTypeFormattingEdits(workerService, languageFeaturesService, model, position, ch, options, token){
+  // Transposed from editor/contrib/format/browser/format.ts
+  ^{ name: "getOnTypeFormattingEdits", status: "pure" };
+}
+
+=ex{getRealAndSyntheticDocumentFormattersOrdered,formatDocumentRangesWithSelectedProvider,formatDocumentRangesWithProvider,formatDocumentWithSelectedProvider,formatDocumentWithProvider,getDocumentRangeFormattingEditsUntilResult,getDocumentFormattingEditsUntilResult,getDocumentFormattingEditsWithSelectedProvider,getOnTypeFormattingEdits}

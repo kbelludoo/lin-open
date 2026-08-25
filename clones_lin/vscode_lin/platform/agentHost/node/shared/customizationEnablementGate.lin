@@ -1,0 +1,34 @@
+@LIN:platform_agentHost_node_shared_customizationEnablementGate:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!targetForPlugin(plugin){
+  // Transposed from platform/agentHost/node/shared/customizationEnablementGate.ts
+  ^{ name: "targetForPlugin", status: "pure" };
+}
+
+!targetForMcpServer(server, owningPluginUri, isClientBundled){
+  // Transposed from platform/agentHost/node/shared/customizationEnablementGate.ts
+  ^{ name: "targetForMcpServer", status: "pure" };
+}
+
+!resolveCustomizationEnablement(service, session, customizations, clientChildEnablement?, Readonly<Record<string, readonly CustomizationEnablement[]>>>, clientPlugins?, ClientPluginCustomization>, mcpServerOwners?, string>){
+  // Transposed from platform/agentHost/node/shared/customizationEnablementGate.ts
+  ^{ name: "resolveCustomizationEnablement", status: "pure" };
+}
+
+!isCustomizationSdkEligible(resolved, customization){
+  // Transposed from platform/agentHost/node/shared/customizationEnablementGate.ts
+  ^{ name: "isCustomizationSdkEligible", status: "pure" };
+}
+
+!getSdkMcpServerEnablement(resolved){
+  // Transposed from platform/agentHost/node/shared/customizationEnablementGate.ts
+  ^{ name: "getSdkMcpServerEnablement", status: "pure" };
+}
+
+!recordClientPluginEnablement(service, session, plugin, clientPlugin){
+  // Transposed from platform/agentHost/node/shared/customizationEnablementGate.ts
+  ^{ name: "recordClientPluginEnablement", status: "pure" };
+}
+
+=ex{targetForPlugin,targetForMcpServer,resolveCustomizationEnablement,isCustomizationSdkEligible,getSdkMcpServerEnablement,recordClientPluginEnablement}

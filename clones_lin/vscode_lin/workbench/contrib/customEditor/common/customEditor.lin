@@ -1,0 +1,8 @@
+@LIN:workbench_contrib_customEditor_common_customEditor:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createCustomEditorInfoCollection(...args){
+  ^{ className: "CustomEditorInfoCollection", methods: ["length", "defaultEditor", "find", "bestAvailableEditor"] };
+}
+
+=ex{createCustomEditorInfoCollection}

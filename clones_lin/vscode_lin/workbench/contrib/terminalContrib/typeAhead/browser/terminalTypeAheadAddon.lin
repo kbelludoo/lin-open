@@ -1,0 +1,12 @@
+@LIN:workbench_contrib_terminalContrib_typeAhead_browser_terminalTypeAheadAddon:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createPredictionStats(...args){
+  ^{ className: "PredictionStats", methods: ["accuracy", "for", "if", "sampleSize", "latency", "maxLatency", "for", "if", "_pushStat"] };
+}
+
+!createPredictionTimeline(...args){
+  ^{ className: "PredictionTimeline", methods: ["_currentGenerationPredictions", "isShowingPredictions", "length", "setShowPredictions", "if", "if", "if", "undoAllPredictions", "if", "beforeServerInput", "if", "if", "if", "if", "while", "if", "if", "if", "for", "if", "if", "if", "if", "if", "_clearPredictionState", "addPrediction", "if", "if", "if", "addBoundary", "if", "peekEnd", "peekStart", "physicalCursor", "if", "if", "tentativeCursor", "if", "clearCursor", "_getActiveBuffer"] };
+}
+
+=ex{createPredictionStats,createPredictionTimeline}

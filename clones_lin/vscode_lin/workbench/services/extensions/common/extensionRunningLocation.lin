@@ -1,0 +1,16 @@
+@LIN:workbench_services_extensions_common_extensionRunningLocation:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createLocalProcessRunningLocation(...args){
+  ^{ className: "LocalProcessRunningLocation", methods: ["equals", "asString", "if"] };
+}
+
+!createLocalWebWorkerRunningLocation(...args){
+  ^{ className: "LocalWebWorkerRunningLocation", methods: ["equals", "asString", "if"] };
+}
+
+!createRemoteRunningLocation(...args){
+  ^{ className: "RemoteRunningLocation", methods: ["equals", "asString"] };
+}
+
+=ex{createLocalProcessRunningLocation,createLocalWebWorkerRunningLocation,createRemoteRunningLocation}

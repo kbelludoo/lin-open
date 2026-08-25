@@ -1,0 +1,29 @@
+@LIN:workbench_contrib_chat_browser_chatDebug_chatDebugEnablement:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getChatDebugLoggingSettingId(sessionResource){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/chatDebugEnablement.ts
+  ^{ name: "getChatDebugLoggingSettingId", status: "pure" };
+}
+
+!isChatDebugLoggingEnabledForSession(configurationService, sessionResource){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/chatDebugEnablement.ts
+  ^{ name: "isChatDebugLoggingEnabledForSession", status: "pure" };
+}
+
+!renderChatDebugLoggingDisabledMessage(container, sessionResource, preferencesService, disposables){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/chatDebugEnablement.ts
+  ^{ name: "renderChatDebugLoggingDisabledMessage", status: "pure" };
+}
+
+!isWireLogLoggingEnabled(configurationService){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/chatDebugEnablement.ts
+  ^{ name: "isWireLogLoggingEnabled", status: "pure" };
+}
+
+!renderWireLogLoggingDisabledMessage(container, preferencesService, disposables){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/chatDebugEnablement.ts
+  ^{ name: "renderWireLogLoggingDisabledMessage", status: "pure" };
+}
+
+=ex{getChatDebugLoggingSettingId,isChatDebugLoggingEnabledForSession,renderChatDebugLoggingDisabledMessage,isWireLogLoggingEnabled,renderWireLogLoggingDisabledMessage}

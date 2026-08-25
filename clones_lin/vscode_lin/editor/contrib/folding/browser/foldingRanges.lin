@@ -1,0 +1,12 @@
+@LIN:editor_contrib_folding_browser_foldingRanges:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createFoldingRegions(...args){
+  ^{ className: "FoldingRegions", methods: ["if", "ensureParentIndices", "if", "for", "if", "length", "getStartLineNumber", "getEndLineNumber", "getType", "hasTypes", "isCollapsed", "setCollapsed", "isUserDefined", "setUserDefined", "isRecovered", "setRecovered", "getSource", "setSource", "if", "if", "setCollapsedAllOfType", "if", "for", "if", "toRegion", "getParentIndex", "if", "contains", "findIndex", "if", "while", "findRange", "if", "if", "while", "toString", "for", "toFoldRange", "fromFoldRanges", "for", "if", "if", "for", "if", "sanitizeAndMerge", "while", "if", "if", "if", "while", "if", "if", "if", "while", "if"] };
+}
+
+!createFoldingRegion(...args){
+  ^{ className: "FoldingRegion", methods: ["startLineNumber", "endLineNumber", "regionIndex", "parentIndex", "isCollapsed", "containedBy", "containsLine", "hidesLine"] };
+}
+
+=ex{createFoldingRegions,createFoldingRegion}

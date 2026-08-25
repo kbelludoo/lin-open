@@ -1,0 +1,32 @@
+@LIN:workbench_contrib_testing_browser_testingOutputPeek:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createTestResultsView(...args){
+  ^{ className: "TestResultsView", methods: ["subject", "showLatestRun", "if", "renderBody", "layoutBody", "renderContent", "if"] };
+}
+
+!createCloseTestPeek(...args){
+  ^{ className: "CloseTestPeek", methods: ["runEditorCommand"] };
+}
+
+!createGoToNextMessageAction(...args){
+  ^{ className: "GoToNextMessageAction", methods: ["run", "if"] };
+}
+
+!createGoToPreviousMessageAction(...args){
+  ^{ className: "GoToPreviousMessageAction", methods: ["run", "if"] };
+}
+
+!createCollapsePeekStack(...args){
+  ^{ className: "CollapsePeekStack", methods: ["run", "if"] };
+}
+
+!createOpenMessageInEditorAction(...args){
+  ^{ className: "OpenMessageInEditorAction", methods: ["run"] };
+}
+
+!createToggleTestingPeekHistory(...args){
+  ^{ className: "ToggleTestingPeekHistory", methods: ["run"] };
+}
+
+=ex{createTestResultsView,createCloseTestPeek,createGoToNextMessageAction,createGoToPreviousMessageAction,createCollapsePeekStack,createOpenMessageInEditorAction,createToggleTestingPeekHistory}

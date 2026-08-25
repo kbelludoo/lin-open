@@ -1,0 +1,8 @@
+@LIN:editor_common_languages_supports_onEnter:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createOnEnterSupport(...args){
+  ^{ className: "OnEnterSupport", methods: ["if", "onEnter", "if", "for", "every", "if", "if", "if", "if", "for", "if", "if", "for", "_createOpenBracketRegExp", "_createCloseBracketRegExp", "_safeRegExp", "catch"] };
+}
+
+=ex{createOnEnterSupport}

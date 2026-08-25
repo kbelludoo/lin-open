@@ -1,0 +1,16 @@
+@LIN:editor_common_viewLayout_lineDecorations:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createLineDecoration(...args){
+  ^{ className: "LineDecoration", methods: ["_equals", "equalsArr", "if", "for", "extractWrapped", "if", "for", "if", "filter", "if", "for", "if", "_typeCompare", "compare", "if", "if", "if", "if"] };
+}
+
+!createDecorationSegment(...args){
+  ^{ className: "DecorationSegment", methods: [] };
+}
+
+!createLineDecorationsNormalizer(...args){
+  ^{ className: "LineDecorationsNormalizer", methods: ["normalize", "if", "for", "if", "if", "if"] };
+}
+
+=ex{createLineDecoration,createDecorationSegment,createLineDecorationsNormalizer}

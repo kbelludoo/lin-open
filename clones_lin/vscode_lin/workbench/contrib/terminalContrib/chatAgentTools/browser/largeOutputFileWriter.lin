@@ -1,0 +1,8 @@
+@LIN:workbench_contrib_terminalContrib_chatAgentTools_browser_largeOutputFileWriter:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createLargeOutputFileWriter(...args){
+  ^{ className: "LargeOutputFileWriter", methods: ["processOutput", "if", "if", "_writeToTempFile", "catch", "_prettyPrintIfJson", "cleanup", "for", "dispose"] };
+}
+
+=ex{createLargeOutputFileWriter}

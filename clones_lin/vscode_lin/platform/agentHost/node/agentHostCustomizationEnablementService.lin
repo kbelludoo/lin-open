@@ -1,0 +1,14 @@
+@LIN:platform_agentHost_node_agentHostCustomizationEnablementService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getCustomizationEnablementKey(target, kind){
+  // Transposed from platform/agentHost/node/agentHostCustomizationEnablementService.ts
+  ^{ name: "getCustomizationEnablementKey", status: "pure" };
+}
+
+!targetForUnownedMcpServer(name){
+  // Transposed from platform/agentHost/node/agentHostCustomizationEnablementService.ts
+  ^{ name: "targetForUnownedMcpServer", status: "pure" };
+}
+
+=ex{getCustomizationEnablementKey,targetForUnownedMcpServer}

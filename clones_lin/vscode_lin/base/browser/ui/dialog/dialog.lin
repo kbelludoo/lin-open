@@ -1,0 +1,20 @@
+@LIN:base_browser_ui_dialog_dialog:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createDialog(...args){
+  ^{ className: "Dialog", methods: ["if", "_register", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "getIconAriaLabel", "switch", "updateMessage", "show", "if", "if", "if", "if", "if", "_register", "if", "if", "for", "for", "if", "if", "for", "if", "if", "for", "if", "if", "if", "if", "_register", "if", "if", "switch", "if", "if", "if", "if", "applyStyles", "if", "switch", "if", "dispose", "if", "rearrangeButtons", "if", "if", "if", "if", "if"] };
+}
+
+!getDialogContentsAlignmentEnum(){
+  ^{ enumName: "DialogContentsAlignment", members: ["/**
+	 * Dialog contents align from left to right (icon", "message", "buttons on a separate row).
+	 *
+	 * Note: this is the default alignment for dialogs.
+	 */
+	Horizontal", "/**
+	 * Dialog contents align from top to bottom (icon", "message", "buttons stack on top of each other)
+	 */
+	Vertical"] };
+}
+
+=ex{createDialog,getDialogContentsAlignmentEnum}

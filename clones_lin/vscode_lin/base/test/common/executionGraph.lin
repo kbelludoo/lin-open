@@ -1,0 +1,19 @@
+@LIN:base_test_common_executionGraph:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!buildHistoryFromTasks(tasks, startTime, logs){
+  // Transposed from base/test/common/executionGraph.ts
+  ^{ name: "buildHistoryFromTasks", status: "pure" };
+}
+
+!renderSwimlanes(history){
+  // Transposed from base/test/common/executionGraph.ts
+  ^{ name: "renderSwimlanes", status: "pure" };
+}
+
+!renderLaneGraph(history){
+  // Transposed from base/test/common/executionGraph.ts
+  ^{ name: "renderLaneGraph", status: "pure" };
+}
+
+=ex{buildHistoryFromTasks,renderSwimlanes,renderLaneGraph}

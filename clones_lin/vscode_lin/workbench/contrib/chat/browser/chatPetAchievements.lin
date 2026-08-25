@@ -1,0 +1,69 @@
+@LIN:workbench_contrib_chat_browser_chatPetAchievements:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isChatPetAchievementId(value){
+  // Transposed from workbench/contrib/chat/browser/chatPetAchievements.ts
+  ^{ name: "isChatPetAchievementId", status: "pure" };
+}
+
+!isChatPetAchievementEnabled(id){
+  // Transposed from workbench/contrib/chat/browser/chatPetAchievements.ts
+  ^{ name: "isChatPetAchievementEnabled", status: "pure" };
+}
+
+!isChatPetAccessoryId(value){
+  // Transposed from workbench/contrib/chat/browser/chatPetAchievements.ts
+  ^{ name: "isChatPetAccessoryId", status: "pure" };
+}
+
+!getChatPetAchievement(id){
+  // Transposed from workbench/contrib/chat/browser/chatPetAchievements.ts
+  ^{ name: "getChatPetAchievement", status: "pure" };
+}
+
+!getChatPetAccessory(id){
+  // Transposed from workbench/contrib/chat/browser/chatPetAchievements.ts
+  ^{ name: "getChatPetAccessory", status: "pure" };
+}
+
+!getChatPetAchievementForAccessory(id){
+  // Transposed from workbench/contrib/chat/browser/chatPetAchievements.ts
+  ^{ name: "getChatPetAchievementForAccessory", status: "pure" };
+}
+
+!didExplicitlySwitchChatPetModel(previousModelIdentifier, selectedModelIdentifier){
+  // Transposed from workbench/contrib/chat/browser/chatPetAchievements.ts
+  ^{ name: "didExplicitlySwitchChatPetModel", status: "pure" };
+}
+
+!hasChatPetImageAttachment(entries){
+  // Transposed from workbench/contrib/chat/browser/chatPetAchievements.ts
+  ^{ name: "hasChatPetImageAttachment", status: "pure" };
+}
+
+!shouldUnlockChatPetIntegratedBrowserShare(shared, succeeded){
+  // Transposed from workbench/contrib/chat/browser/chatPetAchievements.ts
+  ^{ name: "shouldUnlockChatPetIntegratedBrowserShare", status: "pure" };
+}
+
+!isUserAuthoredChatPetCustomization(source, isBuiltin){
+  // Transposed from workbench/contrib/chat/browser/chatPetAchievements.ts
+  ^{ name: "isUserAuthoredChatPetCustomization", status: "pure" };
+}
+
+!getChatPetCustomizationAchievementIds(skills, instructions, mcpServerCount){
+  // Transposed from workbench/contrib/chat/browser/chatPetAchievements.ts
+  ^{ name: "getChatPetCustomizationAchievementIds", status: "pure" };
+}
+
+!getChatPetAchievementPresentation(achievement, unlocked){
+  // Transposed from workbench/contrib/chat/browser/chatPetAchievements.ts
+  ^{ name: "getChatPetAchievementPresentation", status: "pure" };
+}
+
+!getUnlockedChatPetAccessories(unlockedAchievements){
+  // Transposed from workbench/contrib/chat/browser/chatPetAchievements.ts
+  ^{ name: "getUnlockedChatPetAccessories", status: "pure" };
+}
+
+=ex{isChatPetAchievementId,isChatPetAchievementEnabled,isChatPetAccessoryId,getChatPetAchievement,getChatPetAccessory,getChatPetAchievementForAccessory,didExplicitlySwitchChatPetModel,hasChatPetImageAttachment,shouldUnlockChatPetIntegratedBrowserShare,isUserAuthoredChatPetCustomization,getChatPetCustomizationAchievementIds,getChatPetAchievementPresentation,getUnlockedChatPetAccessories}

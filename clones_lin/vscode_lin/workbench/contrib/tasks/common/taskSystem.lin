@@ -1,0 +1,12 @@
+@LIN:workbench_contrib_tasks_common_taskSystem:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createVerifiedTask(...args){
+  ^{ className: "VerifiedTask", methods: ["verify", "getVerifiedTask"] };
+}
+
+!createTaskError(...args){
+  ^{ className: "TaskError", methods: [] };
+}
+
+=ex{createVerifiedTask,createTaskError}

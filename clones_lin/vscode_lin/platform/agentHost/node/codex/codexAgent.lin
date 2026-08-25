@@ -1,0 +1,24 @@
+@LIN:platform_agentHost_node_codex_codexAgent:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!toCodexModelSelectionId(modelProvider, modelId){
+  // Transposed from platform/agentHost/node/codex/codexAgent.ts
+  ^{ name: "toCodexModelSelectionId", status: "pure" };
+}
+
+!parseCodexModelSelection(selection){
+  // Transposed from platform/agentHost/node/codex/codexAgent.ts
+  ^{ name: "parseCodexModelSelection", status: "pure" };
+}
+
+!codexPackageSuffix(platform, arch){
+  // Transposed from platform/agentHost/node/codex/codexAgent.ts
+  ^{ name: "codexPackageSuffix", status: "pure" };
+}
+
+!codexBinaryTriple(sdkTarget){
+  // Transposed from platform/agentHost/node/codex/codexAgent.ts
+  ^{ name: "codexBinaryTriple", status: "pure" };
+}
+
+=ex{toCodexModelSelectionId,parseCodexModelSelection,codexPackageSuffix,codexBinaryTriple}

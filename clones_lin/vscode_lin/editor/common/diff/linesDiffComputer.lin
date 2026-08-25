@@ -1,0 +1,12 @@
+@LIN:editor_common_diff_linesDiffComputer:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createLinesDiff(...args){
+  ^{ className: "LinesDiff", methods: [] };
+}
+
+!createMovedText(...args){
+  ^{ className: "MovedText", methods: ["flip"] };
+}
+
+=ex{createLinesDiff,createMovedText}

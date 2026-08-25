@@ -1,0 +1,34 @@
+@LIN:base_parts_ipc_node_ipc_net:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!upgradeToISocket(req, socket, {
+	debugLabel, skipWebSocketFrames = false, disableWebSocketCompression = false, enableMessageSplitting = true, }){
+  // Transposed from base/parts/ipc/node/ipc.net.ts
+  ^{ name: "upgradeToISocket", status: "pure" };
+}
+
+!createRandomIPCHandle(){
+  // Transposed from base/parts/ipc/node/ipc.net.ts
+  ^{ name: "createRandomIPCHandle", status: "pure" };
+}
+
+!createStaticIPCHandle(directoryPath, type, version){
+  // Transposed from base/parts/ipc/node/ipc.net.ts
+  ^{ name: "createStaticIPCHandle", status: "pure" };
+}
+
+!serve(hook){
+  // Transposed from base/parts/ipc/node/ipc.net.ts
+  ^{ name: "serve", status: "pure" };
+}
+
+!connect(hook, clientId){
+  // Transposed from base/parts/ipc/node/ipc.net.ts
+  ^{ name: "connect", status: "pure" };
+}
+
+!createServer(...args){
+  ^{ className: "Server", methods: ["toClientConnectionEvent", "dispose", "if"] };
+}
+
+=ex{upgradeToISocket,createRandomIPCHandle,createStaticIPCHandle,serve,connect,createServer}

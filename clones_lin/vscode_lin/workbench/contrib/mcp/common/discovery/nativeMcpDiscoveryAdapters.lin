@@ -1,0 +1,12 @@
+@LIN:workbench_contrib_mcp_common_discovery_nativeMcpDiscoveryAdapters:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createWindsurfDesktopMpcDiscoveryAdapter(...args){
+  ^{ className: "WindsurfDesktopMpcDiscoveryAdapter", methods: ["getFilePath"] };
+}
+
+!createCursorDesktopMpcDiscoveryAdapter(...args){
+  ^{ className: "CursorDesktopMpcDiscoveryAdapter", methods: ["getFilePath"] };
+}
+
+=ex{createWindsurfDesktopMpcDiscoveryAdapter,createCursorDesktopMpcDiscoveryAdapter}

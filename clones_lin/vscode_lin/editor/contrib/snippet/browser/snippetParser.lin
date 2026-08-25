@@ -1,0 +1,40 @@
+@LIN:editor_contrib_snippet_browser_snippetParser:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createScanner(...args){
+  ^{ className: "Scanner", methods: ["isDigitCharacter", "isVariableCharacter", "text", "tokenText", "next", "if", "if"] };
+}
+
+!createText(...args){
+  ^{ className: "Text", methods: ["escape", "toString", "toTextmateString", "len", "clone"] };
+}
+
+!createPlaceholder(...args){
+  ^{ className: "Placeholder", methods: ["compareByIndex", "if", "if", "if", "if", "if", "isFinalTabstop", "choice", "toTextmateString", "if", "if", "if", "if", "clone", "if"] };
+}
+
+!createChoice(...args){
+  ^{ className: "Choice", methods: ["appendChild", "if", "toString", "toTextmateString", "len", "clone"] };
+}
+
+!createTransform(...args){
+  ^{ className: "Transform", methods: ["resolve", "replace", "_replace", "for", "if", "toString", "toTextmateString", "clone"] };
+}
+
+!createFormatString(...args){
+  ^{ className: "FormatString", methods: ["resolve", "if", "if", "if", "if", "if", "if", "if", "_toKebabCase", "if", "if", "_toPascalCase", "if", "_toCamelCase", "if", "if", "_toSnakeCase", "toTextmateString", "if", "if", "if", "if", "clone"] };
+}
+
+!createVariable(...args){
+  ^{ className: "Variable", methods: ["resolve", "if", "if", "toTextmateString", "if", "if", "clone", "if"] };
+}
+
+!createTextmateSnippet(...args){
+  ^{ className: "TextmateSnippet", methods: ["placeholderInfo", "if", "walk", "if", "placeholders", "offset", "walk", "if", "fullLen", "enclosingPlaceholders", "while", "if", "resolveVariables", "walk", "appendChild", "replace", "toTextmateString", "clone"] };
+}
+
+!createSnippetParser(...args){
+  ^{ className: "SnippetParser", methods: ["escape", "asInsertText", "guessNeedsClipboard", "parse", "parseFragment", "walk", "if", "if", "for", "for", "ensureFinalTabstop", "if", "if", "_accept", "if", "_backTo", "_until", "while", "if", "if", "if", "_parse", "_parseEscaped", "_parseTabstopOrVariableName", "if", "_parseComplexPlaceholder", "if", "while", "while", "_parseChoiceElement", "while", "if", "if", "if", "_parseComplexVariable", "if", "while", "_parseTransform", "while", "if", "while", "while", "if", "catch", "_parseFormatString", "if", "if", "if", "if", "if", "if", "if", "_parseAnything", "if"] };
+}
+
+=ex{createScanner,createText,createPlaceholder,createChoice,createTransform,createFormatString,createVariable,createTextmateSnippet,createSnippetParser}

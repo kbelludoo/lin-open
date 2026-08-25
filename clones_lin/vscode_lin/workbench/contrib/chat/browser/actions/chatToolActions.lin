@@ -1,0 +1,13 @@
+@LIN:workbench_contrib_chat_browser_actions_chatToolActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!registerChatToolActions(){
+  // Transposed from workbench/contrib/chat/browser/actions/chatToolActions.ts
+  ^{ name: "registerChatToolActions", status: "pure" };
+}
+
+!createConfigureToolsAction(...args){
+  ^{ className: "ConfigureToolsAction", methods: ["run", "if", "if", "switch", "if", "extractWidget", "isChatActionContext", "for", "extractSource", "isChatActionSource", "for"] };
+}
+
+=ex{registerChatToolActions,createConfigureToolsAction}

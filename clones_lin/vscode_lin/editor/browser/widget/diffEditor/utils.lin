@@ -1,0 +1,27 @@
+@LIN:editor_browser_widget_diffEditor_utils:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!applyObservableDecorations(editor, decorations){
+  // Transposed from editor/browser/widget/diffEditor/utils.ts
+  ^{ name: "applyObservableDecorations", status: "pure" };
+}
+
+!animatedObservable(targetWindow, base, boolean>, store){
+  // Transposed from editor/browser/widget/diffEditor/utils.ts
+  ^{ name: "animatedObservable", status: "pure" };
+}
+
+!translatePosition(posInOriginal, mappings){
+  // Transposed from editor/browser/widget/diffEditor/utils.ts
+  ^{ name: "translatePosition", status: "pure" };
+}
+
+!createObservableElementSizeObserver(...args){
+  ^{ className: "ObservableElementSizeObserver", methods: ["width", "height", "automaticLayout", "observe", "setAutomaticLayout", "if"] };
+}
+
+!createDisposableCancellationTokenSource(...args){
+  ^{ className: "DisposableCancellationTokenSource", methods: ["dispose"] };
+}
+
+=ex{applyObservableDecorations,animatedObservable,translatePosition,createObservableElementSizeObserver,createDisposableCancellationTokenSource}

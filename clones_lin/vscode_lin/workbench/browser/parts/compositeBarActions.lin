@@ -1,0 +1,36 @@
+@LIN:workbench_browser_parts_compositeBarActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createCompositeBarAction(...args){
+  ^{ className: "CompositeBarAction", methods: ["compositeBarActionItem", "compositeBarActionItem", "activities", "activities", "activate", "if", "deactivate", "if"] };
+}
+
+!createCompositeBarActionViewItem(...args){
+  ^{ className: "CompositeBarActionViewItem", methods: ["compositeBarActionItem", "updateStyles", "if", "if", "if", "if", "render", "if", "if", "if", "onThemeChange", "update", "getActivities", "if", "updateActivity", "if", "if", "if", "if", "if", "if", "if", "if", "if", "getVisibleBadges", "if", "if", "if", "updateLabel", "if", "if", "updateTitle", "forEach", "computeTitle", "for", "if", "computeKeybindingLabel", "dispose", "if"] };
+}
+
+!createCompositeOverflowActivityAction(...args){
+  ^{ className: "CompositeOverflowActivityAction", methods: ["run"] };
+}
+
+!createCompositeOverflowActivityActionViewItem(...args){
+  ^{ className: "CompositeOverflowActivityActionViewItem", methods: ["showMenu", "getActions", "if", "if"] };
+}
+
+!createCompositeActionViewItem(...args){
+  ^{ className: "CompositeActionViewItem", methods: ["render", "if", "if", "updateFromDragging", "if", "showContextMenu", "if", "if", "if", "if", "if", "updateChecked", "if", "updateEnabled", "if", "if", "dispose"] };
+}
+
+!createToggleCompositePinnedAction(...args){
+  ^{ className: "ToggleCompositePinnedAction", methods: ["run"] };
+}
+
+!createToggleCompositeBadgeAction(...args){
+  ^{ className: "ToggleCompositeBadgeAction", methods: ["run"] };
+}
+
+!createSwitchCompositeViewAction(...args){
+  ^{ className: "SwitchCompositeViewAction", methods: ["run", "if", "for", "if"] };
+}
+
+=ex{createCompositeBarAction,createCompositeBarActionViewItem,createCompositeOverflowActivityAction,createCompositeOverflowActivityActionViewItem,createCompositeActionViewItem,createToggleCompositePinnedAction,createToggleCompositeBadgeAction,createSwitchCompositeViewAction}

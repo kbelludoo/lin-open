@@ -1,0 +1,16 @@
+@LIN:workbench_contrib_mergeEditor_browser_model_editing:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createLineRangeEdit(...args){
+  ^{ className: "LineRangeEdit", methods: ["equals", "toEdits"] };
+}
+
+!createRangeEdit(...args){
+  ^{ className: "RangeEdit", methods: ["equals"] };
+}
+
+!createLineEdits(...args){
+  ^{ className: "LineEdits", methods: ["toEdits", "if", "if"] };
+}
+
+=ex{createLineRangeEdit,createRangeEdit,createLineEdits}

@@ -1,0 +1,20 @@
+@LIN:workbench_contrib_chat_browser_widget_chatContentParts_codeBlockPart:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createCodeBlockPart(...args){
+  ^{ className: "CodeBlockPart", methods: ["poolKey", "verticalPadding", "if", "_register", "if", "if", "dispose", "uri", "createEditor", "focus", "updatePaddingForLayout", "_ensureToolbar", "if", "if", "if", "if", "if", "if", "_configureForScreenReader", "if", "if", "if", "getEditorOptionsFromConfig", "layout", "if", "if", "getContentHeight", "render", "if", "if", "if", "if", "if", "reset", "onDidRemount", "if", "clearWidgets", "updateEditor", "if", "getVulnerabilitiesLabel", "if", "localize", "updateContexts", "if", "if", "setText", "if", "setLanguage"] };
+}
+
+!createChatCodeBlockContentProvider(...args){
+  ^{ className: "ChatCodeBlockContentProvider", methods: [] };
+}
+
+!createCodeCompareBlockPart(...args){
+  ^{ className: "CodeCompareBlockPart", methods: ["_register", "showWhile", "if", "uri", "createDiffEditor", "focus", "updatePaddingForLayout", "_configureForScreenReader", "getEditorOptionsFromConfig", "layout", "if", "render", "if", "if", "reset", "clearWidgets", "updateEditor", "if", "if", "if", "if", "if", "if"] };
+}
+
+!createDefaultChatTextEditor(...args){
+  ^{ className: "DefaultChatTextEditor", methods: ["apply", "if", "if", "_applyWithDiffEditor", "if", "if", "_apply", "for", "_checkSha1", "if", "discard", "if"] };
+}
+
+=ex{createCodeBlockPart,createChatCodeBlockContentProvider,createCodeCompareBlockPart,createDefaultChatTextEditor}

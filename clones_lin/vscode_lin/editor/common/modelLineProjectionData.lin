@@ -1,0 +1,16 @@
+@LIN:editor_common_modelLineProjectionData:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createModelLineProjectionData(...args){
+  ^{ className: "ModelLineProjectionData", methods: ["getOutputLineCount", "getMinOutputOffset", "if", "getLineLength", "if", "getMaxOutputOffset", "translateToInputOffset", "if", "if", "for", "if", "if", "translateToOutputPosition", "if", "for", "if", "if", "offsetInInputWithInjectionsToOutputPosition", "while", "if", "if", "if", "if", "if", "if", "normalizeOutputPosition", "if", "if", "if", "if", "outputPositionToOffsetInInputWithInjections", "if", "normalizeOffsetInInputWithInjectionsAroundInjections", "if", "if", "while", "if", "while", "if", "while", "getInjectedText", "if", "getInjectedTextAtOffset", "if", "for", "if", "if"] };
+}
+
+!createInjectedText(...args){
+  ^{ className: "InjectedText", methods: [] };
+}
+
+!createOutputPosition(...args){
+  ^{ className: "OutputPosition", methods: ["toString", "toPosition"] };
+}
+
+=ex{createModelLineProjectionData,createInjectedText,createOutputPosition}

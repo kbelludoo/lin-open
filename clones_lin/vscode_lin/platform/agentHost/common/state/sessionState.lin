@@ -1,0 +1,414 @@
+@LIN:platform_agentHost_common_state_sessionState:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isMessageHiddenFromTranscript(message){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "isMessageHiddenFromTranscript", status: "pure" };
+}
+
+!withMessageHiddenFromTranscript(message, hidden){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "withMessageHiddenFromTranscript", status: "pure" };
+}
+
+!readUsageInfoMeta(usage){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "readUsageInfoMeta", status: "pure" };
+}
+
+!hasReportedUsage(usage){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "hasReportedUsage", status: "pure" };
+}
+
+!buildResourceWatchChannelUri(descriptor){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "buildResourceWatchChannelUri", status: "pure" };
+}
+
+!parseResourceWatchChannelUri(uri){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "parseResourceWatchChannelUri", status: "pure" };
+}
+
+!isAhpResourceWatchChannel(uri){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "isAhpResourceWatchChannel", status: "pure" };
+}
+
+!isAhpRootChannel(uri){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "isAhpRootChannel", status: "pure" };
+}
+
+!customizationId(uri, range?){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "customizationId", status: "pure" };
+}
+
+!getToolOutputText(result){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "getToolOutputText", status: "pure" };
+}
+
+!getInlineToolInput(toolInput){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "getInlineToolInput", status: "pure" };
+}
+
+!getToolFileEdits(result){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "getToolFileEdits", status: "pure" };
+}
+
+!getToolSubagentContent(result){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "getToolSubagentContent", status: "pure" };
+}
+
+!buildSubagentSessionUri(parentSession, toolCallId){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "buildSubagentSessionUri", status: "pure" };
+}
+
+!parseSubagentSessionUri(uri){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "parseSubagentSessionUri", status: "pure" };
+}
+
+!isSubagentSession(uri){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "isSubagentSession", status: "pure" };
+}
+
+!buildSubagentSessionUriPrefix(parentSession){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "buildSubagentSessionUriPrefix", status: "pure" };
+}
+
+!createRootState(){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "createRootState", status: "pure" };
+}
+
+!createSessionState(summary){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "createSessionState", status: "pure" };
+}
+
+!createChatState(summary){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "createChatState", status: "pure" };
+}
+
+!createDefaultChatSummary(session, chatUri){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "createDefaultChatSummary", status: "pure" };
+}
+
+!chatSummaryFromState(state){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "chatSummaryFromState", status: "pure" };
+}
+
+!effectiveChatInteractivity(interactivity, sessionArchived){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "effectiveChatInteractivity", status: "pure" };
+}
+
+!isChatReadOnly(interactivity, sessionArchived){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "isChatReadOnly", status: "pure" };
+}
+
+!createActiveTurn(id, message, startedAt){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "createActiveTurn", status: "pure" };
+}
+
+!buildChatUri(sessionUri, chatId){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "buildChatUri", status: "pure" };
+}
+
+!buildDefaultChatUri(sessionUri){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "buildDefaultChatUri", status: "pure" };
+}
+
+!isSubagentChatUri(uri){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "isSubagentChatUri", status: "pure" };
+}
+
+!buildSubagentChatUri(sessionUri, toolCallId){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "buildSubagentChatUri", status: "pure" };
+}
+
+!parseChatUri(uri){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "parseChatUri", status: "pure" };
+}
+
+!parseDefaultChatUri(uri){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "parseDefaultChatUri", status: "pure" };
+}
+
+!parseRequiredSessionUriFromChatUri(uri){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "parseRequiredSessionUriFromChatUri", status: "pure" };
+}
+
+!isDefaultChatUri(uri){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "isDefaultChatUri", status: "pure" };
+}
+
+!getSessionChatResource(state, 'defaultChat'> & { readonly chats, 'resource'>[] }, chatId){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "getSessionChatResource", status: "pure" };
+}
+
+!resolveChatUri(session, chat){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "resolveChatUri", status: "pure" };
+}
+
+!chatStorageUri(chatChannel){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "chatStorageUri", status: "pure" };
+}
+
+!isAhpChatChannel(uri){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "isAhpChatChannel", status: "pure" };
+}
+
+!mergeSessionWithDefaultChat(session, chat){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "mergeSessionWithDefaultChat", status: "pure" };
+}
+
+!getActiveTurn(chat){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "getActiveTurn", status: "pure" };
+}
+
+!getDefaultChat(session){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "getDefaultChat", status: "pure" };
+}
+
+!readSessionMultiRootMetadata(meta){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "readSessionMultiRootMetadata", status: "pure" };
+}
+
+!parseSessionMultiRootMetadata(value){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "parseSessionMultiRootMetadata", status: "pure" };
+}
+
+!withSessionMultiRootMetadata(meta, multiRoot){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "withSessionMultiRootMetadata", status: "pure" };
+}
+
+!readSessionPromptCacheState(meta){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "readSessionPromptCacheState", status: "pure" };
+}
+
+!withSessionPromptCacheState(meta, promptCache){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "withSessionPromptCacheState", status: "pure" };
+}
+
+!readSessionFolderPickerDecision(meta){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "readSessionFolderPickerDecision", status: "pure" };
+}
+
+!parseSessionFolderPickerDecision(value){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "parseSessionFolderPickerDecision", status: "pure" };
+}
+
+!withSessionFolderPickerDecision(meta, decision){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "withSessionFolderPickerDecision", status: "pure" };
+}
+
+!readSessionSourceControlState(meta){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "readSessionSourceControlState", status: "pure" };
+}
+
+!withSessionSourceControlState(meta, state){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "withSessionSourceControlState", status: "pure" };
+}
+
+!hasSessionPullRequestForBranch(gitHubState, branchName){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "hasSessionPullRequestForBranch", status: "pure" };
+}
+
+!getSessionRelatedPullRequestUrls(gitHubState){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "getSessionRelatedPullRequestUrls", status: "pure" };
+}
+
+!withMostRecentSessionPullRequest(gitHubState, pullRequestUrl, branchName){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "withMostRecentSessionPullRequest", status: "pure" };
+}
+
+!withMostRecentRelatedSessionPullRequest(gitHubState, pullRequestUrl, branchName){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "withMostRecentRelatedSessionPullRequest", status: "pure" };
+}
+
+!withInitialSessionPullRequest(gitHubState, pullRequestUrl?){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "withInitialSessionPullRequest", status: "pure" };
+}
+
+!withMostRecentReferencedSessionPullRequest(gitHubState, pullRequestUrl){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "withMostRecentReferencedSessionPullRequest", status: "pure" };
+}
+
+!readSessionGitState(meta){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "readSessionGitState", status: "pure" };
+}
+
+!needsSessionGitStateRefresh(gitState){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "needsSessionGitStateRefresh", status: "pure" };
+}
+
+!withSessionGitState(meta, gitState){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "withSessionGitState", status: "pure" };
+}
+
+!readSessionGitHubState(meta){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "readSessionGitHubState", status: "pure" };
+}
+
+!withSessionGitHubState(meta, gitHubState){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "withSessionGitHubState", status: "pure" };
+}
+
+!readSessionSpawnDepth(meta){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "readSessionSpawnDepth", status: "pure" };
+}
+
+!withSessionSpawnDepth(meta, depth){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "withSessionSpawnDepth", status: "pure" };
+}
+
+!readSessionOrchestration(meta){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "readSessionOrchestration", status: "pure" };
+}
+
+!parseSessionOrchestration(value){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "parseSessionOrchestration", status: "pure" };
+}
+
+!withSessionOrchestration(meta, orchestration){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "withSessionOrchestration", status: "pure" };
+}
+
+!withSessionStatusFlag(status, flag, set){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "withSessionStatusFlag", status: "pure" };
+}
+
+!isSessionStatusRead(status){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "isSessionStatusRead", status: "pure" };
+}
+
+!isSessionStatusArchived(status){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "isSessionStatusArchived", status: "pure" };
+}
+
+!readSessionWorkspaceless(meta){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "readSessionWorkspaceless", status: "pure" };
+}
+
+!withSessionWorkspaceless(meta, workspaceless){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "withSessionWorkspaceless", status: "pure" };
+}
+
+!readSessionExternal(meta){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "readSessionExternal", status: "pure" };
+}
+
+!withSessionExternal(meta, external){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "withSessionExternal", status: "pure" };
+}
+
+!readSessionEhcliAdoptable(meta){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "readSessionEhcliAdoptable", status: "pure" };
+}
+
+!withSessionEhcliAdoptable(meta){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "withSessionEhcliAdoptable", status: "pure" };
+}
+
+!readSessionEhcliAdopted(meta){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "readSessionEhcliAdopted", status: "pure" };
+}
+
+!withSessionEhcliAdopted(meta, adopted){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "withSessionEhcliAdopted", status: "pure" };
+}
+
+!readSessionMatchesByProjectRoot(meta){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "readSessionMatchesByProjectRoot", status: "pure" };
+}
+
+!hostBuildInfoFromProduct(productService){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "hostBuildInfoFromProduct", status: "pure" };
+}
+
+!readHostBuildInfo(state){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "readHostBuildInfo", status: "pure" };
+}
+
+!withHostBuildInfo(meta, buildInfo){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "withHostBuildInfo", status: "pure" };
+}
+
+!formatHostBuildInfo(info){
+  // Transposed from platform/agentHost/common/state/sessionState.ts
+  ^{ name: "formatHostBuildInfo", status: "pure" };
+}
+
+=ex{isMessageHiddenFromTranscript,withMessageHiddenFromTranscript,readUsageInfoMeta,hasReportedUsage,buildResourceWatchChannelUri,parseResourceWatchChannelUri,isAhpResourceWatchChannel,isAhpRootChannel,customizationId,getToolOutputText,getInlineToolInput,getToolFileEdits,getToolSubagentContent,buildSubagentSessionUri,parseSubagentSessionUri,isSubagentSession,buildSubagentSessionUriPrefix,createRootState,createSessionState,createChatState,createDefaultChatSummary,chatSummaryFromState,effectiveChatInteractivity,isChatReadOnly,createActiveTurn,buildChatUri,buildDefaultChatUri,isSubagentChatUri,buildSubagentChatUri,parseChatUri,parseDefaultChatUri,parseRequiredSessionUriFromChatUri,isDefaultChatUri,getSessionChatResource,resolveChatUri,chatStorageUri,isAhpChatChannel,mergeSessionWithDefaultChat,getActiveTurn,getDefaultChat,readSessionMultiRootMetadata,parseSessionMultiRootMetadata,withSessionMultiRootMetadata,readSessionPromptCacheState,withSessionPromptCacheState,readSessionFolderPickerDecision,parseSessionFolderPickerDecision,withSessionFolderPickerDecision,readSessionSourceControlState,withSessionSourceControlState,hasSessionPullRequestForBranch,getSessionRelatedPullRequestUrls,withMostRecentSessionPullRequest,withMostRecentRelatedSessionPullRequest,withInitialSessionPullRequest,withMostRecentReferencedSessionPullRequest,readSessionGitState,needsSessionGitStateRefresh,withSessionGitState,readSessionGitHubState,withSessionGitHubState,readSessionSpawnDepth,withSessionSpawnDepth,readSessionOrchestration,parseSessionOrchestration,withSessionOrchestration,withSessionStatusFlag,isSessionStatusRead,isSessionStatusArchived,readSessionWorkspaceless,withSessionWorkspaceless,readSessionExternal,withSessionExternal,readSessionEhcliAdoptable,withSessionEhcliAdoptable,readSessionEhcliAdopted,withSessionEhcliAdopted,readSessionMatchesByProjectRoot,hostBuildInfoFromProduct,readHostBuildInfo,withHostBuildInfo,formatHostBuildInfo}

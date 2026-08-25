@@ -1,0 +1,12 @@
+@LIN:workbench_services_configurationResolver_common_configurationResolver:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createVariableError(...args){
+  ^{ className: "VariableError", methods: [] };
+}
+
+!getVariableKindEnum(){
+  ^{ enumName: "VariableKind", members: ["Unknown", "Env", "Config", "Command", "Input", "ExtensionInstallFolder", "TaskVar", "WorkspaceFolder", "Cwd", "WorkspaceFolderBasename", "UserHome", "LineNumber", "ColumnNumber", "SelectedText", "File", "FileWorkspaceFolder", "FileWorkspaceFolderBasename", "RelativeFile", "RelativeFileDirname", "FileDirname", "FileExtname", "FileBasename", "FileBasenameNoExtension", "FileDirnameBasename", "ExecPath", "ExecInstallFolder", "PathSeparator", "PathSeparatorAlias"] };
+}
+
+=ex{createVariableError,getVariableKindEnum}

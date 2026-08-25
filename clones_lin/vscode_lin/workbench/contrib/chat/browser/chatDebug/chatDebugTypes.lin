@@ -1,0 +1,13 @@
+@LIN:workbench_contrib_chat_browser_chatDebug_chatDebugTypes:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!setupBreadcrumbKeyboardNavigation(container, widget){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/chatDebugTypes.ts
+  ^{ name: "setupBreadcrumbKeyboardNavigation", status: "pure" };
+}
+
+!createTextBreadcrumbItem(...args){
+  ^{ className: "TextBreadcrumbItem", methods: ["equals", "dispose", "render", "if"] };
+}
+
+=ex{setupBreadcrumbKeyboardNavigation,createTextBreadcrumbItem}

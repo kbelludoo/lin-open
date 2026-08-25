@@ -1,0 +1,13 @@
+@LIN:workbench_contrib_debug_common_debugSource:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getUriFromSource(raw, path, sessionId, uriIdentityService, logService){
+  // Transposed from workbench/contrib/debug/common/debugSource.ts
+  ^{ name: "getUriFromSource", status: "pure" };
+}
+
+!createSource(...args){
+  ^{ className: "Source", methods: ["if", "name", "origin", "presentationHint", "reference", "inMemory", "openInEditor", "resolve", "getEncodedDebugData", "switch", "if", "for", "if", "switch"] };
+}
+
+=ex{getUriFromSource,createSource}

@@ -1,0 +1,33 @@
+@LIN:platform_agentHost_common_tunnelGatewaySelection:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!selectEditorGatewayEndpoint(inventory){
+  // Transposed from platform/agentHost/common/tunnelGatewaySelection.ts
+  ^{ name: "selectEditorGatewayEndpoint", status: "pure" };
+}
+
+!selectDedicatedGatewayFallback(inventory){
+  // Transposed from platform/agentHost/common/tunnelGatewaySelection.ts
+  ^{ name: "selectDedicatedGatewayFallback", status: "pure" };
+}
+
+!selectGatewayFallbackAfterRejection(rejected, inventory){
+  // Transposed from platform/agentHost/common/tunnelGatewaySelection.ts
+  ^{ name: "selectGatewayFallbackAfterRejection", status: "pure" };
+}
+
+!resolveGatewaySelection(locationPreferenceService, dialogService, request){
+  // Transposed from platform/agentHost/common/tunnelGatewaySelection.ts
+  ^{ name: "resolveGatewaySelection", status: "pure" };
+}
+
+!shouldNotifyTunnelFailover(previousServerType, newServerType, userInitiated, editorFallback = false){
+  // Transposed from platform/agentHost/common/tunnelGatewaySelection.ts
+  ^{ name: "shouldNotifyTunnelFailover", status: "pure" };
+}
+
+!createTunnelFailoverTracker(...args){
+  ^{ className: "TunnelFailoverTracker", methods: ["recordAndShouldNotify"] };
+}
+
+=ex{selectEditorGatewayEndpoint,selectDedicatedGatewayFallback,selectGatewayFallbackAfterRejection,resolveGatewaySelection,shouldNotifyTunnelFailover,createTunnelFailoverTracker}

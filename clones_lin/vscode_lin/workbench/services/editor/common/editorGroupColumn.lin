@@ -1,0 +1,14 @@
+@LIN:workbench_services_editor_common_editorGroupColumn:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!columnToEditorGroup(editorGroupService, configurationService, column = ACTIVE_GROUP){
+  // Transposed from workbench/services/editor/common/editorGroupColumn.ts
+  ^{ name: "columnToEditorGroup", status: "pure" };
+}
+
+!editorGroupToColumn(editorGroupService, editorGroup){
+  // Transposed from workbench/services/editor/common/editorGroupColumn.ts
+  ^{ name: "editorGroupToColumn", status: "pure" };
+}
+
+=ex{columnToEditorGroup,editorGroupToColumn}

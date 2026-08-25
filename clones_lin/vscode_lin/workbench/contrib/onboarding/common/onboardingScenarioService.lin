@@ -1,0 +1,14 @@
+@LIN:workbench_contrib_onboarding_common_onboardingScenarioService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isOnboardingDeveloperModeEnabled(configurationService, scenarioId){
+  // Transposed from workbench/contrib/onboarding/common/onboardingScenarioService.ts
+  ^{ name: "isOnboardingDeveloperModeEnabled", status: "pure" };
+}
+
+!getOnboardingDeveloperModeVariation(configurationService, scenarioId){
+  // Transposed from workbench/contrib/onboarding/common/onboardingScenarioService.ts
+  ^{ name: "getOnboardingDeveloperModeVariation", status: "pure" };
+}
+
+=ex{isOnboardingDeveloperModeEnabled,getOnboardingDeveloperModeVariation}

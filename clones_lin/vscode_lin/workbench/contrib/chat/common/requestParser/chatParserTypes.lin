@@ -1,0 +1,29 @@
+@LIN:workbench_contrib_chat_common_requestParser_chatParserTypes:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!equals(a, b){
+  // Transposed from workbench/contrib/chat/common/requestParser/chatParserTypes.ts
+  ^{ name: "equals", status: "pure" };
+}
+
+!getPromptText(request){
+  // Transposed from workbench/contrib/chat/common/requestParser/chatParserTypes.ts
+  ^{ name: "getPromptText", status: "pure" };
+}
+
+!reviveParsedChatRequest(serialized){
+  // Transposed from workbench/contrib/chat/common/requestParser/chatParserTypes.ts
+  ^{ name: "reviveParsedChatRequest", status: "pure" };
+}
+
+!extractAgentAndCommand(parsed){
+  // Transposed from workbench/contrib/chat/common/requestParser/chatParserTypes.ts
+  ^{ name: "extractAgentAndCommand", status: "pure" };
+}
+
+!formatChatQuestion(chatAgentService, location, prompt, participant, command){
+  // Transposed from workbench/contrib/chat/common/requestParser/chatParserTypes.ts
+  ^{ name: "formatChatQuestion", status: "pure" };
+}
+
+=ex{equals,getPromptText,reviveParsedChatRequest,extractAgentAndCommand,formatChatQuestion}

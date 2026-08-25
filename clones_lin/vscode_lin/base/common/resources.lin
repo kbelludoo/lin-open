@@ -1,0 +1,19 @@
+@LIN:base_common_resources:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!originalFSPath(uri){
+  // Transposed from base/common/resources.ts
+  ^{ name: "originalFSPath", status: "pure" };
+}
+
+!parseMetaData(dataUri){
+  // Transposed from base/common/resources.ts
+  ^{ name: "parseMetaData", status: "pure" };
+}
+
+!toLocalResource(resource, authority, localScheme){
+  // Transposed from base/common/resources.ts
+  ^{ name: "toLocalResource", status: "pure" };
+}
+
+=ex{originalFSPath,parseMetaData,toLocalResource}

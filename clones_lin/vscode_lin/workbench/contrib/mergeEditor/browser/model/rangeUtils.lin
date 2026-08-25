@@ -1,0 +1,29 @@
+@LIN:workbench_contrib_mergeEditor_browser_model_rangeUtils:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!rangeContainsPosition(range, position){
+  // Transposed from workbench/contrib/mergeEditor/browser/model/rangeUtils.ts
+  ^{ name: "rangeContainsPosition", status: "pure" };
+}
+
+!lengthOfRange(range){
+  // Transposed from workbench/contrib/mergeEditor/browser/model/rangeUtils.ts
+  ^{ name: "lengthOfRange", status: "pure" };
+}
+
+!lengthBetweenPositions(position1, position2){
+  // Transposed from workbench/contrib/mergeEditor/browser/model/rangeUtils.ts
+  ^{ name: "lengthBetweenPositions", status: "pure" };
+}
+
+!addLength(position, length){
+  // Transposed from workbench/contrib/mergeEditor/browser/model/rangeUtils.ts
+  ^{ name: "addLength", status: "pure" };
+}
+
+!rangeIsBeforeOrTouching(range, other){
+  // Transposed from workbench/contrib/mergeEditor/browser/model/rangeUtils.ts
+  ^{ name: "rangeIsBeforeOrTouching", status: "pure" };
+}
+
+=ex{rangeContainsPosition,lengthOfRange,lengthBetweenPositions,addLength,rangeIsBeforeOrTouching}

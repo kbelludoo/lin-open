@@ -1,0 +1,17 @@
+@LIN:workbench_browser_chatPills:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getChatPillEntries(sections){
+  // Transposed from workbench/browser/chatPills.ts
+  ^{ name: "getChatPillEntries", status: "pure" };
+}
+
+!createChatPillsWidget(...args){
+  ^{ className: "ChatPillsWidget", methods: ["if", "if", "if", "getPillElements", "getPill", "if"] };
+}
+
+!createChatPillActionViewItem(...args){
+  ^{ className: "ChatPillActionViewItem", methods: ["renderContent", "updateClass", "updateLabel", "if", "getLabelContent", "if", "if", "getIconElement", "if", "getLabelText", "getAdditionalLabelContent"] };
+}
+
+=ex{getChatPillEntries,createChatPillsWidget,createChatPillActionViewItem}

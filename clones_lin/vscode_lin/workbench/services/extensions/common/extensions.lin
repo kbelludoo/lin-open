@@ -1,0 +1,51 @@
+@LIN:workbench_services_extensions_common_extensions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isProposedApiEnabled(extension, proposal){
+  // Transposed from workbench/services/extensions/common/extensions.ts
+  ^{ name: "isProposedApiEnabled", status: "pure" };
+}
+
+!setProposedApiUsageReporter(reporter){
+  // Transposed from workbench/services/extensions/common/extensions.ts
+  ^{ name: "setProposedApiUsageReporter", status: "pure" };
+}
+
+!resolveEnabledApiProposalsFallbackExperiment(assignmentService, quality){
+  // Transposed from workbench/services/extensions/common/extensions.ts
+  ^{ name: "resolveEnabledApiProposalsFallbackExperiment", status: "pure" };
+}
+
+!setEnabledApiProposalsFallbackExperiment(value, quality){
+  // Transposed from workbench/services/extensions/common/extensions.ts
+  ^{ name: "setEnabledApiProposalsFallbackExperiment", status: "pure" };
+}
+
+!checkProposedApiEnabled(extension, proposal){
+  // Transposed from workbench/services/extensions/common/extensions.ts
+  ^{ name: "checkProposedApiEnabled", status: "pure" };
+}
+
+!toExtension(extensionDescription){
+  // Transposed from workbench/services/extensions/common/extensions.ts
+  ^{ name: "toExtension", status: "pure" };
+}
+
+!toExtensionDescription(extension, isUnderDevelopment?){
+  // Transposed from workbench/services/extensions/common/extensions.ts
+  ^{ name: "toExtensionDescription", status: "pure" };
+}
+
+!createMissingExtensionDependency(...args){
+  ^{ className: "MissingExtensionDependency", methods: [] };
+}
+
+!createExtensionHostExtensions(...args){
+  ^{ className: "ExtensionHostExtensions", methods: ["versionId", "allExtensions", "myExtensions", "toSnapshot", "set", "if", "for", "if", "for", "if", "for", "for", "delta", "if", "for", "for", "for", "for", "containsExtension", "for", "containsActivationEvent", "if", "_readMyActivationEvents", "for", "for"] };
+}
+
+!createActivationTimes(...args){
+  ^{ className: "ActivationTimes", methods: [] };
+}
+
+=ex{isProposedApiEnabled,setProposedApiUsageReporter,resolveEnabledApiProposalsFallbackExperiment,setEnabledApiProposalsFallbackExperiment,checkProposedApiEnabled,toExtension,toExtensionDescription,createMissingExtensionDependency,createExtensionHostExtensions,createActivationTimes}

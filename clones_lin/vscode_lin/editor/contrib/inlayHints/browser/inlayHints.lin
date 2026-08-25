@@ -1,0 +1,21 @@
+@LIN:editor_contrib_inlayHints_browser_inlayHints:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!asCommandLink(command){
+  // Transposed from editor/contrib/inlayHints/browser/inlayHints.ts
+  ^{ name: "asCommandLink", status: "pure" };
+}
+
+!createInlayHintAnchor(...args){
+  ^{ className: "InlayHintAnchor", methods: [] };
+}
+
+!createInlayHintItem(...args){
+  ^{ className: "InlayHintItem", methods: ["with", "resolve", "if", "if", "if", "if", "_doResolve", "catch"] };
+}
+
+!createInlayHintsFragments(...args){
+  ^{ className: "InlayHintsFragments", methods: ["freeze", "create", "if", "catch", "for", "for", "dispose", "_getRangeAtPosition", "if", "if", "if"] };
+}
+
+=ex{asCommandLink,createInlayHintAnchor,createInlayHintItem,createInlayHintsFragments}

@@ -1,0 +1,18 @@
+@LIN:sessions_contrib_chat_browser_sessionArtifacts:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!sessionArtifactLocation(uri, label){
+  // Transposed from sessions/contrib/chat/browser/sessionArtifacts.ts
+  ^{ name: "sessionArtifactLocation", status: "pure" };
+}
+
+!buildSessionArtifactSections(artifacts, externalFiles, actions, imageCarouselEnabled, browserUrls){
+  // Transposed from sessions/contrib/chat/browser/sessionArtifacts.ts
+  ^{ name: "buildSessionArtifactSections", status: "pure" };
+}
+
+!createSessionArtifacts(...args){
+  ^{ className: "SessionArtifacts", methods: ["if", "_readExternalFiles", "_actions"] };
+}
+
+=ex{sessionArtifactLocation,buildSessionArtifactSections,createSessionArtifacts}

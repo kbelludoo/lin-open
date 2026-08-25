@@ -1,0 +1,8 @@
+@LIN:workbench_services_timer_browser_timerService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createTimerService(...args){
+  ^{ className: "TimerService", methods: ["_isInitialStartup", "_didUseCachedData", "_getWindowCount", "_extendStartupInfo"] };
+}
+
+=ex{createTimerService}

@@ -1,0 +1,20 @@
+@LIN:editor_common_languages_supports_languageBracketsConfiguration:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createLanguageBracketsConfiguration(...args){
+  ^{ className: "LanguageBracketsConfiguration", methods: ["for", "for", "openingBrackets", "closingBrackets", "getOpeningBracketInfo", "getClosingBracketInfo", "getBracketInfo", "getBracketRegExp"] };
+}
+
+!createBracketKindBase(...args){
+  ^{ className: "BracketKindBase", methods: ["languageId"] };
+}
+
+!createOpeningBracketKind(...args){
+  ^{ className: "OpeningBracketKind", methods: [] };
+}
+
+!createClosingBracketKind(...args){
+  ^{ className: "ClosingBracketKind", methods: ["closes", "if", "closesColorized", "if", "getOpeningBrackets"] };
+}
+
+=ex{createLanguageBracketsConfiguration,createBracketKindBase,createOpeningBracketKind,createClosingBracketKind}

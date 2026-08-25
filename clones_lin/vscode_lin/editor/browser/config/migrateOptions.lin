@@ -1,0 +1,13 @@
+@LIN:editor_browser_config_migrateOptions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!migrateOptions(options){
+  // Transposed from editor/browser/config/migrateOptions.ts
+  ^{ name: "migrateOptions", status: "pure" };
+}
+
+!createEditorSettingMigration(...args){
+  ^{ className: "EditorSettingMigration", methods: ["apply", "_read", "if", "if", "_write", "if"] };
+}
+
+=ex{migrateOptions,createEditorSettingMigration}

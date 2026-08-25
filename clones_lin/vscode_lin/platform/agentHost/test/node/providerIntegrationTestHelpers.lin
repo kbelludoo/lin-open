@@ -1,0 +1,14 @@
+@LIN:platform_agentHost_test_node_providerIntegrationTestHelpers:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!dispatchTurn(client, session, turnId, text, clientSeq){
+  // Transposed from platform/agentHost/test/node/providerIntegrationTestHelpers.ts
+  ^{ name: "dispatchTurn", status: "pure" };
+}
+
+!dispatchTurnWithAttachments(client, session, turnId, text, attachments, clientSeq){
+  // Transposed from platform/agentHost/test/node/providerIntegrationTestHelpers.ts
+  ^{ name: "dispatchTurnWithAttachments", status: "pure" };
+}
+
+=ex{dispatchTurn,dispatchTurnWithAttachments}

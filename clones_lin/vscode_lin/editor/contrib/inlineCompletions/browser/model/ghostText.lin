@@ -1,0 +1,26 @@
+@LIN:editor_contrib_inlineCompletions_browser_model_ghostText:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!ghostTextsOrReplacementsEqual(a, b){
+  // Transposed from editor/contrib/inlineCompletions/browser/model/ghostText.ts
+  ^{ name: "ghostTextsOrReplacementsEqual", status: "pure" };
+}
+
+!ghostTextOrReplacementEquals(a, b){
+  // Transposed from editor/contrib/inlineCompletions/browser/model/ghostText.ts
+  ^{ name: "ghostTextOrReplacementEquals", status: "pure" };
+}
+
+!createGhostText(...args){
+  ^{ className: "GhostText", methods: ["equals", "render", "renderForScreenReader", "if", "isEmpty", "lineCount"] };
+}
+
+!createGhostTextPart(...args){
+  ^{ className: "GhostTextPart", methods: ["equals"] };
+}
+
+!createGhostTextReplacement(...args){
+  ^{ className: "GhostTextReplacement", methods: ["renderForScreenReader", "render", "if", "lineCount", "isEmpty", "equals"] };
+}
+
+=ex{ghostTextsOrReplacementsEqual,ghostTextOrReplacementEquals,createGhostText,createGhostTextPart,createGhostTextReplacement}

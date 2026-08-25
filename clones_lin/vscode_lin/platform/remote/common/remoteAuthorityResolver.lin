@@ -1,0 +1,25 @@
+@LIN:platform_remote_common_remoteAuthorityResolver:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getRemoteAuthorityPrefix(remoteAuthority){
+  // Transposed from platform/remote/common/remoteAuthorityResolver.ts
+  ^{ name: "getRemoteAuthorityPrefix", status: "pure" };
+}
+
+!createManagedRemoteConnection(...args){
+  ^{ className: "ManagedRemoteConnection", methods: ["toString"] };
+}
+
+!createWebSocketRemoteConnection(...args){
+  ^{ className: "WebSocketRemoteConnection", methods: ["toString"] };
+}
+
+!createRemoteAuthorityResolverError(...args){
+  ^{ className: "RemoteAuthorityResolverError", methods: ["isNotAvailable", "isTemporarilyNotAvailable", "isNoResolverFound", "isInvalidAuthority", "isHandled"] };
+}
+
+!getRemoteAuthorityResolverErrorCodeEnum(){
+  ^{ enumName: "RemoteAuthorityResolverErrorCode", members: ["Unknown", "NotAvailable", "TemporarilyNotAvailable", "NoResolverFound", "InvalidAuthority"] };
+}
+
+=ex{getRemoteAuthorityPrefix,createManagedRemoteConnection,createWebSocketRemoteConnection,createRemoteAuthorityResolverError,getRemoteAuthorityResolverErrorCodeEnum}

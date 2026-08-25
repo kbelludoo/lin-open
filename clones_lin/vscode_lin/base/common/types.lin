@@ -1,0 +1,74 @@
+@LIN:base_common_types:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isString(str){
+  // Transposed from base/common/types.ts
+  ^{ name: "isString", status: "pure" };
+}
+
+!isStringArray(value){
+  // Transposed from base/common/types.ts
+  ^{ name: "isStringArray", status: "pure" };
+}
+
+!isObject(obj){
+  // Transposed from base/common/types.ts
+  ^{ name: "isObject", status: "pure" };
+}
+
+!isTypedArray(obj){
+  // Transposed from base/common/types.ts
+  ^{ name: "isTypedArray", status: "pure" };
+}
+
+!isNumber(obj){
+  // Transposed from base/common/types.ts
+  ^{ name: "isNumber", status: "pure" };
+}
+
+!isBoolean(obj){
+  // Transposed from base/common/types.ts
+  ^{ name: "isBoolean", status: "pure" };
+}
+
+!isUndefined(obj){
+  // Transposed from base/common/types.ts
+  ^{ name: "isUndefined", status: "pure" };
+}
+
+!isUndefinedOrNull(obj){
+  // Transposed from base/common/types.ts
+  ^{ name: "isUndefinedOrNull", status: "pure" };
+}
+
+!assertType(condition, type?){
+  // Transposed from base/common/types.ts
+  ^{ name: "assertType", status: "pure" };
+}
+
+!isEmptyObject(obj){
+  // Transposed from base/common/types.ts
+  ^{ name: "isEmptyObject", status: "pure" };
+}
+
+!isFunction(obj){
+  // Transposed from base/common/types.ts
+  ^{ name: "isFunction", status: "pure" };
+}
+
+!areFunctions(objects){
+  // Transposed from base/common/types.ts
+  ^{ name: "areFunctions", status: "pure" };
+}
+
+!validateConstraints(args, constraints){
+  // Transposed from base/common/types.ts
+  ^{ name: "validateConstraints", status: "pure" };
+}
+
+!validateConstraint(arg, constraint){
+  // Transposed from base/common/types.ts
+  ^{ name: "validateConstraint", status: "pure" };
+}
+
+=ex{isString,isStringArray,isObject,isTypedArray,isNumber,isBoolean,isUndefined,isUndefinedOrNull,assertType,isEmptyObject,isFunction,areFunctions,validateConstraints,validateConstraint}

@@ -1,0 +1,13 @@
+@LIN:workbench_contrib_extensions_electron_browser_extensionsSlowActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createSlowExtensionAction(accessor, extension, profile){
+  // Transposed from workbench/contrib/extensions/electron-browser/extensionsSlowActions.ts
+  ^{ name: "createSlowExtensionAction", status: "pure" };
+}
+
+!createSlowExtensionAction(...args){
+  ^{ className: "SlowExtensionAction", methods: ["run", "if"] };
+}
+
+=ex{createSlowExtensionAction,createSlowExtensionAction}

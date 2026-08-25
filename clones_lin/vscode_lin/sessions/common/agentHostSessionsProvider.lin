@@ -1,0 +1,24 @@
+@LIN:sessions_common_agentHostSessionsProvider:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isAgentHostProvider(provider){
+  // Transposed from sessions/common/agentHostSessionsProvider.ts
+  ^{ name: "isAgentHostProvider", status: "pure" };
+}
+
+!isAgentHostProviderId(providerId){
+  // Transposed from sessions/common/agentHostSessionsProvider.ts
+  ^{ name: "isAgentHostProviderId", status: "pure" };
+}
+
+!resolvedConfigsEqual(a, b){
+  // Transposed from sessions/common/agentHostSessionsProvider.ts
+  ^{ name: "resolvedConfigsEqual", status: "pure" };
+}
+
+!buildMutableConfigSchema(config, unknown>){
+  // Transposed from sessions/common/agentHostSessionsProvider.ts
+  ^{ name: "buildMutableConfigSchema", status: "pure" };
+}
+
+=ex{isAgentHostProvider,isAgentHostProviderId,resolvedConfigsEqual,buildMutableConfigSchema}

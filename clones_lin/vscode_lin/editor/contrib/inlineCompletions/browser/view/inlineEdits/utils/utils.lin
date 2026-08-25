@@ -1,0 +1,61 @@
+@LIN:editor_contrib_inlineCompletions_browser_view_inlineEdits_utils_utils:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!maxContentWidthInRange(editor, range, reader){
+  // Transposed from editor/contrib/inlineCompletions/browser/view/inlineEdits/utils/utils.ts
+  ^{ name: "maxContentWidthInRange", status: "pure" };
+}
+
+!getContentSizeOfLines(editor, range, reader){
+  // Transposed from editor/contrib/inlineCompletions/browser/view/inlineEdits/utils/utils.ts
+  ^{ name: "getContentSizeOfLines", status: "pure" };
+}
+
+!getOffsetForPos(editor, pos, reader){
+  // Transposed from editor/contrib/inlineCompletions/browser/view/inlineEdits/utils/utils.ts
+  ^{ name: "getOffsetForPos", status: "pure" };
+}
+
+!getPrefixTrim(diffRanges, originalLinesRange, modifiedLines, editor, reader){
+  // Transposed from editor/contrib/inlineCompletions/browser/view/inlineEdits/utils/utils.ts
+  ^{ name: "getPrefixTrim", status: "pure" };
+}
+
+!getEditorValidOverlayRect(editor){
+  // Transposed from editor/contrib/inlineCompletions/browser/view/inlineEdits/utils/utils.ts
+  ^{ name: "getEditorValidOverlayRect", status: "pure" };
+}
+
+!applyEditToModifiedRangeMappings(rangeMapping, edit){
+  // Transposed from editor/contrib/inlineCompletions/browser/view/inlineEdits/utils/utils.ts
+  ^{ name: "applyEditToModifiedRangeMappings", status: "pure" };
+}
+
+!createReindentEdit(text, range, tabSize){
+  // Transposed from editor/contrib/inlineCompletions/browser/view/inlineEdits/utils/utils.ts
+  ^{ name: "createReindentEdit", status: "pure" };
+}
+
+!createRectangle(layout, padding, borderRadius, options){
+  // Transposed from editor/contrib/inlineCompletions/browser/view/inlineEdits/utils/utils.ts
+  ^{ name: "createRectangle", status: "pure" };
+}
+
+!observeEditorBoundingClientRect(editor, store){
+  // Transposed from editor/contrib/inlineCompletions/browser/view/inlineEdits/utils/utils.ts
+  ^{ name: "observeEditorBoundingClientRect", status: "pure" };
+}
+
+!createStatusBarViewItem(...args){
+  ^{ className: "StatusBarViewItem", methods: ["updateLabel", "if", "if", "updateTooltip"] };
+}
+
+!createUniqueUriGenerator(...args){
+  ^{ className: "UniqueUriGenerator", methods: ["getUniqueUri"] };
+}
+
+!createPathBuilder(...args){
+  ^{ className: "PathBuilder", methods: ["moveTo", "lineTo", "curveTo", "curveTo2", "build"] };
+}
+
+=ex{maxContentWidthInRange,getContentSizeOfLines,getOffsetForPos,getPrefixTrim,getEditorValidOverlayRect,applyEditToModifiedRangeMappings,createReindentEdit,createRectangle,observeEditorBoundingClientRect,createStatusBarViewItem,createUniqueUriGenerator,createPathBuilder}

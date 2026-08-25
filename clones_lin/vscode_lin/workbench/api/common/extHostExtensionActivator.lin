@@ -1,0 +1,24 @@
+@LIN:workbench_api_common_extHostExtensionActivator:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createExtensionActivationTimes(...args){
+  ^{ className: "ExtensionActivationTimes", methods: [] };
+}
+
+!createExtensionActivationTimesBuilder(...args){
+  ^{ className: "ExtensionActivationTimesBuilder", methods: ["_delta", "if", "build", "codeLoadingStart", "codeLoadingStop", "activateCallStart", "activateCallStop", "activateResolveStart", "activateResolveStop"] };
+}
+
+!createActivatedExtension(...args){
+  ^{ className: "ActivatedExtension", methods: [] };
+}
+
+!createEmptyExtension(...args){
+  ^{ className: "EmptyExtension", methods: [] };
+}
+
+!createHostExtension(...args){
+  ^{ className: "HostExtension", methods: [] };
+}
+
+=ex{createExtensionActivationTimes,createExtensionActivationTimesBuilder,createActivatedExtension,createEmptyExtension,createHostExtension}

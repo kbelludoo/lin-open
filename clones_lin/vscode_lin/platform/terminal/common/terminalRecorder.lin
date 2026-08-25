@@ -1,0 +1,8 @@
+@LIN:platform_terminal_common_terminalRecorder:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createTerminalRecorder(...args){
+  ^{ className: "TerminalRecorder", methods: ["handleResize", "if", "if", "if", "if", "if", "handleData", "while", "if", "if", "generateReplayEventSync", "if", "generateReplayEvent"] };
+}
+
+=ex{createTerminalRecorder}

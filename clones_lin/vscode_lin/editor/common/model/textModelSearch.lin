@@ -1,0 +1,31 @@
+@LIN:editor_common_model_textModelSearch:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isMultilineRegexSource(searchString){
+  // Transposed from editor/common/model/textModelSearch.ts
+  ^{ name: "isMultilineRegexSource", status: "pure" };
+}
+
+!createFindMatch(range, rawMatches, captureMatches){
+  // Transposed from editor/common/model/textModelSearch.ts
+  ^{ name: "createFindMatch", status: "pure" };
+}
+
+!isValidMatch(wordSeparators, text, textLength, matchStartIndex, matchLength){
+  // Transposed from editor/common/model/textModelSearch.ts
+  ^{ name: "isValidMatch", status: "pure" };
+}
+
+!createSearchParams(...args){
+  ^{ className: "SearchParams", methods: ["parseSearchRequest", "if", "if", "catch", "if"] };
+}
+
+!createTextModelSearch(...args){
+  ^{ className: "TextModelSearch", methods: ["findMatches", "if", "if", "_getMultilineMatchRange", "if", "if", "_doFindMatchesMultiline", "if", "_doFindMatchesLineByLine", "if", "for", "if", "_findMatchesInLine", "if", "if", "if", "if", "findNextMatch", "if", "if", "_doFindNextMatchMultiline", "if", "if", "_doFindNextMatchLineByLine", "if", "for", "if", "_findFirstMatchInLine", "if", "findPreviousMatch", "if", "if", "_doFindPreviousMatchMultiline", "if", "_doFindPreviousMatchLineByLine", "if", "for", "if", "_findLastMatchInLine"] };
+}
+
+!createSearcher(...args){
+  ^{ className: "Searcher", methods: ["reset", "next", "if", "if", "if", "if"] };
+}
+
+=ex{isMultilineRegexSource,createFindMatch,isValidMatch,createSearchParams,createTextModelSearch,createSearcher}

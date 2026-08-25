@@ -1,0 +1,13 @@
+@LIN:workbench_services_textMate_common_TMHelper:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!findMatchingThemeRule(theme, scopes, onlyColorRules){
+  // Transposed from workbench/services/textMate/common/TMHelper.ts
+  ^{ name: "findMatchingThemeRule", status: "pure" };
+}
+
+!createThemeRule(...args){
+  ^{ className: "ThemeRule", methods: ["matches", "_cmp", "if", "if", "if", "if", "if", "for", "if", "isMoreSpecific", "_matchesOne", "_matches", "while", "if"] };
+}
+
+=ex{findMatchingThemeRule,createThemeRule}

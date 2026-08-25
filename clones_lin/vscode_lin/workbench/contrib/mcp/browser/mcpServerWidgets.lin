@@ -1,0 +1,32 @@
+@LIN:workbench_contrib_mcp_browser_mcpServerWidgets:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createMcpServerIconWidget(...args){
+  ^{ className: "McpServerIconWidget", methods: ["clear", "render", "if", "if", "if", "if"] };
+}
+
+!createPublisherWidget(...args){
+  ^{ className: "PublisherWidget", methods: ["clear", "render", "if", "if", "if", "if", "if"] };
+}
+
+!createStarredWidget(...args){
+  ^{ className: "StarredWidget", methods: ["if", "clear", "render", "if", "if", "if", "getCountLabel", "if", "if"] };
+}
+
+!createLicenseWidget(...args){
+  ^{ className: "LicenseWidget", methods: ["clear", "render", "if"] };
+}
+
+!createMcpServerHoverWidget(...args){
+  ^{ className: "McpServerHoverWidget", methods: ["render", "if", "getHoverMarkdown", "if", "if", "if", "if", "if", "if", "if", "if", "if", "for", "if"] };
+}
+
+!createMcpServerScopeBadgeWidget(...args){
+  ^{ className: "McpServerScopeBadgeWidget", methods: ["clear", "render", "if", "switch"] };
+}
+
+!createMcpServerStatusWidget(...args){
+  ^{ className: "McpServerStatusWidget", methods: ["render", "if", "for", "if", "if"] };
+}
+
+=ex{createMcpServerIconWidget,createPublisherWidget,createStarredWidget,createLicenseWidget,createMcpServerHoverWidget,createMcpServerScopeBadgeWidget,createMcpServerStatusWidget}

@@ -1,0 +1,8 @@
+@LIN:workbench_contrib_issue_common_issue:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getIssueSourceEnum(){
+  ^{ enumName: "IssueSource", members: ["VSCode", "AgentsWindow", "Extension", "Marketplace", "Unknown"] };
+}
+
+=ex{getIssueSourceEnum}

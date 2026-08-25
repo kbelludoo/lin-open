@@ -1,0 +1,14 @@
+@LIN:workbench_contrib_mcp_common_mcpSandboxService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!mcpDefaultCwdToFsPath(resource, os){
+  // Transposed from workbench/contrib/mcp/common/mcpSandboxService.ts
+  ^{ name: "mcpDefaultCwdToFsPath", status: "pure" };
+}
+
+!resolveMcpServerSandboxWorkingDirectory(cwd, defaultCwd, userHome, os){
+  // Transposed from workbench/contrib/mcp/common/mcpSandboxService.ts
+  ^{ name: "resolveMcpServerSandboxWorkingDirectory", status: "pure" };
+}
+
+=ex{mcpDefaultCwdToFsPath,resolveMcpServerSandboxWorkingDirectory}

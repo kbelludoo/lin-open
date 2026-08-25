@@ -1,0 +1,16 @@
+@LIN:workbench_contrib_debug_browser_callStackWidget:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createCallStackFrame(...args){
+  ^{ className: "CallStackFrame", methods: [] };
+}
+
+!createSkippedCallFrames(...args){
+  ^{ className: "SkippedCallFrames", methods: [] };
+}
+
+!createCallStackWidget(...args){
+  ^{ className: "CallStackWidget", methods: ["onDidChangeContentHeight", "onDidScroll", "contentHeight", "setFrames", "layout", "collapseAll", "transaction", "loadFrame", "if", "if", "mapFrames", "for", "if", "if"] };
+}
+
+=ex{createCallStackFrame,createSkippedCallFrames,createCallStackWidget}

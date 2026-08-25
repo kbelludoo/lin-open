@@ -1,0 +1,13 @@
+@LIN:platform_browserView_electron_main_browserViewFrameInspector:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!extractNodeData(connection, id){
+  // Transposed from platform/browserView/electron-main/browserViewFrameInspector.ts
+  ^{ name: "extractNodeData", status: "pure" };
+}
+
+!createBrowserViewFrameInspector(...args){
+  ^{ className: "BrowserViewFrameInspector", methods: ["isPaused", "isInspecting", "frameId", "_register", "if", "if", "if", "if", "if", "_enableDomains", "dispose", "if", "setTheme", "startInspection", "if", "if", "if", "_stopInspection", "if", "stopInspection", "setElementComments", "_updateElementComments", "extractNodeDataById", "if", "extractNodeData", "getVisualViewportScale", "if", "getElementHandle", "if"] };
+}
+
+=ex{extractNodeData,createBrowserViewFrameInspector}

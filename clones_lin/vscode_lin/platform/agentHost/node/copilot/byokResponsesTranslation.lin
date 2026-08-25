@@ -1,0 +1,28 @@
+@LIN:platform_agentHost_node_copilot_byokResponsesTranslation:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!responsesRequestToBridge(vendor, body){
+  // Transposed from platform/agentHost/node/copilot/byokResponsesTranslation.ts
+  ^{ name: "responsesRequestToBridge", status: "pure" };
+}
+
+!bridgeResultToResponsesBody(result, model){
+  // Transposed from platform/agentHost/node/copilot/byokResponsesTranslation.ts
+  ^{ name: "bridgeResultToResponsesBody", status: "pure" };
+}
+
+!bridgeResultToResponsesSseFrames(result, model){
+  // Transposed from platform/agentHost/node/copilot/byokResponsesTranslation.ts
+  ^{ name: "bridgeResultToResponsesSseFrames", status: "pure" };
+}
+
+!responsesErrorBody(message, type = 'api_error'){
+  // Transposed from platform/agentHost/node/copilot/byokResponsesTranslation.ts
+  ^{ name: "responsesErrorBody", status: "pure" };
+}
+
+!createResponsesTranslationError(...args){
+  ^{ className: "ResponsesTranslationError", methods: ["toBridgeRole", "switch"] };
+}
+
+=ex{responsesRequestToBridge,bridgeResultToResponsesBody,bridgeResultToResponsesSseFrames,responsesErrorBody,createResponsesTranslationError}

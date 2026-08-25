@@ -1,0 +1,18 @@
+@LIN:workbench_contrib_notebook_test_browser_testNotebookEditor:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createTestNotebookEditor(instantiationService, disposables, cells, lang, kind, output?, metadata?){
+  // Transposed from workbench/contrib/notebook/test/browser/testNotebookEditor.ts
+  ^{ name: "createTestNotebookEditor", status: "pure" };
+}
+
+!valueBytesFromString(value){
+  // Transposed from workbench/contrib/notebook/test/browser/testNotebookEditor.ts
+  ^{ name: "valueBytesFromString", status: "pure" };
+}
+
+!createTestCell(...args){
+  ^{ className: "TestCell", methods: [] };
+}
+
+=ex{createTestNotebookEditor,valueBytesFromString,createTestCell}

@@ -1,0 +1,17 @@
+@LIN:editor_common_model_editStack:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isEditStackElement(element){
+  // Transposed from editor/common/model/editStack.ts
+  ^{ name: "isEditStackElement", status: "pure" };
+}
+
+!createSingleModelEditStackData(...args){
+  ^{ className: "SingleModelEditStackData", methods: ["create", "append", "if", "_writeSelectionsSize", "_writeSelections", "if", "for", "_readSelections", "for", "serialize", "for", "for", "deserialize", "for"] };
+}
+
+!createEditStack(...args){
+  ^{ className: "EditStack", methods: ["pushStackElement", "popStackElement", "clear", "_getOrCreateEditStackElement", "pushEOL", "if", "_computeCursorState", "catch"] };
+}
+
+=ex{isEditStackElement,createSingleModelEditStackData,createEditStack}

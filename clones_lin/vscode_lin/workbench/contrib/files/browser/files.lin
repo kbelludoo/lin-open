@@ -1,0 +1,19 @@
+@LIN:workbench_contrib_files_browser_files:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getResourceForCommand(commandArg, editorService, listService){
+  // Transposed from workbench/contrib/files/browser/files.ts
+  ^{ name: "getResourceForCommand", status: "pure" };
+}
+
+!getMultiSelectedResources(commandArg, listService, editorSerice, editorGroupService, explorerService){
+  // Transposed from workbench/contrib/files/browser/files.ts
+  ^{ name: "getMultiSelectedResources", status: "pure" };
+}
+
+!getOpenEditorsViewMultiSelection(accessor){
+  // Transposed from workbench/contrib/files/browser/files.ts
+  ^{ name: "getOpenEditorsViewMultiSelection", status: "pure" };
+}
+
+=ex{getResourceForCommand,getMultiSelectedResources,getOpenEditorsViewMultiSelection}

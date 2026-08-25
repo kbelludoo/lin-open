@@ -1,0 +1,24 @@
+@LIN:sessions_contrib_layout_browser_singlePane_singlePaneSharedHelpers:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isMainPartEmpty(editorGroupsService){
+  // Transposed from sessions/contrib/layout/browser/singlePane/singlePaneSharedHelpers.ts
+  ^{ name: "isMainPartEmpty", status: "pure" };
+}
+
+!isChangesEditorInput(editor, sessionChangesService){
+  // Transposed from sessions/contrib/layout/browser/singlePane/singlePaneSharedHelpers.ts
+  ^{ name: "isChangesEditorInput", status: "pure" };
+}
+
+!isFileEditorInput(editor){
+  // Transposed from sessions/contrib/layout/browser/singlePane/singlePaneSharedHelpers.ts
+  ^{ name: "isFileEditorInput", status: "pure" };
+}
+
+!isEditorWithoutDockedDetails(editor){
+  // Transposed from sessions/contrib/layout/browser/singlePane/singlePaneSharedHelpers.ts
+  ^{ name: "isEditorWithoutDockedDetails", status: "pure" };
+}
+
+=ex{isMainPartEmpty,isChangesEditorInput,isFileEditorInput,isEditorWithoutDockedDetails}

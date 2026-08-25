@@ -1,0 +1,13 @@
+@LIN:platform_userDataSync_common_snippetsSync:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!parseSnippets(syncData){
+  // Transposed from platform/userDataSync/common/snippetsSync.ts
+  ^{ name: "parseSnippets", status: "pure" };
+}
+
+!createSnippetsInitializer(...args){
+  ^{ className: "SnippetsInitializer", methods: ["doInitialize", "if", "if", "if", "isEmpty", "catch"] };
+}
+
+=ex{parseSnippets,createSnippetsInitializer}

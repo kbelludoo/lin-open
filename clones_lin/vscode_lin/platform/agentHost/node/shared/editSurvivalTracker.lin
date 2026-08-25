@@ -1,0 +1,34 @@
+@LIN:platform_agentHost_node_shared_editSurvivalTracker:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!compute4GramTextSimilarity(text1, text2){
+  // Transposed from platform/agentHost/node/shared/editSurvivalTracker.ts
+  ^{ name: "compute4GramTextSimilarity", status: "pure" };
+}
+
+!computeFractionPresentIn(chunk, currentText){
+  // Transposed from platform/agentHost/node/shared/editSurvivalTracker.ts
+  ^{ name: "computeFractionPresentIn", status: "pure" };
+}
+
+!computeChunkedFourGramSurvival(aiChunks, currentText){
+  // Transposed from platform/agentHost/node/shared/editSurvivalTracker.ts
+  ^{ name: "computeChunkedFourGramSurvival", status: "pure" };
+}
+
+!computeNoRevertScore(beforeText, afterText, currentText){
+  // Transposed from platform/agentHost/node/shared/editSurvivalTracker.ts
+  ^{ name: "computeNoRevertScore", status: "pure" };
+}
+
+!computeWholeFileEditSurvival(beforeText, afterText, currentText){
+  // Transposed from platform/agentHost/node/shared/editSurvivalTracker.ts
+  ^{ name: "computeWholeFileEditSurvival", status: "pure" };
+}
+
+!computeChunkedEditSurvival(beforeText, afterText, aiChunks, currentText){
+  // Transposed from platform/agentHost/node/shared/editSurvivalTracker.ts
+  ^{ name: "computeChunkedEditSurvival", status: "pure" };
+}
+
+=ex{compute4GramTextSimilarity,computeFractionPresentIn,computeChunkedFourGramSurvival,computeNoRevertScore,computeWholeFileEditSurvival,computeChunkedEditSurvival}

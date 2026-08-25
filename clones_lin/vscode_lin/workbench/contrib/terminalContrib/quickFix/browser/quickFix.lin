@@ -1,0 +1,8 @@
+@LIN:workbench_contrib_terminalContrib_quickFix_browser_quickFix:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getTerminalQuickFixTypeEnum(){
+  ^{ enumName: "TerminalQuickFixType", members: ["TerminalCommand", "Opener", "Port", "VscodeCommand"] };
+}
+
+=ex{getTerminalQuickFixTypeEnum}

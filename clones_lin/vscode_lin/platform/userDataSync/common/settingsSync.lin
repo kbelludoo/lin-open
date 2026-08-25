@@ -1,0 +1,13 @@
+@LIN:platform_userDataSync_common_settingsSync:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!parseSettingsSyncContent(syncContent){
+  // Transposed from platform/userDataSync/common/settingsSync.ts
+  ^{ name: "parseSettingsSyncContent", status: "pure" };
+}
+
+!createSettingsInitializer(...args){
+  ^{ className: "SettingsInitializer", methods: ["doInitialize", "if", "if", "isEmpty", "catch", "parseSettingsSyncContent", "catch"] };
+}
+
+=ex{parseSettingsSyncContent,createSettingsInitializer}

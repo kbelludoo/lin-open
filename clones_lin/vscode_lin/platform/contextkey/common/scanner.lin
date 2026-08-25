@@ -1,0 +1,8 @@
+@LIN:platform_contextkey_common_scanner:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createScanner(...args){
+  ^{ className: "Scanner", methods: ["getLexeme", "switch", "errors", "reset", "scan", "switch", "_match", "_advance", "_peek", "_addToken", "_error", "_string", "if", "if", "_quotedString", "_regex", "while", "if", "if", "if", "if", "if", "if", "_isAtEnd"] };
+}
+
+=ex{createScanner}

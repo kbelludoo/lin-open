@@ -1,0 +1,8 @@
+@LIN:editor_common_languages_modesRegistry:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createEditorModesRegistry(...args){
+  ^{ className: "EditorModesRegistry", methods: ["registerLanguage", "for", "if", "getLanguages"] };
+}
+
+=ex{createEditorModesRegistry}

@@ -1,0 +1,13 @@
+@LIN:workbench_browser_chatDropdownPill:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createChatSectionPill(action, sections, options, resourceLabels, instantiationService){
+  // Transposed from workbench/browser/chatDropdownPill.ts
+  ^{ name: "createChatSectionPill", status: "pure" };
+}
+
+!createChatDropdownPillActionViewItem(...args){
+  ^{ className: "ChatDropdownPillActionViewItem", methods: ["itemModifierClass", "buttonModifierClass", "renderContent", "_updatePopupState", "if", "if", "isSummarized", "entries", "getIconElement", "createIconElement", "if", "getLabelText", "getAdditionalLabelContent", "getTooltip", "if", "getAriaLabel", "onDidClickButton", "if", "hasOpenDropdown", "openEntry", "catch", "showDropdown", "if", "for", "if", "for"] };
+}
+
+=ex{createChatSectionPill,createChatDropdownPillActionViewItem}

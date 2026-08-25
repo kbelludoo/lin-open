@@ -1,0 +1,29 @@
+@LIN:editor_contrib_gotoSymbol_browser_goToSymbol:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getDefinitionsAtPosition(registry, model, position, recursive, token){
+  // Transposed from editor/contrib/gotoSymbol/browser/goToSymbol.ts
+  ^{ name: "getDefinitionsAtPosition", status: "pure" };
+}
+
+!getDeclarationsAtPosition(registry, model, position, recursive, token){
+  // Transposed from editor/contrib/gotoSymbol/browser/goToSymbol.ts
+  ^{ name: "getDeclarationsAtPosition", status: "pure" };
+}
+
+!getImplementationsAtPosition(registry, model, position, recursive, token){
+  // Transposed from editor/contrib/gotoSymbol/browser/goToSymbol.ts
+  ^{ name: "getImplementationsAtPosition", status: "pure" };
+}
+
+!getTypeDefinitionsAtPosition(registry, model, position, recursive, token){
+  // Transposed from editor/contrib/gotoSymbol/browser/goToSymbol.ts
+  ^{ name: "getTypeDefinitionsAtPosition", status: "pure" };
+}
+
+!getReferencesAtPosition(registry, model, position, compact, recursive, token){
+  // Transposed from editor/contrib/gotoSymbol/browser/goToSymbol.ts
+  ^{ name: "getReferencesAtPosition", status: "pure" };
+}
+
+=ex{getDefinitionsAtPosition,getDeclarationsAtPosition,getImplementationsAtPosition,getTypeDefinitionsAtPosition,getReferencesAtPosition}

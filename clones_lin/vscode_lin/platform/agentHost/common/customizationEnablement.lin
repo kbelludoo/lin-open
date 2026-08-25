@@ -1,0 +1,34 @@
+@LIN:platform_agentHost_common_customizationEnablement:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getCustomizationEnablementDecision(customization){
+  // Transposed from platform/agentHost/common/customizationEnablement.ts
+  ^{ name: "getCustomizationEnablementDecision", status: "pure" };
+}
+
+!isCustomizationEnabled(customization){
+  // Transposed from platform/agentHost/common/customizationEnablement.ts
+  ^{ name: "isCustomizationEnabled", status: "pure" };
+}
+
+!getCustomizationScopeEnablement(customization){
+  // Transposed from platform/agentHost/common/customizationEnablement.ts
+  ^{ name: "getCustomizationScopeEnablement", status: "pure" };
+}
+
+!getCustomizationDisabledReason(customization, plugin?){
+  // Transposed from platform/agentHost/common/customizationEnablement.ts
+  ^{ name: "getCustomizationDisabledReason", status: "pure" };
+}
+
+!sortCustomizationEnablement(enablement){
+  // Transposed from platform/agentHost/common/customizationEnablement.ts
+  ^{ name: "sortCustomizationEnablement", status: "pure" };
+}
+
+!withCustomizationEnablement(current, kind, entry){
+  // Transposed from platform/agentHost/common/customizationEnablement.ts
+  ^{ name: "withCustomizationEnablement", status: "pure" };
+}
+
+=ex{getCustomizationEnablementDecision,isCustomizationEnabled,getCustomizationScopeEnablement,getCustomizationDisabledReason,sortCustomizationEnablement,withCustomizationEnablement}

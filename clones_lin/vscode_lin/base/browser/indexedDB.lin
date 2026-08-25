@@ -1,0 +1,12 @@
+@LIN:base_browser_indexedDB:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createDBClosedError(...args){
+  ^{ className: "DBClosedError", methods: [] };
+}
+
+!createIndexedDB(...args){
+  ^{ className: "IndexedDB", methods: ["create", "openDatabase", "catch", "if", "catch", "doOpenDatabase", "for", "for", "deleteDatabase", "hasPendingTransactions", "close", "if", "if", "if", "if", "if", "if", "if", "error"] };
+}
+
+=ex{createDBClosedError,createIndexedDB}

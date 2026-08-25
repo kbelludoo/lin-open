@@ -1,0 +1,325 @@
+@LIN:base_common_strings:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isFalsyOrWhitespace(str){
+  // Transposed from base/common/strings.ts
+  ^{ name: "isFalsyOrWhitespace", status: "pure" };
+}
+
+!format(value, args){
+  // Transposed from base/common/strings.ts
+  ^{ name: "format", status: "pure" };
+}
+
+!format2(template, values, unknown>){
+  // Transposed from base/common/strings.ts
+  ^{ name: "format2", status: "pure" };
+}
+
+!htmlAttributeEncodeValue(value){
+  // Transposed from base/common/strings.ts
+  ^{ name: "htmlAttributeEncodeValue", status: "pure" };
+}
+
+!escape(html){
+  // Transposed from base/common/strings.ts
+  ^{ name: "escape", status: "pure" };
+}
+
+!escapeRegExpCharacters(value){
+  // Transposed from base/common/strings.ts
+  ^{ name: "escapeRegExpCharacters", status: "pure" };
+}
+
+!count(value, substr){
+  // Transposed from base/common/strings.ts
+  ^{ name: "count", status: "pure" };
+}
+
+!truncate(value, maxLength, suffix = Ellipsis){
+  // Transposed from base/common/strings.ts
+  ^{ name: "truncate", status: "pure" };
+}
+
+!truncateMiddle(value, maxLength, suffix = Ellipsis){
+  // Transposed from base/common/strings.ts
+  ^{ name: "truncateMiddle", status: "pure" };
+}
+
+!trim(haystack, needle){
+  // Transposed from base/common/strings.ts
+  ^{ name: "trim", status: "pure" };
+}
+
+!ltrim(haystack, needle){
+  // Transposed from base/common/strings.ts
+  ^{ name: "ltrim", status: "pure" };
+}
+
+!rtrim(haystack, needle){
+  // Transposed from base/common/strings.ts
+  ^{ name: "rtrim", status: "pure" };
+}
+
+!convertSimple2RegExpPattern(pattern){
+  // Transposed from base/common/strings.ts
+  ^{ name: "convertSimple2RegExpPattern", status: "pure" };
+}
+
+!createRegExp(searchString, isRegex, options){
+  // Transposed from base/common/strings.ts
+  ^{ name: "createRegExp", status: "pure" };
+}
+
+!regExpLeadsToEndlessLoop(regexp){
+  // Transposed from base/common/strings.ts
+  ^{ name: "regExpLeadsToEndlessLoop", status: "pure" };
+}
+
+!splitLines(str){
+  // Transposed from base/common/strings.ts
+  ^{ name: "splitLines", status: "pure" };
+}
+
+!splitLinesIncludeSeparators(str){
+  // Transposed from base/common/strings.ts
+  ^{ name: "splitLinesIncludeSeparators", status: "pure" };
+}
+
+!firstNonWhitespaceIndex(str){
+  // Transposed from base/common/strings.ts
+  ^{ name: "firstNonWhitespaceIndex", status: "pure" };
+}
+
+!getLeadingWhitespace(str, start, end){
+  // Transposed from base/common/strings.ts
+  ^{ name: "getLeadingWhitespace", status: "pure" };
+}
+
+!lastNonWhitespaceIndex(str, startIndex){
+  // Transposed from base/common/strings.ts
+  ^{ name: "lastNonWhitespaceIndex", status: "pure" };
+}
+
+!getIndentationLength(str){
+  // Transposed from base/common/strings.ts
+  ^{ name: "getIndentationLength", status: "pure" };
+}
+
+!compare(a, b){
+  // Transposed from base/common/strings.ts
+  ^{ name: "compare", status: "pure" };
+}
+
+!compareSubstring(a, b, aStart, aEnd, bStart, bEnd){
+  // Transposed from base/common/strings.ts
+  ^{ name: "compareSubstring", status: "pure" };
+}
+
+!compareIgnoreCase(a, b){
+  // Transposed from base/common/strings.ts
+  ^{ name: "compareIgnoreCase", status: "pure" };
+}
+
+!compareSubstringIgnoreCase(a, b, aStart, aEnd, bStart, bEnd){
+  // Transposed from base/common/strings.ts
+  ^{ name: "compareSubstringIgnoreCase", status: "pure" };
+}
+
+!isAsciiDigit(code){
+  // Transposed from base/common/strings.ts
+  ^{ name: "isAsciiDigit", status: "pure" };
+}
+
+!isLowerAsciiLetter(code){
+  // Transposed from base/common/strings.ts
+  ^{ name: "isLowerAsciiLetter", status: "pure" };
+}
+
+!isUpperAsciiLetter(code){
+  // Transposed from base/common/strings.ts
+  ^{ name: "isUpperAsciiLetter", status: "pure" };
+}
+
+!equalsIgnoreCase(a, b){
+  // Transposed from base/common/strings.ts
+  ^{ name: "equalsIgnoreCase", status: "pure" };
+}
+
+!equals(a, b, ignoreCase?){
+  // Transposed from base/common/strings.ts
+  ^{ name: "equals", status: "pure" };
+}
+
+!startsWithIgnoreCase(str, candidate){
+  // Transposed from base/common/strings.ts
+  ^{ name: "startsWithIgnoreCase", status: "pure" };
+}
+
+!endsWithIgnoreCase(str, candidate){
+  // Transposed from base/common/strings.ts
+  ^{ name: "endsWithIgnoreCase", status: "pure" };
+}
+
+!commonPrefixLength(a, b){
+  // Transposed from base/common/strings.ts
+  ^{ name: "commonPrefixLength", status: "pure" };
+}
+
+!commonSuffixLength(a, b){
+  // Transposed from base/common/strings.ts
+  ^{ name: "commonSuffixLength", status: "pure" };
+}
+
+!isHighSurrogate(charCode){
+  // Transposed from base/common/strings.ts
+  ^{ name: "isHighSurrogate", status: "pure" };
+}
+
+!isLowSurrogate(charCode){
+  // Transposed from base/common/strings.ts
+  ^{ name: "isLowSurrogate", status: "pure" };
+}
+
+!computeCodePoint(highSurrogate, lowSurrogate){
+  // Transposed from base/common/strings.ts
+  ^{ name: "computeCodePoint", status: "pure" };
+}
+
+!getNextCodePoint(str, len, offset){
+  // Transposed from base/common/strings.ts
+  ^{ name: "getNextCodePoint", status: "pure" };
+}
+
+!nextCharLength(str, initialOffset){
+  // Transposed from base/common/strings.ts
+  ^{ name: "nextCharLength", status: "pure" };
+}
+
+!prevCharLength(str, initialOffset){
+  // Transposed from base/common/strings.ts
+  ^{ name: "prevCharLength", status: "pure" };
+}
+
+!getCharContainingOffset(str, offset){
+  // Transposed from base/common/strings.ts
+  ^{ name: "getCharContainingOffset", status: "pure" };
+}
+
+!charCount(str){
+  // Transposed from base/common/strings.ts
+  ^{ name: "charCount", status: "pure" };
+}
+
+!containsRTL(str){
+  // Transposed from base/common/strings.ts
+  ^{ name: "containsRTL", status: "pure" };
+}
+
+!isBasicASCII(str){
+  // Transposed from base/common/strings.ts
+  ^{ name: "isBasicASCII", status: "pure" };
+}
+
+!containsUnusualLineTerminators(str){
+  // Transposed from base/common/strings.ts
+  ^{ name: "containsUnusualLineTerminators", status: "pure" };
+}
+
+!isFullWidthCharacter(charCode){
+  // Transposed from base/common/strings.ts
+  ^{ name: "isFullWidthCharacter", status: "pure" };
+}
+
+!isEmojiImprecise(x){
+  // Transposed from base/common/strings.ts
+  ^{ name: "isEmojiImprecise", status: "pure" };
+}
+
+!lcut(text, n, prefix = ''){
+  // Transposed from base/common/strings.ts
+  ^{ name: "lcut", status: "pure" };
+}
+
+!rcut(text, n, suffix = ''){
+  // Transposed from base/common/strings.ts
+  ^{ name: "rcut", status: "pure" };
+}
+
+!removeAnsiEscapeCodes(str){
+  // Transposed from base/common/strings.ts
+  ^{ name: "removeAnsiEscapeCodes", status: "pure" };
+}
+
+!removeAnsiEscapeCodesFromPrompt(str){
+  // Transposed from base/common/strings.ts
+  ^{ name: "removeAnsiEscapeCodesFromPrompt", status: "pure" };
+}
+
+!startsWithUTF8BOM(str){
+  // Transposed from base/common/strings.ts
+  ^{ name: "startsWithUTF8BOM", status: "pure" };
+}
+
+!stripUTF8BOM(str){
+  // Transposed from base/common/strings.ts
+  ^{ name: "stripUTF8BOM", status: "pure" };
+}
+
+!fuzzyContains(target, query){
+  // Transposed from base/common/strings.ts
+  ^{ name: "fuzzyContains", status: "pure" };
+}
+
+!containsUppercaseCharacter(target, ignoreEscapedChars = false){
+  // Transposed from base/common/strings.ts
+  ^{ name: "containsUppercaseCharacter", status: "pure" };
+}
+
+!uppercaseFirstLetter(str){
+  // Transposed from base/common/strings.ts
+  ^{ name: "uppercaseFirstLetter", status: "pure" };
+}
+
+!getNLines(str, n = 1){
+  // Transposed from base/common/strings.ts
+  ^{ name: "getNLines", status: "pure" };
+}
+
+!singleLetterHash(n){
+  // Transposed from base/common/strings.ts
+  ^{ name: "singleLetterHash", status: "pure" };
+}
+
+!getGraphemeBreakType(codePoint){
+  // Transposed from base/common/strings.ts
+  ^{ name: "getGraphemeBreakType", status: "pure" };
+}
+
+!getLeftDeleteOffset(offset, str){
+  // Transposed from base/common/strings.ts
+  ^{ name: "getLeftDeleteOffset", status: "pure" };
+}
+
+!multibyteAwareBtoa(str){
+  // Transposed from base/common/strings.ts
+  ^{ name: "multibyteAwareBtoa", status: "pure" };
+}
+
+!createCodePointIterator(...args){
+  ^{ className: "CodePointIterator", methods: ["offset", "setOffset", "prevCodePoint", "nextCodePoint", "eol"] };
+}
+
+!createGraphemeIterator(...args){
+  ^{ className: "GraphemeIterator", methods: ["offset", "nextGraphemeLength", "prevGraphemeLength", "while", "eol"] };
+}
+
+!createAmbiguousCharacters(...args){
+  ^{ className: "AmbiguousCharacters", methods: ["arrayToMap", "for", "mergeMaps", "for", "intersectMaps", "if", "for", "if", "for", "getInstance", "getLocales", "isAmbiguous", "containsAmbiguousCharacter", "for", "getPrimaryConfusable", "getConfusableCodePoints"] };
+}
+
+!createInvisibleCharacters(...args){
+  ^{ className: "InvisibleCharacters", methods: ["getRawData", "getData", "if", "isInvisibleCharacter", "containsInvisibleCharacter", "for", "codePoints"] };
+}
+
+=ex{isFalsyOrWhitespace,format,format2,htmlAttributeEncodeValue,escape,escapeRegExpCharacters,count,truncate,truncateMiddle,trim,ltrim,rtrim,convertSimple2RegExpPattern,createRegExp,regExpLeadsToEndlessLoop,splitLines,splitLinesIncludeSeparators,firstNonWhitespaceIndex,getLeadingWhitespace,lastNonWhitespaceIndex,getIndentationLength,compare,compareSubstring,compareIgnoreCase,compareSubstringIgnoreCase,isAsciiDigit,isLowerAsciiLetter,isUpperAsciiLetter,equalsIgnoreCase,equals,startsWithIgnoreCase,endsWithIgnoreCase,commonPrefixLength,commonSuffixLength,isHighSurrogate,isLowSurrogate,computeCodePoint,getNextCodePoint,nextCharLength,prevCharLength,getCharContainingOffset,charCount,containsRTL,isBasicASCII,containsUnusualLineTerminators,isFullWidthCharacter,isEmojiImprecise,lcut,rcut,removeAnsiEscapeCodes,removeAnsiEscapeCodesFromPrompt,startsWithUTF8BOM,stripUTF8BOM,fuzzyContains,containsUppercaseCharacter,uppercaseFirstLetter,getNLines,singleLetterHash,getGraphemeBreakType,getLeftDeleteOffset,multibyteAwareBtoa,createCodePointIterator,createGraphemeIterator,createAmbiguousCharacters,createInvisibleCharacters}

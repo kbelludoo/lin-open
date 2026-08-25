@@ -1,0 +1,13 @@
+@LIN:workbench_api_common_extHostTypes_selection:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getDebugDescriptionOfSelection(selection){
+  // Transposed from workbench/api/common/extHostTypes/selection.ts
+  ^{ name: "getDebugDescriptionOfSelection", status: "pure" };
+}
+
+!createSelection(...args){
+  ^{ className: "Selection", methods: ["isSelection", "if", "if", "anchor", "active", "if", "if", "isReversed", "toJSON"] };
+}
+
+=ex{getDebugDescriptionOfSelection,createSelection}

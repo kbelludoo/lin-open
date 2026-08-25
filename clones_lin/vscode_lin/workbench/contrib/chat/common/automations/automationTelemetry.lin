@@ -1,0 +1,29 @@
+@LIN:workbench_contrib_chat_common_automations_automationTelemetry:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!publishAutomationCreated(telemetryService, automation){
+  // Transposed from workbench/contrib/chat/common/automations/automationTelemetry.ts
+  ^{ name: "publishAutomationCreated", status: "pure" };
+}
+
+!publishAutomationUpdated(telemetryService, before, after){
+  // Transposed from workbench/contrib/chat/common/automations/automationTelemetry.ts
+  ^{ name: "publishAutomationUpdated", status: "pure" };
+}
+
+!publishAutomationDeleted(telemetryService, automation){
+  // Transposed from workbench/contrib/chat/common/automations/automationTelemetry.ts
+  ^{ name: "publishAutomationDeleted", status: "pure" };
+}
+
+!publishAutomationRun(telemetryService, args){
+  // Transposed from workbench/contrib/chat/common/automations/automationTelemetry.ts
+  ^{ name: "publishAutomationRun", status: "pure" };
+}
+
+!publishAutomationRunError(telemetryService, args){
+  // Transposed from workbench/contrib/chat/common/automations/automationTelemetry.ts
+  ^{ name: "publishAutomationRunError", status: "pure" };
+}
+
+=ex{publishAutomationCreated,publishAutomationUpdated,publishAutomationDeleted,publishAutomationRun,publishAutomationRunError}

@@ -1,0 +1,35 @@
+@LIN:workbench_contrib_chat_browser_chatSetup_chatSetup:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!refreshTokens(commandService){
+  // Transposed from workbench/contrib/chat/browser/chatSetup/chatSetup.ts
+  ^{ name: "refreshTokens", status: "pure" };
+}
+
+!buildUpgradeUrlWithRedirect(baseUpgradeUrl, urlProtocol, quality){
+  // Transposed from workbench/contrib/chat/browser/chatSetup/chatSetup.ts
+  ^{ name: "buildUpgradeUrlWithRedirect", status: "pure" };
+}
+
+!maybeEnableAuthExtension(extensionsWorkbenchService, logService){
+  // Transposed from workbench/contrib/chat/browser/chatSetup/chatSetup.ts
+  ^{ name: "maybeEnableAuthExtension", status: "pure" };
+}
+
+!createChatSetupError(...args){
+  ^{ className: "ChatSetupError", methods: [] };
+}
+
+!getChatSetupAnonymousEnum(){
+  ^{ enumName: "ChatSetupAnonymous", members: ["Disabled", "EnabledWithDialog", "EnabledWithoutDialog"] };
+}
+
+!getChatSetupStepEnum(){
+  ^{ enumName: "ChatSetupStep", members: ["Initial", "SigningIn", "Installing"] };
+}
+
+!getChatSetupStrategyEnum(){
+  ^{ enumName: "ChatSetupStrategy", members: ["Canceled", "DefaultSetup", "SetupWithoutEnterpriseProvider", "SetupWithEnterpriseProvider", "SetupWithGoogleProvider", "SetupWithAppleProvider"] };
+}
+
+=ex{refreshTokens,buildUpgradeUrlWithRedirect,maybeEnableAuthExtension,createChatSetupError,getChatSetupAnonymousEnum,getChatSetupStepEnum,getChatSetupStrategyEnum}

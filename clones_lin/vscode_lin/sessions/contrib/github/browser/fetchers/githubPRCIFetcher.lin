@@ -1,0 +1,13 @@
+@LIN:sessions_contrib_github_browser_fetchers_githubPRCIFetcher:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!computeOverallCIStatus(checks){
+  // Transposed from sessions/contrib/github/browser/fetchers/githubPRCIFetcher.ts
+  ^{ name: "computeOverallCIStatus", status: "pure" };
+}
+
+!createGitHubPRCIFetcher(...args){
+  ^{ className: "GitHubPRCIFetcher", methods: ["getCheckRuns", "rerunFailedJobs", "getCheckRunAnnotations", "if", "if", "if", "if", "if"] };
+}
+
+=ex{computeOverallCIStatus,createGitHubPRCIFetcher}

@@ -1,0 +1,14 @@
+@LIN:workbench_contrib_chat_browser_actions_reviewEdits:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!reviewEdits(accessor, editor, stream, token, applyCodeBlockSuggestionId){
+  // Transposed from workbench/contrib/chat/browser/actions/reviewEdits.ts
+  ^{ name: "reviewEdits", status: "pure" };
+}
+
+!reviewNotebookEdits(accessor, uri, stream, TextEdit[]] | ICellEditOperation[]>, token){
+  // Transposed from workbench/contrib/chat/browser/actions/reviewEdits.ts
+  ^{ name: "reviewNotebookEdits", status: "pure" };
+}
+
+=ex{reviewEdits,reviewNotebookEdits}

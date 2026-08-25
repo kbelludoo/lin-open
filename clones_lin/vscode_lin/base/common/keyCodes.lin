@@ -1,0 +1,19 @@
+@LIN:base_common_keyCodes:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!toString(keyCode){
+  // Transposed from base/common/keyCodes.ts
+  ^{ name: "toString", status: "pure" };
+}
+
+!KeyChord(firstPart, secondPart){
+  // Transposed from base/common/keyCodes.ts
+  ^{ name: "KeyChord", status: "pure" };
+}
+
+!isModifierKey(keyCode){
+  // Transposed from base/common/keyCodes.ts
+  ^{ name: "isModifierKey", status: "pure" };
+}
+
+=ex{toString,KeyChord,isModifierKey}

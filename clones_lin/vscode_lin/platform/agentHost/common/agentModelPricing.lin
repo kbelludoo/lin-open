@@ -1,0 +1,29 @@
+@LIN:platform_agentHost_common_agentModelPricing:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!readAgentModelPricingMeta(model){
+  // Transposed from platform/agentHost/common/agentModelPricing.ts
+  ^{ name: "readAgentModelPricingMeta", status: "pure" };
+}
+
+!createAgentModelPricingMeta(pricing){
+  // Transposed from platform/agentHost/common/agentModelPricing.ts
+  ^{ name: "createAgentModelPricingMeta", status: "pure" };
+}
+
+!normalizeCAPIBilling(raw){
+  // Transposed from platform/agentHost/common/agentModelPricing.ts
+  ^{ name: "normalizeCAPIBilling", status: "pure" };
+}
+
+!createPricingMetaFromBilling(billing, priceCategory?, category?){
+  // Transposed from platform/agentHost/common/agentModelPricing.ts
+  ^{ name: "createPricingMetaFromBilling", status: "pure" };
+}
+
+!hasLongContextSurcharge(billing){
+  // Transposed from platform/agentHost/common/agentModelPricing.ts
+  ^{ name: "hasLongContextSurcharge", status: "pure" };
+}
+
+=ex{readAgentModelPricingMeta,createAgentModelPricingMeta,normalizeCAPIBilling,createPricingMetaFromBilling,hasLongContextSurcharge}

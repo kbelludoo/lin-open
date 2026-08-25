@@ -1,0 +1,16 @@
+@LIN:editor_contrib_suggest_browser_suggestMemory:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createNoMemory(...args){
+  ^{ className: "NoMemory", methods: ["memorize", "toJSON", "fromJSON"] };
+}
+
+!createLRUMemory(...args){
+  ^{ className: "LRUMemory", methods: ["memorize", "select", "if", "for", "if", "if", "if", "if", "if", "toJSON", "fromJSON", "for"] };
+}
+
+!createPrefixMemory(...args){
+  ^{ className: "PrefixMemory", methods: ["memorize", "select", "if", "if", "if", "for", "if", "toJSON", "fromJSON", "if", "for"] };
+}
+
+=ex{createNoMemory,createLRUMemory,createPrefixMemory}

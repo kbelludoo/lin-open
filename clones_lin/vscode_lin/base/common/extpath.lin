@@ -1,0 +1,74 @@
+@LIN:base_common_extpath:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getRoot(path, sep){
+  // Transposed from base/common/extpath.ts
+  ^{ name: "getRoot", status: "pure" };
+}
+
+!isUNC(path){
+  // Transposed from base/common/extpath.ts
+  ^{ name: "isUNC", status: "pure" };
+}
+
+!isValidBasename(name, isWindowsOS){
+  // Transposed from base/common/extpath.ts
+  ^{ name: "isValidBasename", status: "pure" };
+}
+
+!isEqual(pathA, pathB, ignoreCase?){
+  // Transposed from base/common/extpath.ts
+  ^{ name: "isEqual", status: "pure" };
+}
+
+!isEqualOrParent(base, parentCandidate, ignoreCase?, forcePosixSemantics = false){
+  // Transposed from base/common/extpath.ts
+  ^{ name: "isEqualOrParent", status: "pure" };
+}
+
+!isWindowsDriveLetter(char0){
+  // Transposed from base/common/extpath.ts
+  ^{ name: "isWindowsDriveLetter", status: "pure" };
+}
+
+!sanitizeFilePath(candidate, cwd){
+  // Transposed from base/common/extpath.ts
+  ^{ name: "sanitizeFilePath", status: "pure" };
+}
+
+!removeTrailingPathSeparator(candidate){
+  // Transposed from base/common/extpath.ts
+  ^{ name: "removeTrailingPathSeparator", status: "pure" };
+}
+
+!isRootOrDriveLetter(path){
+  // Transposed from base/common/extpath.ts
+  ^{ name: "isRootOrDriveLetter", status: "pure" };
+}
+
+!hasDriveLetter(path, isWindowsOS){
+  // Transposed from base/common/extpath.ts
+  ^{ name: "hasDriveLetter", status: "pure" };
+}
+
+!getDriveLetter(path, isWindowsOS){
+  // Transposed from base/common/extpath.ts
+  ^{ name: "getDriveLetter", status: "pure" };
+}
+
+!indexOfPath(path, candidate, ignoreCase?){
+  // Transposed from base/common/extpath.ts
+  ^{ name: "indexOfPath", status: "pure" };
+}
+
+!parseLineAndColumnAware(rawPath){
+  // Transposed from base/common/extpath.ts
+  ^{ name: "parseLineAndColumnAware", status: "pure" };
+}
+
+!randomPath(parent?, prefix?, randomLength = 8){
+  // Transposed from base/common/extpath.ts
+  ^{ name: "randomPath", status: "pure" };
+}
+
+=ex{getRoot,isUNC,isValidBasename,isEqual,isEqualOrParent,isWindowsDriveLetter,sanitizeFilePath,removeTrailingPathSeparator,isRootOrDriveLetter,hasDriveLetter,getDriveLetter,indexOfPath,parseLineAndColumnAware,randomPath}

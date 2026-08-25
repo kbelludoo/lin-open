@@ -1,0 +1,16 @@
+@LIN:workbench_contrib_notebook_browser_view_cellParts_cellActionView:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createCodiconActionViewItem(...args){
+  ^{ className: "CodiconActionViewItem", methods: ["updateLabel", "if"] };
+}
+
+!createActionViewWithLabel(...args){
+  ^{ className: "ActionViewWithLabel", methods: ["render", "updateLabel", "if"] };
+}
+
+!createUnifiedSubmenuActionView(...args){
+  ^{ className: "UnifiedSubmenuActionView", methods: ["render", "for", "onClick", "updateLabel", "if", "if", "if", "if"] };
+}
+
+=ex{createCodiconActionViewItem,createActionViewWithLabel,createUnifiedSubmenuActionView}

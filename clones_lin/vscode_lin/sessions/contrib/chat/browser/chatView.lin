@@ -1,0 +1,37 @@
+@LIN:sessions_contrib_chat_browser_chatView:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!applySessionsChatBackground(element, background){
+  // Transposed from sessions/contrib/chat/browser/chatView.ts
+  ^{ name: "applySessionsChatBackground", status: "pure" };
+}
+
+!shouldShowSessionChatTip(sessionStatus){
+  // Transposed from sessions/contrib/chat/browser/chatView.ts
+  ^{ name: "shouldShowSessionChatTip", status: "pure" };
+}
+
+!shouldShowTranscriptPreparationProgress(requestCount, visibleRequestCount, hiddenRequestIncomplete){
+  // Transposed from sessions/contrib/chat/browser/chatView.ts
+  ^{ name: "shouldShowTranscriptPreparationProgress", status: "pure" };
+}
+
+!getTranscriptProgress(showProgress, activity){
+  // Transposed from sessions/contrib/chat/browser/chatView.ts
+  ^{ name: "getTranscriptProgress", status: "pure" };
+}
+
+!findTranscriptContextEntry(requests){
+  // Transposed from sessions/contrib/chat/browser/chatView.ts
+  ^{ name: "findTranscriptContextEntry", status: "pure" };
+}
+
+!createNewChatView(...args){
+  ^{ className: "NewChatView", methods: ["toJSON", "doLayout", "focus", "selectWorkspace", "if", "prefillInput", "if", "sendQuery", "if", "submitInput", "attach", "setVisible", "if"] };
+}
+
+!createChatView(...args){
+  ^{ className: "ChatView", methods: ["_setupTranscriptPreparationProgress", "if", "if", "_setupInitialTranscriptContext", "if", "dispose", "_buildStyles", "widget", "setChat", "if", "if", "if", "if", "if", "_saveCurrentViewState", "if", "_clearCurrentChat", "_applyHistoryKey", "_updateWidgetLockState", "if", "if", "toJSON", "doLayout", "_layoutChatWidget", "if", "_ensureBannersMounted", "if", "if", "_setupVoiceOverlay", "if", "focus", "attach", "for", "setActive", "if", "setVisible", "if"] };
+}
+
+=ex{applySessionsChatBackground,shouldShowSessionChatTip,shouldShowTranscriptPreparationProgress,getTranscriptProgress,findTranscriptContextEntry,createNewChatView,createChatView}

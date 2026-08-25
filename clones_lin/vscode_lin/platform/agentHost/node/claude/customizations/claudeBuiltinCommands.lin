@@ -1,0 +1,14 @@
+@LIN:platform_agentHost_node_claude_customizations_claudeBuiltinCommands:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!buildClaudeBuiltinSkillsContainer(diskSkillNames){
+  // Transposed from platform/agentHost/node/claude/customizations/claudeBuiltinCommands.ts
+  ^{ name: "buildClaudeBuiltinSkillsContainer", status: "pure" };
+}
+
+!buildSdkBuiltinSkillsContainer(commands, diskSkillNames){
+  // Transposed from platform/agentHost/node/claude/customizations/claudeBuiltinCommands.ts
+  ^{ name: "buildSdkBuiltinSkillsContainer", status: "pure" };
+}
+
+=ex{buildClaudeBuiltinSkillsContainer,buildSdkBuiltinSkillsContainer}

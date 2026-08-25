@@ -1,0 +1,13 @@
+@LIN:workbench_contrib_chat_browser_widget_chatContentParts_chatEditPillElement:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isResourceContentEmpty(textModelService, uri){
+  // Transposed from workbench/contrib/chat/browser/widget/chatContentParts/chatEditPillElement.ts
+  ^{ name: "isResourceContentEmpty", status: "pure" };
+}
+
+!createChatEditPillElement(...args){
+  ^{ className: "ChatEditPillElement", methods: ["uri", "setUri", "setStatus", "if", "setLabelDetail", "setProgressFill", "if", "setDiff", "if", "if", "if", "setAriaLabel", "setTooltip", "if"] };
+}
+
+=ex{isResourceContentEmpty,createChatEditPillElement}

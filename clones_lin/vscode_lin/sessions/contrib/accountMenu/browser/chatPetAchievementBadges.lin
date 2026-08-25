@@ -1,0 +1,13 @@
+@LIN:sessions_contrib_accountMenu_browser_chatPetAchievementBadges:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getSessionsChatPetAchievementBadges(enabled, unlockedAchievements){
+  // Transposed from sessions/contrib/accountMenu/browser/chatPetAchievementBadges.ts
+  ^{ name: "getSessionsChatPetAchievementBadges", status: "pure" };
+}
+
+!createSessionsChatPetAchievementBadges(...args){
+  ^{ className: "SessionsChatPetAchievementBadges", methods: ["render", "if", "for", "if", "if"] };
+}
+
+=ex{getSessionsChatPetAchievementBadges,createSessionsChatPetAchievementBadges}

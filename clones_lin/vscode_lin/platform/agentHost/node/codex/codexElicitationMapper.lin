@@ -1,0 +1,24 @@
+@LIN:platform_agentHost_node_codex_codexElicitationMapper:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!buildElicitationRequest(requestId, params){
+  // Transposed from platform/agentHost/node/codex/codexElicitationMapper.ts
+  ^{ name: "buildElicitationRequest", status: "pure" };
+}
+
+!elicitationResponseFromAnswers(params, response, answers, ChatInputAnswer> | undefined){
+  // Transposed from platform/agentHost/node/codex/codexElicitationMapper.ts
+  ^{ name: "elicitationResponseFromAnswers", status: "pure" };
+}
+
+!declinedElicitationResponse(){
+  // Transposed from platform/agentHost/node/codex/codexElicitationMapper.ts
+  ^{ name: "declinedElicitationResponse", status: "pure" };
+}
+
+!cancelledElicitationResponse(){
+  // Transposed from platform/agentHost/node/codex/codexElicitationMapper.ts
+  ^{ name: "cancelledElicitationResponse", status: "pure" };
+}
+
+=ex{buildElicitationRequest,elicitationResponseFromAnswers,declinedElicitationResponse,cancelledElicitationResponse}

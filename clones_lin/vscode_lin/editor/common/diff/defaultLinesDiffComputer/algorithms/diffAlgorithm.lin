@@ -1,0 +1,16 @@
+@LIN:editor_common_diff_defaultLinesDiffComputer_algorithms_diffAlgorithm:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createDiffAlgorithmResult(...args){
+  ^{ className: "DiffAlgorithmResult", methods: ["trivial", "trivialTimedOut"] };
+}
+
+!createSequenceDiff(...args){
+  ^{ className: "SequenceDiff", methods: ["invert", "fromOffsetPairs", "assertSorted", "for", "if", "swap", "toString", "join", "delta", "if", "deltaStart", "if", "deltaEnd", "if", "intersectsOrTouches", "intersect", "if", "getStarts", "getEndExclusives"] };
+}
+
+!createOffsetPair(...args){
+  ^{ className: "OffsetPair", methods: ["toString", "delta", "if", "equals"] };
+}
+
+=ex{createDiffAlgorithmResult,createSequenceDiff,createOffsetPair}

@@ -1,0 +1,64 @@
+@LIN:workbench_contrib_chat_common_promptSyntax_hookSchema:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isEquals(a, b){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/hookSchema.ts
+  ^{ name: "isEquals", status: "pure" };
+}
+
+!mergeHooks(base, additional){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/hookSchema.ts
+  ^{ name: "mergeHooks", status: "pure" };
+}
+
+!toHookType(rawHookTypeId){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/hookSchema.ts
+  ^{ name: "toHookType", status: "pure" };
+}
+
+!getPlatformLabel(os){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/hookSchema.ts
+  ^{ name: "getPlatformLabel", status: "pure" };
+}
+
+!resolveEffectiveCommand(hook, os){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/hookSchema.ts
+  ^{ name: "resolveEffectiveCommand", status: "pure" };
+}
+
+!isUsingPlatformOverride(hook, os){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/hookSchema.ts
+  ^{ name: "isUsingPlatformOverride", status: "pure" };
+}
+
+!getEffectiveCommandSource(hook, os){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/hookSchema.ts
+  ^{ name: "getEffectiveCommandSource", status: "pure" };
+}
+
+!getEffectiveCommandFieldKey(hook, os){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/hookSchema.ts
+  ^{ name: "getEffectiveCommandFieldKey", status: "pure" };
+}
+
+!formatHookCommandLabel(hook, os){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/hookSchema.ts
+  ^{ name: "formatHookCommandLabel", status: "pure" };
+}
+
+!resolveHookCommand(raw, unknown>, workspaceRootUri, userHome){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/hookSchema.ts
+  ^{ name: "resolveHookCommand", status: "pure" };
+}
+
+!extractHookCommandsFromItem(item, workspaceRootUri, userHome){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/hookSchema.ts
+  ^{ name: "extractHookCommandsFromItem", status: "pure" };
+}
+
+!parseSubagentHooksFromYaml(hooksMap, workspaceRootUri, userHome, target){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/hookSchema.ts
+  ^{ name: "parseSubagentHooksFromYaml", status: "pure" };
+}
+
+=ex{isEquals,mergeHooks,toHookType,getPlatformLabel,resolveEffectiveCommand,isUsingPlatformOverride,getEffectiveCommandSource,getEffectiveCommandFieldKey,formatHookCommandLabel,resolveHookCommand,extractHookCommandsFromItem,parseSubagentHooksFromYaml}

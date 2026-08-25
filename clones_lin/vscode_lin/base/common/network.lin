@@ -1,0 +1,19 @@
+@LIN:base_common_network:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!matchesScheme(target, scheme){
+  // Transposed from base/common/network.ts
+  ^{ name: "matchesScheme", status: "pure" };
+}
+
+!matchesSomeScheme(target, schemes){
+  // Transposed from base/common/network.ts
+  ^{ name: "matchesSomeScheme", status: "pure" };
+}
+
+!getHeadersFromQuery(url){
+  // Transposed from base/common/network.ts
+  ^{ name: "getHeadersFromQuery", status: "pure" };
+}
+
+=ex{matchesScheme,matchesSomeScheme,getHeadersFromQuery}

@@ -1,0 +1,23 @@
+@LIN:sessions_browser_parts_mobile_contributions_mobileChangesView:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!toRow(change){
+  // Transposed from sessions/browser/parts/mobile/contributions/mobileChangesView.ts
+  ^{ name: "toRow", status: "pure" };
+}
+
+!rowToDiffData(row){
+  // Transposed from sessions/browser/parts/mobile/contributions/mobileChangesView.ts
+  ^{ name: "rowToDiffData", status: "pure" };
+}
+
+!openMobileChangesView(instantiationService, workbenchContainer, onOpen){
+  // Transposed from sessions/browser/parts/mobile/contributions/mobileChangesView.ts
+  ^{ name: "openMobileChangesView", status: "pure" };
+}
+
+!createMobileChangesView(...args){
+  ^{ className: "MobileChangesView", methods: ["renderList", "for", "if", "localize", "for", "renderRow", "if", "if", "if", "dispose"] };
+}
+
+=ex{toRow,rowToDiffData,openMobileChangesView,createMobileChangesView}

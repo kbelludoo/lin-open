@@ -1,0 +1,49 @@
+@LIN:base_common_labels:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getPathLabel(resource, formatting){
+  // Transposed from base/common/labels.ts
+  ^{ name: "getPathLabel", status: "pure" };
+}
+
+!normalizeDriveLetter(path, isWindowsOS){
+  // Transposed from base/common/labels.ts
+  ^{ name: "normalizeDriveLetter", status: "pure" };
+}
+
+!tildify(path, userHome, os = OS){
+  // Transposed from base/common/labels.ts
+  ^{ name: "tildify", status: "pure" };
+}
+
+!untildify(path, userHome){
+  // Transposed from base/common/labels.ts
+  ^{ name: "untildify", status: "pure" };
+}
+
+!shorten(paths, defaultPathSeparator){
+  // Transposed from base/common/labels.ts
+  ^{ name: "shorten", status: "pure" };
+}
+
+!mnemonicMenuLabel(label, forceDisableMnemonics?){
+  // Transposed from base/common/labels.ts
+  ^{ name: "mnemonicMenuLabel", status: "pure" };
+}
+
+!mnemonicButtonLabel(label, forceDisableMnemonics?){
+  // Transposed from base/common/labels.ts
+  ^{ name: "mnemonicButtonLabel", status: "pure" };
+}
+
+!unmnemonicLabel(label){
+  // Transposed from base/common/labels.ts
+  ^{ name: "unmnemonicLabel", status: "pure" };
+}
+
+!splitRecentLabel(recentLabel){
+  // Transposed from base/common/labels.ts
+  ^{ name: "splitRecentLabel", status: "pure" };
+}
+
+=ex{getPathLabel,normalizeDriveLetter,tildify,untildify,shorten,mnemonicMenuLabel,mnemonicButtonLabel,unmnemonicLabel,splitRecentLabel}

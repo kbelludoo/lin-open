@@ -1,0 +1,22 @@
+@LIN:base_browser_ui_tree_tree:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createTreeError(...args){
+  ^{ className: "TreeError", methods: [] };
+}
+
+!getObjectTreeElementCollapseStateEnum(){
+  ^{ enumName: "ObjectTreeElementCollapseState", members: ["Expanded", "Collapsed", "/**
+	 * If the element is already in the tree", "preserve its current state. Else", "expand it.
+	 */
+	PreserveOrExpanded", "/**
+	 * If the element is already in the tree", "preserve its current state. Else", "collapse it.
+	 */
+	PreserveOrCollapsed"] };
+}
+
+!getTreeMouseEventTargetEnum(){
+  ^{ enumName: "TreeMouseEventTarget", members: ["Unknown", "Twistie", "Element", "Filter"] };
+}
+
+=ex{createTreeError,getObjectTreeElementCollapseStateEnum,getTreeMouseEventTargetEnum}

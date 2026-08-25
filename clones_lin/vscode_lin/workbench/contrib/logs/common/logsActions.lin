@@ -1,0 +1,12 @@
+@LIN:workbench_contrib_logs_common_logsActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createSetLogLevelAction(...args){
+  ^{ className: "SetLogLevelAction", methods: ["run", "if", "selectLogLevelOrChannel", "if", "if", "if", "setLogLevelForChannel", "if", "getLogLevelEntries", "getLabel", "getDescription"] };
+}
+
+!createOpenWindowSessionLogFileAction(...args){
+  ^{ className: "OpenWindowSessionLogFileAction", methods: ["run", "then", "localize", "if", "then", "if", "getSessions", "if", "getLogFiles", "if"] };
+}
+
+=ex{createSetLogLevelAction,createOpenWindowSessionLogFileAction}

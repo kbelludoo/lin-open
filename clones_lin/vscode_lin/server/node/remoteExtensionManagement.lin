@@ -1,0 +1,8 @@
+@LIN:server_node_remoteExtensionManagement:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createManagementConnection(...args){
+  ^{ className: "ManagementConnection", methods: ["_log", "shortenReconnectionGraceTimeIfNecessary", "_cleanResources", "if", "acceptReconnection"] };
+}
+
+=ex{createManagementConnection}

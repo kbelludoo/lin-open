@@ -1,0 +1,59 @@
+@LIN:editor_browser_widget_diffEditor_commands:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!findDiffEditor(accessor, originalUri, modifiedUri){
+  // Transposed from editor/browser/widget/diffEditor/commands.ts
+  ^{ name: "findDiffEditor", status: "pure" };
+}
+
+!findFocusedDiffEditor(accessor){
+  // Transposed from editor/browser/widget/diffEditor/commands.ts
+  ^{ name: "findFocusedDiffEditor", status: "pure" };
+}
+
+!findDiffEditorContainingCodeEditor(accessor, editor){
+  // Transposed from editor/browser/widget/diffEditor/commands.ts
+  ^{ name: "findDiffEditorContainingCodeEditor", status: "pure" };
+}
+
+!createToggleCollapseUnchangedRegions(...args){
+  ^{ className: "ToggleCollapseUnchangedRegions", methods: ["run"] };
+}
+
+!createToggleShowMovedCodeBlocks(...args){
+  ^{ className: "ToggleShowMovedCodeBlocks", methods: ["run"] };
+}
+
+!createToggleUseInlineViewWhenSpaceIsLimited(...args){
+  ^{ className: "ToggleUseInlineViewWhenSpaceIsLimited", methods: ["run"] };
+}
+
+!createSwitchSide(...args){
+  ^{ className: "SwitchSide", methods: ["runEditorCommand", "if", "if"] };
+}
+
+!createExitCompareMove(...args){
+  ^{ className: "ExitCompareMove", methods: ["runEditorCommand", "if"] };
+}
+
+!createCollapseAllUnchangedRegions(...args){
+  ^{ className: "CollapseAllUnchangedRegions", methods: ["runEditorCommand", "if"] };
+}
+
+!createShowAllUnchangedRegions(...args){
+  ^{ className: "ShowAllUnchangedRegions", methods: ["runEditorCommand", "if"] };
+}
+
+!createRevertHunkOrSelection(...args){
+  ^{ className: "RevertHunkOrSelection", methods: ["run", "runViaCursorOrSelection", "if", "runViaToolbarContext", "if"] };
+}
+
+!createAccessibleDiffViewerNext(...args){
+  ^{ className: "AccessibleDiffViewerNext", methods: ["run"] };
+}
+
+!createAccessibleDiffViewerPrev(...args){
+  ^{ className: "AccessibleDiffViewerPrev", methods: ["run"] };
+}
+
+=ex{findDiffEditor,findFocusedDiffEditor,findDiffEditorContainingCodeEditor,createToggleCollapseUnchangedRegions,createToggleShowMovedCodeBlocks,createToggleUseInlineViewWhenSpaceIsLimited,createSwitchSide,createExitCompareMove,createCollapseAllUnchangedRegions,createShowAllUnchangedRegions,createRevertHunkOrSelection,createAccessibleDiffViewerNext,createAccessibleDiffViewerPrev}

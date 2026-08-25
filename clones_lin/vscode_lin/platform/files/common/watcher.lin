@@ -1,0 +1,44 @@
+@LIN:platform_files_common_watcher:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isWatchRequestWithCorrelation(request){
+  // Transposed from platform/files/common/watcher.ts
+  ^{ name: "isWatchRequestWithCorrelation", status: "pure" };
+}
+
+!isRecursiveWatchRequest(request){
+  // Transposed from platform/files/common/watcher.ts
+  ^{ name: "isRecursiveWatchRequest", status: "pure" };
+}
+
+!reviveFileChanges(changes){
+  // Transposed from platform/files/common/watcher.ts
+  ^{ name: "reviveFileChanges", status: "pure" };
+}
+
+!coalesceEvents(changes){
+  // Transposed from platform/files/common/watcher.ts
+  ^{ name: "coalesceEvents", status: "pure" };
+}
+
+!normalizeWatcherPattern(path, pattern){
+  // Transposed from platform/files/common/watcher.ts
+  ^{ name: "normalizeWatcherPattern", status: "pure" };
+}
+
+!parseWatcherPatterns(path, patterns, ignoreCase){
+  // Transposed from platform/files/common/watcher.ts
+  ^{ name: "parseWatcherPatterns", status: "pure" };
+}
+
+!isFiltered(event, filter){
+  // Transposed from platform/files/common/watcher.ts
+  ^{ name: "isFiltered", status: "pure" };
+}
+
+!requestFilterToString(filter){
+  // Transposed from platform/files/common/watcher.ts
+  ^{ name: "requestFilterToString", status: "pure" };
+}
+
+=ex{isWatchRequestWithCorrelation,isRecursiveWatchRequest,reviveFileChanges,coalesceEvents,normalizeWatcherPattern,parseWatcherPatterns,isFiltered,requestFilterToString}

@@ -1,0 +1,14 @@
+@LIN:platform_telemetry_common_telemetry:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!telemetryLevelEnabled(service, level){
+  // Transposed from platform/telemetry/common/telemetry.ts
+  ^{ name: "telemetryLevelEnabled", status: "pure" };
+}
+
+!escapeModelIdForTelemetry(modelId){
+  // Transposed from platform/telemetry/common/telemetry.ts
+  ^{ name: "escapeModelIdForTelemetry", status: "pure" };
+}
+
+=ex{telemetryLevelEnabled,escapeModelIdForTelemetry}

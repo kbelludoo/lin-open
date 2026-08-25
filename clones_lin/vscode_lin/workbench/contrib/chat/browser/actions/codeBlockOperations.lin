@@ -1,0 +1,17 @@
+@LIN:workbench_contrib_chat_browser_actions_codeBlockOperations:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!computeIndentation(line, tabSize){
+  // Transposed from workbench/contrib/chat/browser/actions/codeBlockOperations.ts
+  ^{ name: "computeIndentation", status: "pure" };
+}
+
+!createInsertCodeBlockOperation(...args){
+  ^{ className: "InsertCodeBlockOperation", methods: ["run", "if", "if", "handleNotebookEditor", "if", "handleTextEditor", "notify"] };
+}
+
+!createApplyCodeBlockOperation(...args){
+  ^{ className: "ApplyCodeBlockOperation", methods: ["run", "if", "catch", "if", "if", "evaluateURIToUse", "if", "if", "if", "if", "switch", "if", "catch", "handleNotebookEditor", "if", "if", "catch", "handleTextEditor", "if", "catch", "getTextEdits", "notebookEdit", "if", "getNotebookEdits", "notebookEdit", "if", "if", "while", "applyWithInlinePreview", "applyNotebookEditsWithInlinePreview", "tryToRevealCodeBlock", "if", "if", "notify"] };
+}
+
+=ex{computeIndentation,createInsertCodeBlockOperation,createApplyCodeBlockOperation}

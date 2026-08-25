@@ -1,0 +1,14 @@
+@LIN:platform_policy_common_policy:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!toSerializablePolicyDefinition(definition){
+  // Transposed from platform/policy/common/policy.ts
+  ^{ name: "toSerializablePolicyDefinition", status: "pure" };
+}
+
+!getRestrictedPolicyValue(definition){
+  // Transposed from platform/policy/common/policy.ts
+  ^{ name: "getRestrictedPolicyValue", status: "pure" };
+}
+
+=ex{toSerializablePolicyDefinition,getRestrictedPolicyValue}

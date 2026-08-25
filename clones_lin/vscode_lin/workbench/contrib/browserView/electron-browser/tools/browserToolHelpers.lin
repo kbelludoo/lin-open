@@ -1,0 +1,59 @@
+@LIN:workbench_contrib_browserView_electron_browser_tools_browserToolHelpers:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getSessionId(invocation){
+  // Transposed from workbench/contrib/browserView/electron-browser/tools/browserToolHelpers.ts
+  ^{ name: "getSessionId", status: "pure" };
+}
+
+!formatBrowserEditorList(editorService, editors, options?){
+  // Transposed from workbench/contrib/browserView/electron-browser/tools/browserToolHelpers.ts
+  ^{ name: "formatBrowserEditorList", status: "pure" };
+}
+
+!getBrowserPageResourceNavigationError(editor, target){
+  // Transposed from workbench/contrib/browserView/electron-browser/tools/browserToolHelpers.ts
+  ^{ name: "getBrowserPageResourceNavigationError", status: "pure" };
+}
+
+!getBrowserPagesContext(editorService, browserViewService, agentNetworkFilterService, options?){
+  // Transposed from workbench/contrib/browserView/electron-browser/tools/browserToolHelpers.ts
+  ^{ name: "getBrowserPagesContext", status: "pure" };
+}
+
+!createBrowserPageLink(pageId){
+  // Transposed from workbench/contrib/browserView/electron-browser/tools/browserToolHelpers.ts
+  ^{ name: "createBrowserPageLink", status: "pure" };
+}
+
+!invokeFunctionResultToToolResult(result, code?){
+  // Transposed from workbench/contrib/browserView/electron-browser/tools/browserToolHelpers.ts
+  ^{ name: "invokeFunctionResultToToolResult", status: "pure" };
+}
+
+!errorResult(message){
+  // Transposed from workbench/contrib/browserView/electron-browser/tools/browserToolHelpers.ts
+  ^{ name: "errorResult", status: "pure" };
+}
+
+!rewriteRemoteLocalhostUrl(url, browserViewService, remoteExplorerService){
+  // Transposed from workbench/contrib/browserView/electron-browser/tools/browserToolHelpers.ts
+  ^{ name: "rewriteRemoteLocalhostUrl", status: "pure" };
+}
+
+!remoteUrlRewriteNotice(originalUrl, rewrittenUrl){
+  // Transposed from workbench/contrib/browserView/electron-browser/tools/browserToolHelpers.ts
+  ^{ name: "remoteUrlRewriteNotice", status: "pure" };
+}
+
+!findExistingPagesByHost(browserViewService, url, options?){
+  // Transposed from workbench/contrib/browserView/electron-browser/tools/browserToolHelpers.ts
+  ^{ name: "findExistingPagesByHost", status: "pure" };
+}
+
+!getExistingPagesResult(editorService, existing, formatOptions?){
+  // Transposed from workbench/contrib/browserView/electron-browser/tools/browserToolHelpers.ts
+  ^{ name: "getExistingPagesResult", status: "pure" };
+}
+
+=ex{getSessionId,formatBrowserEditorList,getBrowserPageResourceNavigationError,getBrowserPagesContext,createBrowserPageLink,invokeFunctionResultToToolResult,errorResult,rewriteRemoteLocalhostUrl,remoteUrlRewriteNotice,findExistingPagesByHost,getExistingPagesResult}

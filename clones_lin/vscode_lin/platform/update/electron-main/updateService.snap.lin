@@ -1,0 +1,8 @@
+@LIN:platform_update_electron_main_updateService_snap:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createSnapUpdateService(...args){
+  ^{ className: "SnapUpdateService", methods: ["doCheckForUpdates", "then", "doQuitAndInstall", "isUpdateAvailable", "isLatestVersion"] };
+}
+
+=ex{createSnapUpdateService}

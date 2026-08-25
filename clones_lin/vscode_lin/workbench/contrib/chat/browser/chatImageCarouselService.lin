@@ -1,0 +1,19 @@
+@LIN:workbench_contrib_chat_browser_chatImageCarouselService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!findClickedImageIndex(sections, resource, data?, preferredSectionIndex?){
+  // Transposed from workbench/contrib/chat/browser/chatImageCarouselService.ts
+  ^{ name: "findClickedImageIndex", status: "pure" };
+}
+
+!buildCollectionArgs(sections, clickedGlobalIndex, sessionResource){
+  // Transposed from workbench/contrib/chat/browser/chatImageCarouselService.ts
+  ^{ name: "buildCollectionArgs", status: "pure" };
+}
+
+!buildSingleImageArgs(resource, data){
+  // Transposed from workbench/contrib/chat/browser/chatImageCarouselService.ts
+  ^{ name: "buildSingleImageArgs", status: "pure" };
+}
+
+=ex{findClickedImageIndex,buildCollectionArgs,buildSingleImageArgs}

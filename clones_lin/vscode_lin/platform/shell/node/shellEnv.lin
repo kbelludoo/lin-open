@@ -1,0 +1,9 @@
+@LIN:platform_shell_node_shellEnv:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getResolvedShellEnv(configurationService, logService, args, env){
+  // Transposed from platform/shell/node/shellEnv.ts
+  ^{ name: "getResolvedShellEnv", status: "pure" };
+}
+
+=ex{getResolvedShellEnv}

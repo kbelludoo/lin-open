@@ -1,0 +1,13 @@
+@LIN:workbench_contrib_webview_browser_themeing:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!fromTheme(theme){
+  // Transposed from workbench/contrib/webview/browser/themeing.ts
+  ^{ name: "fromTheme", status: "pure" };
+}
+
+!createWebviewThemeDataProvider(...args){
+  ^{ className: "WebviewThemeDataProvider", methods: ["getTheme", "getWebviewThemeData", "if", "if", "if", "_reset"] };
+}
+
+=ex{fromTheme,createWebviewThemeDataProvider}

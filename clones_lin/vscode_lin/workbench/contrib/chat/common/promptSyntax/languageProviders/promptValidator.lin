@@ -1,0 +1,43 @@
+@LIN:workbench_contrib_chat_common_promptSyntax_languageProviders_promptValidator:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getValidAttributeNames(promptType, includeNonRecommended, target){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/languageProviders/promptValidator.ts
+  ^{ name: "getValidAttributeNames", status: "pure" };
+}
+
+!isNonRecommendedAttribute(attributeName){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/languageProviders/promptValidator.ts
+  ^{ name: "isNonRecommendedAttribute", status: "pure" };
+}
+
+!getAttributeDescription(attributeName, promptType, target){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/languageProviders/promptValidator.ts
+  ^{ name: "getAttributeDescription", status: "pure" };
+}
+
+!mapClaudeModels(claudeModelNames){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/languageProviders/promptValidator.ts
+  ^{ name: "mapClaudeModels", status: "pure" };
+}
+
+!mapClaudeTools(claudeToolNames){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/languageProviders/promptValidator.ts
+  ^{ name: "mapClaudeTools", status: "pure" };
+}
+
+!isVSCodeOrDefaultTarget(target){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/languageProviders/promptValidator.ts
+  ^{ name: "isVSCodeOrDefaultTarget", status: "pure" };
+}
+
+!getTarget(promptType, header){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/languageProviders/promptValidator.ts
+  ^{ name: "getTarget", status: "pure" };
+}
+
+!createPromptValidator(...args){
+  ^{ className: "PromptValidator", methods: ["if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "for", "if", "if", "if", "catch", "for", "if", "if", "if", "if", "if", "if", "switch", "if", "if", "if", "for", "switch", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "for", "if", "if", "if", "for", "if", "for", "if", "if", "if", "findModelByName", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "for", "if", "if", "if", "if", "if", "if", "getUnknownToolMarker", "if", "if", "if", "getMissingGithubMcpServerMarker", "if", "getMissingPlaywrightMcpServerMarker", "if", "if", "if", "if", "for", "catch", "if", "if", "for", "if", "if", "catch", "if", "if", "if", "if", "for", "if", "for", "if", "if", "for", "if", "if", "for", "for", "if", "if", "if", "if", "if", "if", "for", "if", "if", "if", "if", "if", "if", "if", "for", "if", "for", "switch", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "for", "if", "if", "if", "if", "if", "for", "if", "if", "for", "if", "if"] };
+}
+
+=ex{getValidAttributeNames,isNonRecommendedAttribute,getAttributeDescription,mapClaudeModels,mapClaudeTools,isVSCodeOrDefaultTarget,getTarget,createPromptValidator}

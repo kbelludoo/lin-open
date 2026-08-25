@@ -1,0 +1,8 @@
+@LIN:platform_userDataSync_test_common_userDataSyncClient:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createUserDataSyncClient(...args){
+  ^{ className: "UserDataSyncClient", methods: ["setUp", "stub", "stub", "getCompatibleExtension", "if", "sync", "read", "getLatestRef", "_getResourceManifest", "getSynchronizer"] };
+}
+
+=ex{createUserDataSyncClient}

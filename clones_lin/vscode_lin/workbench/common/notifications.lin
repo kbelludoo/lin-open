@@ -1,0 +1,18 @@
+@LIN:workbench_common_notifications:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isNotificationViewItem(obj){
+  // Transposed from workbench/common/notifications.ts
+  ^{ name: "isNotificationViewItem", status: "pure" };
+}
+
+!getNotificationsPosition(configurationService){
+  // Transposed from workbench/common/notifications.ts
+  ^{ name: "getNotificationsPosition", status: "pure" };
+}
+
+!createChoiceAction(...args){
+  ^{ className: "ChoiceAction", methods: ["menu", "keepOpen"] };
+}
+
+=ex{isNotificationViewItem,getNotificationsPosition,createChoiceAction}

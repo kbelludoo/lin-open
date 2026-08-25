@@ -1,0 +1,17 @@
+@LIN:workbench_contrib_chat_browser_widget_input_chatSelectedTools:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!fromMap(map){
+  // Transposed from workbench/contrib/chat/browser/widget/input/chatSelectedTools.ts
+  ^{ name: "fromMap", status: "pure" };
+}
+
+!createChatSelectedTools(...args){
+  ^{ className: "ChatSelectedTools", methods: ["if", "if", "if", "if", "if", "for", "entriesScope", "currentMode", "resetSessionEnablementState", "set", "if", "updateCustomModeTools"] };
+}
+
+!getToolsScopeEnum(){
+  ^{ enumName: "ToolsScope", members: ["Global", "Session", "Agent", "Agent_ReadOnly"] };
+}
+
+=ex{fromMap,createChatSelectedTools,getToolsScopeEnum}

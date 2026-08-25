@@ -1,0 +1,12 @@
+@LIN:workbench_contrib_mcp_common_mcpServer:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createMcpServerMetadataCache(...args){
+  ^{ className: "McpServerMetadataCache", methods: ["if", "reset", "get", "store", "getServers", "storeServers", "if"] };
+}
+
+!createMcpPrefixGenerator(...args){
+  ^{ className: "McpPrefixGenerator", methods: ["take", "if", "if"] };
+}
+
+=ex{createMcpServerMetadataCache,createMcpPrefixGenerator}

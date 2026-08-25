@@ -1,0 +1,66 @@
+@LIN:editor_common_textModelEvents:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!serializeFontTokenOptions(){
+  // Transposed from editor/common/textModelEvents.ts
+  ^{ name: "serializeFontTokenOptions", status: "pure" };
+}
+
+!deserializeFontTokenOptions(){
+  // Transposed from editor/common/textModelEvents.ts
+  ^{ name: "deserializeFontTokenOptions", status: "pure" };
+}
+
+!createModelRawFlush(...args){
+  ^{ className: "ModelRawFlush", methods: [] };
+}
+
+!createLineInjectedText(...args){
+  ^{ className: "LineInjectedText", methods: ["applyInjectedText", "if", "for", "fromDecorations", "for", "if", "if", "if", "if", "withText"] };
+}
+
+!createModelRawLineChanged(...args){
+  ^{ className: "ModelRawLineChanged", methods: [] };
+}
+
+!createModelLineHeightChanged(...args){
+  ^{ className: "ModelLineHeightChanged", methods: [] };
+}
+
+!createModelFontChanged(...args){
+  ^{ className: "ModelFontChanged", methods: [] };
+}
+
+!createModelRawLinesDeleted(...args){
+  ^{ className: "ModelRawLinesDeleted", methods: [] };
+}
+
+!createModelRawLinesInserted(...args){
+  ^{ className: "ModelRawLinesInserted", methods: ["toLineNumber", "toLineNumberPostEdit"] };
+}
+
+!createModelRawEOLChanged(...args){
+  ^{ className: "ModelRawEOLChanged", methods: [] };
+}
+
+!createModelRawContentChangedEvent(...args){
+  ^{ className: "ModelRawContentChangedEvent", methods: ["containsEvent", "for", "if", "merge"] };
+}
+
+!createModelInjectedTextChangedEvent(...args){
+  ^{ className: "ModelInjectedTextChangedEvent", methods: [] };
+}
+
+!createModelLineHeightChangedEvent(...args){
+  ^{ className: "ModelLineHeightChangedEvent", methods: ["affects", "for", "if", "for", "if"] };
+}
+
+!createModelFontChangedEvent(...args){
+  ^{ className: "ModelFontChangedEvent", methods: [] };
+}
+
+!createInternalModelContentChangeEvent(...args){
+  ^{ className: "InternalModelContentChangeEvent", methods: ["merge", "_mergeChangeEvents"] };
+}
+
+=ex{serializeFontTokenOptions,deserializeFontTokenOptions,createModelRawFlush,createLineInjectedText,createModelRawLineChanged,createModelLineHeightChanged,createModelFontChanged,createModelRawLinesDeleted,createModelRawLinesInserted,createModelRawEOLChanged,createModelRawContentChangedEvent,createModelInjectedTextChangedEvent,createModelLineHeightChangedEvent,createModelFontChangedEvent,createInternalModelContentChangeEvent}

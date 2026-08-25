@@ -1,0 +1,17 @@
+@LIN:workbench_services_preferences_common_preferences:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!validateSettingsEditorOptions(options){
+  // Transposed from workbench/services/preferences/common/preferences.ts
+  ^{ name: "validateSettingsEditorOptions", status: "pure" };
+}
+
+!getSettingValueTypeEnum(){
+  ^{ enumName: "SettingValueType", members: ["Null", "Enum", "String", "MultilineString", "Integer", "Number", "Boolean", "Array", "Exclude", "Include", "Complex", "NullableInteger", "NullableNumber", "Object", "BooleanObject", "LanguageTag", "ExtensionToggle", "ComplexObject"] };
+}
+
+!getSettingMatchTypeEnum(){
+  ^{ enumName: "SettingMatchType", members: ["None", "LanguageTagSettingMatch", "RemoteMatch", "NonContiguousQueryInSettingId", "DescriptionOrValueMatch", "NonContiguousWordsInSettingsLabel", "ContiguousWordsInSettingsLabel", "ContiguousQueryInSettingId", "AllWordsInSettingsLabel", "ExactMatch"] };
+}
+
+=ex{validateSettingsEditorOptions,getSettingValueTypeEnum,getSettingMatchTypeEnum}

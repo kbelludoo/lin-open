@@ -1,0 +1,185 @@
+@LIN:workbench_contrib_extensions_browser_extensionsActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getContextMenuActions(extension, contextKeyService, instantiationService){
+  // Transposed from workbench/contrib/extensions/browser/extensionsActions.ts
+  ^{ name: "getContextMenuActions", status: "pure" };
+}
+
+!createPromptExtensionInstallFailureAction(...args){
+  ^{ className: "PromptExtensionInstallFailureAction", methods: ["run", "if", "if", "localize", "if", "getDownloadUrl", "if", "if", "if", "if", "catch", "if", "if"] };
+}
+
+!createButtonWithDropDownExtensionAction(...args){
+  ^{ className: "ButtonWithDropDownExtensionAction", methods: ["menuActions", "extension", "extension", "update", "if", "for", "if", "if", "run", "if", "getLabel"] };
+}
+
+!createButtonWithDropdownExtensionActionViewItem(...args){
+  ^{ className: "ButtonWithDropdownExtensionActionViewItem", methods: ["_register", "render", "updateClass", "if"] };
+}
+
+!createInstallAction(...args){
+  ^{ className: "InstallAction", methods: ["manifest", "update", "computeAndUpdateEnablement", "if", "if", "if", "if", "run", "if", "if", "if", "if", "if", "if", "if", "if", "if", "getThemeAction", "install", "catch", "getRunningExtension", "if", "if", "updateLabel", "getLabel", "if", "if"] };
+}
+
+!createInstallDropdownAction(...args){
+  ^{ className: "InstallDropdownAction", methods: ["manifest", "getLabel"] };
+}
+
+!createInstallingLabelAction(...args){
+  ^{ className: "InstallingLabelAction", methods: ["update"] };
+}
+
+!createRemoteInstallAction(...args){
+  ^{ className: "RemoteInstallAction", methods: ["getInstallLabel"] };
+}
+
+!createLocalInstallAction(...args){
+  ^{ className: "LocalInstallAction", methods: ["getInstallLabel"] };
+}
+
+!createWebInstallAction(...args){
+  ^{ className: "WebInstallAction", methods: ["getInstallLabel"] };
+}
+
+!createUninstallAction(...args){
+  ^{ className: "UninstallAction", methods: ["update", "if", "if", "if", "if", "run", "if", "catch"] };
+}
+
+!createUpdateAction(...args){
+  ^{ className: "UpdateAction", methods: ["update", "if", "computeAndUpdateEnablement", "if", "if", "run", "if", "if", "if", "if", "if", "if", "if", "catch"] };
+}
+
+!createToggleAutoUpdateForExtensionAction(...args){
+  ^{ className: "ToggleAutoUpdateForExtensionAction", methods: ["update", "if", "if", "if", "run", "if", "if"] };
+}
+
+!createToggleAutoUpdatesForPublisherAction(...args){
+  ^{ className: "ToggleAutoUpdatesForPublisherAction", methods: ["update", "run", "if", "if"] };
+}
+
+!createMigrateDeprecatedExtensionAction(...args){
+  ^{ className: "MigrateDeprecatedExtensionAction", methods: ["update", "if", "if", "if", "run", "if"] };
+}
+
+!createDropDownExtensionActionViewItem(...args){
+  ^{ className: "DropDownExtensionActionViewItem", methods: ["showMenu", "if", "getActions", "for"] };
+}
+
+!createManageExtensionAction(...args){
+  ^{ className: "ManageExtensionAction", methods: ["getActionGroups", "for", "if", "if", "if", "if", "if", "if", "forEach", "run", "update", "if"] };
+}
+
+!createExtensionEditorManageExtensionAction(...args){
+  ^{ className: "ExtensionEditorManageExtensionAction", methods: ["update", "run", "forEach"] };
+}
+
+!createMenuItemExtensionAction(...args){
+  ^{ className: "MenuItemExtensionAction", methods: ["enabled", "enabled", "update", "if", "if", "if", "if", "run", "if"] };
+}
+
+!createTogglePreReleaseExtensionAction(...args){
+  ^{ className: "TogglePreReleaseExtensionAction", methods: ["update", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "run", "if"] };
+}
+
+!createInstallAnotherVersionAction(...args){
+  ^{ className: "InstallAnotherVersionAction", methods: ["update", "if", "run", "if", "if", "if", "if", "if", "catch"] };
+}
+
+!createEnableForWorkspaceAction(...args){
+  ^{ className: "EnableForWorkspaceAction", methods: ["update", "if", "run", "if"] };
+}
+
+!createEnableGloballyAction(...args){
+  ^{ className: "EnableGloballyAction", methods: ["update", "if", "run", "if"] };
+}
+
+!createDisableForWorkspaceAction(...args){
+  ^{ className: "DisableForWorkspaceAction", methods: ["update", "run", "if"] };
+}
+
+!createDisableGloballyAction(...args){
+  ^{ className: "DisableGloballyAction", methods: ["update", "run", "if"] };
+}
+
+!createEnableAIFeaturesInWorkspaceAction(...args){
+  ^{ className: "EnableAIFeaturesInWorkspaceAction", methods: ["update", "if", "if", "if", "if", "run", "if"] };
+}
+
+!createEnableDropDownAction(...args){
+  ^{ className: "EnableDropDownAction", methods: [] };
+}
+
+!createDisableDropDownAction(...args){
+  ^{ className: "DisableDropDownAction", methods: [] };
+}
+
+!createExtensionRuntimeStateAction(...args){
+  ^{ className: "ExtensionRuntimeStateAction", methods: ["update", "if", "if", "if", "if", "localize", "run", "if", "if", "if", "if", "if", "if"] };
+}
+
+!createSetColorThemeAction(...args){
+  ^{ className: "SetColorThemeAction", methods: ["update", "computeEnablement", "run"] };
+}
+
+!createSetFileIconThemeAction(...args){
+  ^{ className: "SetFileIconThemeAction", methods: ["update", "computeEnablement", "run"] };
+}
+
+!createSetProductIconThemeAction(...args){
+  ^{ className: "SetProductIconThemeAction", methods: ["update", "computeEnablement", "run"] };
+}
+
+!createSetLanguageAction(...args){
+  ^{ className: "SetLanguageAction", methods: ["update", "if", "run"] };
+}
+
+!createClearLanguageAction(...args){
+  ^{ className: "ClearLanguageAction", methods: ["update", "if", "run"] };
+}
+
+!createShowRecommendedExtensionAction(...args){
+  ^{ className: "ShowRecommendedExtensionAction", methods: ["run", "if"] };
+}
+
+!createInstallRecommendedExtensionAction(...args){
+  ^{ className: "InstallRecommendedExtensionAction", methods: ["run", "if", "catch"] };
+}
+
+!createIgnoreExtensionRecommendationAction(...args){
+  ^{ className: "IgnoreExtensionRecommendationAction", methods: ["run"] };
+}
+
+!createUndoIgnoreExtensionRecommendationAction(...args){
+  ^{ className: "UndoIgnoreExtensionRecommendationAction", methods: ["run"] };
+}
+
+!createConfigureWorkspaceRecommendedExtensionsAction(...args){
+  ^{ className: "ConfigureWorkspaceRecommendedExtensionsAction", methods: ["update", "run"] };
+}
+
+!createConfigureWorkspaceFolderRecommendedExtensionsAction(...args){
+  ^{ className: "ConfigureWorkspaceFolderRecommendedExtensionsAction", methods: ["run", "then"] };
+}
+
+!createToggleSyncExtensionAction(...args){
+  ^{ className: "ToggleSyncExtensionAction", methods: ["update", "if", "run"] };
+}
+
+!createExtensionStatusAction(...args){
+  ^{ className: "ExtensionStatusAction", methods: ["status", "update", "recomputeStatus", "computeAndUpdateStatus", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "for", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "updateStatus", "if", "if", "if", "if", "if", "if", "if", "if", "run", "if"] };
+}
+
+!createInstallSpecificVersionOfExtensionAction(...args){
+  ^{ className: "InstallSpecificVersionOfExtensionAction", methods: ["enabled", "run", "if", "isEnabled", "getExtensionEntries", "for"] };
+}
+
+!createInstallLocalExtensionsInRemoteAction(...args){
+  ^{ className: "InstallLocalExtensionsInRemoteAction", methods: ["label", "if", "getQuickPickTitle", "getExtensionsToInstall", "installExtensions", "if", "catch"] };
+}
+
+!createInstallRemoteExtensionsInLocalAction(...args){
+  ^{ className: "InstallRemoteExtensionsInLocalAction", methods: ["label", "getQuickPickTitle", "getExtensionsToInstall", "installExtensions", "if", "catch"] };
+}
+
+=ex{getContextMenuActions,createPromptExtensionInstallFailureAction,createButtonWithDropDownExtensionAction,createButtonWithDropdownExtensionActionViewItem,createInstallAction,createInstallDropdownAction,createInstallingLabelAction,createRemoteInstallAction,createLocalInstallAction,createWebInstallAction,createUninstallAction,createUpdateAction,createToggleAutoUpdateForExtensionAction,createToggleAutoUpdatesForPublisherAction,createMigrateDeprecatedExtensionAction,createDropDownExtensionActionViewItem,createManageExtensionAction,createExtensionEditorManageExtensionAction,createMenuItemExtensionAction,createTogglePreReleaseExtensionAction,createInstallAnotherVersionAction,createEnableForWorkspaceAction,createEnableGloballyAction,createDisableForWorkspaceAction,createDisableGloballyAction,createEnableAIFeaturesInWorkspaceAction,createEnableDropDownAction,createDisableDropDownAction,createExtensionRuntimeStateAction,createSetColorThemeAction,createSetFileIconThemeAction,createSetProductIconThemeAction,createSetLanguageAction,createClearLanguageAction,createShowRecommendedExtensionAction,createInstallRecommendedExtensionAction,createIgnoreExtensionRecommendationAction,createUndoIgnoreExtensionRecommendationAction,createConfigureWorkspaceRecommendedExtensionsAction,createConfigureWorkspaceFolderRecommendedExtensionsAction,createToggleSyncExtensionAction,createExtensionStatusAction,createInstallSpecificVersionOfExtensionAction,createInstallLocalExtensionsInRemoteAction,createInstallRemoteExtensionsInLocalAction}

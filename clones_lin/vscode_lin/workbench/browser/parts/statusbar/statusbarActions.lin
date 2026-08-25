@@ -1,0 +1,16 @@
+@LIN:workbench_browser_parts_statusbar_statusbarActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createToggleStatusbarEntryVisibilityAction(...args){
+  ^{ className: "ToggleStatusbarEntryVisibilityAction", methods: ["run"] };
+}
+
+!createHideStatusbarEntryAction(...args){
+  ^{ className: "HideStatusbarEntryAction", methods: ["run"] };
+}
+
+!createManageExtensionAction(...args){
+  ^{ className: "ManageExtensionAction", methods: ["run"] };
+}
+
+=ex{createToggleStatusbarEntryVisibilityAction,createHideStatusbarEntryAction,createManageExtensionAction}

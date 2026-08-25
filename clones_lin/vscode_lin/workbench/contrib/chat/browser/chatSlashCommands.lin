@@ -1,0 +1,12 @@
+@LIN:workbench_contrib_chat_browser_chatSlashCommands:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createChatSlashCommandsContribution(...args){
+  ^{ className: "ChatSlashCommandsContribution", methods: ["registerSlashCommand", "if", "if", "if", "if", "if", "if", "if"] };
+}
+
+!createChatSessionOptionSlashCommandsContribution(...args){
+  ^{ className: "ChatSessionOptionSlashCommandsContribution", methods: ["refreshForSessionType", "if", "for", "for", "if", "if", "registerOne", "if"] };
+}
+
+=ex{createChatSlashCommandsContribution,createChatSessionOptionSlashCommandsContribution}

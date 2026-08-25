@@ -1,0 +1,9 @@
+@LIN:platform_userDataSync_common_globalStateMerge:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!merge(localStorage, remoteStorage, baseStorage, storageKeys, logService){
+  // Transposed from platform/userDataSync/common/globalStateMerge.ts
+  ^{ name: "merge", status: "pure" };
+}
+
+=ex{merge}

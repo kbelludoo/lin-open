@@ -1,0 +1,16 @@
+@LIN:workbench_contrib_markers_browser_markersViewActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createMarkersFilters(...args){
+  ^{ className: "MarkersFilters", methods: ["excludedFiles", "excludedFiles", "activeFile", "activeFile", "showWarnings", "showWarnings", "showErrors", "showErrors", "showInfos", "showInfos"] };
+}
+
+!createQuickFixAction(...args){
+  ^{ className: "QuickFixAction", methods: ["quickFixes", "quickFixes", "autoFixable", "run"] };
+}
+
+!createQuickFixActionViewItem(...args){
+  ^{ className: "QuickFixActionViewItem", methods: ["onClick", "showQuickFixes", "if", "if"] };
+}
+
+=ex{createMarkersFilters,createQuickFixAction,createQuickFixActionViewItem}

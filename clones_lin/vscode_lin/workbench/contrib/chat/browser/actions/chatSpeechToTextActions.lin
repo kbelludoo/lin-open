@@ -1,0 +1,31 @@
+@LIN:workbench_contrib_chat_browser_actions_chatSpeechToTextActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getDictationShortcutOperation(dictating, state, preparingModel){
+  // Transposed from workbench/contrib/chat/browser/actions/chatSpeechToTextActions.ts
+  ^{ name: "getDictationShortcutOperation", status: "pure" };
+}
+
+!runDictationShortcut(context, commandId, editor, startDictationFn){
+  // Transposed from workbench/contrib/chat/browser/actions/chatSpeechToTextActions.ts
+  ^{ name: "runDictationShortcut", status: "pure" };
+}
+
+!registerChatSpeechToTextActions(){
+  // Transposed from workbench/contrib/chat/browser/actions/chatSpeechToTextActions.ts
+  ^{ name: "registerChatSpeechToTextActions", status: "pure" };
+}
+
+!createToggleChatSpeechToTextAction(...args){
+  ^{ className: "ToggleChatSpeechToTextAction", methods: ["run", "if"] };
+}
+
+!createChatSpeechToTextPreparingAction(...args){
+  ^{ className: "ChatSpeechToTextPreparingAction", methods: ["run"] };
+}
+
+!createChatSpeechToTextConnectingAction(...args){
+  ^{ className: "ChatSpeechToTextConnectingAction", methods: ["run"] };
+}
+
+=ex{getDictationShortcutOperation,runDictationShortcut,registerChatSpeechToTextActions,createToggleChatSpeechToTextAction,createChatSpeechToTextPreparingAction,createChatSpeechToTextConnectingAction}

@@ -1,0 +1,28 @@
+@LIN:workbench_contrib_chat_browser_aiCustomization_aiCustomizationItemSource:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isChatExtensionItem(extensionId, productService){
+  // Transposed from workbench/contrib/chat/browser/aiCustomization/aiCustomizationItemSource.ts
+  ^{ name: "isChatExtensionItem", status: "pure" };
+}
+
+!getFriendlyName(filename){
+  // Transposed from workbench/contrib/chat/browser/aiCustomization/aiCustomizationItemSource.ts
+  ^{ name: "getFriendlyName", status: "pure" };
+}
+
+!expandHookFileItems(hookFileItems, workspaceService, fileService, pathService){
+  // Transposed from workbench/contrib/chat/browser/aiCustomization/aiCustomizationItemSource.ts
+  ^{ name: "expandHookFileItems", status: "pure" };
+}
+
+!mergeBuiltinSkills(items, promptType, promptsService, workspaceService, itemNormalizer){
+  // Transposed from workbench/contrib/chat/browser/aiCustomization/aiCustomizationItemSource.ts
+  ^{ name: "mergeBuiltinSkills", status: "pure" };
+}
+
+!createAICustomizationItemNormalizer(...args){
+  ^{ className: "AICustomizationItemNormalizer", methods: ["normalizeItems", "inferStorageAndGroup", "if", "if", "if", "if"] };
+}
+
+=ex{isChatExtensionItem,getFriendlyName,expandHookFileItems,mergeBuiltinSkills,createAICustomizationItemNormalizer}

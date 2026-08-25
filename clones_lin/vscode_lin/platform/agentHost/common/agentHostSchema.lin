@@ -1,0 +1,24 @@
+@LIN:platform_agentHost_common_agentHostSchema:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getAgentHostTerminalAutoApproveRulesConfig(configurationService){
+  // Transposed from platform/agentHost/common/agentHostSchema.ts
+  ^{ name: "getAgentHostTerminalAutoApproveRulesConfig", status: "pure" };
+}
+
+!normalizeAgentHostTerminalAutoApproveRulesConfig(config, configInspectValue, ignoreDefaults){
+  // Transposed from platform/agentHost/common/agentHostSchema.ts
+  ^{ name: "normalizeAgentHostTerminalAutoApproveRulesConfig", status: "pure" };
+}
+
+!telemetryLevelToAgentHostConfigValue(telemetryLevel){
+  // Transposed from platform/agentHost/common/agentHostSchema.ts
+  ^{ name: "telemetryLevelToAgentHostConfigValue", status: "pure" };
+}
+
+!agentHostConfigValueToTelemetryLevel(value){
+  // Transposed from platform/agentHost/common/agentHostSchema.ts
+  ^{ name: "agentHostConfigValueToTelemetryLevel", status: "pure" };
+}
+
+=ex{getAgentHostTerminalAutoApproveRulesConfig,normalizeAgentHostTerminalAutoApproveRulesConfig,telemetryLevelToAgentHostConfigValue,agentHostConfigValueToTelemetryLevel}

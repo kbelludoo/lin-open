@@ -1,0 +1,28 @@
+@LIN:workbench_contrib_chat_browser_actions_exportAgentHostDebugLogsAction:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getAgentHostDebugLogsExportName(sessionTitle, chatTitle, isPrimaryChat){
+  // Transposed from workbench/contrib/chat/browser/actions/exportAgentHostDebugLogsAction.ts
+  ^{ name: "getAgentHostDebugLogsExportName", status: "pure" };
+}
+
+!exportAgentHostDebugLogs(accessor, activeSession){
+  // Transposed from workbench/contrib/chat/browser/actions/exportAgentHostDebugLogsAction.ts
+  ^{ name: "exportAgentHostDebugLogs", status: "pure" };
+}
+
+!toActiveAgentHostSession(resource, chatTitle, sessionTitle?){
+  // Transposed from workbench/contrib/chat/browser/actions/exportAgentHostDebugLogsAction.ts
+  ^{ name: "toActiveAgentHostSession", status: "pure" };
+}
+
+!collectRotatedLogFiles(path, current, fileService, maxInlineSize = MAX_INLINE_DEBUG_LOGS_BYTES){
+  // Transposed from workbench/contrib/chat/browser/actions/exportAgentHostDebugLogsAction.ts
+  ^{ name: "collectRotatedLogFiles", status: "pure" };
+}
+
+!createExportAgentHostDebugLogsAction(...args){
+  ^{ className: "ExportAgentHostDebugLogsAction", methods: ["run"] };
+}
+
+=ex{getAgentHostDebugLogsExportName,exportAgentHostDebugLogs,toActiveAgentHostSession,collectRotatedLogFiles,createExportAgentHostDebugLogsAction}

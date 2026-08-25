@@ -1,0 +1,16 @@
+@LIN:workbench_contrib_chat_browser_promptSyntax_saveAsPromptFileActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createSaveAsPromptFileAction(...args){
+  ^{ className: "SaveAsPromptFileAction", methods: [] };
+}
+
+!createSaveAsAgentFileAction(...args){
+  ^{ className: "SaveAsAgentFileAction", methods: [] };
+}
+
+!createSaveAsInstructionsFileAction(...args){
+  ^{ className: "SaveAsInstructionsFileAction", methods: [] };
+}
+
+=ex{createSaveAsPromptFileAction,createSaveAsAgentFileAction,createSaveAsInstructionsFileAction}

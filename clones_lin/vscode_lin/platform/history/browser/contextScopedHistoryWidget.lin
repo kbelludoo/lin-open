@@ -1,0 +1,21 @@
+@LIN:platform_history_browser_contextScopedHistoryWidget:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!registerAndCreateHistoryNavigationContext(scopedContextKeyService, widget){
+  // Transposed from platform/history/browser/contextScopedHistoryWidget.ts
+  ^{ name: "registerAndCreateHistoryNavigationContext", status: "pure" };
+}
+
+!createContextScopedHistoryInputBox(...args){
+  ^{ className: "ContextScopedHistoryInputBox", methods: [] };
+}
+
+!createContextScopedFindInput(...args){
+  ^{ className: "ContextScopedFindInput", methods: [] };
+}
+
+!createContextScopedReplaceInput(...args){
+  ^{ className: "ContextScopedReplaceInput", methods: [] };
+}
+
+=ex{registerAndCreateHistoryNavigationContext,createContextScopedHistoryInputBox,createContextScopedFindInput,createContextScopedReplaceInput}

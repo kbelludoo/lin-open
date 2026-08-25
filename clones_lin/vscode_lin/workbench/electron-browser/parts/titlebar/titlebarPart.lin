@@ -1,0 +1,16 @@
+@LIN:workbench_electron_browser_parts_titlebar_titlebarPart:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createNativeTitlebarPart(...args){
+  ^{ className: "NativeTitlebarPart", methods: ["minimumHeight", "if", "maximumHeight", "macTitlebarSize", "if", "handleWindowsAlwaysOnTop", "if", "onMenubarVisibilityChanged", "if", "onConfigurationChanged", "if", "onUpdateAppIconDragBehavior", "if", "if", "installMenubar", "if", "if", "onMenubarFocusChanged", "if", "createContentArea", "if", "if", "if", "if", "onDidChangeWindowMaximized", "if", "if", "if", "if", "updateStyles", "if", "if", "layout", "if"] };
+}
+
+!createMainNativeTitlebarPart(...args){
+  ^{ className: "MainNativeTitlebarPart", methods: [] };
+}
+
+!createNativeTitleService(...args){
+  ^{ className: "NativeTitleService", methods: ["createMainTitlebarPart", "doCreateAuxiliaryTitlebarPart"] };
+}
+
+=ex{createNativeTitlebarPart,createMainNativeTitlebarPart,createNativeTitleService}

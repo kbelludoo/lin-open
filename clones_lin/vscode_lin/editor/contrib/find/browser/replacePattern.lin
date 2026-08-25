@@ -1,0 +1,17 @@
+@LIN:editor_contrib_find_browser_replacePattern:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!parseReplaceString(replaceString){
+  // Transposed from editor/contrib/find/browser/replacePattern.ts
+  ^{ name: "parseReplaceString", status: "pure" };
+}
+
+!createReplacePattern(...args){
+  ^{ className: "ReplacePattern", methods: ["fromStaticValue", "hasReplacementPatterns", "if", "if", "buildReplaceString", "if", "if", "for", "if", "if", "for", "if", "switch", "_substitute", "if", "if", "while", "if"] };
+}
+
+!createReplacePiece(...args){
+  ^{ className: "ReplacePiece", methods: ["staticValue", "matchIndex", "caseOps", "if"] };
+}
+
+=ex{parseReplaceString,createReplacePattern,createReplacePiece}

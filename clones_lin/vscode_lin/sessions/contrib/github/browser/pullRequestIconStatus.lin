@@ -1,0 +1,19 @@
+@LIN:sessions_contrib_github_browser_pullRequestIconStatus:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!computePullRequestIconStatus(reader, gitHubService, owner, repo, livePR){
+  // Transposed from sessions/contrib/github/browser/pullRequestIconStatus.ts
+  ^{ name: "computePullRequestIconStatus", status: "pure" };
+}
+
+!computeLivePullRequestIcon(reader, gitHubService, owner, repo, livePR){
+  // Transposed from sessions/contrib/github/browser/pullRequestIconStatus.ts
+  ^{ name: "computeLivePullRequestIcon", status: "pure" };
+}
+
+!computeSessionPullRequestIcon(reader, gitHubService, iconCache, gitHubInfo){
+  // Transposed from sessions/contrib/github/browser/pullRequestIconStatus.ts
+  ^{ name: "computeSessionPullRequestIcon", status: "pure" };
+}
+
+=ex{computePullRequestIconStatus,computeLivePullRequestIcon,computeSessionPullRequestIcon}

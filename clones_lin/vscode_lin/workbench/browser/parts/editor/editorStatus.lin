@@ -1,0 +1,16 @@
+@LIN:workbench_browser_parts_editor_editorStatus:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createChangeLanguageAction(...args){
+  ^{ className: "ChangeLanguageAction", methods: ["run", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "configureFileAssociation", "if", "if", "if"] };
+}
+
+!createChangeEOLAction(...args){
+  ^{ className: "ChangeEOLAction", methods: ["run", "if", "if"] };
+}
+
+!createChangeEncodingAction(...args){
+  ^{ className: "ChangeEncodingAction", methods: ["run", "if", "if", "if", "if", "if", "if", "if", "if", "if", "filter", "if", "if", "if", "if", "if"] };
+}
+
+=ex{createChangeLanguageAction,createChangeEOLAction,createChangeEncodingAction}

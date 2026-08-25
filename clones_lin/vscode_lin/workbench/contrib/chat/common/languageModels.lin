@@ -1,0 +1,61 @@
+@LIN:workbench_contrib_chat_common_languageModels:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isLanguageModelVendorAbsenceConclusive(vendor, hasLiveModels, hasResolved){
+  // Transposed from workbench/contrib/chat/common/languageModels.ts
+  ^{ name: "isLanguageModelVendorAbsenceConclusive", status: "pure" };
+}
+
+!getByokProviderTelemetryName(vendor, extension){
+  // Transposed from workbench/contrib/chat/common/languageModels.ts
+  ^{ name: "getByokProviderTelemetryName", status: "pure" };
+}
+
+!suitableForAgentMode(metadata){
+  // Transposed from workbench/contrib/chat/common/languageModels.ts
+  ^{ name: "suitableForAgentMode", status: "pure" };
+}
+
+!getTextResponseFromStream(response){
+  // Transposed from workbench/contrib/chat/common/languageModels.ts
+  ^{ name: "getTextResponseFromStream", status: "pure" };
+}
+
+!isILanguageModelChatSelector(value){
+  // Transposed from workbench/contrib/chat/common/languageModels.ts
+  ^{ name: "isILanguageModelChatSelector", status: "pure" };
+}
+
+!getLanguageModelProviderDisplayName(languageModelsService, vendor){
+  // Transposed from workbench/contrib/chat/common/languageModels.ts
+  ^{ name: "getLanguageModelProviderDisplayName", status: "pure" };
+}
+
+!getLanguageModelDisplayNameWithProvider(model, languageModelsService){
+  // Transposed from workbench/contrib/chat/common/languageModels.ts
+  ^{ name: "getLanguageModelDisplayNameWithProvider", status: "pure" };
+}
+
+!resolveProviderDeprecationLink(link, urlProtocol){
+  // Transposed from workbench/contrib/chat/common/languageModels.ts
+  ^{ name: "resolveProviderDeprecationLink", status: "pure" };
+}
+
+!isAutoLanguageModel(model){
+  // Transposed from workbench/contrib/chat/common/languageModels.ts
+  ^{ name: "isAutoLanguageModel", status: "pure" };
+}
+
+!getLanguageModelPartAudienceEnum(){
+  ^{ enumName: "LanguageModelPartAudience", members: ["Assistant", "User", "Extension"] };
+}
+
+!getChatImageMimeTypeEnum(){
+  ^{ enumName: "ChatImageMimeType", members: ["PNG", "JPEG", "GIF", "WEBP", "BMP"] };
+}
+
+!getImageDetailLevelEnum(){
+  ^{ enumName: "ImageDetailLevel", members: ["Low", "High"] };
+}
+
+=ex{isLanguageModelVendorAbsenceConclusive,getByokProviderTelemetryName,suitableForAgentMode,getTextResponseFromStream,isILanguageModelChatSelector,getLanguageModelProviderDisplayName,getLanguageModelDisplayNameWithProvider,resolveProviderDeprecationLink,isAutoLanguageModel,getLanguageModelPartAudienceEnum,getChatImageMimeTypeEnum,getImageDetailLevelEnum}

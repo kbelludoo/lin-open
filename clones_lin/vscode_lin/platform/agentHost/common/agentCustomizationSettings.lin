@@ -1,0 +1,29 @@
+@LIN:platform_agentHost_common_agentCustomizationSettings:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getAgentCustomizationSettingsEntries(state){
+  // Transposed from platform/agentHost/common/agentCustomizationSettings.ts
+  ^{ name: "getAgentCustomizationSettingsEntries", status: "pure" };
+}
+
+!withAgentCustomizationSettings(state, entries){
+  // Transposed from platform/agentHost/common/agentCustomizationSettings.ts
+  ^{ name: "withAgentCustomizationSettings", status: "pure" };
+}
+
+!readAgentCustomizationSettings(state, provider){
+  // Transposed from platform/agentHost/common/agentCustomizationSettings.ts
+  ^{ name: "readAgentCustomizationSettings", status: "pure" };
+}
+
+!getProviderBackedRootConfigKeys(state){
+  // Transposed from platform/agentHost/common/agentCustomizationSettings.ts
+  ^{ name: "getProviderBackedRootConfigKeys", status: "pure" };
+}
+
+!preserveProviderBackedRootConfigValues(state, replacement, unknown>>){
+  // Transposed from platform/agentHost/common/agentCustomizationSettings.ts
+  ^{ name: "preserveProviderBackedRootConfigValues", status: "pure" };
+}
+
+=ex{getAgentCustomizationSettingsEntries,withAgentCustomizationSettings,readAgentCustomizationSettings,getProviderBackedRootConfigKeys,preserveProviderBackedRootConfigValues}

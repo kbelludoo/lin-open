@@ -1,0 +1,19 @@
+@LIN:editor_common_languageSelector:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!score(selector, candidateUri, candidateLanguage, candidateIsSynchronized, candidateNotebookUri, candidateNotebookType){
+  // Transposed from editor/common/languageSelector.ts
+  ^{ name: "score", status: "pure" };
+}
+
+!targetsNotebooks(selector){
+  // Transposed from editor/common/languageSelector.ts
+  ^{ name: "targetsNotebooks", status: "pure" };
+}
+
+!selectLanguageIds(selector, into){
+  // Transposed from editor/common/languageSelector.ts
+  ^{ name: "selectLanguageIds", status: "pure" };
+}
+
+=ex{score,targetsNotebooks,selectLanguageIds}

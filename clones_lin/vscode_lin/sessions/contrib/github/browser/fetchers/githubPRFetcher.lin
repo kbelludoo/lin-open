@@ -1,0 +1,13 @@
+@LIN:sessions_contrib_github_browser_fetchers_githubPRFetcher:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!computeMergeability(pr, reviews){
+  // Transposed from sessions/contrib/github/browser/fetchers/githubPRFetcher.ts
+  ^{ name: "computeMergeability", status: "pure" };
+}
+
+!createGitHubPRFetcher(...args){
+  ^{ className: "GitHubPRFetcher", methods: ["getPullRequest", "getReviews", "getReviewThreads", "if", "postReviewComment", "if", "postIssueComment", "if", "resolveThread", "if"] };
+}
+
+=ex{computeMergeability,createGitHubPRFetcher}

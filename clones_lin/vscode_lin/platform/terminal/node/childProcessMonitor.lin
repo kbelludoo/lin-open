@@ -1,0 +1,8 @@
+@LIN:platform_terminal_node_childProcessMonitor:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createChildProcessMonitor(...args){
+  ^{ className: "ChildProcessMonitor", methods: ["hasChildProcesses", "if", "hasChildProcesses", "setPid", "handleInput", "handleOutput", "_refreshActive", "if", "catch", "_refreshInactive", "_processContainsChildren", "if", "if", "if"] };
+}
+
+=ex{createChildProcessMonitor}

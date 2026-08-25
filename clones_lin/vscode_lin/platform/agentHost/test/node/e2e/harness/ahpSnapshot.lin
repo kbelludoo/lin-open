@@ -1,0 +1,22 @@
+@LIN:platform_agentHost_test_node_e2e_harness_ahpSnapshot:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!assertRecordedAhpSnapshot(test, client, options?){
+  // Transposed from platform/agentHost/test/node/e2e/harness/ahpSnapshot.ts
+  ^{ name: "assertRecordedAhpSnapshot", status: "pure" };
+}
+
+!snapshotPathForTest(test, name, extension){
+  // Transposed from platform/agentHost/test/node/e2e/harness/ahpSnapshot.ts
+  ^{ name: "snapshotPathForTest", status: "pure" };
+}
+
+!createAhpSnapshotRecorder(...args){
+  ^{ className: "AhpSnapshotRecorder", methods: ["setNormalization", "record", "beginRound", "clear", "serialize", "for", "while", "if", "if", "if", "if", "if", "if", "for"] };
+}
+
+!createAhpSnapshotScenario(...args){
+  ^{ className: "AhpSnapshotScenario", methods: ["load", "clientId", "for", "for", "if", "run", "for", "for", "if", "if", "if"] };
+}
+
+=ex{assertRecordedAhpSnapshot,snapshotPathForTest,createAhpSnapshotRecorder,createAhpSnapshotScenario}

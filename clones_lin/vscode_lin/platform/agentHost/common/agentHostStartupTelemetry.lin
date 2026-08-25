@@ -1,0 +1,8 @@
+@LIN:platform_agentHost_common_agentHostStartupTelemetry:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createAgentHostStartupTelemetry(...args){
+  ^{ className: "AgentHostStartupTelemetry", methods: ["messagePortAcquired", "protocolConnected", "authenticationSettled", "sessionListRequested", "if", "sessionListFailed", "if", "sessionListSucceeded", "connectionFailed", "dispose", "_failureStage", "_report", "if"] };
+}
+
+=ex{createAgentHostStartupTelemetry}

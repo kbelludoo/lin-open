@@ -1,0 +1,8 @@
+@LIN:sessions_browser_layoutPolicy:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createSessionsLayoutPolicy(...args){
+  ^{ className: "SessionsLayoutPolicy", methods: ["isSinglePane", "setSinglePane", "update", "getPartVisibilityDefaults", "switch", "getPartSizes", "switch"] };
+}
+
+=ex{createSessionsLayoutPolicy}

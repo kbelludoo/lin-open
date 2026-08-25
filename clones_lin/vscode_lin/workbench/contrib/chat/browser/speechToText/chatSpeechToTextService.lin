@@ -1,0 +1,24 @@
+@LIN:workbench_contrib_chat_browser_speechToText_chatSpeechToTextService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!stripDictationFillers(text){
+  // Transposed from workbench/contrib/chat/browser/speechToText/chatSpeechToTextService.ts
+  ^{ name: "stripDictationFillers", status: "pure" };
+}
+
+!createDictationCleanupSystemPrompt(dictationInstructions?){
+  // Transposed from workbench/contrib/chat/browser/speechToText/chatSpeechToTextService.ts
+  ^{ name: "createDictationCleanupSystemPrompt", status: "pure" };
+}
+
+!isDictationEntitled(entitlement, isInternal, usesMai){
+  // Transposed from workbench/contrib/chat/browser/speechToText/chatSpeechToTextService.ts
+  ^{ name: "isDictationEntitled", status: "pure" };
+}
+
+!isDictationActiveOnSurface(service, surface){
+  // Transposed from workbench/contrib/chat/browser/speechToText/chatSpeechToTextService.ts
+  ^{ name: "isDictationActiveOnSurface", status: "pure" };
+}
+
+=ex{stripDictationFillers,createDictationCleanupSystemPrompt,isDictationEntitled,isDictationActiveOnSurface}

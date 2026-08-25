@@ -1,0 +1,23 @@
+@LIN:editor_common_viewModel_viewModelDecoration:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isModelDecorationVisible(model, decoration){
+  // Transposed from editor/common/viewModel/viewModelDecoration.ts
+  ^{ name: "isModelDecorationVisible", status: "pure" };
+}
+
+!isModelDecorationInComment(model, decoration){
+  // Transposed from editor/common/viewModel/viewModelDecoration.ts
+  ^{ name: "isModelDecorationInComment", status: "pure" };
+}
+
+!isModelDecorationInString(model, decoration){
+  // Transposed from editor/common/viewModel/viewModelDecoration.ts
+  ^{ name: "isModelDecorationInString", status: "pure" };
+}
+
+!createViewModelDecoration(...args){
+  ^{ className: "ViewModelDecoration", methods: [] };
+}
+
+=ex{isModelDecorationVisible,isModelDecorationInComment,isModelDecorationInString,createViewModelDecoration}

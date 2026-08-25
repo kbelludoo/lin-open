@@ -1,0 +1,46 @@
+@LIN:sessions_contrib_sessions_browser_views_sessionsList:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getFirstApprovalAcrossChats(approvalModel, session, reader){
+  // Transposed from sessions/contrib/sessions/browser/views/sessionsList.ts
+  ^{ name: "getFirstApprovalAcrossChats", status: "pure" };
+}
+
+!limitSessionsForList(sessions, limit, options){
+  // Transposed from sessions/contrib/sessions/browser/views/sessionsList.ts
+  ^{ name: "limitSessionsForList", status: "pure" };
+}
+
+!computeReorderSortChanges(input){
+  // Transposed from sessions/contrib/sessions/browser/views/sessionsList.ts
+  ^{ name: "computeReorderSortChanges", status: "pure" };
+}
+
+!isQuickChatSession(session){
+  // Transposed from sessions/contrib/sessions/browser/views/sessionsList.ts
+  ^{ name: "isQuickChatSession", status: "pure" };
+}
+
+!isAutomationSession(session){
+  // Transposed from sessions/contrib/sessions/browser/views/sessionsList.ts
+  ^{ name: "isAutomationSession", status: "pure" };
+}
+
+!groupByWorkspace(sessions){
+  // Transposed from sessions/contrib/sessions/browser/views/sessionsList.ts
+  ^{ name: "groupByWorkspace", status: "pure" };
+}
+
+!createSessionsFlatList(...args){
+  ^{ className: "SessionsFlatList", methods: ["if", "setSessions", "getContentHeight", "getRowHeight", "layout", "focus", "focusSession"] };
+}
+
+!getSessionsGroupingEnum(){
+  ^{ enumName: "SessionsGrouping", members: ["Workspace", "Date"] };
+}
+
+!getSessionsSortingEnum(){
+  ^{ enumName: "SessionsSorting", members: ["Created", "Updated"] };
+}
+
+=ex{getFirstApprovalAcrossChats,limitSessionsForList,computeReorderSortChanges,isQuickChatSession,isAutomationSession,groupByWorkspace,createSessionsFlatList,getSessionsGroupingEnum,getSessionsSortingEnum}

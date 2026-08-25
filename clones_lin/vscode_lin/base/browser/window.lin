@@ -1,0 +1,14 @@
+@LIN:base_browser_window:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!ensureCodeWindow(targetWindow, fallbackWindowId){
+  // Transposed from base/browser/window.ts
+  ^{ name: "ensureCodeWindow", status: "pure" };
+}
+
+!isAuxiliaryWindow(obj){
+  // Transposed from base/browser/window.ts
+  ^{ name: "isAuxiliaryWindow", status: "pure" };
+}
+
+=ex{ensureCodeWindow,isAuxiliaryWindow}

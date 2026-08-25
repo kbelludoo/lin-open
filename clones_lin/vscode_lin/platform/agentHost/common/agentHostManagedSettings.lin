@@ -1,0 +1,14 @@
+@LIN:platform_agentHost_common_agentHostManagedSettings:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isManagedSettingsPermissions(value){
+  // Transposed from platform/agentHost/common/agentHostManagedSettings.ts
+  ^{ name: "isManagedSettingsPermissions", status: "pure" };
+}
+
+!resolveManagedSettingsPermissions(configurationService){
+  // Transposed from platform/agentHost/common/agentHostManagedSettings.ts
+  ^{ name: "resolveManagedSettingsPermissions", status: "pure" };
+}
+
+=ex{isManagedSettingsPermissions,resolveManagedSettingsPermissions}

@@ -1,0 +1,14 @@
+@LIN:platform_environment_node_userDataPath:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getUserDataPath(cliArgs, productName){
+  // Transposed from platform/environment/node/userDataPath.ts
+  ^{ name: "getUserDataPath", status: "pure" };
+}
+
+!getDefaultUserDataPath(productName){
+  // Transposed from platform/environment/node/userDataPath.ts
+  ^{ name: "getDefaultUserDataPath", status: "pure" };
+}
+
+=ex{getUserDataPath,getDefaultUserDataPath}

@@ -1,0 +1,12 @@
+@LIN:workbench_services_keybinding_common_keybindingIO:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createKeybindingIO(...args){
+  ^{ className: "KeybindingIO", methods: ["writeKeybindingItem", "if", "if", "if", "if", "readUserKeybindingItem"] };
+}
+
+!createOutputBuilder(...args){
+  ^{ className: "OutputBuilder", methods: ["write", "writeLine", "toString"] };
+}
+
+=ex{createKeybindingIO,createOutputBuilder}

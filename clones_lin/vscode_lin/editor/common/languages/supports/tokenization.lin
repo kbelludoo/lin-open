@@ -1,0 +1,58 @@
+@LIN:editor_common_languages_supports_tokenization:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!parseTokenTheme(source){
+  // Transposed from editor/common/languages/supports/tokenization.ts
+  ^{ name: "parseTokenTheme", status: "pure" };
+}
+
+!toStandardTokenType(tokenType){
+  // Transposed from editor/common/languages/supports/tokenization.ts
+  ^{ name: "toStandardTokenType", status: "pure" };
+}
+
+!strcmp(a, b){
+  // Transposed from editor/common/languages/supports/tokenization.ts
+  ^{ name: "strcmp", status: "pure" };
+}
+
+!generateTokensCSSForColorMap(colorMap){
+  // Transposed from editor/common/languages/supports/tokenization.ts
+  ^{ name: "generateTokensCSSForColorMap", status: "pure" };
+}
+
+!generateTokensCSSForFontMap(fontMap){
+  // Transposed from editor/common/languages/supports/tokenization.ts
+  ^{ name: "generateTokensCSSForFontMap", status: "pure" };
+}
+
+!classNameForFontTokenDecorations(fontFamily, fontSize){
+  // Transposed from editor/common/languages/supports/tokenization.ts
+  ^{ name: "classNameForFontTokenDecorations", status: "pure" };
+}
+
+!createParsedTokenThemeRule(...args){
+  ^{ className: "ParsedTokenThemeRule", methods: [] };
+}
+
+!createColorMap(...args){
+  ^{ className: "ColorMap", methods: ["getId", "if", "if", "if", "getColorMap"] };
+}
+
+!createTokenTheme(...args){
+  ^{ className: "TokenTheme", methods: ["createFromRawTokenTheme", "createFromParsedTokenTheme", "getColorMap", "getThemeTrieElement", "_match", "match", "if"] };
+}
+
+!createThemeTrieElementRule(...args){
+  ^{ className: "ThemeTrieElementRule", methods: ["clone", "acceptOverwrite", "if", "if", "if"] };
+}
+
+!createExternalThemeTrieElement(...args){
+  ^{ className: "ExternalThemeTrieElement", methods: ["if", "for"] };
+}
+
+!createThemeTrieElement(...args){
+  ^{ className: "ThemeTrieElement", methods: ["toExternalThemeTrieElement", "match", "if", "if", "if", "insert", "if", "if", "if"] };
+}
+
+=ex{parseTokenTheme,toStandardTokenType,strcmp,generateTokensCSSForColorMap,generateTokensCSSForFontMap,classNameForFontTokenDecorations,createParsedTokenThemeRule,createColorMap,createTokenTheme,createThemeTrieElementRule,createExternalThemeTrieElement,createThemeTrieElement}

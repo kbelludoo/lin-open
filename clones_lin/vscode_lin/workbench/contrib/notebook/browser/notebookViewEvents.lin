@@ -1,0 +1,20 @@
+@LIN:workbench_contrib_notebook_browser_notebookViewEvents:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createNotebookLayoutChangedEvent(...args){
+  ^{ className: "NotebookLayoutChangedEvent", methods: [] };
+}
+
+!createNotebookMetadataChangedEvent(...args){
+  ^{ className: "NotebookMetadataChangedEvent", methods: [] };
+}
+
+!createNotebookCellStateChangedEvent(...args){
+  ^{ className: "NotebookCellStateChangedEvent", methods: [] };
+}
+
+!getNotebookViewEventTypeEnum(){
+  ^{ enumName: "NotebookViewEventType", members: ["LayoutChanged", "MetadataChanged", "CellStateChanged"] };
+}
+
+=ex{createNotebookLayoutChangedEvent,createNotebookMetadataChangedEvent,createNotebookCellStateChangedEvent,getNotebookViewEventTypeEnum}

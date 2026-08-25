@@ -1,0 +1,40 @@
+@LIN:editor_contrib_indentation_browser_indentation:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createIndentationToSpacesAction(...args){
+  ^{ className: "IndentationToSpacesAction", methods: ["run", "if", "if"] };
+}
+
+!createIndentationToTabsAction(...args){
+  ^{ className: "IndentationToTabsAction", methods: ["run", "if", "if"] };
+}
+
+!createChangeIndentationSizeAction(...args){
+  ^{ className: "ChangeIndentationSizeAction", methods: ["run", "if", "then", "if"] };
+}
+
+!createIndentUsingTabs(...args){
+  ^{ className: "IndentUsingTabs", methods: [] };
+}
+
+!createIndentUsingSpaces(...args){
+  ^{ className: "IndentUsingSpaces", methods: [] };
+}
+
+!createChangeTabDisplaySize(...args){
+  ^{ className: "ChangeTabDisplaySize", methods: [] };
+}
+
+!createDetectIndentation(...args){
+  ^{ className: "DetectIndentation", methods: ["run", "if"] };
+}
+
+!createReindentLinesAction(...args){
+  ^{ className: "ReindentLinesAction", methods: ["run", "if", "if"] };
+}
+
+!createReindentSelectedLinesAction(...args){
+  ^{ className: "ReindentSelectedLinesAction", methods: ["run", "if", "if", "for", "if", "if", "if", "if"] };
+}
+
+=ex{createIndentationToSpacesAction,createIndentationToTabsAction,createChangeIndentationSizeAction,createIndentUsingTabs,createIndentUsingSpaces,createChangeTabDisplaySize,createDetectIndentation,createReindentLinesAction,createReindentSelectedLinesAction}

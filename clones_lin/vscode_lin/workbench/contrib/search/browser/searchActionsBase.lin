@@ -1,0 +1,24 @@
+@LIN:workbench_contrib_search_browser_searchActionsBase:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isSearchViewFocused(viewsService){
+  // Transposed from workbench/contrib/search/browser/searchActionsBase.ts
+  ^{ name: "isSearchViewFocused", status: "pure" };
+}
+
+!getSearchView(viewsService){
+  // Transposed from workbench/contrib/search/browser/searchActionsBase.ts
+  ^{ name: "getSearchView", status: "pure" };
+}
+
+!getElementsToOperateOn(viewer, RenderableMatch, void>, currElement, sortConfig){
+  // Transposed from workbench/contrib/search/browser/searchActionsBase.ts
+  ^{ name: "getElementsToOperateOn", status: "pure" };
+}
+
+!openSearchView(viewsService, focus?){
+  // Transposed from workbench/contrib/search/browser/searchActionsBase.ts
+  ^{ name: "openSearchView", status: "pure" };
+}
+
+=ex{isSearchViewFocused,getSearchView,getElementsToOperateOn,openSearchView}

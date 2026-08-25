@@ -1,0 +1,34 @@
+@LIN:platform_agentHost_common_remoteAgentHostService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!incompatible(message, supportedByClient, offeredByServer?, vscodeUpgradeMethod?){
+  // Transposed from platform/agentHost/common/remoteAgentHostService.ts
+  ^{ name: "incompatible", status: "pure" };
+}
+
+!getEntryTypeConfig(type){
+  // Transposed from platform/agentHost/common/remoteAgentHostService.ts
+  ^{ name: "getEntryTypeConfig", status: "pure" };
+}
+
+!getEntryAddress(entry){
+  // Transposed from platform/agentHost/common/remoteAgentHostService.ts
+  ^{ name: "getEntryAddress", status: "pure" };
+}
+
+!remoteAgentHostLogOutputChannelId(address){
+  // Transposed from platform/agentHost/common/remoteAgentHostService.ts
+  ^{ name: "remoteAgentHostLogOutputChannelId", status: "pure" };
+}
+
+!parseRemoteAgentHostInput(input){
+  // Transposed from platform/agentHost/common/remoteAgentHostService.ts
+  ^{ name: "parseRemoteAgentHostInput", status: "pure" };
+}
+
+!parseLegacyRawEntry(raw){
+  // Transposed from platform/agentHost/common/remoteAgentHostService.ts
+  ^{ name: "parseLegacyRawEntry", status: "pure" };
+}
+
+=ex{incompatible,getEntryTypeConfig,getEntryAddress,remoteAgentHostLogOutputChannelId,parseRemoteAgentHostInput,parseLegacyRawEntry}

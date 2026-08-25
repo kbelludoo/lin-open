@@ -1,0 +1,14 @@
+@LIN:platform_agentHost_common_state_protocol_version_negotiation:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isCompatibleProtocolVersion(offered, current){
+  // Transposed from platform/agentHost/common/state/protocol/version/negotiation.ts
+  ^{ name: "isCompatibleProtocolVersion", status: "pure" };
+}
+
+!negotiateProtocolVersion(offered, current){
+  // Transposed from platform/agentHost/common/state/protocol/version/negotiation.ts
+  ^{ name: "negotiateProtocolVersion", status: "pure" };
+}
+
+=ex{isCompatibleProtocolVersion,negotiateProtocolVersion}

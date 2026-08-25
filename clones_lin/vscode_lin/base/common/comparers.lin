@@ -1,0 +1,49 @@
+@LIN:base_common_comparers:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!compareFileNames(one, other, caseSensitive = false){
+  // Transposed from base/common/comparers.ts
+  ^{ name: "compareFileNames", status: "pure" };
+}
+
+!compareFileNamesDefault(one, other){
+  // Transposed from base/common/comparers.ts
+  ^{ name: "compareFileNamesDefault", status: "pure" };
+}
+
+!compareFileExtensions(one, other){
+  // Transposed from base/common/comparers.ts
+  ^{ name: "compareFileExtensions", status: "pure" };
+}
+
+!compareFileExtensionsDefault(one, other){
+  // Transposed from base/common/comparers.ts
+  ^{ name: "compareFileExtensionsDefault", status: "pure" };
+}
+
+!compareFileExtensionsUpper(one, other){
+  // Transposed from base/common/comparers.ts
+  ^{ name: "compareFileExtensionsUpper", status: "pure" };
+}
+
+!compareFileExtensionsLower(one, other){
+  // Transposed from base/common/comparers.ts
+  ^{ name: "compareFileExtensionsLower", status: "pure" };
+}
+
+!comparePaths(one, other, caseSensitive = false){
+  // Transposed from base/common/comparers.ts
+  ^{ name: "comparePaths", status: "pure" };
+}
+
+!compareAnything(one, other, lookFor){
+  // Transposed from base/common/comparers.ts
+  ^{ name: "compareAnything", status: "pure" };
+}
+
+!compareByPrefix(one, other, lookFor){
+  // Transposed from base/common/comparers.ts
+  ^{ name: "compareByPrefix", status: "pure" };
+}
+
+=ex{compareFileNames,compareFileNamesDefault,compareFileExtensions,compareFileExtensionsDefault,compareFileExtensionsUpper,compareFileExtensionsLower,comparePaths,compareAnything,compareByPrefix}

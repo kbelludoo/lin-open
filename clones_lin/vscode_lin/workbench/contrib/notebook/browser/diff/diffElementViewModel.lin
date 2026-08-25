@@ -1,0 +1,29 @@
+@LIN:workbench_contrib_notebook_browser_diff_diffElementViewModel:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!outputEqual(a, b){
+  // Transposed from workbench/contrib/notebook/browser/diff/diffElementViewModel.ts
+  ^{ name: "outputEqual", status: "pure" };
+}
+
+!createDiffElementPlaceholderViewModel(...args){
+  ^{ className: "DiffElementPlaceholderViewModel", methods: ["totalHeight", "getHeight", "layoutChange", "showHiddenCells"] };
+}
+
+!createNotebookDocumentMetadataViewModel(...args){
+  ^{ className: "NotebookDocumentMetadataViewModel", methods: ["editorHeight", "editorHeight", "editorMargin", "editorMargin", "layoutInfo", "totalHeight", "computeHeights", "if", "layoutChange", "_layout", "if", "if", "if", "if", "if", "if", "if", "getHeight", "if", "_computeTotalHeight", "computeInputEditorHeight", "_fireLayoutChangeEvent", "getComputedCellContainerWidth", "if", "getSourceEditorViewState", "saveSpirceEditorViewState"] };
+}
+
+!createSideBySideDiffElementViewModel(...args){
+  ^{ className: "SideBySideDiffElementViewModel", methods: ["originalDocument", "modifiedDocument", "if", "for", "checkIfInputModified", "checkIfOutputsModified", "if", "if", "checkMetadataIfModified", "if", "if", "updateOutputHeight", "if", "getOutputOffsetInContainer", "if", "getOutputOffsetInCell", "isOutputEmpty", "if", "getRichOutputTotalHeight", "getNestedCellViewModel", "getCellByUri", "computeInputEditorHeight", "computeModifiedInputEditorHeight", "computeModifiedMetadataEditorHeight", "computeEditorHeights", "if"] };
+}
+
+!createSingleSideDiffElementViewModel(...args){
+  ^{ className: "SingleSideDiffElementViewModel", methods: ["cellViewModel", "originalDocument", "if", "modifiedDocument", "if", "checkIfInputModified", "getNestedCellViewModel", "checkIfOutputsModified", "checkMetadataIfModified", "updateOutputHeight", "getOutputOffsetInContainer", "getOutputOffsetInCell", "isOutputEmpty", "if", "getRichOutputTotalHeight", "getCellByUri"] };
+}
+
+!getPropertyFoldingStateEnum(){
+  ^{ enumName: "PropertyFoldingState", members: ["Expanded", "Collapsed"] };
+}
+
+=ex{outputEqual,createDiffElementPlaceholderViewModel,createNotebookDocumentMetadataViewModel,createSideBySideDiffElementViewModel,createSingleSideDiffElementViewModel,getPropertyFoldingStateEnum}

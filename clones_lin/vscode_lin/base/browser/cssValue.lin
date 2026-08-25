@@ -1,0 +1,48 @@
+@LIN:base_browser_cssValue:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!asCssValueWithDefault(cssPropertyValue, dflt){
+  // Transposed from base/browser/cssValue.ts
+  ^{ name: "asCssValueWithDefault", status: "pure" };
+}
+
+!sizeValue(value){
+  // Transposed from base/browser/cssValue.ts
+  ^{ name: "sizeValue", status: "pure" };
+}
+
+!hexColorValue(value){
+  // Transposed from base/browser/cssValue.ts
+  ^{ name: "hexColorValue", status: "pure" };
+}
+
+!identValue(value){
+  // Transposed from base/browser/cssValue.ts
+  ^{ name: "identValue", status: "pure" };
+}
+
+!stringValue(value){
+  // Transposed from base/browser/cssValue.ts
+  ^{ name: "stringValue", status: "pure" };
+}
+
+!asCSSUrl(uri){
+  // Transposed from base/browser/cssValue.ts
+  ^{ name: "asCSSUrl", status: "pure" };
+}
+
+!className(value, escapingExpected = false){
+  // Transposed from base/browser/cssValue.ts
+  ^{ name: "className", status: "pure" };
+}
+
+!inline(strings, values){
+  // Transposed from base/browser/cssValue.ts
+  ^{ name: "inline", status: "pure" };
+}
+
+!createBuilder(...args){
+  ^{ className: "Builder", methods: ["push", "join"] };
+}
+
+=ex{asCssValueWithDefault,sizeValue,hexColorValue,identValue,stringValue,asCSSUrl,className,inline,createBuilder}

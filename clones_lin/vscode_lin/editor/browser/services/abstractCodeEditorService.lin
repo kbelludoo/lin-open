@@ -1,0 +1,12 @@
+@LIN:editor_browser_services_abstractCodeEditorService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createModelTransientSettingWatcher(...args){
+  ^{ className: "ModelTransientSettingWatcher", methods: ["set", "get", "keys"] };
+}
+
+!createGlobalStyleSheet(...args){
+  ^{ className: "GlobalStyleSheet", methods: ["sheet", "ref", "unref", "insertRule", "removeRulesContainingSelector"] };
+}
+
+=ex{createModelTransientSettingWatcher,createGlobalStyleSheet}

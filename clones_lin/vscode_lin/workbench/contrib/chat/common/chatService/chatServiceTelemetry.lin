@@ -1,0 +1,12 @@
+@LIN:workbench_contrib_chat_common_chatService_chatServiceTelemetry:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createChatServiceTelemetry(...args){
+  ^{ className: "ChatServiceTelemetry", methods: ["notifyUserAction", "if", "if", "if", "if", "if", "if", "if", "if", "retrievedFollowups"] };
+}
+
+!createChatRequestTelemetry(...args){
+  ^{ className: "ChatRequestTelemetry", methods: ["complete", "if", "attachmentKindsForTelemetry", "map", "if", "if", "if", "if", "if", "if", "if", "if", "resolveModelId"] };
+}
+
+=ex{createChatServiceTelemetry,createChatRequestTelemetry}

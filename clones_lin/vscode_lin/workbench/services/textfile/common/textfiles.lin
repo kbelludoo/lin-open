@@ -1,0 +1,28 @@
+@LIN:workbench_services_textfile_common_textfiles:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isTextFileEditorModel(model){
+  // Transposed from workbench/services/textfile/common/textfiles.ts
+  ^{ name: "isTextFileEditorModel", status: "pure" };
+}
+
+!snapshotToString(snapshot){
+  // Transposed from workbench/services/textfile/common/textfiles.ts
+  ^{ name: "snapshotToString", status: "pure" };
+}
+
+!stringToSnapshot(value){
+  // Transposed from workbench/services/textfile/common/textfiles.ts
+  ^{ name: "stringToSnapshot", status: "pure" };
+}
+
+!toBufferOrReadable(value){
+  // Transposed from workbench/services/textfile/common/textfiles.ts
+  ^{ name: "toBufferOrReadable", status: "pure" };
+}
+
+!createTextFileOperationError(...args){
+  ^{ className: "TextFileOperationError", methods: ["isTextFileOperationError"] };
+}
+
+=ex{isTextFileEditorModel,snapshotToString,stringToSnapshot,toBufferOrReadable,createTextFileOperationError}

@@ -1,0 +1,40 @@
+@LIN:sessions_contrib_automations_browser_automationDialog:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isAutomationDialogPopupTarget(relatedTarget){
+  // Transposed from sessions/contrib/automations/browser/automationDialog.ts
+  ^{ name: "isAutomationDialogPopupTarget", status: "pure" };
+}
+
+!isAutomationDialogEditCommand(commandId, target){
+  // Transposed from sessions/contrib/automations/browser/automationDialog.ts
+  ^{ name: "isAutomationDialogEditCommand", status: "pure" };
+}
+
+!canSelectAutomationWorkspace(folderUri, preferredProviderId, sessionsManagementService, workspaceTrustRequestService){
+  // Transposed from sessions/contrib/automations/browser/automationDialog.ts
+  ^{ name: "canSelectAutomationWorkspace", status: "pure" };
+}
+
+!resolveAutomationModelIdentifier(languageModelsService, 'getLanguageModelIds' | 'lookupLanguageModel'>, identifier, logicalSessionType, modelTarget){
+  // Transposed from sessions/contrib/automations/browser/automationDialog.ts
+  ^{ name: "resolveAutomationModelIdentifier", status: "pure" };
+}
+
+!createAutomationSessionDraftSynchronizer(...args){
+  ^{ className: "AutomationSessionDraftSynchronizer", methods: ["update", "waitForSync", "scheduleSync", "if", "if", "sync", "if", "if", "if", "createAutomationQuickChat", "catch", "if", "matchesAppliedTarget", "discardSession", "if", "dispose"] };
+}
+
+!createAutomationIsolationGroupActionViewItem(...args){
+  ^{ className: "AutomationIsolationGroupActionViewItem", methods: ["render", "if", "refreshTargetCapability", "if", "if", "if", "refreshTargetAndRender", "renderBranchControl", "getBranchPresentation", "if", "if", "if", "if", "if", "switch", "canOpenBranchPicker", "if", "getWorktreeUnavailableReason", "if", "if", "if", "if", "switch", "cancelBranchRequest", "reloadRepository", "if", "catch", "if", "if", "if", "if", "if", "if", "catch", "if"] };
+}
+
+!createAutomationsWorkspacePicker(...args){
+  ^{ className: "AutomationsWorkspacePicker", methods: ["setTargetModel", "_showTabs", "_shouldPersistSelection", "_buildItems", "_dispatchPickerItem", "_isSelectedFolder", "_renderTriggerLabel", "_getAllBrowseActions"] };
+}
+
+!createMobileAutomationsWorkspacePicker(...args){
+  ^{ className: "MobileAutomationsWorkspacePicker", methods: ["setLayoutService", "showPicker"] };
+}
+
+=ex{isAutomationDialogPopupTarget,isAutomationDialogEditCommand,canSelectAutomationWorkspace,resolveAutomationModelIdentifier,createAutomationSessionDraftSynchronizer,createAutomationIsolationGroupActionViewItem,createAutomationsWorkspacePicker,createMobileAutomationsWorkspacePicker}

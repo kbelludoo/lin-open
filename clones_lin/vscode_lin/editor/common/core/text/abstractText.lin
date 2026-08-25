@@ -1,0 +1,16 @@
+@LIN:editor_common_core_text_abstractText:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createLineBasedText(...args){
+  ^{ className: "LineBasedText", methods: ["getValueOfRange", "if", "for", "getLineLength", "length"] };
+}
+
+!createArrayText(...args){
+  ^{ className: "ArrayText", methods: [] };
+}
+
+!createStringText(...args){
+  ^{ className: "StringText", methods: ["getValueOfRange", "length", "getTransformer"] };
+}
+
+=ex{createLineBasedText,createArrayText,createStringText}

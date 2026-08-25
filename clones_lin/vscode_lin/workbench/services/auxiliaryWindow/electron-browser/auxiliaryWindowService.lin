@@ -1,0 +1,12 @@
+@LIN:workbench_services_auxiliaryWindow_electron_browser_auxiliaryWindowService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createNativeAuxiliaryWindow(...args){
+  ^{ className: "NativeAuxiliaryWindow", methods: ["if", "handleMaximizedState", "_register", "_register", "handleAlwaysOnTopState", "if", "handleFullScreenState", "if", "setBounds", "handleVetoBeforeClose", "confirmBeforeClose", "if", "if", "preventUnload", "createState"] };
+}
+
+!createNativeAuxiliaryWindowService(...args){
+  ^{ className: "NativeAuxiliaryWindowService", methods: ["resolveWindowId", "createContainer", "if", "createAuxiliaryWindow"] };
+}
+
+=ex{createNativeAuxiliaryWindow,createNativeAuxiliaryWindowService}

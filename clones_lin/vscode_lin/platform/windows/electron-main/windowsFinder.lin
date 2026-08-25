@@ -1,0 +1,14 @@
+@LIN:platform_windows_electron_main_windowsFinder:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!findWindowOnWorkspaceOrFolder(windows, folderOrWorkspaceConfigUri){
+  // Transposed from platform/windows/electron-main/windowsFinder.ts
+  ^{ name: "findWindowOnWorkspaceOrFolder", status: "pure" };
+}
+
+!findWindowOnExtensionDevelopmentPath(windows, extensionDevelopmentPaths){
+  // Transposed from platform/windows/electron-main/windowsFinder.ts
+  ^{ name: "findWindowOnExtensionDevelopmentPath", status: "pure" };
+}
+
+=ex{findWindowOnWorkspaceOrFolder,findWindowOnExtensionDevelopmentPath}

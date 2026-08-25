@@ -1,0 +1,43 @@
+@LIN:workbench_contrib_terminalContrib_chatAgentTools_browser_tools_runInTerminalTool:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createSandboxLines(sandboxingOptions){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/tools/runInTerminalTool.ts
+  ^{ name: "createSandboxLines", status: "pure" };
+}
+
+!createSandboxProperties(sandboxingOptions){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/tools/runInTerminalTool.ts
+  ^{ name: "createSandboxProperties", status: "pure" };
+}
+
+!createRunInTerminalToolData(accessor){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/tools/runInTerminalTool.ts
+  ^{ name: "createRunInTerminalToolData", status: "pure" };
+}
+
+!shouldAutomaticallyRetryUnsandboxed(options){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/tools/runInTerminalTool.ts
+  ^{ name: "shouldAutomaticallyRetryUnsandboxed", status: "pure" };
+}
+
+!shouldAutomaticallyRetryAllowNetworkInSandboxed(options){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/tools/runInTerminalTool.ts
+  ^{ name: "shouldAutomaticallyRetryAllowNetworkInSandboxed", status: "pure" };
+}
+
+!outputLooksBubblewrapHostRestricted(output){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/tools/runInTerminalTool.ts
+  ^{ name: "outputLooksBubblewrapHostRestricted", status: "pure" };
+}
+
+!buildCompletionNotificationCommand(command){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/tools/runInTerminalTool.ts
+  ^{ name: "buildCompletionNotificationCommand", status: "pure" };
+}
+
+!createTerminalProfileFetcher(...args){
+  ^{ className: "TerminalProfileFetcher", methods: ["getCopilotProfile", "if", "if", "if", "if", "if", "_shellExists", "_findFallbackShell", "for", "getCopilotShell", "_getChatTerminalProfile", "switch", "_isValidChatAgentTerminalProfile", "if"] };
+}
+
+=ex{createSandboxLines,createSandboxProperties,createRunInTerminalToolData,shouldAutomaticallyRetryUnsandboxed,shouldAutomaticallyRetryAllowNetworkInSandboxed,outputLooksBubblewrapHostRestricted,buildCompletionNotificationCommand,createTerminalProfileFetcher}

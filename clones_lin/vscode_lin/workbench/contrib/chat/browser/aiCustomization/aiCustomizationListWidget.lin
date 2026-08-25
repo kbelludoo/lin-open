@@ -1,0 +1,18 @@
+@LIN:workbench_contrib_chat_browser_aiCustomization_aiCustomizationListWidget:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!formatDisplayName(name){
+  // Transposed from workbench/contrib/chat/browser/aiCustomization/aiCustomizationListWidget.ts
+  ^{ name: "formatDisplayName", status: "pure" };
+}
+
+!getCountAnnouncement(section, count, isFiltering){
+  // Transposed from workbench/contrib/chat/browser/aiCustomization/aiCustomizationListWidget.ts
+  ^{ name: "getCountAnnouncement", status: "pure" };
+}
+
+!createAICustomizationListWidget(...args){
+  ^{ className: "AICustomizationListWidget", methods: ["create", "if", "if", "if", "if", "_register", "if", "if", "onContextMenu", "if", "if", "if", "setSection", "if", "if", "updateSectionHeader", "switch", "updateAddButton", "if", "if", "buildCreateActions", "if", "for", "for", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "for", "getDropdownActions", "hasActiveWorkspace", "executePrimaryCreateAction", "if", "getTypeLabel", "switch", "announceItemCount", "refresh", "if", "applyItemsFromModel", "computeItemCountForSection", "applySearchFilter", "for", "if", "buildGroupedEntries", "for", "for", "if", "if", "for", "commitDisplayEntries", "groupMatchedItems", "for", "if", "switch", "if", "filterItems", "toggleGroup", "updateEmptyState", "if", "getEmptyStateInfo", "switch", "setSearchQuery", "clearSearch", "focusSearch", "focusList", "if", "revealLastItem", "if", "revealAndSelectFirstItemByUri", "if", "layout", "if", "itemCount", "generateDebugReport", "if"] };
+}
+
+=ex{formatDisplayName,getCountAnnouncement,createAICustomizationListWidget}

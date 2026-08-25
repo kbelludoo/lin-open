@@ -1,0 +1,19 @@
+@LIN:workbench_contrib_chat_browser_chatDebug_agentHostChatDebugProvider:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!convertAgentHostEventsToDebugEvents(records, sessionResource, fallbackUsageTotals?, usageRecords?, customizations?){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/agentHostChatDebugProvider.ts
+  ^{ name: "convertAgentHostEventsToDebugEvents", status: "pure" };
+}
+
+!buildCustomizationDebugEvents(customizations, sessionResource, parentEventId, created){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/agentHostChatDebugProvider.ts
+  ^{ name: "buildCustomizationDebugEvents", status: "pure" };
+}
+
+!parseJsonl(text){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/agentHostChatDebugProvider.ts
+  ^{ name: "parseJsonl", status: "pure" };
+}
+
+=ex{convertAgentHostEventsToDebugEvents,buildCustomizationDebugEvents,parseJsonl}

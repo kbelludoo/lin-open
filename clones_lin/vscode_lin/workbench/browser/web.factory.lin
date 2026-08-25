@@ -1,0 +1,29 @@
+@LIN:workbench_browser_web_factory:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!create(domElement, options){
+  // Transposed from workbench/browser/web.factory.ts
+  ^{ name: "create", status: "pure" };
+}
+
+!executeCommand(command, args){
+  // Transposed from workbench/browser/web.factory.ts
+  ^{ name: "executeCommand", status: "pure" };
+}
+
+!retrievePerformanceMarks(){
+  // Transposed from workbench/browser/web.factory.ts
+  ^{ name: "retrievePerformanceMarks", status: "pure" };
+}
+
+!createTerminal(options){
+  // Transposed from workbench/browser/web.factory.ts
+  ^{ name: "createTerminal", status: "pure" };
+}
+
+!openTunnel(tunnelOptions){
+  // Transposed from workbench/browser/web.factory.ts
+  ^{ name: "openTunnel", status: "pure" };
+}
+
+=ex{create,executeCommand,retrievePerformanceMarks,createTerminal,openTunnel}

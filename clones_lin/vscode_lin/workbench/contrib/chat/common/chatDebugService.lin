@@ -1,0 +1,15 @@
+@LIN:workbench_contrib_chat_common_chatDebugService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getChatDebugLogLevelEnum(){
+  ^{ enumName: "ChatDebugLogLevel", members: ["Trace", "Info", "Warning", "Error"] };
+}
+
+!getChatDebugHookResultEnum(){
+  ^{ enumName: "ChatDebugHookResult", members: ["/** The hook executed successfully (exit code 0). */
+	Success", "/** The hook returned a blocking error (exit code 2). */
+	Error", "/** The hook returned a non-blocking warning (other non-zero exit codes). */
+	NonBlockingError"] };
+}
+
+=ex{getChatDebugLogLevelEnum,getChatDebugHookResultEnum}

@@ -1,0 +1,44 @@
+@LIN:workbench_services_search_common_searchExtTypes:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createPosition(...args){
+  ^{ className: "Position", methods: ["isBefore", "isBeforeOrEqual", "isAfter", "isAfterOrEqual", "isEqual", "compareTo", "translate", "with"] };
+}
+
+!createRange(...args){
+  ^{ className: "Range", methods: ["contains", "isEqual", "intersection", "union", "with"] };
+}
+
+!createTextSearchMatch2(...args){
+  ^{ className: "TextSearchMatch2", methods: [] };
+}
+
+!createTextSearchContext2(...args){
+  ^{ className: "TextSearchContext2", methods: [] };
+}
+
+!createAISearchKeyword(...args){
+  ^{ className: "AISearchKeyword", methods: [] };
+}
+
+!getExcludeSettingOptionsEnum(){
+  ^{ enumName: "ExcludeSettingOptions", members: ["/*
+	 * Don't use any exclude settings.
+	 */
+	None", "/*
+	 * Use:
+	 * - files.exclude setting
+	 */
+	FilesExclude", "/*
+	 * Use:
+	 * - files.exclude setting
+	 * - search.exclude setting
+	 */
+	SearchAndFilesExclude"] };
+}
+
+!getTextSearchCompleteMessageTypeEnum(){
+  ^{ enumName: "TextSearchCompleteMessageType", members: ["Information", "Warning"] };
+}
+
+=ex{createPosition,createRange,createTextSearchMatch2,createTextSearchContext2,createAISearchKeyword,getExcludeSettingOptionsEnum,getTextSearchCompleteMessageTypeEnum}

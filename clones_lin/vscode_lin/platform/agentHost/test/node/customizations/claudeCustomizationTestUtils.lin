@@ -1,0 +1,14 @@
+@LIN:platform_agentHost_test_node_customizations_claudeCustomizationTestUtils:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createInMemoryFileService(disposables){
+  // Transposed from platform/agentHost/test/node/customizations/claudeCustomizationTestUtils.ts
+  ^{ name: "createInMemoryFileService", status: "pure" };
+}
+
+!seedFile(fileService, path, content = ''){
+  // Transposed from platform/agentHost/test/node/customizations/claudeCustomizationTestUtils.ts
+  ^{ name: "seedFile", status: "pure" };
+}
+
+=ex{createInMemoryFileService,seedFile}

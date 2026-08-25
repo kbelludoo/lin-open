@@ -1,0 +1,108 @@
+@LIN:base_common_buffer:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!binaryIndexOf(haystack, needle, offset = 0){
+  // Transposed from base/common/buffer.ts
+  ^{ name: "binaryIndexOf", status: "pure" };
+}
+
+!readUInt16LE(source, offset){
+  // Transposed from base/common/buffer.ts
+  ^{ name: "readUInt16LE", status: "pure" };
+}
+
+!writeUInt16LE(destination, value, offset){
+  // Transposed from base/common/buffer.ts
+  ^{ name: "writeUInt16LE", status: "pure" };
+}
+
+!readUInt32BE(source, offset){
+  // Transposed from base/common/buffer.ts
+  ^{ name: "readUInt32BE", status: "pure" };
+}
+
+!writeUInt32BE(destination, value, offset){
+  // Transposed from base/common/buffer.ts
+  ^{ name: "writeUInt32BE", status: "pure" };
+}
+
+!readUInt32LE(source, offset){
+  // Transposed from base/common/buffer.ts
+  ^{ name: "readUInt32LE", status: "pure" };
+}
+
+!writeUInt32LE(destination, value, offset){
+  // Transposed from base/common/buffer.ts
+  ^{ name: "writeUInt32LE", status: "pure" };
+}
+
+!readUInt8(source, offset){
+  // Transposed from base/common/buffer.ts
+  ^{ name: "readUInt8", status: "pure" };
+}
+
+!writeUInt8(destination, value, offset){
+  // Transposed from base/common/buffer.ts
+  ^{ name: "writeUInt8", status: "pure" };
+}
+
+!readableToBuffer(readable){
+  // Transposed from base/common/buffer.ts
+  ^{ name: "readableToBuffer", status: "pure" };
+}
+
+!bufferToReadable(buffer){
+  // Transposed from base/common/buffer.ts
+  ^{ name: "bufferToReadable", status: "pure" };
+}
+
+!streamToBuffer(stream){
+  // Transposed from base/common/buffer.ts
+  ^{ name: "streamToBuffer", status: "pure" };
+}
+
+!bufferedStreamToBuffer(bufferedStream){
+  // Transposed from base/common/buffer.ts
+  ^{ name: "bufferedStreamToBuffer", status: "pure" };
+}
+
+!bufferToStream(buffer){
+  // Transposed from base/common/buffer.ts
+  ^{ name: "bufferToStream", status: "pure" };
+}
+
+!streamToBufferReadableStream(stream){
+  // Transposed from base/common/buffer.ts
+  ^{ name: "streamToBufferReadableStream", status: "pure" };
+}
+
+!newWriteableBufferStream(options?){
+  // Transposed from base/common/buffer.ts
+  ^{ name: "newWriteableBufferStream", status: "pure" };
+}
+
+!prefixedBufferReadable(prefix, readable){
+  // Transposed from base/common/buffer.ts
+  ^{ name: "prefixedBufferReadable", status: "pure" };
+}
+
+!prefixedBufferStream(prefix, stream){
+  // Transposed from base/common/buffer.ts
+  ^{ name: "prefixedBufferStream", status: "pure" };
+}
+
+!encodeHex({ buffer }){
+  // Transposed from base/common/buffer.ts
+  ^{ name: "encodeHex", status: "pure" };
+}
+
+!decodeHex(hex){
+  // Transposed from base/common/buffer.ts
+  ^{ name: "decodeHex", status: "pure" };
+}
+
+!createVSBuffer(...args){
+  ^{ className: "VSBuffer", methods: ["alloc", "if", "wrap", "fromString", "if", "if", "fromByteArray", "for", "concat", "if", "for", "for", "isNativeBuffer", "clone", "toString", "if", "if", "slice", "set", "if", "if", "if", "readUInt32BE", "writeUInt32BE", "readUInt32LE", "writeUInt32LE", "readUInt8", "writeUInt8", "indexOf", "equals", "if", "if"] };
+}
+
+=ex{binaryIndexOf,readUInt16LE,writeUInt16LE,readUInt32BE,writeUInt32BE,readUInt32LE,writeUInt32LE,readUInt8,writeUInt8,readableToBuffer,bufferToReadable,streamToBuffer,bufferedStreamToBuffer,bufferToStream,streamToBufferReadableStream,newWriteableBufferStream,prefixedBufferReadable,prefixedBufferStream,encodeHex,decodeHex,createVSBuffer}

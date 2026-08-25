@@ -1,0 +1,8 @@
+@LIN:base_browser_ui_scrollbar_scrollbarArrow:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createScrollbarArrow(...args){
+  ^{ className: "ScrollbarArrow", methods: ["if", "if", "if", "if", "if", "if", "if", "if", "_arrowPointerDown"] };
+}
+
+=ex{createScrollbarArrow}

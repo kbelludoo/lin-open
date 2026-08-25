@@ -1,0 +1,14 @@
+@LIN:sessions_contrib_chat_browser_sideChatOrchestration:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!openAndSendSideChat(sessionsManagementService, sessionsService, sessionsPartService, session, sideChat, requestOptions){
+  // Transposed from sessions/contrib/chat/browser/sideChatOrchestration.ts
+  ^{ name: "openAndSendSideChat", status: "pure" };
+}
+
+!createAndSendSideChat(sessionsManagementService, sessionsService, sessionsPartService, session, sourceChat, turnId, requestOptions, selection?){
+  // Transposed from sessions/contrib/chat/browser/sideChatOrchestration.ts
+  ^{ name: "createAndSendSideChat", status: "pure" };
+}
+
+=ex{openAndSendSideChat,createAndSendSideChat}

@@ -1,0 +1,28 @@
+@LIN:editor_common_viewModel:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createViewport(...args){
+  ^{ className: "Viewport", methods: [] };
+}
+
+!createMinimapLinesRenderingData(...args){
+  ^{ className: "MinimapLinesRenderingData", methods: [] };
+}
+
+!createViewLineData(...args){
+  ^{ className: "ViewLineData", methods: [] };
+}
+
+!createViewLineRenderingData(...args){
+  ^{ className: "ViewLineRenderingData", methods: ["isBasicASCII", "if", "containsRTL", "if"] };
+}
+
+!createViewModelDecoration(...args){
+  ^{ className: "ViewModelDecoration", methods: [] };
+}
+
+!createOverviewRulerDecorationsGroup(...args){
+  ^{ className: "OverviewRulerDecorationsGroup", methods: ["compareByRenderingProps", "if", "if", "if", "equals", "equalsArr"] };
+}
+
+=ex{createViewport,createMinimapLinesRenderingData,createViewLineData,createViewLineRenderingData,createViewModelDecoration,createOverviewRulerDecorationsGroup}

@@ -1,0 +1,20 @@
+@LIN:platform_storage_common_storageIpc:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createApplicationStorageDatabaseClient(...args){
+  ^{ className: "ApplicationStorageDatabaseClient", methods: ["close"] };
+}
+
+!createApplicationSharedStorageDatabaseClient(...args){
+  ^{ className: "ApplicationSharedStorageDatabaseClient", methods: ["applicationShared", "close"] };
+}
+
+!createProfileStorageDatabaseClient(...args){
+  ^{ className: "ProfileStorageDatabaseClient", methods: ["close"] };
+}
+
+!createStorageClient(...args){
+  ^{ className: "StorageClient", methods: ["isUsed"] };
+}
+
+=ex{createApplicationStorageDatabaseClient,createApplicationSharedStorageDatabaseClient,createProfileStorageDatabaseClient,createStorageClient}

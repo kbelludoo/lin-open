@@ -1,0 +1,21 @@
+@LIN:editor_common_languages_supports_richEditBrackets:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createBracketOrRegExp(pieces, options?){
+  // Transposed from editor/common/languages/supports/richEditBrackets.ts
+  ^{ name: "createBracketOrRegExp", status: "pure" };
+}
+
+!createRichEditBracket(...args){
+  ^{ className: "RichEditBracket", methods: ["isOpen", "isClose", "_toSet", "for"] };
+}
+
+!createRichEditBrackets(...args){
+  ^{ className: "RichEditBrackets", methods: ["for", "for", "for"] };
+}
+
+!createBracketsUtils(...args){
+  ^{ className: "BracketsUtils", methods: ["_findPrevBracketInText", "if", "findPrevBracketInRange", "findNextBracketInText", "if", "if", "findNextBracketInRange"] };
+}
+
+=ex{createBracketOrRegExp,createRichEditBracket,createRichEditBrackets,createBracketsUtils}

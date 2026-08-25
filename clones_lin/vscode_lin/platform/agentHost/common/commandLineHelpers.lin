@@ -1,0 +1,14 @@
+@LIN:platform_agentHost_common_commandLineHelpers:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!extractCdPrefix(commandLine, isPowerShell){
+  // Transposed from platform/agentHost/common/commandLineHelpers.ts
+  ^{ name: "extractCdPrefix", status: "pure" };
+}
+
+!stripRedundantCdPrefix(toolName, parameters, unknown> | undefined, workingDirectory){
+  // Transposed from platform/agentHost/common/commandLineHelpers.ts
+  ^{ name: "stripRedundantCdPrefix", status: "pure" };
+}
+
+=ex{extractCdPrefix,stripRedundantCdPrefix}

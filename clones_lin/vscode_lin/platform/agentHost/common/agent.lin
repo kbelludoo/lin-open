@@ -1,0 +1,68 @@
+@LIN:platform_agentHost_common_agent:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isInvalidUtilityProcessConfigurationMessage(message){
+  // Transposed from platform/agentHost/common/agent.ts
+  ^{ name: "isInvalidUtilityProcessConfigurationMessage", status: "pure" };
+}
+
+!isFatalAgentHostStartError(error){
+  // Transposed from platform/agentHost/common/agent.ts
+  ^{ name: "isFatalAgentHostStartError", status: "pure" };
+}
+
+!toFatalAgentHostStartError(error){
+  // Transposed from platform/agentHost/common/agent.ts
+  ^{ name: "toFatalAgentHostStartError", status: "pure" };
+}
+
+!protectedResourcesRequireGitHubCopilotSignIn(resources){
+  // Transposed from platform/agentHost/common/agent.ts
+  ^{ name: "protectedResourcesRequireGitHubCopilotSignIn", status: "pure" };
+}
+
+!resolveAgentChatContext(configurationResourceOrContext, resource){
+  // Transposed from platform/agentHost/common/agent.ts
+  ^{ name: "resolveAgentChatContext", status: "pure" };
+}
+
+!resolveAgentChatOrigin(context?){
+  // Transposed from platform/agentHost/common/agent.ts
+  ^{ name: "resolveAgentChatOrigin", status: "pure" };
+}
+
+!resolveSubagentChatParent(context?){
+  // Transposed from platform/agentHost/common/agent.ts
+  ^{ name: "resolveSubagentChatParent", status: "pure" };
+}
+
+!resolveAgentHostCustomizations(context?){
+  // Transposed from platform/agentHost/common/agent.ts
+  ^{ name: "resolveAgentHostCustomizations", status: "pure" };
+}
+
+!resolveAgentHostInstructions(context?){
+  // Transposed from platform/agentHost/common/agent.ts
+  ^{ name: "resolveAgentHostInstructions", status: "pure" };
+}
+
+!subagentChatTitle(taskDescription, agentDisplayName){
+  // Transposed from platform/agentHost/common/agent.ts
+  ^{ name: "subagentChatTitle", status: "pure" };
+}
+
+!toSpawnEvent(signal){
+  // Transposed from platform/agentHost/common/agent.ts
+  ^{ name: "toSpawnEvent", status: "pure" };
+}
+
+!uri(provider, rawSessionId){
+  // Transposed from platform/agentHost/common/agent.ts
+  ^{ name: "uri", status: "pure" };
+}
+
+!createAgentHostStartError(...args){
+  ^{ className: "AgentHostStartError", methods: [] };
+}
+
+=ex{isInvalidUtilityProcessConfigurationMessage,isFatalAgentHostStartError,toFatalAgentHostStartError,protectedResourcesRequireGitHubCopilotSignIn,resolveAgentChatContext,resolveAgentChatOrigin,resolveSubagentChatParent,resolveAgentHostCustomizations,resolveAgentHostInstructions,subagentChatTitle,toSpawnEvent,uri,createAgentHostStartError}

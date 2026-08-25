@@ -1,0 +1,8 @@
+@LIN:platform_agentHost_common_agentHostClientFileSystemProvider:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createAgentHostClientFileSystemProvider(...args){
+  ^{ className: "AgentHostClientFileSystemProvider", methods: ["_decodeUri", "_encodeUri"] };
+}
+
+=ex{createAgentHostClientFileSystemProvider}

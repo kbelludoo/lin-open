@@ -1,0 +1,56 @@
+@LIN:editor_contrib_hover_browser_hoverActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createShowOrFocusHoverAction(...args){
+  ^{ className: "ShowOrFocusHoverAction", methods: ["run", "if", "if", "if", "if"] };
+}
+
+!createShowDefinitionPreviewHoverAction(...args){
+  ^{ className: "ShowDefinitionPreviewHoverAction", methods: ["run", "if", "if", "if"] };
+}
+
+!createHideContentHoverAction(...args){
+  ^{ className: "HideContentHoverAction", methods: ["run"] };
+}
+
+!createScrollUpHoverAction(...args){
+  ^{ className: "ScrollUpHoverAction", methods: ["run", "if"] };
+}
+
+!createScrollDownHoverAction(...args){
+  ^{ className: "ScrollDownHoverAction", methods: ["run", "if"] };
+}
+
+!createScrollLeftHoverAction(...args){
+  ^{ className: "ScrollLeftHoverAction", methods: ["run", "if"] };
+}
+
+!createScrollRightHoverAction(...args){
+  ^{ className: "ScrollRightHoverAction", methods: ["run", "if"] };
+}
+
+!createPageUpHoverAction(...args){
+  ^{ className: "PageUpHoverAction", methods: ["run", "if"] };
+}
+
+!createPageDownHoverAction(...args){
+  ^{ className: "PageDownHoverAction", methods: ["run", "if"] };
+}
+
+!createGoToTopHoverAction(...args){
+  ^{ className: "GoToTopHoverAction", methods: ["run", "if"] };
+}
+
+!createGoToBottomHoverAction(...args){
+  ^{ className: "GoToBottomHoverAction", methods: ["run", "if"] };
+}
+
+!createIncreaseHoverVerbosityLevel(...args){
+  ^{ className: "IncreaseHoverVerbosityLevel", methods: ["run", "if"] };
+}
+
+!createDecreaseHoverVerbosityLevel(...args){
+  ^{ className: "DecreaseHoverVerbosityLevel", methods: ["run", "if"] };
+}
+
+=ex{createShowOrFocusHoverAction,createShowDefinitionPreviewHoverAction,createHideContentHoverAction,createScrollUpHoverAction,createScrollDownHoverAction,createScrollLeftHoverAction,createScrollRightHoverAction,createPageUpHoverAction,createPageDownHoverAction,createGoToTopHoverAction,createGoToBottomHoverAction,createIncreaseHoverVerbosityLevel,createDecreaseHoverVerbosityLevel}

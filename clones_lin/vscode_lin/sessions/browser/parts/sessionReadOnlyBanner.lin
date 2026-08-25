@@ -1,0 +1,8 @@
+@LIN:sessions_browser_parts_sessionReadOnlyBanner:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createSessionReadOnlyBanner(...args){
+  ^{ className: "SessionReadOnlyBanner", methods: ["visible", "setVisible", "setContent", "if"] };
+}
+
+=ex{createSessionReadOnlyBanner}

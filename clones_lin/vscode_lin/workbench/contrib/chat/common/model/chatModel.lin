@@ -1,0 +1,88 @@
+@LIN:workbench_contrib_chat_common_model_chatModel:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getAttachableImageExtension(mimeType){
+  // Transposed from workbench/contrib/chat/common/model/chatModel.ts
+  ^{ name: "getAttachableImageExtension", status: "pure" };
+}
+
+!toExport(data){
+  // Transposed from workbench/contrib/chat/common/model/chatModel.ts
+  ^{ name: "toExport", status: "pure" };
+}
+
+!isCellTextEditOperation(value){
+  // Transposed from workbench/contrib/chat/common/model/chatModel.ts
+  ^{ name: "isCellTextEditOperation", status: "pure" };
+}
+
+!isCellTextEditOperationArray(value){
+  // Transposed from workbench/contrib/chat/common/model/chatModel.ts
+  ^{ name: "isCellTextEditOperationArray", status: "pure" };
+}
+
+!toChatHistoryContent(content){
+  // Transposed from workbench/contrib/chat/common/model/chatModel.ts
+  ^{ name: "toChatHistoryContent", status: "pure" };
+}
+
+!reviveSerializableInputState(state){
+  // Transposed from workbench/contrib/chat/common/model/chatModel.ts
+  ^{ name: "reviveSerializableInputState", status: "pure" };
+}
+
+!normalizeSerializableChatData(raw){
+  // Transposed from workbench/contrib/chat/common/model/chatModel.ts
+  ^{ name: "normalizeSerializableChatData", status: "pure" };
+}
+
+!isExportableSessionData(obj){
+  // Transposed from workbench/contrib/chat/common/model/chatModel.ts
+  ^{ name: "isExportableSessionData", status: "pure" };
+}
+
+!extractExportableSessionData(data){
+  // Transposed from workbench/contrib/chat/common/model/chatModel.ts
+  ^{ name: "extractExportableSessionData", status: "pure" };
+}
+
+!isSerializableSessionData(obj){
+  // Transposed from workbench/contrib/chat/common/model/chatModel.ts
+  ^{ name: "isSerializableSessionData", status: "pure" };
+}
+
+!updateRanges(variableData, diff){
+  // Transposed from workbench/contrib/chat/common/model/chatModel.ts
+  ^{ name: "updateRanges", status: "pure" };
+}
+
+!canMergeMarkdownStrings(md1, md2){
+  // Transposed from workbench/contrib/chat/common/model/chatModel.ts
+  ^{ name: "canMergeMarkdownStrings", status: "pure" };
+}
+
+!appendMarkdownString(md1, md2){
+  // Transposed from workbench/contrib/chat/common/model/chatModel.ts
+  ^{ name: "appendMarkdownString", status: "pure" };
+}
+
+!getCodeCitationsMessage(citations){
+  // Transposed from workbench/contrib/chat/common/model/chatModel.ts
+  ^{ name: "getCodeCitationsMessage", status: "pure" };
+}
+
+!serializeSendOptions(options){
+  // Transposed from workbench/contrib/chat/common/model/chatModel.ts
+  ^{ name: "serializeSendOptions", status: "pure" };
+}
+
+!createUri(sessionResource, toolCallId, index, basename?){
+  // Transposed from workbench/contrib/chat/common/model/chatModel.ts
+  ^{ name: "createUri", status: "pure" };
+}
+
+!getChatRequestEditedFileEventKindEnum(){
+  ^{ enumName: "ChatRequestEditedFileEventKind", members: ["Keep", "Undo", "UserModification"] };
+}
+
+=ex{getAttachableImageExtension,toExport,isCellTextEditOperation,isCellTextEditOperationArray,toChatHistoryContent,reviveSerializableInputState,normalizeSerializableChatData,isExportableSessionData,extractExportableSessionData,isSerializableSessionData,updateRanges,canMergeMarkdownStrings,appendMarkdownString,getCodeCitationsMessage,serializeSendOptions,createUri,getChatRequestEditedFileEventKindEnum}

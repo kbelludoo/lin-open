@@ -1,0 +1,16 @@
+@LIN:editor_common_viewModel_overviewZoneManager:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createColorZone(...args){
+  ^{ className: "ColorZone", methods: ["compare", "if", "if"] };
+}
+
+!createOverviewRulerZone(...args){
+  ^{ className: "OverviewRulerZone", methods: ["compare", "if", "if", "if", "setColorZone", "getColorZones"] };
+}
+
+!createOverviewZoneManager(...args){
+  ^{ className: "OverviewZoneManager", methods: ["getId2Color", "setZones", "setLineHeight", "if", "setPixelRatio", "getDOMWidth", "getCanvasWidth", "setDOMWidth", "if", "getDOMHeight", "getCanvasHeight", "setDOMHeight", "if", "getOuterHeight", "setOuterHeight", "if", "resolveColorZones", "for", "if", "if", "if", "if", "if", "if"] };
+}
+
+=ex{createColorZone,createOverviewRulerZone,createOverviewZoneManager}

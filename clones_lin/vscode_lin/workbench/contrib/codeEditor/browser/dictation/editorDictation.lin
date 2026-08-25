@@ -1,0 +1,12 @@
+@LIN:workbench_contrib_codeEditor_browser_dictation_editorDictation:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createEditorDictationStartAction(...args){
+  ^{ className: "EditorDictationStartAction", methods: ["runEditorCommand", "if", "if"] };
+}
+
+!createEditorDictationStopAction(...args){
+  ^{ className: "EditorDictationStopAction", methods: ["runEditorCommand"] };
+}
+
+=ex{createEditorDictationStartAction,createEditorDictationStopAction}

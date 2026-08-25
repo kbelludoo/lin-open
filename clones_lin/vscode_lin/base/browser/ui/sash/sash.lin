@@ -1,0 +1,22 @@
+@LIN:base_browser_ui_sash_sash:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!setGlobalSashSize(size){
+  // Transposed from base/browser/ui/sash/sash.ts
+  ^{ name: "setGlobalSashSize", status: "pure" };
+}
+
+!setGlobalHoverDelay(size){
+  // Transposed from base/browser/ui/sash/sash.ts
+  ^{ name: "setGlobalHoverDelay", status: "pure" };
+}
+
+!createSash(...args){
+  ^{ className: "Sash", methods: ["state", "orthogonalStartSash", "orthogonalEndSash", "state", "if", "onDidStart", "onDidChange", "onDidReset", "addClass", "if", "if", "if", "if", "onDidEnd", "orthogonalStartSash", "if", "if", "if", "orthogonalEndSash", "if", "if", "if", "if", "if", "_register", "if", "if", "if", "onPointerStart", "if", "if", "for", "if", "if", "if", "if", "if", "if", "if", "for", "onPointerDoublePress", "if", "if", "onMouseEnter", "if", "onMouseLeave", "if", "clearSashHoverState", "layout", "if", "if", "if", "if", "if", "getOrthogonalSash", "dispose"] };
+}
+
+!getOrthogonalEdgeEnum(){
+  ^{ enumName: "OrthogonalEdge", members: ["North", "South", "East", "West"] };
+}
+
+=ex{setGlobalSashSize,setGlobalHoverDelay,createSash,getOrthogonalEdgeEnum}

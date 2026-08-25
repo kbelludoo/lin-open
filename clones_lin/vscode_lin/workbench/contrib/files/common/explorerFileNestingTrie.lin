@@ -1,0 +1,16 @@
+@LIN:workbench_contrib_files_common_explorerFileNestingTrie:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createExplorerFileNestingTrie(...args){
+  ^{ className: "ExplorerFileNestingTrie", methods: ["for", "for", "toString", "getAttributes", "if", "nest", "for", "for", "if", "if", "for", "if", "for", "if", "if"] };
+}
+
+!createPreTrie(...args){
+  ^{ className: "PreTrie", methods: ["add", "if", "if", "if", "get", "if", "toString", "if"] };
+}
+
+!createSufTrie(...args){
+  ^{ className: "SufTrie", methods: ["add", "if", "if", "if", "if", "get", "if", "if", "if", "toString", "if", "if"] };
+}
+
+=ex{createExplorerFileNestingTrie,createPreTrie,createSufTrie}

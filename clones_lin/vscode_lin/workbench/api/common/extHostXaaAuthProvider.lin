@@ -1,0 +1,14 @@
+@LIN:workbench_api_common_extHostXaaAuthProvider:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!cacheKey(resource, scopes){
+  // Transposed from workbench/api/common/extHostXaaAuthProvider.ts
+  ^{ name: "cacheKey", status: "pure" };
+}
+
+!toSession(token, scopes, fallbackAccount?){
+  // Transposed from workbench/api/common/extHostXaaAuthProvider.ts
+  ^{ name: "toSession", status: "pure" };
+}
+
+=ex{cacheKey,toSession}

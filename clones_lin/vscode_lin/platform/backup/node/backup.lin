@@ -1,0 +1,19 @@
+@LIN:platform_backup_node_backup:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isEmptyWindowBackupInfo(obj){
+  // Transposed from platform/backup/node/backup.ts
+  ^{ name: "isEmptyWindowBackupInfo", status: "pure" };
+}
+
+!deserializeWorkspaceInfos(serializedBackupWorkspaces){
+  // Transposed from platform/backup/node/backup.ts
+  ^{ name: "deserializeWorkspaceInfos", status: "pure" };
+}
+
+!deserializeFolderInfos(serializedBackupWorkspaces){
+  // Transposed from platform/backup/node/backup.ts
+  ^{ name: "deserializeFolderInfos", status: "pure" };
+}
+
+=ex{isEmptyWindowBackupInfo,deserializeWorkspaceInfos,deserializeFolderInfos}

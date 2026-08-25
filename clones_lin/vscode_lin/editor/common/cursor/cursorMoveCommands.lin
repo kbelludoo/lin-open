@@ -1,0 +1,13 @@
+@LIN:editor_common_cursor_cursorMoveCommands:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!parse(args){
+  // Transposed from editor/common/cursor/cursorMoveCommands.ts
+  ^{ name: "parse", status: "pure" };
+}
+
+!createCursorMoveCommands(...args){
+  ^{ className: "CursorMoveCommands", methods: ["addCursorDown", "for", "if", "addCursorUp", "for", "if", "moveToBeginningOfLine", "for", "_moveToLineStart", "if", "_moveToLineStartByView", "_moveToLineStartByModel", "moveToEndOfLine", "for", "_moveToLineEnd", "if", "_moveToLineEndByView", "_moveToLineEndByModel", "expandLineSelection", "for", "if", "moveToBeginningOfBuffer", "for", "moveToEndOfBuffer", "for", "selectAll", "line", "if", "if", "if", "if", "if", "word", "cancelSelection", "moveTo", "if", "if", "if", "simpleMove", "switch", "if", "if", "if", "if", "if", "if", "if", "if", "viewportMove", "switch", "for", "findPositionInViewportIfOutside", "if", "if", "if", "_firstLineNumberInRange", "_lastLineNumberInRange", "_moveLeft", "_moveHalfLineLeft", "for", "_moveRight", "_moveHalfLineRight", "for", "_moveDownByViewLines", "for", "_moveDownByModelLines", "for", "_moveUpByViewLines", "for", "_moveUpByModelLines", "for", "_moveDownByFoldedLines", "if", "_moveUpByFoldedLines", "if", "_targetFoldedDown", "while", "for", "if", "while", "if", "if", "_targetFoldedUp", "while", "for", "if", "while", "if", "if", "_moveToViewPosition", "_moveToModelPosition", "_moveToViewMinColumn", "for", "_moveToViewFirstNonWhitespaceColumn", "for", "_moveToViewCenterColumn", "for", "_moveToViewMaxColumn", "for", "_moveToViewLastNonWhitespaceColumn", "for"] };
+}
+
+=ex{parse,createCursorMoveCommands}

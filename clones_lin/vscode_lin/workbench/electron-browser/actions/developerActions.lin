@@ -1,0 +1,40 @@
+@LIN:workbench_electron_browser_actions_developerActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createToggleDevToolsAction(...args){
+  ^{ className: "ToggleDevToolsAction", methods: ["run"] };
+}
+
+!createConfigureRuntimeArgumentsAction(...args){
+  ^{ className: "ConfigureRuntimeArgumentsAction", methods: ["run"] };
+}
+
+!createReloadWindowWithExtensionsDisabledAction(...args){
+  ^{ className: "ReloadWindowWithExtensionsDisabledAction", methods: ["run"] };
+}
+
+!createOpenUserDataFolderAction(...args){
+  ^{ className: "OpenUserDataFolderAction", methods: ["run"] };
+}
+
+!createShowGPUInfoAction(...args){
+  ^{ className: "ShowGPUInfoAction", methods: ["run"] };
+}
+
+!createShowContentTracingAction(...args){
+  ^{ className: "ShowContentTracingAction", methods: ["run"] };
+}
+
+!createStartTracing(...args){
+  ^{ className: "StartTracing", methods: ["run"] };
+}
+
+!createStartHeapTracing(...args){
+  ^{ className: "StartHeapTracing", methods: ["run"] };
+}
+
+!createStopTracing(...args){
+  ^{ className: "StopTracing", methods: ["run", "if", "if"] };
+}
+
+=ex{createToggleDevToolsAction,createConfigureRuntimeArgumentsAction,createReloadWindowWithExtensionsDisabledAction,createOpenUserDataFolderAction,createShowGPUInfoAction,createShowContentTracingAction,createStartTracing,createStartHeapTracing,createStopTracing}

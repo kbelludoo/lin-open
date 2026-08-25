@@ -1,0 +1,17 @@
+@LIN:editor_common_core_edits_lineEdit:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!is(thing){
+  // Transposed from editor/common/core/edits/lineEdit.ts
+  ^{ name: "is", status: "pure" };
+}
+
+!createLineEdit(...args){
+  ^{ className: "LineEdit", methods: ["deserialize", "fromStringEdit", "fromTextEdit", "for", "if", "createFromUnsorted", "isEmpty", "toEdit", "for", "toString", "serialize", "getNewLineRanges", "for", "mapLineNumber", "for", "if", "mapLineRange", "mapBackLineRange", "touches", "rebase", "humanReadablePatch", "pushLine", "if", "pushSeperator", "if", "for", "for", "apply", "for", "while", "for", "while", "inverse"] };
+}
+
+!createLineReplacement(...args){
+  ^{ className: "LineReplacement", methods: ["deserialize", "fromSingleTextEdit", "if", "if", "toSingleTextEdit", "if", "if", "if", "if", "toSingleEdit", "toString", "serialize", "removeCommonSuffixPrefixLines", "if", "toLineEdit"] };
+}
+
+=ex{is,createLineEdit,createLineReplacement}

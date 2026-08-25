@@ -1,0 +1,8 @@
+@LIN:platform_mcp_common_mcpManagementCli:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createMcpManagementCli(...args){
+  ^{ className: "McpManagementCli", methods: ["addMcpDefinitions", "updateMcpInResource", "validateConfiguration", "catch", "if"] };
+}
+
+=ex{createMcpManagementCli}

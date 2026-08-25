@@ -1,0 +1,64 @@
+@LIN:workbench_contrib_debug_common_debugUtils:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!formatPII(value, excludePII, args){
+  // Transposed from workbench/contrib/debug/common/debugUtils.ts
+  ^{ name: "formatPII", status: "pure" };
+}
+
+!isSessionAttach(session){
+  // Transposed from workbench/contrib/debug/common/debugUtils.ts
+  ^{ name: "isSessionAttach", status: "pure" };
+}
+
+!getExtensionHostDebugSession(session){
+  // Transposed from workbench/contrib/debug/common/debugUtils.ts
+  ^{ name: "getExtensionHostDebugSession", status: "pure" };
+}
+
+!getExactExpressionStartAndEnd(lineContent, looseStart, looseEnd){
+  // Transposed from workbench/contrib/debug/common/debugUtils.ts
+  ^{ name: "getExactExpressionStartAndEnd", status: "pure" };
+}
+
+!getEvaluatableExpressionAtPosition(languageFeaturesService, model, position, token?){
+  // Transposed from workbench/contrib/debug/common/debugUtils.ts
+  ^{ name: "getEvaluatableExpressionAtPosition", status: "pure" };
+}
+
+!isUriString(s){
+  // Transposed from workbench/contrib/debug/common/debugUtils.ts
+  ^{ name: "isUriString", status: "pure" };
+}
+
+!convertToDAPaths(message, toUri){
+  // Transposed from workbench/contrib/debug/common/debugUtils.ts
+  ^{ name: "convertToDAPaths", status: "pure" };
+}
+
+!convertToVSCPaths(message, toUri){
+  // Transposed from workbench/contrib/debug/common/debugUtils.ts
+  ^{ name: "convertToVSCPaths", status: "pure" };
+}
+
+!saveAllBeforeDebugStart(configurationService, editorService){
+  // Transposed from workbench/contrib/debug/common/debugUtils.ts
+  ^{ name: "saveAllBeforeDebugStart", status: "pure" };
+}
+
+!resolveChildSession(session, allSessions){
+  // Transposed from workbench/contrib/debug/common/debugUtils.ts
+  ^{ name: "resolveChildSession", status: "pure" };
+}
+
+!getEffectiveConfigForPlatform(config, os){
+  // Transposed from workbench/contrib/debug/common/debugUtils.ts
+  ^{ name: "getEffectiveConfigForPlatform", status: "pure" };
+}
+
+!getEffectivePresentationForConfig(config, os){
+  // Transposed from workbench/contrib/debug/common/debugUtils.ts
+  ^{ name: "getEffectivePresentationForConfig", status: "pure" };
+}
+
+=ex{formatPII,isSessionAttach,getExtensionHostDebugSession,getExactExpressionStartAndEnd,getEvaluatableExpressionAtPosition,isUriString,convertToDAPaths,convertToVSCPaths,saveAllBeforeDebugStart,resolveChildSession,getEffectiveConfigForPlatform,getEffectivePresentationForConfig}

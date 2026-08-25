@@ -1,0 +1,8 @@
+@LIN:sessions_browser_parts_customViewNode:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createCustomViewNode(...args){
+  ^{ className: "CustomViewNode", methods: ["if", "layout", "focus", "_layoutChildren", "if"] };
+}
+
+=ex{createCustomViewNode}

@@ -1,0 +1,16 @@
+@LIN:editor_common_model_prefixSumComputer:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createPrefixSumComputer(...args){
+  ^{ className: "PrefixSumComputer", methods: ["getCount", "insertValues", "if", "if", "if", "setValue", "if", "if", "removeValues", "if", "if", "if", "if", "if", "getTotalSum", "if", "getPrefixSum", "if", "_getPrefixSum", "if", "if", "if", "for", "getIndexOf", "while", "if", "if"] };
+}
+
+!createConstantTimePrefixSumComputer(...args){
+  ^{ className: "ConstantTimePrefixSumComputer", methods: ["getTotalSum", "getPrefixSum", "if", "getIndexOf", "if", "removeValues", "insertValues", "_invalidate", "_ensureValid", "if", "for", "for", "setValue", "if"] };
+}
+
+!createPrefixSumIndexOfResult(...args){
+  ^{ className: "PrefixSumIndexOfResult", methods: [] };
+}
+
+=ex{createPrefixSumComputer,createConstantTimePrefixSumComputer,createPrefixSumIndexOfResult}

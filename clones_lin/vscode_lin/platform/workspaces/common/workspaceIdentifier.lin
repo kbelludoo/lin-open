@@ -1,0 +1,14 @@
+@LIN:platform_workspaces_common_workspaceIdentifier:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getWorkspaceIdentifier(workspaceUri){
+  // Transposed from platform/workspaces/common/workspaceIdentifier.ts
+  ^{ name: "getWorkspaceIdentifier", status: "pure" };
+}
+
+!getSingleFolderWorkspaceIdentifier(folderUri){
+  // Transposed from platform/workspaces/common/workspaceIdentifier.ts
+  ^{ name: "getSingleFolderWorkspaceIdentifier", status: "pure" };
+}
+
+=ex{getWorkspaceIdentifier,getSingleFolderWorkspaceIdentifier}

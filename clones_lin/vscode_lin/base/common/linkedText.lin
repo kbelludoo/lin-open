@@ -1,0 +1,13 @@
+@LIN:base_common_linkedText:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!parseLinkedText(text){
+  // Transposed from base/common/linkedText.ts
+  ^{ name: "parseLinkedText", status: "pure" };
+}
+
+!createLinkedText(...args){
+  ^{ className: "LinkedText", methods: ["toString"] };
+}
+
+=ex{parseLinkedText,createLinkedText}

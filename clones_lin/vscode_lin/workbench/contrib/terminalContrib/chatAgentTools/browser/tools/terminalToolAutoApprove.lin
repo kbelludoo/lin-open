@@ -1,0 +1,19 @@
+@LIN:workbench_contrib_terminalContrib_chatAgentTools_browser_tools_terminalToolAutoApprove:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isSessionAutoApproveLevel(chatSessionResource, configurationService, chatWidgetService, chatService){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/tools/terminalToolAutoApprove.ts
+  ^{ name: "isSessionAutoApproveLevel", status: "pure" };
+}
+
+!isToolEligibleForTerminalAutoApproval(toolReferenceName, configurationService, legacyToolReferenceFullNames?){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/tools/terminalToolAutoApprove.ts
+  ^{ name: "isToolEligibleForTerminalAutoApproval", status: "pure" };
+}
+
+!isTerminalAutoApproveAllowed(toolReferenceName, configurationService, storageService, legacyToolReferenceFullNames?){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/tools/terminalToolAutoApprove.ts
+  ^{ name: "isTerminalAutoApproveAllowed", status: "pure" };
+}
+
+=ex{isSessionAutoApproveLevel,isToolEligibleForTerminalAutoApproval,isTerminalAutoApproveAllowed}

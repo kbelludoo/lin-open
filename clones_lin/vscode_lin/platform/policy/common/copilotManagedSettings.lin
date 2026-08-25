@@ -1,0 +1,39 @@
+@LIN:platform_policy_common_copilotManagedSettings:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!managedSettingValue(key){
+  // Transposed from platform/policy/common/copilotManagedSettings.ts
+  ^{ name: "managedSettingValue", status: "pure" };
+}
+
+!shouldForceRemoteSettingsRefresh(nativeMdm, server){
+  // Transposed from platform/policy/common/copilotManagedSettings.ts
+  ^{ name: "shouldForceRemoteSettingsRefresh", status: "pure" };
+}
+
+!managedModelValue(){
+  // Transposed from platform/policy/common/copilotManagedSettings.ts
+  ^{ name: "managedModelValue", status: "pure" };
+}
+
+!thirdPartyAgentEnabledValue(policyData){
+  // Transposed from platform/policy/common/copilotManagedSettings.ts
+  ^{ name: "thirdPartyAgentEnabledValue", status: "pure" };
+}
+
+!collectManagedSettingsDefinitions(policyDefinitions){
+  // Transposed from platform/policy/common/copilotManagedSettings.ts
+  ^{ name: "collectManagedSettingsDefinitions", status: "pure" };
+}
+
+!hasManagedSettingsDefinitions(policyDefinitions){
+  // Transposed from platform/policy/common/copilotManagedSettings.ts
+  ^{ name: "hasManagedSettingsDefinitions", status: "pure" };
+}
+
+!pickManagedSettings(nativeMdm, server, file){
+  // Transposed from platform/policy/common/copilotManagedSettings.ts
+  ^{ name: "pickManagedSettings", status: "pure" };
+}
+
+=ex{managedSettingValue,shouldForceRemoteSettingsRefresh,managedModelValue,thirdPartyAgentEnabledValue,collectManagedSettingsDefinitions,hasManagedSettingsDefinitions,pickManagedSettings}

@@ -1,0 +1,13 @@
+@LIN:platform_userDataSync_common_keybindingsSync:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getKeybindingsContentFromSyncContent(syncContent, platformSpecific, logService){
+  // Transposed from platform/userDataSync/common/keybindingsSync.ts
+  ^{ name: "getKeybindingsContentFromSyncContent", status: "pure" };
+}
+
+!createKeybindingsInitializer(...args){
+  ^{ className: "KeybindingsInitializer", methods: ["doInitialize", "if", "if", "isEmpty", "catch", "getKeybindingsContentFromSyncContent", "catch"] };
+}
+
+=ex{getKeybindingsContentFromSyncContent,createKeybindingsInitializer}

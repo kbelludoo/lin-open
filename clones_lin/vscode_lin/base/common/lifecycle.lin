@@ -1,0 +1,23 @@
+@LIN:base_common_lifecycle:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!setDisposableTracker(tracker){
+  // Transposed from base/common/lifecycle.ts
+  ^{ name: "setDisposableTracker", status: "pure" };
+}
+
+!markAsDisposed(disposable){
+  // Transposed from base/common/lifecycle.ts
+  ^{ name: "markAsDisposed", status: "pure" };
+}
+
+!combinedDisposable(disposables){
+  // Transposed from base/common/lifecycle.ts
+  ^{ name: "combinedDisposable", status: "pure" };
+}
+
+!createRefCountedDisposable(...args){
+  ^{ className: "RefCountedDisposable", methods: ["acquire", "release", "if"] };
+}
+
+=ex{setDisposableTracker,markAsDisposed,combinedDisposable,createRefCountedDisposable}

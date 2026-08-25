@@ -1,0 +1,23 @@
+@LIN:workbench_contrib_chat_browser_widgetHosts_editor_chatEditorInput:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getNewEditorUri(){
+  // Transposed from workbench/contrib/chat/browser/widgetHosts/editor/chatEditorInput.ts
+  ^{ name: "getNewEditorUri", status: "pure" };
+}
+
+!showClearEditingSessionConfirmation(model, dialogService, options?){
+  // Transposed from workbench/contrib/chat/browser/widgetHosts/editor/chatEditorInput.ts
+  ^{ name: "showClearEditingSessionConfirmation", status: "pure" };
+}
+
+!shouldShowClearEditingSessionConfirmation(model, options?){
+  // Transposed from workbench/contrib/chat/browser/widgetHosts/editor/chatEditorInput.ts
+  ^{ name: "shouldShowClearEditingSessionConfirmation", status: "pure" };
+}
+
+!createChatEditorModel(...args){
+  ^{ className: "ChatEditorModel", methods: ["resolve", "isResolved", "isDisposed"] };
+}
+
+=ex{getNewEditorUri,showClearEditingSessionConfirmation,shouldShowClearEditingSessionConfirmation,createChatEditorModel}

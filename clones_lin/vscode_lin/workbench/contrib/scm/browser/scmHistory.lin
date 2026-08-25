@@ -1,0 +1,29 @@
+@LIN:workbench_contrib_scm_browser_scmHistory:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!renderSCMHistoryItemGraph(historyItemViewModel){
+  // Transposed from workbench/contrib/scm/browser/scmHistory.ts
+  ^{ name: "renderSCMHistoryItemGraph", status: "pure" };
+}
+
+!renderSCMHistoryGraphPlaceholder(columns, highlightIndex?){
+  // Transposed from workbench/contrib/scm/browser/scmHistory.ts
+  ^{ name: "renderSCMHistoryGraphPlaceholder", status: "pure" };
+}
+
+!getHistoryItemIndex(historyItemViewModel){
+  // Transposed from workbench/contrib/scm/browser/scmHistory.ts
+  ^{ name: "getHistoryItemIndex", status: "pure" };
+}
+
+!compareHistoryItemRefs(ref1, ref2, currentHistoryItemRef?, currentHistoryItemRemoteRef?, currentHistoryItemBaseRef?){
+  // Transposed from workbench/contrib/scm/browser/scmHistory.ts
+  ^{ name: "compareHistoryItemRefs", status: "pure" };
+}
+
+!toHistoryItemHoverContent(markdownRendererService, historyItem, includeReferences){
+  // Transposed from workbench/contrib/scm/browser/scmHistory.ts
+  ^{ name: "toHistoryItemHoverContent", status: "pure" };
+}
+
+=ex{renderSCMHistoryItemGraph,renderSCMHistoryGraphPlaceholder,getHistoryItemIndex,compareHistoryItemRefs,toHistoryItemHoverContent}

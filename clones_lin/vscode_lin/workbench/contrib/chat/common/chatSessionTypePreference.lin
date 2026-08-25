@@ -1,0 +1,19 @@
+@LIN:workbench_contrib_chat_common_chatSessionTypePreference:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getRememberedSessionType(storageService){
+  // Transposed from workbench/contrib/chat/common/chatSessionTypePreference.ts
+  ^{ name: "getRememberedSessionType", status: "pure" };
+}
+
+!storeUserSelectedSessionType(storageService, sessionType){
+  // Transposed from workbench/contrib/chat/common/chatSessionTypePreference.ts
+  ^{ name: "storeUserSelectedSessionType", status: "pure" };
+}
+
+!clearUserSelectedSessionType(storageService){
+  // Transposed from workbench/contrib/chat/common/chatSessionTypePreference.ts
+  ^{ name: "clearUserSelectedSessionType", status: "pure" };
+}
+
+=ex{getRememberedSessionType,storeUserSelectedSessionType,clearUserSelectedSessionType}

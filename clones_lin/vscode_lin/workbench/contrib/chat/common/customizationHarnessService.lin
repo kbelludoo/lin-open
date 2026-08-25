@@ -1,0 +1,19 @@
+@LIN:workbench_contrib_chat_common_customizationHarnessService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isPluginCustomizationItem(item){
+  // Transposed from workbench/contrib/chat/common/customizationHarnessService.ts
+  ^{ name: "isPluginCustomizationItem", status: "pure" };
+}
+
+!getCustomizationDisabledLabel(reason){
+  // Transposed from workbench/contrib/chat/common/customizationHarnessService.ts
+  ^{ name: "getCustomizationDisabledLabel", status: "pure" };
+}
+
+!createVSCodeHarnessDescriptor(){
+  // Transposed from workbench/contrib/chat/common/customizationHarnessService.ts
+  ^{ name: "createVSCodeHarnessDescriptor", status: "pure" };
+}
+
+=ex{isPluginCustomizationItem,getCustomizationDisabledLabel,createVSCodeHarnessDescriptor}

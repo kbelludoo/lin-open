@@ -1,0 +1,17 @@
+@LIN:workbench_contrib_chat_browser_actions_chatContextActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!registerChatContextActions(){
+  // Transposed from workbench/contrib/chat/browser/actions/chatContextActions.ts
+  ^{ name: "registerChatContextActions", status: "pure" };
+}
+
+!createAttachSearchResultAction(...args){
+  ^{ className: "AttachSearchResultAction", methods: ["run", "if", "if", "if"] };
+}
+
+!createAttachContextAction(...args){
+  ^{ className: "AttachContextAction", methods: ["run", "if", "for", "_show", "if", "if", "if", "_handleQPPick", "if", "if", "if", "if", "_handleContextPick", "if", "_handleContextPickerItem", "if", "if", "if", "push", "if", "if", "if"] };
+}
+
+=ex{registerChatContextActions,createAttachSearchResultAction,createAttachContextAction}

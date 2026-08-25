@@ -1,0 +1,8 @@
+@LIN:editor_common_core_misc_rgba:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createRGBA8(...args){
+  ^{ className: "RGBA8", methods: ["equals", "_clamp", "if", "if"] };
+}
+
+=ex{createRGBA8}

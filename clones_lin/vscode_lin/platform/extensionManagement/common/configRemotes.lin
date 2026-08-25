@@ -1,0 +1,14 @@
+@LIN:platform_extensionManagement_common_configRemotes:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getDomainsOfRemotes(text, allowedDomains){
+  // Transposed from platform/extensionManagement/common/configRemotes.ts
+  ^{ name: "getDomainsOfRemotes", status: "pure" };
+}
+
+!getRemotes(text, stripEndingDotGit){
+  // Transposed from platform/extensionManagement/common/configRemotes.ts
+  ^{ name: "getRemotes", status: "pure" };
+}
+
+=ex{getDomainsOfRemotes,getRemotes}

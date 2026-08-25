@@ -1,0 +1,13 @@
+@LIN:base_common_observableInternal_experimental_time:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!wasTrueRecently(obs, timeMs, store){
+  // Transposed from base/common/observableInternal/experimental/time.ts
+  ^{ name: "wasTrueRecently", status: "pure" };
+}
+
+!createTotalTrueTimeObservable(...args){
+  ^{ className: "TotalTrueTimeObservable", methods: ["if", "if", "totalTimeMs", "if", "if", "if", "if"] };
+}
+
+=ex{wasTrueRecently,createTotalTrueTimeObservable}

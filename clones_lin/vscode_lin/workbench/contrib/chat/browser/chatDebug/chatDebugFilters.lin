@@ -1,0 +1,18 @@
+@LIN:workbench_contrib_chat_browser_chatDebug_chatDebugFilters:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!registerFilterMenuItems(state, scopedContextKeyService){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/chatDebugFilters.ts
+  ^{ name: "registerFilterMenuItems", status: "pure" };
+}
+
+!bindFilterContextKeys(state, scopedContextKeyService){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/chatDebugFilters.ts
+  ^{ name: "bindFilterContextKeys", status: "pure" };
+}
+
+!createChatDebugFilterState(...args){
+  ^{ className: "ChatDebugFilterState", methods: ["isKindVisible", "switch", "if", "isAllKindsVisible", "isAllFiltersDefault", "setTextFilter", "if", "textFilterWithoutTimestamps", "isTimestampVisible", "if", "if", "fire"] };
+}
+
+=ex{registerFilterMenuItems,bindFilterContextKeys,createChatDebugFilterState}

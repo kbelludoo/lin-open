@@ -1,0 +1,16 @@
+@LIN:workbench_contrib_debug_browser_debugEditorActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createRunToCursorAction(...args){
+  ^{ className: "RunToCursorAction", methods: ["run"] };
+}
+
+!createSelectionToReplAction(...args){
+  ^{ className: "SelectionToReplAction", methods: ["run"] };
+}
+
+!createSelectionToWatchExpressionsAction(...args){
+  ^{ className: "SelectionToWatchExpressionsAction", methods: ["run", "if", "if"] };
+}
+
+=ex{createRunToCursorAction,createSelectionToReplAction,createSelectionToWatchExpressionsAction}

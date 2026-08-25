@@ -1,0 +1,23 @@
+@LIN:platform_agentHost_common_state_sessionProtocol:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isJsonRpcRequest(msg){
+  // Transposed from platform/agentHost/common/state/sessionProtocol.ts
+  ^{ name: "isJsonRpcRequest", status: "pure" };
+}
+
+!isJsonRpcNotification(msg){
+  // Transposed from platform/agentHost/common/state/sessionProtocol.ts
+  ^{ name: "isJsonRpcNotification", status: "pure" };
+}
+
+!isJsonRpcResponse(msg){
+  // Transposed from platform/agentHost/common/state/sessionProtocol.ts
+  ^{ name: "isJsonRpcResponse", status: "pure" };
+}
+
+!createProtocolError(...args){
+  ^{ className: "ProtocolError", methods: [] };
+}
+
+=ex{isJsonRpcRequest,isJsonRpcNotification,isJsonRpcResponse,createProtocolError}

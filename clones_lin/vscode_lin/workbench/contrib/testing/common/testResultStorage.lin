@@ -1,0 +1,12 @@
+@LIN:workbench_contrib_testing_common_testResultStorage:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createInMemoryResultStorage(...args){
+  ^{ className: "InMemoryResultStorage", methods: ["readForResultId", "storeForResultId", "deleteForResultId", "readOutputForResultId", "storeOutputForResultId", "readOutputRangeForResultId"] };
+}
+
+!createTestResultStorage(...args){
+  ^{ className: "TestResultStorage", methods: ["readForResultId", "storeForResultId", "deleteForResultId", "readOutputRangeForResultId", "readOutputForResultId", "storeOutputForResultId", "persist", "cleanupDereferenced", "if", "getResultJsonPath", "getResultOutputPath"] };
+}
+
+=ex{createInMemoryResultStorage,createTestResultStorage}

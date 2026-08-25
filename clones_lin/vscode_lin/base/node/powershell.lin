@@ -1,0 +1,9 @@
+@LIN:base_node_powershell:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getFirstAvailablePowerShellInstallation(){
+  // Transposed from base/node/powershell.ts
+  ^{ name: "getFirstAvailablePowerShellInstallation", status: "pure" };
+}
+
+=ex{getFirstAvailablePowerShellInstallation}

@@ -1,0 +1,44 @@
+@LIN:workbench_contrib_chat_common_voiceClient_voiceClientService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!normalizeAgentsVoiceId(value){
+  // Transposed from workbench/contrib/chat/common/voiceClient/voiceClientService.ts
+  ^{ name: "normalizeAgentsVoiceId", status: "pure" };
+}
+
+!getVoiceToolApprovalCommand(invocation, includeParameters = true){
+  // Transposed from workbench/contrib/chat/common/voiceClient/voiceClientService.ts
+  ^{ name: "getVoiceToolApprovalCommand", status: "pure" };
+}
+
+!derivePendingId(requestId, part, store?){
+  // Transposed from workbench/contrib/chat/common/voiceClient/voiceClientService.ts
+  ^{ name: "derivePendingId", status: "pure" };
+}
+
+!markPendingIdResolved(pendingId){
+  // Transposed from workbench/contrib/chat/common/voiceClient/voiceClientService.ts
+  ^{ name: "markPendingIdResolved", status: "pure" };
+}
+
+!isPendingIdResolved(pendingId, reader?){
+  // Transposed from workbench/contrib/chat/common/voiceClient/voiceClientService.ts
+  ^{ name: "isPendingIdResolved", status: "pure" };
+}
+
+!restoreResolvedPendingId(requestId, part, store?){
+  // Transposed from workbench/contrib/chat/common/voiceClient/voiceClientService.ts
+  ^{ name: "restoreResolvedPendingId", status: "pure" };
+}
+
+!peekPendingId(requestId, part){
+  // Transposed from workbench/contrib/chat/common/voiceClient/voiceClientService.ts
+  ^{ name: "peekPendingId", status: "pure" };
+}
+
+!isVoiceCheckpointId(value){
+  // Transposed from workbench/contrib/chat/common/voiceClient/voiceClientService.ts
+  ^{ name: "isVoiceCheckpointId", status: "pure" };
+}
+
+=ex{normalizeAgentsVoiceId,getVoiceToolApprovalCommand,derivePendingId,markPendingIdResolved,isPendingIdResolved,restoreResolvedPendingId,peekPendingId,isVoiceCheckpointId}

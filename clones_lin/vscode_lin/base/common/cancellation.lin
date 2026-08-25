@@ -1,0 +1,22 @@
+@LIN:base_common_cancellation:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isCancellationToken(thing){
+  // Transposed from base/common/cancellation.ts
+  ^{ name: "isCancellationToken", status: "pure" };
+}
+
+!cancelOnDispose(store){
+  // Transposed from base/common/cancellation.ts
+  ^{ name: "cancelOnDispose", status: "pure" };
+}
+
+!createCancellationTokenSource(...args){
+  ^{ className: "CancellationTokenSource", methods: ["token", "if", "cancel", "if", "if", "dispose", "if", "if", "if"] };
+}
+
+!createCancellationTokenPool(...args){
+  ^{ className: "CancellationTokenPool", methods: ["token", "add", "if", "if", "_check", "if", "dispose"] };
+}
+
+=ex{isCancellationToken,cancelOnDispose,createCancellationTokenSource,createCancellationTokenPool}

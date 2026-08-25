@@ -1,0 +1,12 @@
+@LIN:workbench_contrib_notebook_browser_diff_diffElementOutputs:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createOutputElement(...args){
+  ^{ className: "OutputElement", methods: ["render", "if", "add", "if", "if", "if", "_renderMissingRenderer", "if", "if", "_renderSearchForMimetype", "_renderMessage", "pickActiveMimeTypeRenderer", "map", "if", "if", "if", "generateRendererInfo", "if", "getCellOutputCurrentIndex", "updateHeight", "getOutputOffsetInContainer", "getOutputOffsetInCell"] };
+}
+
+!createOutputContainer(...args){
+  ^{ className: "OutputContainer", methods: ["if", "_updateOutputs", "render", "for", "showOutputs", "for", "hideOutputs", "_renderOutput"] };
+}
+
+=ex{createOutputElement,createOutputContainer}

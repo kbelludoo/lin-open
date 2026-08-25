@@ -1,0 +1,19 @@
+@LIN:platform_userDataSync_common_abstractSynchronizer:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isRemoteUserData(thing){
+  // Transposed from platform/userDataSync/common/abstractSynchronizer.ts
+  ^{ name: "isRemoteUserData", status: "pure" };
+}
+
+!isSyncData(thing){
+  // Transposed from platform/userDataSync/common/abstractSynchronizer.ts
+  ^{ name: "isSyncData", status: "pure" };
+}
+
+!getSyncResourceLogLabel(syncResource, profile){
+  // Transposed from platform/userDataSync/common/abstractSynchronizer.ts
+  ^{ name: "getSyncResourceLogLabel", status: "pure" };
+}
+
+=ex{isRemoteUserData,isSyncData,getSyncResourceLogLabel}

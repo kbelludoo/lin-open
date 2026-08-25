@@ -1,0 +1,8 @@
+@LIN:base_common_keybindingParser:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createKeybindingParser(...args){
+  ^{ className: "KeybindingParser", methods: ["_readModifiers", "if", "parseChord", "if", "parseKeybinding", "if", "while"] };
+}
+
+=ex{createKeybindingParser}

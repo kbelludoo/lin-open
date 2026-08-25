@@ -1,0 +1,12 @@
+@LIN:sessions_electron_browser_parts_titlebarPart:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createNativeTitlebarPart(...args){
+  ^{ className: "NativeTitlebarPart", methods: ["createContentArea", "if", "if", "if", "if", "if", "onDidChangeWindowMaximized", "if", "if", "if", "if", "handleWindowsAlwaysOnTop", "if", "updateStyles", "if", "if", "layout", "if"] };
+}
+
+!createNativeTitleService(...args){
+  ^{ className: "NativeTitleService", methods: ["createMainTitlebarPart", "doCreateAuxiliaryTitlebarPart"] };
+}
+
+=ex{createNativeTitlebarPart,createNativeTitleService}

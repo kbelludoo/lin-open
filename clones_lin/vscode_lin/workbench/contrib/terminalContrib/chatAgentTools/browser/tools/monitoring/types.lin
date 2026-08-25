@@ -1,0 +1,8 @@
+@LIN:workbench_contrib_terminalContrib_chatAgentTools_browser_tools_monitoring_types:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getOutputMonitorStateEnum(){
+  ^{ enumName: "OutputMonitorState", members: ["Initial", "Idle", "PollingForIdle", "Prompting", "Timeout", "Active", "Cancelled"] };
+}
+
+=ex{getOutputMonitorStateEnum}

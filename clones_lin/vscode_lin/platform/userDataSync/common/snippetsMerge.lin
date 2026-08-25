@@ -1,0 +1,14 @@
+@LIN:platform_userDataSync_common_snippetsMerge:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!merge(local, remote, base){
+  // Transposed from platform/userDataSync/common/snippetsMerge.ts
+  ^{ name: "merge", status: "pure" };
+}
+
+!areSame(a, b){
+  // Transposed from platform/userDataSync/common/snippetsMerge.ts
+  ^{ name: "areSame", status: "pure" };
+}
+
+=ex{merge,areSame}

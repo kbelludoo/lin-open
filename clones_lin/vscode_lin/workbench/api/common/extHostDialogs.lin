@@ -1,0 +1,8 @@
+@LIN:workbench_api_common_extHostDialogs:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createExtHostDialogs(...args){
+  ^{ className: "ExtHostDialogs", methods: ["showOpenDialog", "showSaveDialog"] };
+}
+
+=ex{createExtHostDialogs}

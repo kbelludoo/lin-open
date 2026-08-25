@@ -1,0 +1,64 @@
+@LIN:workbench_contrib_extensions_browser_extensionsViews:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createDefaultPopularExtensionsView(...args){
+  ^{ className: "DefaultPopularExtensionsView", methods: ["show"] };
+}
+
+!createServerInstalledExtensionsView(...args){
+  ^{ className: "ServerInstalledExtensionsView", methods: ["show"] };
+}
+
+!createEnabledExtensionsView(...args){
+  ^{ className: "EnabledExtensionsView", methods: ["show"] };
+}
+
+!createDisabledExtensionsView(...args){
+  ^{ className: "DisabledExtensionsView", methods: ["show"] };
+}
+
+!createOutdatedExtensionsView(...args){
+  ^{ className: "OutdatedExtensionsView", methods: ["show", "updateSize"] };
+}
+
+!createRecentlyUpdatedExtensionsView(...args){
+  ^{ className: "RecentlyUpdatedExtensionsView", methods: ["show"] };
+}
+
+!createStaticQueryExtensionsView(...args){
+  ^{ className: "StaticQueryExtensionsView", methods: ["show"] };
+}
+
+!createUntrustedWorkspaceUnsupportedExtensionsView(...args){
+  ^{ className: "UntrustedWorkspaceUnsupportedExtensionsView", methods: ["show"] };
+}
+
+!createUntrustedWorkspacePartiallySupportedExtensionsView(...args){
+  ^{ className: "UntrustedWorkspacePartiallySupportedExtensionsView", methods: ["show"] };
+}
+
+!createVirtualWorkspaceUnsupportedExtensionsView(...args){
+  ^{ className: "VirtualWorkspaceUnsupportedExtensionsView", methods: ["show"] };
+}
+
+!createVirtualWorkspacePartiallySupportedExtensionsView(...args){
+  ^{ className: "VirtualWorkspacePartiallySupportedExtensionsView", methods: ["show"] };
+}
+
+!createDeprecatedExtensionsView(...args){
+  ^{ className: "DeprecatedExtensionsView", methods: ["show"] };
+}
+
+!createSearchMarketplaceExtensionsView(...args){
+  ^{ className: "SearchMarketplaceExtensionsView", methods: ["show", "reportSearchFinished"] };
+}
+
+!createDefaultRecommendedExtensionsView(...args){
+  ^{ className: "DefaultRecommendedExtensionsView", methods: ["renderBody", "show"] };
+}
+
+!createRecommendedExtensionsView(...args){
+  ^{ className: "RecommendedExtensionsView", methods: ["renderBody", "show"] };
+}
+
+=ex{createDefaultPopularExtensionsView,createServerInstalledExtensionsView,createEnabledExtensionsView,createDisabledExtensionsView,createOutdatedExtensionsView,createRecentlyUpdatedExtensionsView,createStaticQueryExtensionsView,createUntrustedWorkspaceUnsupportedExtensionsView,createUntrustedWorkspacePartiallySupportedExtensionsView,createVirtualWorkspaceUnsupportedExtensionsView,createVirtualWorkspacePartiallySupportedExtensionsView,createDeprecatedExtensionsView,createSearchMarketplaceExtensionsView,createDefaultRecommendedExtensionsView,createRecommendedExtensionsView}

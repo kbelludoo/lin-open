@@ -1,0 +1,8 @@
+@LIN:workbench_common_editor_diffEditorModel:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createDiffEditorModel(...args){
+  ^{ className: "DiffEditorModel", methods: ["originalModel", "modifiedModel", "resolve", "isResolved", "dispose"] };
+}
+
+=ex{createDiffEditorModel}

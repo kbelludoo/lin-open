@@ -1,0 +1,12 @@
+@LIN:platform_agentHost_node_claude_customizations_claudeSessionClientCustomizationsModel:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createSessionClientCustomizationsModel(...args){
+  ^{ className: "SessionClientCustomizationsModel", methods: ["_mergedSynced", "for", "setSyncedCustomizations", "removeClient"] };
+}
+
+!createSessionClientCustomizationsDiff(...args){
+  ^{ className: "SessionClientCustomizationsDiff", methods: ["if", "hasDifference", "hasDifferenceFrom", "consume", "markDirty"] };
+}
+
+=ex{createSessionClientCustomizationsModel,createSessionClientCustomizationsDiff}

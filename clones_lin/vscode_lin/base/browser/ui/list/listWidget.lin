@@ -1,0 +1,53 @@
+@LIN:base_browser_ui_list_listWidget:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isMonacoEditor(e){
+  // Transposed from base/browser/ui/list/listWidget.ts
+  ^{ name: "isMonacoEditor", status: "pure" };
+}
+
+!isMonacoCustomToggle(e){
+  // Transposed from base/browser/ui/list/listWidget.ts
+  ^{ name: "isMonacoCustomToggle", status: "pure" };
+}
+
+!isActionItem(e){
+  // Transposed from base/browser/ui/list/listWidget.ts
+  ^{ name: "isActionItem", status: "pure" };
+}
+
+!isMonacoTwistie(e){
+  // Transposed from base/browser/ui/list/listWidget.ts
+  ^{ name: "isMonacoTwistie", status: "pure" };
+}
+
+!isStickyScrollElement(e){
+  // Transposed from base/browser/ui/list/listWidget.ts
+  ^{ name: "isStickyScrollElement", status: "pure" };
+}
+
+!isStickyScrollContainer(e){
+  // Transposed from base/browser/ui/list/listWidget.ts
+  ^{ name: "isStickyScrollContainer", status: "pure" };
+}
+
+!isButton(e){
+  // Transposed from base/browser/ui/list/listWidget.ts
+  ^{ name: "isButton", status: "pure" };
+}
+
+!isSelectionSingleChangeEvent(event){
+  // Transposed from base/browser/ui/list/listWidget.ts
+  ^{ name: "isSelectionSingleChangeEvent", status: "pure" };
+}
+
+!isSelectionRangeChangeEvent(event){
+  // Transposed from base/browser/ui/list/listWidget.ts
+  ^{ name: "isSelectionRangeChangeEvent", status: "pure" };
+}
+
+!getTypeNavigationModeEnum(){
+  ^{ enumName: "TypeNavigationMode", members: ["Automatic", "Trigger"] };
+}
+
+=ex{isMonacoEditor,isMonacoCustomToggle,isActionItem,isMonacoTwistie,isStickyScrollElement,isStickyScrollContainer,isButton,isSelectionSingleChangeEvent,isSelectionRangeChangeEvent,getTypeNavigationModeEnum}

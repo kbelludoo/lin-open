@@ -1,0 +1,33 @@
+@LIN:workbench_contrib_chat_browser_chatSessions_chatSessions_contribution:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!applyCodexAgentHostPreference(contribution){
+  // Transposed from workbench/contrib/chat/browser/chatSessions/chatSessions.contribution.ts
+  ^{ name: "applyCodexAgentHostPreference", status: "pure" };
+}
+
+!openChatSession(accessor, openOptions, chatSendOptions?){
+  // Transposed from workbench/contrib/chat/browser/chatSessions/chatSessions.contribution.ts
+  ^{ name: "openChatSession", status: "pure" };
+}
+
+!getResourceForNewChatSession(options){
+  // Transposed from workbench/contrib/chat/browser/chatSessions/chatSessions.contribution.ts
+  ^{ name: "getResourceForNewChatSession", status: "pure" };
+}
+
+!getSessionStatusForModel(model){
+  // Transposed from workbench/contrib/chat/browser/chatSessions/chatSessions.contribution.ts
+  ^{ name: "getSessionStatusForModel", status: "pure" };
+}
+
+!chatResponseStateToSessionStatus(state){
+  // Transposed from workbench/contrib/chat/browser/chatSessions/chatSessions.contribution.ts
+  ^{ name: "chatResponseStateToSessionStatus", status: "pure" };
+}
+
+!getChatSessionPositionEnum(){
+  ^{ enumName: "ChatSessionPosition", members: ["Editor", "Sidebar"] };
+}
+
+=ex{applyCodexAgentHostPreference,openChatSession,getResourceForNewChatSession,getSessionStatusForModel,chatResponseStateToSessionStatus,getChatSessionPositionEnum}

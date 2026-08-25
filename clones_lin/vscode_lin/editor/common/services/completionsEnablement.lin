@@ -1,0 +1,19 @@
+@LIN:editor_common_services_completionsEnablement:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isCompletionsEnabled(configurationService, modeId){
+  // Transposed from editor/common/services/completionsEnablement.ts
+  ^{ name: "isCompletionsEnabled", status: "pure" };
+}
+
+!isCompletionsEnabledWithTextResourceConfig(configurationService, resource, modeId){
+  // Transposed from editor/common/services/completionsEnablement.ts
+  ^{ name: "isCompletionsEnabledWithTextResourceConfig", status: "pure" };
+}
+
+!isCompletionsEnabledFromObject(completionsEnablementObject, boolean> | undefined, modeId){
+  // Transposed from editor/common/services/completionsEnablement.ts
+  ^{ name: "isCompletionsEnabledFromObject", status: "pure" };
+}
+
+=ex{isCompletionsEnabled,isCompletionsEnabledWithTextResourceConfig,isCompletionsEnabledFromObject}

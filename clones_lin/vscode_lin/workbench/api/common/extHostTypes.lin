@@ -1,0 +1,968 @@
+@LIN:workbench_api_common_extHostTypes:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!asStatusBarItemIdentifier(extension, id){
+  // Transposed from workbench/api/common/extHostTypes.ts
+  ^{ name: "asStatusBarItemIdentifier", status: "pure" };
+}
+
+!toString(v){
+  // Transposed from workbench/api/common/extHostTypes.ts
+  ^{ name: "toString", status: "pure" };
+}
+
+!isViewBadge(thing){
+  // Transposed from workbench/api/common/extHostTypes.ts
+  ^{ name: "isViewBadge", status: "pure" };
+}
+
+!createDisposable(...args){
+  ^{ className: "Disposable", methods: ["from", "Disposable", "if", "for", "if", "dispose", "if"] };
+}
+
+!createResolvedAuthority(...args){
+  ^{ className: "ResolvedAuthority", methods: ["isResolvedAuthority", "if", "if"] };
+}
+
+!createManagedResolvedAuthority(...args){
+  ^{ className: "ManagedResolvedAuthority", methods: ["isManagedResolvedAuthority", "if"] };
+}
+
+!createRemoteAuthorityResolverError(...args){
+  ^{ className: "RemoteAuthorityResolverError", methods: ["NotAvailable", "TemporarilyNotAvailable"] };
+}
+
+!createHover(...args){
+  ^{ className: "Hover", methods: ["if"] };
+}
+
+!createVerboseHover(...args){
+  ^{ className: "VerboseHover", methods: [] };
+}
+
+!createDocumentHighlight(...args){
+  ^{ className: "DocumentHighlight", methods: ["toJSON"] };
+}
+
+!createMultiDocumentHighlight(...args){
+  ^{ className: "MultiDocumentHighlight", methods: ["toJSON"] };
+}
+
+!createDocumentSymbol(...args){
+  ^{ className: "DocumentSymbol", methods: ["validate", "if"] };
+}
+
+!createCodeAction(...args){
+  ^{ className: "CodeAction", methods: [] };
+}
+
+!createSelectionRange(...args){
+  ^{ className: "SelectionRange", methods: [] };
+}
+
+!createCallHierarchyItem(...args){
+  ^{ className: "CallHierarchyItem", methods: [] };
+}
+
+!createCallHierarchyIncomingCall(...args){
+  ^{ className: "CallHierarchyIncomingCall", methods: [] };
+}
+
+!createCallHierarchyOutgoingCall(...args){
+  ^{ className: "CallHierarchyOutgoingCall", methods: [] };
+}
+
+!createCodeLens(...args){
+  ^{ className: "CodeLens", methods: ["isResolved"] };
+}
+
+!createParameterInformation(...args){
+  ^{ className: "ParameterInformation", methods: [] };
+}
+
+!createSignatureInformation(...args){
+  ^{ className: "SignatureInformation", methods: [] };
+}
+
+!createSignatureHelp(...args){
+  ^{ className: "SignatureHelp", methods: [] };
+}
+
+!createInlayHintLabelPart(...args){
+  ^{ className: "InlayHintLabelPart", methods: [] };
+}
+
+!createCompletionList(...args){
+  ^{ className: "CompletionList", methods: [] };
+}
+
+!createDocumentLink(...args){
+  ^{ className: "DocumentLink", methods: [] };
+}
+
+!createColor(...args){
+  ^{ className: "Color", methods: [] };
+}
+
+!createColorInformation(...args){
+  ^{ className: "ColorInformation", methods: [] };
+}
+
+!createColorPresentation(...args){
+  ^{ className: "ColorPresentation", methods: ["if"] };
+}
+
+!createTerminalQuickFixOpener(...args){
+  ^{ className: "TerminalQuickFixOpener", methods: [] };
+}
+
+!createTerminalQuickFixCommand(...args){
+  ^{ className: "TerminalQuickFixCommand", methods: [] };
+}
+
+!createTreeItem(...args){
+  ^{ className: "TreeItem", methods: ["isTreeItem", "if", "if"] };
+}
+
+!createInternalDataTransferItem(...args){
+  ^{ className: "InternalDataTransferItem", methods: ["asFile"] };
+}
+
+!createDocumentDropEdit(...args){
+  ^{ className: "DocumentDropEdit", methods: [] };
+}
+
+!createDocumentDropOrPasteEditKind(...args){
+  ^{ className: "DocumentDropOrPasteEditKind", methods: ["append", "intersects", "contains"] };
+}
+
+!createDocumentPasteEdit(...args){
+  ^{ className: "DocumentPasteEdit", methods: [] };
+}
+
+!createThemeIcon(...args){
+  ^{ className: "ThemeIcon", methods: ["isThemeIcon", "if"] };
+}
+
+!createThemeColor(...args){
+  ^{ className: "ThemeColor", methods: [] };
+}
+
+!createBreakpoint(...args){
+  ^{ className: "Breakpoint", methods: ["if", "if", "if", "if", "id", "if"] };
+}
+
+!createSourceBreakpoint(...args){
+  ^{ className: "SourceBreakpoint", methods: ["if"] };
+}
+
+!createFunctionBreakpoint(...args){
+  ^{ className: "FunctionBreakpoint", methods: [] };
+}
+
+!createDataBreakpoint(...args){
+  ^{ className: "DataBreakpoint", methods: ["if"] };
+}
+
+!createFileSystemError(...args){
+  ^{ className: "FileSystemError", methods: ["FileExists", "FileNotFound", "FileNotADirectory", "FileIsADirectory", "NoPermissions", "Unavailable", "if"] };
+}
+
+!createFoldingRange(...args){
+  ^{ className: "FoldingRange", methods: [] };
+}
+
+!createSemanticTokensLegend(...args){
+  ^{ className: "SemanticTokensLegend", methods: [] };
+}
+
+!createSemanticTokensBuilder(...args){
+  ^{ className: "SemanticTokensBuilder", methods: ["if", "for", "for", "push", "if", "_push", "if", "if", "if", "for", "_pushEncoded", "for", "if", "if", "if", "_sortAndDeltaEncode", "for", "if", "for", "build", "if"] };
+}
+
+!createSemanticTokens(...args){
+  ^{ className: "SemanticTokens", methods: [] };
+}
+
+!createSemanticTokensEdit(...args){
+  ^{ className: "SemanticTokensEdit", methods: [] };
+}
+
+!createSemanticTokensEdits(...args){
+  ^{ className: "SemanticTokensEdits", methods: [] };
+}
+
+!createDebugVisualization(...args){
+  ^{ className: "DebugVisualization", methods: [] };
+}
+
+!createQuickInputButtons(...args){
+  ^{ className: "QuickInputButtons", methods: [] };
+}
+
+!createFileDecoration(...args){
+  ^{ className: "FileDecoration", methods: ["validate", "if", "if", "if", "if", "if"] };
+}
+
+!createCellErrorStackFrame(...args){
+  ^{ className: "CellErrorStackFrame", methods: [] };
+}
+
+!createNotebookCellStatusBarItem(...args){
+  ^{ className: "NotebookCellStatusBarItem", methods: [] };
+}
+
+!createNotebookRendererScript(...args){
+  ^{ className: "NotebookRendererScript", methods: [] };
+}
+
+!createNotebookKernelSourceAction(...args){
+  ^{ className: "NotebookKernelSourceAction", methods: [] };
+}
+
+!createLinkedEditingRanges(...args){
+  ^{ className: "LinkedEditingRanges", methods: [] };
+}
+
+!createPortAttributes(...args){
+  ^{ className: "PortAttributes", methods: ["autoForwardAction"] };
+}
+
+!createTestRunProfileBase(...args){
+  ^{ className: "TestRunProfileBase", methods: [] };
+}
+
+!createTestMessageStackFrame(...args){
+  ^{ className: "TestMessageStackFrame", methods: [] };
+}
+
+!createTypeHierarchyItem(...args){
+  ^{ className: "TypeHierarchyItem", methods: [] };
+}
+
+!createTextTabInput(...args){
+  ^{ className: "TextTabInput", methods: [] };
+}
+
+!createTextDiffTabInput(...args){
+  ^{ className: "TextDiffTabInput", methods: [] };
+}
+
+!createTextMergeTabInput(...args){
+  ^{ className: "TextMergeTabInput", methods: [] };
+}
+
+!createCustomEditorTabInput(...args){
+  ^{ className: "CustomEditorTabInput", methods: [] };
+}
+
+!createWebviewEditorTabInput(...args){
+  ^{ className: "WebviewEditorTabInput", methods: [] };
+}
+
+!createNotebookEditorTabInput(...args){
+  ^{ className: "NotebookEditorTabInput", methods: [] };
+}
+
+!createNotebookDiffEditorTabInput(...args){
+  ^{ className: "NotebookDiffEditorTabInput", methods: [] };
+}
+
+!createTerminalEditorTabInput(...args){
+  ^{ className: "TerminalEditorTabInput", methods: [] };
+}
+
+!createInteractiveWindowInput(...args){
+  ^{ className: "InteractiveWindowInput", methods: [] };
+}
+
+!createChatEditorTabInput(...args){
+  ^{ className: "ChatEditorTabInput", methods: [] };
+}
+
+!createTextMultiDiffTabInput(...args){
+  ^{ className: "TextMultiDiffTabInput", methods: [] };
+}
+
+!createChatResponseMarkdownPart(...args){
+  ^{ className: "ChatResponseMarkdownPart", methods: ["if"] };
+}
+
+!createChatResponseMarkdownWithVulnerabilitiesPart(...args){
+  ^{ className: "ChatResponseMarkdownWithVulnerabilitiesPart", methods: ["if"] };
+}
+
+!createChatResponseConfirmationPart(...args){
+  ^{ className: "ChatResponseConfirmationPart", methods: [] };
+}
+
+!createChatResponseFileTreePart(...args){
+  ^{ className: "ChatResponseFileTreePart", methods: [] };
+}
+
+!createChatResponseMultiDiffPart(...args){
+  ^{ className: "ChatResponseMultiDiffPart", methods: [] };
+}
+
+!createMcpToolInvocationContentData(...args){
+  ^{ className: "McpToolInvocationContentData", methods: [] };
+}
+
+!createChatSubagentToolInvocationData(...args){
+  ^{ className: "ChatSubagentToolInvocationData", methods: [] };
+}
+
+!createChatResponseExternalEditPart(...args){
+  ^{ className: "ChatResponseExternalEditPart", methods: [] };
+}
+
+!createChatResponseProgressPart(...args){
+  ^{ className: "ChatResponseProgressPart", methods: [] };
+}
+
+!createChatResponseProgressPart2(...args){
+  ^{ className: "ChatResponseProgressPart2", methods: [] };
+}
+
+!createChatResponseThinkingProgressPart(...args){
+  ^{ className: "ChatResponseThinkingProgressPart", methods: [] };
+}
+
+!createChatResponseHookPart(...args){
+  ^{ className: "ChatResponseHookPart", methods: [] };
+}
+
+!createChatResponseVoiceProgressPart(...args){
+  ^{ className: "ChatResponseVoiceProgressPart", methods: [] };
+}
+
+!createChatResponseAutoModeResolutionPart(...args){
+  ^{ className: "ChatResponseAutoModeResolutionPart", methods: [] };
+}
+
+!createChatResponseWarningPart(...args){
+  ^{ className: "ChatResponseWarningPart", methods: ["if"] };
+}
+
+!createChatResponseInfoPart(...args){
+  ^{ className: "ChatResponseInfoPart", methods: ["if"] };
+}
+
+!createChatResponseCommandButtonPart(...args){
+  ^{ className: "ChatResponseCommandButtonPart", methods: [] };
+}
+
+!createChatResponseReferencePart(...args){
+  ^{ className: "ChatResponseReferencePart", methods: [] };
+}
+
+!createChatResponseCodeblockUriPart(...args){
+  ^{ className: "ChatResponseCodeblockUriPart", methods: [] };
+}
+
+!createChatResponseCodeCitationPart(...args){
+  ^{ className: "ChatResponseCodeCitationPart", methods: [] };
+}
+
+!createChatResponseMovePart(...args){
+  ^{ className: "ChatResponseMovePart", methods: [] };
+}
+
+!createChatResponseExtensionsPart(...args){
+  ^{ className: "ChatResponseExtensionsPart", methods: [] };
+}
+
+!createChatResponsePullRequestPart(...args){
+  ^{ className: "ChatResponsePullRequestPart", methods: ["toJSON"] };
+}
+
+!createChatQuestion(...args){
+  ^{ className: "ChatQuestion", methods: [] };
+}
+
+!createChatResponseQuestionCarouselPart(...args){
+  ^{ className: "ChatResponseQuestionCarouselPart", methods: [] };
+}
+
+!createChatToolInvocationPart(...args){
+  ^{ className: "ChatToolInvocationPart", methods: [] };
+}
+
+!createChatSessionCustomizationType(...args){
+  ^{ className: "ChatSessionCustomizationType", methods: [] };
+}
+
+!createChatDebugToolCallEvent(...args){
+  ^{ className: "ChatDebugToolCallEvent", methods: [] };
+}
+
+!createChatDebugModelTurnEvent(...args){
+  ^{ className: "ChatDebugModelTurnEvent", methods: [] };
+}
+
+!createChatDebugGenericEvent(...args){
+  ^{ className: "ChatDebugGenericEvent", methods: [] };
+}
+
+!createChatDebugSubagentInvocationEvent(...args){
+  ^{ className: "ChatDebugSubagentInvocationEvent", methods: [] };
+}
+
+!createChatDebugMessageSection(...args){
+  ^{ className: "ChatDebugMessageSection", methods: [] };
+}
+
+!createChatDebugUserMessageEvent(...args){
+  ^{ className: "ChatDebugUserMessageEvent", methods: [] };
+}
+
+!createChatDebugAgentResponseEvent(...args){
+  ^{ className: "ChatDebugAgentResponseEvent", methods: [] };
+}
+
+!createChatDebugEventTextContent(...args){
+  ^{ className: "ChatDebugEventTextContent", methods: [] };
+}
+
+!createChatDebugEventMessageContent(...args){
+  ^{ className: "ChatDebugEventMessageContent", methods: [] };
+}
+
+!createChatDebugEventToolCallContent(...args){
+  ^{ className: "ChatDebugEventToolCallContent", methods: [] };
+}
+
+!createChatDebugEventModelTurnContent(...args){
+  ^{ className: "ChatDebugEventModelTurnContent", methods: [] };
+}
+
+!createChatDebugEventHookContent(...args){
+  ^{ className: "ChatDebugEventHookContent", methods: [] };
+}
+
+!createChatSessionChangedFile(...args){
+  ^{ className: "ChatSessionChangedFile", methods: [] };
+}
+
+!createLanguageModelPromptTsxPart(...args){
+  ^{ className: "LanguageModelPromptTsxPart", methods: ["toJSON"] };
+}
+
+!createLanguageModelChatSystemMessage(...args){
+  ^{ className: "LanguageModelChatSystemMessage", methods: [] };
+}
+
+!createLanguageModelChatUserMessage(...args){
+  ^{ className: "LanguageModelChatUserMessage", methods: [] };
+}
+
+!createLanguageModelChatAssistantMessage(...args){
+  ^{ className: "LanguageModelChatAssistantMessage", methods: [] };
+}
+
+!createLanguageModelError(...args){
+  ^{ className: "LanguageModelError", methods: ["NotFound", "NoPermissions", "Blocked", "tryDeserialize", "if"] };
+}
+
+!createLanguageModelToolResult(...args){
+  ^{ className: "LanguageModelToolResult", methods: ["toJSON"] };
+}
+
+!createLanguageModelToolResult2(...args){
+  ^{ className: "LanguageModelToolResult2", methods: ["toJSON"] };
+}
+
+!createExtendedLanguageModelToolResult(...args){
+  ^{ className: "ExtendedLanguageModelToolResult", methods: [] };
+}
+
+!getTerminalOutputAnchorEnum(){
+  ^{ enumName: "TerminalOutputAnchor", members: ["Top", "Bottom"] };
+}
+
+!getTerminalQuickFixTypeEnum(){
+  ^{ enumName: "TerminalQuickFixType", members: ["TerminalCommand", "Opener", "Command"] };
+}
+
+!getEnvironmentVariableMutatorTypeEnum(){
+  ^{ enumName: "EnvironmentVariableMutatorType", members: ["Replace", "Append", "Prepend"] };
+}
+
+!getHoverVerbosityActionEnum(){
+  ^{ enumName: "HoverVerbosityAction", members: ["Increase", "Decrease"] };
+}
+
+!getDocumentHighlightKindEnum(){
+  ^{ enumName: "DocumentHighlightKind", members: ["Text", "Read", "Write"] };
+}
+
+!getCodeActionTriggerKindEnum(){
+  ^{ enumName: "CodeActionTriggerKind", members: ["Invoke", "Automatic"] };
+}
+
+!getLanguageStatusSeverityEnum(){
+  ^{ enumName: "LanguageStatusSeverity", members: ["Information", "Warning", "Error"] };
+}
+
+!getSignatureHelpTriggerKindEnum(){
+  ^{ enumName: "SignatureHelpTriggerKind", members: ["Invoke", "TriggerCharacter", "ContentChange"] };
+}
+
+!getInlayHintKindEnum(){
+  ^{ enumName: "InlayHintKind", members: ["Type", "Parameter"] };
+}
+
+!getCompletionTriggerKindEnum(){
+  ^{ enumName: "CompletionTriggerKind", members: ["Invoke", "TriggerCharacter", "TriggerForIncompleteCompletions"] };
+}
+
+!getCompletionItemKindEnum(){
+  ^{ enumName: "CompletionItemKind", members: ["Text", "Method", "Function", "Constructor", "Field", "Variable", "Class", "Interface", "Module", "Property", "Unit", "Value", "Enum", "Keyword", "Snippet", "Color", "File", "Reference", "Folder", "EnumMember", "Constant", "Struct", "Event", "Operator", "TypeParameter", "User", "Issue"] };
+}
+
+!getCompletionItemTagEnum(){
+  ^{ enumName: "CompletionItemTag", members: ["Deprecated"] };
+}
+
+!getPartialAcceptTriggerKindEnum(){
+  ^{ enumName: "PartialAcceptTriggerKind", members: ["Unknown", "Word", "Line", "Suggest"] };
+}
+
+!getInlineCompletionEndOfLifeReasonKindEnum(){
+  ^{ enumName: "InlineCompletionEndOfLifeReasonKind", members: ["Accepted", "Rejected", "Ignored"] };
+}
+
+!getInlineCompletionDisplayLocationKindEnum(){
+  ^{ enumName: "InlineCompletionDisplayLocationKind", members: ["Code", "Label"] };
+}
+
+!getViewColumnEnum(){
+  ^{ enumName: "ViewColumn", members: ["Active", "Beside", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"] };
+}
+
+!getStatusBarAlignmentEnum(){
+  ^{ enumName: "StatusBarAlignment", members: ["Left", "Right"] };
+}
+
+!getTextEditorLineNumbersStyleEnum(){
+  ^{ enumName: "TextEditorLineNumbersStyle", members: ["Off", "On", "Relative", "Interval"] };
+}
+
+!getTextDocumentSaveReasonEnum(){
+  ^{ enumName: "TextDocumentSaveReason", members: ["Manual", "AfterDelay", "FocusOut"] };
+}
+
+!getTextEditorRevealTypeEnum(){
+  ^{ enumName: "TextEditorRevealType", members: ["Default", "InCenter", "InCenterIfOutsideViewport", "AtTop"] };
+}
+
+!getTextEditorSelectionChangeKindEnum(){
+  ^{ enumName: "TextEditorSelectionChangeKind", members: ["Keyboard", "Mouse", "Command"] };
+}
+
+!getTextEditorChangeKindEnum(){
+  ^{ enumName: "TextEditorChangeKind", members: ["Addition", "Deletion", "Modification"] };
+}
+
+!getTextDocumentChangeReasonEnum(){
+  ^{ enumName: "TextDocumentChangeReason", members: ["Undo", "Redo"] };
+}
+
+!getDecorationRangeBehaviorEnum(){
+  ^{ enumName: "DecorationRangeBehavior", members: ["/**
+	 * TrackedRangeStickiness.AlwaysGrowsWhenTypingAtEdges
+	 */
+	OpenOpen", "/**
+	 * TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges
+	 */
+	ClosedClosed", "/**
+	 * TrackedRangeStickiness.GrowsOnlyWhenTypingBefore
+	 */
+	OpenClosed", "/**
+	 * TrackedRangeStickiness.GrowsOnlyWhenTypingAfter
+	 */
+	ClosedOpen"] };
+}
+
+!getSyntaxTokenTypeEnum(){
+  ^{ enumName: "SyntaxTokenType", members: ["Other", "Comment", "String", "RegEx"] };
+}
+
+!getColorFormatEnum(){
+  ^{ enumName: "ColorFormat", members: ["RGB", "HEX", "HSL"] };
+}
+
+!getSourceControlInputBoxValidationTypeEnum(){
+  ^{ enumName: "SourceControlInputBoxValidationType", members: ["Error", "Warning", "Information"] };
+}
+
+!getTerminalExitReasonEnum(){
+  ^{ enumName: "TerminalExitReason", members: ["Unknown", "Shutdown", "Process", "User", "Extension"] };
+}
+
+!getTerminalShellExecutionCommandLineConfidenceEnum(){
+  ^{ enumName: "TerminalShellExecutionCommandLineConfidence", members: ["Low", "Medium", "High"] };
+}
+
+!getTerminalShellTypeEnum(){
+  ^{ enumName: "TerminalShellType", members: ["Sh", "Bash", "Fish", "Csh", "Ksh", "Zsh", "CommandPrompt", "GitBash", "PowerShell", "Python", "Julia", "NuShell", "Node", "Xonsh"] };
+}
+
+!getTerminalLocationEnum(){
+  ^{ enumName: "TerminalLocation", members: ["Panel", "Editor"] };
+}
+
+!getTerminalCompletionItemKindEnum(){
+  ^{ enumName: "TerminalCompletionItemKind", members: ["File", "Folder", "Method", "Alias", "Argument", "Option", "OptionValue", "Flag", "SymbolicLinkFile", "SymbolicLinkFolder", "ScmCommit", "ScmBranch", "ScmTag", "ScmStash", "ScmRemote", "PullRequest", "PullRequestDone"] };
+}
+
+!getTaskRevealKindEnum(){
+  ^{ enumName: "TaskRevealKind", members: ["Always", "Silent", "Never"] };
+}
+
+!getTaskEventKindEnum(){
+  ^{ enumName: "TaskEventKind", members: ["/** Indicates a task's properties or configuration have changed */
+	Changed", "/** Indicates a task has begun executing */
+	ProcessStarted", "/** Indicates a task process has completed */
+	ProcessEnded", "/** Indicates a task was terminated", "either by user action or by the system */
+	Terminated", "/** Indicates a task has started running */
+	Start", "/** Indicates a task has acquired all needed input/variables to execute */
+	AcquiredInput", "/** Indicates a dependent task has started */
+	DependsOnStarted", "/** Indicates a task is actively running/processing */
+	Active", "/** Indicates a task is paused/waiting but not complete */
+	Inactive", "/** Indicates a task has completed fully */
+	End", "/** Indicates the task's problem matcher has started */
+	ProblemMatcherStarted", "/** Indicates the task's problem matcher has ended without errors */
+	ProblemMatcherEnded", "/** Indicates the task's problem matcher has ended with errors */
+	ProblemMatcherFoundErrors"] };
+}
+
+!getTaskPanelKindEnum(){
+  ^{ enumName: "TaskPanelKind", members: ["Shared", "Dedicated", "New"] };
+}
+
+!getShellQuotingEnum(){
+  ^{ enumName: "ShellQuoting", members: ["Escape", "Strong", "Weak"] };
+}
+
+!getTaskScopeEnum(){
+  ^{ enumName: "TaskScope", members: ["Global", "Workspace"] };
+}
+
+!getTaskRunOnEnum(){
+  ^{ enumName: "TaskRunOn", members: ["Default", "FolderOpen", "WorktreeCreated"] };
+}
+
+!getProgressLocationEnum(){
+  ^{ enumName: "ProgressLocation", members: ["SourceControl", "Window", "Notification"] };
+}
+
+!getTreeItemCollapsibleStateEnum(){
+  ^{ enumName: "TreeItemCollapsibleState", members: ["None", "Collapsed", "Expanded"] };
+}
+
+!getTreeItemCheckboxStateEnum(){
+  ^{ enumName: "TreeItemCheckboxState", members: ["Unchecked", "Checked"] };
+}
+
+!getDocumentPasteTriggerKindEnum(){
+  ^{ enumName: "DocumentPasteTriggerKind", members: ["Automatic", "PasteAs"] };
+}
+
+!getConfigurationTargetEnum(){
+  ^{ enumName: "ConfigurationTarget", members: ["Global", "Workspace", "WorkspaceFolder"] };
+}
+
+!getInlineCompletionTriggerKindEnum(){
+  ^{ enumName: "InlineCompletionTriggerKind", members: ["Invoke", "Automatic"] };
+}
+
+!getInlineCompletionsDisposeReasonKindEnum(){
+  ^{ enumName: "InlineCompletionsDisposeReasonKind", members: ["Other", "Empty", "TokenCancellation", "LostRace", "NotTaken"] };
+}
+
+!getNewSymbolNameTagEnum(){
+  ^{ enumName: "NewSymbolNameTag", members: ["AIGenerated"] };
+}
+
+!getNewSymbolNameTriggerKindEnum(){
+  ^{ enumName: "NewSymbolNameTriggerKind", members: ["Invoke", "Automatic"] };
+}
+
+!getFileChangeTypeEnum(){
+  ^{ enumName: "FileChangeType", members: ["Changed", "Created", "Deleted"] };
+}
+
+!getFoldingRangeKindEnum(){
+  ^{ enumName: "FoldingRangeKind", members: ["Comment", "Imports", "Region"] };
+}
+
+!getCommentThreadCollapsibleStateEnum(){
+  ^{ enumName: "CommentThreadCollapsibleState", members: ["/**
+	 * Determines an item is collapsed
+	 */
+	Collapsed", "/**
+	 * Determines an item is expanded
+	 */
+	Expanded"] };
+}
+
+!getCommentModeEnum(){
+  ^{ enumName: "CommentMode", members: ["Editing", "Preview"] };
+}
+
+!getCommentStateEnum(){
+  ^{ enumName: "CommentState", members: ["Published", "Draft"] };
+}
+
+!getCommentThreadStateEnum(){
+  ^{ enumName: "CommentThreadState", members: ["Unresolved", "Resolved"] };
+}
+
+!getCommentThreadApplicabilityEnum(){
+  ^{ enumName: "CommentThreadApplicability", members: ["Current", "Outdated"] };
+}
+
+!getCommentThreadFocusEnum(){
+  ^{ enumName: "CommentThreadFocus", members: ["Reply", "Comment"] };
+}
+
+!getDebugConsoleModeEnum(){
+  ^{ enumName: "DebugConsoleMode", members: ["/**
+	 * Debug session should have a separate debug console.
+	 */
+	Separate", "/**
+	 * Debug session should share debug console with its parent session.
+	 * This value has no effect for sessions which do not have a parent session.
+	 */
+	MergeWithParent"] };
+}
+
+!getQuickInputButtonLocationEnum(){
+  ^{ enumName: "QuickInputButtonLocation", members: ["Title", "Inline", "Input"] };
+}
+
+!getQuickPickItemKindEnum(){
+  ^{ enumName: "QuickPickItemKind", members: ["Separator", "Default"] };
+}
+
+!getInputBoxValidationSeverityEnum(){
+  ^{ enumName: "InputBoxValidationSeverity", members: ["Info", "Warning", "Error"] };
+}
+
+!getExtensionKindEnum(){
+  ^{ enumName: "ExtensionKind", members: ["UI", "Workspace"] };
+}
+
+!getColorThemeKindEnum(){
+  ^{ enumName: "ColorThemeKind", members: ["Light", "Dark", "HighContrast", "HighContrastLight"] };
+}
+
+!getNotebookCellExecutionStateEnum(){
+  ^{ enumName: "NotebookCellExecutionState", members: ["Idle", "Pending", "Executing"] };
+}
+
+!getNotebookCellStatusBarAlignmentEnum(){
+  ^{ enumName: "NotebookCellStatusBarAlignment", members: ["Left", "Right"] };
+}
+
+!getNotebookEditorRevealTypeEnum(){
+  ^{ enumName: "NotebookEditorRevealType", members: ["Default", "InCenter", "InCenterIfOutsideViewport", "AtTop"] };
+}
+
+!getNotebookControllerAffinityEnum(){
+  ^{ enumName: "NotebookControllerAffinity", members: ["Default", "Preferred"] };
+}
+
+!getNotebookControllerAffinity2Enum(){
+  ^{ enumName: "NotebookControllerAffinity2", members: ["Default", "Preferred", "Hidden"] };
+}
+
+!getNotebookVariablesRequestKindEnum(){
+  ^{ enumName: "NotebookVariablesRequestKind", members: ["Named", "Indexed"] };
+}
+
+!getExtensionModeEnum(){
+  ^{ enumName: "ExtensionMode", members: ["/**
+	 * The extension is installed normally (for example", "from the marketplace
+	 * or VSIX) in VS Code.
+	 */
+	Production", "/**
+	 * The extension is running from an `--extensionDevelopmentPath` provided
+	 * when launching VS Code.
+	 */
+	Development", "/**
+	 * The extension is running from an `--extensionDevelopmentPath` and
+	 * the extension host is running unit tests.
+	 */
+	Test"] };
+}
+
+!getExtensionRuntimeEnum(){
+  ^{ enumName: "ExtensionRuntime", members: ["/**
+	 * The extension is running in a NodeJS extension host. Runtime access to NodeJS APIs is available.
+	 */
+	Node", "/**
+	 * The extension is running in a Webworker extension host. Runtime access is limited to Webworker APIs.
+	 */
+	Webworker"] };
+}
+
+!getStandardTokenTypeEnum(){
+  ^{ enumName: "StandardTokenType", members: ["Other", "Comment", "String", "RegEx"] };
+}
+
+!getSyntaxHighlightingTokenFontStyleEnum(){
+  ^{ enumName: "SyntaxHighlightingTokenFontStyle", members: ["None", "Italic", "Bold", "Underline", "Strikethrough"] };
+}
+
+!getTestResultStateEnum(){
+  ^{ enumName: "TestResultState", members: ["Queued", "Running", "Passed", "Failed", "Skipped", "Errored"] };
+}
+
+!getTestRunProfileKindEnum(){
+  ^{ enumName: "TestRunProfileKind", members: ["Run", "Debug", "Coverage"] };
+}
+
+!getExternalUriOpenerPriorityEnum(){
+  ^{ enumName: "ExternalUriOpenerPriority", members: ["None", "Option", "Default", "Preferred"] };
+}
+
+!getWorkspaceTrustStateEnum(){
+  ^{ enumName: "WorkspaceTrustState", members: ["Untrusted", "Trusted", "Unspecified"] };
+}
+
+!getPortAutoForwardActionEnum(){
+  ^{ enumName: "PortAutoForwardAction", members: ["Notify", "OpenBrowser", "OpenPreview", "Silent", "Ignore", "OpenBrowserOnce"] };
+}
+
+!getInteractiveSessionVoteDirectionEnum(){
+  ^{ enumName: "InteractiveSessionVoteDirection", members: ["Down", "Up"] };
+}
+
+!getChatCopyKindEnum(){
+  ^{ enumName: "ChatCopyKind", members: ["Action", "Toolbar"] };
+}
+
+!getChatVariableLevelEnum(){
+  ^{ enumName: "ChatVariableLevel", members: ["Short", "Medium", "Full"] };
+}
+
+!getChatEditingSessionActionOutcomeEnum(){
+  ^{ enumName: "ChatEditingSessionActionOutcome", members: ["Accepted", "Rejected", "Saved"] };
+}
+
+!getChatRequestEditedFileEventKindEnum(){
+  ^{ enumName: "ChatRequestEditedFileEventKind", members: ["Keep", "Undo", "UserModification"] };
+}
+
+!getInteractiveEditorResponseFeedbackKindEnum(){
+  ^{ enumName: "InteractiveEditorResponseFeedbackKind", members: ["Unhelpful", "Helpful", "Undone", "Accepted", "Bug"] };
+}
+
+!getChatResultFeedbackKindEnum(){
+  ^{ enumName: "ChatResultFeedbackKind", members: ["Unhelpful", "Helpful"] };
+}
+
+!getChatQuestionTypeEnum(){
+  ^{ enumName: "ChatQuestionType", members: ["/**
+	 * A free-form text input question.
+	 */
+	Text", "/**
+	 * A single-select question with radio buttons.
+	 */
+	SingleSelect", "/**
+	 * A multi-select question with checkboxes.
+	 */
+	MultiSelect"] };
+}
+
+!getChatTodoStatusEnum(){
+  ^{ enumName: "ChatTodoStatus", members: ["NotStarted", "InProgress", "Completed"] };
+}
+
+!getChatDebugSubagentStatusEnum(){
+  ^{ enumName: "ChatDebugSubagentStatus", members: ["Running", "Completed", "Failed"] };
+}
+
+!getChatLocationEnum(){
+  ^{ enumName: "ChatLocation", members: ["Panel", "Terminal", "Notebook", "Editor"] };
+}
+
+!getChatSessionStatusEnum(){
+  ^{ enumName: "ChatSessionStatus", members: ["Failed", "Completed", "InProgress", "NeedsInput"] };
+}
+
+!getChatDebugLogLevelEnum(){
+  ^{ enumName: "ChatDebugLogLevel", members: ["Trace", "Info", "Warning", "Error"] };
+}
+
+!getChatDebugToolCallResultEnum(){
+  ^{ enumName: "ChatDebugToolCallResult", members: ["Success", "Error"] };
+}
+
+!getChatDebugHookResultEnum(){
+  ^{ enumName: "ChatDebugHookResult", members: ["Success", "Error", "NonBlockingError"] };
+}
+
+!getChatDebugMessageContentTypeEnum(){
+  ^{ enumName: "ChatDebugMessageContentType", members: ["User", "Agent"] };
+}
+
+!getChatResponseReferencePartStatusKindEnum(){
+  ^{ enumName: "ChatResponseReferencePartStatusKind", members: ["Complete", "Partial", "Omitted"] };
+}
+
+!getChatResponseClearToPreviousToolInvocationReasonEnum(){
+  ^{ enumName: "ChatResponseClearToPreviousToolInvocationReason", members: ["NoReason", "FilteredContentRetry", "CopyrightContentRetry"] };
+}
+
+!getLanguageModelChatMessageRoleEnum(){
+  ^{ enumName: "LanguageModelChatMessageRole", members: ["User", "Assistant", "System"] };
+}
+
+!getChatErrorLevelEnum(){
+  ^{ enumName: "ChatErrorLevel", members: ["Info", "Warning", "Error"] };
+}
+
+!getChatInputNotificationSeverityEnum(){
+  ^{ enumName: "ChatInputNotificationSeverity", members: ["Info", "Warning", "Error"] };
+}
+
+!getLanguageModelPartAudienceEnum(){
+  ^{ enumName: "LanguageModelPartAudience", members: ["Assistant", "User", "Extension"] };
+}
+
+!getChatImageMimeTypeEnum(){
+  ^{ enumName: "ChatImageMimeType", members: ["PNG", "JPEG", "GIF", "WEBP", "BMP"] };
+}
+
+!getLanguageModelChatToolModeEnum(){
+  ^{ enumName: "LanguageModelChatToolMode", members: ["Auto", "Required"] };
+}
+
+!getRelatedInformationTypeEnum(){
+  ^{ enumName: "RelatedInformationType", members: ["SymbolInformation", "CommandInformation", "SearchInformation", "SettingInformation"] };
+}
+
+!getSettingsSearchResultKindEnum(){
+  ^{ enumName: "SettingsSearchResultKind", members: ["EMBEDDED", "LLM_RANKED", "CANCELED"] };
+}
+
+!getSpeechToTextStatusEnum(){
+  ^{ enumName: "SpeechToTextStatus", members: ["Started", "Recognizing", "Recognized", "Stopped", "Error"] };
+}
+
+!getTextToSpeechStatusEnum(){
+  ^{ enumName: "TextToSpeechStatus", members: ["Started", "Stopped", "Error"] };
+}
+
+!getKeywordRecognitionStatusEnum(){
+  ^{ enumName: "KeywordRecognitionStatus", members: ["Recognized", "Stopped"] };
+}
+
+!getMcpToolAvailabilityEnum(){
+  ^{ enumName: "McpToolAvailability", members: ["Initial", "Dynamic"] };
+}
+
+=ex{asStatusBarItemIdentifier,toString,isViewBadge,createDisposable,createResolvedAuthority,createManagedResolvedAuthority,createRemoteAuthorityResolverError,createHover,createVerboseHover,createDocumentHighlight,createMultiDocumentHighlight,createDocumentSymbol,createCodeAction,createSelectionRange,createCallHierarchyItem,createCallHierarchyIncomingCall,createCallHierarchyOutgoingCall,createCodeLens,createParameterInformation,createSignatureInformation,createSignatureHelp,createInlayHintLabelPart,createCompletionList,createDocumentLink,createColor,createColorInformation,createColorPresentation,createTerminalQuickFixOpener,createTerminalQuickFixCommand,createTreeItem,createInternalDataTransferItem,createDocumentDropEdit,createDocumentDropOrPasteEditKind,createDocumentPasteEdit,createThemeIcon,createThemeColor,createBreakpoint,createSourceBreakpoint,createFunctionBreakpoint,createDataBreakpoint,createFileSystemError,createFoldingRange,createSemanticTokensLegend,createSemanticTokensBuilder,createSemanticTokens,createSemanticTokensEdit,createSemanticTokensEdits,createDebugVisualization,createQuickInputButtons,createFileDecoration,createCellErrorStackFrame,createNotebookCellStatusBarItem,createNotebookRendererScript,createNotebookKernelSourceAction,createLinkedEditingRanges,createPortAttributes,createTestRunProfileBase,createTestMessageStackFrame,createTypeHierarchyItem,createTextTabInput,createTextDiffTabInput,createTextMergeTabInput,createCustomEditorTabInput,createWebviewEditorTabInput,createNotebookEditorTabInput,createNotebookDiffEditorTabInput,createTerminalEditorTabInput,createInteractiveWindowInput,createChatEditorTabInput,createTextMultiDiffTabInput,createChatResponseMarkdownPart,createChatResponseMarkdownWithVulnerabilitiesPart,createChatResponseConfirmationPart,createChatResponseFileTreePart,createChatResponseMultiDiffPart,createMcpToolInvocationContentData,createChatSubagentToolInvocationData,createChatResponseExternalEditPart,createChatResponseProgressPart,createChatResponseProgressPart2,createChatResponseThinkingProgressPart,createChatResponseHookPart,createChatResponseVoiceProgressPart,createChatResponseAutoModeResolutionPart,createChatResponseWarningPart,createChatResponseInfoPart,createChatResponseCommandButtonPart,createChatResponseReferencePart,createChatResponseCodeblockUriPart,createChatResponseCodeCitationPart,createChatResponseMovePart,createChatResponseExtensionsPart,createChatResponsePullRequestPart,createChatQuestion,createChatResponseQuestionCarouselPart,createChatToolInvocationPart,createChatSessionCustomizationType,createChatDebugToolCallEvent,createChatDebugModelTurnEvent,createChatDebugGenericEvent,createChatDebugSubagentInvocationEvent,createChatDebugMessageSection,createChatDebugUserMessageEvent,createChatDebugAgentResponseEvent,createChatDebugEventTextContent,createChatDebugEventMessageContent,createChatDebugEventToolCallContent,createChatDebugEventModelTurnContent,createChatDebugEventHookContent,createChatSessionChangedFile,createLanguageModelPromptTsxPart,createLanguageModelChatSystemMessage,createLanguageModelChatUserMessage,createLanguageModelChatAssistantMessage,createLanguageModelError,createLanguageModelToolResult,createLanguageModelToolResult2,createExtendedLanguageModelToolResult,getTerminalOutputAnchorEnum,getTerminalQuickFixTypeEnum,getEnvironmentVariableMutatorTypeEnum,getHoverVerbosityActionEnum,getDocumentHighlightKindEnum,getCodeActionTriggerKindEnum,getLanguageStatusSeverityEnum,getSignatureHelpTriggerKindEnum,getInlayHintKindEnum,getCompletionTriggerKindEnum,getCompletionItemKindEnum,getCompletionItemTagEnum,getPartialAcceptTriggerKindEnum,getInlineCompletionEndOfLifeReasonKindEnum,getInlineCompletionDisplayLocationKindEnum,getViewColumnEnum,getStatusBarAlignmentEnum,getTextEditorLineNumbersStyleEnum,getTextDocumentSaveReasonEnum,getTextEditorRevealTypeEnum,getTextEditorSelectionChangeKindEnum,getTextEditorChangeKindEnum,getTextDocumentChangeReasonEnum,getDecorationRangeBehaviorEnum,getSyntaxTokenTypeEnum,getColorFormatEnum,getSourceControlInputBoxValidationTypeEnum,getTerminalExitReasonEnum,getTerminalShellExecutionCommandLineConfidenceEnum,getTerminalShellTypeEnum,getTerminalLocationEnum,getTerminalCompletionItemKindEnum,getTaskRevealKindEnum,getTaskEventKindEnum,getTaskPanelKindEnum,getShellQuotingEnum,getTaskScopeEnum,getTaskRunOnEnum,getProgressLocationEnum,getTreeItemCollapsibleStateEnum,getTreeItemCheckboxStateEnum,getDocumentPasteTriggerKindEnum,getConfigurationTargetEnum,getInlineCompletionTriggerKindEnum,getInlineCompletionsDisposeReasonKindEnum,getNewSymbolNameTagEnum,getNewSymbolNameTriggerKindEnum,getFileChangeTypeEnum,getFoldingRangeKindEnum,getCommentThreadCollapsibleStateEnum,getCommentModeEnum,getCommentStateEnum,getCommentThreadStateEnum,getCommentThreadApplicabilityEnum,getCommentThreadFocusEnum,getDebugConsoleModeEnum,getQuickInputButtonLocationEnum,getQuickPickItemKindEnum,getInputBoxValidationSeverityEnum,getExtensionKindEnum,getColorThemeKindEnum,getNotebookCellExecutionStateEnum,getNotebookCellStatusBarAlignmentEnum,getNotebookEditorRevealTypeEnum,getNotebookControllerAffinityEnum,getNotebookControllerAffinity2Enum,getNotebookVariablesRequestKindEnum,getExtensionModeEnum,getExtensionRuntimeEnum,getStandardTokenTypeEnum,getSyntaxHighlightingTokenFontStyleEnum,getTestResultStateEnum,getTestRunProfileKindEnum,getExternalUriOpenerPriorityEnum,getWorkspaceTrustStateEnum,getPortAutoForwardActionEnum,getInteractiveSessionVoteDirectionEnum,getChatCopyKindEnum,getChatVariableLevelEnum,getChatEditingSessionActionOutcomeEnum,getChatRequestEditedFileEventKindEnum,getInteractiveEditorResponseFeedbackKindEnum,getChatResultFeedbackKindEnum,getChatQuestionTypeEnum,getChatTodoStatusEnum,getChatDebugSubagentStatusEnum,getChatLocationEnum,getChatSessionStatusEnum,getChatDebugLogLevelEnum,getChatDebugToolCallResultEnum,getChatDebugHookResultEnum,getChatDebugMessageContentTypeEnum,getChatResponseReferencePartStatusKindEnum,getChatResponseClearToPreviousToolInvocationReasonEnum,getLanguageModelChatMessageRoleEnum,getChatErrorLevelEnum,getChatInputNotificationSeverityEnum,getLanguageModelPartAudienceEnum,getChatImageMimeTypeEnum,getLanguageModelChatToolModeEnum,getRelatedInformationTypeEnum,getSettingsSearchResultKindEnum,getSpeechToTextStatusEnum,getTextToSpeechStatusEnum,getKeywordRecognitionStatusEnum,getMcpToolAvailabilityEnum}

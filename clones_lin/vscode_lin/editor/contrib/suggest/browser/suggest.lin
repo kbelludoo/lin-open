@@ -1,0 +1,36 @@
+@LIN:editor_contrib_suggest_browser_suggest:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getSnippetSuggestSupport(){
+  // Transposed from editor/contrib/suggest/browser/suggest.ts
+  ^{ name: "getSnippetSuggestSupport", status: "pure" };
+}
+
+!setSnippetSuggestSupport(support){
+  // Transposed from editor/contrib/suggest/browser/suggest.ts
+  ^{ name: "setSnippetSuggestSupport", status: "pure" };
+}
+
+!provideSuggestionItems(registry, model, position, options, context, token){
+  // Transposed from editor/contrib/suggest/browser/suggest.ts
+  ^{ name: "provideSuggestionItems", status: "pure" };
+}
+
+!getSuggestionComparator(snippetConfig){
+  // Transposed from editor/contrib/suggest/browser/suggest.ts
+  ^{ name: "getSuggestionComparator", status: "pure" };
+}
+
+!createCompletionItem(...args){
+  ^{ className: "CompletionItem", methods: ["if", "isResolved", "resolveDuration", "resolve", "if"] };
+}
+
+!createCompletionOptions(...args){
+  ^{ className: "CompletionOptions", methods: [] };
+}
+
+!createCompletionItemModel(...args){
+  ^{ className: "CompletionItemModel", methods: [] };
+}
+
+=ex{getSnippetSuggestSupport,setSnippetSuggestSupport,provideSuggestionItems,getSuggestionComparator,createCompletionItem,createCompletionOptions,createCompletionItemModel}

@@ -1,0 +1,84 @@
+@LIN:platform_agentHost_common_changesetUri:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!formatBranchChangesetDescription(gitState){
+  // Transposed from platform/agentHost/common/changesetUri.ts
+  ^{ name: "formatBranchChangesetDescription", status: "pure" };
+}
+
+!buildBranchChangesetUri(sessionUri){
+  // Transposed from platform/agentHost/common/changesetUri.ts
+  ^{ name: "buildBranchChangesetUri", status: "pure" };
+}
+
+!buildSessionChangesetUri(sessionUri){
+  // Transposed from platform/agentHost/common/changesetUri.ts
+  ^{ name: "buildSessionChangesetUri", status: "pure" };
+}
+
+!buildUncommittedChangesetUri(sessionUri){
+  // Transposed from platform/agentHost/common/changesetUri.ts
+  ^{ name: "buildUncommittedChangesetUri", status: "pure" };
+}
+
+!buildTurnChangesetUriTemplate(sessionUri){
+  // Transposed from platform/agentHost/common/changesetUri.ts
+  ^{ name: "buildTurnChangesetUriTemplate", status: "pure" };
+}
+
+!buildTurnChangesetUri(sessionUri, turnId){
+  // Transposed from platform/agentHost/common/changesetUri.ts
+  ^{ name: "buildTurnChangesetUri", status: "pure" };
+}
+
+!buildCompareTurnsChangesetUriTemplate(sessionUri){
+  // Transposed from platform/agentHost/common/changesetUri.ts
+  ^{ name: "buildCompareTurnsChangesetUriTemplate", status: "pure" };
+}
+
+!buildCompareTurnsChangesetUri(sessionUri, originalTurnId, modifiedTurnId){
+  // Transposed from platform/agentHost/common/changesetUri.ts
+  ^{ name: "buildCompareTurnsChangesetUri", status: "pure" };
+}
+
+!buildChangesetUri(sessionUri, changesetId){
+  // Transposed from platform/agentHost/common/changesetUri.ts
+  ^{ name: "buildChangesetUri", status: "pure" };
+}
+
+!parseChangesetUri(uri){
+  // Transposed from platform/agentHost/common/changesetUri.ts
+  ^{ name: "parseChangesetUri", status: "pure" };
+}
+
+!isChangesetUri(uri){
+  // Transposed from platform/agentHost/common/changesetUri.ts
+  ^{ name: "isChangesetUri", status: "pure" };
+}
+
+!isSessionChangesetUri(uri){
+  // Transposed from platform/agentHost/common/changesetUri.ts
+  ^{ name: "isSessionChangesetUri", status: "pure" };
+}
+
+!isUncommittedChangesetUri(uri){
+  // Transposed from platform/agentHost/common/changesetUri.ts
+  ^{ name: "isUncommittedChangesetUri", status: "pure" };
+}
+
+!parseTurnChangesetUri(uri){
+  // Transposed from platform/agentHost/common/changesetUri.ts
+  ^{ name: "parseTurnChangesetUri", status: "pure" };
+}
+
+!parseCompareTurnsChangesetUri(uri){
+  // Transposed from platform/agentHost/common/changesetUri.ts
+  ^{ name: "parseCompareTurnsChangesetUri", status: "pure" };
+}
+
+!buildDefaultChangesetCatalog(sessionUri, state?){
+  // Transposed from platform/agentHost/common/changesetUri.ts
+  ^{ name: "buildDefaultChangesetCatalog", status: "pure" };
+}
+
+=ex{formatBranchChangesetDescription,buildBranchChangesetUri,buildSessionChangesetUri,buildUncommittedChangesetUri,buildTurnChangesetUriTemplate,buildTurnChangesetUri,buildCompareTurnsChangesetUriTemplate,buildCompareTurnsChangesetUri,buildChangesetUri,parseChangesetUri,isChangesetUri,isSessionChangesetUri,isUncommittedChangesetUri,parseTurnChangesetUri,parseCompareTurnsChangesetUri,buildDefaultChangesetCatalog}

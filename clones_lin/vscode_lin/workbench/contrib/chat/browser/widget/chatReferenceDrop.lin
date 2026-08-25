@@ -1,0 +1,19 @@
+@LIN:workbench_contrib_chat_browser_widget_chatReferenceDrop:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isSelfChatReferenceDrop(droppedClientResource, ownClientResource){
+  // Transposed from workbench/contrib/chat/browser/widget/chatReferenceDrop.ts
+  ^{ name: "isSelfChatReferenceDrop", status: "pure" };
+}
+
+!isCrossAgentHostChatReferenceDrop(droppedClientResource, ownClientResource){
+  // Transposed from workbench/contrib/chat/browser/widget/chatReferenceDrop.ts
+  ^{ name: "isCrossAgentHostChatReferenceDrop", status: "pure" };
+}
+
+!resolveChatReferenceDropEntry(data, ownClientResource){
+  // Transposed from workbench/contrib/chat/browser/widget/chatReferenceDrop.ts
+  ^{ name: "resolveChatReferenceDropEntry", status: "pure" };
+}
+
+=ex{isSelfChatReferenceDrop,isCrossAgentHostChatReferenceDrop,resolveChatReferenceDropEntry}

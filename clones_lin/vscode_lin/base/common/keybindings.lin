@@ -1,0 +1,22 @@
+@LIN:base_common_keybindings:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!decodeKeybinding(keybinding, OS){
+  // Transposed from base/common/keybindings.ts
+  ^{ name: "decodeKeybinding", status: "pure" };
+}
+
+!createSimpleKeybinding(keybinding, OS){
+  // Transposed from base/common/keybindings.ts
+  ^{ name: "createSimpleKeybinding", status: "pure" };
+}
+
+!createKeybinding(...args){
+  ^{ className: "Keybinding", methods: ["if", "getHashCode", "for", "if", "equals", "if", "if", "for"] };
+}
+
+!createResolvedChord(...args){
+  ^{ className: "ResolvedChord", methods: [] };
+}
+
+=ex{decodeKeybinding,createSimpleKeybinding,createKeybinding,createResolvedChord}

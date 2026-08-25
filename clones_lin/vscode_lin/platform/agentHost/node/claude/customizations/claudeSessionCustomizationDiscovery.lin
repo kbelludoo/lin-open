@@ -1,0 +1,18 @@
+@LIN:platform_agentHost_node_claude_customizations_claudeSessionCustomizationDiscovery:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createClaudeInternalMcpServerCustomization(name){
+  // Transposed from platform/agentHost/node/claude/customizations/claudeSessionCustomizationDiscovery.ts
+  ^{ name: "createClaudeInternalMcpServerCustomization", status: "pure" };
+}
+
+!resolveClaudeAgentName(agent, fileService, logService, sessionId){
+  // Transposed from platform/agentHost/node/claude/customizations/claudeSessionCustomizationDiscovery.ts
+  ^{ name: "resolveClaudeAgentName", status: "pure" };
+}
+
+!createClaudeCustomizationWatcher(...args){
+  ^{ className: "ClaudeCustomizationWatcher", methods: ["catch", "for", "if"] };
+}
+
+=ex{createClaudeInternalMcpServerCustomization,resolveClaudeAgentName,createClaudeCustomizationWatcher}

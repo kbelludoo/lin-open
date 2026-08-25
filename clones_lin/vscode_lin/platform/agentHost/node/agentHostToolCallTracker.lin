@@ -1,0 +1,23 @@
+@LIN:platform_agentHost_node_agentHostToolCallTracker:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!deriveToolInvokedResult(result){
+  // Transposed from platform/agentHost/node/agentHostToolCallTracker.ts
+  ^{ name: "deriveToolInvokedResult", status: "pure" };
+}
+
+!toolSourceKindFromContributor(contributor){
+  // Transposed from platform/agentHost/node/agentHostToolCallTracker.ts
+  ^{ name: "toolSourceKindFromContributor", status: "pure" };
+}
+
+!canRefineContributor(current, next){
+  // Transposed from platform/agentHost/node/agentHostToolCallTracker.ts
+  ^{ name: "canRefineContributor", status: "pure" };
+}
+
+!createAgentHostToolCallTracker(...args){
+  ^{ className: "AgentHostToolCallTracker", methods: ["toolCallStarted", "updateTurnModel", "if", "if", "for", "toolCallMetadataUpdated", "if", "toolCallExecutionStarted", "if", "toolCallCompleted", "if", "if", "if", "toolCallBlocked", "toolCallUnblocked", "clearSession", "for", "for", "clear", "_key", "_turnKey"] };
+}
+
+=ex{deriveToolInvokedResult,toolSourceKindFromContributor,canRefineContributor,createAgentHostToolCallTracker}

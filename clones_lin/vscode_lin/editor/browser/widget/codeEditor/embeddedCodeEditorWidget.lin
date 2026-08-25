@@ -1,0 +1,13 @@
+@LIN:editor_browser_widget_codeEditor_embeddedCodeEditorWidget:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getOuterEditor(accessor){
+  // Transposed from editor/browser/widget/codeEditor/embeddedCodeEditorWidget.ts
+  ^{ name: "getOuterEditor", status: "pure" };
+}
+
+!createEmbeddedCodeEditorWidget(...args){
+  ^{ className: "EmbeddedCodeEditorWidget", methods: ["getParentEditor", "_onParentConfigurationChanged", "updateOptions"] };
+}
+
+=ex{getOuterEditor,createEmbeddedCodeEditorWidget}

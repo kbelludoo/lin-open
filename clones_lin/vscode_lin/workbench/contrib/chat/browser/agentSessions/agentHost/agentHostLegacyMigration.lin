@@ -1,0 +1,14 @@
+@LIN:workbench_contrib_chat_browser_agentSessions_agentHost_agentHostLegacyMigration:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!adoptLegacyCopilotCliResource(connection, resource, logService, configurationService, telemetryService, source, timeoutMs){
+  // Transposed from workbench/contrib/chat/browser/agentSessions/agentHost/agentHostLegacyMigration.ts
+  ^{ name: "adoptLegacyCopilotCliResource", status: "pure" };
+}
+
+!reportLegacyMigrationOpen(telemetryService, source, surfaced){
+  // Transposed from workbench/contrib/chat/browser/agentSessions/agentHost/agentHostLegacyMigration.ts
+  ^{ name: "reportLegacyMigrationOpen", status: "pure" };
+}
+
+=ex{adoptLegacyCopilotCliResource,reportLegacyMigrationOpen}

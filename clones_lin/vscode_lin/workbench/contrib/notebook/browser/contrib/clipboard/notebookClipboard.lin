@@ -1,0 +1,23 @@
+@LIN:workbench_contrib_notebook_browser_contrib_clipboard_notebookClipboard:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!runPasteCells(editor, activeCell, pasteCells){
+  // Transposed from workbench/contrib/notebook/browser/contrib/clipboard/notebookClipboard.ts
+  ^{ name: "runPasteCells", status: "pure" };
+}
+
+!runCopyCells(accessor, editor, targetCell){
+  // Transposed from workbench/contrib/notebook/browser/contrib/clipboard/notebookClipboard.ts
+  ^{ name: "runCopyCells", status: "pure" };
+}
+
+!runCutCells(accessor, editor, targetCell){
+  // Transposed from workbench/contrib/notebook/browser/contrib/clipboard/notebookClipboard.ts
+  ^{ name: "runCutCells", status: "pure" };
+}
+
+!createNotebookClipboardContribution(...args){
+  ^{ className: "NotebookClipboardContribution", methods: ["if", "if", "if", "_getContext", "_focusInsideEmebedMonaco", "if", "if", "while", "runCopyAction", "if", "runPasteAction", "if", "runCutAction"] };
+}
+
+=ex{runPasteCells,runCopyCells,runCutCells,createNotebookClipboardContribution}

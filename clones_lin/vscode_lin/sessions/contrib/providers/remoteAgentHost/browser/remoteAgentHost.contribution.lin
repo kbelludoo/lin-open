@@ -1,0 +1,23 @@
+@LIN:sessions_contrib_providers_remoteAgentHost_browser_remoteAgentHost_contribution:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!shouldPauseSSHReconnectAfterFailure(err){
+  // Transposed from sessions/contrib/providers/remoteAgentHost/browser/remoteAgentHost.contribution.ts
+  ^{ name: "shouldPauseSSHReconnectAfterFailure", status: "pure" };
+}
+
+!sshConnectionKey(connection){
+  // Transposed from sessions/contrib/providers/remoteAgentHost/browser/remoteAgentHost.contribution.ts
+  ^{ name: "sshConnectionKey", status: "pure" };
+}
+
+!disconnectSSHEntry(connection, remoteAgentHostService, 'removeRemoteAgentHost'>, sshService, 'disconnect'>){
+  // Transposed from sessions/contrib/providers/remoteAgentHost/browser/remoteAgentHost.contribution.ts
+  ^{ name: "disconnectSSHEntry", status: "pure" };
+}
+
+!createSSHReconnectState(...args){
+  ^{ className: "SSHReconnectState", methods: ["hasPendingTimer", "cancelTimer", "resetForResume", "resumeAutomatically", "if"] };
+}
+
+=ex{shouldPauseSSHReconnectAfterFailure,sshConnectionKey,disconnectSSHEntry,createSSHReconnectState}

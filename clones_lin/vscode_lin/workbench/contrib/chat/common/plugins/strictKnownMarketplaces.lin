@@ -1,0 +1,14 @@
+@LIN:workbench_contrib_chat_common_plugins_strictKnownMarketplaces:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getStrictKnownMarketplaces(value){
+  // Transposed from workbench/contrib/chat/common/plugins/strictKnownMarketplaces.ts
+  ^{ name: "getStrictKnownMarketplaces", status: "pure" };
+}
+
+!isMarketplaceReferenceAllowed(allowlist, ref){
+  // Transposed from workbench/contrib/chat/common/plugins/strictKnownMarketplaces.ts
+  ^{ name: "isMarketplaceReferenceAllowed", status: "pure" };
+}
+
+=ex{getStrictKnownMarketplaces,isMarketplaceReferenceAllowed}

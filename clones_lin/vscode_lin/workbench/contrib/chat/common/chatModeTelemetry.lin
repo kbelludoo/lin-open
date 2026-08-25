@@ -1,0 +1,9 @@
+@LIN:workbench_contrib_chat_common_chatModeTelemetry:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!reportChatModeChange(telemetryService, currentMode, targetMode, requestCount){
+  // Transposed from workbench/contrib/chat/common/chatModeTelemetry.ts
+  ^{ name: "reportChatModeChange", status: "pure" };
+}
+
+=ex{reportChatModeChange}

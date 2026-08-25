@@ -1,0 +1,34 @@
+@LIN:platform_agentHost_common_agentHostEndpointRegistry:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!parseAgentHostEndpointMetadataEntry(raw){
+  // Transposed from platform/agentHost/common/agentHostEndpointRegistry.ts
+  ^{ name: "parseAgentHostEndpointMetadataEntry", status: "pure" };
+}
+
+!parseAgentHostEndpointRegistry(raw){
+  // Transposed from platform/agentHost/common/agentHostEndpointRegistry.ts
+  ^{ name: "parseAgentHostEndpointRegistry", status: "pure" };
+}
+
+!getAgentHostEndpointIdentityKey(identity){
+  // Transposed from platform/agentHost/common/agentHostEndpointRegistry.ts
+  ^{ name: "getAgentHostEndpointIdentityKey", status: "pure" };
+}
+
+!getAgentHostEndpointIdentityHashInput(identity){
+  // Transposed from platform/agentHost/common/agentHostEndpointRegistry.ts
+  ^{ name: "getAgentHostEndpointIdentityHashInput", status: "pure" };
+}
+
+!isSameAgentHostEndpointIdentity(a, b){
+  // Transposed from platform/agentHost/common/agentHostEndpointRegistry.ts
+  ^{ name: "isSameAgentHostEndpointIdentity", status: "pure" };
+}
+
+!dedupeAgentHostEndpointMetadata(entries){
+  // Transposed from platform/agentHost/common/agentHostEndpointRegistry.ts
+  ^{ name: "dedupeAgentHostEndpointMetadata", status: "pure" };
+}
+
+=ex{parseAgentHostEndpointMetadataEntry,parseAgentHostEndpointRegistry,getAgentHostEndpointIdentityKey,getAgentHostEndpointIdentityHashInput,isSameAgentHostEndpointIdentity,dedupeAgentHostEndpointMetadata}

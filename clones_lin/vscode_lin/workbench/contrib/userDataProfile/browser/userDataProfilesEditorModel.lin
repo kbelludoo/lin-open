@@ -1,0 +1,26 @@
+@LIN:workbench_contrib_userDataProfile_browser_userDataProfilesEditorModel:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isProfileResourceTypeElement(element){
+  // Transposed from workbench/contrib/userDataProfile/browser/userDataProfilesEditorModel.ts
+  ^{ name: "isProfileResourceTypeElement", status: "pure" };
+}
+
+!isProfileResourceChildElement(element){
+  // Transposed from workbench/contrib/userDataProfile/browser/userDataProfilesEditorModel.ts
+  ^{ name: "isProfileResourceChildElement", status: "pure" };
+}
+
+!createUserDataProfileElement(...args){
+  ^{ className: "UserDataProfileElement", methods: ["profile", "if", "getProfileToWatch", "reset", "updateWorkspaces", "for", "for", "toggleNewWindowProfile", "if", "isNewWindowProfile", "isNewWindowProfile", "if", "toggleCurrentWindowProfile", "if", "doSave", "getChildrenForResourceType", "if", "if", "getInitialName"] };
+}
+
+!createNewProfileElement(...args){
+  ^{ className: "NewProfileElement", methods: ["copyFromTemplates", "if", "copyFrom", "copyFrom", "if", "if", "copyFlags", "copyFlags", "previewProfile", "previewProfile", "if", "if", "add", "getProfileToWatch", "getCopyFlagsFrom", "initialize", "if", "if", "if", "if", "if", "if", "if", "if", "getNewProfileName", "for", "resolveTemplate", "if", "if", "hasResource", "if", "switch", "getCopyFlag", "setCopyFlag", "getCopyFromName", "if", "getChildrenForResourceType", "if", "if", "if", "if", "getChildrenFromProfileTemplate", "switch", "if", "if", "if", "if", "if", "if", "shouldValidateName", "getInitialName", "doSave", "if", "if"] };
+}
+
+!createUserDataProfilesEditorModel(...args){
+  ^{ className: "UserDataProfilesEditorModel", methods: ["getInstance", "if", "profiles", "if", "if", "if", "if", "for", "if", "onDidChangeProfiles", "for", "if", "for", "if", "if", "if", "getTemplates", "if", "createProfileElement", "if", "createNewProfile", "if", "if", "if", "catch", "if", "if", "add", "if", "revert", "removeNewProfile", "if", "if", "previewNewProfile", "if", "if", "if", "if", "exportNewProfile", "if", "saveNewProfile", "if", "if", "if", "if", "if", "if", "if", "if", "if", "catch", "if", "if", "discardNewProfile", "if", "if", "removeProfile", "if", "openWindow"] };
+}
+
+=ex{isProfileResourceTypeElement,isProfileResourceChildElement,createUserDataProfileElement,createNewProfileElement,createUserDataProfilesEditorModel}

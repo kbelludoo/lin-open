@@ -1,0 +1,13 @@
+@LIN:workbench_services_preferences_browser_keybindingsEditorModel:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createKeybindingCommandQuery(commandId, when?){
+  // Transposed from workbench/services/preferences/browser/keybindingsEditorModel.ts
+  ^{ name: "createKeybindingCommandQuery", status: "pure" };
+}
+
+!createKeybindingsEditorModel(...args){
+  ^{ className: "KeybindingsEditorModel", methods: ["fetch", "if", "if", "if", "map", "if", "map", "filterBySource", "filterByExtension", "filterByText", "if", "if", "for", "if", "filterByWhen", "if", "if", "splitKeybindingWords", "for", "if", "getId", "getExtensionsMapping", "for", "compareKeybindingData", "if", "if", "if", "if", "if", "if", "if", "toKeybindingEntry", "if", "getCommandDefaultLabel", "getCommandLabel", "if", "if"] };
+}
+
+=ex{createKeybindingCommandQuery,createKeybindingsEditorModel}

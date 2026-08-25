@@ -1,0 +1,9 @@
+@LIN:platform_agentHost_common_sshHostKeyPolicy:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!decideHostKeyTrust(request, trustedKeys){
+  // Transposed from platform/agentHost/common/sshHostKeyPolicy.ts
+  ^{ name: "decideHostKeyTrust", status: "pure" };
+}
+
+=ex{decideHostKeyTrust}

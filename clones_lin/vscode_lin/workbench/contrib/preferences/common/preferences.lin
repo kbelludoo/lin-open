@@ -1,0 +1,23 @@
+@LIN:workbench_contrib_preferences_common_preferences:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getExperimentalExtensionToggleData(chatEntitlementService, extensionGalleryService, productService){
+  // Transposed from workbench/contrib/preferences/common/preferences.ts
+  ^{ name: "getExperimentalExtensionToggleData", status: "pure" };
+}
+
+!compareTwoNullableNumbers(a, b){
+  // Transposed from workbench/contrib/preferences/common/preferences.ts
+  ^{ name: "compareTwoNullableNumbers", status: "pure" };
+}
+
+!wordifyKey(key){
+  // Transposed from workbench/contrib/preferences/common/preferences.ts
+  ^{ name: "wordifyKey", status: "pure" };
+}
+
+!getWorkbenchSettingsEditorSettingsEnum(){
+  ^{ enumName: "WorkbenchSettingsEditorSettings", members: ["ShowAISearchToggle", "EnableNaturalLanguageSearch"] };
+}
+
+=ex{getExperimentalExtensionToggleData,compareTwoNullableNumbers,wordifyKey,getWorkbenchSettingsEditorSettingsEnum}

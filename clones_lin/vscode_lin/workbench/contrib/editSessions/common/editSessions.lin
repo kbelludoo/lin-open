@@ -1,0 +1,17 @@
+@LIN:workbench_contrib_editSessions_common_editSessions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!decodeEditSessionFileContent(version, content){
+  // Transposed from workbench/contrib/editSessions/common/editSessions.ts
+  ^{ name: "decodeEditSessionFileContent", status: "pure" };
+}
+
+!getChangeTypeEnum(){
+  ^{ enumName: "ChangeType", members: ["Addition", "Deletion"] };
+}
+
+!getFileTypeEnum(){
+  ^{ enumName: "FileType", members: ["File"] };
+}
+
+=ex{decodeEditSessionFileContent,getChangeTypeEnum,getFileTypeEnum}

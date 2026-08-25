@@ -1,0 +1,63 @@
+@LIN:workbench_contrib_chat_browser_aiCustomization_mcpListWidget:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createBuiltinActiveSessionMcpEntries(servers){
+  // Transposed from workbench/contrib/chat/browser/aiCustomization/mcpListWidget.ts
+  ^{ name: "createBuiltinActiveSessionMcpEntries", status: "pure" };
+}
+
+!isMcpServerCollectionVisible(collectionId, hiddenCollectionIds){
+  // Transposed from workbench/contrib/chat/browser/aiCustomization/mcpListWidget.ts
+  ^{ name: "isMcpServerCollectionVisible", status: "pure" };
+}
+
+!authenticateMcpServer(agentHostCustomizationService, sessionResource, serverId){
+  // Transposed from workbench/contrib/chat/browser/aiCustomization/mcpListWidget.ts
+  ^{ name: "authenticateMcpServer", status: "pure" };
+}
+
+!getMcpStatusPresentation(state, disabledReason?){
+  // Transposed from workbench/contrib/chat/browser/aiCustomization/mcpListWidget.ts
+  ^{ name: "getMcpStatusPresentation", status: "pure" };
+}
+
+!getMcpStatusRenderSignature(input){
+  // Transposed from workbench/contrib/chat/browser/aiCustomization/mcpListWidget.ts
+  ^{ name: "getMcpStatusRenderSignature", status: "pure" };
+}
+
+!getActiveSessionServerPresentation(server){
+  // Transposed from workbench/contrib/chat/browser/aiCustomization/mcpListWidget.ts
+  ^{ name: "getActiveSessionServerPresentation", status: "pure" };
+}
+
+!getActiveSessionServerLifecycleAction(server){
+  // Transposed from workbench/contrib/chat/browser/aiCustomization/mcpListWidget.ts
+  ^{ name: "getActiveSessionServerLifecycleAction", status: "pure" };
+}
+
+!getAgentHostMcpServerEnablementActions(agentHostCustomizations, agentPluginService, sessionResource, server, scopes, 'workspace', 'session']){
+  // Transposed from workbench/contrib/chat/browser/aiCustomization/mcpListWidget.ts
+  ^{ name: "getAgentHostMcpServerEnablementActions", status: "pure" };
+}
+
+!getLocalMcpServerEnablementActions(mcpService, serverId, isEmptyWorkbench, options){
+  // Transposed from workbench/contrib/chat/browser/aiCustomization/mcpListWidget.ts
+  ^{ name: "getLocalMcpServerEnablementActions", status: "pure" };
+}
+
+!getBuiltinMcpServerEnablementActions(mcpService, serverId, isEmptyWorkbench, agentHostCustomizations, agentPluginService, sessionResource, activeSessionServer){
+  // Transposed from workbench/contrib/chat/browser/aiCustomization/mcpListWidget.ts
+  ^{ name: "getBuiltinMcpServerEnablementActions", status: "pure" };
+}
+
+!getActiveSessionServerOptionsActions(commandService, agentHostCustomizations, agentPluginService, sessionResource, server){
+  // Transposed from workbench/contrib/chat/browser/aiCustomization/mcpListWidget.ts
+  ^{ name: "getActiveSessionServerOptionsActions", status: "pure" };
+}
+
+!createMcpListWidget(...args){
+  ^{ className: "McpListWidget", methods: ["create", "if", "if", "if", "if", "getWidgetAriaLabel", "getId", "if", "if", "getGroupId", "_register", "if", "if", "if", "if", "if", "if", "if", "if", "refresh", "if", "updateAccessState", "if", "if", "showBrowseMarketplace", "if", "toggleBrowseMode", "if", "if", "queryGallery", "if", "if", "updateGalleryList", "if", "filterServers", "if", "for", "if", "for", "if", "for", "if", "if", "if", "if", "for", "if", "if", "for", "if", "if", "for", "itemCount", "fireItemCount", "toggleGroup", "isInBrowseMode", "exitBrowseMode", "if", "layout", "if", "focusSearch", "revealLastItem", "if", "focus", "if", "openActiveSessionServerOptions", "onContextMenu", "if", "if", "if", "if", "if", "if", "if", "for", "if", "if", "if", "if", "if", "for", "for", "for"] };
+}
+
+=ex{createBuiltinActiveSessionMcpEntries,isMcpServerCollectionVisible,authenticateMcpServer,getMcpStatusPresentation,getMcpStatusRenderSignature,getActiveSessionServerPresentation,getActiveSessionServerLifecycleAction,getAgentHostMcpServerEnablementActions,getLocalMcpServerEnablementActions,getBuiltinMcpServerEnablementActions,getActiveSessionServerOptionsActions,createMcpListWidget}

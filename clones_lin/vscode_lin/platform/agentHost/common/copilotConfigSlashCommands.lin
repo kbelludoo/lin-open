@@ -1,0 +1,19 @@
+@LIN:platform_agentHost_common_copilotConfigSlashCommands:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isCopilotConfigSlashCommand(command){
+  // Transposed from platform/agentHost/common/copilotConfigSlashCommands.ts
+  ^{ name: "isCopilotConfigSlashCommand", status: "pure" };
+}
+
+!getCopilotConfigSlashCommandItems(typed, state?){
+  // Transposed from platform/agentHost/common/copilotConfigSlashCommands.ts
+  ^{ name: "getCopilotConfigSlashCommandItems", status: "pure" };
+}
+
+!resolveCopilotConfigSlashCommandOnSend(command, rest){
+  // Transposed from platform/agentHost/common/copilotConfigSlashCommands.ts
+  ^{ name: "resolveCopilotConfigSlashCommandOnSend", status: "pure" };
+}
+
+=ex{isCopilotConfigSlashCommand,getCopilotConfigSlashCommandItems,resolveCopilotConfigSlashCommandOnSend}

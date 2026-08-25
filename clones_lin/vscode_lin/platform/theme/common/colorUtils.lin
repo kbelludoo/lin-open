@@ -1,0 +1,79 @@
+@LIN:platform_theme_common_colorUtils:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!asCssVariableName(colorIdent){
+  // Transposed from platform/theme/common/colorUtils.ts
+  ^{ name: "asCssVariableName", status: "pure" };
+}
+
+!asCssVariable(color){
+  // Transposed from platform/theme/common/colorUtils.ts
+  ^{ name: "asCssVariable", status: "pure" };
+}
+
+!asCssVariableWithDefault(color, defaultCssValue){
+  // Transposed from platform/theme/common/colorUtils.ts
+  ^{ name: "asCssVariableWithDefault", status: "pure" };
+}
+
+!isColorDefaults(value){
+  // Transposed from platform/theme/common/colorUtils.ts
+  ^{ name: "isColorDefaults", status: "pure" };
+}
+
+!registerColor(id, defaults, description, needsTransparency?, deprecationMessage?){
+  // Transposed from platform/theme/common/colorUtils.ts
+  ^{ name: "registerColor", status: "pure" };
+}
+
+!getColorRegistry(){
+  // Transposed from platform/theme/common/colorUtils.ts
+  ^{ name: "getColorRegistry", status: "pure" };
+}
+
+!executeTransform(transform, theme){
+  // Transposed from platform/theme/common/colorUtils.ts
+  ^{ name: "executeTransform", status: "pure" };
+}
+
+!darken(colorValue, factor){
+  // Transposed from platform/theme/common/colorUtils.ts
+  ^{ name: "darken", status: "pure" };
+}
+
+!lighten(colorValue, factor){
+  // Transposed from platform/theme/common/colorUtils.ts
+  ^{ name: "lighten", status: "pure" };
+}
+
+!transparent(colorValue, factor){
+  // Transposed from platform/theme/common/colorUtils.ts
+  ^{ name: "transparent", status: "pure" };
+}
+
+!opaque(colorValue, background){
+  // Transposed from platform/theme/common/colorUtils.ts
+  ^{ name: "opaque", status: "pure" };
+}
+
+!oneOf(colorValues){
+  // Transposed from platform/theme/common/colorUtils.ts
+  ^{ name: "oneOf", status: "pure" };
+}
+
+!ifDefinedThenElse(ifArg, thenArg, elseArg){
+  // Transposed from platform/theme/common/colorUtils.ts
+  ^{ name: "ifDefinedThenElse", status: "pure" };
+}
+
+!lessProminent(colorValue, backgroundColorValue, factor, transparency){
+  // Transposed from platform/theme/common/colorUtils.ts
+  ^{ name: "lessProminent", status: "pure" };
+}
+
+!resolveColorValue(colorValue, theme){
+  // Transposed from platform/theme/common/colorUtils.ts
+  ^{ name: "resolveColorValue", status: "pure" };
+}
+
+=ex{asCssVariableName,asCssVariable,asCssVariableWithDefault,isColorDefaults,registerColor,getColorRegistry,executeTransform,darken,lighten,transparent,opaque,oneOf,ifDefinedThenElse,lessProminent,resolveColorValue}

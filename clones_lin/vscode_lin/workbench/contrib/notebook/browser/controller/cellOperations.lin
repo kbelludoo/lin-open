@@ -1,0 +1,44 @@
+@LIN:workbench_contrib_notebook_browser_controller_cellOperations:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!changeCellToKind(kind, context, language?, mime?){
+  // Transposed from workbench/contrib/notebook/browser/controller/cellOperations.ts
+  ^{ name: "changeCellToKind", status: "pure" };
+}
+
+!moveCellRange(context, direction){
+  // Transposed from workbench/contrib/notebook/browser/controller/cellOperations.ts
+  ^{ name: "moveCellRange", status: "pure" };
+}
+
+!copyCellRange(context, direction){
+  // Transposed from workbench/contrib/notebook/browser/controller/cellOperations.ts
+  ^{ name: "copyCellRange", status: "pure" };
+}
+
+!joinSelectedCells(bulkEditService, notificationService, context){
+  // Transposed from workbench/contrib/notebook/browser/controller/cellOperations.ts
+  ^{ name: "joinSelectedCells", status: "pure" };
+}
+
+!joinNotebookCells(editor, range, direction, constraint?){
+  // Transposed from workbench/contrib/notebook/browser/controller/cellOperations.ts
+  ^{ name: "joinNotebookCells", status: "pure" };
+}
+
+!joinCellsWithSurrounds(bulkEditService, context, direction){
+  // Transposed from workbench/contrib/notebook/browser/controller/cellOperations.ts
+  ^{ name: "joinCellsWithSurrounds", status: "pure" };
+}
+
+!computeCellLinesContents(cell, splitPoints){
+  // Transposed from workbench/contrib/notebook/browser/controller/cellOperations.ts
+  ^{ name: "computeCellLinesContents", status: "pure" };
+}
+
+!insertCellAtIndex(viewModel, index, source, language, type, metadata, outputs, synchronous, pushUndoStop){
+  // Transposed from workbench/contrib/notebook/browser/controller/cellOperations.ts
+  ^{ name: "insertCellAtIndex", status: "pure" };
+}
+
+=ex{changeCellToKind,moveCellRange,copyCellRange,joinSelectedCells,joinNotebookCells,joinCellsWithSurrounds,computeCellLinesContents,insertCellAtIndex}

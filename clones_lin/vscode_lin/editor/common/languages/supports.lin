@@ -1,0 +1,18 @@
+@LIN:editor_common_languages_supports:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createScopedLineTokens(context, offset){
+  // Transposed from editor/common/languages/supports.ts
+  ^{ name: "createScopedLineTokens", status: "pure" };
+}
+
+!ignoreBracketsInToken(standardTokenType){
+  // Transposed from editor/common/languages/supports.ts
+  ^{ name: "ignoreBracketsInToken", status: "pure" };
+}
+
+!createScopedLineTokens(...args){
+  ^{ className: "ScopedLineTokens", methods: ["getLineContent", "getLineLength", "getActualLineContentBefore", "getTokenCount", "findTokenIndexAtOffset", "getStandardTokenType", "toIViewLineTokens"] };
+}
+
+=ex{createScopedLineTokens,ignoreBracketsInToken,createScopedLineTokens}

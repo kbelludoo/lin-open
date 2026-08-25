@@ -1,0 +1,13 @@
+@LIN:editor_contrib_suggest_browser_suggestWidgetDetails:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!canExpandCompletionItem(item){
+  // Transposed from editor/contrib/suggest/browser/suggestWidgetDetails.ts
+  ^{ name: "canExpandCompletionItem", status: "pure" };
+}
+
+!createSuggestDetailsWidget(...args){
+  ^{ className: "SuggestDetailsWidget", methods: ["dispose", "_configureFont", "getLayoutInfo", "renderLoading", "renderItem", "if", "if", "if", "if", "clearContents", "isEmpty", "size", "layout", "scrollDown", "scrollUp", "scrollTop", "scrollBottom", "pageDown", "pageUp", "focus"] };
+}
+
+=ex{canExpandCompletionItem,createSuggestDetailsWidget}

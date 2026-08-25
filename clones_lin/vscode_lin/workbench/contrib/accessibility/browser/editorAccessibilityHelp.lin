@@ -1,0 +1,28 @@
+@LIN:workbench_contrib_accessibility_browser_editorAccessibilityHelp:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getCommentCommandInfo(keybindingService, contextKeyService, editor){
+  // Transposed from workbench/contrib/accessibility/browser/editorAccessibilityHelp.ts
+  ^{ name: "getCommentCommandInfo", status: "pure" };
+}
+
+!getChatCommandInfo(keybindingService, contextKeyService){
+  // Transposed from workbench/contrib/accessibility/browser/editorAccessibilityHelp.ts
+  ^{ name: "getChatCommandInfo", status: "pure" };
+}
+
+!getChatEditInfo(keybindingService, contextKeyService, editor){
+  // Transposed from workbench/contrib/accessibility/browser/editorAccessibilityHelp.ts
+  ^{ name: "getChatEditInfo", status: "pure" };
+}
+
+!getDictationInfo(contextKeyService){
+  // Transposed from workbench/contrib/accessibility/browser/editorAccessibilityHelp.ts
+  ^{ name: "getDictationInfo", status: "pure" };
+}
+
+!createEditorAccessibilityHelpContribution(...args){
+  ^{ className: "EditorAccessibilityHelpContribution", methods: ["if"] };
+}
+
+=ex{getCommentCommandInfo,getChatCommandInfo,getChatEditInfo,getDictationInfo,createEditorAccessibilityHelpContribution}

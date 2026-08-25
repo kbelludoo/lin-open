@@ -1,0 +1,46 @@
+@LIN:platform_extensions_common_extensions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getWorkspaceSupportTypeMessage(supportType){
+  // Transposed from platform/extensions/common/extensions.ts
+  ^{ name: "getWorkspaceSupportTypeMessage", status: "pure" };
+}
+
+!isApplicationScopedExtension(manifest){
+  // Transposed from platform/extensions/common/extensions.ts
+  ^{ name: "isApplicationScopedExtension", status: "pure" };
+}
+
+!isLanguagePackExtension(manifest){
+  // Transposed from platform/extensions/common/extensions.ts
+  ^{ name: "isLanguagePackExtension", status: "pure" };
+}
+
+!isAuthenticationProviderExtension(manifest){
+  // Transposed from platform/extensions/common/extensions.ts
+  ^{ name: "isAuthenticationProviderExtension", status: "pure" };
+}
+
+!isResolverExtension(manifest, remoteAuthority){
+  // Transposed from platform/extensions/common/extensions.ts
+  ^{ name: "isResolverExtension", status: "pure" };
+}
+
+!parseEnabledApiProposalNames(enabledApiProposals){
+  // Transposed from platform/extensions/common/extensions.ts
+  ^{ name: "parseEnabledApiProposalNames", status: "pure" };
+}
+
+!createExtensionIdentifier(...args){
+  ^{ className: "ExtensionIdentifier", methods: ["equals", "if", "if", "if", "toKey", "if"] };
+}
+
+!createExtensionIdentifierSet(...args){
+  ^{ className: "ExtensionIdentifierSet", methods: ["size", "if", "for", "add", "delete", "has"] };
+}
+
+!createExtensionError(...args){
+  ^{ className: "ExtensionError", methods: ["if"] };
+}
+
+=ex{getWorkspaceSupportTypeMessage,isApplicationScopedExtension,isLanguagePackExtension,isAuthenticationProviderExtension,isResolverExtension,parseEnabledApiProposalNames,createExtensionIdentifier,createExtensionIdentifierSet,createExtensionError}

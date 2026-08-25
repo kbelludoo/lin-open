@@ -1,0 +1,12 @@
+@LIN:workbench_contrib_accessibilitySignals_browser_commands:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createShowSignalSoundHelp(...args){
+  ^{ className: "ShowSignalSoundHelp", methods: ["run", "for", "if", "for"] };
+}
+
+!createShowAccessibilityAnnouncementHelp(...args){
+  ^{ className: "ShowAccessibilityAnnouncementHelp", methods: ["run", "if", "for", "for"] };
+}
+
+=ex{createShowSignalSoundHelp,createShowAccessibilityAnnouncementHelp}

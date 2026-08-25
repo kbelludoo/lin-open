@@ -1,0 +1,29 @@
+@LIN:workbench_contrib_chat_browser_chatDebug_chatDebugToolCallContentRenderer:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!tryParseJSON(text){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/chatDebugToolCallContentRenderer.ts
+  ^{ name: "tryParseJSON", status: "pure" };
+}
+
+!tokenizeContent(text, languageService){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/chatDebugToolCallContentRenderer.ts
+  ^{ name: "tokenizeContent", status: "pure" };
+}
+
+!renderSection(parent, label, plainText, tokenizedHtml, disposables, initiallyCollapsed, clipboardService?, scrollable?){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/chatDebugToolCallContentRenderer.ts
+  ^{ name: "renderSection", status: "pure" };
+}
+
+!renderToolCallContent(content, languageService, clipboardService?, scrollable?){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/chatDebugToolCallContentRenderer.ts
+  ^{ name: "renderToolCallContent", status: "pure" };
+}
+
+!toolCallContentToPlainText(content){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/chatDebugToolCallContentRenderer.ts
+  ^{ name: "toolCallContentToPlainText", status: "pure" };
+}
+
+=ex{tryParseJSON,tokenizeContent,renderSection,renderToolCallContent,toolCallContentToPlainText}

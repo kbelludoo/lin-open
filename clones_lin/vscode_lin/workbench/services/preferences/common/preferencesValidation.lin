@@ -1,0 +1,19 @@
+@LIN:workbench_services_preferences_common_preferencesValidation:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createValidator(prop){
+  // Transposed from workbench/services/preferences/common/preferencesValidation.ts
+  ^{ name: "createValidator", status: "pure" };
+}
+
+!getInvalidTypeError(value, type){
+  // Transposed from workbench/services/preferences/common/preferencesValidation.ts
+  ^{ name: "getInvalidTypeError", status: "pure" };
+}
+
+!validatePropertyName(propertyNames, key){
+  // Transposed from workbench/services/preferences/common/preferencesValidation.ts
+  ^{ name: "validatePropertyName", status: "pure" };
+}
+
+=ex{createValidator,getInvalidTypeError,validatePropertyName}

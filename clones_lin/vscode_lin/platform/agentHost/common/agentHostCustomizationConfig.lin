@@ -1,0 +1,14 @@
+@LIN:platform_agentHost_common_agentHostCustomizationConfig:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getAgentHostConfiguredCustomizations(values, unknown> | undefined){
+  // Transposed from platform/agentHost/common/agentHostCustomizationConfig.ts
+  ^{ name: "getAgentHostConfiguredCustomizations", status: "pure" };
+}
+
+!toContainerCustomization(entry){
+  // Transposed from platform/agentHost/common/agentHostCustomizationConfig.ts
+  ^{ name: "toContainerCustomization", status: "pure" };
+}
+
+=ex{getAgentHostConfiguredCustomizations,toContainerCustomization}

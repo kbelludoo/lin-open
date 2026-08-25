@@ -1,0 +1,13 @@
+@LIN:workbench_contrib_notebook_browser_view_cellParts_codeCellRunToolbar:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getCodeCellExecutionContextKeyService(contextKeyService){
+  // Transposed from workbench/contrib/notebook/browser/view/cellParts/codeCellRunToolbar.ts
+  ^{ name: "getCodeCellExecutionContextKeyService", status: "pure" };
+}
+
+!createRunToolbar(...args){
+  ^{ className: "RunToolbar", methods: ["didRenderCell", "getCellToolbarActions", "createRunCellToolbar", "if"] };
+}
+
+=ex{getCodeCellExecutionContextKeyService,createRunToolbar}

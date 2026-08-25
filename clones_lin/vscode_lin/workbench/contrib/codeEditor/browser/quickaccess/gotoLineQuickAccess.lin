@@ -1,0 +1,8 @@
+@LIN:workbench_contrib_codeEditor_browser_quickaccess_gotoLineQuickAccess:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createGotoLineQuickAccessProvider(...args){
+  ^{ className: "GotoLineQuickAccessProvider", methods: ["configuration", "activeTextEditorControl", "gotoLocation"] };
+}
+
+=ex{createGotoLineQuickAccessProvider}

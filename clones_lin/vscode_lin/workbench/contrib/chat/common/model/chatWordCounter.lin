@@ -1,0 +1,14 @@
+@LIN:workbench_contrib_chat_common_model_chatWordCounter:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getNWords(str, numWordsToCount){
+  // Transposed from workbench/contrib/chat/common/model/chatWordCounter.ts
+  ^{ name: "getNWords", status: "pure" };
+}
+
+!countWords(str){
+  // Transposed from workbench/contrib/chat/common/model/chatWordCounter.ts
+  ^{ name: "countWords", status: "pure" };
+}
+
+=ex{getNWords,countWords}

@@ -1,0 +1,34 @@
+@LIN:base_common_objects:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!mixin(destination, source, overwrite){
+  // Transposed from base/common/objects.ts
+  ^{ name: "mixin", status: "pure" };
+}
+
+!equals(one, other){
+  // Transposed from base/common/objects.ts
+  ^{ name: "equals", status: "pure" };
+}
+
+!safeStringify(obj){
+  // Transposed from base/common/objects.ts
+  ^{ name: "safeStringify", status: "pure" };
+}
+
+!stableStringify(value){
+  // Transposed from base/common/objects.ts
+  ^{ name: "stableStringify", status: "pure" };
+}
+
+!distinct(base, target){
+  // Transposed from base/common/objects.ts
+  ^{ name: "distinct", status: "pure" };
+}
+
+!getCaseInsensitive(target, key){
+  // Transposed from base/common/objects.ts
+  ^{ name: "getCaseInsensitive", status: "pure" };
+}
+
+=ex{mixin,equals,safeStringify,stableStringify,distinct,getCaseInsensitive}

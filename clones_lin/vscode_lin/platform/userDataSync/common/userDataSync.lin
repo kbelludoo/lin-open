@@ -1,0 +1,66 @@
+@LIN:platform_userDataSync_common_userDataSync:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getDisallowedIgnoredSettings(){
+  // Transposed from platform/userDataSync/common/userDataSync.ts
+  ^{ name: "getDisallowedIgnoredSettings", status: "pure" };
+}
+
+!getDefaultIgnoredSettings(excludeExtensions){
+  // Transposed from platform/userDataSync/common/userDataSync.ts
+  ^{ name: "getDefaultIgnoredSettings", status: "pure" };
+}
+
+!getIgnoredSettingsForExtension(manifest){
+  // Transposed from platform/userDataSync/common/userDataSync.ts
+  ^{ name: "getIgnoredSettingsForExtension", status: "pure" };
+}
+
+!registerConfiguration(){
+  // Transposed from platform/userDataSync/common/userDataSync.ts
+  ^{ name: "registerConfiguration", status: "pure" };
+}
+
+!isAuthenticationProvider(thing){
+  // Transposed from platform/userDataSync/common/userDataSync.ts
+  ^{ name: "isAuthenticationProvider", status: "pure" };
+}
+
+!getPathSegments(collection, paths){
+  // Transposed from platform/userDataSync/common/userDataSync.ts
+  ^{ name: "getPathSegments", status: "pure" };
+}
+
+!getLastSyncResourceUri(collection, syncResource, environmentService, extUri){
+  // Transposed from platform/userDataSync/common/userDataSync.ts
+  ^{ name: "getLastSyncResourceUri", status: "pure" };
+}
+
+!isUserDataManifest(thing){
+  // Transposed from platform/userDataSync/common/userDataSync.ts
+  ^{ name: "isUserDataManifest", status: "pure" };
+}
+
+!createSyncHeaders(executionId){
+  // Transposed from platform/userDataSync/common/userDataSync.ts
+  ^{ name: "createSyncHeaders", status: "pure" };
+}
+
+!toUserDataSyncError(error){
+  // Transposed from platform/userDataSync/common/userDataSync.ts
+  ^{ name: "toUserDataSyncError", status: "pure" };
+}
+
+!createUserDataSyncError(...args){
+  ^{ className: "UserDataSyncError", methods: [] };
+}
+
+!createUserDataSyncStoreError(...args){
+  ^{ className: "UserDataSyncStoreError", methods: [] };
+}
+
+!createUserDataAutoSyncError(...args){
+  ^{ className: "UserDataAutoSyncError", methods: [] };
+}
+
+=ex{getDisallowedIgnoredSettings,getDefaultIgnoredSettings,getIgnoredSettingsForExtension,registerConfiguration,isAuthenticationProvider,getPathSegments,getLastSyncResourceUri,isUserDataManifest,createSyncHeaders,toUserDataSyncError,createUserDataSyncError,createUserDataSyncStoreError,createUserDataAutoSyncError}

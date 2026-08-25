@@ -1,0 +1,20 @@
+@LIN:workbench_contrib_chat_browser_agentSessions_experiments_unifiedQuickAccessActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createShowUnifiedQuickAccessAction(...args){
+  ^{ className: "ShowUnifiedQuickAccessAction", methods: ["run"] };
+}
+
+!createShowAgentSessionsQuickAccessAction(...args){
+  ^{ className: "ShowAgentSessionsQuickAccessAction", methods: ["run"] };
+}
+
+!createShowCommandsQuickAccessAction(...args){
+  ^{ className: "ShowCommandsQuickAccessAction", methods: ["run"] };
+}
+
+!createShowFilesQuickAccessAction(...args){
+  ^{ className: "ShowFilesQuickAccessAction", methods: ["run"] };
+}
+
+=ex{createShowUnifiedQuickAccessAction,createShowAgentSessionsQuickAccessAction,createShowCommandsQuickAccessAction,createShowFilesQuickAccessAction}

@@ -1,0 +1,8 @@
+@LIN:editor_common_viewLayout_linePart:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createLinePart(...args){
+  ^{ className: "LinePart", methods: ["isWhitespace", "isPseudoAfter"] };
+}
+
+=ex{createLinePart}

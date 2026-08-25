@@ -1,0 +1,13 @@
+@LIN:workbench_contrib_terminalContrib_voice_browser_terminalVoice:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!postProcessTerminalDictation(text){
+  // Transposed from workbench/contrib/terminalContrib/voice/browser/terminalVoice.ts
+  ^{ name: "postProcessTerminalDictation", status: "pure" };
+}
+
+!createTerminalVoiceSession(...args){
+  ^{ className: "TerminalVoiceSession", methods: ["getInstance", "if", "start", "add", "add", "if", "if", "if", "if", "switch", "if", "if", "_startBuiltin", "if", "if", "if", "if", "if", "add", "if", "add", "_finalizeBuiltinThenStop", "if", "if", "stop", "if", "if", "if", "if", "_sendText", "_updateInput", "if", "_createDecoration", "if", "if", "if", "_registerMicInteractions", "if", "if", "_updateDecoration", "_setInactive", "_renderGhostText", "_renderPreparingText", "_renderGhostTextContent", "if", "if", "if", "if"] };
+}
+
+=ex{postProcessTerminalDictation,createTerminalVoiceSession}

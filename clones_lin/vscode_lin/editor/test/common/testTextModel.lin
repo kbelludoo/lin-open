@@ -1,0 +1,19 @@
+@LIN:editor_test_common_testTextModel:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createTextModel(text, languageId, options, uri){
+  // Transposed from editor/test/common/testTextModel.ts
+  ^{ name: "createTextModel", status: "pure" };
+}
+
+!instantiateTextModel(instantiationService, text, languageId, _options, uri){
+  // Transposed from editor/test/common/testTextModel.ts
+  ^{ name: "instantiateTextModel", status: "pure" };
+}
+
+!createModelServices(disposables, services){
+  // Transposed from editor/test/common/testTextModel.ts
+  ^{ name: "createModelServices", status: "pure" };
+}
+
+=ex{createTextModel,instantiateTextModel,createModelServices}

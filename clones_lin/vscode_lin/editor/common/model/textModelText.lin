@@ -1,0 +1,8 @@
+@LIN:editor_common_model_textModelText:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createTextModelText(...args){
+  ^{ className: "TextModelText", methods: ["getValueOfRange", "getLineLength", "length"] };
+}
+
+=ex{createTextModelText}

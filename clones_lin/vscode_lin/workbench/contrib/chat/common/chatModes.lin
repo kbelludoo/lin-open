@@ -1,0 +1,29 @@
+@LIN:workbench_contrib_chat_common_chatModes:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isEquals(a, b){
+  // Transposed from workbench/contrib/chat/common/chatModes.ts
+  ^{ name: "isEquals", status: "pure" };
+}
+
+!isBuiltinChatMode(mode){
+  // Transposed from workbench/contrib/chat/common/chatModes.ts
+  ^{ name: "isBuiltinChatMode", status: "pure" };
+}
+
+!getModeNameForTelemetry(mode){
+  // Transposed from workbench/contrib/chat/common/chatModes.ts
+  ^{ name: "getModeNameForTelemetry", status: "pure" };
+}
+
+!getHandoffId(handoff){
+  // Transposed from workbench/contrib/chat/common/chatModes.ts
+  ^{ name: "getHandoffId", status: "pure" };
+}
+
+!buildCustomAgentHandoffsInfo(modes){
+  // Transposed from workbench/contrib/chat/common/chatModes.ts
+  ^{ name: "buildCustomAgentHandoffsInfo", status: "pure" };
+}
+
+=ex{isEquals,isBuiltinChatMode,getModeNameForTelemetry,getHandoffId,buildCustomAgentHandoffsInfo}

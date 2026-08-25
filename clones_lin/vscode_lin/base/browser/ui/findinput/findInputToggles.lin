@@ -1,0 +1,16 @@
+@LIN:base_browser_ui_findinput_findInputToggles:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createCaseSensitiveToggle(...args){
+  ^{ className: "CaseSensitiveToggle", methods: [] };
+}
+
+!createWholeWordsToggle(...args){
+  ^{ className: "WholeWordsToggle", methods: [] };
+}
+
+!createRegexToggle(...args){
+  ^{ className: "RegexToggle", methods: [] };
+}
+
+=ex{createCaseSensitiveToggle,createWholeWordsToggle,createRegexToggle}

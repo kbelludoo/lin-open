@@ -1,0 +1,13 @@
+@LIN:workbench_browser_parts_notifications_notificationsViewer:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!setNotificationRowHeight(height){
+  // Transposed from workbench/browser/parts/notifications/notificationsViewer.ts
+  ^{ name: "setNotificationRowHeight", status: "pure" };
+}
+
+!createNotificationTemplateRenderer(...args){
+  ^{ className: "NotificationTemplateRenderer", methods: ["updateExpandCollapseIcons", "if", "if", "setInput", "render", "add", "add", "add", "renderSeverity", "forEach", "renderMessage", "renderSecondaryActions", "if", "if", "if", "if", "if", "if", "renderSource", "if", "renderButtons", "add", "for", "add", "renderProgress", "if", "if", "if", "if", "toSeverityIcon", "switch", "getKeybindingLabel"] };
+}
+
+=ex{setNotificationRowHeight,createNotificationTemplateRenderer}

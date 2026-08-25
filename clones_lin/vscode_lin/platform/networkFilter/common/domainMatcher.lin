@@ -1,0 +1,29 @@
+@LIN:platform_networkFilter_common_domainMatcher:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!normalizeDomain(value, fromUrl){
+  // Transposed from platform/networkFilter/common/domainMatcher.ts
+  ^{ name: "normalizeDomain", status: "pure" };
+}
+
+!extractDomainPattern(pattern){
+  // Transposed from platform/networkFilter/common/domainMatcher.ts
+  ^{ name: "extractDomainPattern", status: "pure" };
+}
+
+!matchesDomainPattern(domain, pattern){
+  // Transposed from platform/networkFilter/common/domainMatcher.ts
+  ^{ name: "matchesDomainPattern", status: "pure" };
+}
+
+!extractDomainFromUri(uri){
+  // Transposed from platform/networkFilter/common/domainMatcher.ts
+  ^{ name: "extractDomainFromUri", status: "pure" };
+}
+
+!isDomainAllowed(domain, allowedPatterns, deniedPatterns){
+  // Transposed from platform/networkFilter/common/domainMatcher.ts
+  ^{ name: "isDomainAllowed", status: "pure" };
+}
+
+=ex{normalizeDomain,extractDomainPattern,matchesDomainPattern,extractDomainFromUri,isDomainAllowed}

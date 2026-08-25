@@ -1,0 +1,34 @@
+@LIN:workbench_contrib_chat_browser_chatImageUtils:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!resizeImage(data, mimeType?){
+  // Transposed from workbench/contrib/chat/browser/chatImageUtils.ts
+  ^{ name: "resizeImage", status: "pure" };
+}
+
+!getOrCreateImageThumbnail(cacheKey, data, maxSize){
+  // Transposed from workbench/contrib/chat/browser/chatImageUtils.ts
+  ^{ name: "getOrCreateImageThumbnail", status: "pure" };
+}
+
+!convertStringToUInt8Array(data){
+  // Transposed from workbench/contrib/chat/browser/chatImageUtils.ts
+  ^{ name: "convertStringToUInt8Array", status: "pure" };
+}
+
+!convertUint8ArrayToString(data){
+  // Transposed from workbench/contrib/chat/browser/chatImageUtils.ts
+  ^{ name: "convertUint8ArrayToString", status: "pure" };
+}
+
+!createFileForMedia(fileService, imagesFolder, dataTransfer, mimeType){
+  // Transposed from workbench/contrib/chat/browser/chatImageUtils.ts
+  ^{ name: "createFileForMedia", status: "pure" };
+}
+
+!cleanupOldImages(fileService, logService, imagesFolder){
+  // Transposed from workbench/contrib/chat/browser/chatImageUtils.ts
+  ^{ name: "cleanupOldImages", status: "pure" };
+}
+
+=ex{resizeImage,getOrCreateImageThumbnail,convertStringToUInt8Array,convertUint8ArrayToString,createFileForMedia,cleanupOldImages}

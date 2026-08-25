@@ -1,0 +1,19 @@
+@LIN:workbench_contrib_chat_common_chatPermissionWarnings:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!resetShownWarnings(){
+  // Transposed from workbench/contrib/chat/common/chatPermissionWarnings.ts
+  ^{ name: "resetShownWarnings", status: "pure" };
+}
+
+!hasShownElevatedWarning(level, storageService){
+  // Transposed from workbench/contrib/chat/common/chatPermissionWarnings.ts
+  ^{ name: "hasShownElevatedWarning", status: "pure" };
+}
+
+!maybeConfirmElevatedPermissionLevel(level, dialogService, storageService, options?){
+  // Transposed from workbench/contrib/chat/common/chatPermissionWarnings.ts
+  ^{ name: "maybeConfirmElevatedPermissionLevel", status: "pure" };
+}
+
+=ex{resetShownWarnings,hasShownElevatedWarning,maybeConfirmElevatedPermissionLevel}

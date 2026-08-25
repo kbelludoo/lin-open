@@ -1,0 +1,12 @@
+@LIN:editor_common_cursor_cursorMoveOperations:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createCursorPosition(...args){
+  ^{ className: "CursorPosition", methods: [] };
+}
+
+!createMoveOperations(...args){
+  ^{ className: "MoveOperations", methods: ["leftPosition", "if", "leftPositionAtomicSoftTabs", "if", "left", "moveLeft", "clipPositionColumn", "clipRange", "if", "if", "rightPosition", "rightPositionAtomicSoftTabs", "if", "right", "moveRight", "vertical", "if", "if", "if", "if", "if", "if", "down", "moveDown", "if", "translateDown", "up", "moveUp", "translateUp", "_isBlankLine", "moveToPrevBlankLine", "moveToNextBlankLine", "moveToBeginningOfLine", "if", "moveToEndOfLine", "moveToBeginningOfBuffer", "moveToEndOfBuffer"] };
+}
+
+=ex{createCursorPosition,createMoveOperations}

@@ -1,0 +1,24 @@
+@LIN:editor_common_diff_defaultLinesDiffComputer_heuristicSequenceOptimizations:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!optimizeSequenceDiffs(sequence1, sequence2, sequenceDiffs){
+  // Transposed from editor/common/diff/defaultLinesDiffComputer/heuristicSequenceOptimizations.ts
+  ^{ name: "optimizeSequenceDiffs", status: "pure" };
+}
+
+!removeShortMatches(sequence1, sequence2, sequenceDiffs){
+  // Transposed from editor/common/diff/defaultLinesDiffComputer/heuristicSequenceOptimizations.ts
+  ^{ name: "removeShortMatches", status: "pure" };
+}
+
+!removeVeryShortMatchingLinesBetweenDiffs(sequence1, _sequence2, sequenceDiffs){
+  // Transposed from editor/common/diff/defaultLinesDiffComputer/heuristicSequenceOptimizations.ts
+  ^{ name: "removeVeryShortMatchingLinesBetweenDiffs", status: "pure" };
+}
+
+!removeVeryShortMatchingTextBetweenLongDiffs(sequence1, sequence2, sequenceDiffs){
+  // Transposed from editor/common/diff/defaultLinesDiffComputer/heuristicSequenceOptimizations.ts
+  ^{ name: "removeVeryShortMatchingTextBetweenLongDiffs", status: "pure" };
+}
+
+=ex{optimizeSequenceDiffs,removeShortMatches,removeVeryShortMatchingLinesBetweenDiffs,removeVeryShortMatchingTextBetweenLongDiffs}

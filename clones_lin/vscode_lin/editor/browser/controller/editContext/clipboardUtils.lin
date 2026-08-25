@@ -1,0 +1,33 @@
+@LIN:editor_browser_controller_editContext_clipboardUtils:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!generateDataToCopyAndStoreInMemory(viewModel, id, isFirefox){
+  // Transposed from editor/browser/controller/editContext/clipboardUtils.ts
+  ^{ name: "generateDataToCopyAndStoreInMemory", status: "pure" };
+}
+
+!createClipboardCopyEvent(e, isCut, context, logService, isFirefox){
+  // Transposed from editor/browser/controller/editContext/clipboardUtils.ts
+  ^{ name: "createClipboardCopyEvent", status: "pure" };
+}
+
+!createClipboardPasteEvent(e){
+  // Transposed from editor/browser/controller/editContext/clipboardUtils.ts
+  ^{ name: "createClipboardPasteEvent", status: "pure" };
+}
+
+!createReadableClipboardData(dataTransfer){
+  // Transposed from editor/browser/controller/editContext/clipboardUtils.ts
+  ^{ name: "createReadableClipboardData", status: "pure" };
+}
+
+!createWritableClipboardData(dataTransfer){
+  // Transposed from editor/browser/controller/editContext/clipboardUtils.ts
+  ^{ name: "createWritableClipboardData", status: "pure" };
+}
+
+!createInMemoryClipboardMetadataManager(...args){
+  ^{ className: "InMemoryClipboardMetadataManager", methods: ["set", "get", "if"] };
+}
+
+=ex{generateDataToCopyAndStoreInMemory,createClipboardCopyEvent,createClipboardPasteEvent,createReadableClipboardData,createWritableClipboardData,createInMemoryClipboardMetadataManager}

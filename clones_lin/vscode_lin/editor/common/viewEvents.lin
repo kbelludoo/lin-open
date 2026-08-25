@@ -1,0 +1,76 @@
+@LIN:editor_common_viewEvents:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createViewCompositionStartEvent(...args){
+  ^{ className: "ViewCompositionStartEvent", methods: [] };
+}
+
+!createViewCompositionEndEvent(...args){
+  ^{ className: "ViewCompositionEndEvent", methods: [] };
+}
+
+!createViewConfigurationChangedEvent(...args){
+  ^{ className: "ViewConfigurationChangedEvent", methods: ["hasChanged"] };
+}
+
+!createViewCursorStateChangedEvent(...args){
+  ^{ className: "ViewCursorStateChangedEvent", methods: [] };
+}
+
+!createViewDecorationsChangedEvent(...args){
+  ^{ className: "ViewDecorationsChangedEvent", methods: ["if"] };
+}
+
+!createViewFlushedEvent(...args){
+  ^{ className: "ViewFlushedEvent", methods: [] };
+}
+
+!createViewFocusChangedEvent(...args){
+  ^{ className: "ViewFocusChangedEvent", methods: [] };
+}
+
+!createViewLanguageConfigurationEvent(...args){
+  ^{ className: "ViewLanguageConfigurationEvent", methods: [] };
+}
+
+!createViewLineMappingChangedEvent(...args){
+  ^{ className: "ViewLineMappingChangedEvent", methods: [] };
+}
+
+!createViewLinesChangedEvent(...args){
+  ^{ className: "ViewLinesChangedEvent", methods: [] };
+}
+
+!createViewLinesDeletedEvent(...args){
+  ^{ className: "ViewLinesDeletedEvent", methods: [] };
+}
+
+!createViewLinesInsertedEvent(...args){
+  ^{ className: "ViewLinesInsertedEvent", methods: [] };
+}
+
+!createViewRevealRangeRequestEvent(...args){
+  ^{ className: "ViewRevealRangeRequestEvent", methods: [] };
+}
+
+!createViewScrollChangedEvent(...args){
+  ^{ className: "ViewScrollChangedEvent", methods: [] };
+}
+
+!createViewThemeChangedEvent(...args){
+  ^{ className: "ViewThemeChangedEvent", methods: [] };
+}
+
+!createViewTokensChangedEvent(...args){
+  ^{ className: "ViewTokensChangedEvent", methods: [] };
+}
+
+!createViewTokensColorsChangedEvent(...args){
+  ^{ className: "ViewTokensColorsChangedEvent", methods: [] };
+}
+
+!createViewZonesChangedEvent(...args){
+  ^{ className: "ViewZonesChangedEvent", methods: [] };
+}
+
+=ex{createViewCompositionStartEvent,createViewCompositionEndEvent,createViewConfigurationChangedEvent,createViewCursorStateChangedEvent,createViewDecorationsChangedEvent,createViewFlushedEvent,createViewFocusChangedEvent,createViewLanguageConfigurationEvent,createViewLineMappingChangedEvent,createViewLinesChangedEvent,createViewLinesDeletedEvent,createViewLinesInsertedEvent,createViewRevealRangeRequestEvent,createViewScrollChangedEvent,createViewThemeChangedEvent,createViewTokensChangedEvent,createViewTokensColorsChangedEvent,createViewZonesChangedEvent}

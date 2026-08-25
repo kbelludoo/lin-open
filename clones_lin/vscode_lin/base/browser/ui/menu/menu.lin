@@ -1,0 +1,26 @@
+@LIN:base_browser_ui_menu_menu:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!cleanMnemonic(label){
+  // Transposed from base/browser/ui/menu/menu.ts
+  ^{ name: "cleanMnemonic", status: "pure" };
+}
+
+!getMenuWidgetCSS(style, isForShadowDom){
+  // Transposed from base/browser/ui/menu/menu.ts
+  ^{ name: "getMenuWidgetCSS", status: "pure" };
+}
+
+!createMenu(...args){
+  ^{ className: "Menu", methods: ["if", "if", "if", "if", "if", "if", "if", "_register", "while", "if", "if", "while", "if", "if", "if", "if", "initializeOrUpdateStyleSheet", "if", "if", "styleScrollElement", "getContainer", "onScroll", "scrollOffset", "trigger", "if", "if", "if", "focusItemByElement", "if", "setFocusedItem", "for", "if", "updateFocus", "if", "doGetActionViewItem", "if", "if", "if", "if", "if", "if"] };
+}
+
+!getHorizontalDirectionEnum(){
+  ^{ enumName: "HorizontalDirection", members: ["Right", "Left"] };
+}
+
+!getVerticalDirectionEnum(){
+  ^{ enumName: "VerticalDirection", members: ["Above", "Below"] };
+}
+
+=ex{cleanMnemonic,getMenuWidgetCSS,createMenu,getHorizontalDirectionEnum,getVerticalDirectionEnum}

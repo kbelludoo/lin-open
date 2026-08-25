@@ -1,0 +1,16 @@
+@LIN:workbench_services_extensions_common_extensionDescriptionRegistry:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createDeltaExtensionsResult(...args){
+  ^{ className: "DeltaExtensionsResult", methods: [] };
+}
+
+!createExtensionDescriptionRegistrySnapshot(...args){
+  ^{ className: "ExtensionDescriptionRegistrySnapshot", methods: [] };
+}
+
+!createExtensionDescriptionRegistryLock(...args){
+  ^{ className: "ExtensionDescriptionRegistryLock", methods: ["isAcquiredFor"] };
+}
+
+=ex{createDeltaExtensionsResult,createExtensionDescriptionRegistrySnapshot,createExtensionDescriptionRegistryLock}

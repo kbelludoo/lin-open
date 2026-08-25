@@ -1,0 +1,52 @@
+@LIN:workbench_electron_browser_actions_windowActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createCloseWindowAction(...args){
+  ^{ className: "CloseWindowAction", methods: ["run"] };
+}
+
+!createCloseOtherWindowsAction(...args){
+  ^{ className: "CloseOtherWindowsAction", methods: ["run", "for", "if"] };
+}
+
+!createZoomInAction(...args){
+  ^{ className: "ZoomInAction", methods: ["run"] };
+}
+
+!createZoomOutAction(...args){
+  ^{ className: "ZoomOutAction", methods: ["run"] };
+}
+
+!createZoomResetAction(...args){
+  ^{ className: "ZoomResetAction", methods: ["run"] };
+}
+
+!createSwitchWindowAction(...args){
+  ^{ className: "SwitchWindowAction", methods: ["isQuickNavigate"] };
+}
+
+!createQuickSwitchWindowAction(...args){
+  ^{ className: "QuickSwitchWindowAction", methods: ["isQuickNavigate"] };
+}
+
+!createSwitchToMainWindowAction(...args){
+  ^{ className: "SwitchToMainWindowAction", methods: ["run"] };
+}
+
+!createFocusWindowAction(...args){
+  ^{ className: "FocusWindowAction", methods: ["run"] };
+}
+
+!createToggleWindowAlwaysOnTopAction(...args){
+  ^{ className: "ToggleWindowAlwaysOnTopAction", methods: ["run"] };
+}
+
+!createEnableWindowAlwaysOnTopAction(...args){
+  ^{ className: "EnableWindowAlwaysOnTopAction", methods: ["run"] };
+}
+
+!createDisableWindowAlwaysOnTopAction(...args){
+  ^{ className: "DisableWindowAlwaysOnTopAction", methods: ["run"] };
+}
+
+=ex{createCloseWindowAction,createCloseOtherWindowsAction,createZoomInAction,createZoomOutAction,createZoomResetAction,createSwitchWindowAction,createQuickSwitchWindowAction,createSwitchToMainWindowAction,createFocusWindowAction,createToggleWindowAlwaysOnTopAction,createEnableWindowAlwaysOnTopAction,createDisableWindowAlwaysOnTopAction}

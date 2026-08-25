@@ -1,0 +1,12 @@
+@LIN:editor_browser_viewParts_currentLineHighlight_currentLineHighlight:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createCurrentLineHighlightOverlay(...args){
+  ^{ className: "CurrentLineHighlightOverlay", methods: ["_renderOne", "_shouldRenderThis", "_shouldRenderOther"] };
+}
+
+!createCurrentLineMarginHighlightOverlay(...args){
+  ^{ className: "CurrentLineMarginHighlightOverlay", methods: ["_renderOne", "_shouldRenderThis", "_shouldRenderOther"] };
+}
+
+=ex{createCurrentLineHighlightOverlay,createCurrentLineMarginHighlightOverlay}

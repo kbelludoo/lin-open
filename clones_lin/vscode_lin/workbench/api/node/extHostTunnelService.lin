@@ -1,0 +1,42 @@
+@LIN:workbench_api_node_extHostTunnelService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getSockets(stdout){
+  // Transposed from workbench/api/node/extHostTunnelService.ts
+  ^{ name: "getSockets", status: "pure" };
+}
+
+!loadListeningPorts(stdouts){
+  // Transposed from workbench/api/node/extHostTunnelService.ts
+  ^{ name: "loadListeningPorts", status: "pure" };
+}
+
+!parseIpAddress(hex){
+  // Transposed from workbench/api/node/extHostTunnelService.ts
+  ^{ name: "parseIpAddress", status: "pure" };
+}
+
+!loadConnectionTable(stdout){
+  // Transposed from workbench/api/node/extHostTunnelService.ts
+  ^{ name: "loadConnectionTable", status: "pure" };
+}
+
+!findPorts(connections, socketMap, { pid, processes){
+  // Transposed from workbench/api/node/extHostTunnelService.ts
+  ^{ name: "findPorts", status: "pure" };
+}
+
+!tryFindRootPorts(connections, rootProcessesStdout, previousPorts, CandidatePort & { ppid){
+  // Transposed from workbench/api/node/extHostTunnelService.ts
+  ^{ name: "tryFindRootPorts", status: "pure" };
+}
+
+!createNodeExtHostTunnelService(...args){
+  ^{ className: "NodeExtHostTunnelService", methods: ["if", "$registerCandidateFinder", "if", "if", "while", "if", "calculateDelay", "setInitialCandidates", "findCandidatePorts", "catch", "for", "catch", "filter", "if", "then", "defaultTunnelHost", "makeManagedTunnelFactory", "NodeRemoteTunnel", "register", "getAddress"] };
+}
+
+!createExtHostManagedSocket(...args){
+  ^{ className: "ExtHostManagedSocket", methods: ["connect", "write", "closeRemote", "drain"] };
+}
+
+=ex{getSockets,loadListeningPorts,parseIpAddress,loadConnectionTable,findPorts,tryFindRootPorts,createNodeExtHostTunnelService,createExtHostManagedSocket}

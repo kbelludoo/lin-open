@@ -1,0 +1,12 @@
+@LIN:workbench_api_common_extHostTesting:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createTestRunCoordinator(...args){
+  ^{ className: "TestRunCoordinator", methods: ["trackers", "getCoverageDetails", "disposeTestRun", "for", "if", "prepareForMainThreadTestRun", "cancelRunById", "cancelAllRuns", "createTestRun", "if", "getTracker"] };
+}
+
+!createTestRunDto(...args){
+  ^{ className: "TestRunDto", methods: ["fromPublic", "fromInternal"] };
+}
+
+=ex{createTestRunCoordinator,createTestRunDto}

@@ -1,0 +1,20 @@
+@LIN:workbench_api_common_extHostTypes_diagnostic:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createDiagnosticRelatedInformation(...args){
+  ^{ className: "DiagnosticRelatedInformation", methods: ["is", "if", "isEqual", "if", "if"] };
+}
+
+!createDiagnostic(...args){
+  ^{ className: "Diagnostic", methods: ["if", "toJSON", "isEqual", "if", "if"] };
+}
+
+!getDiagnosticTagEnum(){
+  ^{ enumName: "DiagnosticTag", members: ["Unnecessary", "Deprecated"] };
+}
+
+!getDiagnosticSeverityEnum(){
+  ^{ enumName: "DiagnosticSeverity", members: ["Hint", "Information", "Warning", "Error"] };
+}
+
+=ex{createDiagnosticRelatedInformation,createDiagnostic,getDiagnosticTagEnum,getDiagnosticSeverityEnum}

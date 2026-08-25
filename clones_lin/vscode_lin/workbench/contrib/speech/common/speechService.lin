@@ -1,0 +1,21 @@
+@LIN:workbench_contrib_speech_common_speechService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!speechLanguageConfigToLanguage(config, lang = language){
+  // Transposed from workbench/contrib/speech/common/speechService.ts
+  ^{ name: "speechLanguageConfigToLanguage", status: "pure" };
+}
+
+!getSpeechToTextStatusEnum(){
+  ^{ enumName: "SpeechToTextStatus", members: ["Started", "Recognizing", "Recognized", "Stopped", "Error"] };
+}
+
+!getTextToSpeechStatusEnum(){
+  ^{ enumName: "TextToSpeechStatus", members: ["Started", "Stopped", "Error"] };
+}
+
+!getKeywordRecognitionStatusEnum(){
+  ^{ enumName: "KeywordRecognitionStatus", members: ["Recognized", "Stopped", "Canceled"] };
+}
+
+=ex{speechLanguageConfigToLanguage,getSpeechToTextStatusEnum,getTextToSpeechStatusEnum,getKeywordRecognitionStatusEnum}

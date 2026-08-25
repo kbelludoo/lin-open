@@ -1,0 +1,8 @@
+@LIN:workbench_contrib_tasks_browser_taskService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createTaskService(...args){
+  ^{ className: "TaskService", methods: ["_getTaskSystem", "if", "if", "_computeLegacyConfiguration", "_versionAndEngineCompatible"] };
+}
+
+=ex{createTaskService}

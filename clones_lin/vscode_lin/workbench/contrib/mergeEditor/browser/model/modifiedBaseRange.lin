@@ -1,0 +1,37 @@
+@LIN:workbench_contrib_mergeEditor_browser_model_modifiedBaseRange:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getOtherInputNumber(inputNumber){
+  // Transposed from workbench/contrib/mergeEditor/browser/model/modifiedBaseRange.ts
+  ^{ name: "getOtherInputNumber", status: "pure" };
+}
+
+!createModifiedBaseRange(...args){
+  ^{ className: "ModifiedBaseRange", methods: ["fromDiffs", "if", "getInputRange", "getInputCombinedDiff", "getInputDiffs", "isConflicting", "canBeCombined", "isOrderRelevant", "if", "getEditForBase", "if", "if", "if", "if", "if", "if", "smartCombineInputs", "if", "if", "if", "dumbCombineInputs", "if", "if", "if", "if"] };
+}
+
+!createModifiedBaseRangeStateBase(...args){
+  ^{ className: "ModifiedBaseRangeStateBase", methods: ["kind", "toString", "swap", "withInputValue", "if", "equals"] };
+}
+
+!createModifiedBaseRangeStateInput1(...args){
+  ^{ className: "ModifiedBaseRangeStateInput1", methods: ["kind", "includesInput1", "toString", "swap", "withInputValue", "if", "equals"] };
+}
+
+!createModifiedBaseRangeStateInput2(...args){
+  ^{ className: "ModifiedBaseRangeStateInput2", methods: ["kind", "includesInput2", "toString", "swap", "withInputValue", "if", "equals"] };
+}
+
+!createModifiedBaseRangeStateBoth(...args){
+  ^{ className: "ModifiedBaseRangeStateBoth", methods: ["kind", "includesInput1", "includesInput2", "toString", "swap", "withInputValue", "if", "equals", "getInput"] };
+}
+
+!createModifiedBaseRangeStateUnrecognized(...args){
+  ^{ className: "ModifiedBaseRangeStateUnrecognized", methods: ["kind", "toString", "swap", "withInputValue", "if", "equals"] };
+}
+
+!getModifiedBaseRangeStateKindEnum(){
+  ^{ enumName: "ModifiedBaseRangeStateKind", members: ["base", "input1", "input2", "both", "unrecognized"] };
+}
+
+=ex{getOtherInputNumber,createModifiedBaseRange,createModifiedBaseRangeStateBase,createModifiedBaseRangeStateInput1,createModifiedBaseRangeStateInput2,createModifiedBaseRangeStateBoth,createModifiedBaseRangeStateUnrecognized,getModifiedBaseRangeStateKindEnum}

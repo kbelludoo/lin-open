@@ -1,0 +1,14 @@
+@LIN:workbench_contrib_debug_browser_debugEditorContribution:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!formatHoverContent(contentText){
+  // Transposed from workbench/contrib/debug/browser/debugEditorContribution.ts
+  ^{ name: "formatHoverContent", status: "pure" };
+}
+
+!createInlineValueDecoration(lineNumber, contentText, classNamePrefix, column = Constants.MAX_SAFE_SMALL_INTEGER, viewportMaxCol){
+  // Transposed from workbench/contrib/debug/browser/debugEditorContribution.ts
+  ^{ name: "createInlineValueDecoration", status: "pure" };
+}
+
+=ex{formatHoverContent,createInlineValueDecoration}

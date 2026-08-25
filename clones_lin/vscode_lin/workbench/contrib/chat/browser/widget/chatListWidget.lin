@@ -1,0 +1,26 @@
+@LIN:workbench_contrib_chat_browser_widget_chatListWidget:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getAnchoredScrollTop(scrollTop, currentTargetTop, anchorTargetTop){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListWidget.ts
+  ^{ name: "getAnchoredScrollTop", status: "pure" };
+}
+
+!computeScrollDownState(isScrolledToBottom, scrollLock){
+  // Transposed from workbench/contrib/chat/browser/widget/chatListWidget.ts
+  ^{ name: "computeScrollDownState", status: "pure" };
+}
+
+!createAutoScrollHolds(...args){
+  ^{ className: "AutoScrollHolds", methods: ["isHeld", "acquire", "if"] };
+}
+
+!createUserToggleResizeState(...args){
+  ^{ className: "UserToggleResizeState", methods: ["isActive", "start", "markResized", "if", "startTransition", "endTransition", "advanceFrame", "if"] };
+}
+
+!createChatListWidget(...args){
+  ^{ className: "ChatListWidget", methods: ["onDidClickRequest", "onDidRerender", "onDidDispose", "onDidFocusOutside", "domNode", "scrollTop", "scrollTop", "scrollHeight", "renderHeight", "contentHeight", "isScrolledToBottom", "lastItem", "lastVisibleItem", "if", "for", "if", "if", "if", "if", "if", "if", "if", "handleCopy", "if", "if", "for", "for", "cloneSelectedContents", "for", "if", "if", "updateScrollDownButtonVisibility", "handleContextMenu", "setViewModel", "refresh", "if", "createRequestTreeItems", "setScrollLock", "scrollLock", "setVisibleChangeCount", "scrollToCurrentItem", "if", "if", "rerender", "getItems", "for", "if", "if", "createRequestTreeItems", "for", "isTreeStickyScrollEnabled", "delegateScrollFromMouseWheelEvent", "hasElement", "_updateElementHeight", "if", "trackUserToggleResize", "if", "cancelUserToggleScrollRestoration", "reveal", "getElementTop", "getFocus", "setFocus", "focusItem", "focusLastItem", "if", "if", "scrollToEnd", "if", "if", "acquireAutoScrollHold", "isAutoScrollHeld", "if", "if", "focus", "isDOMFocused", "getCodeBlockInfosForResponse", "getCodeBlockInfoForEditor", "getFileTreeInfosForResponse", "getLastFocusedFileTreeForResponse", "editorsInUse", "getTemplateDataForRequestId", "if", "getElementFromNode", "updateRendererOptions", "setStyles", "setVisible", "layout"] };
+}
+
+=ex{getAnchoredScrollTop,computeScrollDownState,createAutoScrollHolds,createUserToggleResizeState,createChatListWidget}

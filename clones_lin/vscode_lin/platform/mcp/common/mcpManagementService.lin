@@ -1,0 +1,8 @@
+@LIN:platform_mcp_common_mcpManagementService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createMcpUserResourceManagementService(...args){
+  ^{ className: "McpUserResourceManagementService", methods: ["installFromGallery", "updateMetadata", "if", "updateMetadataFromGallery", "if", "getLocalServerInfo", "if", "catch", "getLocation", "installFromUri", "canInstall"] };
+}
+
+=ex{createMcpUserResourceManagementService}

@@ -1,0 +1,12 @@
+@LIN:editor_standalone_browser_quickAccess_standaloneGotoLineQuickAccess:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createStandaloneGotoLineQuickAccessProvider(...args){
+  ^{ className: "StandaloneGotoLineQuickAccessProvider", methods: ["activeTextEditorControl"] };
+}
+
+!createGotoLineAction(...args){
+  ^{ className: "GotoLineAction", methods: ["run"] };
+}
+
+=ex{createStandaloneGotoLineQuickAccessProvider,createGotoLineAction}

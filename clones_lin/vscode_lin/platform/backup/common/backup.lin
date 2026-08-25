@@ -1,0 +1,14 @@
+@LIN:platform_backup_common_backup:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isFolderBackupInfo(curr){
+  // Transposed from platform/backup/common/backup.ts
+  ^{ name: "isFolderBackupInfo", status: "pure" };
+}
+
+!isWorkspaceBackupInfo(curr){
+  // Transposed from platform/backup/common/backup.ts
+  ^{ name: "isWorkspaceBackupInfo", status: "pure" };
+}
+
+=ex{isFolderBackupInfo,isWorkspaceBackupInfo}

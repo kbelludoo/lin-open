@@ -1,0 +1,12 @@
+@LIN:sessions_contrib_files_browser_filesView:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createSessionsExplorerView(...args){
+  ^{ className: "SessionsExplorerView", methods: ["primaryActionGroups", "getLocationBasedColors", "createActionViewItem", "if"] };
+}
+
+!createSessionsExplorerEmptyView(...args){
+  ^{ className: "SessionsExplorerEmptyView", methods: ["renderBody"] };
+}
+
+=ex{createSessionsExplorerView,createSessionsExplorerEmptyView}

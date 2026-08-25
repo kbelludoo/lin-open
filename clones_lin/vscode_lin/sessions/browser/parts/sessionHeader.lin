@@ -1,0 +1,12 @@
+@LIN:sessions_browser_parts_sessionHeader:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createSessionHeader(...args){
+  ^{ className: "SessionHeader", methods: ["element", "visible", "height", "_registerContextMenu", "if", "_registerDragSource", "if", "if", "setSession", "if", "if", "setVisible", "if", "_updateVisibility", "_updateHeader", "_applyVisibility", "if", "_updateStyles", "_isTitleEditable", "startTitleEditing", "_startTitleEditing", "if", "if", "if", "_cancelTitleEditing", "if", "_endTitleEditing", "if"] };
+}
+
+!createSessionViewFloatingToolbar(...args){
+  ^{ className: "SessionViewFloatingToolbar", methods: ["element", "setSession", "if", "if", "_setVisible"] };
+}
+
+=ex{createSessionHeader,createSessionViewFloatingToolbar}

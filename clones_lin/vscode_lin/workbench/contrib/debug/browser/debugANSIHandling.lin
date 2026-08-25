@@ -1,0 +1,19 @@
+@LIN:workbench_contrib_debug_browser_debugANSIHandling:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!handleANSIOutput(text, linkDetector, workspaceFolder, highlights, hoverBehavior){
+  // Transposed from workbench/contrib/debug/browser/debugANSIHandling.ts
+  ^{ name: "handleANSIOutput", status: "pure" };
+}
+
+!appendStylizedStringToContainer(root, stringContent, cssClasses, linkDetector, workspaceFolder, customTextColor, customBackgroundColor, customUnderlineColor, highlights, offset, hoverBehavior){
+  // Transposed from workbench/contrib/debug/browser/debugANSIHandling.ts
+  ^{ name: "appendStylizedStringToContainer", status: "pure" };
+}
+
+!calcANSI8bitColor(colorNumber){
+  // Transposed from workbench/contrib/debug/browser/debugANSIHandling.ts
+  ^{ name: "calcANSI8bitColor", status: "pure" };
+}
+
+=ex{handleANSIOutput,appendStylizedStringToContainer,calcANSI8bitColor}

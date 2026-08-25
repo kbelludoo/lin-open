@@ -1,0 +1,14 @@
+@LIN:platform_agentHost_node_claude_customizations_scan_claudeMcpScan:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!scanClaudeMcpServers(workingDirectory, userHome, fileService){
+  // Transposed from platform/agentHost/node/claude/customizations/scan/claudeMcpScan.ts
+  ^{ name: "scanClaudeMcpServers", status: "pure" };
+}
+
+!deriveMcpState(status){
+  // Transposed from platform/agentHost/node/claude/customizations/scan/claudeMcpScan.ts
+  ^{ name: "deriveMcpState", status: "pure" };
+}
+
+=ex{scanClaudeMcpServers,deriveMcpState}

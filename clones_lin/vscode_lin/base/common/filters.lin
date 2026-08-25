@@ -1,0 +1,84 @@
+@LIN:base_common_filters:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!or(filter){
+  // Transposed from base/common/filters.ts
+  ^{ name: "or", status: "pure" };
+}
+
+!matchesContiguousSubString(word, wordToMatchAgainst){
+  // Transposed from base/common/filters.ts
+  ^{ name: "matchesContiguousSubString", status: "pure" };
+}
+
+!matchesBaseContiguousSubString(word, wordToMatchAgainst){
+  // Transposed from base/common/filters.ts
+  ^{ name: "matchesBaseContiguousSubString", status: "pure" };
+}
+
+!matchesSubString(word, wordToMatchAgainst){
+  // Transposed from base/common/filters.ts
+  ^{ name: "matchesSubString", status: "pure" };
+}
+
+!isUpper(code){
+  // Transposed from base/common/filters.ts
+  ^{ name: "isUpper", status: "pure" };
+}
+
+!matchesCamelCase(word, camelCaseWord){
+  // Transposed from base/common/filters.ts
+  ^{ name: "matchesCamelCase", status: "pure" };
+}
+
+!matchesWords(word, target, contiguous){
+  // Transposed from base/common/filters.ts
+  ^{ name: "matchesWords", status: "pure" };
+}
+
+!matchesFuzzy(word, wordToMatchAgainst, enableSeparateSubstringMatching = false){
+  // Transposed from base/common/filters.ts
+  ^{ name: "matchesFuzzy", status: "pure" };
+}
+
+!matchesFuzzy2(pattern, word){
+  // Transposed from base/common/filters.ts
+  ^{ name: "matchesFuzzy2", status: "pure" };
+}
+
+!anyScore(pattern, lowPattern, patternPos, word, lowWord, wordPos){
+  // Transposed from base/common/filters.ts
+  ^{ name: "anyScore", status: "pure" };
+}
+
+!createMatches(score){
+  // Transposed from base/common/filters.ts
+  ^{ name: "createMatches", status: "pure" };
+}
+
+!isPatternInWord(patternLow, patternPos, patternLen, wordLow, wordPos, wordLen, fillMinWordPosArr = false){
+  // Transposed from base/common/filters.ts
+  ^{ name: "isPatternInWord", status: "pure" };
+}
+
+!isDefault(score?){
+  // Transposed from base/common/filters.ts
+  ^{ name: "isDefault", status: "pure" };
+}
+
+!fuzzyScore(pattern, patternLow, patternStart, word, wordLow, wordStart, options){
+  // Transposed from base/common/filters.ts
+  ^{ name: "fuzzyScore", status: "pure" };
+}
+
+!fuzzyScoreGracefulAggressive(pattern, lowPattern, patternPos, word, lowWord, wordPos, options?){
+  // Transposed from base/common/filters.ts
+  ^{ name: "fuzzyScoreGracefulAggressive", status: "pure" };
+}
+
+!fuzzyScoreGraceful(pattern, lowPattern, patternPos, word, lowWord, wordPos, options?){
+  // Transposed from base/common/filters.ts
+  ^{ name: "fuzzyScoreGraceful", status: "pure" };
+}
+
+=ex{or,matchesContiguousSubString,matchesBaseContiguousSubString,matchesSubString,isUpper,matchesCamelCase,matchesWords,matchesFuzzy,matchesFuzzy2,anyScore,createMatches,isPatternInWord,isDefault,fuzzyScore,fuzzyScoreGracefulAggressive,fuzzyScoreGraceful}

@@ -1,0 +1,16 @@
+@LIN:base_browser_ui_button_button:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createButtonBar(...args){
+  ^{ className: "ButtonBar", methods: ["dispose", "buttons", "clear", "addButton", "addButtonWithDescription", "addButtonWithDropdown", "pushButton", "if"] };
+}
+
+!createButtonWithIcon(...args){
+  ^{ className: "ButtonWithIcon", methods: ["labelElement", "iconElement", "if", "label", "label", "if", "if", "if", "if", "if", "icon", "icon"] };
+}
+
+!getButtonBarAlignmentEnum(){
+  ^{ enumName: "ButtonBarAlignment", members: ["Horizontal", "Vertical"] };
+}
+
+=ex{createButtonBar,createButtonWithIcon,getButtonBarAlignmentEnum}

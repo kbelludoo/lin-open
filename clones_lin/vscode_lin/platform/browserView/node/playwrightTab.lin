@@ -1,0 +1,12 @@
+@LIN:platform_browserView_node_playwrightTab:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createDialogInterruptedError(...args){
+  ^{ className: "DialogInterruptedError", methods: [] };
+}
+
+!createPlaywrightTab(...args){
+  ^{ className: "PlaywrightTab", methods: ["_initialize", "for", "for", "_handleDialog", "if", "replyToDialog", "if", "if", "_handleFileChooser", "replyToFileChooser", "if", "_handleDownload", "_handleRequestFailed", "_handleConsoleMessage", "_handlePageError", "_getBlockedURLErrorMessage", "if", "if", "if", "if", "getSummary", "if", "if", "getAiSnapshot", "if", "if", "for"] };
+}
+
+=ex{createDialogInterruptedError,createPlaywrightTab}

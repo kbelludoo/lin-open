@@ -1,0 +1,16 @@
+@LIN:workbench_browser_parts_views_treeView:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createTreeViewPane(...args){
+  ^{ className: "TreeViewPane", methods: ["if", "if", "focus", "renderBody", "shouldShowWelcome", "layoutBody", "getOptimalWidth", "renderTreeView", "layoutTreeView", "updateTreeVisibility", "getActionRunner", "getActionsContext"] };
+}
+
+!createCustomTreeView(...args){
+  ^{ className: "CustomTreeView", methods: ["activate", "if"] };
+}
+
+!createTreeView(...args){
+  ^{ className: "TreeView", methods: ["activate", "if"] };
+}
+
+=ex{createTreeViewPane,createCustomTreeView,createTreeView}

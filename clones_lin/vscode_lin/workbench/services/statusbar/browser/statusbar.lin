@@ -1,0 +1,19 @@
+@LIN:workbench_services_statusbar_browser_statusbar:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isStatusbarEntryLocation(thing){
+  // Transposed from workbench/services/statusbar/browser/statusbar.ts
+  ^{ name: "isStatusbarEntryLocation", status: "pure" };
+}
+
+!isStatusbarEntryPriority(thing){
+  // Transposed from workbench/services/statusbar/browser/statusbar.ts
+  ^{ name: "isStatusbarEntryPriority", status: "pure" };
+}
+
+!isTooltipWithCommands(thing){
+  // Transposed from workbench/services/statusbar/browser/statusbar.ts
+  ^{ name: "isTooltipWithCommands", status: "pure" };
+}
+
+=ex{isStatusbarEntryLocation,isStatusbarEntryPriority,isTooltipWithCommands}

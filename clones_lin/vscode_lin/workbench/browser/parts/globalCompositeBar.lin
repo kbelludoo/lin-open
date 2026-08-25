@@ -1,0 +1,29 @@
+@LIN:workbench_browser_parts_globalCompositeBar:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isAccountsActionVisible(storageService){
+  // Transposed from workbench/browser/parts/globalCompositeBar.ts
+  ^{ name: "isAccountsActionVisible", status: "pure" };
+}
+
+!createGlobalCompositeBar(...args){
+  ^{ className: "GlobalCompositeBar", methods: ["if", "if", "if", "registerListeners", "if", "create", "focus", "getContextMenuActions", "toggleAccountsActivity", "accountsVisibilityPreference", "accountsVisibilityPreference"] };
+}
+
+!createAccountsActivityActionViewItem(...args){
+  ^{ className: "AccountsActivityActionViewItem", methods: ["registerListeners", "_register", "for", "catch", "initialize", "if", "doInitialize", "for", "if", "render", "updateAvatar", "if", "if", "for", "if", "if", "if", "getDefaultAccountAvatarIcon", "if", "resolveMainMenuActions", "if", "for", "if", "catch", "for", "if", "if", "if", "for", "if", "catch", "for", "if", "if", "if", "for", "if", "if", "resolveContextMenuActions", "addOrUpdateAccount", "if", "if", "if", "removeAccount", "if", "if", "if", "addAccountsFromProvider", "for", "catch", "catch"] };
+}
+
+!createGlobalActivityActionViewItem(...args){
+  ^{ className: "GlobalActivityActionViewItem", methods: ["render", "updateProfileBadge", "if", "if", "if", "updateActivity", "computeTitle", "computeTitle"] };
+}
+
+!createSimpleAccountActivityActionViewItem(...args){
+  ^{ className: "SimpleAccountActivityActionViewItem", methods: [] };
+}
+
+!createSimpleGlobalActivityActionViewItem(...args){
+  ^{ className: "SimpleGlobalActivityActionViewItem", methods: [] };
+}
+
+=ex{isAccountsActionVisible,createGlobalCompositeBar,createAccountsActivityActionViewItem,createGlobalActivityActionViewItem,createSimpleAccountActivityActionViewItem,createSimpleGlobalActivityActionViewItem}

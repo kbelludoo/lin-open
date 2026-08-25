@@ -1,0 +1,16 @@
+@LIN:editor_contrib_inlineCompletions_browser_model_suggestWidgetAdapter:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createSuggestWidgetAdaptor(...args){
+  ^{ className: "SuggestWidgetAdaptor", methods: ["selectedItem", "_register", "_register", "if", "if", "if", "if", "if", "update", "getSuggestItemInfo", "if", "if", "stopForceRenderingAbove", "forceRenderingAbove"] };
+}
+
+!createSuggestItemInfo(...args){
+  ^{ className: "SuggestItemInfo", methods: ["fromSuggestion", "if", "if", "equals", "toSelectedSuggestionInfo", "getSingleTextEdit"] };
+}
+
+!createObservableSuggestWidgetAdapter(...args){
+  ^{ className: "ObservableSuggestWidgetAdapter", methods: ["stopForceRenderingAbove", "forceRenderingAbove"] };
+}
+
+=ex{createSuggestWidgetAdaptor,createSuggestItemInfo,createObservableSuggestWidgetAdapter}

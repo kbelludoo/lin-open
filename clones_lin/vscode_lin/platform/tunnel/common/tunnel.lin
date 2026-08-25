@@ -1,0 +1,56 @@
+@LIN:platform_tunnel_common_tunnel:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isRemoteTunnel(something){
+  // Transposed from platform/tunnel/common/tunnel.ts
+  ^{ name: "isRemoteTunnel", status: "pure" };
+}
+
+!isTunnelProvider(addressOrTunnelProvider){
+  // Transposed from platform/tunnel/common/tunnel.ts
+  ^{ name: "isTunnelProvider", status: "pure" };
+}
+
+!extractLocalHostUriMetaDataForPortMapping(uri){
+  // Transposed from platform/tunnel/common/tunnel.ts
+  ^{ name: "extractLocalHostUriMetaDataForPortMapping", status: "pure" };
+}
+
+!extractQueryLocalHostUriMetaDataForPortMapping(uri){
+  // Transposed from platform/tunnel/common/tunnel.ts
+  ^{ name: "extractQueryLocalHostUriMetaDataForPortMapping", status: "pure" };
+}
+
+!isLocalhost(host){
+  // Transposed from platform/tunnel/common/tunnel.ts
+  ^{ name: "isLocalhost", status: "pure" };
+}
+
+!isAllInterfaces(host){
+  // Transposed from platform/tunnel/common/tunnel.ts
+  ^{ name: "isAllInterfaces", status: "pure" };
+}
+
+!isPortPrivileged(port, host, os, osRelease){
+  // Transposed from platform/tunnel/common/tunnel.ts
+  ^{ name: "isPortPrivileged", status: "pure" };
+}
+
+!createDisposableTunnel(...args){
+  ^{ className: "DisposableTunnel", methods: ["dispose"] };
+}
+
+!getTunnelProtocolEnum(){
+  ^{ enumName: "TunnelProtocol", members: ["Http", "Https"] };
+}
+
+!getTunnelPrivacyIdEnum(){
+  ^{ enumName: "TunnelPrivacyId", members: ["ConstantPrivate", "// private", "and changing is unsupported
+	Private", "Public"] };
+}
+
+!getProvidedOnAutoForwardEnum(){
+  ^{ enumName: "ProvidedOnAutoForward", members: ["Notify", "OpenBrowser", "OpenPreview", "Silent", "Ignore", "OpenBrowserOnce"] };
+}
+
+=ex{isRemoteTunnel,isTunnelProvider,extractLocalHostUriMetaDataForPortMapping,extractQueryLocalHostUriMetaDataForPortMapping,isLocalhost,isAllInterfaces,isPortPrivileged,createDisposableTunnel,getTunnelProtocolEnum,getTunnelPrivacyIdEnum,getProvidedOnAutoForwardEnum}

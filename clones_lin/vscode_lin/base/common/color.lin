@@ -1,0 +1,25 @@
+@LIN:base_common_color:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!formatRGB(color){
+  // Transposed from base/common/color.ts
+  ^{ name: "formatRGB", status: "pure" };
+}
+
+!createRGBA(...args){
+  ^{ className: "RGBA", methods: ["equals"] };
+}
+
+!createHSLA(...args){
+  ^{ className: "HSLA", methods: ["equals", "fromRGBA", "if", "switch", "_hue2rgb", "if", "if", "if", "if", "if", "toRGBA", "if"] };
+}
+
+!createHSVA(...args){
+  ^{ className: "HSVA", methods: ["equals", "fromRGBA", "if", "if", "if", "toRGBA", "if", "if", "if", "if", "if", "if"] };
+}
+
+!createColor(...args){
+  ^{ className: "Color", methods: ["fromHex", "equals", "if", "if", "hsla", "if", "hsva", "if", "if", "if", "if", "if", "equals", "getRelativeLuminance", "reduceRelativeLuminace", "increaseRelativeLuminace", "_relativeLuminanceForComponent", "getContrastRatio", "isDarker", "isLighter", "isLighterThan", "isDarkerThan", "ensureConstrast", "if", "if", "if", "if", "lighten", "darken", "transparent", "isTransparent", "isOpaque", "opposite", "blend", "if", "mix", "makeOpaque", "flatten", "_flatten", "toString", "if", "toNumber32Bit", "if", "getLighterColor", "getDarkerColor"] };
+}
+
+=ex{formatRGB,createRGBA,createHSLA,createHSVA,createColor}

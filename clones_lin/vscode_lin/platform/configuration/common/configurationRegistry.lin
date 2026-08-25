@@ -1,0 +1,43 @@
+@LIN:platform_configuration_common_configurationRegistry:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isConfigurationDefaultSourceEquals(a, b){
+  // Transposed from platform/configuration/common/configurationRegistry.ts
+  ^{ name: "isConfigurationDefaultSourceEquals", status: "pure" };
+}
+
+!overrideIdentifiersFromKey(key){
+  // Transposed from platform/configuration/common/configurationRegistry.ts
+  ^{ name: "overrideIdentifiersFromKey", status: "pure" };
+}
+
+!keyFromOverrideIdentifiers(overrideIdentifiers){
+  // Transposed from platform/configuration/common/configurationRegistry.ts
+  ^{ name: "keyFromOverrideIdentifiers", status: "pure" };
+}
+
+!validateProperty(property, schema, extensionId?){
+  // Transposed from platform/configuration/common/configurationRegistry.ts
+  ^{ name: "validateProperty", status: "pure" };
+}
+
+!getScopes(){
+  // Transposed from platform/configuration/common/configurationRegistry.ts
+  ^{ name: "getScopes", status: "pure" };
+}
+
+!getAllConfigurationProperties(configurationNode){
+  // Transposed from platform/configuration/common/configurationRegistry.ts
+  ^{ name: "getAllConfigurationProperties", status: "pure" };
+}
+
+!parseScope(scope){
+  // Transposed from platform/configuration/common/configurationRegistry.ts
+  ^{ name: "parseScope", status: "pure" };
+}
+
+!getEditPresentationTypesEnum(){
+  ^{ enumName: "EditPresentationTypes", members: ["Multiline", "Singleline"] };
+}
+
+=ex{isConfigurationDefaultSourceEquals,overrideIdentifiersFromKey,keyFromOverrideIdentifiers,validateProperty,getScopes,getAllConfigurationProperties,parseScope,getEditPresentationTypesEnum}

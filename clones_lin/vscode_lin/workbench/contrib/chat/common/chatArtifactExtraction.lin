@@ -1,0 +1,14 @@
+@LIN:workbench_contrib_chat_common_chatArtifactExtraction:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createUri(memoryPath, sessionResource){
+  // Transposed from workbench/contrib/chat/common/chatArtifactExtraction.ts
+  ^{ name: "createUri", status: "pure" };
+}
+
+!extractArtifactsFromResponse(response, sessionResource, byMimeType, IArtifactGroupConfig>, byFilePath, IArtifactGroupConfig>, byMemoryFilePath, IArtifactGroupConfig> = {}){
+  // Transposed from workbench/contrib/chat/common/chatArtifactExtraction.ts
+  ^{ name: "extractArtifactsFromResponse", status: "pure" };
+}
+
+=ex{createUri,extractArtifactsFromResponse}

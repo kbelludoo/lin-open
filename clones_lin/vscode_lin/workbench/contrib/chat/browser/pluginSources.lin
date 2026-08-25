@@ -1,0 +1,20 @@
+@LIN:workbench_contrib_chat_browser_pluginSources:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createGitHubPluginSource(...args){
+  ^{ className: "GitHubPluginSource", methods: ["getInstallUri", "if", "if", "_getRepoDir", "getLabel", "_cloneUrl", "_displayLabel"] };
+}
+
+!createGitUrlPluginSource(...args){
+  ^{ className: "GitUrlPluginSource", methods: ["getInstallUri", "if", "if", "_getRepoDir", "getLabel", "_cloneUrl", "_displayLabel", "_gitUrlCacheSegments"] };
+}
+
+!createNpmPluginSource(...args){
+  ^{ className: "NpmPluginSource", methods: ["getInstallUri", "getLabel", "_getCacheDir", "_buildInstallArgs", "if"] };
+}
+
+!createPipPluginSource(...args){
+  ^{ className: "PipPluginSource", methods: ["getInstallUri", "getLabel", "_getCacheDir", "_buildInstallArgs", "if"] };
+}
+
+=ex{createGitHubPluginSource,createGitUrlPluginSource,createNpmPluginSource,createPipPluginSource}

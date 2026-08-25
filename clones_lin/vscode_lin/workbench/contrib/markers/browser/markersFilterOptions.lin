@@ -1,0 +1,12 @@
+@LIN:workbench_contrib_markers_browser_markersFilterOptions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createResourceGlobMatcher(...args){
+  ^{ className: "ResourceGlobMatcher", methods: ["for", "matches", "if"] };
+}
+
+!createFilterOptions(...args){
+  ^{ className: "FilterOptions", methods: ["EMPTY", "for", "if", "if", "for", "if", "matchesSourceFilters", "if", "if", "setPattern", "if"] };
+}
+
+=ex{createResourceGlobMatcher,createFilterOptions}

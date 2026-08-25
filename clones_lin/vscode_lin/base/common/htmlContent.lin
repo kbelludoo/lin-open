@@ -1,0 +1,69 @@
+@LIN:base_common_htmlContent:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isEmptyMarkdownString(oneOrMany){
+  // Transposed from base/common/htmlContent.ts
+  ^{ name: "isEmptyMarkdownString", status: "pure" };
+}
+
+!isMarkdownString(thing){
+  // Transposed from base/common/htmlContent.ts
+  ^{ name: "isMarkdownString", status: "pure" };
+}
+
+!markdownStringEqual(a, b){
+  // Transposed from base/common/htmlContent.ts
+  ^{ name: "markdownStringEqual", status: "pure" };
+}
+
+!escapeMarkdownSyntaxTokens(text){
+  // Transposed from base/common/htmlContent.ts
+  ^{ name: "escapeMarkdownSyntaxTokens", status: "pure" };
+}
+
+!escapeMarkdownLinkLabel(text){
+  // Transposed from base/common/htmlContent.ts
+  ^{ name: "escapeMarkdownLinkLabel", status: "pure" };
+}
+
+!appendEscapedMarkdownInlineCode(text){
+  // Transposed from base/common/htmlContent.ts
+  ^{ name: "appendEscapedMarkdownInlineCode", status: "pure" };
+}
+
+!removeMarkdownEscapes(text){
+  // Transposed from base/common/htmlContent.ts
+  ^{ name: "removeMarkdownEscapes", status: "pure" };
+}
+
+!parseHrefAndDimensions(href){
+  // Transposed from base/common/htmlContent.ts
+  ^{ name: "parseHrefAndDimensions", status: "pure" };
+}
+
+!createMarkdownLink(text, href, title?, escapeTokens = true){
+  // Transposed from base/common/htmlContent.ts
+  ^{ name: "createMarkdownLink", status: "pure" };
+}
+
+!createMarkdownCommandLink(command, escapeTokens = true){
+  // Transposed from base/common/htmlContent.ts
+  ^{ name: "createMarkdownCommandLink", status: "pure" };
+}
+
+!createCommandUri(commandId, commandArgs){
+  // Transposed from base/common/htmlContent.ts
+  ^{ name: "createCommandUri", status: "pure" };
+}
+
+!isPortableLinkTarget(target){
+  // Transposed from base/common/htmlContent.ts
+  ^{ name: "isPortableLinkTarget", status: "pure" };
+}
+
+!isPortableMarkdownTarget(target){
+  // Transposed from base/common/htmlContent.ts
+  ^{ name: "isPortableMarkdownTarget", status: "pure" };
+}
+
+=ex{isEmptyMarkdownString,isMarkdownString,markdownStringEqual,escapeMarkdownSyntaxTokens,escapeMarkdownLinkLabel,appendEscapedMarkdownInlineCode,removeMarkdownEscapes,parseHrefAndDimensions,createMarkdownLink,createMarkdownCommandLink,createCommandUri,isPortableLinkTarget,isPortableMarkdownTarget}

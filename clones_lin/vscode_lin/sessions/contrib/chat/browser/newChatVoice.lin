@@ -1,0 +1,13 @@
+@LIN:sessions_contrib_chat_browser_newChatVoice:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isNewChatVoiceSessionActive(connected, connecting, targetSession, hasDraftTarget){
+  // Transposed from sessions/contrib/chat/browser/newChatVoice.ts
+  ^{ name: "isNewChatVoiceSessionActive", status: "pure" };
+}
+
+!createNewChatVoiceController(...args){
+  ^{ className: "NewChatVoiceController", methods: ["if"] };
+}
+
+=ex{isNewChatVoiceSessionActive,createNewChatVoiceController}

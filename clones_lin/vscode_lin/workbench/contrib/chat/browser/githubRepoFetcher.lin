@@ -1,0 +1,27 @@
+@LIN:workbench_contrib_chat_browser_githubRepoFetcher:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!parseGitHubCloneUrl(cloneUrl){
+  // Transposed from workbench/contrib/chat/browser/githubRepoFetcher.ts
+  ^{ name: "parseGitHubCloneUrl", status: "pure" };
+}
+
+!resolveGitHubRefToSha(requestService, repo, ref, authToken, token){
+  // Transposed from workbench/contrib/chat/browser/githubRepoFetcher.ts
+  ^{ name: "resolveGitHubRefToSha", status: "pure" };
+}
+
+!fetchAndExtractGitHubRepo(requestService, fileService, logService, repo, sha, targetDir, authToken, token){
+  // Transposed from workbench/contrib/chat/browser/githubRepoFetcher.ts
+  ^{ name: "fetchAndExtractGitHubRepo", status: "pure" };
+}
+
+!createGitHubAuthRequiredError(...args){
+  ^{ className: "GitHubAuthRequiredError", methods: [] };
+}
+
+!createGitHubRateLimitError(...args){
+  ^{ className: "GitHubRateLimitError", methods: [] };
+}
+
+=ex{parseGitHubCloneUrl,resolveGitHubRefToSha,fetchAndExtractGitHubRepo,createGitHubAuthRequiredError,createGitHubRateLimitError}

@@ -1,0 +1,26 @@
+@LIN:workbench_contrib_files_browser_fileImportExport:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getFileOverwriteConfirm(name){
+  // Transposed from workbench/contrib/files/browser/fileImportExport.ts
+  ^{ name: "getFileOverwriteConfirm", status: "pure" };
+}
+
+!getMultipleFilesOverwriteConfirm(files){
+  // Transposed from workbench/contrib/files/browser/fileImportExport.ts
+  ^{ name: "getMultipleFilesOverwriteConfirm", status: "pure" };
+}
+
+!createBrowserFileUpload(...args){
+  ^{ className: "BrowserFileUpload", methods: ["upload", "toTransfer", "for", "doUpload", "for", "if", "if", "if", "if", "if", "if", "doUploadEntry", "if", "if", "if", "if", "if", "if", "if", "for", "if", "if", "for", "while", "if", "if", "catch", "if", "if", "catch"] };
+}
+
+!createExternalFileImport(...args){
+  ^{ className: "ExternalFileImport", methods: ["import", "doImport", "if", "if", "localize", "localize", "if", "if", "if", "importResources", "if", "if", "if", "if", "if", "if", "if", "if", "if"] };
+}
+
+!createFileDownload(...args){
+  ^{ className: "FileDownload", methods: ["download", "doDownload", "for", "if", "if", "doDownloadBrowser", "if", "if", "catch", "if", "catch", "if", "downloadFileBufferedBrowser", "if", "downloadFileUnbufferedBrowser", "if", "downloadFileBrowser", "if", "downloadFolderBrowser", "if", "for", "if", "if", "reportProgress", "if", "if", "doDownloadNative", "if", "if"] };
+}
+
+=ex{getFileOverwriteConfirm,getMultipleFilesOverwriteConfirm,createBrowserFileUpload,createExternalFileImport,createFileDownload}

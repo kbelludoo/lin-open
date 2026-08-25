@@ -1,0 +1,13 @@
+@LIN:editor_common_core_text_positionToOffsetImpl:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!_setPositionOffsetTransformerDependencies(deps){
+  // Transposed from editor/common/core/text/positionToOffsetImpl.ts
+  ^{ name: "_setPositionOffsetTransformerDependencies", status: "pure" };
+}
+
+!createPositionOffsetTransformer(...args){
+  ^{ className: "PositionOffsetTransformer", methods: ["lineStartOffsetByLineIdx", "if", "lineEndOffsetByLineIdx", "if", "_computeLineOffsets", "for", "getOffset", "_validatePosition", "if", "if", "if", "if", "getPosition", "getTextLength", "textLength", "getLineLength"] };
+}
+
+=ex{_setPositionOffsetTransformerDependencies,createPositionOffsetTransformer}

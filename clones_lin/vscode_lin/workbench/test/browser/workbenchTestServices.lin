@@ -1,0 +1,119 @@
+@LIN:workbench_test_browser_workbenchTestServices:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createFileEditorInput(instantiationService, resource){
+  // Transposed from workbench/test/browser/workbenchTestServices.ts
+  ^{ name: "createFileEditorInput", status: "pure" };
+}
+
+!toUntypedWorkingCopyId(resource){
+  // Transposed from workbench/test/browser/workbenchTestServices.ts
+  ^{ name: "toUntypedWorkingCopyId", status: "pure" };
+}
+
+!toTypedWorkingCopyId(resource, typeId = 'testBackupTypeId'){
+  // Transposed from workbench/test/browser/workbenchTestServices.ts
+  ^{ name: "toTypedWorkingCopyId", status: "pure" };
+}
+
+!registerTestEditor(id, inputs, serializerInputId?){
+  // Transposed from workbench/test/browser/workbenchTestServices.ts
+  ^{ name: "registerTestEditor", status: "pure" };
+}
+
+!registerTestFileEditor(){
+  // Transposed from workbench/test/browser/workbenchTestServices.ts
+  ^{ name: "registerTestFileEditor", status: "pure" };
+}
+
+!registerTestResourceEditor(){
+  // Transposed from workbench/test/browser/workbenchTestServices.ts
+  ^{ name: "registerTestResourceEditor", status: "pure" };
+}
+
+!registerTestSideBySideEditor(){
+  // Transposed from workbench/test/browser/workbenchTestServices.ts
+  ^{ name: "registerTestSideBySideEditor", status: "pure" };
+}
+
+!createEditorParts(instantiationService, disposables){
+  // Transposed from workbench/test/browser/workbenchTestServices.ts
+  ^{ name: "createEditorParts", status: "pure" };
+}
+
+!createEditorPart(instantiationService, disposables){
+  // Transposed from workbench/test/browser/workbenchTestServices.ts
+  ^{ name: "createEditorPart", status: "pure" };
+}
+
+!getLastResolvedFileStat(model){
+  // Transposed from workbench/test/browser/workbenchTestServices.ts
+  ^{ name: "getLastResolvedFileStat", status: "pure" };
+}
+
+!workbenchTeardown(instantiationService){
+  // Transposed from workbench/test/browser/workbenchTestServices.ts
+  ^{ name: "workbenchTeardown", status: "pure" };
+}
+
+!createTestTextResourceEditor(...args){
+  ^{ className: "TestTextResourceEditor", methods: ["createEditorControl"] };
+}
+
+!createTestTextFileEditor(...args){
+  ^{ className: "TestTextFileEditor", methods: ["createEditorControl", "setSelection", "getSelection", "if", "if"] };
+}
+
+!createTestWorkingCopyService(...args){
+  ^{ className: "TestWorkingCopyService", methods: ["testUnregisterWorkingCopy"] };
+}
+
+!createTestServiceAccessor(...args){
+  ^{ className: "TestServiceAccessor", methods: [] };
+}
+
+!createTestTextFileService(...args){
+  ^{ className: "TestTextFileService", methods: ["setReadStreamErrorOnce", "readStream", "if", "setWriteErrorOnce", "write", "if"] };
+}
+
+!createTestBrowserTextFileServiceWithEncodingOverrides(...args){
+  ^{ className: "TestBrowserTextFileServiceWithEncodingOverrides", methods: ["encoding", "if"] };
+}
+
+!createTestEncodingOracle(...args){
+  ^{ className: "TestEncodingOracle", methods: ["encodingOverrides", "encodingOverrides"] };
+}
+
+!createTestWorkingCopyBackupService(...args){
+  ^{ className: "TestWorkingCopyBackupService", methods: ["parseBackupContent"] };
+}
+
+!createInMemoryTestWorkingCopyBackupService(...args){
+  ^{ className: "InMemoryTestWorkingCopyBackupService", methods: ["testGetFileService", "joinBackupResource", "joinDiscardBackup", "backup", "while", "discardBackup", "while", "getBackupContents"] };
+}
+
+!createTestFilesConfigurationService(...args){
+  ^{ className: "TestFilesConfigurationService", methods: ["testOnFilesConfigurationChange"] };
+}
+
+!createTestReadonlyTextFileEditorModel(...args){
+  ^{ className: "TestReadonlyTextFileEditorModel", methods: ["isReadonly"] };
+}
+
+!createTestEditorInput(...args){
+  ^{ className: "TestEditorInput", methods: ["typeId", "editorId", "resolve"] };
+}
+
+!createTestForceRevealFileEditorInput(...args){
+  ^{ className: "TestForceRevealFileEditorInput", methods: ["capabilities"] };
+}
+
+!createTestEditorParts(...args){
+  ^{ className: "TestEditorParts", methods: ["createMainEditorPart"] };
+}
+
+!createTestTerminalConfigurationService(...args){
+  ^{ className: "TestTerminalConfigurationService", methods: ["fontMetrics", "setConfig"] };
+}
+
+=ex{createFileEditorInput,toUntypedWorkingCopyId,toTypedWorkingCopyId,registerTestEditor,registerTestFileEditor,registerTestResourceEditor,registerTestSideBySideEditor,createEditorParts,createEditorPart,getLastResolvedFileStat,workbenchTeardown,createTestTextResourceEditor,createTestTextFileEditor,createTestWorkingCopyService,createTestServiceAccessor,createTestTextFileService,createTestBrowserTextFileServiceWithEncodingOverrides,createTestEncodingOracle,createTestWorkingCopyBackupService,createInMemoryTestWorkingCopyBackupService,createTestFilesConfigurationService,createTestReadonlyTextFileEditorModel,createTestEditorInput,createTestForceRevealFileEditorInput,createTestEditorParts,createTestTerminalConfigurationService}

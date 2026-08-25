@@ -1,0 +1,9 @@
+@LIN:base_node_ps:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!listProcesses(rootPid){
+  // Transposed from base/node/ps.ts
+  ^{ name: "listProcesses", status: "pure" };
+}
+
+=ex{listProcesses}

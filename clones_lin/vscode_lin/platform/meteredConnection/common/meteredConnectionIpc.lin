@@ -1,0 +1,8 @@
+@LIN:platform_meteredConnection_common_meteredConnectionIpc:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getMeteredConnectionCommandEnum(){
+  ^{ enumName: "MeteredConnectionCommand", members: ["OnDidChangeIsConnectionMetered", "IsConnectionMetered", "SetIsBrowserConnectionMetered"] };
+}
+
+=ex{getMeteredConnectionCommandEnum}

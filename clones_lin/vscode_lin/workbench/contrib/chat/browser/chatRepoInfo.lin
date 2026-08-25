@@ -1,0 +1,19 @@
+@LIN:workbench_contrib_chat_browser_chatRepoInfo:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!generateUnifiedDiff(fileService, relPath, originalUri, modifiedUri, changeType){
+  // Transposed from workbench/contrib/chat/browser/chatRepoInfo.ts
+  ^{ name: "generateUnifiedDiff", status: "pure" };
+}
+
+!captureRepoMetadata(scmService){
+  // Transposed from workbench/contrib/chat/browser/chatRepoInfo.ts
+  ^{ name: "captureRepoMetadata", status: "pure" };
+}
+
+!captureRepoInfo(scmService, fileService){
+  // Transposed from workbench/contrib/chat/browser/chatRepoInfo.ts
+  ^{ name: "captureRepoInfo", status: "pure" };
+}
+
+=ex{generateUnifiedDiff,captureRepoMetadata,captureRepoInfo}

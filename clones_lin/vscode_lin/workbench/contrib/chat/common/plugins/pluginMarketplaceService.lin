@@ -1,0 +1,19 @@
+@LIN:workbench_contrib_chat_common_plugins_pluginMarketplaceService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!parsePluginSource(rawSource, pluginRoot, logContext){
+  // Transposed from workbench/contrib/chat/common/plugins/pluginMarketplaceService.ts
+  ^{ name: "parsePluginSource", status: "pure" };
+}
+
+!getPluginSourceLabel(descriptor){
+  // Transposed from workbench/contrib/chat/common/plugins/pluginMarketplaceService.ts
+  ^{ name: "getPluginSourceLabel", status: "pure" };
+}
+
+!hasSourceChanged(installed, marketplace){
+  // Transposed from workbench/contrib/chat/common/plugins/pluginMarketplaceService.ts
+  ^{ name: "hasSourceChanged", status: "pure" };
+}
+
+=ex{parsePluginSource,getPluginSourceLabel,hasSourceChanged}

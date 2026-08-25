@@ -1,0 +1,13 @@
+@LIN:base_test_common_snapshot:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!assertSnapshot(value, options?){
+  // Transposed from base/test/common/snapshot.ts
+  ^{ name: "assertSnapshot", status: "pure" };
+}
+
+!createSnapshotContext(...args){
+  ^{ className: "SnapshotContext", methods: ["if", "if", "assert", "removeOldSnapshots", "if"] };
+}
+
+=ex{assertSnapshot,createSnapshotContext}

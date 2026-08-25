@@ -1,0 +1,13 @@
+@LIN:workbench_api_common_extHostDocumentData:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!setWordDefinitionFor(languageId, wordDefinition){
+  // Transposed from workbench/api/common/extHostDocumentData.ts
+  ^{ name: "setWordDefinitionFor", status: "pure" };
+}
+
+!createExtHostDocumentData(...args){
+  ^{ className: "ExtHostDocumentData", methods: ["dispose", "equalLines", "document", "if", "uri", "fileName", "isUntitled", "languageId", "version", "isClosed", "isDirty", "encoding", "save", "getText", "eol", "lineCount", "lineAt", "offsetAt", "positionAt", "validateRange", "validatePosition", "getWordRangeAtPosition", "_acceptLanguageId", "_acceptIsDirty", "_acceptEncoding", "_save", "if", "_getTextInRange", "if", "if", "for", "_lineAt", "if", "if", "_offsetAt", "_positionAt", "_validateRange", "if", "if", "_validatePosition", "if", "if", "if", "if", "if", "if", "if", "_getWordRangeAtPosition", "if", "if"] };
+}
+
+=ex{setWordDefinitionFor,createExtHostDocumentData}

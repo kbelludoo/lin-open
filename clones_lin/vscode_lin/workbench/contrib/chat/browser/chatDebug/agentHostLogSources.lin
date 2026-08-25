@@ -1,0 +1,44 @@
+@LIN:workbench_contrib_chat_browser_chatDebug_agentHostLogSources:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isAgentHostSession(resource){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/agentHostLogSources.ts
+  ^{ name: "isAgentHostSession", status: "pure" };
+}
+
+!getRemoteConnectionForSession(sessionResource, connections){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/agentHostLogSources.ts
+  ^{ name: "getRemoteConnectionForSession", status: "pure" };
+}
+
+!sanitizeFilePart(value){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/agentHostLogSources.ts
+  ^{ name: "sanitizeFilePart", status: "pure" };
+}
+
+!enumerateAgentHostLogSources(services, sessionResource){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/agentHostLogSources.ts
+  ^{ name: "enumerateAgentHostLogSources", status: "pure" };
+}
+
+!readAgentHostLogSourceContent(source, services, capBytes){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/agentHostLogSources.ts
+  ^{ name: "readAgentHostLogSourceContent", status: "pure" };
+}
+
+!readCopilotLogsForSession(logsDir, rawSessionId, fileService, logService){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/agentHostLogSources.ts
+  ^{ name: "readCopilotLogsForSession", status: "pure" };
+}
+
+!findRelevantCopilotLogs(logsDir, rawSessionId, fileService, logService){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/agentHostLogSources.ts
+  ^{ name: "findRelevantCopilotLogs", status: "pure" };
+}
+
+!readRemoteAgentHostLog(connection, serverDataFolderName, fileService){
+  // Transposed from workbench/contrib/chat/browser/chatDebug/agentHostLogSources.ts
+  ^{ name: "readRemoteAgentHostLog", status: "pure" };
+}
+
+=ex{isAgentHostSession,getRemoteConnectionForSession,sanitizeFilePart,enumerateAgentHostLogSources,readAgentHostLogSourceContent,readCopilotLogsForSession,findRelevantCopilotLogs,readRemoteAgentHostLog}

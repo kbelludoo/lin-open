@@ -1,0 +1,8 @@
+@LIN:workbench_services_remote_common_remoteAgentEnvironmentChannel:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createRemoteExtensionEnvironmentChannelClient(...args){
+  ^{ className: "RemoteExtensionEnvironmentChannelClient", methods: ["getEnvironmentData", "getExtensionHostExitInfo", "getDiagnosticInfo", "updateTelemetryLevel", "logTelemetry", "flushTelemetry", "ping"] };
+}
+
+=ex{createRemoteExtensionEnvironmentChannelClient}

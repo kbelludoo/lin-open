@@ -1,0 +1,17 @@
+@LIN:workbench_contrib_terminal_browser_terminalContextMenu:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!openContextMenu(targetWindow, event, contextInstances, menu, contextMenuService, extraActions?){
+  // Transposed from workbench/contrib/terminal/browser/terminalContextMenu.ts
+  ^{ name: "openContextMenu", status: "pure" };
+}
+
+!createInstanceContext(...args){
+  ^{ className: "InstanceContext", methods: ["toJSON"] };
+}
+
+!createTerminalContextActionRunner(...args){
+  ^{ className: "TerminalContextActionRunner", methods: ["runAction"] };
+}
+
+=ex{openContextMenu,createInstanceContext,createTerminalContextActionRunner}

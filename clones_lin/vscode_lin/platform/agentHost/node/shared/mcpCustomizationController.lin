@@ -1,0 +1,48 @@
+@LIN:platform_agentHost_node_shared_mcpCustomizationController:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!buildMcpTopLevelCustomizationId(providerId, sessionId, serverName){
+  // Transposed from platform/agentHost/node/shared/mcpCustomizationController.ts
+  ^{ name: "buildMcpTopLevelCustomizationId", status: "pure" };
+}
+
+!buildMcpChannel(chatUri, serverName){
+  // Transposed from platform/agentHost/node/shared/mcpCustomizationController.ts
+  ^{ name: "buildMcpChannel", status: "pure" };
+}
+
+!findMcpChildId(customizations, serverName){
+  // Transposed from platform/agentHost/node/shared/mcpCustomizationController.ts
+  ^{ name: "findMcpChildId", status: "pure" };
+}
+
+!getMcpServerCustomizations(customizations){
+  // Transposed from platform/agentHost/node/shared/mcpCustomizationController.ts
+  ^{ name: "getMcpServerCustomizations", status: "pure" };
+}
+
+!getEffectiveMcpServerCustomizations(customizations){
+  // Transposed from platform/agentHost/node/shared/mcpCustomizationController.ts
+  ^{ name: "getEffectiveMcpServerCustomizations", status: "pure" };
+}
+
+!applyMcpServerEnablement(customizations, desired){
+  // Transposed from platform/agentHost/node/shared/mcpCustomizationController.ts
+  ^{ name: "applyMcpServerEnablement", status: "pure" };
+}
+
+!findMcpServerName(customizations, id){
+  // Transposed from platform/agentHost/node/shared/mcpCustomizationController.ts
+  ^{ name: "findMcpServerName", status: "pure" };
+}
+
+!parseMcpChannelUri(uri){
+  // Transposed from platform/agentHost/node/shared/mcpCustomizationController.ts
+  ^{ name: "parseMcpChannelUri", status: "pure" };
+}
+
+!createMcpCustomizationController(...args){
+  ^{ className: "McpCustomizationController", methods: ["if", "if", "if", "topLevelCustomizations", "if", "pluginMcpServerSources", "readyChannels", "if", "if", "customizationIdForServer", "if", "serverNameForCustomizationId", "if", "stateForServer", "serverEnablement", "if", "channelForServer", "if", "applyAll", "for", "applyOne", "_applyOne", "if", "if", "remove", "_remove", "if", "if", "if", "_setLiveEntry", "_deleteLiveEntry", "_stateForUpdate", "if", "_mintTopLevelId", "_resolveChildId", "_findPublishedMcpCustomization", "if", "_buildChannel", "if", "_buildTopLevel"] };
+}
+
+=ex{buildMcpTopLevelCustomizationId,buildMcpChannel,findMcpChildId,getMcpServerCustomizations,getEffectiveMcpServerCustomizations,applyMcpServerEnablement,findMcpServerName,parseMcpChannelUri,createMcpCustomizationController}

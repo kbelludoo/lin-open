@@ -1,0 +1,8 @@
+@LIN:platform_agentHost_node_agentSdkSetupChannel:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createAgentSdkSetupChannel(...args){
+  ^{ className: "AgentSdkSetupChannel", methods: ["publish", "publishWith", "_handleRequest", "_takeRequest", "_download", "if", "catch", "_lookAgain"] };
+}
+
+=ex{createAgentSdkSetupChannel}

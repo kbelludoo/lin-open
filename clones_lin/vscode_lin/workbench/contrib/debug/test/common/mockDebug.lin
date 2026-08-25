@@ -1,0 +1,16 @@
+@LIN:workbench_contrib_debug_test_common_mockDebug:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createMockRawSession(...args){
+  ^{ className: "MockRawSession", methods: ["getLengthInSeconds", "stackTrace", "exceptionInfo", "launchOrAttach", "scopes", "variables", "evaluate", "custom", "terminate", "disconnect", "threads", "stepIn", "stepOut", "stepBack", "continue", "reverseContinue", "pause", "terminateThreads", "setVariable", "restartFrame", "completions", "next", "source", "loadedSources", "setBreakpoints", "setFunctionBreakpoints", "setExceptionBreakpoints"] };
+}
+
+!createMockDebugAdapter(...args){
+  ^{ className: "MockDebugAdapter", methods: ["startSession", "stopSession", "sendMessage", "if", "switch", "if", "sendResponseBody", "sendEventBody", "waitForResponseFromClient", "sendRequestBody", "evaluate"] };
+}
+
+!createMockDebugStorage(...args){
+  ^{ className: "MockDebugStorage", methods: [] };
+}
+
+=ex{createMockRawSession,createMockDebugAdapter,createMockDebugStorage}

@@ -1,0 +1,17 @@
+@LIN:workbench_contrib_notebook_browser_view_cellParts_cellDnd:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!performCellDropEdits(editor, draggedCell, dropDirection, draggedOverCell){
+  // Transposed from workbench/contrib/notebook/browser/view/cellParts/cellDnd.ts
+  ^{ name: "performCellDropEdits", status: "pure" };
+}
+
+!createCellDragAndDropPart(...args){
+  ^{ className: "CellDragAndDropPart", methods: ["didRenderCell", "updateState", "if", "update"] };
+}
+
+!createCellDragAndDropController(...args){
+  ^{ className: "CellDragAndDropController", methods: ["if", "addCellDragListener", "addCellDragListener", "setList", "onWillScroll", "setInsertIndicatorVisibility", "toCellDragEvent", "if", "clearGlobalDragState", "onGlobalDragStart", "onGlobalDragEnd", "onCellDragover", "if", "if", "if", "updateInsertIndicator", "if", "getDropInsertDirection", "onCellDrop", "if", "getCellRangeAroundDragTarget", "if", "_dropImpl", "if", "if", "if", "if", "onCellDragLeave", "dragCleanup", "if", "registerDragHandle", "for", "for", "if", "for", "startExplicitDrag", "explicitDrag", "if", "if", "if", "if", "endExplicitDrag", "explicitDrop", "if", "getExplicitDragDropDirection", "dispose"] };
+}
+
+=ex{performCellDropEdits,createCellDragAndDropPart,createCellDragAndDropController}

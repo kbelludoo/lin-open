@@ -1,0 +1,24 @@
+@LIN:workbench_contrib_chat_common_promptSyntax_config_config:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getLocationsValue(configService, type){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/config/config.ts
+  ^{ name: "getLocationsValue", status: "pure" };
+}
+
+!getPromptFileLocationsConfigKey(type){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/config/config.ts
+  ^{ name: "getPromptFileLocationsConfigKey", status: "pure" };
+}
+
+!asBoolean(value){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/config/config.ts
+  ^{ name: "asBoolean", status: "pure" };
+}
+
+!isTildePath(path){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/config/config.ts
+  ^{ name: "isTildePath", status: "pure" };
+}
+
+=ex{getLocationsValue,getPromptFileLocationsConfigKey,asBoolean,isTildePath}

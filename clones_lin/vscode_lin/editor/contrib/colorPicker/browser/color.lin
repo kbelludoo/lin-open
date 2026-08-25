@@ -1,0 +1,19 @@
+@LIN:editor_contrib_colorPicker_browser_color:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getColors(colorProviderRegistry, model, token, defaultColorDecoratorsEnablement){
+  // Transposed from editor/contrib/colorPicker/browser/color.ts
+  ^{ name: "getColors", status: "pure" };
+}
+
+!getColorPresentations(model, colorInfo, provider, token){
+  // Transposed from editor/contrib/colorPicker/browser/color.ts
+  ^{ name: "getColorPresentations", status: "pure" };
+}
+
+!_setupColorCommand(accessor, resource){
+  // Transposed from editor/contrib/colorPicker/browser/color.ts
+  ^{ name: "_setupColorCommand", status: "pure" };
+}
+
+=ex{getColors,getColorPresentations,_setupColorCommand}

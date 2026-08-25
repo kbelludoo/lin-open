@@ -1,0 +1,89 @@
+@LIN:sessions_common_sessionsTelemetry:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getSessionsTelemetryProviderId(providerId){
+  // Transposed from sessions/common/sessionsTelemetry.ts
+  ^{ name: "getSessionsTelemetryProviderId", status: "pure" };
+}
+
+!hashSessionIdForTelemetry(sessionId){
+  // Transposed from sessions/common/sessionsTelemetry.ts
+  ^{ name: "hashSessionIdForTelemetry", status: "pure" };
+}
+
+!logSessionsInteraction(telemetryService, button, source?){
+  // Transposed from sessions/common/sessionsTelemetry.ts
+  ^{ name: "logSessionsInteraction", status: "pure" };
+}
+
+!logSidePanelToggle(telemetryService, visible){
+  // Transposed from sessions/common/sessionsTelemetry.ts
+  ^{ name: "logSidePanelToggle", status: "pure" };
+}
+
+!logChangesViewVersionModeChange(telemetryService, mode){
+  // Transposed from sessions/common/sessionsTelemetry.ts
+  ^{ name: "logChangesViewVersionModeChange", status: "pure" };
+}
+
+!logChangesViewFileSelect(telemetryService, changeType){
+  // Transposed from sessions/common/sessionsTelemetry.ts
+  ^{ name: "logChangesViewFileSelect", status: "pure" };
+}
+
+!logChangesViewViewModeChange(telemetryService, mode){
+  // Transposed from sessions/common/sessionsTelemetry.ts
+  ^{ name: "logChangesViewViewModeChange", status: "pure" };
+}
+
+!classifySessionWorkspaceTopology(folderCount, gitFolderCount){
+  // Transposed from sessions/common/sessionsTelemetry.ts
+  ^{ name: "classifySessionWorkspaceTopology", status: "pure" };
+}
+
+!logTunnelDiscoveryResult(telemetryService, data){
+  // Transposed from sessions/common/sessionsTelemetry.ts
+  ^{ name: "logTunnelDiscoveryResult", status: "pure" };
+}
+
+!logTunnelConnectAttempt(telemetryService, data){
+  // Transposed from sessions/common/sessionsTelemetry.ts
+  ^{ name: "logTunnelConnectAttempt", status: "pure" };
+}
+
+!logTunnelConnectResolved(telemetryService, data){
+  // Transposed from sessions/common/sessionsTelemetry.ts
+  ^{ name: "logTunnelConnectResolved", status: "pure" };
+}
+
+!categorizeSSHConnectError(err){
+  // Transposed from sessions/common/sessionsTelemetry.ts
+  ^{ name: "categorizeSSHConnectError", status: "pure" };
+}
+
+!logSSHConnectAttempt(telemetryService, data){
+  // Transposed from sessions/common/sessionsTelemetry.ts
+  ^{ name: "logSSHConnectAttempt", status: "pure" };
+}
+
+!logSocketClose(telemetryService, data){
+  // Transposed from sessions/common/sessionsTelemetry.ts
+  ^{ name: "logSocketClose", status: "pure" };
+}
+
+!logSendDropped(telemetryService, data){
+  // Transposed from sessions/common/sessionsTelemetry.ts
+  ^{ name: "logSendDropped", status: "pure" };
+}
+
+!logVisibilityResumed(telemetryService, data){
+  // Transposed from sessions/common/sessionsTelemetry.ts
+  ^{ name: "logVisibilityResumed", status: "pure" };
+}
+
+!logTerminalRecovery(telemetryService, data){
+  // Transposed from sessions/common/sessionsTelemetry.ts
+  ^{ name: "logTerminalRecovery", status: "pure" };
+}
+
+=ex{getSessionsTelemetryProviderId,hashSessionIdForTelemetry,logSessionsInteraction,logSidePanelToggle,logChangesViewVersionModeChange,logChangesViewFileSelect,logChangesViewViewModeChange,classifySessionWorkspaceTopology,logTunnelDiscoveryResult,logTunnelConnectAttempt,logTunnelConnectResolved,categorizeSSHConnectError,logSSHConnectAttempt,logSocketClose,logSendDropped,logVisibilityResumed,logTerminalRecovery}

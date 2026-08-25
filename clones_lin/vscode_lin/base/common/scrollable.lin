@@ -1,0 +1,16 @@
+@LIN:base_common_scrollable:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createScrollable(...args){
+  ^{ className: "Scrollable", methods: ["dispose", "if", "setSmoothScrollDuration", "validateScrollPosition", "getScrollDimensions", "setScrollDimensions", "getFutureScrollPosition", "if", "getCurrentScrollPosition", "setScrollPositionNow", "if", "setScrollPositionSmooth", "if", "if", "if", "if", "if", "hasPendingScrollAnimation", "_performSmoothScrolling", "if", "if", "if", "if", "_setState"] };
+}
+
+!createSmoothScrollingUpdate(...args){
+  ^{ className: "SmoothScrollingUpdate", methods: [] };
+}
+
+!createSmoothScrollingOperation(...args){
+  ^{ className: "SmoothScrollingOperation", methods: ["_initAnimations", "_initAnimation", "if", "if", "dispose", "if", "acceptScrollDimensions", "tick", "_tick", "if", "combine", "start"] };
+}
+
+=ex{createScrollable,createSmoothScrollingUpdate,createSmoothScrollingOperation}

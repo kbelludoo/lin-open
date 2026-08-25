@@ -1,0 +1,8 @@
+@LIN:workbench_services_extensions_electron_browser_localProcessExtensionHost:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createExtensionHostProcess(...args){
+  ^{ className: "ExtensionHostProcess", methods: ["onStdout", "onStderr", "onMessage", "onExit", "start", "enableInspectPort", "waitForExit", "kill"] };
+}
+
+=ex{createExtensionHostProcess}

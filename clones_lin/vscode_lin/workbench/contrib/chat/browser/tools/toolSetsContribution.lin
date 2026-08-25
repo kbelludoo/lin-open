@@ -1,0 +1,23 @@
+@LIN:workbench_contrib_chat_browser_tools_toolSetsContribution:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getEnabledSelectionReferences(selection, toolsService){
+  // Transposed from workbench/contrib/chat/browser/tools/toolSetsContribution.ts
+  ^{ name: "getEnabledSelectionReferences", status: "pure" };
+}
+
+!createToolSetFileContents(toolSetName, toolReferences){
+  // Transposed from workbench/contrib/chat/browser/tools/toolSetsContribution.ts
+  ^{ name: "createToolSetFileContents", status: "pure" };
+}
+
+!deleteToolSetFromFileContents(rawContents, toolSetName){
+  // Transposed from workbench/contrib/chat/browser/tools/toolSetsContribution.ts
+  ^{ name: "deleteToolSetFromFileContents", status: "pure" };
+}
+
+!createConfigureToolSets(...args){
+  ^{ className: "ConfigureToolSets", methods: ["run", "if", "if", "if", "if", "if", "if", "if"] };
+}
+
+=ex{getEnabledSelectionReferences,createToolSetFileContents,deleteToolSetFromFileContents,createConfigureToolSets}

@@ -1,0 +1,19 @@
+@LIN:workbench_contrib_notebook_browser_viewModel_cellOutputTextHelper:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getAllOutputsText(notebook, viewCell, shortErrors){
+  // Transposed from workbench/contrib/notebook/browser/viewModel/cellOutputTextHelper.ts
+  ^{ name: "getAllOutputsText", status: "pure" };
+}
+
+!getOutputStreamText(output){
+  // Transposed from workbench/contrib/notebook/browser/viewModel/cellOutputTextHelper.ts
+  ^{ name: "getOutputStreamText", status: "pure" };
+}
+
+!getOutputText(mimeType, buffer, shortError){
+  // Transposed from workbench/contrib/notebook/browser/viewModel/cellOutputTextHelper.ts
+  ^{ name: "getOutputText", status: "pure" };
+}
+
+=ex{getAllOutputsText,getOutputStreamText,getOutputText}

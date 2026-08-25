@@ -1,0 +1,8 @@
+@LIN:editor_common_languages_supports_indentRules:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createIndentRulesSupport(...args){
+  ^{ className: "IndentRulesSupport", methods: ["shouldIncrease", "if", "shouldDecrease", "shouldIndentNextLine", "shouldIgnore", "getIndentMetadata"] };
+}
+
+=ex{createIndentRulesSupport}

@@ -1,0 +1,12 @@
+@LIN:sessions_contrib_providers_copilotChatSessions_browser_modePicker:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createModePickerModel(...args){
+  ^{ className: "ModePickerModel", methods: ["selectedMode", "if", "selectedModeId", "reset", "setSelectedMode", "setSession", "if", "if", "getAvailableModes", "if", "if", "_setSession", "if", "_findModeById", "if"] };
+}
+
+!createModePicker(...args){
+  ^{ className: "ModePicker", methods: ["if", "reset", "render", "for", "if", "_showPicker", "if", "if", "_buildItems", "if", "for", "_selectMode", "_updateTriggerLabel", "if", "if"] };
+}
+
+=ex{createModePickerModel,createModePicker}

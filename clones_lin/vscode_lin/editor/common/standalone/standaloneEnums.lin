@@ -1,0 +1,445 @@
+@LIN:editor_common_standalone_standaloneEnums:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getAccessibilitySupportEnum(){
+  ^{ enumName: "AccessibilitySupport", members: ["/**
+	 * This should be the browser case where it is not known if a screen reader is attached or no.
+	 */
+	Unknown", "Disabled", "Enabled"] };
+}
+
+!getCodeActionTriggerTypeEnum(){
+  ^{ enumName: "CodeActionTriggerType", members: ["Invoke", "Auto"] };
+}
+
+!getCompletionItemInsertTextRuleEnum(){
+  ^{ enumName: "CompletionItemInsertTextRule", members: ["None", "/**
+	 * Adjust whitespace/indentation of multiline insert texts to
+	 * match the current line indentation.
+	 */
+	KeepWhitespace", "/**
+	 * `insertText` is a snippet.
+	 */
+	InsertAsSnippet"] };
+}
+
+!getCompletionItemKindEnum(){
+  ^{ enumName: "CompletionItemKind", members: ["Method", "Function", "Constructor", "Field", "Variable", "Class", "Struct", "Interface", "Module", "Property", "Event", "Operator", "Unit", "Value", "Constant", "Enum", "EnumMember", "Keyword", "Text", "Color", "File", "Reference", "Customcolor", "Folder", "TypeParameter", "User", "Issue", "Tool", "Snippet"] };
+}
+
+!getCompletionItemTagEnum(){
+  ^{ enumName: "CompletionItemTag", members: ["Deprecated"] };
+}
+
+!getCompletionTriggerKindEnum(){
+  ^{ enumName: "CompletionTriggerKind", members: ["Invoke", "TriggerCharacter", "TriggerForIncompleteCompletions"] };
+}
+
+!getContentWidgetPositionPreferenceEnum(){
+  ^{ enumName: "ContentWidgetPositionPreference", members: ["/**
+	 * Place the content widget exactly at a position
+	 */
+	EXACT", "/**
+	 * Place the content widget above a position
+	 */
+	ABOVE", "/**
+	 * Place the content widget below a position
+	 */
+	BELOW"] };
+}
+
+!getCursorChangeReasonEnum(){
+  ^{ enumName: "CursorChangeReason", members: ["/**
+	 * Unknown or not set.
+	 */
+	NotSet", "/**
+	 * A `model.setValue()` was called.
+	 */
+	ContentFlush", "/**
+	 * The `model` has been changed outside of this cursor and the cursor recovers its position from associated markers.
+	 */
+	RecoverFromMarkers", "/**
+	 * There was an explicit user gesture.
+	 */
+	Explicit", "/**
+	 * There was a Paste.
+	 */
+	Paste", "/**
+	 * There was an Undo.
+	 */
+	Undo", "/**
+	 * There was a Redo.
+	 */
+	Redo"] };
+}
+
+!getDefaultEndOfLineEnum(){
+  ^{ enumName: "DefaultEndOfLine", members: ["/**
+	 * Use line feed (\n) as the end of line character.
+	 */
+	LF", "/**
+	 * Use carriage return and line feed (\r\n) as the end of line character.
+	 */
+	CRLF"] };
+}
+
+!getDocumentHighlightKindEnum(){
+  ^{ enumName: "DocumentHighlightKind", members: ["/**
+	 * A textual occurrence.
+	 */
+	Text", "/**
+	 * Read-access of a symbol", "like reading a variable.
+	 */
+	Read", "/**
+	 * Write-access of a symbol", "like writing to a variable.
+	 */
+	Write"] };
+}
+
+!getEditorAutoIndentStrategyEnum(){
+  ^{ enumName: "EditorAutoIndentStrategy", members: ["None", "Keep", "Brackets", "Advanced", "Full"] };
+}
+
+!getEditorOptionEnum(){
+  ^{ enumName: "EditorOption", members: ["acceptSuggestionOnCommitCharacter", "acceptSuggestionOnEnter", "accessibilitySupport", "accessibilityPageSize", "allowOverflow", "allowVariableLineHeights", "allowVariableFonts", "allowVariableFontsInAccessibilityMode", "ariaLabel", "ariaRequired", "autoClosingBrackets", "autoClosingComments", "screenReaderAnnounceInlineSuggestion", "autoClosingDelete", "autoClosingOvertype", "autoClosingQuotes", "autoIndent", "autoIndentOnPaste", "autoIndentOnPasteWithinString", "automaticLayout", "autoSurround", "bracketPairColorization", "guides", "codeLens", "codeLensFontFamily", "codeLensFontSize", "colorDecorators", "colorDecoratorsLimit", "columnSelection", "comments", "contextmenu", "copyWithSyntaxHighlighting", "cursorBlinking", "cursorSmoothCaretAnimation", "cursorStyle", "cursorSurroundingLines", "cursorSurroundingLinesStyle", "cursorWidth", "cursorHeight", "disableLayerHinting", "disableMonospaceOptimizations", "domReadOnly", "dragAndDrop", "dropIntoEditor", "editContext", "emptySelectionClipboard", "experimentalGpuAcceleration", "experimentalWhitespaceRendering", "extraEditorClassName", "fastScrollSensitivity", "find", "fixedOverflowWidgets", "folding", "foldingStrategy", "foldingHighlight", "foldingImportsByDefault", "foldingMaximumRegions", "unfoldOnClickAfterEndOfLine", "fontFamily", "fontInfo", "fontLigatures", "fontSize", "fontWeight", "fontVariations", "formatOnPaste", "formatOnType", "glyphMargin", "gotoLocation", "hideCursorInOverviewRuler", "hover", "inDiffEditor", "inlineSuggest", "letterSpacing", "lightbulb", "lineDecorationsWidth", "lineHeight", "lineNumbers", "lineNumbersMinChars", "linkedEditing", "links", "matchBrackets", "minimap", "mouseStyle", "mouseWheelScrollSensitivity", "mouseWheelZoom", "multiCursorMergeOverlapping", "multiCursorModifier", "mouseMiddleClickAction", "multiCursorPaste", "multiCursorLimit", "occurrencesHighlight", "occurrencesHighlightDelay", "overtypeCursorStyle", "overtypeOnPaste", "overviewRulerBorder", "overviewRulerLanes", "padding", "pasteAs", "parameterHints", "peekWidgetDefaultFocus", "placeholder", "definitionLinkOpensInPeek", "quickSuggestions", "quickSuggestionsDelay", "readOnly", "readOnlyMessage", "renameOnType", "renderRichScreenReaderContent", "renderControlCharacters", "renderFinalNewline", "renderLineHighlight", "renderLineHighlightOnlyWhenFocus", "renderValidationDecorations", "renderWhitespace", "revealHorizontalRightPadding", "roundedSelection", "rulers", "scrollbar", "scrollBeyondLastColumn", "scrollBeyondLastLine", "scrollPredominantAxis", "selectionClipboard", "selectionHighlight", "selectionHighlightMaxLength", "selectionHighlightMultiline", "selectOnLineNumbers", "showFoldingControls", "showUnused", "snippetSuggestions", "smartSelect", "smoothScrolling", "stickyScroll", "stickyTabStops", "stopRenderingLineAfter", "suggest", "suggestFontSize", "suggestLineHeight", "suggestOnTriggerCharacters", "suggestSelection", "tabCompletion", "tabIndex", "trimWhitespaceOnDelete", "unicodeHighlighting", "unusualLineTerminators", "useShadowDOM", "useTabStops", "wordBreak", "wordSegmenterLocales", "wordSeparators", "wordWrap", "wordWrapBreakAfterCharacters", "wordWrapBreakBeforeCharacters", "wordWrapColumn", "wordWrapOverride1", "wordWrapOverride2", "wrappingIndent", "wrappingStrategy", "showDeprecated", "inertialScroll", "inlayHints", "wrapOnEscapedLineFeeds", "effectiveCursorStyle", "editorClassName", "pixelRatio", "tabFocusMode", "layoutInfo", "wrappingInfo", "defaultColorDecorators", "colorDecoratorsActivatedOn", "inlineCompletionsAccessibilityVerbose", "effectiveEditContext", "scrollOnMiddleClick", "effectiveAllowVariableFonts", "doubleClickSelectsBlock"] };
+}
+
+!getEndOfLinePreferenceEnum(){
+  ^{ enumName: "EndOfLinePreference", members: ["/**
+	 * Use the end of line character identified in the text buffer.
+	 */
+	TextDefined", "/**
+	 * Use line feed (\n) as the end of line character.
+	 */
+	LF", "/**
+	 * Use carriage return and line feed (\r\n) as the end of line character.
+	 */
+	CRLF"] };
+}
+
+!getEndOfLineSequenceEnum(){
+  ^{ enumName: "EndOfLineSequence", members: ["/**
+	 * Use line feed (\n) as the end of line character.
+	 */
+	LF", "/**
+	 * Use carriage return and line feed (\r\n) as the end of line character.
+	 */
+	CRLF"] };
+}
+
+!getGlyphMarginLaneEnum(){
+  ^{ enumName: "GlyphMarginLane", members: ["Left", "Center", "Right"] };
+}
+
+!getHoverVerbosityActionEnum(){
+  ^{ enumName: "HoverVerbosityAction", members: ["/**
+	 * Increase the verbosity of the hover
+	 */
+	Increase", "/**
+	 * Decrease the verbosity of the hover
+	 */
+	Decrease"] };
+}
+
+!getIndentActionEnum(){
+  ^{ enumName: "IndentAction", members: ["/**
+	 * Insert new line and copy the previous line's indentation.
+	 */
+	None", "/**
+	 * Insert new line and indent once (relative to the previous line's indentation).
+	 */
+	Indent", "/**
+	 * Insert two new lines:
+	 *  - the first one indented which will hold the cursor
+	 *  - the second one at the same indentation level
+	 */
+	IndentOutdent", "/**
+	 * Insert new line and outdent once (relative to the previous line's indentation).
+	 */
+	Outdent"] };
+}
+
+!getInjectedTextCursorStopsEnum(){
+  ^{ enumName: "InjectedTextCursorStops", members: ["Both", "Right", "Left", "None"] };
+}
+
+!getInlayHintKindEnum(){
+  ^{ enumName: "InlayHintKind", members: ["Type", "Parameter"] };
+}
+
+!getInlineCompletionEndOfLifeReasonKindEnum(){
+  ^{ enumName: "InlineCompletionEndOfLifeReasonKind", members: ["Accepted", "Rejected", "Ignored"] };
+}
+
+!getInlineCompletionHintStyleEnum(){
+  ^{ enumName: "InlineCompletionHintStyle", members: ["Code", "Label"] };
+}
+
+!getInlineCompletionTriggerKindEnum(){
+  ^{ enumName: "InlineCompletionTriggerKind", members: ["/**
+	 * Completion was triggered automatically while editing.
+	 * It is sufficient to return a single completion item in this case.
+	 */
+	Automatic", "/**
+	 * Completion was triggered explicitly by a user gesture.
+	 * Return multiple completion items to enable cycling through them.
+	 */
+	Explicit"] };
+}
+
+!getKeyCodeEnum(){
+  ^{ enumName: "KeyCode", members: ["DependsOnKbLayout", "/**
+	 * Placed first to cover the 0 value of the enum.
+	 */
+	Unknown", "Backspace", "Tab", "Enter", "Shift", "Ctrl", "Alt", "PauseBreak", "CapsLock", "Escape", "Space", "PageUp", "PageDown", "End", "Home", "LeftArrow", "UpArrow", "RightArrow", "DownArrow", "Insert", "Delete", "Digit0", "Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7", "Digit8", "Digit9", "KeyA", "KeyB", "KeyC", "KeyD", "KeyE", "KeyF", "KeyG", "KeyH", "KeyI", "KeyJ", "KeyK", "KeyL", "KeyM", "KeyN", "KeyO", "KeyP", "KeyQ", "KeyR", "KeyS", "KeyT", "KeyU", "KeyV", "KeyW", "KeyX", "KeyY", "KeyZ", "Meta", "ContextMenu", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "F13", "F14", "F15", "F16", "F17", "F18", "F19", "F20", "F21", "F22", "F23", "F24", "NumLock", "ScrollLock", "/**
+	 * Used for miscellaneous characters; it can vary by keyboard.
+	 * For the US standard keyboard", "the ';:' key
+	 */
+	Semicolon", "/**
+	 * For any country/region", "the '+' key
+	 * For the US standard keyboard", "the '", "/**
+	 * For any country/region", "the '", "' key
+	 * For the US standard keyboard", "the '", "<' key
+	 */
+	Comma", "/**
+	 * For any country/region", "the '-' key
+	 * For the US standard keyboard", "the '-_' key
+	 */
+	Minus", "/**
+	 * For any country/region", "the '.' key
+	 * For the US standard keyboard", "the '.>' key
+	 */
+	Period", "/**
+	 * Used for miscellaneous characters; it can vary by keyboard.
+	 * For the US standard keyboard", "the '/?' key
+	 */
+	Slash", "/**
+	 * Used for miscellaneous characters; it can vary by keyboard.
+	 * For the US standard keyboard", "the '`~' key
+	 */
+	Backquote", "/**
+	 * Used for miscellaneous characters; it can vary by keyboard.
+	 * For the US standard keyboard", "the '[{' key
+	 */
+	BracketLeft", "/**
+	 * Used for miscellaneous characters; it can vary by keyboard.
+	 * For the US standard keyboard", "the '\|' key
+	 */
+	Backslash", "/**
+	 * Used for miscellaneous characters; it can vary by keyboard.
+	 * For the US standard keyboard", "the ']"] };
+}
+
+!getMarkerSeverityEnum(){
+  ^{ enumName: "MarkerSeverity", members: ["Hint", "Info", "Warning", "Error"] };
+}
+
+!getMarkerTagEnum(){
+  ^{ enumName: "MarkerTag", members: ["Unnecessary", "Deprecated"] };
+}
+
+!getMinimapPositionEnum(){
+  ^{ enumName: "MinimapPosition", members: ["Inline", "Gutter"] };
+}
+
+!getMinimapSectionHeaderStyleEnum(){
+  ^{ enumName: "MinimapSectionHeaderStyle", members: ["Normal", "Underlined"] };
+}
+
+!getMouseTargetTypeEnum(){
+  ^{ enumName: "MouseTargetType", members: ["/**
+	 * Mouse is on top of an unknown element.
+	 */
+	UNKNOWN", "/**
+	 * Mouse is on top of the textarea used for input.
+	 */
+	TEXTAREA", "/**
+	 * Mouse is on top of the glyph margin
+	 */
+	GUTTER_GLYPH_MARGIN", "/**
+	 * Mouse is on top of the line numbers
+	 */
+	GUTTER_LINE_NUMBERS", "/**
+	 * Mouse is on top of the line decorations
+	 */
+	GUTTER_LINE_DECORATIONS", "/**
+	 * Mouse is on top of the whitespace left in the gutter by a view zone.
+	 */
+	GUTTER_VIEW_ZONE", "/**
+	 * Mouse is on top of text in the content.
+	 */
+	CONTENT_TEXT", "/**
+	 * Mouse is on top of empty space in the content (e.g. after line text or below last line)
+	 */
+	CONTENT_EMPTY", "/**
+	 * Mouse is on top of a view zone in the content.
+	 */
+	CONTENT_VIEW_ZONE", "/**
+	 * Mouse is on top of a content widget.
+	 */
+	CONTENT_WIDGET", "/**
+	 * Mouse is on top of the decorations overview ruler.
+	 */
+	OVERVIEW_RULER", "/**
+	 * Mouse is on top of a scrollbar.
+	 */
+	SCROLLBAR", "/**
+	 * Mouse is on top of an overlay widget.
+	 */
+	OVERLAY_WIDGET", "/**
+	 * Mouse is outside of the editor.
+	 */
+	OUTSIDE_EDITOR"] };
+}
+
+!getNewSymbolNameTagEnum(){
+  ^{ enumName: "NewSymbolNameTag", members: ["AIGenerated"] };
+}
+
+!getNewSymbolNameTriggerKindEnum(){
+  ^{ enumName: "NewSymbolNameTriggerKind", members: ["Invoke", "Automatic"] };
+}
+
+!getOverlayWidgetPositionPreferenceEnum(){
+  ^{ enumName: "OverlayWidgetPositionPreference", members: ["/**
+	 * Position the overlay widget in the top right corner
+	 */
+	TOP_RIGHT_CORNER", "/**
+	 * Position the overlay widget in the bottom right corner
+	 */
+	BOTTOM_RIGHT_CORNER", "/**
+	 * Position the overlay widget in the top center
+	 */
+	TOP_CENTER"] };
+}
+
+!getOverviewRulerLaneEnum(){
+  ^{ enumName: "OverviewRulerLane", members: ["Left", "Center", "Right", "Full"] };
+}
+
+!getPartialAcceptTriggerKindEnum(){
+  ^{ enumName: "PartialAcceptTriggerKind", members: ["Word", "Line", "Suggest"] };
+}
+
+!getPositionAffinityEnum(){
+  ^{ enumName: "PositionAffinity", members: ["/**
+	 * Prefers the left most position.
+	*/
+	Left", "/**
+	 * Prefers the right most position.
+	*/
+	Right", "/**
+	 * No preference.
+	*/
+	None", "/**
+	 * If the given position is on injected text", "prefers the position left of it.
+	*/
+	LeftOfInjectedText", "/**
+	 * If the given position is on injected text", "prefers the position right of it.
+	*/
+	RightOfInjectedText"] };
+}
+
+!getRenderLineNumbersTypeEnum(){
+  ^{ enumName: "RenderLineNumbersType", members: ["Off", "On", "Relative", "Interval", "Custom"] };
+}
+
+!getRenderMinimapEnum(){
+  ^{ enumName: "RenderMinimap", members: ["None", "Text", "Blocks"] };
+}
+
+!getScrollTypeEnum(){
+  ^{ enumName: "ScrollType", members: ["Smooth", "Immediate"] };
+}
+
+!getScrollbarVisibilityEnum(){
+  ^{ enumName: "ScrollbarVisibility", members: ["Auto", "Hidden", "Visible"] };
+}
+
+!getSelectionDirectionEnum(){
+  ^{ enumName: "SelectionDirection", members: ["/**
+	 * The selection starts above where it ends.
+	 */
+	LTR", "/**
+	 * The selection starts below where it ends.
+	 */
+	RTL"] };
+}
+
+!getShowLightbulbIconModeEnum(){
+  ^{ enumName: "ShowLightbulbIconMode", members: ["Off", "OnCode", "On"] };
+}
+
+!getSignatureHelpTriggerKindEnum(){
+  ^{ enumName: "SignatureHelpTriggerKind", members: ["Invoke", "TriggerCharacter", "ContentChange"] };
+}
+
+!getSymbolKindEnum(){
+  ^{ enumName: "SymbolKind", members: ["File", "Module", "Namespace", "Package", "Class", "Method", "Property", "Field", "Constructor", "Enum", "Interface", "Function", "Variable", "Constant", "String", "Number", "Boolean", "Array", "Object", "Key", "Null", "EnumMember", "Struct", "Event", "Operator", "TypeParameter"] };
+}
+
+!getSymbolTagEnum(){
+  ^{ enumName: "SymbolTag", members: ["Deprecated"] };
+}
+
+!getTextDirectionEnum(){
+  ^{ enumName: "TextDirection", members: ["LTR", "RTL"] };
+}
+
+!getTextEditorCursorBlinkingStyleEnum(){
+  ^{ enumName: "TextEditorCursorBlinkingStyle", members: ["/**
+	 * Hidden
+	 */
+	Hidden", "/**
+	 * Blinking
+	 */
+	Blink", "/**
+	 * Blinking with smooth fading
+	 */
+	Smooth", "/**
+	 * Blinking with prolonged filled state and smooth fading
+	 */
+	Phase", "/**
+	 * Expand collapse animation on the y axis
+	 */
+	Expand", "/**
+	 * No-Blinking
+	 */
+	Solid"] };
+}
+
+!getTextEditorCursorStyleEnum(){
+  ^{ enumName: "TextEditorCursorStyle", members: ["/**
+	 * As a vertical line (sitting between two characters).
+	 */
+	Line", "/**
+	 * As a block (sitting on top of a character).
+	 */
+	Block", "/**
+	 * As a horizontal line (sitting under a character).
+	 */
+	Underline", "/**
+	 * As a thin vertical line (sitting between two characters).
+	 */
+	LineThin", "/**
+	 * As an outlined block (sitting on top of a character).
+	 */
+	BlockOutline", "/**
+	 * As a thin horizontal line (sitting under a character).
+	 */
+	UnderlineThin"] };
+}
+
+!getTrackedRangeStickinessEnum(){
+  ^{ enumName: "TrackedRangeStickiness", members: ["AlwaysGrowsWhenTypingAtEdges", "NeverGrowsWhenTypingAtEdges", "GrowsOnlyWhenTypingBefore", "GrowsOnlyWhenTypingAfter"] };
+}
+
+!getWrappingIndentEnum(){
+  ^{ enumName: "WrappingIndent", members: ["/**
+	 * No indentation", "/**
+	 * Same", "/**
+	 * Indent", "/**
+	 * DeepIndent"] };
+}
+
+=ex{getAccessibilitySupportEnum,getCodeActionTriggerTypeEnum,getCompletionItemInsertTextRuleEnum,getCompletionItemKindEnum,getCompletionItemTagEnum,getCompletionTriggerKindEnum,getContentWidgetPositionPreferenceEnum,getCursorChangeReasonEnum,getDefaultEndOfLineEnum,getDocumentHighlightKindEnum,getEditorAutoIndentStrategyEnum,getEditorOptionEnum,getEndOfLinePreferenceEnum,getEndOfLineSequenceEnum,getGlyphMarginLaneEnum,getHoverVerbosityActionEnum,getIndentActionEnum,getInjectedTextCursorStopsEnum,getInlayHintKindEnum,getInlineCompletionEndOfLifeReasonKindEnum,getInlineCompletionHintStyleEnum,getInlineCompletionTriggerKindEnum,getKeyCodeEnum,getMarkerSeverityEnum,getMarkerTagEnum,getMinimapPositionEnum,getMinimapSectionHeaderStyleEnum,getMouseTargetTypeEnum,getNewSymbolNameTagEnum,getNewSymbolNameTriggerKindEnum,getOverlayWidgetPositionPreferenceEnum,getOverviewRulerLaneEnum,getPartialAcceptTriggerKindEnum,getPositionAffinityEnum,getRenderLineNumbersTypeEnum,getRenderMinimapEnum,getScrollTypeEnum,getScrollbarVisibilityEnum,getSelectionDirectionEnum,getShowLightbulbIconModeEnum,getSignatureHelpTriggerKindEnum,getSymbolKindEnum,getSymbolTagEnum,getTextDirectionEnum,getTextEditorCursorBlinkingStyleEnum,getTextEditorCursorStyleEnum,getTrackedRangeStickinessEnum,getWrappingIndentEnum}

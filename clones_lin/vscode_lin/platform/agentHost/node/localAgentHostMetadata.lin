@@ -1,0 +1,39 @@
+@LIN:platform_agentHost_node_localAgentHostMetadata:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createLocalAgentHostEndpointMetadata(userDataPath){
+  // Transposed from platform/agentHost/node/localAgentHostMetadata.ts
+  ^{ name: "createLocalAgentHostEndpointMetadata", status: "pure" };
+}
+
+!prepareLocalAgentHostEndpointMetadataDirectory(userDataPath){
+  // Transposed from platform/agentHost/node/localAgentHostMetadata.ts
+  ^{ name: "prepareLocalAgentHostEndpointMetadataDirectory", status: "pure" };
+}
+
+!prepareLocalAgentHostEndpointSocketDirectory(userDataPath){
+  // Transposed from platform/agentHost/node/localAgentHostMetadata.ts
+  ^{ name: "prepareLocalAgentHostEndpointSocketDirectory", status: "pure" };
+}
+
+!publishLocalAgentHostEndpointMetadata(userDataPath, metadata, logService?){
+  // Transposed from platform/agentHost/node/localAgentHostMetadata.ts
+  ^{ name: "publishLocalAgentHostEndpointMetadata", status: "pure" };
+}
+
+!cleanupLocalAgentHostEndpointMetadataSync(userDataPath, owner, logService?){
+  // Transposed from platform/agentHost/node/localAgentHostMetadata.ts
+  ^{ name: "cleanupLocalAgentHostEndpointMetadataSync", status: "pure" };
+}
+
+!cleanupLocalAgentHostEndpointSocketSync(endpointPath){
+  // Transposed from platform/agentHost/node/localAgentHostMetadata.ts
+  ^{ name: "cleanupLocalAgentHostEndpointSocketSync", status: "pure" };
+}
+
+!readLocalAgentHostEndpointRegistry(userDataPath, logService?){
+  // Transposed from platform/agentHost/node/localAgentHostMetadata.ts
+  ^{ name: "readLocalAgentHostEndpointRegistry", status: "pure" };
+}
+
+=ex{createLocalAgentHostEndpointMetadata,prepareLocalAgentHostEndpointMetadataDirectory,prepareLocalAgentHostEndpointSocketDirectory,publishLocalAgentHostEndpointMetadata,cleanupLocalAgentHostEndpointMetadataSync,cleanupLocalAgentHostEndpointSocketSync,readLocalAgentHostEndpointRegistry}

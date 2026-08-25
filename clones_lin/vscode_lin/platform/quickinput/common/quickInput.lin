@@ -1,0 +1,83 @@
+@LIN:platform_quickinput_common_quickInput:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isKeyModified(keyMods){
+  // Transposed from platform/quickinput/common/quickInput.ts
+  ^{ name: "isKeyModified", status: "pure" };
+}
+
+!getQuickInputHideReasonEnum(){
+  ^{ enumName: "QuickInputHideReason", members: ["/**
+	 * Focus moved away from the quick input.
+	 */
+	Blur", "/**
+	 * An explicit user gesture", "e.g. pressing Escape key.
+	 */
+	Gesture", "/**
+	 * Anything else.
+	 */
+	Other"] };
+}
+
+!getItemActivationEnum(){
+  ^{ enumName: "ItemActivation", members: ["/**
+	 * No item will be active.
+	 */
+	NONE", "/**
+	 * First item will be active.
+	 */
+	FIRST", "/**
+	 * Second item will be active.
+	 */
+	SECOND", "/**
+	 * Last item will be active.
+	 */
+	LAST"] };
+}
+
+!getQuickPickFocusEnum(){
+  ^{ enumName: "QuickPickFocus", members: ["/**
+	 * Focus the first item in the list.
+	 */
+	First", "/**
+	 * Focus the second item in the list.
+	 */
+	Second", "/**
+	 * Focus the last item in the list.
+	 */
+	Last", "/**
+	 * Focus the next item in the list.
+	 */
+	Next", "/**
+	 * Focus the previous item in the list.
+	 */
+	Previous", "/**
+	 * Focus the next page in the list.
+	 */
+	NextPage", "/**
+	 * Focus the previous page in the list.
+	 */
+	PreviousPage", "/**
+	 * Focus the first item under the next separator.
+	 */
+	NextSeparator", "/**
+	 * Focus the first item under the current separator.
+	 */
+	PreviousSeparator"] };
+}
+
+!getQuickInputButtonLocationEnum(){
+  ^{ enumName: "QuickInputButtonLocation", members: ["/**
+	 * In the title bar.
+	 */
+	Title", "/**
+	 * To the right of the input box.
+	 */
+	Inline", "/**
+	 * At the far end inside the input box.
+	 * Used by the public API to create toggles.
+	 */
+	Input"] };
+}
+
+=ex{isKeyModified,getQuickInputHideReasonEnum,getItemActivationEnum,getQuickPickFocusEnum,getQuickInputButtonLocationEnum}

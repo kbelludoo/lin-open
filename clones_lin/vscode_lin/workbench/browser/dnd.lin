@@ -1,0 +1,43 @@
+@LIN:workbench_browser_dnd:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!extractTreeDropData(dataTransfer){
+  // Transposed from workbench/browser/dnd.ts
+  ^{ name: "extractTreeDropData", status: "pure" };
+}
+
+!fillEditorsDragData(accessor, resourcesOrEditors, event, options?){
+  // Transposed from workbench/browser/dnd.ts
+  ^{ name: "fillEditorsDragData", status: "pure" };
+}
+
+!isWindowDraggedOver(){
+  // Transposed from workbench/browser/dnd.ts
+  ^{ name: "isWindowDraggedOver", status: "pure" };
+}
+
+!createDraggedEditorIdentifier(...args){
+  ^{ className: "DraggedEditorIdentifier", methods: [] };
+}
+
+!createDraggedEditorGroupIdentifier(...args){
+  ^{ className: "DraggedEditorGroupIdentifier", methods: [] };
+}
+
+!createResourcesDropHandler(...args){
+  ^{ className: "ResourcesDropHandler", methods: ["if", "for", "if", "if", "if", "if", "if", "if", "handleWorkspaceDrop", "if", "catch", "if", "if"] };
+}
+
+!createDraggedCompositeIdentifier(...args){
+  ^{ className: "DraggedCompositeIdentifier", methods: ["id"] };
+}
+
+!createDraggedViewIdentifier(...args){
+  ^{ className: "DraggedViewIdentifier", methods: ["id"] };
+}
+
+!createCompositeDragAndDropObserver(...args){
+  ^{ className: "CompositeDragAndDropObserver", methods: ["INSTANCE", "if", "readDragData", "if", "writeDragData", "registerTarget", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if"] };
+}
+
+=ex{extractTreeDropData,fillEditorsDragData,isWindowDraggedOver,createDraggedEditorIdentifier,createDraggedEditorGroupIdentifier,createResourcesDropHandler,createDraggedCompositeIdentifier,createDraggedViewIdentifier,createCompositeDragAndDropObserver}

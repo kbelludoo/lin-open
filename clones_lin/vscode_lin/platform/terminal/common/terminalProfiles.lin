@@ -1,0 +1,19 @@
+@LIN:platform_terminal_common_terminalProfiles:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createProfileSchemaEnums(detectedProfiles, extensionProfiles?){
+  // Transposed from platform/terminal/common/terminalProfiles.ts
+  ^{ name: "createProfileSchemaEnums", status: "pure" };
+}
+
+!terminalProfileArgsMatch(args1, args2){
+  // Transposed from platform/terminal/common/terminalProfiles.ts
+  ^{ name: "terminalProfileArgsMatch", status: "pure" };
+}
+
+!terminalIconsEqual(a?, b?){
+  // Transposed from platform/terminal/common/terminalProfiles.ts
+  ^{ name: "terminalIconsEqual", status: "pure" };
+}
+
+=ex{createProfileSchemaEnums,terminalProfileArgsMatch,terminalIconsEqual}

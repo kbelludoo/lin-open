@@ -1,0 +1,44 @@
+@LIN:workbench_contrib_inlineChat_browser_inlineChatActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createStartSessionAction(...args){
+  ^{ className: "StartSessionAction", methods: ["run", "if", "if", "_runEditorCommand", "if"] };
+}
+
+!createFocusInlineChat(...args){
+  ^{ className: "FocusInlineChat", methods: ["runEditorCommand"] };
+}
+
+!createFixDiagnosticsAction(...args){
+  ^{ className: "FixDiagnosticsAction", methods: ["runInlineChatCommand"] };
+}
+
+!createKeepSessionAction2(...args){
+  ^{ className: "KeepSessionAction2", methods: [] };
+}
+
+!createUndoAndCloseSessionAction2(...args){
+  ^{ className: "UndoAndCloseSessionAction2", methods: [] };
+}
+
+!createCancelSessionAction(...args){
+  ^{ className: "CancelSessionAction", methods: [] };
+}
+
+!createContinueInlineChatInChatViewAction(...args){
+  ^{ className: "ContinueInlineChatInChatViewAction", methods: ["runInlineChatCommand"] };
+}
+
+!createRephraseInlineChatSessionAction(...args){
+  ^{ className: "RephraseInlineChatSessionAction", methods: ["runInlineChatCommand"] };
+}
+
+!createAskInChatAction(...args){
+  ^{ className: "AskInChatAction", methods: ["runEditorCommand", "if", "if"] };
+}
+
+!createDismissEditorAffordanceAction(...args){
+  ^{ className: "DismissEditorAffordanceAction", methods: ["runEditorCommand"] };
+}
+
+=ex{createStartSessionAction,createFocusInlineChat,createFixDiagnosticsAction,createKeepSessionAction2,createUndoAndCloseSessionAction2,createCancelSessionAction,createContinueInlineChatInChatViewAction,createRephraseInlineChatSessionAction,createAskInChatAction,createDismissEditorAffordanceAction}

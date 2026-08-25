@@ -1,0 +1,64 @@
+@LIN:workbench_browser_actions_layoutActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createToggleSidebarPositionAction(...args){
+  ^{ className: "ToggleSidebarPositionAction", methods: ["getLabel", "run"] };
+}
+
+!createToggleSidebarVisibilityAction(...args){
+  ^{ className: "ToggleSidebarVisibilityAction", methods: ["run"] };
+}
+
+!createToggleStatusbarVisibilityAction(...args){
+  ^{ className: "ToggleStatusbarVisibilityAction", methods: ["run"] };
+}
+
+!createHideEditorTabsAction(...args){
+  ^{ className: "HideEditorTabsAction", methods: [] };
+}
+
+!createZenHideEditorTabsAction(...args){
+  ^{ className: "ZenHideEditorTabsAction", methods: [] };
+}
+
+!createShowMultipleEditorTabsAction(...args){
+  ^{ className: "ShowMultipleEditorTabsAction", methods: [] };
+}
+
+!createZenShowMultipleEditorTabsAction(...args){
+  ^{ className: "ZenShowMultipleEditorTabsAction", methods: [] };
+}
+
+!createShowSingleEditorTabAction(...args){
+  ^{ className: "ShowSingleEditorTabAction", methods: [] };
+}
+
+!createZenShowSingleEditorTabAction(...args){
+  ^{ className: "ZenShowSingleEditorTabAction", methods: [] };
+}
+
+!createEditorActionsTitleBarAction(...args){
+  ^{ className: "EditorActionsTitleBarAction", methods: ["run"] };
+}
+
+!createEditorActionsDefaultAction(...args){
+  ^{ className: "EditorActionsDefaultAction", methods: ["run"] };
+}
+
+!createHideEditorActionsAction(...args){
+  ^{ className: "HideEditorActionsAction", methods: ["run"] };
+}
+
+!createShowEditorActionsAction(...args){
+  ^{ className: "ShowEditorActionsAction", methods: ["run"] };
+}
+
+!createConfigureEditorTabsAction(...args){
+  ^{ className: "ConfigureEditorTabsAction", methods: ["run"] };
+}
+
+!createConfigureEditorAction(...args){
+  ^{ className: "ConfigureEditorAction", methods: ["run"] };
+}
+
+=ex{createToggleSidebarPositionAction,createToggleSidebarVisibilityAction,createToggleStatusbarVisibilityAction,createHideEditorTabsAction,createZenHideEditorTabsAction,createShowMultipleEditorTabsAction,createZenShowMultipleEditorTabsAction,createShowSingleEditorTabAction,createZenShowSingleEditorTabAction,createEditorActionsTitleBarAction,createEditorActionsDefaultAction,createHideEditorActionsAction,createShowEditorActionsAction,createConfigureEditorTabsAction,createConfigureEditorAction}

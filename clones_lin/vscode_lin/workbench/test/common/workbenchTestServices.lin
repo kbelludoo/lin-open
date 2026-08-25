@@ -1,0 +1,25 @@
+@LIN:workbench_test_common_workbenchTestServices:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createFileStat(resource, readonly = false, isFile?, isDirectory?, isSymbolicLink?, children?, executable?){
+  // Transposed from workbench/test/common/workbenchTestServices.ts
+  ^{ name: "createFileStat", status: "pure" };
+}
+
+!createTestLoggerService(...args){
+  ^{ className: "TestLoggerService", methods: ["doCreateLogger"] };
+}
+
+!createTestStorageService(...args){
+  ^{ className: "TestStorageService", methods: ["testEmitWillSaveState"] };
+}
+
+!createTestExtensionService(...args){
+  ^{ className: "TestExtensionService", methods: ["getViewContainerActivities", "getActivity", "showViewContainerActivity", "showViewActivity", "showAccountsActivity", "showGlobalActivity", "dispose"] };
+}
+
+!createInMemoryTestFileService(...args){
+  ^{ className: "InMemoryTestFileService", methods: ["clearTracking", "readFile", "if", "if", "writeFile", "if", "if", "del", "exists", "if"] };
+}
+
+=ex{createFileStat,createTestLoggerService,createTestStorageService,createTestExtensionService,createInMemoryTestFileService}

@@ -1,0 +1,9 @@
+@LIN:platform_externalServices_common_serviceMachineId:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getServiceMachineId(environmentService, fileService, storageService){
+  // Transposed from platform/externalServices/common/serviceMachineId.ts
+  ^{ name: "getServiceMachineId", status: "pure" };
+}
+
+=ex{getServiceMachineId}

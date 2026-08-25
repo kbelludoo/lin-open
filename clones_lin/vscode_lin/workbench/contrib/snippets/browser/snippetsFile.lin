@@ -1,0 +1,12 @@
+@LIN:workbench_contrib_snippets_browser_snippetsFile:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createSnippet(...args){
+  ^{ className: "Snippet", methods: ["codeSnippet", "isBogous", "isTrivial", "needsClipboard", "usesSelection", "isFileIncluded", "if", "if"] };
+}
+
+!createSnippetFile(...args){
+  ^{ className: "SnippetFile", methods: ["select", "if", "_filepathSelect", "_scopeSelect", "for", "if", "for", "if", "if", "_load", "if", "load", "if", "reset", "_parseSnippet", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if"] };
+}
+
+=ex{createSnippet,createSnippetFile}

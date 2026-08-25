@@ -1,0 +1,63 @@
+@LIN:workbench_contrib_notebook_browser_notebookBrowser:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isNotebookCellDecoration(obj){
+  // Transposed from workbench/contrib/notebook/browser/notebookBrowser.ts
+  ^{ name: "isNotebookCellDecoration", status: "pure" };
+}
+
+!isNotebookViewZoneDecoration(obj){
+  // Transposed from workbench/contrib/notebook/browser/notebookBrowser.ts
+  ^{ name: "isNotebookViewZoneDecoration", status: "pure" };
+}
+
+!getNotebookEditorFromEditorPane(editorPane?){
+  // Transposed from workbench/contrib/notebook/browser/notebookBrowser.ts
+  ^{ name: "getNotebookEditorFromEditorPane", status: "pure" };
+}
+
+!getScrollToRevealBehaviorEnum(){
+  ^{ enumName: "ScrollToRevealBehavior", members: ["fullCell", "firstLine"] };
+}
+
+!getCellLayoutStateEnum(){
+  ^{ enumName: "CellLayoutState", members: ["Uninitialized", "Estimated", "FromCache", "Measured"] };
+}
+
+!getCellLayoutContextEnum(){
+  ^{ enumName: "CellLayoutContext", members: ["Fold"] };
+}
+
+!getNotebookOverviewRulerLaneEnum(){
+  ^{ enumName: "NotebookOverviewRulerLane", members: ["Left", "Center", "Right", "Full"] };
+}
+
+!getCellRevealRangeTypeEnum(){
+  ^{ enumName: "CellRevealRangeType", members: ["Default", "Center", "CenterIfOutsideViewport"] };
+}
+
+!getCellEditStateEnum(){
+  ^{ enumName: "CellEditState", members: ["/**
+	 * Default state.
+	 * For markup cells", "this is the renderer version of the markup.
+	 * For code cell", "the browser focus should be on the container instead of the editor
+	 */
+	Preview", "/**
+	 * Editing mode. Source for markup or code is rendered in editors and the state will be persistent.
+	 */
+	Editing"] };
+}
+
+!getCellFocusModeEnum(){
+  ^{ enumName: "CellFocusMode", members: ["Container", "Editor", "Output", "ChatInput"] };
+}
+
+!getCursorAtBoundaryEnum(){
+  ^{ enumName: "CursorAtBoundary", members: ["None", "Top", "Bottom", "Both"] };
+}
+
+!getCursorAtLineBoundaryEnum(){
+  ^{ enumName: "CursorAtLineBoundary", members: ["None", "Start", "End", "Both"] };
+}
+
+=ex{isNotebookCellDecoration,isNotebookViewZoneDecoration,getNotebookEditorFromEditorPane,getScrollToRevealBehaviorEnum,getCellLayoutStateEnum,getCellLayoutContextEnum,getNotebookOverviewRulerLaneEnum,getCellRevealRangeTypeEnum,getCellEditStateEnum,getCellFocusModeEnum,getCursorAtBoundaryEnum,getCursorAtLineBoundaryEnum}

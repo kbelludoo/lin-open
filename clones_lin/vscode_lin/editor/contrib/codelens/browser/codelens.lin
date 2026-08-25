@@ -1,0 +1,13 @@
+@LIN:editor_contrib_codelens_browser_codelens:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getCodeLensModel(registry, model, token){
+  // Transposed from editor/contrib/codelens/browser/codelens.ts
+  ^{ name: "getCodeLensModel", status: "pure" };
+}
+
+!createCodeLensModel(...args){
+  ^{ className: "CodeLensModel", methods: ["dispose", "isDisposed", "add", "for"] };
+}
+
+=ex{getCodeLensModel,createCodeLensModel}

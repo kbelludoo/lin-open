@@ -1,0 +1,19 @@
+@LIN:platform_agentHost_node_claude_claudeElicitation:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!buildElicitationRequest(requestId, request){
+  // Transposed from platform/agentHost/node/claude/claudeElicitation.ts
+  ^{ name: "buildElicitationRequest", status: "pure" };
+}
+
+!elicitationResultFromAnswers(request, response, answers, ChatInputAnswer> | undefined){
+  // Transposed from platform/agentHost/node/claude/claudeElicitation.ts
+  ^{ name: "elicitationResultFromAnswers", status: "pure" };
+}
+
+!cancelledElicitationResult(){
+  // Transposed from platform/agentHost/node/claude/claudeElicitation.ts
+  ^{ name: "cancelledElicitationResult", status: "pure" };
+}
+
+=ex{buildElicitationRequest,elicitationResultFromAnswers,cancelledElicitationResult}

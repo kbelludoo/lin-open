@@ -1,0 +1,18 @@
+@LIN:base_browser_ui_contextview_contextview:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isAnchor(obj){
+  // Transposed from base/browser/ui/contextview/contextview.ts
+  ^{ name: "isAnchor", status: "pure" };
+}
+
+!getAnchorRect(anchor){
+  // Transposed from base/browser/ui/contextview/contextview.ts
+  ^{ name: "getAnchorRect", status: "pure" };
+}
+
+!createContextView(...args){
+  ^{ className: "ContextView", methods: ["setContainer", "if", "if", "if", "if", "if", "show", "if", "getViewElement", "layout", "doLayout", "hide", "if", "if", "if", "isVisible", "completeHideAnimation", "if", "prepareMenuCloseAnimation", "hasRequiredAncestorClasses", "if", "for", "if", "onDOMEvent", "if", "if", "dispose"] };
+}
+
+=ex{isAnchor,getAnchorRect,createContextView}

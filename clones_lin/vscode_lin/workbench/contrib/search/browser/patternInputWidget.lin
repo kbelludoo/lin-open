@@ -1,0 +1,16 @@
+@LIN:workbench_contrib_search_browser_patternInputWidget:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createPatternInputWidget(...args){
+  ^{ className: "PatternInputWidget", methods: ["dispose", "setWidth", "getValue", "setValue", "if", "select", "focus", "inputHasFocus", "setInputWidth", "getSubcontrolsWidth", "getHistory", "clearHistory", "prependHistory", "clear", "onSearchSubmit", "showNextTerm", "showPreviousTerm", "render", "renderSubcontrols", "onInputKeyUp", "switch"] };
+}
+
+!createIncludePatternInputWidget(...args){
+  ^{ className: "IncludePatternInputWidget", methods: ["dispose", "onlySearchInOpenEditors", "setOnlySearchInOpenEditors", "onlySearchInChangedFiles", "setOnlySearchInChangedFiles", "setOnlySearchInChangedFilesEnabled", "if", "getSubcontrolsWidth", "renderSubcontrols", "_register", "if", "_register", "if"] };
+}
+
+!createExcludePatternInputWidget(...args){
+  ^{ className: "ExcludePatternInputWidget", methods: ["dispose", "useExcludesAndIgnoreFiles", "setUseExcludesAndIgnoreFiles", "getSubcontrolsWidth", "renderSubcontrols", "if"] };
+}
+
+=ex{createPatternInputWidget,createIncludePatternInputWidget,createExcludePatternInputWidget}

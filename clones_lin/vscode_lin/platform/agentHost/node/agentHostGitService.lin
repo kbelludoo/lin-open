@@ -1,0 +1,78 @@
+@LIN:platform_agentHost_node_agentHostGitService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getRemoteTrackingRef(branch){
+  // Transposed from platform/agentHost/node/agentHostGitService.ts
+  ^{ name: "getRemoteTrackingRef", status: "pure" };
+}
+
+!isRetryableWorktreeRemovalError(error){
+  // Transposed from platform/agentHost/node/agentHostGitService.ts
+  ^{ name: "isRetryableWorktreeRemovalError", status: "pure" };
+}
+
+!formatGitError(args, timeoutMs, didTimeOut, error, stderr){
+  // Transposed from platform/agentHost/node/agentHostGitService.ts
+  ^{ name: "formatGitError", status: "pure" };
+}
+
+!summarizeStderrForError(stderr){
+  // Transposed from platform/agentHost/node/agentHostGitService.ts
+  ^{ name: "summarizeStderrForError", status: "pure" };
+}
+
+!parseUntrackedPaths(output){
+  // Transposed from platform/agentHost/node/agentHostGitService.ts
+  ^{ name: "parseUntrackedPaths", status: "pure" };
+}
+
+!parseSingleLsTreeEntry(output){
+  // Transposed from platform/agentHost/node/agentHostGitService.ts
+  ^{ name: "parseSingleLsTreeEntry", status: "pure" };
+}
+
+!parseGitDiffRawNumstat(output, repositoryRoot, sessionUri, beforeRef, afterRef?){
+  // Transposed from platform/agentHost/node/agentHostGitService.ts
+  ^{ name: "parseGitDiffRawNumstat", status: "pure" };
+}
+
+!parseGitStatusV2(output){
+  // Transposed from platform/agentHost/node/agentHostGitService.ts
+  ^{ name: "parseGitStatusV2", status: "pure" };
+}
+
+!parseHasGitHubRemote(remotesOutput){
+  // Transposed from platform/agentHost/node/agentHostGitService.ts
+  ^{ name: "parseHasGitHubRemote", status: "pure" };
+}
+
+!parseFetchRemoteUrls(remotesOutput, preferredRemote?){
+  // Transposed from platform/agentHost/node/agentHostGitService.ts
+  ^{ name: "parseFetchRemoteUrls", status: "pure" };
+}
+
+!parseGitHubRepoFromRemote(remotesOutput, remoteName?){
+  // Transposed from platform/agentHost/node/agentHostGitService.ts
+  ^{ name: "parseGitHubRepoFromRemote", status: "pure" };
+}
+
+!parseDefaultBranchRef(symbolicRefOutput){
+  // Transposed from platform/agentHost/node/agentHostGitService.ts
+  ^{ name: "parseDefaultBranchRef", status: "pure" };
+}
+
+!parseRemoteBranchRef(ref){
+  // Transposed from platform/agentHost/node/agentHostGitService.ts
+  ^{ name: "parseRemoteBranchRef", status: "pure" };
+}
+
+!parseGitRefs(output){
+  // Transposed from platform/agentHost/node/agentHostGitService.ts
+  ^{ name: "parseGitRefs", status: "pure" };
+}
+
+!createGitCheckoutProgressParser(...args){
+  ^{ className: "GitCheckoutProgressParser", methods: ["push", "if", "if"] };
+}
+
+=ex{getRemoteTrackingRef,isRetryableWorktreeRemovalError,formatGitError,summarizeStderrForError,parseUntrackedPaths,parseSingleLsTreeEntry,parseGitDiffRawNumstat,parseGitStatusV2,parseHasGitHubRemote,parseFetchRemoteUrls,parseGitHubRepoFromRemote,parseDefaultBranchRef,parseRemoteBranchRef,parseGitRefs,createGitCheckoutProgressParser}

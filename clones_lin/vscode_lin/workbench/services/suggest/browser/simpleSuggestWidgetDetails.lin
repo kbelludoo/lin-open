@@ -1,0 +1,17 @@
+@LIN:workbench_services_suggest_browser_simpleSuggestWidgetDetails:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!canExpandCompletionItem(item){
+  // Transposed from workbench/services/suggest/browser/simpleSuggestWidgetDetails.ts
+  ^{ name: "canExpandCompletionItem", status: "pure" };
+}
+
+!createSimpleSuggestDetailsWidget(...args){
+  ^{ className: "SimpleSuggestDetailsWidget", methods: ["_configureFont", "dispose", "getLayoutInfo", "renderLoading", "renderItem", "if", "if", "if", "if", "if", "if", "clearContents", "isEmpty", "size", "layout", "scrollDown", "scrollUp", "scrollTop", "scrollBottom", "pageDown", "pageUp", "borderWidth", "borderWidth", "focus"] };
+}
+
+!createSimpleSuggestDetailsOverlay(...args){
+  ^{ className: "SimpleSuggestDetailsOverlay", methods: ["add", "if", "if", "if", "if", "if", "dispose", "getId", "getDomNode", "show", "if", "hide", "if", "if", "placeAtAnchor", "_placeAtAnchor", "function", "function", "function", "function", "if", "if", "if", "if", "if", "if", "_applyTopLeft"] };
+}
+
+=ex{canExpandCompletionItem,createSimpleSuggestDetailsWidget,createSimpleSuggestDetailsOverlay}

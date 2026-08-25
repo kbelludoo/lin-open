@@ -1,0 +1,13 @@
+@LIN:workbench_browser_chatChangesPill:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!chatChangesStatsEqual(a, b){
+  // Transposed from workbench/browser/chatChangesPill.ts
+  ^{ name: "chatChangesStatsEqual", status: "pure" };
+}
+
+!createChatChangesPillActionViewItem(...args){
+  ^{ className: "ChatChangesPillActionViewItem", methods: ["itemModifierClass", "buttonModifierClass", "renderContent", "_updateLabel", "if", "localize"] };
+}
+
+=ex{chatChangesStatsEqual,createChatChangesPillActionViewItem}

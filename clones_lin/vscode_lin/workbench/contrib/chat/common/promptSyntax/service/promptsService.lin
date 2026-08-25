@@ -1,0 +1,52 @@
+@LIN:workbench_contrib_chat_common_promptSyntax_service_promptsService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!newInstructionsCollectionEvent(){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/service/promptsService.ts
+  ^{ name: "newInstructionsCollectionEvent", status: "pure" };
+}
+
+!newInstructionsCollectionDebugInfo(){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/service/promptsService.ts
+  ^{ name: "newInstructionsCollectionDebugInfo", status: "pure" };
+}
+
+!matchesSessionType(sessionTypes, currentSessionType){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/service/promptsService.ts
+  ^{ name: "matchesSessionType", status: "pure" };
+}
+
+!isUserToggleableCustomization(type, storage){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/service/promptsService.ts
+  ^{ name: "isUserToggleableCustomization", status: "pure" };
+}
+
+!isExtensionPromptPath(obj){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/service/promptsService.ts
+  ^{ name: "isExtensionPromptPath", status: "pure" };
+}
+
+!isBuiltinPromptPath(obj){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/service/promptsService.ts
+  ^{ name: "isBuiltinPromptPath", status: "pure" };
+}
+
+!fromPromptPath(promptPath){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/service/promptsService.ts
+  ^{ name: "fromPromptPath", status: "pure" };
+}
+
+!isCustomAgentVisibility(obj){
+  // Transposed from workbench/contrib/chat/common/promptSyntax/service/promptsService.ts
+  ^{ name: "isCustomAgentVisibility", status: "pure" };
+}
+
+!getPromptsStorageEnum(){
+  ^{ enumName: "PromptsStorage", members: ["local", "user", "extension", "plugin", "builtIn"] };
+}
+
+!getAgentInstructionFileTypeEnum(){
+  ^{ enumName: "AgentInstructionFileType", members: ["agentsMd", "claudeMd", "copilotInstructionsMd"] };
+}
+
+=ex{newInstructionsCollectionEvent,newInstructionsCollectionDebugInfo,matchesSessionType,isUserToggleableCustomization,isExtensionPromptPath,isBuiltinPromptPath,fromPromptPath,isCustomAgentVisibility,getPromptsStorageEnum,getAgentInstructionFileTypeEnum}

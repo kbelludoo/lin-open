@@ -1,0 +1,18 @@
+@LIN:workbench_services_search_common_queryBuilder:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!escapeGlobPattern(path){
+  // Transposed from workbench/services/search/common/queryBuilder.ts
+  ^{ name: "escapeGlobPattern", status: "pure" };
+}
+
+!resolveResourcesForSearchIncludes(resources, contextService){
+  // Transposed from workbench/services/search/common/queryBuilder.ts
+  ^{ name: "resolveResourcesForSearchIncludes", status: "pure" };
+}
+
+!createQueryBuilder(...args){
+  ^{ className: "QueryBuilder", methods: ["aiText", "text", "getContentPattern", "if", "if", "if", "if", "if", "if", "if", "if", "if", "handleIncludeExclude", "if", "if", "parseSearchPaths", "if", "if", "commonQueryFromFileList", "forEach", "if", "if", "if", "isCaseSensitive", "if", "if", "isMultiline", "if", "parseSearchPaths", "map", "map", "if", "if", "getExcludesForFolder", "expandSearchPathPatterns", "if", "if", "if", "if", "expandOneSearchPath", "if", "if", "if", "resolveOneSearchPathPattern", "getFolderQueryForSearchPath", "if", "if", "if", "if", "if"] };
+}
+
+=ex{escapeGlobPattern,resolveResourcesForSearchIncludes,createQueryBuilder}

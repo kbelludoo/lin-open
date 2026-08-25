@@ -1,0 +1,12 @@
+@LIN:workbench_browser_actions_windowActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createOpenRecentAction(...args){
+  ^{ className: "OpenRecentAction", methods: ["isQuickNavigate"] };
+}
+
+!createReloadWindowAction(...args){
+  ^{ className: "ReloadWindowAction", methods: ["run"] };
+}
+
+=ex{createOpenRecentAction,createReloadWindowAction}

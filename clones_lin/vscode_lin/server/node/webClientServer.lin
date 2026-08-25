@@ -1,0 +1,18 @@
+@LIN:server_node_webClientServer:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!serveError(req, res, errorCode, errorMessage){
+  // Transposed from server/node/webClientServer.ts
+  ^{ name: "serveError", status: "pure" };
+}
+
+!serveFile(filePath, cacheControl, logService, req, res, responseHeaders, string>){
+  // Transposed from server/node/webClientServer.ts
+  ^{ name: "serveFile", status: "pure" };
+}
+
+!createWebClientServer(...args){
+  ^{ className: "WebClientServer", methods: ["handle", "if", "if", "catch", "_handleStatic", "_getResourceURLTemplateAuthority", "_handleWebExtensionResource", "if", "if", "catch", "if", "_handleRoot", "if", "if", "if", "if", "asJSON", "if", "if", "if", "catch", "asJSON", "if", "if", "for", "catch", "if", "_getScriptCspHashes", "_handleCallback"] };
+}
+
+=ex{serveError,serveFile,createWebClientServer}

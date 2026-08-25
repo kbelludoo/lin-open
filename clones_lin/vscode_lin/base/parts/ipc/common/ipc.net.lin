@@ -1,0 +1,17 @@
+@LIN:base_parts_ipc_common_ipc_net:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!traceSocketEvent(nativeObject, socketDebugLabel, type, data?){
+  // Transposed from base/parts/ipc/common/ipc.net.ts
+  ^{ name: "traceSocketEvent", status: "pure" };
+}
+
+!createChunkStream(...args){
+  ^{ className: "ChunkStream", methods: ["byteLength", "acceptChunk", "read", "peek", "_read", "if", "if", "if", "if", "if", "if", "while", "if", "if", "if"] };
+}
+
+!createLoadEstimator(...args){
+  ^{ className: "LoadEstimator", methods: ["getInstance", "if", "for", "for", "load", "for", "if", "hasHighLoad"] };
+}
+
+=ex{traceSocketEvent,createChunkStream,createLoadEstimator}

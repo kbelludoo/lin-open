@@ -1,0 +1,19 @@
+@LIN:platform_terminal_common_xterm_shellIntegrationAddon:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!deserializeVSCodeOscMessage(message){
+  // Transposed from platform/terminal/common/xterm/shellIntegrationAddon.ts
+  ^{ name: "deserializeVSCodeOscMessage", status: "pure" };
+}
+
+!serializeVSCodeOscMessage(message){
+  // Transposed from platform/terminal/common/xterm/shellIntegrationAddon.ts
+  ^{ name: "serializeVSCodeOscMessage", status: "pure" };
+}
+
+!parseKeyValueAssignment(message){
+  // Transposed from platform/terminal/common/xterm/shellIntegrationAddon.ts
+  ^{ name: "parseKeyValueAssignment", status: "pure" };
+}
+
+=ex{deserializeVSCodeOscMessage,serializeVSCodeOscMessage,parseKeyValueAssignment}

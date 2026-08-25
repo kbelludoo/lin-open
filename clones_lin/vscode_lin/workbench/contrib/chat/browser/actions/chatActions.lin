@@ -1,0 +1,34 @@
+@LIN:workbench_contrib_chat_browser_actions_chatActions:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getOpenChatActionIdForMode(mode){
+  // Transposed from workbench/contrib/chat/browser/actions/chatActions.ts
+  ^{ name: "getOpenChatActionIdForMode", status: "pure" };
+}
+
+!stringifyItem(item, includeName = true){
+  // Transposed from workbench/contrib/chat/browser/actions/chatActions.ts
+  ^{ name: "stringifyItem", status: "pure" };
+}
+
+!computeToolEnablementMap(options){
+  // Transposed from workbench/contrib/chat/browser/actions/chatActions.ts
+  ^{ name: "computeToolEnablementMap", status: "pure" };
+}
+
+!handleCurrentEditingSession(model, phrase, dialogService){
+  // Transposed from workbench/contrib/chat/browser/actions/chatActions.ts
+  ^{ name: "handleCurrentEditingSession", status: "pure" };
+}
+
+!handleModeSwitch(accessor, fromMode, toMode, requestCount, model){
+  // Transposed from workbench/contrib/chat/browser/actions/chatActions.ts
+  ^{ name: "handleModeSwitch", status: "pure" };
+}
+
+!clearChatSessionPreservingType(accessor, widget, sessionType){
+  // Transposed from workbench/contrib/chat/browser/actions/chatActions.ts
+  ^{ name: "clearChatSessionPreservingType", status: "pure" };
+}
+
+=ex{getOpenChatActionIdForMode,stringifyItem,computeToolEnablementMap,handleCurrentEditingSession,handleModeSwitch,clearChatSessionPreservingType}

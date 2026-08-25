@@ -1,0 +1,8 @@
+@LIN:editor_contrib_insertFinalNewLine_browser_insertFinalNewLine:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createInsertFinalNewLineAction(...args){
+  ^{ className: "InsertFinalNewLineAction", methods: ["run", "if"] };
+}
+
+=ex{createInsertFinalNewLineAction}

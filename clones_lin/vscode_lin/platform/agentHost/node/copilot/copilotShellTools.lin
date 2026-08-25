@@ -1,0 +1,13 @@
+@LIN:platform_agentHost_node_copilot_copilotShellTools:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createShellTools(shellManager, chat, terminalManager, logService, confirmUnsandboxedExecution?, // eslint-disable-next-line @typescript-eslint/no-explicit-any){
+  // Transposed from platform/agentHost/node/copilot/copilotShellTools.ts
+  ^{ name: "createShellTools", status: "pure" };
+}
+
+!createShellManager(...args){
+  ^{ className: "ShellManager", methods: ["getResolvedExecutable", "if", "getOrCreateSandboxEngine", "if", "getOrCreateShell", "if", "_makeReference", "if", "holdShellUntilCommandFinishes", "_trackToolCall", "if", "getTerminalUriForToolCall", "if", "getShell", "listShells", "shutdownShell", "if"] };
+}
+
+=ex{createShellTools,createShellManager}

@@ -1,0 +1,9 @@
+@LIN:platform_agentHost_common_sshHostKeyTrust:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!computeHostKeyStoreKey(host, port){
+  // Transposed from platform/agentHost/common/sshHostKeyTrust.ts
+  ^{ name: "computeHostKeyStoreKey", status: "pure" };
+}
+
+=ex{computeHostKeyStoreKey}

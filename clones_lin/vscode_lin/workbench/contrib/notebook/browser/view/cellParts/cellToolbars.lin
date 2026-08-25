@@ -1,0 +1,12 @@
+@LIN:workbench_contrib_notebook_browser_view_cellParts_cellToolbars:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createBetweenCellToolbar(...args){
+  ^{ className: "BetweenCellToolbar", methods: ["_initialize", "if", "if", "if", "didRenderCell", "updateInternalLayoutNow"] };
+}
+
+!createCellTitleToolbarPart(...args){
+  ^{ className: "CellTitleToolbarPart", methods: ["hasActions", "if", "_initializeModel", "if", "_initialize", "if", "if", "prepareRenderCell", "didRenderCell", "updateContext", "setupChangeListeners", "if", "if", "updateActions", "if", "if"] };
+}
+
+=ex{createBetweenCellToolbar,createCellTitleToolbarPart}

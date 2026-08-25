@@ -1,0 +1,12 @@
+@LIN:editor_browser_stableEditorScroll:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createStableEditorScrollState(...args){
+  ^{ className: "StableEditorScrollState", methods: ["capture", "if", "restore", "if", "restoreRelativeVerticalPositionOfCursor", "if"] };
+}
+
+!createStableEditorBottomScrollState(...args){
+  ^{ className: "StableEditorBottomScrollState", methods: ["capture", "if", "restore", "if"] };
+}
+
+=ex{createStableEditorScrollState,createStableEditorBottomScrollState}

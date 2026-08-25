@@ -1,0 +1,27 @@
+@LIN:workbench_services_lifecycle_common_lifecycle:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!StartupKindToString(startupKind){
+  // Transposed from workbench/services/lifecycle/common/lifecycle.ts
+  ^{ name: "StartupKindToString", status: "pure" };
+}
+
+!LifecyclePhaseToString(phase){
+  // Transposed from workbench/services/lifecycle/common/lifecycle.ts
+  ^{ name: "LifecyclePhaseToString", status: "pure" };
+}
+
+!getWillShutdownJoinerOrderEnum(){
+  ^{ enumName: "WillShutdownJoinerOrder", members: ["/**
+	 * Joiners to run before the `Last` joiners. This is the default order and best for
+	 * most cases. You can be sure that services are still functional at this point.
+	 */
+	Default", "/**
+	 * The joiners to run last. This should ONLY be used in rare cases when you have no
+	 * dependencies to workbench services or state. The workbench may be in a state where
+	 * resources can no longer be accessed or changed.
+	 */
+	Last"] };
+}
+
+=ex{StartupKindToString,LifecyclePhaseToString,getWillShutdownJoinerOrderEnum}

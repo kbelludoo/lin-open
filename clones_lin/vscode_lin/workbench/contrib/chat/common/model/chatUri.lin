@@ -1,0 +1,34 @@
+@LIN:workbench_contrib_chat_common_model_chatUri:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!forSession(sessionId){
+  // Transposed from workbench/contrib/chat/common/model/chatUri.ts
+  ^{ name: "forSession", status: "pure" };
+}
+
+!chatSessionResourceToId(resource){
+  // Transposed from workbench/contrib/chat/common/model/chatUri.ts
+  ^{ name: "chatSessionResourceToId", status: "pure" };
+}
+
+!getChatSessionStorageResource(storageRoot, sessionId, suffix){
+  // Transposed from workbench/contrib/chat/common/model/chatUri.ts
+  ^{ name: "getChatSessionStorageResource", status: "pure" };
+}
+
+!getChatSessionType(resource){
+  // Transposed from workbench/contrib/chat/common/model/chatUri.ts
+  ^{ name: "getChatSessionType", status: "pure" };
+}
+
+!isUntitledChatSession(resource){
+  // Transposed from workbench/contrib/chat/common/model/chatUri.ts
+  ^{ name: "isUntitledChatSession", status: "pure" };
+}
+
+!getNewChatSessionResource(sessionType){
+  // Transposed from workbench/contrib/chat/common/model/chatUri.ts
+  ^{ name: "getNewChatSessionResource", status: "pure" };
+}
+
+=ex{forSession,chatSessionResourceToId,getChatSessionStorageResource,getChatSessionType,isUntitledChatSession,getNewChatSessionResource}

@@ -1,0 +1,14 @@
+@LIN:platform_agentHost_common_githubPullRequestReferences:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!parseGitHubPullRequestReferences(text, defaultRepository?, gitHubHost = 'github.com'){
+  // Transposed from platform/agentHost/common/githubPullRequestReferences.ts
+  ^{ name: "parseGitHubPullRequestReferences", status: "pure" };
+}
+
+!toGitHubPullRequestUrl(reference, gitHubHost = 'github.com'){
+  // Transposed from platform/agentHost/common/githubPullRequestReferences.ts
+  ^{ name: "toGitHubPullRequestUrl", status: "pure" };
+}
+
+=ex{parseGitHubPullRequestReferences,toGitHubPullRequestUrl}

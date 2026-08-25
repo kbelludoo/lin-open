@@ -1,0 +1,43 @@
+@LIN:editor_contrib_inlineCompletions_browser_utils:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!addPositions(pos1, pos2){
+  // Transposed from editor/contrib/inlineCompletions/browser/utils.ts
+  ^{ name: "addPositions", status: "pure" };
+}
+
+!subtractPositions(pos1, pos2){
+  // Transposed from editor/contrib/inlineCompletions/browser/utils.ts
+  ^{ name: "subtractPositions", status: "pure" };
+}
+
+!substringPos(text, pos){
+  // Transposed from editor/contrib/inlineCompletions/browser/utils.ts
+  ^{ name: "substringPos", status: "pure" };
+}
+
+!getEndPositionsAfterApplying(edits){
+  // Transposed from editor/contrib/inlineCompletions/browser/utils.ts
+  ^{ name: "getEndPositionsAfterApplying", status: "pure" };
+}
+
+!getModifiedRangesAfterApplying(edits){
+  // Transposed from editor/contrib/inlineCompletions/browser/utils.ts
+  ^{ name: "getModifiedRangesAfterApplying", status: "pure" };
+}
+
+!removeTextReplacementCommonSuffixPrefix(edits, textModel){
+  // Transposed from editor/contrib/inlineCompletions/browser/utils.ts
+  ^{ name: "removeTextReplacementCommonSuffixPrefix", status: "pure" };
+}
+
+!wait(ms, cancellationToken?){
+  // Transposed from editor/contrib/inlineCompletions/browser/utils.ts
+  ^{ name: "wait", status: "pure" };
+}
+
+!createObservableContextKeyService(...args){
+  ^{ className: "ObservableContextKeyService", methods: [] };
+}
+
+=ex{addPositions,subtractPositions,substringPos,getEndPositionsAfterApplying,getModifiedRangesAfterApplying,removeTextReplacementCommonSuffixPrefix,wait,createObservableContextKeyService}

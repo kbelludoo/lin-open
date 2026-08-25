@@ -1,0 +1,24 @@
+@LIN:workbench_contrib_chat_common_tools_builtinTools_chatUrlFetchingPatterns:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!extractUrlPatterns(url){
+  // Transposed from workbench/contrib/chat/common/tools/builtinTools/chatUrlFetchingPatterns.ts
+  ^{ name: "extractUrlPatterns", status: "pure" };
+}
+
+!getPatternLabel(url, pattern){
+  // Transposed from workbench/contrib/chat/common/tools/builtinTools/chatUrlFetchingPatterns.ts
+  ^{ name: "getPatternLabel", status: "pure" };
+}
+
+!isUrlApproved(url, approvedUrls, boolean | IUrlApprovalSettings>, checkRequest){
+  // Transposed from workbench/contrib/chat/common/tools/builtinTools/chatUrlFetchingPatterns.ts
+  ^{ name: "isUrlApproved", status: "pure" };
+}
+
+!getMatchingPattern(url, approvedUrls, boolean | IUrlApprovalSettings>){
+  // Transposed from workbench/contrib/chat/common/tools/builtinTools/chatUrlFetchingPatterns.ts
+  ^{ name: "getMatchingPattern", status: "pure" };
+}
+
+=ex{extractUrlPatterns,getPatternLabel,isUrlApproved,getMatchingPattern}

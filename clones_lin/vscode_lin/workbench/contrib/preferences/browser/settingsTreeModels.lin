@@ -1,0 +1,45 @@
+@LIN:workbench_contrib_preferences_browser_settingsTreeModels:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!inspectSetting(key, target, languageFilter, configurationService){
+  // Transposed from workbench/contrib/preferences/browser/settingsTreeModels.ts
+  ^{ name: "inspectSetting", status: "pure" };
+}
+
+!sanitizeId(id){
+  // Transposed from workbench/contrib/preferences/browser/settingsTreeModels.ts
+  ^{ name: "sanitizeId", status: "pure" };
+}
+
+!settingKeyToDisplayFormat(key, groupId, isLanguageTagSetting){
+  // Transposed from workbench/contrib/preferences/browser/settingsTreeModels.ts
+  ^{ name: "settingKeyToDisplayFormat", status: "pure" };
+}
+
+!objectSettingSupportsRemoveDefaultValue(key){
+  // Transposed from workbench/contrib/preferences/browser/settingsTreeModels.ts
+  ^{ name: "objectSettingSupportsRemoveDefaultValue", status: "pure" };
+}
+
+!parseQuery(query){
+  // Transposed from workbench/contrib/preferences/browser/settingsTreeModels.ts
+  ^{ name: "parseQuery", status: "pure" };
+}
+
+!createSettingsTreeGroupElement(...args){
+  ^{ className: "SettingsTreeGroupElement", methods: ["children", "children", "forEach", "containsSetting"] };
+}
+
+!createSettingsTreeNewExtensionsElement(...args){
+  ^{ className: "SettingsTreeNewExtensionsElement", methods: [] };
+}
+
+!createSettingsTreeSettingElement(...args){
+  ^{ className: "SettingsTreeSettingElement", methods: ["displayCategory", "if", "displayLabel", "if", "initLabels", "if", "initSettingDescription", "if", "initSettingValueType", "if", "if", "if", "if", "if", "if", "if", "if", "if", "inspectSelf", "getTargetToInspect", "if", "if", "update", "switch", "if", "for", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "matchesAllTags", "if", "if", "if", "matchesScope", "if", "if", "if", "if", "if", "if", "if", "matchesAnyExtension", "if", "if", "matchesAnyFeature", "if", "if", "if", "some", "if", "matchesAnyId", "if", "for", "matchesAllLanguages", "if", "if"] };
+}
+
+!createSearchResultModel(...args){
+  ^{ className: "SearchResultModel", methods: ["showAiResults", "sortResults", "if", "for", "if", "if", "if", "getUniqueSearchResults", "if", "if", "if", "if", "if", "if", "if", "getRawResults", "getUniqueSearchResultSettings", "updateChildren", "for", "if", "if", "setResult", "if", "if", "getUniqueResultsCount"] };
+}
+
+=ex{inspectSetting,sanitizeId,settingKeyToDisplayFormat,objectSettingSupportsRemoveDefaultValue,parseQuery,createSettingsTreeGroupElement,createSettingsTreeNewExtensionsElement,createSettingsTreeSettingElement,createSearchResultModel}

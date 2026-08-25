@@ -1,0 +1,25 @@
+@LIN:editor_contrib_inlineCompletions_browser_model_inlineSuggestionItem:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!create(data, textModel, shouldDiffEdit, // TODO@benibenj it should only be created once and hence not meeded to be passed here){
+  // Transposed from editor/contrib/inlineCompletions/browser/model/inlineSuggestionItem.ts
+  ^{ name: "create", status: "pure" };
+}
+
+!createInlineSuggestionIdentity(...args){
+  ^{ className: "InlineSuggestionIdentity", methods: ["jumpedTo", "addRef", "removeRef", "if", "setJumpTo"] };
+}
+
+!createInlineSuggestHint(...args){
+  ^{ className: "InlineSuggestHint", methods: ["create", "withEdit", "if"] };
+}
+
+!createInlineCompletionItem(...args){
+  ^{ className: "InlineCompletionItem", methods: ["create", "action", "hash", "getSingleTextEdit", "withIdentity", "withEdit", "if", "if", "if", "canBeReused", "isVisible", "computeEditKind", "editRange", "insertText"] };
+}
+
+!createInlineEditItem(...args){
+  ^{ className: "InlineEditItem", methods: ["createForTest", "create", "if", "if", "if", "updatedEditModelVersion", "updatedEdit", "action", "withIdentity", "canBeReused", "withEdit", "_applyTextModelChanges", "if", "if", "if", "if", "if", "if", "if", "if", "computeEditKind", "if"] };
+}
+
+=ex{create,createInlineSuggestionIdentity,createInlineSuggestHint,createInlineCompletionItem,createInlineEditItem}

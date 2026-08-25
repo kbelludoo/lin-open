@@ -1,0 +1,8 @@
+@LIN:sessions_contrib_onboardingTours_browser_newSessionViewTourTrigger:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createNewSessionViewTourTrigger(...args){
+  ^{ className: "NewSessionViewTourTrigger", methods: ["if", "_isEligibleUser", "_isTriggeredOrShown", "_isReady"] };
+}
+
+=ex{createNewSessionViewTourTrigger}

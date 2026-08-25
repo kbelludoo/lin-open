@@ -1,0 +1,8 @@
+@LIN:workbench_contrib_chat_common_workingDirectory:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createWorkingDirectory(...args){
+  ^{ className: "WorkingDirectory", methods: ["uri", "hasExplicitWorkingDirectory", "getFolder", "if", "resolveRelativePath", "if"] };
+}
+
+=ex{createWorkingDirectory}

@@ -1,0 +1,18 @@
+@LIN:platform_windows_electron_main_windowsStateHandler:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!restoreWindowsState(data){
+  // Transposed from platform/windows/electron-main/windowsStateHandler.ts
+  ^{ name: "restoreWindowsState", status: "pure" };
+}
+
+!getWindowsStateStoreData(windowsState){
+  // Transposed from platform/windows/electron-main/windowsStateHandler.ts
+  ^{ name: "getWindowsStateStoreData", status: "pure" };
+}
+
+!createWindowsStateHandler(...args){
+  ^{ className: "WindowsStateHandler", methods: ["state", "registerListeners", "if", "_register", "taken", "saveWindowsState", "if", "if", "if", "if", "if", "if", "if", "if", "onBeforeCloseWindow", "if", "if", "if", "if", "toWindowState", "getNewWindowState", "if", "if", "if", "doGetNewWindowState", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "if", "ensureNoOverlap"] };
+}
+
+=ex{restoreWindowsState,getWindowsStateStoreData,createWindowsStateHandler}

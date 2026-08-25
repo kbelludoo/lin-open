@@ -1,0 +1,16 @@
+@LIN:workbench_contrib_testing_common_testItemCollection:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createDuplicateTestItemError(...args){
+  ^{ className: "DuplicateTestItemError", methods: [] };
+}
+
+!createInvalidTestItemError(...args){
+  ^{ className: "InvalidTestItemError", methods: [] };
+}
+
+!createMixedTestItemController(...args){
+  ^{ className: "MixedTestItemController", methods: [] };
+}
+
+=ex{createDuplicateTestItemError,createInvalidTestItemError,createMixedTestItemController}

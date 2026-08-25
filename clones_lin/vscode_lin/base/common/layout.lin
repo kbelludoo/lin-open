@@ -1,0 +1,18 @@
+@LIN:base_common_layout:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!layout(viewportSize, viewSize, anchor){
+  // Transposed from base/common/layout.ts
+  ^{ name: "layout", status: "pure" };
+}
+
+!layout2d(viewport, view, anchor, options?){
+  // Transposed from base/common/layout.ts
+  ^{ name: "layout2d", status: "pure" };
+}
+
+!getLayoutAnchorModeEnum(){
+  ^{ enumName: "LayoutAnchorMode", members: ["AVOID", "ALIGN"] };
+}
+
+=ex{layout,layout2d,getLayoutAnchorModeEnum}

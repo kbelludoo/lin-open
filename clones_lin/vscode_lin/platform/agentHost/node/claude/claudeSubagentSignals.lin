@@ -1,0 +1,14 @@
+@LIN:platform_agentHost_node_claude_claudeSubagentSignals:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!tagWithParent(signals, chat, parentToolUseId, registry){
+  // Transposed from platform/agentHost/node/claude/claudeSubagentSignals.ts
+  ^{ name: "tagWithParent", status: "pure" };
+}
+
+!mapSubagentSystemMessage(message, { type, chat, registry){
+  // Transposed from platform/agentHost/node/claude/claudeSubagentSignals.ts
+  ^{ name: "mapSubagentSystemMessage", status: "pure" };
+}
+
+=ex{tagWithParent,mapSubagentSystemMessage}

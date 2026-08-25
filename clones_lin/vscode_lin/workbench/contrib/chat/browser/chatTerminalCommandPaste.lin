@@ -1,0 +1,19 @@
+@LIN:workbench_contrib_chat_browser_chatTerminalCommandPaste:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isTerminalCommandInput(value, prefix){
+  // Transposed from workbench/contrib/chat/browser/chatTerminalCommandPaste.ts
+  ^{ name: "isTerminalCommandInput", status: "pure" };
+}
+
+!isTerminalCommandPaste(paste){
+  // Transposed from workbench/contrib/chat/browser/chatTerminalCommandPaste.ts
+  ^{ name: "isTerminalCommandPaste", status: "pure" };
+}
+
+!handleTerminalCommandPaste(e, editor, prefix, dialogService, storageService){
+  // Transposed from workbench/contrib/chat/browser/chatTerminalCommandPaste.ts
+  ^{ name: "handleTerminalCommandPaste", status: "pure" };
+}
+
+=ex{isTerminalCommandInput,isTerminalCommandPaste,handleTerminalCommandPaste}

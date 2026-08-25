@@ -1,0 +1,8 @@
+@LIN:platform_sharedProcess_electron_main_sharedProcess:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createSharedProcess(...args){
+  ^{ className: "SharedProcess", methods: ["registerListeners", "onWindowConnection", "onWillShutdown", "whenReady", "if", "whenIpcReady", "if", "createUtilityProcess", "onMessage", "if", "if", "if", "createSharedProcessConfiguration", "connect"] };
+}
+
+=ex{createSharedProcess}

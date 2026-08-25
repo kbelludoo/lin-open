@@ -1,0 +1,8 @@
+@LIN:workbench_contrib_notebook_browser_contrib_cellStatusBar_notebookVisibleCellObserver:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createNotebookVisibleCellObserver(...args){
+  ^{ className: "NotebookVisibleCellObserver", methods: ["visibleCells", "_onModelChange", "updateEverything", "_updateVisibleCells"] };
+}
+
+=ex{createNotebookVisibleCellObserver}

@@ -1,0 +1,24 @@
+@LIN:base_common_fuzzyScorer:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!scoreFuzzy(target, query, queryLower, allowNonContiguousMatches){
+  // Transposed from base/common/fuzzyScorer.ts
+  ^{ name: "scoreFuzzy", status: "pure" };
+}
+
+!scoreFuzzy2(target, query, patternStart = 0, wordStart = 0){
+  // Transposed from base/common/fuzzyScorer.ts
+  ^{ name: "scoreFuzzy2", status: "pure" };
+}
+
+!prepareQuery(original){
+  // Transposed from base/common/fuzzyScorer.ts
+  ^{ name: "prepareQuery", status: "pure" };
+}
+
+!pieceToQuery(arg1){
+  // Transposed from base/common/fuzzyScorer.ts
+  ^{ name: "pieceToQuery", status: "pure" };
+}
+
+=ex{scoreFuzzy,scoreFuzzy2,prepareQuery,pieceToQuery}

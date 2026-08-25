@@ -1,0 +1,22 @@
+@LIN:workbench_contrib_chat_browser_aiCustomization_customizationCreatorService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!resolveWorkspaceTargetDirectory(workspaceService, type){
+  // Transposed from workbench/contrib/chat/browser/aiCustomization/customizationCreatorService.ts
+  ^{ name: "resolveWorkspaceTargetDirectory", status: "pure" };
+}
+
+!resolveUserTargetDirectory(promptsService, type){
+  // Transposed from workbench/contrib/chat/browser/aiCustomization/customizationCreatorService.ts
+  ^{ name: "resolveUserTargetDirectory", status: "pure" };
+}
+
+!createCustomizationCreatorService(...args){
+  ^{ className: "CustomizationCreatorService", methods: ["createWithAI", "if", "if", "if", "resolveTargetDirectory", "resolveUserDirectory"] };
+}
+
+!createCustomizationLocationPicker(...args){
+  ^{ className: "CustomizationLocationPicker", methods: ["resolveTargetDirectoryWithPicker", "if", "if", "if", "if"] };
+}
+
+=ex{resolveWorkspaceTargetDirectory,resolveUserTargetDirectory,createCustomizationCreatorService,createCustomizationLocationPicker}

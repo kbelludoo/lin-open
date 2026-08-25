@@ -1,0 +1,13 @@
+@LIN:workbench_contrib_terminal_browser_terminalInstance:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!parseExitResult(exitCodeOrError, shellLaunchConfig, processState, initialCwd){
+  // Transposed from workbench/contrib/terminal/browser/terminalInstance.ts
+  ^{ name: "parseExitResult", status: "pure" };
+}
+
+!createTerminalLabelComputer(...args){
+  ^{ className: "TerminalLabelComputer", methods: ["title", "description", "refreshLabel", "if", "computeLabel", "if", "basename", "if", "if", "if", "if", "if", "_getProgressStateString", "if", "switch"] };
+}
+
+=ex{parseExitResult,createTerminalLabelComputer}

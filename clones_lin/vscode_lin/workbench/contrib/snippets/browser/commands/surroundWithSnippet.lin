@@ -1,0 +1,13 @@
+@LIN:workbench_contrib_snippets_browser_commands_surroundWithSnippet:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getSurroundableSnippets(snippetsService, model, position, includeDisabledSnippets){
+  // Transposed from workbench/contrib/snippets/browser/commands/surroundWithSnippet.ts
+  ^{ name: "getSurroundableSnippets", status: "pure" };
+}
+
+!createSurroundWithSnippetEditorAction(...args){
+  ^{ className: "SurroundWithSnippetEditorAction", methods: ["runEditorCommand", "if", "if", "if"] };
+}
+
+=ex{getSurroundableSnippets,createSurroundWithSnippetEditorAction}

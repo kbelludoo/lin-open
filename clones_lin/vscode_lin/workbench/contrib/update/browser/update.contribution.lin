@@ -1,0 +1,16 @@
+@LIN:workbench_contrib_update_browser_update_contribution:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createShowReleaseNotesAction(...args){
+  ^{ className: "ShowReleaseNotesAction", methods: ["run", "catch", "if"] };
+}
+
+!createShowCurrentReleaseNotesFromCurrentFileAction(...args){
+  ^{ className: "ShowCurrentReleaseNotesFromCurrentFileAction", methods: ["run", "catch"] };
+}
+
+!createCheckForUpdateAction(...args){
+  ^{ className: "CheckForUpdateAction", methods: ["run"] };
+}
+
+=ex{createShowReleaseNotesAction,createShowCurrentReleaseNotesFromCurrentFileAction,createCheckForUpdateAction}

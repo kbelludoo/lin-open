@@ -1,0 +1,17 @@
+@LIN:platform_agentHost_node_activeClientState:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!structuralToolsEqual(a, b){
+  // Transposed from platform/agentHost/node/activeClientState.ts
+  ^{ name: "structuralToolsEqual", status: "pure" };
+}
+
+!createActiveClientToolSet(...args){
+  ^{ className: "ActiveClientToolSet", methods: ["size", "has", "clientIds", "get", "set", "delete", "merged", "for", "ownerOf", "for", "structuralEquals"] };
+}
+
+!createActiveClientState(...args){
+  ^{ className: "ActiveClientState", methods: ["clientId", "tools", "update", "structuralEquals"] };
+}
+
+=ex{structuralToolsEqual,createActiveClientToolSet,createActiveClientState}

@@ -1,0 +1,19 @@
+@LIN:platform_diagnostics_node_diagnosticsService:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!collectWorkspaceStats(folder, filter, options?){
+  // Transposed from platform/diagnostics/node/diagnosticsService.ts
+  ^{ name: "collectWorkspaceStats", status: "pure" };
+}
+
+!getMachineInfo(){
+  // Transposed from platform/diagnostics/node/diagnosticsService.ts
+  ^{ name: "getMachineInfo", status: "pure" };
+}
+
+!collectLaunchConfigs(folder){
+  // Transposed from platform/diagnostics/node/diagnosticsService.ts
+  ^{ name: "collectLaunchConfigs", status: "pure" };
+}
+
+=ex{collectWorkspaceStats,getMachineInfo,collectLaunchConfigs}

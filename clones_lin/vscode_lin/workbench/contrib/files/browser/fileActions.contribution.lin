@@ -1,0 +1,14 @@
+@LIN:workbench_contrib_files_browser_fileActions_contribution:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!appendEditorTitleContextMenuItem(id, title, when, group, supportsMultiSelect, order?){
+  // Transposed from workbench/contrib/files/browser/fileActions.contribution.ts
+  ^{ name: "appendEditorTitleContextMenuItem", status: "pure" };
+}
+
+!appendToCommandPalette({ id, title, category, metadata }, when?){
+  // Transposed from workbench/contrib/files/browser/fileActions.contribution.ts
+  ^{ name: "appendToCommandPalette", status: "pure" };
+}
+
+=ex{appendEditorTitleContextMenuItem,appendToCommandPalette}

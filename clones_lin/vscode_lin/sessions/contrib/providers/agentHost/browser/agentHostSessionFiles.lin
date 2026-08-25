@@ -1,0 +1,19 @@
+@LIN:sessions_contrib_providers_agentHost_browser_agentHostSessionFiles:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createSessionOutputObs(sessionUri, options, isActiveSessionObs, isArchivedObs, workspaceObs, cache, unknown>){
+  // Transposed from sessions/contrib/providers/agentHost/browser/agentHostSessionFiles.ts
+  ^{ name: "createSessionOutputObs", status: "pure" };
+}
+
+!reduceSessionFiles(edits, folderRoots){
+  // Transposed from sessions/contrib/providers/agentHost/browser/agentHostSessionFiles.ts
+  ^{ name: "reduceSessionFiles", status: "pure" };
+}
+
+!reduceTurnChanges(edits, folderRoots, cache?, unknown>){
+  // Transposed from sessions/contrib/providers/agentHost/browser/agentHostSessionFiles.ts
+  ^{ name: "reduceTurnChanges", status: "pure" };
+}
+
+=ex{createSessionOutputObs,reduceSessionFiles,reduceTurnChanges}

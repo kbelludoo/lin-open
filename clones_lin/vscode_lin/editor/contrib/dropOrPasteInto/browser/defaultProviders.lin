@@ -1,0 +1,16 @@
+@LIN:editor_contrib_dropOrPasteInto_browser_defaultProviders:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createDefaultTextPasteOrDropEditProvider(...args){
+  ^{ className: "DefaultTextPasteOrDropEditProvider", methods: ["getEdit", "if"] };
+}
+
+!createDefaultDropProvidersFeature(...args){
+  ^{ className: "DefaultDropProvidersFeature", methods: [] };
+}
+
+!createDefaultPasteProvidersFeature(...args){
+  ^{ className: "DefaultPasteProvidersFeature", methods: [] };
+}
+
+=ex{createDefaultTextPasteOrDropEditProvider,createDefaultDropProvidersFeature,createDefaultPasteProvidersFeature}

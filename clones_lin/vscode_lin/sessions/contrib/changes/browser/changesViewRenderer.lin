@@ -1,0 +1,29 @@
+@LIN:sessions_contrib_changes_browser_changesViewRenderer:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isChangesFileResource(change, resource){
+  // Transposed from sessions/contrib/changes/browser/changesViewRenderer.ts
+  ^{ name: "isChangesFileResource", status: "pure" };
+}
+
+!toIChangesFileItem(changes){
+  // Transposed from sessions/contrib/changes/browser/changesViewRenderer.ts
+  ^{ name: "toIChangesFileItem", status: "pure" };
+}
+
+!isChangesFileItem(element){
+  // Transposed from sessions/contrib/changes/browser/changesViewRenderer.ts
+  ^{ name: "isChangesFileItem", status: "pure" };
+}
+
+!isChangesRootItem(element){
+  // Transposed from sessions/contrib/changes/browser/changesViewRenderer.ts
+  ^{ name: "isChangesRootItem", status: "pure" };
+}
+
+!buildTreeChildren(items, treeRootInfo?){
+  // Transposed from sessions/contrib/changes/browser/changesViewRenderer.ts
+  ^{ name: "buildTreeChildren", status: "pure" };
+}
+
+=ex{isChangesFileResource,toIChangesFileItem,isChangesFileItem,isChangesRootItem,buildTreeChildren}

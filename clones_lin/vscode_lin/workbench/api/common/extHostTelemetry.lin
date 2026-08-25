@@ -1,0 +1,13 @@
+@LIN:workbench_api_common_extHostTelemetry:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!isNewAppInstall(firstSessionDate){
+  // Transposed from workbench/api/common/extHostTelemetry.ts
+  ^{ name: "isNewAppInstall", status: "pure" };
+}
+
+!createExtHostTelemetryLogger(...args){
+  ^{ className: "ExtHostTelemetryLogger", methods: ["validateSender", "if", "if", "if", "if", "updateTelemetryEnablements", "if", "mixInCommonPropsAndCleanData", "if", "if", "if", "logEvent", "if", "if", "if", "logUsage", "if", "logError", "if", "if", "if", "apiTelemetryLogger", "if", "isUsageEnabled", "isErrorsEnabled", "isDisposed", "dispose", "if"] };
+}
+
+=ex{isNewAppInstall,createExtHostTelemetryLogger}

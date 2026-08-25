@@ -1,0 +1,34 @@
+@LIN:platform_agentHost_common_agentHostSessionType:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!remoteAgentHostSessionTypeId(connectionAuthority, agentProvider){
+  // Transposed from platform/agentHost/common/agentHostSessionType.ts
+  ^{ name: "remoteAgentHostSessionTypeId", status: "pure" };
+}
+
+!remoteAgentHostSessionTypeAuthorityPrefix(connectionAuthority){
+  // Transposed from platform/agentHost/common/agentHostSessionType.ts
+  ^{ name: "remoteAgentHostSessionTypeAuthorityPrefix", status: "pure" };
+}
+
+!isRemoteAgentHostSessionType(sessionType){
+  // Transposed from platform/agentHost/common/agentHostSessionType.ts
+  ^{ name: "isRemoteAgentHostSessionType", status: "pure" };
+}
+
+!findRemoteAgentHostSessionTypeAuthority(sessionType, connectionAuthorities){
+  // Transposed from platform/agentHost/common/agentHostSessionType.ts
+  ^{ name: "findRemoteAgentHostSessionTypeAuthority", status: "pure" };
+}
+
+!parseRemoteAgentHostHarness(sessionType){
+  // Transposed from platform/agentHost/common/agentHostSessionType.ts
+  ^{ name: "parseRemoteAgentHostHarness", status: "pure" };
+}
+
+!parseRemoteAgentHostSessionTypeAuthority(sessionType, agentProvider){
+  // Transposed from platform/agentHost/common/agentHostSessionType.ts
+  ^{ name: "parseRemoteAgentHostSessionTypeAuthority", status: "pure" };
+}
+
+=ex{remoteAgentHostSessionTypeId,remoteAgentHostSessionTypeAuthorityPrefix,isRemoteAgentHostSessionType,findRemoteAgentHostSessionTypeAuthority,parseRemoteAgentHostHarness,parseRemoteAgentHostSessionTypeAuthority}

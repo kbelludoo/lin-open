@@ -1,0 +1,49 @@
+@LIN:workbench_contrib_terminalContrib_chatAgentTools_browser_tools_monitoring_outputMonitor:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getLastLine(output){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/tools/monitoring/outputMonitor.ts
+  ^{ name: "getLastLine", status: "pure" };
+}
+
+!detectsSensitiveInputPrompt(cursorLine){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/tools/monitoring/outputMonitor.ts
+  ^{ name: "detectsSensitiveInputPrompt", status: "pure" };
+}
+
+!matchTerminalPromptOption(options, suggestedOption){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/tools/monitoring/outputMonitor.ts
+  ^{ name: "matchTerminalPromptOption", status: "pure" };
+}
+
+!detectsHighConfidenceInputPattern(cursorLine){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/tools/monitoring/outputMonitor.ts
+  ^{ name: "detectsHighConfidenceInputPattern", status: "pure" };
+}
+
+!detectsInputRequiredPattern(cursorLine){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/tools/monitoring/outputMonitor.ts
+  ^{ name: "detectsInputRequiredPattern", status: "pure" };
+}
+
+!detectsLikelyInputRequiredPattern(cursorLine){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/tools/monitoring/outputMonitor.ts
+  ^{ name: "detectsLikelyInputRequiredPattern", status: "pure" };
+}
+
+!detectsNonInteractiveHelpPattern(cursorLine){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/tools/monitoring/outputMonitor.ts
+  ^{ name: "detectsNonInteractiveHelpPattern", status: "pure" };
+}
+
+!detectsVSCodeTaskFinishMessage(cursorLine){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/tools/monitoring/outputMonitor.ts
+  ^{ name: "detectsVSCodeTaskFinishMessage", status: "pure" };
+}
+
+!detectsGenericPressAnyKeyPattern(cursorLine){
+  // Transposed from workbench/contrib/terminalContrib/chatAgentTools/browser/tools/monitoring/outputMonitor.ts
+  ^{ name: "detectsGenericPressAnyKeyPattern", status: "pure" };
+}
+
+=ex{getLastLine,detectsSensitiveInputPrompt,matchTerminalPromptOption,detectsHighConfidenceInputPattern,detectsInputRequiredPattern,detectsLikelyInputRequiredPattern,detectsNonInteractiveHelpPattern,detectsVSCodeTaskFinishMessage,detectsGenericPressAnyKeyPattern}

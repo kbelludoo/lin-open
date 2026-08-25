@@ -1,0 +1,42 @@
+@LIN:platform_browserView_common_browserView:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!equalsBrowserViewAudience(first, second){
+  // Transposed from platform/browserView/common/browserView.ts
+  ^{ name: "equalsBrowserViewAudience", status: "pure" };
+}
+
+!matchesBrowserViewAudience(candidate, pattern){
+  // Transposed from platform/browserView/common/browserView.ts
+  ^{ name: "matchesBrowserViewAudience", status: "pure" };
+}
+
+!isBrowserViewAssociatedResourceNavigation(associatedResource, target){
+  // Transposed from platform/browserView/common/browserView.ts
+  ^{ name: "isBrowserViewAssociatedResourceNavigation", status: "pure" };
+}
+
+!browserZoomLabel(zoomFactor){
+  // Transposed from platform/browserView/common/browserView.ts
+  ^{ name: "browserZoomLabel", status: "pure" };
+}
+
+!browserZoomAccessibilityLabel(zoomFactor){
+  // Transposed from platform/browserView/common/browserView.ts
+  ^{ name: "browserZoomAccessibilityLabel", status: "pure" };
+}
+
+!getBrowserViewCommandIdEnum(){
+  ^{ enumName: "BrowserViewCommandId", members: ["// Tab management
+	Open"] };
+}
+
+!getBrowserElementSelectionModeEnum(){
+  ^{ enumName: "BrowserElementSelectionMode", members: ["Select", "Comment"] };
+}
+
+!getBrowserViewStorageScopeEnum(){
+  ^{ enumName: "BrowserViewStorageScope", members: ["Global", "Workspace", "Ephemeral"] };
+}
+
+=ex{equalsBrowserViewAudience,matchesBrowserViewAudience,isBrowserViewAssociatedResourceNavigation,browserZoomLabel,browserZoomAccessibilityLabel,getBrowserViewCommandIdEnum,getBrowserElementSelectionModeEnum,getBrowserViewStorageScopeEnum}

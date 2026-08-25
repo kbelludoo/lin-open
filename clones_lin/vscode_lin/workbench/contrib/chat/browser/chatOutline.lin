@@ -1,0 +1,13 @@
+@LIN:workbench_contrib_chat_browser_chatOutline:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getChatRequestLabel(request, index){
+  // Transposed from workbench/contrib/chat/browser/chatOutline.ts
+  ^{ name: "getChatRequestLabel", status: "pure" };
+}
+
+!createChatOutlineEntry(...args){
+  ^{ className: "ChatOutlineEntry", methods: ["id", "icon", "label"] };
+}
+
+=ex{getChatRequestLabel,createChatOutlineEntry}

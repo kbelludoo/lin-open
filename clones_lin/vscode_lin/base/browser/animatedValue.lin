@@ -1,0 +1,23 @@
+@LIN:base_browser_animatedValue:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!easeOutExpo(passedTime, start, length, totalDuration){
+  // Transposed from base/browser/animatedValue.ts
+  ^{ name: "easeOutExpo", status: "pure" };
+}
+
+!easeOutCubic(passedTime, start, length, totalDuration){
+  // Transposed from base/browser/animatedValue.ts
+  ^{ name: "easeOutCubic", status: "pure" };
+}
+
+!linear(passedTime, start, length, totalDuration){
+  // Transposed from base/browser/animatedValue.ts
+  ^{ name: "linear", status: "pure" };
+}
+
+!createAnimationFrameScheduler(...args){
+  ^{ className: "AnimationFrameScheduler", methods: ["invalidateOnNextAnimationFrame", "if", "_update"] };
+}
+
+=ex{easeOutExpo,easeOutCubic,linear,createAnimationFrameScheduler}

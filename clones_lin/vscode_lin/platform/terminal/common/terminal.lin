@@ -1,0 +1,65 @@
+@LIN:platform_terminal_common_terminal:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!getTitleEventSourceEnum(){
+  ^{ enumName: "TitleEventSource", members: ["/** From the API or the rename command that overrides any other type */
+	Api", "/** From the process name property*/
+	Process", "/** From the VT sequence */
+	Sequence", "/** Config changed */
+	Config"] };
+}
+
+!getTerminalIpcChannelsEnum(){
+  ^{ enumName: "TerminalIpcChannels", members: ["/**
+	 * Communicates between the renderer process and shared process.
+	 */
+	LocalPty", "/**
+	 * Communicates between the shared process and the pty host process.
+	 */
+	PtyHost", "/**
+	 * Communicates between the renderer process and the pty host process.
+	 */
+	PtyHostWindow", "/**
+	 * Deals with logging from the pty host process.
+	 */
+	Logger", "/**
+	 * Enables the detection of unresponsive pty hosts.
+	 */
+	Heartbeat"] };
+}
+
+!getHeartbeatConstantsEnum(){
+  ^{ enumName: "HeartbeatConstants", members: ["/**
+	 * The duration between heartbeats
+	 */
+	BeatInterval", "/**
+	 * The duration of the first heartbeat while the pty host is starting up. This is much larger
+	 * than the regular BeatInterval to accommodate slow machines", "we still want to warn about the
+	 * pty host's unresponsiveness eventually though.
+	 */
+	ConnectingBeatInterval", "/**
+	 * Defines a multiplier for BeatInterval for how long to wait before starting the second wait
+	 * timer.
+	 */
+	FirstWaitMultiplier", "/**
+	 * Defines a multiplier for BeatInterval for how long to wait before telling the user about
+	 * non-responsiveness. The second timer is to avoid informing the user incorrectly when waking
+	 * the computer up from sleep
+	 */
+	SecondWaitMultiplier", "/**
+	 * How long to wait before telling the user about non-responsiveness when they try to create a
+	 * process. This short circuits the standard wait timeouts to tell the user sooner and only
+	 * create process is handled to avoid additional perf overhead.
+	 */
+	CreateProcessTimeout"] };
+}
+
+!getTerminalLocationEnum(){
+  ^{ enumName: "TerminalLocation", members: ["Panel", "Editor"] };
+}
+
+!getTerminalExitReasonEnum(){
+  ^{ enumName: "TerminalExitReason", members: ["Unknown", "Shutdown", "Process", "User", "Extension"] };
+}
+
+=ex{getTitleEventSourceEnum,getTerminalIpcChannelsEnum,getHeartbeatConstantsEnum,getTerminalLocationEnum,getTerminalExitReasonEnum}
