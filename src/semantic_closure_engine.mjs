@@ -142,6 +142,35 @@ export class TrueAstParser {
         return new AstNode('TryStatement', { block, handler });
       }
 
+      if (tok.value === 'switch') {
+        next();
+        expect('(');
+        const discriminant = parseExpression();
+        expect(')');
+        expect('{');
+        const cases = [];
+        while (peek().value !== '}' && peek().type !== 'EOF') {
+          let test = null;
+          if (match('case')) {
+            test = parseExpression();
+            expect(':');
+          } else if (match('default')) {
+            expect(':');
+          }
+          const consequent = [];
+          while (peek().value !== 'case' && peek().value !== 'default' && peek().value !== '}' && peek().type !== 'EOF') {
+            if (match('break')) {
+              match(';');
+            } else {
+              consequent.push(parseStatement());
+            }
+          }
+          cases.push(new AstNode('SwitchCase', { test, consequent }));
+        }
+        expect('}');
+        return new AstNode('SwitchStatement', { discriminant, cases });
+      }
+
       if (tok.value === 'throw') {
         next();
         const arg = parseExpression();
@@ -171,6 +200,11 @@ export class TrueAstParser {
 
       if (tok.value === 'function' || tok.value === 'async') {
         return parseFunction();
+      }
+
+      if (tok.value === ';') {
+        next();
+        return new AstNode('EmptyStatement');
       }
 
       const expr = parseExpression();
@@ -234,7 +268,7 @@ export class TrueAstParser {
     function parseBinary(minPrec) {
       let left = parsePrimary();
 
-      while (peek().type === 'PUNCTUATOR' && isBinaryOp(peek().value)) {
+      while ((peek().type === 'PUNCTUATOR' || peek().type === 'IDENTIFIER') && isBinaryOp(peek().value)) {
         const op = peek().value;
         const prec = getPrecedence(op);
         if (prec < minPrec) break;
@@ -247,7 +281,7 @@ export class TrueAstParser {
     }
 
     function isBinaryOp(op) {
-      return ['===', '!==', '==', '!=', '<=', '>=', '<', '>', '+', '-', '*', '/', '%', '&&', '||', '??', '**', '^', '&', '|', '>>>', '>>', '<<'].includes(op);
+      return ['===', '!==', '==', '!=', '<=', '>=', '<', '>', '+', '-', '*', '/', '%', '&&', '||', '??', '**', '^', '&', '|', '>>>', '>>', '<<', 'instanceof', 'in'].includes(op);
     }
 
     function getPrecedence(op) {
@@ -255,7 +289,7 @@ export class TrueAstParser {
       if (op === '&&') return 2;
       if (['|', '^', '&'].includes(op)) return 3;
       if (['===', '!==', '==', '!='].includes(op)) return 4;
-      if (['<', '>', '<=', '>='].includes(op)) return 5;
+      if (['<', '>', '<=', '>=', 'instanceof', 'in'].includes(op)) return 5;
       if (['>>>', '>>', '<<'].includes(op)) return 6;
       if (op === '+' || op === '-') return 7;
       if (op === '*' || op === '/' || op === '%' || op === '**') return 8;
@@ -330,10 +364,8 @@ export class TrueAstParser {
       }
 
       if (tok.value === 'function') {
-        return parseFunction();
-      }
-
-      if (tok.value === '[') {
+        node = parseFunction();
+      } else if (tok.value === '[') {
         next();
         const elements = [];
         while (peek().value !== ']' && peek().type !== 'EOF') {
@@ -812,6 +844,31 @@ export class LinAstEmitter {
 
       case 'ThrowStatement':
         return `throw ${this.emitExpression(stmt.argument)};`;
+
+      case 'SwitchStatement': {
+        const disc = this.emitExpression(stmt.discriminant);
+        const branches = [];
+        let defaultBranch = null;
+        for (const c of stmt.cases) {
+          const bodyStr = c.consequent.map(s => this.emitStatement(s)).filter(Boolean).join('\n');
+          if (c.test) {
+            const testStr = this.emitExpression(c.test);
+            branches.push({ test: `(${disc} == ${testStr})`, body: bodyStr });
+          } else {
+            defaultBranch = bodyStr;
+          }
+        }
+        let result = defaultBranch || '';
+        for (let i = branches.length - 1; i >= 0; i--) {
+          const b = branches[i];
+          if (result) {
+            result = `?(${b.test}){\n${b.body}\n}:{\n${result}\n};`;
+          } else {
+            result = `?(${b.test}){\n${b.body}\n};`;
+          }
+        }
+        return result;
+      }
 
       case 'IfStatement': {
         const test = this.emitExpression(stmt.test);
