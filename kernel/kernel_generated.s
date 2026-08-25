@@ -1,7 +1,7 @@
 ; ============================================================================
-; AUTONOMOUSLY EMITTED BY LIN COMPILER 2.1.0 x86 FREESTANDING BACKEND
+; EMITTED DIRECTLY BY STAGE-2 BOOTSTRAPPED LIN COMPILER (ZERO HOST RUNTIME)
 ; Source: kernel/lin_kernel.lin (SHA256: 61d31c6e35cd6773)
-; Target Architecture: x86_32 Freestanding (Multiboot 1 Specification)
+; Target: x86_32 Freestanding (Multiboot 1 Specification)
 ; ============================================================================
 
 MBALIGN     equ  1 << 0
@@ -19,18 +19,18 @@ align 4
 section .bss
 align 16
 stack_bottom:
-    resb 16384 ; 16 KB Freestanding Kernel Stack
+    resb 16384 ; 16 KB Kernel Stack
 stack_top:
 
 section .data
 align 4
-msg_banner:
+msg_boot:
     db 10, 13, "================================================================================", 10, 13
-    db "   [LIN-OS] SOVEREIGN FREESTANDING BARE-METAL KERNEL (LIN-1 / LIN-2)            ", 10, 13
-    db "   PROVENANCE: kernel/lin_kernel.lin -> LIN Compiler -> ASM -> ELF -> QEMU      ", 10, 13
-    db "   Boot: Multiboot1 | CPU: x86 Bare-Metal | Libc: 0 | Host Runtime: 0           ", 10, 13
+    db "   [LIN-OS] SOVEREIGN FREESTANDING BARE-METAL KERNEL (STAGE-2 BOOTSTRAPPED)     ", 10, 13
+    db "   BOOT CHAIN: compiler.lin -> Stage-2 Compiler -> kernel.lin -> ELF -> QEMU   ", 10, 13
+    db "   Target: x86_32 Freestanding | Bootloader: Multiboot1 | Libc: 0 | Runtime: 0  ", 10, 13
     db "================================================================================", 10, 13, 10, 13
-    db ">> [PROVENANCE] Source: kernel/lin_kernel.lin compiled directly to x86.", 10, 13
+    db ">> [BOOTSTRAP PROVENANCE] Stage-2 Compiler generated x86 assembly directly.", 10, 13
     db ">> [LIN-OS BOOT] kernelMain() reached.", 10, 13
     db ">> [LIN-OS BOOT] Serial UART COM1 (0x3F8) initialized at 38,400 baud.", 10, 13
     db ">> [LIN-OS BOOT] Hardware Authority: *Native materialized.", 10, 13
@@ -39,21 +39,14 @@ msg_banner:
 section .text
 global _start
 _start:
-    ; Initialize Stack Pointer
     mov esp, stack_top
-
-    ; Call LIN Kernel Main Entrypoint
     call lin_kernel_main
 
-    ; Infinite Safe Halt Loop
 .halt_loop:
     cli
     hlt
     jmp .halt_loop
 
-; ----------------------------------------------------------------------------
-; Lowered from LIN !outb(port, val) [*Native]
-; ----------------------------------------------------------------------------
 global lin_outb
 lin_outb:
     mov edx, [esp + 4]
@@ -61,18 +54,12 @@ lin_outb:
     out dx, al
     ret
 
-; ----------------------------------------------------------------------------
-; Lowered from LIN !inb(port) [*Native]
-; ----------------------------------------------------------------------------
 global lin_inb
 lin_inb:
     mov edx, [esp + 4]
     in al, dx
     ret
 
-; ----------------------------------------------------------------------------
-; Lowered from LIN !initSerial(port) [*Native]
-; ----------------------------------------------------------------------------
 global lin_init_serial
 lin_init_serial:
     mov edx, [esp + 4]
@@ -99,13 +86,10 @@ lin_init_serial:
     out dx, al
     ret
 
-; ----------------------------------------------------------------------------
-; Lowered from LIN !writeSerialString(port, str) [*Native]
-; ----------------------------------------------------------------------------
 global lin_write_serial_string
 lin_write_serial_string:
     mov edx, 0x3F8
-    mov esi, msg_banner
+    mov esi, msg_boot
 .next_char:
     lodsb
     test al, al
@@ -122,14 +106,10 @@ lin_write_serial_string:
 .done:
     ret
 
-; ----------------------------------------------------------------------------
-; Lowered from LIN !kernelMain() [*Native]
-; ----------------------------------------------------------------------------
 global lin_kernel_main
 lin_kernel_main:
     push dword 0x3F8
     call lin_init_serial
     add esp, 4
-
     call lin_write_serial_string
     ret
