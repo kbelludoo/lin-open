@@ -9,6 +9,7 @@ import { parseRulel, validateComms } from '../src/rulel.mjs';
 import { verify } from '../src/verifier.mjs';
 import { runInMemory } from '../src/vm.mjs';
 import { emitLinFromJs } from '../src/emit_from_js.mjs';
+import { transpileToLin } from '../src/transpiler_to_lin.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -23,6 +24,7 @@ Commands:
   hash <file.lin>                     semantic hashes per fn
   effects <file.lin>                  effect inference per fn
   emit <file.js> [-o out.lin]         JS subset → LIN source
+  to-lin <file> [-o out.lin]          Polyglot (Py/Rust/Go/C/Zig/JS) → LIN
   rulel-check <file.rulel>            RULEL parse + COMMS validation
   verify <file.lin> [--behavior cases.json]
                                       full gate report
@@ -146,6 +148,28 @@ if (cmd === 'emit') {
       console.log(JSON.stringify({ out: path.resolve(outT.value), fns: r.fns }));
     } else {
       process.stdout.write(r.lin);
+    }
+    process.exit(0);
+  } catch (e) {
+    console.error(e.message);
+    process.exit(1);
+  }
+}
+
+if (cmd === 'to-lin' || cmd === 'transpile') {
+  let argv = rest;
+  const outT = takeFlag(argv, '-o');
+  argv = outT.args;
+  const file = argv[0];
+  if (!file) usage();
+  try {
+    const raw = fs.readFileSync(path.resolve(file), 'utf8');
+    const linCode = transpileToLin(raw, { filename: file });
+    if (outT.value) {
+      fs.writeFileSync(path.resolve(outT.value), linCode, 'utf8');
+      console.log(JSON.stringify({ out: path.resolve(outT.value), length: linCode.length }));
+    } else {
+      process.stdout.write(linCode);
     }
     process.exit(0);
   } catch (e) {

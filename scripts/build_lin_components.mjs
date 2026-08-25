@@ -13,7 +13,8 @@ const COMPONENTS = [
   { lin: 'src/effects_core.lin', cjs: 'src/effects_core.compiled.cjs', exports: ['firstUseIsRead', 'collectAssignedIds'] },
   { lin: 'src/rulel_core.lin', cjs: 'src/rulel_core.compiled.cjs', exports: ['splitTopEntries', 'parseValuePairs', 'parseRulel', 'validateComms'] },
   { lin: 'src/vm_core.lin', cjs: 'src/vm_core.compiled.cjs', exports: ['assertJsSyntaxCore', 'validateSandboxSpec'] },
-  { lin: 'src/verifier_core.lin', cjs: 'src/verifier_core.compiled.cjs', exports: ['deepEq', 'findMissingExports'] }
+  { lin: 'src/verifier_core.lin', cjs: 'src/verifier_core.compiled.cjs', exports: ['deepEq', 'findMissingExports'] },
+  { lin: 'src/transpiler_to_lin_core.lin', cjs: 'src/transpiler_to_lin_core.compiled.cjs', exports: ['detectLanguage', 'extractBracedFunctions', 'transpileRustToLin', 'transpileGoToLin', 'transpileCToLin', 'transpileZigToLin'] }
 ];
 
 console.log("================================================================================");
