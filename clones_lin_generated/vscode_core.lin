@@ -1,0 +1,149 @@
+@LIN:L1c:0.2
+~G{?=if #=for ^=ret :else}
+
+!createPosition(lineNumber, column){
+  l = lineNumber || 1;
+  c = column || 1;
+  ^{
+    lineNumber: l,
+    column: c,
+    with: ~(newLineNumber, newColumn){
+      nl = (typeof newLineNumber === "number") ? newLineNumber : l;
+      nc = (typeof newColumn === "number") ? newColumn : c;
+      ?(nl === l && nc === c){ ^this };
+      ^createPosition(nl, nc);
+    },
+    delta: ~(deltaLine, deltaCol){
+      dl = deltaLine || 0;
+      dc = deltaCol || 0;
+      ^createPosition(Math.max(1, l + dl), Math.max(1, c + dc));
+    },
+    isBefore: ~(other){
+      ?(l < other.lineNumber){ ^true };
+      ?(l > other.lineNumber){ ^false };
+      ^c < other.column;
+    },
+    isBeforeOrEqual: ~(other){
+      ?(l < other.lineNumber){ ^true };
+      ?(l > other.lineNumber){ ^false };
+      ^c <= other.column;
+    },
+    compare: ~(other){
+      ?(l < other.lineNumber){ ^-1 };
+      ?(l > other.lineNumber){ ^1 };
+      ?(c < other.column){ ^-1 };
+      ?(c > other.column){ ^1 };
+      ^0;
+    }
+  }
+}
+
+!createRange(startLineNumber, startColumn, endLineNumber, endColumn){
+  sl = startLineNumber || 1;
+  sc = startColumn || 1;
+  el = endLineNumber || 1;
+  ec = endColumn || 1;
+  ?(sl > el || (sl === el && sc > ec)){
+    tmpL = sl; tmpC = sc;
+    sl = el; sc = ec;
+    el = tmpL; ec = tmpC;
+  };
+  ^{
+    startLineNumber: sl,
+    startColumn: sc,
+    endLineNumber: el,
+    endColumn: ec,
+    isEmpty: ~(){
+      ^sl === el && sc === ec;
+    },
+    containsPosition: ~(pos){
+      ?(pos.lineNumber < sl || pos.lineNumber > el){ ^false };
+      ?(pos.lineNumber === sl && pos.column < sc){ ^false };
+      ?(pos.lineNumber === el && pos.column > ec){ ^false };
+      ^true;
+    },
+    containsRange: ~(range){
+      ?(range.startLineNumber < sl || range.endLineNumber > el){ ^false };
+      ?(range.startLineNumber === sl && range.startColumn < sc){ ^false };
+      ?(range.endLineNumber === el && range.endColumn > ec){ ^false };
+      ^true;
+    },
+    plusRange: ~(range){
+      nsl = sl; nsc = sc; nel = el; nec = ec;
+      ?(range.startLineNumber < sl || (range.startLineNumber === sl && range.startColumn < sc)){
+        nsl = range.startLineNumber; nsc = range.startColumn;
+      };
+      ?(range.endLineNumber > el || (range.endLineNumber === el && range.endColumn > ec)){
+        nel = range.endLineNumber; nec = range.endColumn;
+      };
+      ^createRange(nsl, nsc, nel, nec);
+    },
+    intersectRanges: ~(range){
+      nsl = sl; nsc = sc; nel = el; nec = ec;
+      ?(range.startLineNumber > sl || (range.startLineNumber === sl && range.startColumn > sc)){
+        nsl = range.startLineNumber; nsc = range.startColumn;
+      };
+      ?(range.endLineNumber < el || (range.endLineNumber === el && range.endColumn < ec)){
+        nel = range.endLineNumber; nec = range.endColumn;
+      };
+      ?(nsl > nel || (nsl === nel && nsc > nec)){ ^null };
+      ^createRange(nsl, nsc, nel, nec);
+    }
+  }
+}
+
+!parseUri(value){
+  m = String(value).match(/^(([^:/?#]+):)?(\/\/([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?/);
+  ?(!m){ ^createUri("", "", "", "", "") };
+  sch = m[2] || "";
+  auth = m[4] || "";
+  pth = m[5] || "";
+  qry = m[7] || "";
+  frg = m[9] || "";
+  ^createUri(sch, auth, pth, qry, frg);
+}
+
+!createUri(scheme, authority, uriPath, query, fragment){
+  sch = scheme || "file";
+  auth = authority || "";
+  pth = uriPath || "";
+  qry = query || "";
+  frg = fragment || "";
+  ^{
+    scheme: sch,
+    authority: auth,
+    path: pth,
+    query: qry,
+    fragment: frg,
+    toString: ~(){
+      out = sch ? sch + ":" : "";
+      ?(auth || sch === "file"){ out = out + "//" + (auth || "") };
+      out = out + pth;
+      ?(qry){ out = out + "?" + qry };
+      ?(frg){ out = out + "#" + frg };
+      ^out;
+    },
+    joinPath: ~(p1, p2, p3){
+      np = pth;
+      args = [p1, p2, p3];
+      #(i = 0; i < 3; i = i + 1){
+        arg = args[i];
+        ?(arg && typeof arg === "string"){
+          ?(!np.endsWith("/") && !arg.startsWith("/")){ np = np + "/" };
+          np = np + arg;
+        };
+      };
+      parts = np.split("/").filter(Boolean);
+      stack = [];
+      #(i = 0; i < parts.length; i = i + 1){
+        item = parts[i];
+        ?(item === ".."){ stack.pop() }
+        : (item !== "."){ stack.push(item) };
+      };
+      norm = (np.startsWith("/") ? "/" : "") + stack.join("/");
+      ^createUri(sch, auth, norm, qry, frg);
+    }
+  }
+}
+
+=ex{createPosition,createRange,parseUri,createUri}
