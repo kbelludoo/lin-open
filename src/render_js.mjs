@@ -46,7 +46,8 @@ export function renderProgramJs(prog, opts = {}) {
       return true;
     });
     const decl = locals.length ? `var ${locals.join(',')};` : '';
-    parts.push(`/* effect:${fn.effect} */function ${fn.name}(${fnParamsText(fn)}){${decl}${bodyText}}`);
+    const isAsync = /\bawait\b/.test(bodyText) || fn.isAsync;
+    parts.push(`/* effect:${fn.effect} */${isAsync ? 'async ' : ''}function ${fn.name}(${fnParamsText(fn)}){${decl}${bodyText}}`);
   }
   if (opts.epilogue) {
     parts.push(String(opts.epilogue).trim());
