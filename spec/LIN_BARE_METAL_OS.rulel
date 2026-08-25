@@ -1,0 +1,24 @@
+@RULEL:LIN_BARE_METAL_OS_SPEC:1.0
+~ARCH{target="x86_64-freestanding-none" bootloader="multiboot1" isa="x86_64" substrate="bare_metal"}
+~MILESTONES{
+  lin0="compilador_lin_ir"
+  lin1="freestanding_elf_zero_libc"
+  lin2="boot_multiboot_qemu_serial"
+  lin3="hardware_gdt_idt_paging_timer"
+  lin4="preemptive_scheduler_merkle_fs"
+  lin5="self_hosting_fixed_point_certificate"
+}
+.effect_authority{
+  pure="*P: Zero I/O, zero side-effects, total memory safety, mathematically verified"
+  read="*R: Read-only memory, read-only MMIO, telemetry"
+  write="*W: Mutable state, heap/stack memory, buffers"
+  native="*Native: Direct ISA instructions (inb, outb, cli, sti, mov cr3, hlt, iretq)"
+}
+.fixed_point_spec{
+  metric="Self-Hosting Fixed-Point Certificate"
+  checks="parse_eq + ir_eq + semantic_hash_eq + codegen_eq + behavior_eq"
+}
+.filesystem_spec{
+  model="Content-addressed Merkle DAG"
+  guarantees="cryptographic_integrity + deduplication + atomic_commits + cow_journaling"
+}
