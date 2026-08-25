@@ -1,0 +1,21 @@
+@RULEL:BENCHMARK_JS_TEST_RUNNER_JS:1.0.0
+~LANG{source_ext="js"}
+import assert from 'assert';
+import { parseURI, normalizeScheme, parseQuery } from '../src/index.js';
+
+let passed = 0;
+try {
+  assert.strictEqual(normalizeScheme('HTTP'), 'http');
+  passed++;
+  const u = parseURI('https://example.com/api?a=1&b=2#sec');
+  assert.strictEqual(u.scheme, 'https');
+  assert.strictEqual(u.authority, 'example.com');
+  passed++;
+  const q = parseQuery('a=10&b=foo');
+  assert.strictEqual(q.a, '10');
+  passed++;
+  console.log('Overall: PASS (' + passed + ' tests passed)');
+} catch(e) {
+  console.error('Overall: FAIL', e.message);
+  process.exit(1);
+}

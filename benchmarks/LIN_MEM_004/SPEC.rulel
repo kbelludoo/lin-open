@@ -1,0 +1,37 @@
+@RULEL:DOC_SPEC:1.0.0
+~MARKDOWN_SPEC
+# LIN-MEM-004: 100% Full-Substrate Canonical Memory & Rule Engine
+
+## 1. The Core Scientific Test
+Moving from partial canonicalization to **100% Full-Substrate Canonicalization**:
+> **Can the entire semantic state—Entities, Attributes, Relations, Policies, and Rule Predicates—exist as a single unified canonical DAG in resident memory, evaluating composite rules via pure canonical ID predicates without dynamic heap allocations or string matching?**
+
+---
+
+## 2. Structural Topology
+
+```text
+                     CANONICAL MEMORY SUBSTRATE
+                                 │
+       ┌───────────────┬─────────┴───────┬───────────────┐
+       ▼               ▼                 ▼               ▼
+ [Canonical User] [Canonical Acct] [Canonical Res] [Canonical Policy]
+       │                                                 │
+       ├─► role_status_dag_id                            ├─► rule_dag_nodes[]
+       └─► metadata_dag_id                                    │
+                                                              ▼
+                                                        [Canonical Rule]
+                                                        ├─ action_id (u32)
+                                                        ├─ effect (ALLOW/DENY)
+                                                        ├─ min_role_level (u32)
+                                                        └─ max_size_kb (u64)
+```
+
+---
+
+## 3. Strict Experimental Rigor Requirements
+1. **Symmetric Indexing:** All backends maintain identical query capabilities and index structures.
+2. **Transparent Regime Comparison:** Full reporting of both **Regime Shared** (high redundancy) and **Regime Unique** (minimal redundancy) to measure the exact boundary where HashCons benefits diminish.
+3. **Pure Resident Rule Evaluation (Zero-Alloc):**
+   - Traditional: iterate `Vec<PolicyRule>`, match strings, check ints.
+   - LIN Substrate: direct traversal of canonical rule node IDs in L1/L2 cache with zero deserialization.

@@ -1,0 +1,32 @@
+@RULEL:BENCHMARK_JS_INVARIANTS_JS:1.0.0
+~LANG{source_ext="js"}
+import { parseVersion } from './parser.js';
+import { compareVersions } from './comparator.js';
+import { satisfiesRange } from './ranges.js';
+
+export function checkSemverInvariants() {
+  const violations = [];
+
+  // Invariant 1: Identity & Symmetry
+  if (compareVersions('1.2.3', '1.2.3') !== 0) {
+    violations.push('INV_IDENTITY_FAILED');
+  }
+  if (compareVersions('1.2.3', '2.0.0') >= 0 || compareVersions('2.0.0', '1.2.3') <= 0) {
+    violations.push('INV_ANTISYMMETRY_FAILED');
+  }
+
+  // Invariant 2: Prerelease Isolation (1.0.0-beta cannot satisfy ^1.0.0)
+  if (satisfiesRange('1.0.0-beta.1', '^1.0.0')) {
+    violations.push('INV_PRERELEASE_ISOLATION_BROKEN');
+  }
+
+  // Invariant 3: Zero Major Caret Bounds (^0.2.3 should not satisfy 0.3.0)
+  if (satisfiesRange('0.3.0', '^0.2.3')) {
+    violations.push('INV_ZERO_MAJOR_CARET_OVERFLOW');
+  }
+
+  return {
+    valid: violations.length === 0,
+    violations
+  };
+}
