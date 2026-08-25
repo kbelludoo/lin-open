@@ -1,8 +1,0 @@
-@LIN:workbench_contrib_chat_common_promptSyntax_hookTypes:1.0.0
-~G{?=if #=for ^=ret :else}
-
-!getHookTypeEnum(){
-  ^{ enumName: "HookType", members: ["SessionStart", "SessionEnd", "UserPromptSubmit", "PreToolUse", "PostToolUse", "PreCompact", "SubagentStart", "SubagentStop", "Stop", "ErrorOccurred"] };
-}
-
-=ex{getHookTypeEnum}

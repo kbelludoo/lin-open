@@ -1,8 +1,0 @@
-@LIN:sessions_contrib_github_browser_fetchers_githubPullRequestsFetcher:1.0.0
-~G{?=if #=for ^=ret :else}
-
-!createGitHubPullRequestsFetcher(...args){
-  ^{ className: "GitHubPullRequestsFetcher", methods: ["getPullRequests", "if", "getPullRequestsWaitingForReview", "getPullRequestsAssignedToViewer", "_getPullRequestsByQuery"] };
-}
-
-=ex{createGitHubPullRequestsFetcher}

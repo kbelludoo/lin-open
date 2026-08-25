@@ -1,8 +1,0 @@
-@LIN:base_browser_dnd:1.0.0
-~G{?=if #=for ^=ret :else}
-
-!createDelayedDragHandler(...args){
-  ^{ className: "DelayedDragHandler", methods: ["if", "clearDragTimeout", "if", "dispose"] };
-}
-
-=ex{createDelayedDragHandler}

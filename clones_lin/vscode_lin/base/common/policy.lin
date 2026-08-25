@@ -1,8 +1,0 @@
-@LIN:base_common_policy:1.0.0
-~G{?=if #=for ^=ret :else}
-
-!getPolicyCategoryEnum(){
-  ^{ enumName: "PolicyCategory", members: ["Extensions", "IntegratedTerminal", "InteractiveSession", "Telemetry", "Update"] };
-}
-
-=ex{getPolicyCategoryEnum}

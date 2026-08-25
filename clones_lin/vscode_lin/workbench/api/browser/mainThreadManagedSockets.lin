@@ -1,8 +1,0 @@
-@LIN:workbench_api_browser_mainThreadManagedSockets:1.0.0
-~G{?=if #=for ^=ret :else}
-
-!createMainThreadManagedSocket(...args){
-  ^{ className: "MainThreadManagedSocket", methods: ["connect", "write", "closeRemote", "drain"] };
-}
-
-=ex{createMainThreadManagedSocket}

@@ -1,8 +1,0 @@
-@LIN:base_common_controlFlow:1.0.0
-~G{?=if #=for ^=ret :else}
-
-!createReentrancyBarrier(...args){
-  ^{ className: "ReentrancyBarrier", methods: ["if", "if", "isOccupied", "if"] };
-}
-
-=ex{createReentrancyBarrier}

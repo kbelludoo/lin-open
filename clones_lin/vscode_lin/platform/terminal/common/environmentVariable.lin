@@ -1,8 +1,0 @@
-@LIN:platform_terminal_common_environmentVariable:1.0.0
-~G{?=if #=for ^=ret :else}
-
-!getEnvironmentVariableMutatorTypeEnum(){
-  ^{ enumName: "EnvironmentVariableMutatorType", members: ["Replace", "Append", "Prepend"] };
-}
-
-=ex{getEnvironmentVariableMutatorTypeEnum}

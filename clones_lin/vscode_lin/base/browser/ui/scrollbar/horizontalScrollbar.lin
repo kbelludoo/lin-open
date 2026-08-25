@@ -1,8 +1,0 @@
-@LIN:base_browser_ui_scrollbar_horizontalScrollbar:1.0.0
-~G{?=if #=for ^=ret :else}
-
-!createHorizontalScrollbar(...args){
-  ^{ className: "HorizontalScrollbar", methods: ["if", "_updateSlider", "_renderDomNode", "onDidScroll", "_pointerDownRelativePosition", "_sliderPointerPosition", "_sliderOrthogonalPointerPosition", "_updateScrollbarSize", "writeScrollPosition", "updateOptions"] };
-}
-
-=ex{createHorizontalScrollbar}

@@ -1,8 +1,0 @@
-@LIN:base_test_common_virtualScheduling_virtualClock:1.0.0
-~G{?=if #=for ^=ret :else}
-
-!createVirtualClock(...args){
-  ^{ className: "VirtualClock", methods: ["now", "hasEvents", "schedule", "if", "peekNext", "runNext", "if", "getEvents"] };
-}
-
-=ex{createVirtualClock}
