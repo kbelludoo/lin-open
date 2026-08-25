@@ -1,0 +1,93 @@
+@LIN:L1c:1.0
+^schema_once ^lossy=true ^ops=browser_actions
+~G{?=if #=for ^=ret :else}
+~effects{io,async,state}
+
+// ==========================================
+// 6. Action Execution Engine in LIN
+// ==========================================
+
+!buildClickActionPlan(index,coordinates){
+  ?(coordinates){
+    ^({
+      type: "click_coordinates",
+      x: coordinates.x|0,
+      y: coordinates.y|0
+    })
+  };
+  ^({
+    type: "click_element_index",
+    index: index|0
+  })
+}
+
+!buildInputTextActionPlan(index,text,clearExisting){
+  ^({
+    type: "input_text",
+    index: index|0,
+    text: String(text||""),
+    clear_existing: clearExisting!==false
+  })
+}
+
+!buildScrollActionPlan(direction,amount){
+  dir=String(direction||"down").toLowerCase();
+  amt=amount|0||500;
+  dx=0;
+  dy=0;
+  ?(dir=="down"){ dy=amt }
+  :(dir=="up"){ dy=-amt }
+  :(dir=="left"){ dx=-amt }
+  :(dir=="right"){ dx=amt };
+  ^({
+    type: "scroll",
+    delta_x: dx,
+    delta_y: dy
+  })
+}
+
+!buildSendKeysActionPlan(keys){
+  ^({
+    type: "send_keys",
+    keys: String(keys||"")
+  })
+}
+
+!buildNavigateActionPlan(url){
+  ^({
+    type: "navigate",
+    url: String(url||"")
+  })
+}
+
+!buildExtractActionPlan(query,selector){
+  ^({
+    type: "extract_content",
+    query: String(query||""),
+    selector: selector||null
+  })
+}
+
+!dispatchAction(session,actionPlan){
+  ?(actionPlan.type=="navigate"){
+    ^({ status: "success", action: "navigate", url: actionPlan.url })
+  };
+  ?(actionPlan.type=="click_element_index"||actionPlan.type=="click_coordinates"){
+    ^({ status: "success", action: "click", target: actionPlan })
+  };
+  ?(actionPlan.type=="input_text"){
+    ^({ status: "success", action: "input", length: actionPlan.text.length })
+  };
+  ?(actionPlan.type=="scroll"){
+    ^({ status: "success", action: "scroll", delta_y: actionPlan.delta_y })
+  };
+  ?(actionPlan.type=="send_keys"){
+    ^({ status: "success", action: "send_keys", keys: actionPlan.keys })
+  };
+  ?(actionPlan.type=="extract_content"){
+    ^({ status: "success", action: "extract", query: actionPlan.query })
+  };
+  ^({ status: "error", error: "UNKNOWN_ACTION_TYPE" })
+}
+
+=ex{buildClickActionPlan,buildInputTextActionPlan,buildScrollActionPlan,buildSendKeysActionPlan,buildNavigateActionPlan,buildExtractActionPlan,dispatchAction}

@@ -1,0 +1,78 @@
+@LIN:L1c:1.0
+^schema_once ^lossy=true ^ops=browser_dom
+~G{?=if #=for ^=ret :else}
+~effects{pure}
+
+// ==========================================
+// 5. DOM Processing & Highlight Tree in LIN
+// ==========================================
+
+!isElementInteractive(nodeName,attributes,hasClickListeners){
+  tag=String(nodeName||"").toLowerCase();
+  attrs=attributes||{};
+  ?(tag=="button"||tag=="a"||tag=="input"||tag=="select"||tag=="textarea"||tag=="summary"){
+    ^true
+  };
+  role=attrs.role||"";
+  ?(role=="button"||role=="link"||role=="checkbox"||role=="menuitem"||role=="tab"){
+    ^true
+  };
+  ?(attrs.onclick||attrs.tabindex!==undefined||hasClickListeners){
+    ^true
+  };
+  ^false
+}
+
+!formatDOMNode(node,index){
+  ^({
+    index: index|0,
+    node_id: node.nodeId||node.id||0,
+    backend_node_id: node.backendNodeId||0,
+    tag: String(node.nodeName||"").toLowerCase(),
+    text: String(node.textContent||node.nodeValue||"").trim(),
+    attributes: node.attributes||{},
+    is_interactive: isElementInteractive(node.nodeName,node.attributes,node.hasListeners||node.isClickable||node.isInput),
+    layout: node.layout||node.box||{ x: 0, y: 0, width: 0, height: 0 }
+  })
+}
+
+!serializeDOMState(rootNodes,viewport){
+  interactiveElements=[];
+  nodeCounter=0;
+  
+  // DFS traversal queue
+  queue=Array.isArray(rootNodes)?rootNodes.slice():[rootNodes];
+  #(queue.length>0){
+    current=queue.shift();
+    ?(current){
+      formatted=formatDOMNode(current,interactiveElements.length);
+      nodeCounter=nodeCounter+1;
+      ?(formatted.is_interactive){
+        interactiveElements.push(formatted)
+      };
+      children=current.children||[];
+      #(i=0;i<children.length;i++){
+        queue.push(children[i])
+      }
+    }
+  };
+
+  ^({
+    element_count: nodeCounter,
+    interactive_count: interactiveElements.length,
+    interactive_elements: interactiveElements,
+    viewport: viewport||{ width: 1280, height: 800 }
+  })
+}
+
+!findElementByIndex(domState,targetIndex){
+  elements=domState.interactive_elements||[];
+  #(i=0;i<elements.length;i++){
+    ?(elements[i].index==targetIndex){
+      ^elements[i]
+    }
+  };
+  ^null
+}
+
+=ex{isElementInteractive,formatDOMNode,serializeDOMState,findElementByIndex}

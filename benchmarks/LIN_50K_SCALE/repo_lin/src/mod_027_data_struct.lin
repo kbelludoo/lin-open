@@ -1,0 +1,160 @@
+@m{name="mod_027_data_struct" domain="data_struct"}
+~dep{mod="mod_026_crypto_hash" sym="m026_crypto_hash_fn_0"}
+
+!fn m027_data_struct_fn_0(x, y, config) *(Pure) {
+  %inv{ret !== undefined}
+  %inv{typeof ret === "number"}
+  ?(!x) ^0
+  $acc = (typeof x == 'num' ? x : 42)
+  $mul = (typeof y == 'num' ? y : 2)
+  #step(0..8) {
+    ?(step % 2 == 0) $acc = ($acc * $mul + step) % 10007
+    : $acc = ($acc - step * 3 + 10007) % 10007
+  }
+  $acc = ($acc + m026_crypto_hash_fn_0($acc, 2)) % 10007
+  ^$acc
+}
+
+!fn m027_data_struct_fn_1(x, y, config) *(Read) {
+  %inv{ret !== undefined}
+  %inv{typeof ret === "number"}
+  ?(!x) ^0
+  $acc = (typeof x == 'num' ? x : 42)
+  $mul = (typeof y == 'num' ? y : 2)
+  #step(0..8) {
+    ?(step % 2 == 0) $acc = ($acc * $mul + step) % 10007
+    : $acc = ($acc - step * 3 + 10007) % 10007
+  }
+  ^$acc
+}
+
+!fn m027_data_struct_fn_2(x, y, config) *(Write) {
+  %inv{ret !== undefined}
+  %inv{typeof ret === "number"}
+  ?(!x) ^0
+  $acc = (typeof x == 'num' ? x : 42)
+  $mul = (typeof y == 'num' ? y : 2)
+  #step(0..8) {
+    ?(step % 2 == 0) $acc = ($acc * $mul + step) % 10007
+    : $acc = ($acc - step * 3 + 10007) % 10007
+  }
+  ^$acc
+}
+
+!fn m027_data_struct_fn_3(x, y, config) *(Pure) {
+  %inv{ret !== undefined}
+  %inv{typeof ret === "number"}
+  ?(!x) ^0
+  $acc = (typeof x == 'num' ? x : 42)
+  $mul = (typeof y == 'num' ? y : 2)
+  #step(0..8) {
+    ?(step % 2 == 0) $acc = ($acc * $mul + step) % 10007
+    : $acc = ($acc - step * 3 + 10007) % 10007
+  }
+  ^$acc
+}
+
+!fn m027_data_struct_fn_4(x, y, config) *(Pure) {
+  %inv{ret !== undefined}
+  %inv{typeof ret === "number"}
+  ?(!x) ^0
+  $acc = (typeof x == 'num' ? x : 42)
+  $mul = (typeof y == 'num' ? y : 2)
+  #step(0..8) {
+    ?(step % 2 == 0) $acc = ($acc * $mul + step) % 10007
+    : $acc = ($acc - step * 3 + 10007) % 10007
+  }
+  ^$acc
+}
+
+!fn m027_data_struct_fn_5(x, y, config) *(Read) {
+  %inv{ret !== undefined}
+  %inv{typeof ret === "number"}
+  ?(!x) ^0
+  $acc = (typeof x == 'num' ? x : 42)
+  $mul = (typeof y == 'num' ? y : 2)
+  #step(0..8) {
+    ?(step % 2 == 0) $acc = ($acc * $mul + step) % 10007
+    : $acc = ($acc - step * 3 + 10007) % 10007
+  }
+  ^$acc
+}
+
+!fn m027_data_struct_fn_6(x, y, config) *(Write) {
+  %inv{ret !== undefined}
+  %inv{typeof ret === "number"}
+  ?(!x) ^0
+  $acc = (typeof x == 'num' ? x : 42)
+  $mul = (typeof y == 'num' ? y : 2)
+  #step(0..8) {
+    ?(step % 2 == 0) $acc = ($acc * $mul + step) % 10007
+    : $acc = ($acc - step * 3 + 10007) % 10007
+  }
+  ^$acc
+}
+
+!fn m027_data_struct_fn_7(x, y, config) *(Pure) {
+  %inv{ret !== undefined}
+  %inv{typeof ret === "number"}
+  ?(!x) ^0
+  $acc = (typeof x == 'num' ? x : 42)
+  $mul = (typeof y == 'num' ? y : 2)
+  #step(0..8) {
+    ?(step % 2 == 0) $acc = ($acc * $mul + step) % 10007
+    : $acc = ($acc - step * 3 + 10007) % 10007
+  }
+  ^$acc
+}
+
+!fn m027_data_struct_fn_8(x, y, config) *(Pure) {
+  %inv{ret !== undefined}
+  %inv{typeof ret === "number"}
+  ?(!x) ^0
+  $acc = (typeof x == 'num' ? x : 42)
+  $mul = (typeof y == 'num' ? y : 2)
+  #step(0..8) {
+    ?(step % 2 == 0) $acc = ($acc * $mul + step) % 10007
+    : $acc = ($acc - step * 3 + 10007) % 10007
+  }
+  ^$acc
+}
+
+!fn m027_data_struct_fn_9(x, y, config) *(Read) {
+  %inv{ret !== undefined}
+  %inv{typeof ret === "number"}
+  ?(!x) ^0
+  $acc = (typeof x == 'num' ? x : 42)
+  $mul = (typeof y == 'num' ? y : 2)
+  #step(0..8) {
+    ?(step % 2 == 0) $acc = ($acc * $mul + step) % 10007
+    : $acc = ($acc - step * 3 + 10007) % 10007
+  }
+  ^$acc
+}
+
+!fn m027_data_struct_fn_10(x, y, config) *(Write) {
+  %inv{ret !== undefined}
+  %inv{typeof ret === "number"}
+  ?(!x) ^0
+  $acc = (typeof x == 'num' ? x : 42)
+  $mul = (typeof y == 'num' ? y : 2)
+  #step(0..8) {
+    ?(step % 2 == 0) $acc = ($acc * $mul + step) % 10007
+    : $acc = ($acc - step * 3 + 10007) % 10007
+  }
+  ^$acc
+}
+
+!fn m027_data_struct_fn_11(x, y, config) *(Pure) {
+  %inv{ret !== undefined}
+  %inv{typeof ret === "number"}
+  ?(!x) ^0
+  $acc = (typeof x == 'num' ? x : 42)
+  $mul = (typeof y == 'num' ? y : 2)
+  #step(0..8) {
+    ?(step % 2 == 0) $acc = ($acc * $mul + step) % 10007
+    : $acc = ($acc - step * 3 + 10007) % 10007
+  }
+  ^$acc
+}
+

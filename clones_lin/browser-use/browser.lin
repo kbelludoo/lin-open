@@ -1,0 +1,55 @@
+@LIN:L1c:1.0
+^schema_once ^lossy=true ^ops=browser_unified
+~G{?=if #=for ^=ret :else}
+~effects{pure,io,async,state}
+
+// ==========================================
+// 8. Unified Browser-Use Module in LIN
+// ==========================================
+
+!createBrowser(options){
+  cfg=createBrowserConfig(options);
+  sess=initSession(cfg);
+  ^({
+    config: cfg,
+    session: sess,
+    is_running: false
+  })
+}
+
+!browserNavigate(browser,url){
+  isAllowed=isDomainAllowed(url,browser.config.allowed_domains,browser.config.prohibited_domains);
+  ?(!isAllowed){
+    ^({ success: false, error: "SECURITY_DOMAIN_PROHIBITED", url: url })
+  };
+  cleanUrl=sanitizeUrl(url);
+  activeTab=getActiveTab(browser.session);
+  ?(activeTab){
+    activeTab.url=cleanUrl
+  };
+  ^({ success: true, url: cleanUrl })
+}
+
+!browserClick(browser,indexOrCoords){
+  plan=?(typeof indexOrCoords=="object"){buildClickActionPlan(0,indexOrCoords)}:buildClickActionPlan(indexOrCoords,null);
+  ^dispatchAction(browser.session,plan)
+}
+
+!browserInput(browser,index,text){
+  plan=buildInputTextActionPlan(index,text,true);
+  ^dispatchAction(browser.session,plan)
+}
+
+!browserScroll(browser,direction,amount){
+  plan=buildScrollActionPlan(direction,amount);
+  ^dispatchAction(browser.session,plan)
+}
+
+!browserClose(browser){
+  browser.is_running=false;
+  browser.session.tabs=[];
+  browser.session.active_tab_id=null;
+  ^({ closed: true, timestamp: Date.now() })
+}
+
+=ex{createBrowser,browserNavigate,browserClick,browserInput,browserScroll,browserClose}

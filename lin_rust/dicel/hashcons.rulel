@@ -1,0 +1,51 @@
+// hashcons.dicel - Definição semântica do núcleo HashCons
+module lin.core.hashcons;
+
+type NodeId = u64;
+type Hash = u64;
+
+entity SemanticNode {
+    field id: NodeId;
+    field hash: Hash;
+    field kind: NodeKind;
+    field ref_count: u32 default 0;
+    
+    invariant identity_stability: 
+        self.hash == hash(self.kind);
+    
+    relation children: List<NodeId>;
+}
+
+enum NodeKind {
+    Function, Block, Call, Literal, Variable, Operator
+}
+
+table SemanticTable {
+    storage: Map<Hash, SemanticNode>;
+    
+    operation insert(node: SemanticNode) -> NodeId {
+        pre: node.hash != 0;
+        
+        if storage.contains(node.hash) {
+            existing = storage.get(node.hash);
+            existing.ref_count += 1;
+            return existing.id;
+        }
+        
+        storage.insert(node.hash, node);
+        return node.id;
+    }
+    
+    operation release(id: NodeId) {
+        node = storage.get(id);
+        if node.ref_count > 0 { node.ref_count -= 1; }
+        if node.ref_count == 0 { storage.remove(node.hash); }
+    }
+    
+    ensures deterministic: true;
+}
+
+component HashConsEngine {
+    config: { initial_capacity: 1024 };
+    guarantees: { memory_safety: true, deterministic: true };
+}

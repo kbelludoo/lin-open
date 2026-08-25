@@ -1,0 +1,16 @@
+@m{name=crypto_service version="1.3"}
+~dep{hash=std_hash}
+%inv{data !== undefined}
+*(Pure)
+!fn computeHash(data, seed=0) {
+  ?if (!data) ^ret 0
+  let h = seed
+  #for (c in data) { h = ((h << 5) - h) + c; h |= 0 }
+  ^ret h
+}
+%inv{msg !== null && sig !== null}
+*(Pure)
+!fn verifySignature(msg, sig) {
+  ?if (!msg || !sig) ^ret false
+  ^ret computeHash(msg) === sig
+}

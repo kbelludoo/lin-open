@@ -1,0 +1,100 @@
+@LIN:L1c:1.0
+^schema_once ^lossy=true ^ops=browser_session
+~G{?=if #=for ^=ret :else}
+~effects{io,async,state}
+
+// ==========================================
+// 4. Browser Session & Tab Management in LIN
+// ==========================================
+
+!initSession(config){
+  cfg=config||{};
+  ^({
+    config: cfg,
+    ws_url: cfg.cdp_url||null,
+    msg_counter: 1,
+    tabs: [],
+    active_tab_id: null,
+    is_connected: false,
+    created_at: Date.now()
+  })
+}
+
+!nextMessageId(session){
+  id=session.msg_counter|0;
+  session.msg_counter=id+1;
+  ^id
+}
+
+!registerTab(session,tabInfo){
+  tabs=session.tabs||[];
+  found=false;
+  #(i=0;i<tabs.length;i++){
+    ?(tabs[i].target_id==tabInfo.target_id){
+      tabs[i]=tabInfo;
+      found=true
+    }
+  };
+  ?(!found){
+    tabs.push(tabInfo)
+  };
+  session.tabs=tabs;
+  ?(!session.active_tab_id){
+    session.active_tab_id=tabInfo.target_id
+  };
+  ^session
+}
+
+!removeTab(session,targetId){
+  tabs=session.tabs||[];
+  newTabs=[];
+  #(i=0;i<tabs.length;i++){
+    ?(tabs[i].target_id!=targetId){
+      newTabs.push(tabs[i])
+    }
+  };
+  session.tabs=newTabs;
+  ?(session.active_tab_id==targetId){
+    session.active_tab_id=?(newTabs.length>0){newTabs[0].target_id}:null
+  };
+  ^session
+}
+
+!setActiveTab(session,targetId){
+  tabs=session.tabs||[];
+  #(i=0;i<tabs.length;i++){
+    ?(tabs[i].target_id==targetId||tabs[i].tab_id==targetId){
+      session.active_tab_id=tabs[i].target_id;
+      ^({ success: true, active_tab: tabs[i] })
+    }
+  };
+  ^({ success: false, error: "TAB_NOT_FOUND" })
+}
+
+!getActiveTab(session){
+  activeId=session.active_tab_id;
+  tabs=session.tabs||[];
+  #(i=0;i<tabs.length;i++){
+    ?(tabs[i].target_id==activeId){
+      ^tabs[i]
+    }
+  };
+  ^(?(tabs.length>0){tabs[0]}:null)
+}
+
+!listTabsSummary(session){
+  tabs=session.tabs||[];
+  summary=[];
+  #(i=0;i<tabs.length;i++){
+    t=tabs[i];
+    summary.push({
+      tab_id: t.tab_id||t.target_id,
+      url: t.url,
+      title: t.title,
+      is_active: t.target_id==session.active_tab_id
+    })
+  };
+  ^summary
+}
+
+=ex{initSession,nextMessageId,registerTab,removeTab,setActiveTab,getActiveTab,listTabsSummary}

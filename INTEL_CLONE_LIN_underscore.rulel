@@ -1,5 +1,29 @@
-@RULEL:INTEL_CLONE_LIN:1.4.0
-~R{.m=meta .g=gate .c=compare}
-.m{slug=underscore lang=LIN status=PARTIAL_PASS done=false published=false source="https://github.com/jashkenas/underscore.git" url="" nucleus=ts!js!py!go!rust!c!java prefer_emit=ts}
-.g{publish=full_repo_100_hash_eq skip_eq_fail=true behavior_eq=1.0 suite_rate=1 pass=168 fail=0 skip=0 files_ok=164 files_total=164 stub_not_suite=true c_skip=ok_iff_gcc_absent_after_retry}
-.c{pass="modules/_baseCreate.js:ctor!modules/_baseCreate.js:baseCreate!modules/_baseIteratee.js:baseIteratee!modules/_cb.js:cb!modules/_chainResult.js:chainResult!modules/_collectNonEnumProps.js:emulatedSet!modules/_collectNonEnumProps.js:collectNonEnumProps!modules/_createAssigner.js:createAssigner!modules/_createEscaper.js:createEscaper!modules/_createIndexFinder.js:createIndexFinder!modules/_createPredicateIndexFinder.js:createPredicateIndexFinder!modules/_createReduce.js:createReduce!modules/_createSizePropertyCheck.js:createSizePropertyCheck!modules/_deepGet.js:deepGet!modules/_escapeMap.js:type_only!modules/_executeBound.js:executeBound!modules/_flatten.js:flatten!modules/_getByteLength.js:type_only!modules/_getLength.js:type_only!modules/_group.js:group!modules/_has.js:has!modules/_hasObjectTag.js:type_only!modules/_isArrayLike.js:type_only!modules/_isBufferLike.js:type_only!modules/_keyInObj.js:keyInObj!modules/_methodFingerprint.js:ie11fingerprint!modules/_optimizeCb.js:optimizeCb!modules/_setup.js:type_only!modules/_shallowProperty.js:shallowProperty!modules/_stringTagBug.js:type_only!modules/_tagTester.js:tagTester!modules/_toBufferView.js:toBufferView!modules/_toPath.js:toPath!modules/_unescapeMap.js:type_only!modules/after.js:after!modules/allKeys.js:allKeys!modules/before.js:before!modules/bind.js:type_only!modules/bindAll.js:type_only!modules/chain.js:chain!modules/chunk.js:chunk!modules/clone.js:clone!modules/compact.js:compact!modules/compose.js:compose!modules/constant.js:constant!modules/contains.js:contains!modules/countBy.js:type_only!modules/create.js:create!modules/debounce.js:debounce!modules/defaults.js:type_only!modules/defer.js:type_only!modules/delay.js:type_only!modules/difference.js:type_only!modules/each.js:each!modules/escape.js:type_only!modules/every.js:every!modules/extend.js:type_only!modules/extendOwn.js:type_only!modules/filter.js:filter!modules/find.js:find!modules/findIndex.js:type_only!modules/findKey.js:findKey!modules/findLastIndex.js:type_only!modules/findWhere.js:findWhere!modules/first.js:first!modules/flatten.js:flatten!modules/functions.js:functions!modules/get.js:get!modules/groupBy.js:type_only!modules/has.js:has!modules/identity.js:identity!modules/index-all.js:type_only!modules/index-default.js:type_only!modules/index.js:type_only!modules/indexBy.js:type_only!modules/indexOf.js:type_only!modules/initial.js:initial!modules/intersection.js:intersection!modules/invert.js:invert!modules/invoke.js:type_only!modules/isArguments.js:type_only!modules/isArray.js:type_only!modules/isArrayBuffer.js:type_only!modules/isBoolean.js:isBoolean!modules/isDataView.js:alternateIsDataView!modules/isDate.js:type_only!modules/isElement.js:isElement!modules/isEmpty.js:isEmpty!modules/isEqual.js:cycleTracker!modules/isEqual.js:isEqual!modules/isError.js:type_only!modules/isFinite.js:isFinite!modules/isFunction.js:type_only!modules/isMap.js:type_only!modules/isMatch.js:isMatch!modules/isNaN.js:isNaN!modules/isNull.js:isNull!modules/isNumber.js:type_only!modules/isObject.js:isObject!modules/isRegExp.js:type_only!modules/isSet.js:type_only!modules/isString.js:type_only!modules/isSymbol.js:type_only!modules/isTypedArray.js:isTypedArray!modules/isUndefined.js:isUndefined!modules/isWeakMap.js:type_only!modules/isWeakSet.js:type_only!modules/iteratee.js:iteratee!modules/keys.js:keys!modules/last.js:last!modules/lastIndexOf.js:type_only!modules/map.js:map!modules/mapObject.js:mapObject!modules/matcher.js:matcher!modules/max.js:max!modules/memoize.js:memoize!modules/min.js:min!modules/mixin.js:mixin!modules/negate.js:negate!modules/noop.js:noop!modules/now.js:type_only!modules/object.js:object!modules/omit.js:type_only!modules/once.js:type_only!modules/pairs.js:pairs!modules/partial.js:bound!modules/partition.js:type_only!modules/pick.js:type_only!modules/pluck.js:pluck!modules/property.js:property!modules/propertyOf.js:propertyOf!modules/random.js:random!modules/range.js:range!modules/reduce.js:type_only!modules/reduceRight.js:type_only!modules/reject.js:reject!modules/rest.js:rest!modules/restArguments.js:restArguments!modules/result.js:result!modules/sample.js:sample!modules/shuffle.js:shuffle!modules/size.js:size!modules/some.js:some!modules/sortBy.js:sortBy!modules/sortedIndex.js:sortedIndex!modules/tap.js:tap!modules/template.js:escapeChar!modules/template.js:template!modules/templateSettings.js:type_only!modules/throttle.js:throttle!modules/times.js:times!modules/toArray.js:toArray!modules/toPath.js:toPath!modules/underscore-array-methods.js:each!modules/underscore.js:_!modules/unescape.js:type_only!modules/union.js:type_only!modules/uniq.js:uniq!modules/uniqueId.js:uniqueId!modules/unzip.js:unzip!modules/values.js:values!modules/where.js:where!modules/without.js:type_only!modules/wrap.js:wrap!modules/zip.js:type_only!underscore-node.mjs:type_only!test-treeshake/map.js:type_only!test-treeshake/template.js:type_only" fail="" multi="ts:P107/S0/F3 js:P110/S0/F0 py:P73/S0/F37 go:P20/S0/F90 rust:P12/S0/F98 c:P16/S0/F94 java:P20/S0/F90" stub="EXPERIMENTAL_NOT_PASS cs,lua,elixir,crystal,kotlin,hcl,julia,scala,haskell,prolog,zig,nim,asm,ocaml no_toolchain_no_oracle" learn=none improve=positive_transfer:ok×168 note="PARTIAL INTEL only (no gh): full_repo=true files=164/164 js_full=true all_lang=false p=168 f=0 s=0 rate=1; multi=ts:P107/S0/F3 js:P110/S0/F0 py:P73/S0/F37 go:P20/S0/F90 rust:P12/S0/F98 c:P16/S0/F94 java:P20/S0/F90; lin/src=0.4155"}
+@RULEL:INTEL_CLONE_LIN:1.1.0
+^slug="underscore"
+^lang="LIN"
+^rule="semantic_hash_exact_like_P200"
+^no_soft_match=true
+^status="PASS"
+^done=true
+^published=true
+^suite_rate=1
+^suite_total=24
+^source="https://github.com/jashkenas/underscore.git"
+^clone_lin_url="https://github.com/kbelludoo/clone-lin-underscore"
+^clone_lin_local="C:/Users/k/Documents/lia/.clone_lin_publish/clone-lin-underscore"
+^temp_cleaned=true
+^pass=24 ^fail=0 ^skip=0
+^behavior_eq_required=1.0
+^publish_gate="suite_rate==1.0"
+
+@COMPARISON {
+  pass_names: ["after","allKeys","before","chain","chunk","clone","compact","compose","constant","contains","create","debounce","later","each","every","filter","find","findKey","findWhere","first","flatten","functions","get","has"]
+  fail_names: []
+  skip_names: []
+  learn: "none"
+  improve_lin: "positive_transfer:ok×24"
+}
+
+@NOTE_PT {
+  DONE 100% clone-lin-underscore: p=24 suite_rate=1.0; improve=positive_transfer:ok×24
+}

@@ -1,0 +1,64 @@
+// Differential Fuzzer & Program Generator for LIN-SIGIL-005
+
+export function generateTestCorpus() {
+  const corpus = [];
+
+  // Function templates
+  const ops = [
+    { name: "safe_divide", params: ["a", "b"], pre: "b != 0", post: "result * b <= a", pure: true, body: "^(Math.floor(a / b))", validArgs: { a: 20, b: 4 }, invalidArgs: { a: 20, b: 0 }, invType: "pre" },
+    { name: "clamp_val", params: ["x", "min", "max"], pre: "min <= max", post: "result >= min && result <= max", pure: true, body: "^(Math.max(min, Math.min(max, x)))", validArgs: { x: 50, min: 10, max: 100 }, invalidArgs: { x: 50, min: 100, max: 10 }, invType: "pre" },
+    { name: "multiply_exact", params: ["x", "y"], pre: "x >= 0 && y >= 0", post: "result >= x", pure: true, body: "^(x * y)", validArgs: { x: 5, y: 3 }, invalidArgs: { x: -5, y: 3 }, invType: "pre" },
+    { name: "abs_diff", params: ["a", "b"], pre: "true", post: "result >= 0", pure: true, body: "^(Math.abs(a - b))", validArgs: { a: 15, b: 25 }, invalidArgs: null, invType: "none" },
+    { name: "flawed_sum", params: ["a", "b"], pre: "a > 0 && b > 0", post: "result == a + b", pure: true, body: "^(a + b + 10)", validArgs: { a: 4, b: 6 }, invalidArgs: null, invType: "post_fail" },
+    { name: "pure_calls_io", params: ["x"], pre: "x > 0", post: "result == x * 2", pure: true, callsIO: true, body: 'console.log("io"); ^(x * 2)', validArgs: { x: 10 }, invalidArgs: null, invType: "effect_leak" }
+  ];
+
+  for (let i = 1; i <= 50; i++) {
+    const op = ops[(i - 1) % ops.length];
+    const progId = `prog_${String(i).padStart(3, '0')}`;
+    let isNegative = false;
+    let expectedStatus = "ACCEPTED";
+    let expectedReason = "OK";
+    let callArgs = op.validArgs;
+
+    if (op.invType === "pre" && (i % 3 === 0)) {
+      isNegative = true;
+      expectedStatus = "REJECTED";
+      expectedReason = "PRECONDITION_VIOLATED";
+      callArgs = op.invalidArgs;
+    } else if (op.invType === "post_fail") {
+      isNegative = true;
+      expectedStatus = "REJECTED";
+      expectedReason = "POSTCONDITION_VIOLATED";
+    } else if (op.invType === "effect_leak") {
+      isNegative = true;
+      expectedStatus = "REJECTED";
+      expectedReason = "EFFECT_LEAK";
+    }
+
+    const paramDecl = op.params.map(p => `${p}: i32`).join(', ');
+    let linSource = `@LIN:L1c:0.2\n~G{?=if #=for ^=ret :else %=contract *=effect}\n\n`;
+
+    if (op.callsIO) {
+      linSource += `!log(msg: string)\n  *(IO)\n{\n  console.log(msg);\n  ^0\n}\n\n`;
+    }
+
+    linSource += `!${op.name}_${i}(${paramDecl}) -> i32\n`;
+    linSource += `  %(pre: ${op.pre})\n`;
+    linSource += `  %(post: ${op.post})\n`;
+    linSource += `  *(${op.pure ? 'Pure' : 'IO'})\n`;
+    linSource += `{\n  ${op.body}\n}\n`;
+
+    corpus.push({
+      prog_id: progId,
+      fn_name: `${op.name}_${i}`,
+      lin_source: linSource,
+      args: callArgs,
+      expected_status: expectedStatus,
+      expected_reason: expectedReason,
+      is_negative: isNegative
+    });
+  }
+
+  return corpus;
+}

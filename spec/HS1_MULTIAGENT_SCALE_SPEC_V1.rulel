@@ -1,0 +1,23 @@
+@RULEL:HS1_MULTIAGENT_SCALE_SPEC_V1:1.0.0
+~R{.m=meta .r=rule .f=forbid .a=allow .g=gate .w=when .c=contract .x=steps .p=path .d=design_principle}
+.m{lang=LIN status=FROZEN_SPEC repo="C:/Users/k/Documents/lia" date=2026-08-16 why=multiagent_scaling_evaluation}
+.d{P0=scale_to_100_concurrent_agents purpose=throughput!submillisecond_latency!zero_deadlock!invariant_preservation}
+
+.r{
+  R_POPULATION_SWEEP=scale_population_from_1_to_100_agents_measuring_scaling_curve
+  R_LATENCY_BOUND=proof_verification_latency_must_remain_submillisecond_at_p99
+  R_ZERO_DEADLOCK=mutual_dependency_resolution_must_never_deadlock_or_starve
+  R_MERKLE_CONSISTENCY=distributed_proof_ledger_must_remain_strictly_consistent_across_nodes
+}
+
+.g{
+  GATE_HS1_SCALING=throughput_scaling_linear AND p99_latency_submillisecond
+  GATE_HS1_SAFETY=zero_deadlocks AND zero_state_divergence
+  GATE_HS1_OVERALL=GATE_HS1_SCALING AND GATE_HS1_SAFETY
+}
+
+.f{
+  saturate_proof_verification_at_high_agent_concurrency
+  deadlock_during_distributed_capability_negotiation
+  lose_merkle_ledger_consistency_under_load
+}

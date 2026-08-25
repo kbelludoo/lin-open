@@ -11,8 +11,8 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const INTEL = path.join(ROOT, 'INTEL_LIN_AUTONOMY_RUN.dicel');
-const LAB = 'C:/Users/k/Documents/dicel-unified/INTEL_LIN_AUTONOMY_RUN.dicel';
+const INTEL = path.join(ROOT, 'INTEL_LIN_AUTONOMY_RUN.rulel');
+const LAB = 'C:/Users/k/Documents/dicel-unified/INTEL_LIN_AUTONOMY_RUN.rulel';
 
 function parseArgs(argv) {
   const o = {
@@ -59,14 +59,14 @@ function parseJsonTail(out) {
 }
 
 function writeIntel(epoch) {
-  const body = `@DICEL:LIN_AUTONOMY_RUN:1.1.0
-^t="${epoch.t}"
+  const stamp = new Date().toISOString();
+  const body = `@RULEL:INTEL_LIN_AUTONOMY_RUN:1.0.0
 ^status="${epoch.status}"
-^nucleus=untouched
-^mode=evolve+improve+fix+clone_until_100+expose
-^pipeline="original→hash→LIN→compile→hash→retry_until_100→clone-lin-gh"
+^stamp="${stamp}"
+^cycle=${epoch.cycle}
+^gate_all_green=${epoch.gate_all_green}
 
-@STAGES {
+@EPOCH {
   toolchains: ${JSON.stringify(epoch.toolchains).slice(0, 500)}
   improve: ${JSON.stringify(epoch.improve).slice(0, 400)}
   evolve: ${JSON.stringify(epoch.evolve).slice(0, 400)}
@@ -75,8 +75,8 @@ function writeIntel(epoch) {
 
 @EXPOSE {
   intel_lin="${INTEL.replace(/\\\\/g, '/')}"
-  year_star="INTEL_LIN_YEAR_STAR_QUEUE.dicel"
-  ledger="storage/lia_ledger.dicel"
+  year_star="INTEL_LIN_YEAR_STAR_QUEUE.rulel"
+  ledger="storage/lia_ledger.rulel"
 }
 
 @FORBID { mutate_lia_nucleus }

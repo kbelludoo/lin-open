@@ -60,7 +60,7 @@ function retIsBool(fn) {
 }
 
 function paramList(fn) {
-  return (fn.params || []).map((p) => ({ name: p.name, type: normType(p.type), def: p.def }));
+  return (fn.params || []).map((p) => ({ name: p.name, type: normType(p.type), rawType: String(p.type || ''), def: p.def, arr: !!(p.arr || p.isArray) }));
 }
 
 function normType(t) {
@@ -989,13 +989,15 @@ export function emitC(prog, opts = {}) {
       lines.push(`long long ${snakeCase(fn.name)}() { fprintf(stderr, "${fn.name}: js_runtime_only\\n"); exit(70); }`);
       continue;
     }
-    emitCFn(lines, fn);
+    emitCFn(lines, fn, prog);
   }
   void opts;
   return lines.join('\n');
 }
 
 function cType(t) {
+  if (t === '@arr') return 'long long*';
+  if (t === '@cb') return 'char*';
   if (t === '@str') return 'char*';
   switch (normType(t)) {
     case 'int': return 'long long';
@@ -1014,27 +1016,104 @@ function cZero(t) {
   }
 }
 
-function emitCFn(lines, fn) {
-  prepareNativeFn(fn);
-  const strP = new Set(strParamNames(fn));
-  const ps0 = paramList(fn);
-  for (const p of ps0) if (!p.type && strP.has(p.name)) p.type = '@str';
-  const text = stmtsText(fn);
-  if (isJsRuntimeOnly(text) || /["']/.test(text.replace(/"[^"]*"|'[^']*'/g, ''))) {
-    void 0;
+function splitTopC(raw) {
+  const out = [];
+  let d = 0, cur = '';
+  for (const ch of String(raw)) {
+    if (ch === '[' || ch === '(') d++;
+    else if (ch === ']' || ch === ')') d--;
+    if (ch === ',' && d === 0) { out.push(cur.trim()); cur = ''; }
+    else cur += ch;
   }
+  if (cur.trim()) out.push(cur.trim());
+  return out;
+}
+
+function lhsC(idPath) {
+  const m = /^([A-Za-z_$][\w$]*)\[([\s\S]+)\]$/.exec(String(idPath || '').trim());
+  if (!m) return safeEmitId(idPath);
+  return `${safeEmitId(m[1])}[${cExpr(m[2])}]`;
+}
+
+function collectArrLocals(st, map, params) {
+  const reg = (id, len) => { if (!params.includes(id)) map.set(id, len); };
+  if (st.type === 'assign' && st.op === '=') {
+    const rhsT = String(st.rhs && st.rhs.parts ? cRaw(st.rhs) : st.rhs ?? '').trim();
+    const im = /^([A-Za-z_$][\w$]*)\[/.exec(st.idPath);
+    if (im && !/^[A-Za-z_$][\w$]*$/.test(st.idPath) && !map.has(im[1])) reg(im[1], 64);
+    if (/^\[[\s\S]*\]$/.test(rhsT) && /^[A-Za-z_$][\w$]*$/.test(st.idPath)) {
+      const items = rhsT.slice(1, -1).trim();
+      const parts = items === '' ? [] : splitTopC(items);
+      reg(st.idPath, Math.max(parts.length, 1));
+    }
+  }
+  for (const key of ['then', 'else', 'body']) {
+    if (Array.isArray(st[key])) for (const s2 of st[key]) collectArrLocals(s2, map, params);
+  }
+  if (Array.isArray(st.elseIf)) {
+    for (const ei of st.elseIf) {
+      for (const s2 of ei.body) collectArrLocals(s2, map, params);
+      let tail = ei.chainTail;
+      while (tail) { for (const s2 of tail.body) collectArrLocals(s2, map, params); tail = tail.chainTail; }
+    }
+  }
+}
+
+function emitCFn(lines, fn, prog) {
+  prepareNativeFn(fn);
+  const ps0 = paramList(fn);
+  const textHint = stmtsText(fn);
+  const heur = new Set(strParamNames(fn));
   const ps = paramList(fn);
   for (const p of ps) {
-    if (strP.has(p.name)) p.type = '@str';
-    else if (!p.type || p.type === 'any') p.type = 'int';
+    if (p.rawType === 's') p.type = '@str';
+    else if (p.rawType === 'cb') p.type = '@cb';
+    else if (p.arr) p.type = '@arr';
+    else if (heur.has(p.name)) p.type = '@str';
+    else if (!p.type || p.type === 'any' || p.type === 'string') p.type = 'int';
   }
   const sig = ps.map((p) => `${cType(p.type)} ${safeEmitId(p.name)}`).join(', ');
-  const ret = fn.returnType ? cType(fn.returnType.replace(/^[^A-Za-z]+/, '')) : (retIsBool(fn) ? 'int' : cType(ps[0] ? ps[0].type : 'int'));
+  const ret = fn.returnType ? cType(fn.returnType.replace(/^[^A-Za-z]+/, '')) : (retIsBool(fn) ? 'int' : 'long long');
   lines.push(`${ret} ${snakeCase(fn.name)}(${sig}) {`);
+  const paramNames = ps.map((p) => p.name);
+  const arrLocals = new Map();
+  for (const st of fn.body) collectArrLocals(st, arrLocals, paramNames);
+  const sigMap = new Map();
+  for (const f2 of prog.fns || []) {
+    sigMap.set(f2.name, new Set((f2.params || []).map((pp, ix4) => (pp.isArray ? ix4 : -1)).filter((x4) => x4 >= 0)));
+  }
+  {
+    const texts = [];
+    (function tw(list) {
+      for (const q of list || []) {
+        const toT = (v2) => String(v2 && v2.parts ? cRaw(v2) : v2 || '');
+        texts.push(toT(q.expr), toT(q.cond), toT(q.rhs));
+        tw(q.then); tw(q.elseIf?.map((e3) => e3.body)); tw(q.else); tw(q.body);
+      }
+    })(fn.body);
+    for (const tx of texts) {
+      if (!tx) continue;
+      let mm5;
+      const cre = /\b([A-Za-z_$][\w$]*)\s*\(([^()]*?)\)/g;
+      while ((mm5 = cre.exec(tx))) {
+        const posset = sigMap.get(mm5[1]);
+        if (!posset || !posset.size) continue;
+        const args2 = splitTopC(mm5[2]);
+        for (const pos of posset) {
+          if (pos < args2.length) {
+            const aid = args2[pos].trim();
+            if (/^[A-Za-z_$][\w$]*$/.test(aid) && !paramNames.includes(aid)) arrLocals.set(aid, 64);
+          }
+        }
+      }
+    }
+  }
+  for (const [name2, len2] of arrLocals) lines.push(`    long long ${safeEmitId(name2)}[${len2}] = {0};`);
   const locals = new Set();
-  for (const st of fn.body) collectLocalsGo(st, locals, ps.map((p) => p.name));
+  for (const st of fn.body) collectLocalsGo(st, locals, paramNames);
   for (const l of locals) {
-    lines.push(`    ${cType(ps.find((p) => p.name === l)?.type || 'int')} ${safeEmitId(l)} = ${cZero(ps.find((p) => p.name === l)?.type || 'int')};`);
+    if (arrLocals.has(l)) continue;
+    lines.push(`    long long ${safeEmitId(l)} = 0;`);
   }
   lines.push(cStmts(fn.body, 1, fn));
   lines.push('}');
@@ -1061,9 +1140,16 @@ function cStmts(stmts, depth, fn) {
       case 'continue':
         out.push(`${pad}continue;`);
         break;
-      case 'assign':
-        out.push(`${pad}${safeEmitId(st.idPath)} ${cOp(st.op)} ${stripDeclKw(cExpr(cRaw(st.rhs)))};`);
+      case 'assign': {
+        const rhsT = String(st.rhs && st.rhs.parts ? cRaw(st.rhs) : st.rhs ?? '').trim();
+        if (st.op === '=' && /^\[[\s\S]*\]$/.test(rhsT) && /^[A-Za-z_$][\w$]*$/.test(st.idPath)) {
+          const els = splitTopC(rhsT.slice(1, -1));
+          els.forEach((el, ix3) => out.push(`${pad}${lhsC(st.idPath)}[${ix3}] = ${stripDeclKw(cExpr(el))};`));
+          break;
+        }
+        out.push(`${pad}${lhsC(st.idPath)} ${cOp(st.op)} ${stripDeclKw(cExpr(cRaw(st.rhs)))};`);
         break;
+      }
       case 'expr':
         out.push(`${pad}${stripDeclKw(cExpr(cRaw(st.expr)))};`);
         break;
@@ -1402,10 +1488,16 @@ function emitZigFn(lines, fn) {
   for (const p of ps) if (zigType(p.type) === '[]const u8') stringIds.add(p.name);
   const ctx = { stringIds, params: ps };
   lines.push(`pub fn ${safeEmitId(snakeCase(fn.name))}(${sig}) ${retT} {`);
-  for (const p of ps) lines.push(`    _ = ${safeEmitId(p.name)};`);
   const locals = new Set();
   for (const st of fn.body) collectLocalsGo(st, locals, ps.map((p) => p.name));
   const bodyRaw = zigStmts(fn.body, 1, ctx);
+  for (const p of ps) {
+    const pId = safeEmitId(p.name);
+    const reUsed = new RegExp(`\\b${pId}\\b`, 'm');
+    if (!reUsed.test(bodyRaw)) {
+      lines.push(`    _ = ${pId};`);
+    }
+  }
   for (const l of locals) {
     let t = 'i64';
     const reAssign = new RegExp(`\\b${l}\\b\\s*=\\s*([^;\\n]+)`, 'm').exec(bodyRaw);

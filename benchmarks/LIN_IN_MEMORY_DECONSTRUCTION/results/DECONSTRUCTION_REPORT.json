@@ -1,0 +1,30 @@
+{
+  "benchmark": "LIN_4_PATHWAY_DECONSTRUCTION",
+  "summary": {
+    "path_a_python_cold_ms": 23.86,
+    "path_b_lin_disk_ms": 0.563,
+    "path_c_lin_in_memory_ms": 0.164,
+    "path_d_lin_direct_hashcons_ms": 0.0012,
+    "speedup_memory_vs_python": 145.5,
+    "speedup_direct_vs_python": 19883.3
+  },
+  "path_c_phase_breakdown_ms": {
+    "parse": 0.025,
+    "effectCheck": 0.0469,
+    "codeGen": 0.0305,
+    "dataUrlImport": 0.0551,
+    "firstExec": 0.003
+  },
+  "hashcons_telemetry": {
+    "total_symbols_indexed": 1000,
+    "total_queries": 50000,
+    "throughput_lookups_per_sec": 2925589,
+    "cold_lookup_avg_us": 0.237,
+    "warm_lookup_p50_us": 0.119,
+    "warm_lookup_p95_us": 0.185,
+    "warm_lookup_p99_us": 0.225,
+    "warm_lookup_avg_us": 0.153
+  },
+  "steady_state_throughput_ops_sec": 4747422,
+  "timestamp": "2026-08-23T23:58:43.004Z"
+}

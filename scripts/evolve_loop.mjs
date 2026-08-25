@@ -10,10 +10,10 @@ import { spawnSync } from 'node:child_process';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const STORAGE = path.join(ROOT, 'storage');
-const LEDGER = path.join(STORAGE, 'lia_ledger.dicel');
-const TRAUMA = path.join(STORAGE, 'lia_trauma.dicel');
+const LEDGER = path.join(STORAGE, 'lia_ledger.rulel');
+const TRAUMA = path.join(STORAGE, 'lia_trauma.rulel');
 
-function appendDicelEntry(file, block) {
+function appendRulelEntry(file, block) {
   const prev = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
   const stamp = new Date().toISOString();
   const entry = `\n@E{t="${stamp}" ${block}}\n`;
@@ -27,7 +27,7 @@ function run(cmd, args) {
 }
 
 function autonomyStatus() {
-  const files = ['lia_ledger.dicel', 'lia_trauma.dicel', 'lia_knowledge.dicel', 'lia_hypotheses.dicel'];
+  const files = ['lia_ledger.rulel', 'lia_trauma.rulel', 'lia_knowledge.rulel', 'lia_hypotheses.rulel'];
   const mem = {};
   for (const f of files) {
     const p = path.join(STORAGE, f);
@@ -49,9 +49,9 @@ function autonomyStatus() {
 function improveOnce() {
   const smoke = run('node', ['scripts/self_repair.mjs', '--smoke']);
   const ok = smoke.status === 0;
-  appendDicelEntry(LEDGER, `kind=improve ok=${ok} path=self_repair_smoke`);
+  appendRulelEntry(LEDGER, `kind=improve ok=${ok} path=self_repair_smoke`);
   if (!ok) {
-    appendDicelEntry(TRAUMA, `class=SELF_REPAIR_SMOKE note="see self_repair out" fix_target=compiler_not_lia`);
+    appendRulelEntry(TRAUMA, `class=SELF_REPAIR_SMOKE note="see self_repair out" fix_target=compiler_not_lia`);
   }
   return { status: ok ? 'IMPROVE_OK' : 'IMPROVE_FAIL', ledger: LEDGER, out: smoke.out.slice(0, 500) };
 }
@@ -62,7 +62,7 @@ function evolveOnce() {
   if (!fs.existsSync(candDir)) fs.mkdirSync(candDir, { recursive: true });
   const base = autonomyStatus();
   const ok = base.npm_test === 'PASS' && base.multi_emit === 'PASS';
-  appendDicelEntry(LEDGER, `kind=evolve_epoch ok=${ok} promote=none mutate=candidates_only`);
+  appendRulelEntry(LEDGER, `kind=evolve_epoch ok=${ok} promote=none mutate=candidates_only`);
   return {
     status: ok ? 'EVOLVE_EPOCH_GREEN' : 'EVOLVE_EPOCH_BLOCKED',
     gate: 'LIA_ge_Dicel',

@@ -1,5 +1,29 @@
-@RULEL:INTEL_CLONE_LIN:1.4.0
-~R{.m=meta .g=gate .c=compare}
-.m{slug=dedent lang=LIN status=PASS done=true published=true source="https://github.com/dmnd/dedent.git" url="" nucleus=js!ts!py!go!rust!c!java}
-.g{publish=full_repo_100_hash_eq skip_eq_fail=true behavior_eq=1.0 suite_rate=1 pass=7 fail=0 skip=0 files_ok=4 files_total=4 stub_not_suite=true c_skip=ok_iff_gcc_absent_after_retry}
-.c{pass="src/dedent.ts:createDedent!src/dedent.ts:alignValue!.eslintrc.js:type_only!macro.js:prevalMacros!macro.js:asTag!macro.js:asFunction!src/types.ts:type_only" fail="" multi="js:P5/S0/F0 ts:P5/S0/F0 py:P5/S0/F0 go:P5/S0/F0 rust:P5/S0/F0 c:P5/S0/F0 java:P5/S0/F0" stub="EXPERIMENTAL_NOT_PASS cs,lua,elixir,crystal,kotlin,hcl,julia,scala,haskell,prolog,zig,nim,asm no_toolchain_no_oracle" learn=none improve=loop_mode_no_improve note="DONE real-nucleus 7-lang clone-lin-dedent: p=7 multi=js:P5/S0/F0 ts:P5/S0/F0 py:P5/S0/F0 go:P5/S0/F0 rust:P5/S0/F0 c:P5/S0/F0 java:P5/S0/F0 ; size lin/src=0.3431; tok src=2383 lin=818"}
+@RULEL:INTEL_CLONE_LIN:1.1.0
+^slug="dedent"
+^lang="LIN"
+^rule="semantic_hash_exact_like_P200"
+^no_soft_match=true
+^status="PASS"
+^done=true
+^published=true
+^suite_rate=1
+^suite_total=1
+^source="https://github.com/dmnd/dedent.git"
+^clone_lin_url="https://github.com/kbelludoo/clone-lin-dedent"
+^clone_lin_local="C:/Users/k/Documents/lia/.clone_lin_publish/clone-lin-dedent"
+^temp_cleaned=true
+^pass=1 ^fail=0 ^skip=0
+^behavior_eq_required=1.0
+^publish_gate="suite_rate==1.0"
+
+@COMPARISON {
+  pass_names: ["alignValue"]
+  fail_names: []
+  skip_names: []
+  learn: "none"
+  improve_lin: "positive_transfer:ok×1"
+}
+
+@NOTE_PT {
+  DONE 100% clone-lin-dedent: p=1 suite_rate=1.0; improve=positive_transfer:ok×1
+}

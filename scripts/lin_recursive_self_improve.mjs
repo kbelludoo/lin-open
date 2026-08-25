@@ -1,5 +1,5 @@
 // LIN Recursive Self-Improvement Engine (LIN improves LIN)
-// Spec: spec/LIN_SELF_OPTIMIZE.rulel & spec/LIA_AUTONOMY.dicel
+// Spec: spec/LIN_SELF_OPTIMIZE.rulel & spec/LIA_AUTONOMY.rulel
 
 import fs from 'fs';
 import path from 'path';

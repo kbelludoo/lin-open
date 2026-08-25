@@ -1,0 +1,30 @@
+import assert from 'assert';
+import { parseArgs, isNumber } from '../lib/index.js';
+
+let passed = 0;
+try {
+  // Test 1: basic flags
+  const a1 = parseArgs(['--foo', 'bar']);
+  assert.strictEqual(a1.foo, 'bar');
+  passed++;
+
+  // Test 2: number parsing
+  const a2 = parseArgs(['-n', '123']);
+  assert.strictEqual(a2.n, 123);
+  passed++;
+
+  // Test 3: boolean --no-
+  const a3 = parseArgs(['--no-moo']);
+  assert.strictEqual(a3.moo, false);
+  passed++;
+
+  // Test 4: dotted nested keys
+  const a4 = parseArgs(['--a.b', '100']);
+  assert.strictEqual(a4.a.b, 100);
+  passed++;
+
+  console.log('Overall: PASS (' + passed + ' tests passed)');
+} catch (e) {
+  console.error('Overall: FAIL', e.message);
+  process.exit(1);
+}

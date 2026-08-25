@@ -1,0 +1,10 @@
+@LIN:L1c:0.2
+~G{?=if #=for ^=ret :else %=contract *=effect}
+
+!divide(a: i32, b: i32) -> i32
+  %(pre: b != 0)
+  %(post: result * b == a)
+  *(Pure)
+{
+  ^(Math.floor(a / b))
+}

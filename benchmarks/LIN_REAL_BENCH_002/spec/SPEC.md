@@ -1,0 +1,22 @@
+# LIN-REAL-BENCH-002: Large-Scale Real-World Open-Source Benchmark & Statistical Significance
+
+## 1. Scientific Mandate
+Following `LIN-REAL-BENCH-001` (which observed $75\%$ vs $25\%$ localization on 4 tasks):
+> **Does Full LIN maintain a statistically significant advantage ($p < 0.05$) in Root-Cause Localization ($L_{acc}$), Recovery ($R_{rec}$), and Context Compression ($T$) across an expanded, pre-frozen corpus of historical open-source bugs spanning multiple project families?**
+
+---
+
+## 2. Pre-Frozen Open-Source Corpus & Repository Families
+1. **CLI / Arg Parsing:** `minimist` (boolean flags, dotted keys, scientific notation numbers, proto safety).
+2. **Version Semantics & Spec:** `semver` (caret/tilde boundary, prerelease sorting, metadata dropping).
+3. **Media & Web Types:** `mime-types` (content-type parameters, case-insensitive charsets, null safety).
+4. **URI & Network Paths:** `uri-js` (percent-encoding, scheme normalization, query string splitting).
+5. **Date & Time Calculations:** `dayjs` (leap year rollover, duration arithmetic, timezone offset).
+6. **Terminal Styling & ANSI:** `chalk` (nested color styles, strip ANSI codes, 256-color lookups).
+
+---
+
+## 3. Strict Experimental Guarantees
+- **Frozen In Advance:** All issues, failing test assertions, ground truth commits, and repos frozen prior to test execution.
+- **100% Blind Execution:** Zero hints on target files, function names, or line numbers.
+- **Statistical Significance Engine:** McNemar's exact test & $95\%$ Wilson binomial confidence intervals reported for $L_{acc}(\text{LIN})$ vs $L_{acc}(\text{RAW})$.

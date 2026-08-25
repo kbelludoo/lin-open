@@ -1,0 +1,26 @@
+@LIA:LIA_RENAME:1.0.0
+
+^from="AIL"
+^to="LIA"
+^date="2026-08-13"
+^package="lia-lang"
+^path="C:/Users/k/Documents/lia"
+^former_path="C:/Users/k/Documents/ail"
+
+@CHANGE {
+  language_name: "AIL → LIA"
+  package: "ail-lang → lia-lang"
+  cli: "bin/lia.mjs (alias bin/ail.mjs)"
+  header_emit: "@LIA:L1c:0.2"
+  header_read: "@LIA + legacy @AIL"
+  specs: "LIA_*.dicel"
+  examples: "*.lia"
+  legend_unchanged: "!fn ?if #for ^ret :else $K=consts =ex=exports ~G=grammar"
+}
+
+@NOTE {
+  dicel-unified_pointers_updated
+  cli-master-rules_R23_updated
+  bench_scripts_use_LIA_naming
+  roundtrip_tests_must_pass
+}

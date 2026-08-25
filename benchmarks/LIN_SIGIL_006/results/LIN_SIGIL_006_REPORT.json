@@ -1,0 +1,984 @@
+{
+  "benchmark": "LIN-SIGIL-006",
+  "total_programs": 50,
+  "parity_matches": 50,
+  "drift_count": 0,
+  "parity_rate": "100.0%",
+  "g1_generative_synthesis": true,
+  "g2_independent_effect_verification": true,
+  "g3_semantic_trace_equivalence": true,
+  "programs": [
+    {
+      "prog_id": "gen_prog_001",
+      "trace_length": 9,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "POST_PASS:c1",
+        "RETURN:18",
+        "POST_PASS:c1",
+        "RETURN:18"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "03bb11afb77022e0",
+        "typescript": "03bb11afb77022e0",
+        "rust_native": "03bb11afb77022e0",
+        "c99_native": "03bb11afb77022e0"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_002",
+      "trace_length": 8,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "POST_PASS:c0",
+        "RETURN:21",
+        "POST_PASS:c1",
+        "RETURN:21"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "a4bb753f61cc832c",
+        "typescript": "a4bb753f61cc832c",
+        "rust_native": "a4bb753f61cc832c",
+        "c99_native": "a4bb753f61cc832c"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_003",
+      "trace_length": 9,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "POST_PASS:c1",
+        "RETURN:24",
+        "POST_PASS:c1",
+        "RETURN:24"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "7e01ee38e23e8a63",
+        "typescript": "7e01ee38e23e8a63",
+        "rust_native": "7e01ee38e23e8a63",
+        "c99_native": "7e01ee38e23e8a63"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_004",
+      "trace_length": 3,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_FAIL:c0",
+        "ABORT:PRECONDITION_VIOLATED"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "9d7e884e84a0ce4d",
+        "typescript": "9d7e884e84a0ce4d",
+        "rust_native": "9d7e884e84a0ce4d",
+        "c99_native": "9d7e884e84a0ce4d"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_005",
+      "trace_length": 9,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "POST_PASS:c1",
+        "RETURN:30",
+        "POST_PASS:c1",
+        "RETURN:30"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "38cf447073588534",
+        "typescript": "38cf447073588534",
+        "rust_native": "38cf447073588534",
+        "c99_native": "38cf447073588534"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_006",
+      "trace_length": 5,
+      "trace_events": [
+        "ENTER:fn_1",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "EFFECT_LEAK:Pure_calls_HeapMut",
+        "ABORT:EFFECT_LEAK"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "f47ed4f4da67162a",
+        "typescript": "f47ed4f4da67162a",
+        "rust_native": "f47ed4f4da67162a",
+        "c99_native": "f47ed4f4da67162a"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_007",
+      "trace_length": 3,
+      "trace_events": [
+        "ENTER:fn_1",
+        "EFFECT_LEAK:Pure_calls_IO",
+        "ABORT:EFFECT_LEAK"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "ca877ea2a86903a8",
+        "typescript": "ca877ea2a86903a8",
+        "rust_native": "ca877ea2a86903a8",
+        "c99_native": "ca877ea2a86903a8"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_008",
+      "trace_length": 7,
+      "trace_events": [
+        "ENTER:fn_1",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "POST_PASS:c0",
+        "RETURN:5",
+        "POST_PASS:c0",
+        "RETURN:5"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "3c9ebd9564298c24",
+        "typescript": "3c9ebd9564298c24",
+        "rust_native": "3c9ebd9564298c24",
+        "c99_native": "3c9ebd9564298c24"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_009",
+      "trace_length": 8,
+      "trace_events": [
+        "ENTER:fn_1",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "POST_PASS:c1",
+        "RETURN:42",
+        "POST_PASS:c0",
+        "RETURN:42"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "fedaedae82e2b9d7",
+        "typescript": "fedaedae82e2b9d7",
+        "rust_native": "fedaedae82e2b9d7",
+        "c99_native": "fedaedae82e2b9d7"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_010",
+      "trace_length": 9,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "POST_PASS:c1",
+        "RETURN:45",
+        "POST_PASS:c1",
+        "RETURN:45"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "d5fcccc4eb507696",
+        "typescript": "d5fcccc4eb507696",
+        "rust_native": "d5fcccc4eb507696",
+        "c99_native": "d5fcccc4eb507696"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_011",
+      "trace_length": 6,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "EFFECT_LEAK:Pure_calls_IO",
+        "ABORT:EFFECT_LEAK"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "fbfb4f3654f7ed5b",
+        "typescript": "fbfb4f3654f7ed5b",
+        "rust_native": "fbfb4f3654f7ed5b",
+        "c99_native": "fbfb4f3654f7ed5b"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_012",
+      "trace_length": 3,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_FAIL:c0",
+        "ABORT:PRECONDITION_VIOLATED"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "9d7e884e84a0ce4d",
+        "typescript": "9d7e884e84a0ce4d",
+        "rust_native": "9d7e884e84a0ce4d",
+        "c99_native": "9d7e884e84a0ce4d"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_013",
+      "trace_length": 9,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "POST_PASS:c1",
+        "RETURN:54",
+        "POST_PASS:c1",
+        "RETURN:54"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "44dbfdfd8b0a064a",
+        "typescript": "44dbfdfd8b0a064a",
+        "rust_native": "44dbfdfd8b0a064a",
+        "c99_native": "44dbfdfd8b0a064a"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_014",
+      "trace_length": 3,
+      "trace_events": [
+        "ENTER:fn_1",
+        "EFFECT_LEAK:Pure_calls_IO",
+        "ABORT:EFFECT_LEAK"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "ca877ea2a86903a8",
+        "typescript": "ca877ea2a86903a8",
+        "rust_native": "ca877ea2a86903a8",
+        "c99_native": "ca877ea2a86903a8"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_015",
+      "trace_length": 7,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "POST_PASS:c0",
+        "RETURN:60",
+        "RETURN:60"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "697f26a04be9434b",
+        "typescript": "697f26a04be9434b",
+        "rust_native": "697f26a04be9434b",
+        "c99_native": "697f26a04be9434b"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_016",
+      "trace_length": 3,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_FAIL:c0",
+        "ABORT:PRECONDITION_VIOLATED"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "9d7e884e84a0ce4d",
+        "typescript": "9d7e884e84a0ce4d",
+        "rust_native": "9d7e884e84a0ce4d",
+        "c99_native": "9d7e884e84a0ce4d"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_017",
+      "trace_length": 8,
+      "trace_events": [
+        "ENTER:fn_1",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "POST_PASS:c1",
+        "RETURN:66",
+        "POST_PASS:c0",
+        "RETURN:66"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "dd482e0657e067fd",
+        "typescript": "dd482e0657e067fd",
+        "rust_native": "dd482e0657e067fd",
+        "c99_native": "dd482e0657e067fd"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_018",
+      "trace_length": 8,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "POST_PASS:c0",
+        "RETURN:69",
+        "POST_PASS:c1",
+        "RETURN:69"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "fb7af5835a9d2b5d",
+        "typescript": "fb7af5835a9d2b5d",
+        "rust_native": "fb7af5835a9d2b5d",
+        "c99_native": "fb7af5835a9d2b5d"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_019",
+      "trace_length": 7,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "RETURN:72",
+        "POST_PASS:c1",
+        "RETURN:72"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "0c61263d09bb1fd2",
+        "typescript": "0c61263d09bb1fd2",
+        "rust_native": "0c61263d09bb1fd2",
+        "c99_native": "0c61263d09bb1fd2"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_020",
+      "trace_length": 3,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_FAIL:c0",
+        "ABORT:PRECONDITION_VIOLATED"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "9d7e884e84a0ce4d",
+        "typescript": "9d7e884e84a0ce4d",
+        "rust_native": "9d7e884e84a0ce4d",
+        "c99_native": "9d7e884e84a0ce4d"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_021",
+      "trace_length": 6,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "RETURN:78",
+        "RETURN:78"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "8f4d7ec78aebbeea",
+        "typescript": "8f4d7ec78aebbeea",
+        "rust_native": "8f4d7ec78aebbeea",
+        "c99_native": "8f4d7ec78aebbeea"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_022",
+      "trace_length": 8,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "RETURN:81",
+        "POST_PASS:c1",
+        "RETURN:81"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "64b5ad2578dbdda9",
+        "typescript": "64b5ad2578dbdda9",
+        "rust_native": "64b5ad2578dbdda9",
+        "c99_native": "64b5ad2578dbdda9"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_023",
+      "trace_length": 9,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "POST_PASS:c1",
+        "RETURN:84",
+        "POST_PASS:c1",
+        "RETURN:84"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "39871cec09f34e20",
+        "typescript": "39871cec09f34e20",
+        "rust_native": "39871cec09f34e20",
+        "c99_native": "39871cec09f34e20"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_024",
+      "trace_length": 3,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_FAIL:c0",
+        "ABORT:PRECONDITION_VIOLATED"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "9d7e884e84a0ce4d",
+        "typescript": "9d7e884e84a0ce4d",
+        "rust_native": "9d7e884e84a0ce4d",
+        "c99_native": "9d7e884e84a0ce4d"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_025",
+      "trace_length": 9,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "POST_PASS:c1",
+        "RETURN:90",
+        "POST_PASS:c1",
+        "RETURN:90"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "39296fd835fac39b",
+        "typescript": "39296fd835fac39b",
+        "rust_native": "39296fd835fac39b",
+        "c99_native": "39296fd835fac39b"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_026",
+      "trace_length": 8,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "POST_PASS:c0",
+        "RETURN:93",
+        "POST_PASS:c1",
+        "RETURN:93"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "01b3f69b906a89a8",
+        "typescript": "01b3f69b906a89a8",
+        "rust_native": "01b3f69b906a89a8",
+        "c99_native": "01b3f69b906a89a8"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_027",
+      "trace_length": 8,
+      "trace_events": [
+        "ENTER:fn_1",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "POST_PASS:c1",
+        "RETURN:96",
+        "POST_PASS:c0",
+        "RETURN:96"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "dde5084377d27f08",
+        "typescript": "dde5084377d27f08",
+        "rust_native": "dde5084377d27f08",
+        "c99_native": "dde5084377d27f08"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_028",
+      "trace_length": 3,
+      "trace_events": [
+        "ENTER:fn_1",
+        "EFFECT_LEAK:Pure_calls_HeapMut",
+        "ABORT:EFFECT_LEAK"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "842b9783dcdfb5a6",
+        "typescript": "842b9783dcdfb5a6",
+        "rust_native": "842b9783dcdfb5a6",
+        "c99_native": "842b9783dcdfb5a6"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_029",
+      "trace_length": 6,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "EFFECT_LEAK:Pure_calls_HeapMut",
+        "ABORT:EFFECT_LEAK"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "c2fe8b5b621a3647",
+        "typescript": "c2fe8b5b621a3647",
+        "rust_native": "c2fe8b5b621a3647",
+        "c99_native": "c2fe8b5b621a3647"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_030",
+      "trace_length": 3,
+      "trace_events": [
+        "ENTER:fn_1",
+        "EFFECT_LEAK:Pure_calls_HeapMut",
+        "ABORT:EFFECT_LEAK"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "842b9783dcdfb5a6",
+        "typescript": "842b9783dcdfb5a6",
+        "rust_native": "842b9783dcdfb5a6",
+        "c99_native": "842b9783dcdfb5a6"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_031",
+      "trace_length": 8,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "POST_PASS:c1",
+        "RETURN:108",
+        "RETURN:108"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "a44e6720ea9f3758",
+        "typescript": "a44e6720ea9f3758",
+        "rust_native": "a44e6720ea9f3758",
+        "c99_native": "a44e6720ea9f3758"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_032",
+      "trace_length": 3,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_FAIL:c0",
+        "ABORT:PRECONDITION_VIOLATED"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "9d7e884e84a0ce4d",
+        "typescript": "9d7e884e84a0ce4d",
+        "rust_native": "9d7e884e84a0ce4d",
+        "c99_native": "9d7e884e84a0ce4d"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_033",
+      "trace_length": 8,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "RETURN:114",
+        "POST_PASS:c1",
+        "RETURN:114"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "2773634490b2408e",
+        "typescript": "2773634490b2408e",
+        "rust_native": "2773634490b2408e",
+        "c99_native": "2773634490b2408e"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_034",
+      "trace_length": 9,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "POST_PASS:c1",
+        "RETURN:117",
+        "POST_PASS:c1",
+        "RETURN:117"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "7eceda89d07c69a1",
+        "typescript": "7eceda89d07c69a1",
+        "rust_native": "7eceda89d07c69a1",
+        "c99_native": "7eceda89d07c69a1"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_035",
+      "trace_length": 6,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "EFFECT_LEAK:Pure_calls_IO",
+        "ABORT:EFFECT_LEAK"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "fbfb4f3654f7ed5b",
+        "typescript": "fbfb4f3654f7ed5b",
+        "rust_native": "fbfb4f3654f7ed5b",
+        "c99_native": "fbfb4f3654f7ed5b"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_036",
+      "trace_length": 3,
+      "trace_events": [
+        "ENTER:fn_1",
+        "EFFECT_LEAK:Pure_calls_IO",
+        "ABORT:EFFECT_LEAK"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "ca877ea2a86903a8",
+        "typescript": "ca877ea2a86903a8",
+        "rust_native": "ca877ea2a86903a8",
+        "c99_native": "ca877ea2a86903a8"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_037",
+      "trace_length": 8,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "RETURN:126",
+        "POST_PASS:c1",
+        "RETURN:126"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "f92684620f7f4b83",
+        "typescript": "f92684620f7f4b83",
+        "rust_native": "f92684620f7f4b83",
+        "c99_native": "f92684620f7f4b83"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_038",
+      "trace_length": 8,
+      "trace_events": [
+        "ENTER:fn_1",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "POST_PASS:c1",
+        "RETURN:129",
+        "POST_PASS:c0",
+        "RETURN:129"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "4773897149e67377",
+        "typescript": "4773897149e67377",
+        "rust_native": "4773897149e67377",
+        "c99_native": "4773897149e67377"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_039",
+      "trace_length": 9,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "POST_PASS:c1",
+        "RETURN:132",
+        "POST_PASS:c1",
+        "RETURN:132"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "1f34099e4246ba49",
+        "typescript": "1f34099e4246ba49",
+        "rust_native": "1f34099e4246ba49",
+        "c99_native": "1f34099e4246ba49"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_040",
+      "trace_length": 3,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_FAIL:c0",
+        "ABORT:PRECONDITION_VIOLATED"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "9d7e884e84a0ce4d",
+        "typescript": "9d7e884e84a0ce4d",
+        "rust_native": "9d7e884e84a0ce4d",
+        "c99_native": "9d7e884e84a0ce4d"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_041",
+      "trace_length": 9,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "POST_PASS:c1",
+        "RETURN:138",
+        "POST_PASS:c1",
+        "RETURN:138"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "b9206feb42acd2f3",
+        "typescript": "b9206feb42acd2f3",
+        "rust_native": "b9206feb42acd2f3",
+        "c99_native": "b9206feb42acd2f3"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_042",
+      "trace_length": 7,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "RETURN:141",
+        "POST_PASS:c1",
+        "RETURN:141"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "63949ee81bceb2a6",
+        "typescript": "63949ee81bceb2a6",
+        "rust_native": "63949ee81bceb2a6",
+        "c99_native": "63949ee81bceb2a6"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_043",
+      "trace_length": 6,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "EFFECT_LEAK:Pure_calls_HeapMut",
+        "ABORT:EFFECT_LEAK"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "c2fe8b5b621a3647",
+        "typescript": "c2fe8b5b621a3647",
+        "rust_native": "c2fe8b5b621a3647",
+        "c99_native": "c2fe8b5b621a3647"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_044",
+      "trace_length": 3,
+      "trace_events": [
+        "ENTER:fn_1",
+        "EFFECT_LEAK:Pure_calls_HeapMut",
+        "ABORT:EFFECT_LEAK"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "842b9783dcdfb5a6",
+        "typescript": "842b9783dcdfb5a6",
+        "rust_native": "842b9783dcdfb5a6",
+        "c99_native": "842b9783dcdfb5a6"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_045",
+      "trace_length": 9,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "POST_PASS:c1",
+        "RETURN:150",
+        "POST_PASS:c1",
+        "RETURN:150"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "d134599a9c64ef0e",
+        "typescript": "d134599a9c64ef0e",
+        "rust_native": "d134599a9c64ef0e",
+        "c99_native": "d134599a9c64ef0e"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_046",
+      "trace_length": 6,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "EFFECT_LEAK:Pure_calls_IO",
+        "ABORT:EFFECT_LEAK"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "fbfb4f3654f7ed5b",
+        "typescript": "fbfb4f3654f7ed5b",
+        "rust_native": "fbfb4f3654f7ed5b",
+        "c99_native": "fbfb4f3654f7ed5b"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_047",
+      "trace_length": 6,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "EFFECT_LEAK:Pure_calls_HeapMut",
+        "ABORT:EFFECT_LEAK"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "c2fe8b5b621a3647",
+        "typescript": "c2fe8b5b621a3647",
+        "rust_native": "c2fe8b5b621a3647",
+        "c99_native": "c2fe8b5b621a3647"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_048",
+      "trace_length": 3,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_FAIL:c0",
+        "ABORT:PRECONDITION_VIOLATED"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "9d7e884e84a0ce4d",
+        "typescript": "9d7e884e84a0ce4d",
+        "rust_native": "9d7e884e84a0ce4d",
+        "c99_native": "9d7e884e84a0ce4d"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_049",
+      "trace_length": 9,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "POST_PASS:c1",
+        "RETURN:162",
+        "POST_PASS:c1",
+        "RETURN:162"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "007c711c61fb7ffb",
+        "typescript": "007c711c61fb7ffb",
+        "rust_native": "007c711c61fb7ffb",
+        "c99_native": "007c711c61fb7ffb"
+      },
+      "parity": true
+    },
+    {
+      "prog_id": "gen_prog_050",
+      "trace_length": 9,
+      "trace_events": [
+        "ENTER:fn_1",
+        "PRE_PASS:c0",
+        "CALL:fn_2",
+        "ENTER:fn_2",
+        "PRE_PASS:c0",
+        "POST_PASS:c1",
+        "RETURN:165",
+        "POST_PASS:c1",
+        "RETURN:165"
+      ],
+      "trace_hashes": {
+        "reference_interpreter": "63d1296611cce363",
+        "typescript": "63d1296611cce363",
+        "rust_native": "63d1296611cce363",
+        "c99_native": "63d1296611cce363"
+      },
+      "parity": true
+    }
+  ]
+}

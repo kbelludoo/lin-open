@@ -1,5 +1,29 @@
-@RULEL:INTEL_CLONE_LIN:1.4.0
-~R{.m=meta .g=gate .c=compare}
-.m{slug=chalk lang=LIN status=PASS done=true published=true source="https://github.com/chalk/chalk.git" url="" nucleus=js!ts!py!go!rust!c!java}
-.g{publish=full_repo_100_hash_eq skip_eq_fail=true behavior_eq=1.0 suite_rate=1 pass=17 fail=0 skip=0 files_ok=5 files_total=5 stub_not_suite=true c_skip=ok_iff_gcc_absent_after_retry}
-.c{pass="source/index.js:createChalk!source/index.js:get!source/index.js:set!source/index.js:constructor!source/index.js:assertValidLevel!source/index.js:applyOptions!source/index.js:chalkFactory!source/index.js:createModelConverters!source/index.js:createStyler!source/index.js:createBuilder!source/index.js:applyStyle!source/utilities.js:stringReplaceAll!source/utilities.js:stringEncaseCRLFWithFirstIndex!benchmark.js:type_only!examples/rainbow.js:rainbow!examples/rainbow.js:animateString!examples/screenshot.js:type_only" fail="" multi="js:P15/S0/F0 ts:P15/S0/F0 py:P15/S0/F0 go:P15/S0/F0 rust:P15/S0/F0 c:P15/S0/F0 java:P15/S0/F0" stub="EXPERIMENTAL_NOT_PASS cs,lua,elixir,crystal,kotlin,hcl,julia,scala,haskell,prolog,zig,nim,asm no_toolchain_no_oracle" learn=none improve=loop_mode_no_improve note="DONE real-nucleus 7-lang clone-lin-chalk: p=17 multi=js:P15/S0/F0 ts:P15/S0/F0 py:P15/S0/F0 go:P15/S0/F0 rust:P15/S0/F0 c:P15/S0/F0 java:P15/S0/F0 ; size lin/src=0.3466; tok src=3112 lin=1079"}
+@RULEL:INTEL_CLONE_LIN:1.1.0
+^slug="chalk"
+^lang="LIN"
+^rule="semantic_hash_exact_like_P200"
+^no_soft_match=true
+^status="PASS"
+^done=true
+^published=true
+^suite_rate=1
+^suite_total=12
+^source="https://github.com/chalk/chalk.git"
+^clone_lin_url="https://github.com/kbelludoo/clone-lin-chalk"
+^clone_lin_local="C:/Users/k/Documents/lia/.clone_lin_publish/clone-lin-chalk"
+^temp_cleaned=true
+^pass=12 ^fail=0 ^skip=0
+^behavior_eq_required=1.0
+^publish_gate="suite_rate==1.0"
+
+@COMPARISON {
+  pass_names: ["createChalk","styleFunction","assertValidLevel","chalkFactory","createModelConverters","ansi","ansi256","createStyler","createBuilder","applyStyle","stringReplaceAll","stringEncaseCRLFWithFirstIndex"]
+  fail_names: []
+  skip_names: []
+  learn: "none"
+  improve_lin: "positive_transfer:ok×12"
+}
+
+@NOTE_PT {
+  DONE 100% clone-lin-chalk: p=12 suite_rate=1.0; improve=positive_transfer:ok×12
+}

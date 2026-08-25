@@ -1,0 +1,17 @@
+@RULEL:LIN_CANDIDATE:1.0.0
+~R{.m=meta .h=harvest .f=forbid}
+.m{from_clone=clone-lin-ecc stage=LEARN_NEW_LANG}
+.f{mutate_nucleus=true}
+.h{fail{target=go fn=reviewPrompt emit=ok run=FAIL reason="/tmp/lin_multi_ecc_N4ssMA/go/linworkflowsorchreviewworkflowlin.go:154:111: syntax error: unexpected comma; expected ]
+"} fail{target=go fn=verifyPrompt emit=ok run=FAIL reason="/tmp/lin_multi_ecc_N4ssMA/go/linworkflowsorchreviewworkflowlin.go:154:111: syntax error: unexpected comma; expected ]
+"} fail{target=go fn=isBlocking emit=ok run=FAIL reason="/tmp/lin_multi_ecc_N4ssMA/go/linworkflowsorchreviewworkflowlin.go:154:111: syntax error: unexpected comma; expected ]
+"} fail{target=go fn=normalize emit=ok run=FAIL reason="/tmp/lin_multi_ecc_N4ssMA/go/linworkflowsorchreviewworkflowlin.go:154:111: syntax error: unexpected comma; expected ]
+"} fail{target=rust fn=reviewPrompt emit=ok run=FAIL reason="error: unexpected closing delimiter: `}`
+  --> /tmp/lin_multi_ecc_N4ssMA/rust/linworkflowsorchreviewworkflowlin.rs:51:1
+"} fail{target=rust fn=verifyPrompt emit=ok run=FAIL reason="error: unexpected closing delimiter: `}`
+  --> /tmp/lin_multi_ecc_N4ssMA/rust/linworkflowsorchreviewworkflowlin.rs:51:1
+"} fail{target=rust fn=isBlocking emit=ok run=FAIL reason="error: unexpected closing delimiter: `}`
+  --> /tmp/lin_multi_ecc_N4ssMA/rust/linworkflowsorchreviewworkflowlin.rs:51:1
+"} fail{target=rust fn=normalize emit=ok run=FAIL reason="error: unexpected closing delimiter: `}`
+  --> /tmp/lin_multi_ecc_N4ssMA/rust/linworkflowsorchreviewworkflowlin.rs:51:1
+"} fix=emit_peripheral}

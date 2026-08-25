@@ -1,5 +1,35 @@
-@RULEL:INTEL_CLONE_LIN:1.4.0
-~R{.m=meta .g=gate .c=compare}
-.m{slug=left-pad lang=LIN status=PASS done=true published=true source="https://github.com/left-pad/left-pad.git" url="" nucleus=js!ts!py!go!rust!c!java}
-.g{publish=full_repo_100_hash_eq skip_eq_fail=true behavior_eq=1.0 suite_rate=1 pass=1 fail=0 skip=0 files_ok=1 files_total=1 stub_not_suite=true c_skip=ok_iff_gcc_absent_after_retry}
-.c{pass="index.js:leftPad" fail="" multi="js:P1/S0/F0 ts:P1/S0/F0 py:P1/S0/F0 go:P1/S0/F0 rust:P1/S0/F0 c:P0/S1/F0 java:P1/S0/F0" stub="EXPERIMENTAL_NOT_PASS cs,lua,elixir,crystal,kotlin,hcl,julia,scala,haskell,prolog,zig,nim,asm no_toolchain_no_oracle" learn=none improve=loop_mode_no_improve note="DONE real-nucleus 7-lang clone-lin-left-pad: p=1 multi=js:P1/S0/F0 ts:P1/S0/F0 py:P1/S0/F0 go:P1/S0/F0 rust:P1/S0/F0 c:P0/S1/F0 java:P1/S0/F0; size lin/src=0.2889; tok src=296 lin=86"}
+@RULEL:INTEL_CLONE_LIN:1.2.0
+^slug="left-pad"
+^lang="LIN"
+^rule="semantic_hash_exact_like_P200"
+^no_soft_match=true
+^status="PASS"
+^done=true
+^published=true
+^suite_rate=1
+^suite_total=1
+^source="https://github.com/left-pad/left-pad.git"
+^clone_lin_url=""
+^clone_lin_local="C:/Users/k/Documents/lia/.clone_lin_publish/clone-lin-left-pad"
+^temp_cleaned=true
+^pass=1 ^fail=0 ^skip=0
+^behavior_eq_required=1.0
+^publish_gate="suite_rate==1.0_JS"
+^multi="js:P1/S0/F0 ts:P1/S0/F0 py:P1/S0/F0 go:P0/S0/F1 rust:P0/S0/F1"
+^learn_lang="H_NEW_LANG_left-pad_go_rust_mss6w793"
+
+@MULTI_TARGET {
+  js:P1/S0/F0 ts:P1/S0/F0 py:P1/S0/F0 go:P0/S0/F1 rust:P0/S0/F1
+}
+
+@COMPARISON {
+  pass_names: ["leftPad"]
+  fail_names: []
+  skip_names: []
+  learn: "none"
+  improve_lin: "positive_transfer:ok×1"
+}
+
+@NOTE_PT {
+  DONE 100% clone-lin-left-pad: p=1 suite_rate=1.0 JS; multi=js:P1/S0/F0 ts:P1/S0/F0 py:P1/S0/F0 go:P0/S0/F1 rust:P0/S0/F1; improve=positive_transfer:ok×1
+}

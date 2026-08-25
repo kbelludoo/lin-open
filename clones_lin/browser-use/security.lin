@@ -1,0 +1,76 @@
+@LIN:L1c:1.0
+^schema_once ^lossy=true ^ops=browser_security
+~G{?=if #=for ^=ret :else}
+~effects{pure}
+
+// ==========================================
+// 2. URL & Domain Security Sandbox in LIN
+// ==========================================
+
+!extractHostname(urlStr){
+  s=String(urlStr||"").trim();
+  ?(s=="") { ^"" };
+  // Remove protocol
+  idx=s.indexOf("://");
+  clean=?(idx!=-1){s.slice(idx+3)}:s;
+  // Remove path and query
+  slashIdx=clean.indexOf("/");
+  host=?(slashIdx!=-1){clean.slice(0,slashIdx)}:clean;
+  colonIdx=host.indexOf(":");
+  h=?(colonIdx!=-1){host.slice(0,colonIdx)}:host;
+  ^h.toLowerCase()
+}
+
+!matchDomainPattern(hostname,pattern){
+  h=String(hostname||"").toLowerCase();
+  p=String(pattern||"").toLowerCase().trim();
+  ?(p=="*"||p==h){ ^true };
+  // Handle wildcard like *.google.com
+  ?(p.startsWith("*.")){
+    base=p.slice(2);
+    ?(h==base||h.endsWith("."+base)){ ^true }
+  };
+  // Handle protocol wildcard like http*://
+  ?(p.startsWith("http*://")||p.startsWith("https://")||p.startsWith("http://")){
+    patHost=extractHostname(p);
+    ^(h==patHost||h.endsWith("."+patHost))
+  };
+  ^(h==p)
+}
+
+!isDomainAllowed(targetUrl,allowedDomains,prohibitedDomains){
+  h=extractHostname(targetUrl);
+  ?(h=="about:blank"||h==""){ ^true };
+  
+  // Check prohibited domains first
+  prohib=prohibitedDomains||[];
+  #(i=0;i<prohib.length;i++){
+    ?(matchDomainPattern(h,prohib[i])){
+      ^false
+    }
+  };
+
+  // If no allowedDomains specified, allow all non-prohibited
+  allow=allowedDomains||[];
+  ?(allow.length==0){ ^true };
+
+  // If allowedDomains present, must match at least one
+  #(j=0;j<allow.length;j++){
+    ?(matchDomainPattern(h,allow[j])){
+      ^true
+    }
+  };
+
+  ^false
+}
+
+!sanitizeUrl(rawUrl){
+  u=String(rawUrl||"").trim();
+  ?(u==""){ ^"about:blank" };
+  ?(u.startsWith("http://")||u.startsWith("https://")||u.startsWith("file://")||u.startsWith("about:")){
+    ^u
+  };
+  ^("https://"+u)
+}
+
+=ex{extractHostname,matchDomainPattern,isDomainAllowed,sanitizeUrl}

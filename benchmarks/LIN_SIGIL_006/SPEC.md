@@ -1,0 +1,47 @@
+# LIN-SIGIL-006: True Generative Conformance & Semantic Trace Equivalence
+
+## 1. Object & Research Standard
+Following `LIN-SIGIL-005`, this benchmark eliminates fixed template recycling, early runner effect intercepts, and raw JS evaluation:
+> **Do generic code generators across TypeScript, Rust (`rustc -O`), and C99 (`gcc -O3`) independently compile combinatorially synthesized multi-function ASTs (with random call graphs, contracts, and effects) into executables that reproduce 100% identical step-by-step Semantic Execution Traces against an independent Reference AST Interpreter?**
+
+---
+
+## 2. Experimental Architecture
+
+```text
+                  Combinatorial AST Synthesizer
+              (Random DAG, 2-6 Functions, Effects, Contracts)
+                               │
+            ┌──────────────────┼──────────────────┐
+            ▼                  ▼                  ▼
+     Reference AST      Generic TS Emit    Generic Rust Emit   Generic C99 Emit
+      Interpreter       (with Trace/Eff)   (with Trace/Eff)    (with Trace/Eff)
+            │                  │                  │                   │
+            ▼                  ▼                  ▼                   ▼
+       LIN Trace           TS Trace           Rust Trace          C99 Trace
+            │                  │                  │                   │
+            └──────────────────┴─────────┬────────┴───────────────────┘
+                                         ▼
+                         Strict Trace Equivalence Gate:
+            Trace(LIN) == Trace(TS) == Trace(Rust) == Trace(C99)
+```
+
+---
+
+## 3. Semantic Execution Trace Protocol
+Every step in execution emits a structured trace event:
+1. `ENTER:<fn_name>`
+2. `PRE_PASS:<contract_id>` or `PRE_FAIL:<contract_id>`
+3. `EFFECT_CHECK:<caller_eff>-><callee_eff>` (`PASS` or `LEAK`)
+4. `CALL:<callee_name>`
+5. `POST_PASS:<contract_id>` or `POST_FAIL:<contract_id>`
+6. `RETURN:<value>` or `ABORT:<reason>`
+
+---
+
+## 4. Conformance Gates (G1–G5)
+- **G1 (True Generative Synthesis):** 50 distinct programs generated with randomized DAG topology, effects, and contracts.
+- **G2 (Independent Backend Effect Verification):** Each backend independently analyzes and enforces effect isolation in generated code.
+- **G3 (Full Semantic Trace Equivalence):** 100% trace match between LIN Reference Interpreter, TS, Rust, and C99.
+- **G4 (Zero Behavioral Drift):** 0 divergences across all traces.
+- **G5 (Compile-Time Cleanliness):** 100% clean compilation in Node.js, `rustc -O`, and `gcc -O3`.

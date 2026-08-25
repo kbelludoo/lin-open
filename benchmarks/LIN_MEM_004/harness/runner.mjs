@@ -1,0 +1,91 @@
+import fs from "fs";
+import path from "path";
+import { execFileSync } from "child_process";
+import { generateDataset } from "../../LIN_MEM_001/dataset/generate.mjs";
+import { generateWorkload } from "../../LIN_MEM_001/workload/generate.mjs";
+import { GoldenOracle } from "../../LIN_MEM_001/oracle/oracle.mjs";
+import { validateBackendResults } from "../../LIN_MEM_001/harness/validation.mjs";
+
+const ROOT_DIR = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const RUST_BIN = path.join(ROOT_DIR, "backends/rust_engine/target/release/rust_engine_v4");
+
+function runRustBackend(mode, datasetFile, workloadFile) {
+  const tmpOut = path.join("/tmp", `rust_v4_${mode}_out.json`);
+  execFileSync(RUST_BIN, [mode, datasetFile, workloadFile, tmpOut]);
+  const data = JSON.parse(fs.readFileSync(tmpOut, "utf-8"));
+  try { fs.unlinkSync(tmpOut); } catch (e) {}
+  return data;
+}
+
+export async function runSuite() {
+  console.log("================================================================================");
+  console.log("    LIN-MEM-004: 100% FULL-SUBSTRATE CANONICAL ENGINE (100K -> 500K -> 1M)      ");
+  console.log("================================================================================");
+
+  const scales = [100000, 500000, 1000000];
+  const regimes = ["shared", "unique"];
+  const opCount = 20000;
+  const seed = 424242;
+
+  const results = [];
+
+  for (const scale of scales) {
+    for (const regime of regimes) {
+      console.log(`\n>>> [SCALE: ${scale} | REGIME: ${regime.toUpperCase()}]`);
+
+      const dataset = generateDataset({ scale, regime, seed });
+      const workload = generateWorkload({ dataset, opCount, seed });
+
+      const datasetPath = path.join("/tmp", `d4_${scale}_${regime}.json`);
+      const workloadPath = path.join("/tmp", `w4_${scale}_${regime}.json`);
+      fs.writeFileSync(datasetPath, JSON.stringify(dataset));
+      fs.writeFileSync(workloadPath, JSON.stringify(workload));
+
+      console.log("  -> Verifying Golden Oracle parity...");
+      const oracle = new GoldenOracle(dataset);
+      const oracleResults = oracle.runAll(workload);
+
+      console.log("  -> Running Rust HashMap (compound tuple index)...");
+      const rustHash = runRustBackend("hashmap", datasetPath, workloadPath);
+      const vHash = validateBackendResults("rust_hashmap", oracleResults, rustHash.results);
+      delete rustHash.results;
+
+      console.log("  -> Running Rust Arena (interned ID compound index)...");
+      const rustArena = runRustBackend("arena_interned", datasetPath, workloadPath);
+      const vArena = validateBackendResults("rust_arena", oracleResults, rustArena.results);
+      delete rustArena.results;
+
+      console.log("  -> Running LIN Semantic Engine V4 (100% Full-Substrate Canonical DAG)...");
+      const linEngine = runRustBackend("lin_semantic_engine", datasetPath, workloadPath);
+      const vLin = validateBackendResults("lin_semantic_engine", oracleResults, linEngine.results);
+      delete linEngine.results;
+
+      console.log(`     [Validation] Rust HashMap: ${vHash.passed ? "PASS" : "FAIL"} | Arena: ${vArena.passed ? "PASS" : "FAIL"} | LIN Engine V4: ${vLin.passed ? "PASS" : "FAIL"}`);
+      console.log(`     [Density] Rust HashMap: ${(rustHash.resident_heap_bytes / 1024 / 1024).toFixed(2)} MB (${rustHash.bytes_per_entity.toFixed(1)} B/ent)`);
+      console.log(`     [Density] LIN Engine:   ${(linEngine.resident_heap_bytes / 1024 / 1024).toFixed(2)} MB (${linEngine.bytes_per_entity.toFixed(1)} B/ent) [DAG Nodes: ${linEngine.unique_dag_nodes}]`);
+      console.log(`     [Throughput L3] Rust HashMap: ${(rustHash.L3.ops_per_sec / 1e6).toFixed(2)}M ops/s | LIN Engine V4: ${(linEngine.L3.ops_per_sec / 1e6).toFixed(2)}M ops/s`);
+
+      results.push({
+        scale,
+        regime,
+        validations: {
+          rust_hashmap: vHash,
+          rust_arena: vArena,
+          lin_semantic_engine: vLin
+        },
+        rust_hashmap: rustHash,
+        rust_arena: rustArena,
+        lin_semantic_engine: linEngine
+      });
+
+      try { fs.unlinkSync(datasetPath); } catch (e) {}
+      try { fs.unlinkSync(workloadPath); } catch (e) {}
+    }
+  }
+
+  const outPath = path.join(ROOT_DIR, "results/LIN_MEM_004_FULL_SUBSTRATE_SUMMARY.json");
+  fs.writeFileSync(outPath, JSON.stringify(results, null, 2));
+  console.log(`\n[+] LIN-MEM-004 Complete! Saved to ${outPath}`);
+}
+
+runSuite();

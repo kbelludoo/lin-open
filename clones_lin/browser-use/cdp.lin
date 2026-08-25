@@ -1,0 +1,116 @@
+@LIN:L1c:1.0
+^schema_once ^lossy=true ^ops=browser_cdp
+~G{?=if #=for ^=ret :else}
+~effects{pure,io,async}
+
+// ==========================================
+// 3. Chrome DevTools Protocol (CDP) in LIN
+// ==========================================
+
+!formatCdpRequest(msgId,method,params,sessionId){
+  req=({
+    id: msgId|0,
+    method: String(method||""),
+    params: params||{}
+  });
+  ?(sessionId){ req.sessionId=sessionId };
+  ^req
+}
+
+!parseCdpResponse(rawJson){
+  res=?(typeof rawJson=="string"){JSON.parse(rawJson)}:rawJson;
+  ?(res.error){
+    ^({
+      ok: false,
+      id: res.id,
+      error: res.error.message||"CDP_ERROR",
+      code: res.error.code||-1
+    })
+  };
+  ^({
+    ok: true,
+    id: res.id,
+    result: res.result||{},
+    sessionId: res.sessionId||null
+  })
+}
+
+// CDP Command Payloads
+!cdpNavigate(url){
+  ^({ method: "Page.navigate", params: { url: String(url||"") } })
+}
+
+!cdpCaptureScreenshot(format,quality){
+  ^({
+    method: "Page.captureScreenshot",
+    params: {
+      format: format||"png",
+      quality: quality||80,
+      fromSurface: true
+    }
+  })
+}
+
+!cdpEvaluate(expression,awaitPromise){
+  ^({
+    method: "Runtime.evaluate",
+    params: {
+      expression: String(expression||""),
+      returnByValue: true,
+      awaitPromise: awaitPromise!==false
+    }
+  })
+}
+
+!cdpDispatchMouseEvent(eventType,x,y,button,clickCount){
+  ^({
+    method: "Input.dispatchMouseEvent",
+    params: {
+      type: eventType||"mousePressed",
+      x: x|0,
+      y: y|0,
+      button: button||"left",
+      clickCount: clickCount||1
+    }
+  })
+}
+
+!cdpDispatchKeyEvent(eventType,key,code,text){
+  ^({
+    method: "Input.dispatchKeyEvent",
+    params: {
+      type: eventType||"keyDown",
+      key: key||"",
+      code: code||"",
+      text: text||""
+    }
+  })
+}
+
+!cdpGetDocument(depth){
+  ^({
+    method: "DOM.getDocument",
+    params: { depth: depth!==undefined?depth:-1, pierce: true }
+  })
+}
+
+!cdpGetLayoutMetrics(){
+  ^({ method: "Page.getLayoutMetrics", params: {} })
+}
+
+!cdpCreateTarget(url,width,height){
+  ^({
+    method: "Target.createTarget",
+    params: {
+      url: url||"about:blank",
+      width: width||1280,
+      height: height||800
+    }
+  })
+}
+
+!cdpCloseTarget(targetId){
+  ^({ method: "Target.closeTarget", params: { targetId: String(targetId||"") } })
+}
+
+=ex{formatCdpRequest,parseCdpResponse,cdpNavigate,cdpCaptureScreenshot,cdpEvaluate,cdpDispatchMouseEvent,cdpDispatchKeyEvent,cdpGetDocument,cdpGetLayoutMetrics,cdpCreateTarget,cdpCloseTarget}

@@ -1,0 +1,216 @@
+import fs from "fs";
+import path from "path";
+import { execFileSync } from "child_process";
+import { generateDataset } from "../dataset/generate.mjs";
+import { generateWorkload } from "../workload/generate.mjs";
+import { GoldenOracle } from "../oracle/oracle.mjs";
+import { NodeMapBackend } from "../backends/node_map.mjs";
+import { SqliteMemoryBackend } from "../backends/sqlite_memory.mjs";
+import { validateBackendResults } from "./validation.mjs";
+import { computePercentiles, computeDensityMetrics } from "./metrics.mjs";
+import { measureMemoryDelta } from "./memory.mjs";
+
+const ROOT_DIR = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const RUST_BIN = path.join(ROOT_DIR, "backends/rust_engine/target/release/rust_engine");
+
+async function runNodeBackend(BackendClass, backendName, dataset, workload) {
+  // Cold load measurement
+  const loadStart = performance.now();
+  let backend;
+  const memLoad = measureMemoryDelta(() => {
+    backend = new BackendClass();
+    backend.load(dataset);
+  });
+  const coldLoadMs = performance.now() - loadStart;
+
+  // Warmup
+  for (let i = 0; i < Math.min(500, workload.L0.length); i++) {
+    backend.executeL0(workload.L0[i]);
+  }
+
+  // Execute L0
+  const l0Latencies = [];
+  const l0Results = [];
+  const l0Start = performance.now();
+  for (const op of workload.L0) {
+    const t0 = process.hrtime.bigint();
+    const res = backend.executeL0(op);
+    const dt = Number(process.hrtime.bigint() - t0);
+    l0Latencies.push(dt);
+    l0Results.push(res);
+  }
+  const l0DurationS = (performance.now() - l0Start) / 1000;
+  const l0OpsSec = workload.L0.length / l0DurationS;
+
+  // Execute L1
+  const l1Latencies = [];
+  const l1Results = [];
+  const l1Start = performance.now();
+  for (const op of workload.L1) {
+    const t0 = process.hrtime.bigint();
+    const res = backend.executeL1(op);
+    const dt = Number(process.hrtime.bigint() - t0);
+    l1Latencies.push(dt);
+    l1Results.push(res);
+  }
+  const l1DurationS = (performance.now() - l1Start) / 1000;
+  const l1OpsSec = workload.L1.length / l1DurationS;
+
+  // Execute L2
+  const l2Latencies = [];
+  const l2Results = [];
+  const l2Start = performance.now();
+  for (const op of workload.L2) {
+    const t0 = process.hrtime.bigint();
+    const res = backend.executeL2(op);
+    const dt = Number(process.hrtime.bigint() - t0);
+    l2Latencies.push(dt);
+    l2Results.push(res);
+  }
+  const l2DurationS = (performance.now() - l2Start) / 1000;
+  const l2OpsSec = workload.L2.length / l2DurationS;
+
+  // Execute L3
+  const l3Latencies = [];
+  const l3Results = [];
+  const l3Start = performance.now();
+  for (const op of workload.L3) {
+    const t0 = process.hrtime.bigint();
+    const res = backend.executeL3(op);
+    const dt = Number(process.hrtime.bigint() - t0);
+    l3Latencies.push(dt);
+    l3Results.push(res);
+  }
+  const l3DurationS = (performance.now() - l3Start) / 1000;
+  const l3OpsSec = workload.L3.length / l3DurationS;
+
+  const totalEntities = dataset.accounts.length + dataset.policies.length + dataset.users.length + dataset.resources.length;
+  const totalRelations = dataset.users.length * 2 + dataset.resources.length * 2;
+  const residentMemoryBytes = memLoad.deltaRssBytes || memLoad.deltaHeapBytes;
+
+  if (backend.close) {
+    backend.close();
+  }
+
+  return {
+    backend: backendName,
+    cold_load_ms: coldLoadMs,
+    resident_memory_bytes: residentMemoryBytes,
+    total_entities: totalEntities,
+    total_relations: totalRelations,
+    bytes_per_entity: residentMemoryBytes / totalEntities,
+    bytes_per_relation: residentMemoryBytes / totalRelations,
+    L0: { ops_per_sec: l0OpsSec, ...computePercentiles(l0Latencies) },
+    L1: { ops_per_sec: l1OpsSec, ...computePercentiles(l1Latencies) },
+    L2: { ops_per_sec: l2OpsSec, ...computePercentiles(l2Latencies) },
+    L3: { ops_per_sec: l3OpsSec, ...computePercentiles(l3Latencies) },
+    results: {
+      L0: l0Results,
+      L1: l1Results,
+      L2: l2Results,
+      L3: l3Results
+    }
+  };
+}
+
+function runRustBackend(mode, datasetFile, workloadFile) {
+  const tmpOut = path.join("/tmp", `rust_${mode}_out.json`);
+  execFileSync(RUST_BIN, [mode, datasetFile, workloadFile, tmpOut]);
+  const data = JSON.parse(fs.readFileSync(tmpOut, "utf-8"));
+  try { fs.unlinkSync(tmpOut); } catch (e) {}
+  return data;
+}
+
+export async function runBenchmarkSuite({ scales = [10000], regimes = ["shared", "unique"], opCount = 5000, seed = 424242 }) {
+  console.log("================================================================================");
+  console.log("               LIN-MEM-001: SEMANTIC MEMORY ENGINE BENCHMARK                     ");
+  console.log("================================================================================");
+
+  const suiteResults = [];
+
+  for (const scale of scales) {
+    for (const regime of regimes) {
+      console.log(`\n>>> EXECUTING RUN: Scale=${scale}, Regime=${regime}, Ops=${opCount}, Seed=${seed}`);
+      
+      const dataset = generateDataset({ scale, regime, seed });
+      const workload = generateWorkload({ dataset, opCount, seed });
+
+      // Save dataset & workload to temp for Rust processes
+      const datasetPath = path.join("/tmp", `dataset_${scale}_${regime}.json`);
+      const workloadPath = path.join("/tmp", `workload_${scale}_${regime}.json`);
+      fs.writeFileSync(datasetPath, JSON.stringify(dataset));
+      fs.writeFileSync(workloadPath, JSON.stringify(workload));
+
+      console.log("  [1/6] Running Golden Oracle reference...");
+      const oracle = new GoldenOracle(dataset);
+      const oracleResults = oracle.runAll(workload);
+
+      console.log("  [2/6] Running Node Map backend...");
+      const nodeMapData = await runNodeBackend(NodeMapBackend, "node_map", dataset, workload);
+      const vNodeMap = validateBackendResults("node_map", oracleResults, nodeMapData.results);
+      console.log(`        -> Node Map Correctness: ${vNodeMap.passed ? "PASS (100%)" : "FAIL"}`);
+
+      console.log("  [3/6] Running SQLite :memory: backend...");
+      const sqliteData = await runNodeBackend(SqliteMemoryBackend, "sqlite_memory", dataset, workload);
+      const vSqlite = validateBackendResults("sqlite_memory", oracleResults, sqliteData.results);
+      console.log(`        -> SQLite Correctness: ${vSqlite.passed ? "PASS (100%)" : "FAIL"}`);
+
+      console.log("  [4/6] Running Rust HashMap backend...");
+      const rustHashMapData = runRustBackend("hashmap", datasetPath, workloadPath);
+      const vRustHash = validateBackendResults("rust_hashmap", oracleResults, rustHashMapData.results);
+      console.log(`        -> Rust HashMap Correctness: ${vRustHash.passed ? "PASS (100%)" : "FAIL"}`);
+
+      console.log("  [5/6] Running Rust Arena + String Interning backend...");
+      const rustArenaData = runRustBackend("arena_interned", datasetPath, workloadPath);
+      const vRustArena = validateBackendResults("rust_arena_interned", oracleResults, rustArenaData.results);
+      console.log(`        -> Rust Arena Correctness: ${vRustArena.passed ? "PASS (100%)" : "FAIL"}`);
+
+      console.log("  [6/6] Running LIN Semantic Engine (HashCons DAG) backend...");
+      const linData = runRustBackend("lin_semantic_engine", datasetPath, workloadPath);
+      const vLin = validateBackendResults("lin_semantic_engine", oracleResults, linData.results);
+      console.log(`        -> LIN Semantic Engine Correctness: ${vLin.passed ? "PASS (100%)" : "FAIL"}`);
+
+      // Strip large raw results arrays from final summary
+      delete nodeMapData.results;
+      delete sqliteData.results;
+      delete rustHashMapData.results;
+      delete rustArenaData.results;
+      delete linData.results;
+
+      const runSummary = {
+        meta: { scale, regime, opCount, seed },
+        validations: {
+          node_map: vNodeMap,
+          sqlite_memory: vSqlite,
+          rust_hashmap: vRustHash,
+          rust_arena_interned: vRustArena,
+          lin_semantic_engine: vLin
+        },
+        backends: {
+          node_map: nodeMapData,
+          sqlite_memory: sqliteData,
+          rust_hashmap: rustHashMapData,
+          rust_arena_interned: rustArenaData,
+          lin_semantic_engine: linData
+        }
+      };
+
+      suiteResults.push(runSummary);
+
+      // Clean up temp files
+      try { fs.unlinkSync(datasetPath); } catch (e) {}
+      try { fs.unlinkSync(workloadPath); } catch (e) {}
+    }
+  }
+
+  const outSummaryPath = path.join(ROOT_DIR, "results/LIN_MEM_001_SUMMARY.json");
+  fs.writeFileSync(outSummaryPath, JSON.stringify(suiteResults, null, 2));
+  console.log(`\n[+] Suite complete! Full results saved to: ${outSummaryPath}`);
+  return suiteResults;
+}
+
+if (process.argv[1] && process.argv[1].endsWith("runner.mjs")) {
+  const scale = parseInt(process.argv[2] || "50000", 10);
+  const opCount = parseInt(process.argv[3] || "10000", 10);
+  runBenchmarkSuite({ scales: [scale], regimes: ["shared", "unique"], opCount });
+}

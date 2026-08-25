@@ -1,0 +1,219 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { AdversarialAgent } from '../agent/adversarial_agent.mjs';
+
+const __filename = fileURLToPath(import.meta.url);
+const ROOT = path.resolve(path.dirname(__filename), '..');
+const TEMPLATE_DIR = path.resolve(ROOT, '../LIN_REAL_AGENT_002/repo_template');
+const WORK_DIR = path.join(ROOT, 'repo_work');
+const TASKS_FILE = path.join(ROOT, 'dataset/adversarial_tasks.json');
+
+function setupWorkspace() {
+  fs.rmSync(WORK_DIR, { recursive: true, force: true });
+  fs.cpSync(TEMPLATE_DIR, WORK_DIR, { recursive: true });
+}
+
+function initializeSubstrate(agent) {
+  const sub = agent.substrate;
+
+  // 1. Register Symbols & Modules with % Contracts and * Effects
+  sub.registerSymbol({
+    name: 'parseVersion',
+    module: 'src/parser.js',
+    effect: 'Pure',
+    body: 'regex.match',
+    contracts: [{ kind: 'inv', expr: 'ret !== null ? ret.major >= 0 : true' }]
+  });
+  sub.registerSymbol({
+    name: 'isValid',
+    module: 'src/parser.js',
+    effect: 'Pure',
+    body: 'parseVersion(str) !== null',
+    contracts: [{ kind: 'inv', expr: 'typeof ret === "boolean"' }]
+  });
+
+  sub.registerSymbol({
+    name: 'compareIdentifiers',
+    module: 'src/comparator.js',
+    effect: 'Pure',
+    body: 'parseInt comparison',
+    contracts: [{ kind: 'inv', expr: 'ret === 0 || ret === 1 || ret === -1' }]
+  });
+  sub.registerSymbol({
+    name: 'comparePrereleases',
+    module: 'src/comparator.js',
+    effect: 'Pure',
+    body: 'compareIdentifiers loop',
+    contracts: [{ kind: 'inv', expr: 'ret === 0 || ret === 1 || ret === -1' }]
+  });
+  sub.registerSymbol({
+    name: 'compareVersions',
+    module: 'src/comparator.js',
+    effect: 'Pure',
+    body: 'comparePrereleases + major/minor/patch',
+    contracts: [{ kind: 'inv', expr: 'v1 === v2 ? ret === 0 : true' }]
+  });
+  sub.registerSymbol({
+    name: 'gt',
+    module: 'src/comparator.js',
+    effect: 'Pure',
+    body: 'compareVersions > 0',
+    contracts: [{ kind: 'inv', expr: 'typeof ret === "boolean"' }]
+  });
+  sub.registerSymbol({
+    name: 'lt',
+    module: 'src/comparator.js',
+    effect: 'Pure',
+    body: 'compareVersions < 0',
+    contracts: [{ kind: 'inv', expr: 'typeof ret === "boolean"' }]
+  });
+
+  sub.registerSymbol({
+    name: 'parseRange',
+    module: 'src/ranges.js',
+    effect: 'Pure',
+    body: 'caret and tilde parser',
+    contracts: [{ kind: 'inv', expr: 'Array.isArray(ret)' }]
+  });
+  sub.registerSymbol({
+    name: 'satisfiesRange',
+    module: 'src/ranges.js',
+    effect: 'Pure',
+    body: 'evaluates comparators and prerelease isolation',
+    contracts: [{ kind: 'inv', expr: 'ret === true || ret === false' }]
+  });
+
+  sub.registerSymbol({
+    name: 'maxSatisfying',
+    module: 'src/satisfier.js',
+    effect: 'Pure',
+    body: 'loop with gt',
+    contracts: [{ kind: 'inv', expr: 'ret === null || typeof ret === "string"' }]
+  });
+  sub.registerSymbol({
+    name: 'minSatisfying',
+    module: 'src/satisfier.js',
+    effect: 'Pure',
+    body: 'loop with lt',
+    contracts: [{ kind: 'inv', expr: 'ret === null || typeof ret === "string"' }]
+  });
+
+  // 2. Register Transitive Dependency Graph
+  sub.addDependency('compareVersions', 'parseVersion');
+  sub.addDependency('comparePrereleases', 'compareIdentifiers');
+  sub.addDependency('compareVersions', 'comparePrereleases');
+  sub.addDependency('gt', 'compareVersions');
+  sub.addDependency('lt', 'compareVersions');
+
+  sub.addDependency('parseRange', 'parseVersion');
+  sub.addDependency('satisfiesRange', 'parseRange');
+  sub.addDependency('satisfiesRange', 'compareVersions');
+
+  sub.addDependency('maxSatisfying', 'satisfiesRange');
+  sub.addDependency('maxSatisfying', 'gt');
+  sub.addDependency('minSatisfying', 'satisfiesRange');
+  sub.addDependency('minSatisfying', 'lt');
+}
+
+export async function runAdversarialBenchmark() {
+  console.log("================================================================================");
+  console.log("   LIN-AGENT-RUNTIME-006: ADVERSARIAL BLIND DEBUGGING & DYNAMIC RE-RANKING       ");
+  console.log("================================================================================");
+
+  const tasks = JSON.parse(fs.readFileSync(TASKS_FILE, 'utf8'));
+
+  const arms = [
+    { id: 'RAW', name: 'Arm A: Raw Model (Zero-State Baseline)' },
+    { id: 'CHAT_HISTORY', name: 'Arm B: Chat History Buffer' },
+    { id: 'LIN_GREEDY', name: 'Arm C1: LIN Greedy (Static Single-Node)' },
+    { id: 'LIN_DYNAMIC', name: 'Arm C2: LIN Dynamic Re-Ranker (Live Score Propagation)' }
+  ];
+
+  const agent = new AdversarialAgent();
+  initializeSubstrate(agent);
+
+  const armSummaries = {};
+
+  for (const arm of arms) {
+    console.log(`\n================================================================================`);
+    console.log(`>>> Executing ${arm.name}...`);
+    console.log(`================================================================================`);
+
+    let totalTasks = tasks.length;
+    let initialSuccessCount = 0;
+    let recoveredSuccessCount = 0;
+    let rootCauseFoundCount = 0;
+    let totalAttempts = 0;
+    let totalWrongFileEdits = 0;
+    let totalPromptTokens = 0;
+    let totalEvalTokens = 0;
+    let totalDurationMs = 0;
+
+    const taskLogs = [];
+
+    for (const task of tasks) {
+      setupWorkspace();
+
+      // Inject bug according to ground truth
+      const targetFilePath = path.join(WORK_DIR, task.ground_truth.file);
+      let content = fs.readFileSync(targetFilePath, 'utf8');
+      content = content.replace(task.ground_truth.bug_find, task.ground_truth.bug_replace);
+      fs.writeFileSync(targetFilePath, content, 'utf8');
+
+      // Execute task
+      const res = await agent.runTask({
+        task,
+        repoDir: WORK_DIR,
+        arm: arm.id,
+        maxAttempts: 3
+      });
+
+      if (res.initialSuccess) initialSuccessCount++;
+      if (res.recoveredSuccess) recoveredSuccessCount++;
+      if (res.rootCauseFound) rootCauseFoundCount++;
+      totalAttempts += res.attempts;
+      totalWrongFileEdits += res.wrongFileEdits;
+      totalPromptTokens += res.promptTokens;
+      totalEvalTokens += res.evalTokens;
+      totalDurationMs += res.durationMs;
+
+      console.log(`  [${task.task_id}] ${task.title.slice(0, 32)}... -> Success: ${res.success} (Init: ${res.initialSuccess}, Rec: ${res.recoveredSuccess}) | Localized: ${res.rootCauseFound} | Wrong Edits: ${res.wrongFileEdits} | Tokens: ${res.promptTokens} | Time: ${(res.durationMs / 1000).toFixed(1)}s`);
+      taskLogs.push(res);
+    }
+
+    const failedInitial = totalTasks - initialSuccessCount;
+    const recoveryRate = failedInitial > 0 ? (recoveredSuccessCount / failedInitial) : 0;
+    const taskSuccessRate = (initialSuccessCount + recoveredSuccessCount) / totalTasks;
+    const localizationRate = rootCauseFoundCount / totalTasks;
+    const avgAttempts = totalAttempts / totalTasks;
+    const avgTokens = totalPromptTokens / totalTasks;
+
+    const summary = {
+      arm_id: arm.id,
+      arm_name: arm.name,
+      total_tasks: totalTasks,
+      root_cause_localization_rate: localizationRate,
+      initial_success: initialSuccessCount,
+      recovered_success: recoveredSuccessCount,
+      persistent_failures: totalTasks - (initialSuccessCount + recoveredSuccessCount),
+      task_success_rate: taskSuccessRate,
+      hypothesis_recovery_rate: recoveryRate,
+      total_wrong_file_edits: totalWrongFileEdits,
+      avg_attempts_per_task: avgAttempts,
+      avg_prompt_tokens_per_task: avgTokens,
+      total_duration_s: totalDurationMs / 1000,
+      tasks: taskLogs
+    };
+
+    armSummaries[arm.id] = summary;
+    console.log(`\n>>> [${arm.id} Summary] Success: ${(taskSuccessRate * 100).toFixed(1)}% | Localized: ${(localizationRate * 100).toFixed(1)}% | Recovery: ${(recoveryRate * 100).toFixed(1)}% | Wrong Edits: ${totalWrongFileEdits} | Avg Tokens: ${avgTokens.toFixed(0)} | Total Time: ${(totalDurationMs / 1000).toFixed(1)}s`);
+  }
+
+  const outPath = path.join(ROOT, 'results/LIN_AGENT_RUNTIME_006_REPORT.json');
+  fs.writeFileSync(outPath, JSON.stringify(armSummaries, null, 2));
+  console.log(`\n[+] RUNTIME-006 Benchmark Complete! Final Report saved to: ${outPath}`);
+  return armSummaries;
+}
+
+runAdversarialBenchmark();

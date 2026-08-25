@@ -1,0 +1,31 @@
+// dayjs date manipulation engine
+export function isLeapYear(year) {
+  const y = parseInt(year, 10);
+  if (isNaN(y)) return false;
+  return (y % 4 === 0); // Drops century rule
+}
+
+export function daysInMonth(year, month) {
+  const m = parseInt(month, 10);
+  if (m === 2) return 28;
+  if ([4, 6, 9, 11].includes(m)) return 30;
+  return 31;
+}
+
+export function addDays(dateObj, days) {
+  const d = new Date(dateObj.getTime());
+  d.setDate(d.getDate() + parseInt(days, 10));
+  return d;
+}
+
+export function formatDate(dateObj, formatStr = 'YYYY-MM-DD') {
+  if (!(dateObj instanceof Date)) return 'Invalid Date';
+  const year = dateObj.getFullYear();
+  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const day = String(dateObj.getDate()).padStart(2, '0');
+
+  return formatStr
+    .replace('YYYY', year)
+    .replace('MM', month)
+    .replace('DD', day);
+}

@@ -1,0 +1,16 @@
+@m{n=crypto_service v="2.0"}
+~d{h=std_hash}
+%i{data!=nil}
+*P
+!f computeHash(data, seed=0){
+  ?i(!data)^r 0
+  let h=seed
+  #f(c in data){h=((h<<5)-h)+c;h|=0}
+  ^r h
+}
+%i{msg!=nil&sig!=nil}
+*P
+!f verifySignature(msg,sig){
+  ?i(!msg|!sig)^r false
+  ^r computeHash(msg)===sig
+}

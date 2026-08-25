@@ -1,0 +1,494 @@
+[
+  {
+    "scale": 100000,
+    "regime": "shared",
+    "rust_hashmap": {
+      "L2": {
+        "avg_us": 0.7797987000000001,
+        "ops_per_sec": 1219280.8291499808,
+        "p50_us": 0.121,
+        "p90_us": 2.434,
+        "p95_us": 3.199,
+        "p99_us": 4.532
+      },
+      "L3": {
+        "avg_us": 0.40396325,
+        "ops_per_sec": 2267456.9812392876,
+        "p50_us": 0.276,
+        "p90_us": 0.748,
+        "p95_us": 0.809,
+        "p99_us": 1.397
+      },
+      "backend": "hashmap",
+      "bytes_per_entity": 288.69847,
+      "bytes_per_relation": 144.37522254005722,
+      "cold_load_ms": 38.038689,
+      "resident_heap_bytes": 28869847,
+      "total_entities": 100000,
+      "total_relations": 199964,
+      "unique_dag_nodes": 0
+    },
+    "rust_arena": {
+      "L2": {
+        "avg_us": 0.95708155,
+        "ops_per_sec": 995616.103174502,
+        "p50_us": 0.174,
+        "p90_us": 2.947,
+        "p95_us": 4.017,
+        "p99_us": 5.661
+      },
+      "L3": {
+        "avg_us": 0.45167255,
+        "ops_per_sec": 1977719.9953919125,
+        "p50_us": 0.319,
+        "p90_us": 0.788,
+        "p95_us": 0.866,
+        "p99_us": 1.509
+      },
+      "backend": "arena_interned",
+      "bytes_per_entity": 293.67731,
+      "bytes_per_relation": 146.86509071632895,
+      "cold_load_ms": 46.701298,
+      "resident_heap_bytes": 29367731,
+      "total_entities": 100000,
+      "total_relations": 199964,
+      "unique_dag_nodes": 0
+    },
+    "lin_semantic_engine": {
+      "L2": {
+        "avg_us": 1.0897351499999999,
+        "ops_per_sec": 896963.3127653666,
+        "p50_us": 0.488,
+        "p90_us": 2.53,
+        "p95_us": 3.539,
+        "p99_us": 4.683
+      },
+      "L3": {
+        "avg_us": 0.35313164999999996,
+        "ops_per_sec": 2570203.832585147,
+        "p50_us": 0.246,
+        "p90_us": 0.701,
+        "p95_us": 0.784,
+        "p99_us": 1.233
+      },
+      "backend": "lin_semantic_engine",
+      "bytes_per_entity": 85.68356,
+      "bytes_per_relation": 42.84949290872357,
+      "cold_load_ms": 24.271962000000002,
+      "resident_heap_bytes": 8568356,
+      "total_entities": 100000,
+      "total_relations": 199964,
+      "unique_dag_nodes": 50
+    }
+  },
+  {
+    "scale": 100000,
+    "regime": "unique",
+    "rust_hashmap": {
+      "L2": {
+        "avg_us": 0.26702495,
+        "ops_per_sec": 3254871.9329952067,
+        "p50_us": 0.171,
+        "p90_us": 0.609,
+        "p95_us": 0.749,
+        "p99_us": 0.949
+      },
+      "L3": {
+        "avg_us": 0.3462634,
+        "ops_per_sec": 2612586.8162599043,
+        "p50_us": 0.239,
+        "p90_us": 0.681,
+        "p95_us": 0.761,
+        "p99_us": 1.182
+      },
+      "backend": "hashmap",
+      "bytes_per_entity": 315.93456,
+      "bytes_per_relation": 175.5192,
+      "cold_load_ms": 47.156242,
+      "resident_heap_bytes": 31593456,
+      "total_entities": 100000,
+      "total_relations": 180000,
+      "unique_dag_nodes": 0
+    },
+    "rust_arena": {
+      "L2": {
+        "avg_us": 0.27022505,
+        "ops_per_sec": 3231314.2789192935,
+        "p50_us": 0.187,
+        "p90_us": 0.58,
+        "p95_us": 0.737,
+        "p99_us": 0.971
+      },
+      "L3": {
+        "avg_us": 0.34429174999999995,
+        "ops_per_sec": 2623810.397163556,
+        "p50_us": 0.236,
+        "p90_us": 0.68,
+        "p95_us": 0.756,
+        "p99_us": 1.21
+      },
+      "backend": "arena_interned",
+      "bytes_per_entity": 353.90508,
+      "bytes_per_relation": 196.61393333333334,
+      "cold_load_ms": 60.151765000000005,
+      "resident_heap_bytes": 35390508,
+      "total_entities": 100000,
+      "total_relations": 180000,
+      "unique_dag_nodes": 0
+    },
+    "lin_semantic_engine": {
+      "L2": {
+        "avg_us": 0.6803277000000001,
+        "ops_per_sec": 1417471.412436554,
+        "p50_us": 0.615,
+        "p90_us": 0.938,
+        "p95_us": 1.121,
+        "p99_us": 1.418
+      },
+      "L3": {
+        "avg_us": 0.303436,
+        "ops_per_sec": 3050715.087616537,
+        "p50_us": 0.231,
+        "p90_us": 0.632,
+        "p95_us": 0.724,
+        "p99_us": 0.827
+      },
+      "backend": "lin_semantic_engine",
+      "bytes_per_entity": 119.68122,
+      "bytes_per_relation": 66.48956666666666,
+      "cold_load_ms": 32.814274,
+      "resident_heap_bytes": 11968122,
+      "total_entities": 100000,
+      "total_relations": 180000,
+      "unique_dag_nodes": 50
+    }
+  },
+  {
+    "scale": 500000,
+    "regime": "shared",
+    "rust_hashmap": {
+      "L2": {
+        "avg_us": 3.5789381,
+        "ops_per_sec": 276219.9776678911,
+        "p50_us": 0.162,
+        "p90_us": 13.553,
+        "p95_us": 14.561,
+        "p99_us": 17.023
+      },
+      "L3": {
+        "avg_us": 0.5382442999999999,
+        "ops_per_sec": 1741190.9450061382,
+        "p50_us": 0.42,
+        "p90_us": 0.845,
+        "p95_us": 0.91,
+        "p99_us": 1.531
+      },
+      "backend": "hashmap",
+      "bytes_per_entity": 243.442376,
+      "bytes_per_relation": 121.72557012052434,
+      "cold_load_ms": 202.712626,
+      "resident_heap_bytes": 121721188,
+      "total_entities": 500000,
+      "total_relations": 999964,
+      "unique_dag_nodes": 0
+    },
+    "rust_arena": {
+      "L2": {
+        "avg_us": 3.7038935499999996,
+        "ops_per_sec": 266819.5685097998,
+        "p50_us": 0.17,
+        "p90_us": 13.77,
+        "p95_us": 15.369,
+        "p99_us": 19.794
+      },
+      "L3": {
+        "avg_us": 0.5614366,
+        "ops_per_sec": 1637738.204927561,
+        "p50_us": 0.458,
+        "p90_us": 0.859,
+        "p95_us": 0.924,
+        "p99_us": 1.5
+      },
+      "backend": "arena_interned",
+      "bytes_per_entity": 247.387264,
+      "bytes_per_relation": 123.69808513106472,
+      "cold_load_ms": 215.83475299999998,
+      "resident_heap_bytes": 123693632,
+      "total_entities": 500000,
+      "total_relations": 999964,
+      "unique_dag_nodes": 0
+    },
+    "lin_semantic_engine": {
+      "L2": {
+        "avg_us": 3.5670117500000003,
+        "ops_per_sec": 278299.1441675144,
+        "p50_us": 0.524,
+        "p90_us": 13.209,
+        "p95_us": 14.274,
+        "p99_us": 16.551
+      },
+      "L3": {
+        "avg_us": 0.4357178,
+        "ops_per_sec": 2121643.136229857,
+        "p50_us": 0.313,
+        "p90_us": 0.777,
+        "p95_us": 0.852,
+        "p99_us": 1.379
+      },
+      "backend": "lin_semantic_engine",
+      "bytes_per_entity": 68.4514,
+      "bytes_per_relation": 34.226932169558104,
+      "cold_load_ms": 123.944704,
+      "resident_heap_bytes": 34225700,
+      "total_entities": 500000,
+      "total_relations": 999964,
+      "unique_dag_nodes": 50
+    }
+  },
+  {
+    "scale": 500000,
+    "regime": "unique",
+    "rust_hashmap": {
+      "L2": {
+        "avg_us": 0.3503448,
+        "ops_per_sec": 2499820.950324433,
+        "p50_us": 0.256,
+        "p90_us": 0.731,
+        "p95_us": 0.87,
+        "p99_us": 1.223
+      },
+      "L3": {
+        "avg_us": 0.51107765,
+        "ops_per_sec": 1798593.985124009,
+        "p50_us": 0.394,
+        "p90_us": 0.834,
+        "p95_us": 0.924,
+        "p99_us": 1.515
+      },
+      "backend": "hashmap",
+      "bytes_per_entity": 316.735168,
+      "bytes_per_relation": 175.96398222222223,
+      "cold_load_ms": 318.389446,
+      "resident_heap_bytes": 158367584,
+      "total_entities": 500000,
+      "total_relations": 900000,
+      "unique_dag_nodes": 0
+    },
+    "rust_arena": {
+      "L2": {
+        "avg_us": 0.4091024,
+        "ops_per_sec": 2167455.204932348,
+        "p50_us": 0.319,
+        "p90_us": 0.782,
+        "p95_us": 0.916,
+        "p99_us": 1.326
+      },
+      "L3": {
+        "avg_us": 0.50574705,
+        "ops_per_sec": 1787893.120821973,
+        "p50_us": 0.376,
+        "p90_us": 0.817,
+        "p95_us": 0.88,
+        "p99_us": 1.479
+      },
+      "backend": "arena_interned",
+      "bytes_per_entity": 349.32588,
+      "bytes_per_relation": 194.06993333333332,
+      "cold_load_ms": 342.763376,
+      "resident_heap_bytes": 174662940,
+      "total_entities": 500000,
+      "total_relations": 900000,
+      "unique_dag_nodes": 0
+    },
+    "lin_semantic_engine": {
+      "L2": {
+        "avg_us": 1.16086215,
+        "ops_per_sec": 843733.0462391021,
+        "p50_us": 1.064,
+        "p90_us": 1.623,
+        "p95_us": 1.818,
+        "p99_us": 2.214
+      },
+      "L3": {
+        "avg_us": 0.39960355,
+        "ops_per_sec": 2359726.639827136,
+        "p50_us": 0.303,
+        "p90_us": 0.752,
+        "p95_us": 0.809,
+        "p99_us": 0.92
+      },
+      "backend": "lin_semantic_engine",
+      "bytes_per_entity": 117.62095,
+      "bytes_per_relation": 65.34497222222222,
+      "cold_load_ms": 191.189996,
+      "resident_heap_bytes": 58810475,
+      "total_entities": 500000,
+      "total_relations": 900000,
+      "unique_dag_nodes": 50
+    }
+  },
+  {
+    "scale": 1000000,
+    "regime": "shared",
+    "rust_hashmap": {
+      "L2": {
+        "avg_us": 6.979841400000001,
+        "ops_per_sec": 142449.58036276692,
+        "p50_us": 0.164,
+        "p90_us": 26.846,
+        "p95_us": 28.09,
+        "p99_us": 32.043
+      },
+      "L3": {
+        "avg_us": 0.5855675,
+        "ops_per_sec": 1594096.9950634006,
+        "p50_us": 0.474,
+        "p90_us": 0.881,
+        "p95_us": 0.97,
+        "p99_us": 1.694
+      },
+      "backend": "hashmap",
+      "bytes_per_entity": 243.537416,
+      "bytes_per_relation": 121.77089987619777,
+      "cold_load_ms": 452.989873,
+      "resident_heap_bytes": 243537416,
+      "total_entities": 1000000,
+      "total_relations": 1999964,
+      "unique_dag_nodes": 0
+    },
+    "rust_arena": {
+      "L2": {
+        "avg_us": 7.49262385,
+        "ops_per_sec": 132661.94537838086,
+        "p50_us": 0.196,
+        "p90_us": 27.745,
+        "p95_us": 31.789,
+        "p99_us": 40.113
+      },
+      "L3": {
+        "avg_us": 0.60574655,
+        "ops_per_sec": 1552034.196900681,
+        "p50_us": 0.504,
+        "p90_us": 0.891,
+        "p95_us": 0.992,
+        "p99_us": 1.669
+      },
+      "backend": "arena_interned",
+      "bytes_per_entity": 247.47594,
+      "bytes_per_relation": 123.74019732355183,
+      "cold_load_ms": 529.497597,
+      "resident_heap_bytes": 247475940,
+      "total_entities": 1000000,
+      "total_relations": 1999964,
+      "unique_dag_nodes": 0
+    },
+    "lin_semantic_engine": {
+      "L2": {
+        "avg_us": 6.92736005,
+        "ops_per_sec": 143780.0588388259,
+        "p50_us": 0.553,
+        "p90_us": 26.471,
+        "p95_us": 27.732,
+        "p99_us": 37.924
+      },
+      "L3": {
+        "avg_us": 0.51892595,
+        "ops_per_sec": 1762175.5537438435,
+        "p50_us": 0.392,
+        "p90_us": 0.84,
+        "p95_us": 0.916,
+        "p99_us": 1.377
+      },
+      "backend": "lin_semantic_engine",
+      "bytes_per_entity": 68.435492,
+      "bytes_per_relation": 34.218361930514746,
+      "cold_load_ms": 265.205168,
+      "resident_heap_bytes": 68435492,
+      "total_entities": 1000000,
+      "total_relations": 1999964,
+      "unique_dag_nodes": 50
+    }
+  },
+  {
+    "scale": 1000000,
+    "regime": "unique",
+    "rust_hashmap": {
+      "L2": {
+        "avg_us": 0.41259575,
+        "ops_per_sec": 2166227.6445307084,
+        "p50_us": 0.287,
+        "p90_us": 0.811,
+        "p95_us": 0.954,
+        "p99_us": 1.386
+      },
+      "L3": {
+        "avg_us": 0.5121425000000001,
+        "ops_per_sec": 1805948.9765235663,
+        "p50_us": 0.395,
+        "p90_us": 0.828,
+        "p95_us": 0.895,
+        "p99_us": 1.46
+      },
+      "backend": "hashmap",
+      "bytes_per_entity": 316.896933,
+      "bytes_per_relation": 176.05385166666667,
+      "cold_load_ms": 647.233666,
+      "resident_heap_bytes": 316896933,
+      "total_entities": 1000000,
+      "total_relations": 1800000,
+      "unique_dag_nodes": 0
+    },
+    "rust_arena": {
+      "L2": {
+        "avg_us": 0.39487099999999997,
+        "ops_per_sec": 2272399.065998536,
+        "p50_us": 0.302,
+        "p90_us": 0.782,
+        "p95_us": 0.912,
+        "p99_us": 1.309
+      },
+      "L3": {
+        "avg_us": 0.4959561,
+        "ops_per_sec": 1878106.917058385,
+        "p50_us": 0.366,
+        "p90_us": 0.812,
+        "p95_us": 0.872,
+        "p99_us": 1.458
+      },
+      "backend": "arena_interned",
+      "bytes_per_entity": 349.483457,
+      "bytes_per_relation": 194.15747611111112,
+      "cold_load_ms": 822.09236,
+      "resident_heap_bytes": 349483457,
+      "total_entities": 1000000,
+      "total_relations": 1800000,
+      "unique_dag_nodes": 0
+    },
+    "lin_semantic_engine": {
+      "L2": {
+        "avg_us": 1.5100909,
+        "ops_per_sec": 648012.9864394534,
+        "p50_us": 1.41,
+        "p90_us": 2.03,
+        "p95_us": 2.249,
+        "p99_us": 2.79
+      },
+      "L3": {
+        "avg_us": 0.49823865,
+        "ops_per_sec": 1883406.5852934574,
+        "p50_us": 0.369,
+        "p90_us": 0.822,
+        "p95_us": 0.871,
+        "p99_us": 1.129
+      },
+      "backend": "lin_semantic_engine",
+      "bytes_per_entity": 117.658856,
+      "bytes_per_relation": 65.36603111111111,
+      "cold_load_ms": 395.25072900000004,
+      "resident_heap_bytes": 117658856,
+      "total_entities": 1000000,
+      "total_relations": 1800000,
+      "unique_dag_nodes": 50
+    }
+  }
+]
