@@ -1,0 +1,58 @@
+@LIN:vscode_uri:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!parseUri(value){
+  m = String(value).match(/^(([^:/?#]+):)?(\/\/([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?/);
+  ?(!m){ ^createUri("", "", "", "", "") };
+  sch = m[2] || "";
+  auth = m[4] || "";
+  pth = m[5] || "";
+  qry = m[7] || "";
+  frg = m[9] || "";
+  ^createUri(sch, auth, pth, qry, frg);
+}
+
+!createUri(scheme, authority, uriPath, query, fragment){
+  sch = scheme || "file";
+  auth = authority || "";
+  pth = uriPath || "";
+  qry = query || "";
+  frg = fragment || "";
+  ^{
+    scheme: sch,
+    authority: auth,
+    path: pth,
+    query: qry,
+    fragment: frg,
+    toString: ~(){
+      out = sch ? sch + ":" : "";
+      ?(auth || sch === "file"){ out = out + "//" + (auth || "") };
+      out = out + pth;
+      ?(qry){ out = out + "?" + qry };
+      ?(frg){ out = out + "#" + frg };
+      ^out;
+    },
+    joinPath: ~(p1, p2, p3, p4, p5, p6){
+      np = pth;
+      args = [p1, p2, p3, p4, p5, p6];
+      #(i = 0; i < args.length; i = i + 1){
+        arg = args[i];
+        ?(arg && typeof arg === "string"){
+          ?(!np.endsWith("/") && !arg.startsWith("/")){ np = np + "/" };
+          np = np + arg;
+        };
+      };
+      parts = np.split("/").filter(Boolean);
+      stack = [];
+      #(i = 0; i < parts.length; i = i + 1){
+        item = parts[i];
+        ?(item === ".."){ stack.pop() }
+        : (item !== "."){ stack.push(item) };
+      };
+      norm = (np.startsWith("/") ? "/" : "") + stack.join("/");
+      ^createUri(sch, auth, norm, qry, frg);
+    }
+  }
+}
+
+=ex{parseUri,createUri}

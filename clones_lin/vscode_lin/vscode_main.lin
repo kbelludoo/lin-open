@@ -1,0 +1,18 @@
+@LIN:vscode_main:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!initVsCodeEditorCore(){
+  ^{
+    version: "1.98.0-lin-pure",
+    createPosition: ~(line, col){
+      l = line || 1;
+      c = col || 1;
+      ^{ lineNumber: l, column: c }
+    },
+    createRange: ~(sl, sc, el, ec){
+      ^{ startLineNumber: sl || 1, startColumn: sc || 1, endLineNumber: el || 1, endColumn: ec || 1 }
+    }
+  }
+}
+
+=ex{initVsCodeEditorCore}

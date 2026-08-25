@@ -1,0 +1,41 @@
+@LIN:vscode_position:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createPosition(lineNumber, column){
+  l = lineNumber || 1;
+  c = column || 1;
+  ^{
+    lineNumber: l,
+    column: c,
+    with: ~(newLineNumber, newColumn){
+      nl = (typeof newLineNumber === "number") ? newLineNumber : l;
+      nc = (typeof newColumn === "number") ? newColumn : c;
+      ?(nl === l && nc === c){ ^this };
+      ^createPosition(nl, nc);
+    },
+    delta: ~(deltaLine, deltaCol){
+      dl = deltaLine || 0;
+      dc = deltaCol || 0;
+      ^createPosition(Math.max(1, l + dl), Math.max(1, c + dc));
+    },
+    isBefore: ~(other){
+      ?(l < other.lineNumber){ ^true };
+      ?(l > other.lineNumber){ ^false };
+      ^c < other.column;
+    },
+    isBeforeOrEqual: ~(other){
+      ?(l < other.lineNumber){ ^true };
+      ?(l > other.lineNumber){ ^false };
+      ^c <= other.column;
+    },
+    compare: ~(other){
+      ?(l < other.lineNumber){ ^-1 };
+      ?(l > other.lineNumber){ ^1 };
+      ?(c < other.column){ ^-1 };
+      ?(c > other.column){ ^1 };
+      ^0;
+    }
+  }
+}
+
+=ex{createPosition}

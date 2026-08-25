@@ -1,0 +1,58 @@
+@LIN:vscode_range:1.0.0
+~G{?=if #=for ^=ret :else}
+
+!createRange(startLineNumber, startColumn, endLineNumber, endColumn){
+  sl = startLineNumber || 1;
+  sc = startColumn || 1;
+  el = endLineNumber || 1;
+  ec = endColumn || 1;
+  ?(sl > el || (sl === el && sc > ec)){
+    tmpL = sl; tmpC = sc;
+    sl = el; sc = ec;
+    el = tmpL; ec = tmpC;
+  };
+  ^{
+    startLineNumber: sl,
+    startColumn: sc,
+    endLineNumber: el,
+    endColumn: ec,
+    isEmpty: ~(){
+      ^sl === el && sc === ec;
+    },
+    containsPosition: ~(pos){
+      ?(pos.lineNumber < sl || pos.lineNumber > el){ ^false };
+      ?(pos.lineNumber === sl && pos.column < sc){ ^false };
+      ?(pos.lineNumber === el && pos.column > ec){ ^false };
+      ^true;
+    },
+    containsRange: ~(range){
+      ?(range.startLineNumber < sl || range.endLineNumber > el){ ^false };
+      ?(range.startLineNumber === sl && range.startColumn < sc){ ^false };
+      ?(range.endLineNumber === el && range.endColumn > ec){ ^false };
+      ^true;
+    },
+    plusRange: ~(range){
+      nsl = sl; nsc = sc; nel = el; nec = ec;
+      ?(range.startLineNumber < sl || (range.startLineNumber === sl && range.startColumn < sc)){
+        nsl = range.startLineNumber; nsc = range.startColumn;
+      };
+      ?(range.endLineNumber > el || (range.endLineNumber === el && range.endColumn > ec)){
+        nel = range.endLineNumber; nec = range.endColumn;
+      };
+      ^createRange(nsl, nsc, nel, nec);
+    },
+    intersectRanges: ~(range){
+      nsl = sl; nsc = sc; nel = el; nec = ec;
+      ?(range.startLineNumber > sl || (range.startLineNumber === sl && range.startColumn > sc)){
+        nsl = range.startLineNumber; nsc = range.startColumn;
+      };
+      ?(range.endLineNumber < el || (range.endLineNumber === el && range.endColumn < ec)){
+        nel = range.endLineNumber; nec = range.endColumn;
+      };
+      ?(nsl > nel || (nsl === nel && nsc > nec)){ ^null };
+      ^createRange(nsl, nsc, nel, nec);
+    }
+  }
+}
+
+=ex{createRange}
