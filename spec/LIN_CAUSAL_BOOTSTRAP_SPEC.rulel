@@ -1,0 +1,17 @@
+@RULEL:CAUSAL_SELF_HOSTING_SPEC:2.0
+~ARCH{target="x86_32_freestanding_multiboot1" vm="qemu_system_x86_64" bootloader="multiboot1"}
+~STAGES{
+  stage0="Host bootstrap compiler creates standalone Compiler1"
+  poison="Host bootstrap compiler explicitly poisoned and destroyed"
+  stage1="Compiler1 executes independently to compile compiler.lin -> Compiler2"
+  stage2="Compiler2 executes independently to compile compiler.lin -> Compiler3"
+  stage3="Compiler3 executes independently to compile compiler.lin -> Compiler4"
+  fixed_point="Assert SHA256(Compiler2) == SHA256(Compiler3) == SHA256(Compiler4)"
+  general_ast_lowering="Traverse expression trees (BinOp, Call, Assign, Loop, String) into x86 machine instructions"
+  kernel_boot="Compile kernel.lin with Compiler2 -> ASM -> ELF32 -> QEMU serial UART"
+}
+.invariants{
+  causal_execution="Each stage compiler must be executed as the active agent compiling the next stage"
+  poison_guarantee="Stage 0 cannot be re-used after Stage 1 artifact is created"
+  full_sha256="All hashes in proof ledger must be complete 64-hex SHA-256 strings"
+}
