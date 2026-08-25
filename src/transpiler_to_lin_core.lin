@@ -140,7 +140,7 @@
     rf = rawFns[i];
     ?(["if", "while", "for", "switch"].includes(rf.name)){ continue }
     ?(rf.name.indexOf(":") >= 0){ continue }
-    ?(/^[A-Z][A-Z0-9_]*$/.test(rf.name) && rf.rawParams.indexOf(",") >= 0){ continue }
+    ?(/^[A-Z][A-Z0-9_]*$/.test(rf.name)){ continue }
     ?(rf.rawParams.indexOf("(") >= 0){ continue }
     params = rf.rawParams.split(",").map(function(p){
       parts = p.trim().split(/\s+/);
