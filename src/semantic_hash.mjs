@@ -1,40 +1,12 @@
+// LIN Semantic Hash Engine (Dogfooding semantic_hash_core.lin)
 import { createHash } from 'node:crypto';
+import { createRequire } from 'node:module';
 
-const RESERVED = ['var', 'let', 'const', 'return', 'if', 'else', 'while', 'for', 'in', 'of', 'null', 'true', 'false', 'undefined', 'void', 'typeof'];
+const require = createRequire(import.meta.url);
+const { canonicalize: linCanonicalize, escapeRe: linEscapeRe } = require('./semantic_hash_core.compiled.cjs');
 
-export function canonicalize(params, body) {
-  let canon = String(body || '').trim();
-  canon = canon.replace(/\/\*[\s\S]*?\*\/|\/\/[^\r\n]*/g, '');
-  canon = canon.replace(/\s+/g, ' ').replace(/\s*([=+\-*/%&|^<>(),;!?:{}\[\]])\s*/g, '$1').trim();
-  const rawParams = String(params || '').split(',').map((p) => p.trim()).filter(Boolean);
-  const paramTypes = rawParams.map((p) => (p.includes(':') ? p.split(':')[1].trim() : '')).join(',');
-  const paramList = rawParams.map((p) => p.replace(/:.+$/, '').trim());
-  for (let i = 0; i < paramList.length; i++) {
-    const re = new RegExp(`\\b${escapeRe(paramList[i])}\\b`, 'g');
-    canon = canon.replace(re, `$${i}`);
-  }
-  const locals = [];
-  const assignRe = /(?:^|[;{(])\s*([a-zA-Z_$][\w$]*)\s*=(?!=)/g;
-  let match;
-  while ((match = assignRe.exec(canon)) !== null) {
-    const id = match[1];
-    if (!locals.includes(id) && !id.startsWith('$') && !RESERVED.includes(id)) {
-      locals.push(id);
-    }
-  }
-  for (let i = 0; i < locals.length; i++) {
-    const re = new RegExp(`\\b${escapeRe(locals[i])}\\b`, 'g');
-    canon = canon.replace(re, `_l${i}`);
-  }
-  canon = canon.replace(/'/g, '"');
-  canon = canon.replace(/===/g, '==').replace(/!==/g, '!=');
-  canon = canon.replace(/;+/g, ';').replace(/;+$/, '');
-  return `(${paramList.length}:${paramTypes})${canon}`;
-}
-
-function escapeRe(s) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
+export const canonicalize = linCanonicalize;
+export const escapeRe = linEscapeRe;
 
 export function semanticHash(params, body) {
   const canonical = canonicalize(params, body);

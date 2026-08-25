@@ -1,4 +1,12 @@
+// LIN Effects Engine (Dogfooding effects_core.lin)
+import { createRequire } from 'node:module';
 import { renderBody } from './render_core.mjs';
+
+const require = createRequire(import.meta.url);
+const { firstUseIsRead: linFirstUseIsRead, collectAssignedIds: linCollectAssignedIds } = require('./effects_core.compiled.cjs');
+
+export const firstUseIsRead = linFirstUseIsRead;
+export const collectAssignedIds = linCollectAssignedIds;
 
 const NATIVE_BUILTINS = /\b(String|Number|Math|Buffer|Array|Object|Error|JSON|console|process|require|globalThis|window|document|fetch|setTimeout|setInterval|crypto)\b/;
 
@@ -7,39 +15,6 @@ const BUILTIN_SET = new Set([
   'process', 'require', 'globalThis', 'window', 'document', 'fetch', 'setTimeout',
   'setInterval', 'crypto', 'true', 'false', 'null', 'undefined',
 ]);
-
-export function firstUseIsRead(body, id) {
-  const s = String(body || '');
-  const re = new RegExp(`\\b${id}\\b`, 'g');
-  let m;
-  while ((m = re.exec(s))) {
-    let j = m.index + id.length;
-    while (j < s.length && /\s/.test(s[j])) j++;
-    if (s[j] === '=' && s[j + 1] !== '=') return false;
-    const before = s.slice(Math.max(0, m.index - 48), m.index);
-    const after = s.slice(m.index + id.length, m.index + id.length + 48);
-    if (/\{[^{}]*$/.test(before) && /\}\s*=/.test(after)) return false;
-    return true;
-  }
-  return false;
-}
-
-export function collectAssignedIds(body) {
-  const ids = new Set();
-  const re = /(?:^|[;{,}])\s*([A-Za-z_$][\w$]*)\s*=(?!=)/g;
-  let m;
-  const s = `;${body}`;
-  while ((m = re.exec(s)) !== null) {
-    const id = m[1];
-    if (!['return', 'if', 'for', 'else', 'function', 'var', 'let', 'const'].includes(id)) ids.add(id);
-  }
-  const forInit = /for\(([^;]*);/g;
-  while ((m = forInit.exec(body)) !== null) {
-    const im = m[1].match(/^([A-Za-z_$][\w$]*)\s*=/);
-    if (im) ids.add(im[1]);
-  }
-  return [...ids];
-}
 
 function fnBodyText(fn) {
   if (typeof fn.body === 'string') return fn.body;

@@ -1,5 +1,9 @@
+// LIN In-Memory VM & Sandbox Engine (Dogfooding vm_core.lin)
 import vm from 'node:vm';
 import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const { validateSandboxSpec, assertJsSyntaxCore } = require('./vm_core.compiled.cjs');
 
 let hostRequire = null;
 
@@ -35,21 +39,17 @@ export function runInMemory(jsCode, opts = {}) {
 }
 
 function makeRequireShim() {
-  const allowed = new Map([
-    ['node:crypto', () => getRequire()('node:crypto')],
-    ['crypto', () => getRequire()('node:crypto')],
-    ['node:buffer', () => getRequire()('node:buffer')],
-    ['buffer', () => getRequire()('node:buffer')],
-    ['node:util', () => getRequire()('node:util')],
-    ['util', () => getRequire()('node:util')],
-  ]);
   return (spec) => {
-    if (allowed.has(spec)) return allowed.get(spec)();
+    if (validateSandboxSpec(spec)) {
+      const modName = spec.startsWith('node:') ? spec : `node:${spec}`;
+      return getRequire()(modName);
+    }
     throw new Error(`LIN_SANDBOX_REQUIRE: ${spec} not allowed in memory sandbox`);
   };
 }
 
 export function assertJsSyntax(code) {
+  assertJsSyntaxCore(code);
   try {
     new Function(String(code));
     return true;
