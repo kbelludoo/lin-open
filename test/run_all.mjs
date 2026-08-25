@@ -46,7 +46,8 @@ const { semanticHash } = await import(path.join(root, 'src', 'semantic_hash.mjs'
 const { parseRulel, validateComms } = await import(path.join(root, 'src', 'rulel.mjs'));
 const { verify } = await import(path.join(root, 'src', 'verifier.mjs'));
 const { emitLinFromJs } = await import(path.join(root, 'src', 'emit_from_js.mjs'));
-const { emitTs, emitPy, emitGo, emitRust, emitC, emitJava } = await import(path.join(root, 'src', 'emitters.mjs'));
+const { emitTs, emitPy, emitGo, emitRust, emitC, emitJava, emitZig } = await import(path.join(root, 'src', 'emitters.mjs'));
+const { runInMemoryZig } = await import(path.join(root, 'src', 'vm_zig.mjs'));
 
 function readCorpus(rel) {
   const p1 = path.join(CORPUS, rel);
@@ -258,22 +259,33 @@ test('c: gcc compiles + runs arith', () => {
   assert.equal(out.trim(), '5\n20\n120\n1\n9');
 });
 
-test('java: javac + java run arith', () => {
+test('zig: runInMemoryZig compiles and executes in memory', () => {
+  const res = runInMemoryZig(arithSrc);
+  assert.equal(res.ok, true, res.error);
+  assert.equal(res.output, 'ZIG_IN_MEMORY_OK: fns=add,mul,fact,isEven,max3');
+});
+
+test('zig: native execution produces exact arith outputs', () => {
   const prog = parseProgram(arithSrc);
-  let jCode = emitJava(prog);
-  jCode = jCode.replace('  public static void main(String[] args) {\n  }', [
-    '  public static void main(String[] args) {',
-    '    System.out.println(add(2,3));',
-    '    System.out.println(mul(4,5));',
-    '    System.out.println(fact(5));',
-    '    System.out.println(is_even(10) ? 1 : 0);',
-    '    System.out.println(max3(3,9,4));',
-    '  }',
-  ].join('\n'));
-  const dir = fs.mkdtempSync('/tmp/opencode/lintest-java-');
-  fs.writeFileSync(path.join(dir, 'LinProgram.java'), jCode);
-  execFileSync('javac', ['LinProgram.java'], { cwd: dir, timeout: 90000 });
-  const out = execFileSync('java', ['-cp', dir, 'LinProgram'], { encoding: 'utf8', timeout: 30000 });
+  let zCode = emitZig(prog);
+  zCode += `
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    LIA_ALLOC = gpa.allocator();
+    const stdout = std.io.getStdOut().writer();
+    try stdout.print("{d}\\n{d}\\n{d}\\n{d}\\n{d}\\n", .{
+        add(2, 3),
+        mul(4, 5),
+        fact(5),
+        if (is_even(10)) @as(i64, 1) else @as(i64, 0),
+        max3(3, 9, 4),
+    });
+}
+`;
+  const dir = fs.mkdtempSync('/tmp/opencode/lintest-zig-');
+  fs.writeFileSync(path.join(dir, 'arith.zig'), zCode);
+  const out = execFileSync('zig', ['run', 'arith.zig'], { cwd: dir, encoding: 'utf8', timeout: 60000 });
   assert.equal(out.trim(), '5\n20\n120\n1\n9');
 });
 
