@@ -1,4 +1,4 @@
-import { renderBody, renderExpr, fnParamsText } from './render_core.mjs';
+import { renderBody, renderExpr, renderStmt, fnParamsText } from './render_core.mjs';
 import { collectAssignedIds, firstUseIsRead, inferEffect } from './effects.mjs';
 
 export function renderProgramJs(prog, opts = {}) {
@@ -13,6 +13,19 @@ export function renderProgramJs(prog, opts = {}) {
     // LIN_REGEX_001/T3 descobriu: corpos usam nomes soltos; vincula identificadores
     const cnames = Object.keys(prog.consts);
     if (cnames.length) parts.push(`var ${cnames.map((n) => `${n}=$K[${JSON.stringify(n)}]`).join(',')};`);
+  }
+  for (const en of prog.enums || []) {
+    parts.push(`const ${en.name} = {};`);
+    const variantNames = new Set((en.variants || []).map(v => v.name));
+    for (const v of en.variants || []) {
+      const valStr = v.value !== undefined ? String(v.value).replace(/\b([A-Za-z_$][\w$]*)\b/g, (m) => {
+        if (variantNames.has(m)) {
+          return `${en.name}[${JSON.stringify(m)}]`;
+        }
+        return m;
+      }) : JSON.stringify(v.name);
+      parts.push(`${en.name}[${JSON.stringify(v.name)}] = ${valStr};`);
+    }
   }
   for (const mod of prog.modules || []) {
     parts.push(`const ${mod.name} = ${renderModuleObj(mod)};`);
@@ -48,6 +61,9 @@ export function renderProgramJs(prog, opts = {}) {
     const decl = locals.length ? `var ${locals.join(',')};` : '';
     const isAsync = Boolean(fn.isAsync) || /\bawait\s+[\w$(]/.test(bodyText.replace(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g, ''));
     parts.push(`/* effect:${fn.effect} */${isAsync ? 'async ' : ''}function ${fn.name}(${fnParamsText(fn)}){${decl}${bodyText}}`);
+  }
+  for (const st of prog.stmts || []) {
+    parts.push(renderStmt(st));
   }
   if (opts.epilogue) {
     parts.push(String(opts.epilogue).trim());

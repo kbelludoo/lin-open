@@ -84,11 +84,16 @@ class Parser {
       modules: [],
       uses: [],
       fns: [],
+      stmts: [],
       src: this.src,
     };
     for (;;) {
       this.skipTrivia();
       if (this.at('eof')) break;
+      if (this.at('punct', ';')) {
+        this.next();
+        continue;
+      }
       const t = this.peek();
       if (t.type === 'punct' && t.value === '@') {
         this.next();
@@ -207,6 +212,11 @@ class Parser {
         prog.fns.push(this.parseFn(false));
         continue;
       }
+      const topStmt = this.parseStmt();
+      if (topStmt) {
+        prog.stmts.push(topStmt);
+        continue;
+      }
       throw new LinParseError(`unexpected top-level token ${JSON.stringify(t.value)}`, t);
     }
     return prog;
@@ -274,8 +284,13 @@ class Parser {
       for (const entry of body.split(/[\n,]/)) {
         const trimmed = entry.trim().replace(/,$/, '');
         if (!trimmed) continue;
+        const eqMatch = trimmed.match(/^([A-Za-z_$][\w$]*)\s*[:=]\s*(.+)$/);
+        if (eqMatch) {
+          variants.push({ name: eqMatch[1], value: eqMatch[2].trim() });
+          continue;
+        }
         const m = trimmed.match(/^([A-Za-z_$][\w$]*)\s*(\(([\s\S]*)\))?\s*$/);
-        if (m) variants.push({ name: m[1], params: m[3] !== undefined ? m[3].trim() || null : null });
+        if (m) variants.push({ name: m[1], params: m[3] !== undefined ? m[3].trim() || null : null, value: JSON.stringify(m[1]) });
       }
       this.pos = close + 1;
     }
@@ -380,6 +395,18 @@ class Parser {
 
   parseStmt() {
     const t = this.peek();
+    if ((t.type === 'punct' && t.value === '!' && this.peek(1).type === 'id') || (t.type === 'id' && t.value === 'fn' && this.peek(1).type === 'id')) {
+      const isBang = t.value === '!';
+      const fnNode = this.parseFn(isBang);
+      return { type: 'function', fn: fnNode };
+    }
+    if (t.type === 'id' && this.peek(1).type === 'punct' && this.peek(1).value === ':' && !['default', 'case'].includes(t.value)) {
+      const label = t.value;
+      this.next();
+      this.next();
+      const body = this.parseStmt();
+      return { type: 'labeled', label, body };
+    }
     if (t.type === 'punct' && t.value === '^') {
       this.next();
       return { type: 'return', expr: this.scanExpr() };
@@ -390,11 +417,48 @@ class Parser {
     }
     if (t.type === 'id' && t.value === 'break') {
       this.next();
-      return { type: 'break' };
+      let label = null;
+      if (this.peek().type === 'id' && this.peek().value !== ';') {
+        label = this.next().value;
+      }
+      return { type: 'break', label };
     }
     if (t.type === 'id' && t.value === 'continue') {
       this.next();
-      return { type: 'continue' };
+      let label = null;
+      if (this.peek().type === 'id' && this.peek().value !== ';') {
+        label = this.next().value;
+      }
+      return { type: 'continue', label };
+    }
+    if (t.type === 'id' && (t.value === 'let' || t.value === 'var' || t.value === 'const')) {
+      const kind = this.next().value;
+      const decls = [];
+      while (this.pos < this.toks.length && this.peek().value !== ';' && this.peek().value !== '}' && this.peek().type !== 'eof') {
+        const id = this.next().value;
+        let init = null;
+        if (this.peek().value === '=') {
+          this.next();
+          init = this.scanExprCore(this.toks.length - 1, new Set([';', ',', '}']));
+        }
+        decls.push({ id, init });
+        if (this.peek().value === ',') this.next();
+        else break;
+      }
+      return { type: 'var', kind, decls };
+    }
+    if (t.type === 'id' && t.value === 'do') {
+      this.next();
+      const body = this.parseBlock();
+      let cond = null;
+      if (this.peek().type === 'id' && this.peek().value === 'while') {
+        this.next();
+        this.expect('punct', '(', '(');
+        const closeP = this.findMatching(this.pos - 1, '(', ')');
+        cond = this.exprFromSpan(this.pos, closeP);
+        this.pos = closeP + 1;
+      }
+      return { type: 'dowhile', body, cond };
     }
     if (t.type === 'punct' && t.value === '?') {
       return this.parseIfChain('?');
@@ -416,6 +480,9 @@ class Parser {
       this.pos = closeP + 1;
       const body = this.parseBlock();
       return { type: 'while', cond, body };
+    }
+    if (t.type === 'id' && t.value === 'switch' && this.peek(1).type === 'punct' && this.peek(1).value === '(') {
+      return this.parseSwitch();
     }
     if (t.type === 'id' && t.value === 'match' && this.peek(1).type === 'punct' && this.peek(1).value === '(') {
       const m = this.parseMatch();
@@ -776,6 +843,19 @@ class Parser {
     this.expect('punct', '(', '(');
     const openIdx = this.pos - 1;
     const closeP = this.findMatching(openIdx, '(', ')');
+    const headText = this.src.slice(this.toks[openIdx + 1].start, this.toks[closeP].start).trim();
+    if (headText.includes(' of ') && !headText.includes(';')) {
+      const [left, right] = headText.split(/\s+of\s+/);
+      this.pos = closeP + 1;
+      const body = this.parseBlock();
+      return { type: 'forof', left: left.replace(/^(?:const|let|var)\s+/, ''), right, body };
+    }
+    if (headText.includes(' in ') && !headText.includes(';')) {
+      const [left, right] = headText.split(/\s+in\s+/);
+      this.pos = closeP + 1;
+      const body = this.parseBlock();
+      return { type: 'forin', left: left.replace(/^(?:const|let|var)\s+/, ''), right, body };
+    }
     const headGroups = splitTopLevelIdx(this.toks, this.pos, closeP, ';');
     this.pos = closeP + 1;
     const segText = (g) => {
@@ -798,6 +878,59 @@ class Parser {
     const step = segText(headGroups[2]);
     const body = this.parseBlock();
     return { type: 'for', init, cond, step, body };
+  }
+
+  parseSwitch() {
+    this.expect('id', 'switch', 'switch');
+    this.expect('punct', '(', '(');
+    const closeP = this.findMatching(this.pos - 1, '(', ')');
+    const disc = this.exprFromSpan(this.pos, closeP);
+    this.pos = closeP + 1;
+    this.expect('punct', '{', '{');
+    const closeBrace = this.findMatching(this.pos - 1, '{', '}');
+    const cases = [];
+    while (this.pos < closeBrace && this.peek().type !== 'EOF') {
+      while (this.atVal(';') || this.at('nl') || this.at('comment')) this.next();
+      if (this.pos >= closeBrace) break;
+      const t = this.peek();
+      if (t.type === 'id' && t.value === 'case') {
+        this.next();
+        let testStart = this.pos;
+        while (this.peek().value !== ':' && this.pos < closeBrace && this.peek().type !== 'EOF') {
+          this.next();
+        }
+        const testText = this.src.slice(this.toks[testStart].start, this.toks[this.pos].start).trim();
+        this.expect('punct', ':', ':');
+        const test = { parts: [{ kind: 'raw', text: testText }] };
+        const stmts = [];
+        while (this.pos < closeBrace && this.peek().type !== 'EOF') {
+          while (this.atVal(';') || this.at('nl') || this.at('comment')) this.next();
+          if (this.pos >= closeBrace || ['case', 'default'].includes(this.peek().value) || this.peek().value === '}') break;
+          const pBefore = this.pos;
+          const st = this.parseStmt();
+          if (st) stmts.push(st);
+          if (this.pos === pBefore) this.next();
+        }
+        cases.push({ type: 'case', test, consequent: stmts });
+      } else if (t.type === 'id' && t.value === 'default') {
+        this.next();
+        this.expect('punct', ':', ':');
+        const stmts = [];
+        while (this.pos < closeBrace && this.peek().type !== 'EOF') {
+          while (this.atVal(';') || this.at('nl') || this.at('comment')) this.next();
+          if (this.pos >= closeBrace || ['case', 'default'].includes(this.peek().value) || this.peek().value === '}') break;
+          const pBefore = this.pos;
+          const st = this.parseStmt();
+          if (st) stmts.push(st);
+          if (this.pos === pBefore) this.next();
+        }
+        cases.push({ type: 'default', consequent: stmts });
+      } else {
+        this.next();
+      }
+    }
+    this.pos = closeBrace + 1;
+    return { type: 'switch', discriminant: disc, cases };
   }
 
   parseMatch() {
@@ -974,7 +1107,8 @@ function parseParam(p) {
       def = rest.slice(eqIdx + 1).trim();
     }
   }
-  return { name, type, constraint, def };
+  const isArray = /\[\s*\]\s*$/.test(String(p || '').trim());
+  return { name, type, constraint, def, isArray };
 }
 
 function topLevelIndexOf(s, ch) {

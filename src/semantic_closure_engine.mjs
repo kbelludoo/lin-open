@@ -19,6 +19,10 @@ export class TrueAstParser {
       return tokens[pos] || { type: 'EOF', value: '' };
     }
 
+    function peekNext() {
+      return tokens[pos + 1] || { type: 'EOF', value: '' };
+    }
+
     function next() {
       return tokens[pos++];
     }
@@ -45,15 +49,82 @@ export class TrueAstParser {
       if (peek().type === 'IDENTIFIER') {
         id = next().value;
       }
+      if (peek().value === '<') {
+        next();
+        let angleDepth = 1;
+        while (angleDepth > 0 && peek().type !== 'EOF') {
+          if (peek().value === '<') angleDepth++;
+          else if (peek().value === '>') angleDepth--;
+          next();
+        }
+      }
       expect('(');
       const params = [];
-      while (peek().value !== ')' && peek().type !== 'EOF') {
+      while ((peek().type !== 'PUNCTUATOR' || peek().value !== ')') && peek().type !== 'EOF') {
+        const pBefore = pos;
+        if (match('...')) {}
         if (peek().type === 'IDENTIFIER') {
           params.push(next().value);
         }
+        if (peek().value === '!') next();
+        if (peek().value === '?') next();
+        if (peek().value === ':') {
+          next();
+          let parenDepth = 0;
+          let braceDepth = 0;
+          let bracketDepth = 0;
+          let angleDepth = 0;
+          while (peek().type !== 'EOF') {
+            const pv = peek().value;
+            if (parenDepth === 0 && braceDepth === 0 && bracketDepth === 0 && angleDepth === 0 && (pv === '=' || pv === ',' || pv === ')')) {
+              break;
+            }
+            if (pv === '(') parenDepth++;
+            else if (pv === ')') parenDepth--;
+            else if (pv === '{') braceDepth++;
+            else if (pv === '}') braceDepth--;
+            else if (pv === '[') bracketDepth++;
+            else if (pv === ']') bracketDepth--;
+            else if (pv === '<') angleDepth++;
+            else if (pv === '>') angleDepth--;
+            next();
+          }
+        }
+        if (peek().value === '=') {
+          next();
+          parseAssignment();
+        }
         if (peek().value === ',') next();
+        if (pos === pBefore) {
+          throw new Error(`Parser stuck in function params at pos ${pos}: ${JSON.stringify(peek())}`);
+        }
       }
       expect(')');
+      if (peek().value === ':') {
+        next();
+        let parenDepth = 0;
+        let braceDepth = 0;
+        let bracketDepth = 0;
+        let angleDepth = 0;
+        while (peek().type !== 'EOF') {
+          const pv = peek().value;
+          if (parenDepth === 0 && braceDepth === 0 && bracketDepth === 0 && angleDepth === 0 && (pv === '{' || pv === ';')) {
+            break;
+          }
+          if (pv === '(') parenDepth++;
+          else if (pv === ')') parenDepth--;
+          else if (pv === '{') braceDepth++;
+          else if (pv === '}') braceDepth--;
+          else if (pv === '[') bracketDepth++;
+          else if (pv === ']') bracketDepth--;
+          else if (pv === '<') angleDepth++;
+          else if (pv === '>') angleDepth--;
+          next();
+        }
+      }
+      if (match(';')) {
+        return new AstNode('EmptyStatement');
+      }
       const body = parseBlockStatement();
       return new AstNode('FunctionDeclaration', { id, params, body, isExported });
     }
@@ -61,8 +132,12 @@ export class TrueAstParser {
     function parseBlockStatement() {
       expect('{');
       const body = [];
-      while (peek().value !== '}' && peek().type !== 'EOF') {
+      while ((peek().type !== 'PUNCTUATOR' || peek().value !== '}') && peek().type !== 'EOF') {
+        const pBefore = pos;
         body.push(parseStatement());
+        if (pos === pBefore) {
+          throw new Error(`Parser stuck in block at pos ${pos}: ${JSON.stringify(peek())}`);
+        }
       }
       expect('}');
       return new AstNode('BlockStatement', { body });
@@ -71,14 +146,140 @@ export class TrueAstParser {
     function parseStatement() {
       const tok = peek();
 
+      if (tok.value === 'import') {
+        next();
+        if (peek().value === 'type') next();
+        if (peek().value === '{') {
+          next();
+          const specifiers = [];
+          while (peek().value !== '}' && peek().type !== 'EOF') {
+            if (peek().type === 'IDENTIFIER') specifiers.push(next().value);
+            if (peek().value === ',') next();
+          }
+          expect('}');
+          if (match('from')) {
+            const src = next().value;
+            match(';');
+            return new AstNode('ImportDeclaration', { specifiers, source: src });
+          }
+        } else {
+          while (peek().value !== ';' && peek().type !== 'EOF') next();
+          match(';');
+          return new AstNode('EmptyStatement');
+        }
+      }
+
       if (tok.value === 'export') {
         next();
+        if (peek().value === 'type') {
+          while (peek().value !== ';' && peek().type !== 'EOF') next();
+          match(';');
+          return new AstNode('EmptyStatement');
+        }
+        if (peek().value === 'interface') {
+          next();
+          next();
+          if (peek().value === 'extends') {
+            while (peek().value !== '{' && peek().type !== 'EOF') next();
+          }
+          if (peek().value === '{') {
+            let braceCount = 1;
+            next();
+            while (braceCount > 0 && peek().type !== 'EOF') {
+              if (peek().value === '{') braceCount++;
+              else if (peek().value === '}') braceCount--;
+              next();
+            }
+          }
+          return new AstNode('EmptyStatement');
+        }
+        if (peek().value === 'enum' || (peek().value === 'const' && peekNext().value === 'enum')) {
+          if (peek().value === 'const') next();
+          next();
+          const enumName = next().value;
+          expect('{');
+          const members = [];
+          let autoVal = 0;
+          while ((peek().type !== 'PUNCTUATOR' || peek().value !== '}') && peek().type !== 'EOF') {
+            let memberName = next().value;
+            let memberVal = null;
+            if (match('=')) {
+              memberVal = parseAssignment();
+              if (memberVal.type === 'Literal' && typeof memberVal.value === 'number') {
+                autoVal = memberVal.value + 1;
+              }
+            } else {
+              memberVal = new AstNode('Literal', { value: autoVal++, raw: String(autoVal - 1) });
+            }
+            members.push({ name: memberName, value: memberVal });
+            if (!match(',')) break;
+          }
+          expect('}');
+          return new AstNode('EnumDeclaration', { id: enumName, members });
+        }
         if (peek().value === 'function' || peek().value === 'async') {
           return parseFunction(true);
         }
         if (peek().value === 'let' || peek().value === 'const' || peek().value === 'var') {
           return parseVariableDeclaration(true);
         }
+        if (peek().value === '{') {
+          next();
+          while (peek().value !== '}' && peek().type !== 'EOF') next();
+          expect('}');
+          match(';');
+          return new AstNode('EmptyStatement');
+        }
+      }
+
+      if (tok.value === 'enum' || (tok.value === 'export' && (peekNext().value === 'enum' || (peekNext().value === 'const' && tokens[pos + 2]?.value === 'enum')))) {
+        if (tok.value === 'export') next();
+        if (peek().value === 'const') next();
+        next();
+        const enumName = next().value;
+        expect('{');
+        const members = [];
+        let autoVal = 0;
+        while ((peek().type !== 'PUNCTUATOR' || peek().value !== '}') && peek().type !== 'EOF') {
+          let memberName = next().value;
+          let memberVal = null;
+          if (match('=')) {
+            memberVal = parseAssignment();
+            if (memberVal.type === 'Literal' && typeof memberVal.value === 'number') {
+              autoVal = memberVal.value + 1;
+            }
+          } else {
+            memberVal = new AstNode('Literal', { value: autoVal++, raw: String(autoVal - 1) });
+          }
+          members.push({ name: memberName, value: memberVal });
+          if (!match(',')) break;
+        }
+        expect('}');
+        return new AstNode('EnumDeclaration', { id: enumName, members });
+      }
+
+      if (tok.value === 'type') {
+        while (peek().value !== ';' && peek().type !== 'EOF') next();
+        match(';');
+        return new AstNode('EmptyStatement');
+      }
+
+      if (tok.value === 'interface') {
+        next();
+        next();
+        if (peek().value === 'extends') {
+          while (peek().value !== '{' && peek().type !== 'EOF') next();
+        }
+        if (peek().value === '{') {
+          let braceCount = 1;
+          next();
+          while (braceCount > 0 && peek().type !== 'EOF') {
+            if (peek().value === '{') braceCount++;
+            else if (peek().value === '}') braceCount--;
+            next();
+          }
+        }
+        return new AstNode('EmptyStatement');
       }
 
       if (tok.value === 'if') {
@@ -107,20 +308,68 @@ export class TrueAstParser {
         next();
         expect('(');
         let init = null;
+        let isForOfOrIn = false;
+        let forOfOrInKind = null;
+        let forOfOrInLeft = null;
+
         if (peek().value === 'let' || peek().value === 'var' || peek().value === 'const') {
-          init = parseVariableDeclaration();
-          match(';');
+          const kind = next().value;
+          const firstId = next().value;
+          if (peek().value === 'of' || peek().value === 'in') {
+            isForOfOrIn = true;
+            forOfOrInKind = next().value;
+            forOfOrInLeft = new AstNode('VariableDeclaration', {
+              kind,
+              declarations: [new AstNode('VariableDeclarator', { id: firstId, init: null })]
+            });
+          } else {
+            let firstInit = null;
+            if (match('=')) firstInit = parseExpression();
+            const decls = [new AstNode('VariableDeclarator', { id: firstId, init: firstInit })];
+            while (match(',')) {
+              const nextId = next().value;
+              let nextInit = null;
+              if (match('=')) nextInit = parseExpression();
+              decls.push(new AstNode('VariableDeclarator', { id: nextId, init: nextInit }));
+            }
+            init = new AstNode('VariableDeclaration', { kind, declarations: decls });
+            match(';');
+          }
         } else if (peek().value !== ';') {
           init = parseExpression();
-          match(';');
+          if (peek().value === 'of' || peek().value === 'in') {
+            isForOfOrIn = true;
+            forOfOrInKind = next().value;
+            forOfOrInLeft = init;
+          } else {
+            match(';');
+          }
         } else {
           match(';');
         }
+
+        if (isForOfOrIn) {
+          const right = parseExpression();
+          expect(')');
+          const body = parseStatement();
+          return new AstNode(forOfOrInKind === 'of' ? 'ForOfStatement' : 'ForInStatement', {
+            left: forOfOrInLeft,
+            right,
+            body
+          });
+        }
+
         let test = null;
         if (peek().value !== ';') test = parseExpression();
         match(';');
         let update = null;
-        if (peek().value !== ')') update = parseExpression();
+        if (peek().value !== ')') {
+          const updates = [parseAssignment()];
+          while (match(',')) {
+            updates.push(parseAssignment());
+          }
+          update = updates.length === 1 ? updates[0] : new AstNode('SequenceExpression', { expressions: updates });
+        }
         expect(')');
         const body = parseStatement();
         return new AstNode('ForStatement', { init, test, update, body });
@@ -182,6 +431,34 @@ export class TrueAstParser {
         return parseBlockStatement();
       }
 
+      if (tok.value === 'do') {
+        next();
+        const body = parseStatement();
+        expect('while');
+        expect('(');
+        const test = parseExpression();
+        expect(')');
+        match(';');
+        return new AstNode('DoWhileStatement', { body, test });
+      }
+
+      if (tok.value === 'break' || tok.value === 'continue') {
+        const kind = next().value;
+        let label = null;
+        if (peek().type === 'IDENTIFIER' && peek().value !== ';') {
+          label = next().value;
+        }
+        match(';');
+        return new AstNode(kind === 'break' ? 'BreakStatement' : 'ContinueStatement', { label });
+      }
+
+      if (tok.type === 'IDENTIFIER' && peekNext().type === 'PUNCTUATOR' && peekNext().value === ':') {
+        const label = next().value;
+        expect(':');
+        const body = parseStatement();
+        return new AstNode('LabeledStatement', { label, body });
+      }
+
       if (tok.value === 'return') {
         next();
         let argument = null;
@@ -215,7 +492,7 @@ export class TrueAstParser {
     function parseVariableDeclaration(isExported = false) {
       const kind = next().value;
       const declarations = [];
-      while (peek().type === 'IDENTIFIER' || peek().value === '[') {
+      while (peek().type === 'IDENTIFIER' || peek().value === '[' || peek().value === '{') {
         let id;
         if (peek().value === '[') {
           next();
@@ -226,12 +503,44 @@ export class TrueAstParser {
           }
           expect(']');
           id = items;
+        } else if (peek().value === '{') {
+          next();
+          const items = [];
+          while (peek().value !== '}' && peek().type !== 'EOF') {
+            if (peek().type === 'IDENTIFIER') items.push(next().value);
+            if (peek().value === ',') next();
+          }
+          expect('}');
+          id = items;
         } else {
           id = next().value;
         }
+        if (peek().value === '!') next();
+        if (peek().value === ':') {
+          next();
+          let parenDepth = 0;
+          let braceDepth = 0;
+          let bracketDepth = 0;
+          let angleDepth = 0;
+          while (peek().type !== 'EOF') {
+            const pv = peek().value;
+            if (parenDepth === 0 && braceDepth === 0 && bracketDepth === 0 && angleDepth === 0 && (pv === '=' || pv === ',' || pv === ';' || pv === '}' || pv === ')')) {
+              break;
+            }
+            if (pv === '(') parenDepth++;
+            else if (pv === ')') parenDepth--;
+            else if (pv === '{') braceDepth++;
+            else if (pv === '}') braceDepth--;
+            else if (pv === '[') bracketDepth++;
+            else if (pv === ']') bracketDepth--;
+            else if (pv === '<') angleDepth++;
+            else if (pv === '>') angleDepth--;
+            next();
+          }
+        }
         let init = null;
         if (match('=')) {
-          init = parseExpression();
+          init = parseAssignment();
         }
         declarations.push(new AstNode('VariableDeclarator', { id, init }));
         if (!match(',')) break;
@@ -240,7 +549,11 @@ export class TrueAstParser {
     }
 
     function parseExpression() {
-      return parseAssignment();
+      const exprs = [parseAssignment()];
+      while (match(',')) {
+        exprs.push(parseAssignment());
+      }
+      return exprs.length === 1 ? exprs[0] : new AstNode('SequenceExpression', { expressions: exprs });
     }
 
     function parseAssignment() {
@@ -308,10 +621,19 @@ export class TrueAstParser {
         } else {
           callee = parsePrimary();
         }
+        if (peek().value === '<') {
+          next();
+          let angleDepth = 1;
+          while (angleDepth > 0 && peek().type !== 'EOF') {
+            if (peek().value === '<') angleDepth++;
+            else if (peek().value === '>') angleDepth--;
+            next();
+          }
+        }
         let args = [];
         if (match('(')) {
-          while (peek().value !== ')' && peek().type !== 'EOF') {
-            args.push(parseExpression());
+          while ((peek().type !== 'PUNCTUATOR' || peek().value !== ')') && peek().type !== 'EOF') {
+            args.push(parseAssignment());
             if (!match(',')) break;
           }
           expect(')');
@@ -363,23 +685,43 @@ export class TrueAstParser {
         return new AstNode('UnaryExpression', { operator: op, argument: arg, prefix: true });
       }
 
-      if (tok.value === 'function') {
+      if (tok.type === 'IDENTIFIER' && tok.value === 'function') {
         node = parseFunction();
-      } else if (tok.value === '[') {
+      } else if (tok.type === 'PUNCTUATOR' && tok.value === '[') {
         next();
         const elements = [];
         while (peek().value !== ']' && peek().type !== 'EOF') {
-          elements.push(parseExpression());
+          elements.push(parseAssignment());
           if (!match(',')) break;
         }
         expect(']');
         node = new AstNode('ArrayExpression', { elements });
-      } else if (tok.value === '{') {
+      } else if (tok.type === 'PUNCTUATOR' && tok.value === '{') {
         next();
         const properties = [];
-        while (peek().value !== '}' && peek().type !== 'EOF') {
-          const keyTok = next();
-          let keyName = keyTok.value;
+        while ((peek().type !== 'PUNCTUATOR' || peek().value !== '}') && peek().type !== 'EOF') {
+          if (peek().type === 'PUNCTUATOR' && peek().value === '...') {
+            next();
+            const arg = parseAssignment();
+            properties.push(new AstNode('SpreadElement', { argument: arg }));
+            if (!match(',')) break;
+            continue;
+          }
+          let key;
+          let computed = false;
+          if (peek().type === 'PUNCTUATOR' && peek().value === '[') {
+            next();
+            key = parseAssignment();
+            expect(']');
+            computed = true;
+          } else {
+            const keyTok = next();
+            if (keyTok.type === 'STRING_LITERAL' || keyTok.type === 'NUMERIC_LITERAL') {
+              key = new AstNode('Literal', { value: keyTok.value, raw: keyTok.raw || JSON.stringify(keyTok.value) });
+            } else {
+              key = new AstNode('Identifier', { name: keyTok.value });
+            }
+          }
           let val = null;
           if (match('(')) {
             const params = [];
@@ -389,39 +731,39 @@ export class TrueAstParser {
             }
             expect(')');
             const mBody = parseBlockStatement();
-            val = new AstNode('FunctionDeclaration', { id: keyName, params, body: mBody });
+            val = new AstNode('FunctionDeclaration', { id: key.name || 'method', params, body: mBody });
           } else if (match(':')) {
-            val = parseExpression();
+            val = parseAssignment();
           } else {
-            val = new AstNode('Identifier', { name: keyName });
+            val = key;
           }
-          properties.push(new AstNode('Property', { key: keyName, value: val }));
+          properties.push(new AstNode('Property', { key: key.name || key.value || key, value: val, computed }));
           if (!match(',')) break;
         }
         expect('}');
         node = new AstNode('ObjectExpression', { properties });
-      } else if (tok.value === '(') {
+      } else if (tok.type === 'PUNCTUATOR' && tok.value === '(') {
         next();
         const inner = [];
-        while (peek().value !== ')' && peek().type !== 'EOF') {
-          inner.push(parseExpression());
+        while ((peek().type !== 'PUNCTUATOR' || peek().value !== ')') && peek().type !== 'EOF') {
+          inner.push(parseAssignment());
           if (!match(',')) break;
         }
         expect(')');
 
         if (peek().value === '=>') {
           next();
-          const arrowBody = peek().value === '{' ? parseBlockStatement() : parseExpression();
+          const arrowBody = peek().value === '{' ? parseBlockStatement() : parseAssignment();
           const arrowParams = inner.map(i => (i.name ? i.name : String(i.value || '')));
           return new AstNode('ArrowFunctionExpression', { params: arrowParams, body: arrowBody });
         }
 
-        node = inner.length === 1 ? inner[0] : new AstNode('ArrayExpression', { elements: inner });
+        node = inner.length === 1 ? inner[0] : new AstNode('SequenceExpression', { expressions: inner });
       } else if (tok.type === 'IDENTIFIER') {
         const idName = next().value;
         if (peek().value === '=>') {
           next();
-          const arrowBody = peek().value === '{' ? parseBlockStatement() : parseExpression();
+          const arrowBody = peek().value === '{' ? parseBlockStatement() : parseAssignment();
           return new AstNode('ArrowFunctionExpression', { params: [idName], body: arrowBody });
         }
         node = new AstNode('Identifier', { name: idName });
@@ -432,8 +774,8 @@ export class TrueAstParser {
       while (peek().value === '(' || peek().value === '.' || peek().value === '?.' || peek().value === '[') {
         if (match('(')) {
           const args = [];
-          while (peek().value !== ')' && peek().type !== 'EOF') {
-            args.push(parseExpression());
+          while ((peek().type !== 'PUNCTUATOR' || peek().value !== ')') && peek().type !== 'EOF') {
+            args.push(parseAssignment());
             if (!match(',')) break;
           }
           expect(')');
@@ -456,12 +798,43 @@ export class TrueAstParser {
         node = new AstNode('UpdateExpression', { operator: op, argument: node, prefix: false });
       }
 
+      if (peek().value === 'as') {
+        next();
+        let parenDepth = 0;
+        let braceDepth = 0;
+        let bracketDepth = 0;
+        let angleDepth = 0;
+        while (peek().type !== 'EOF') {
+          const pv = peek().value;
+          if (parenDepth === 0 && braceDepth === 0 && bracketDepth === 0 && angleDepth === 0 && (pv === ';' || pv === ',' || pv === ')' || pv === '}' || pv === ']' || pv === '=' || pv === ':')) {
+            break;
+          }
+          if (pv === '(') parenDepth++;
+          else if (pv === ')') parenDepth--;
+          else if (pv === '{') braceDepth++;
+          else if (pv === '}') braceDepth--;
+          else if (pv === '[') bracketDepth++;
+          else if (pv === ']') bracketDepth--;
+          else if (pv === '<') angleDepth++;
+          else if (pv === '>') angleDepth--;
+          next();
+        }
+      }
+
+      if (peek().value === '!') {
+        next();
+      }
+
       return node;
     }
 
     const statements = [];
     while (peek().type !== 'EOF') {
+      const pBefore = pos;
       statements.push(parseStatement());
+      if (pos === pBefore) {
+        throw new Error(`Parser stuck at top-level pos ${pos}: ${JSON.stringify(peek())}`);
+      }
     }
 
     return new AstNode('Program', { body: statements });
@@ -630,17 +1003,24 @@ const BUILTIN_PURE_METHODS = new Set([
   'splice', 'split', 'replace', 'charCodeAt', 'indexOf'
 ]);
 
-export function extractSymbolsAndCallsFromAst(ast, sourceOrigin) {
+export function extractSymbolsAndCallsFromAst(ast, sourceOrigin = TAXONOMY.USER_DEFINED) {
   const functions = new Map();
+  const enums = new Map();
+  const constants = new Map();
   const directCalls = [];
   const methodCalls = [];
 
   function visit(node, currentFnName = null) {
     if (!node || typeof node !== 'object') return;
 
+    if (node.type === 'EnumDeclaration') {
+      enums.set(node.id, { name: node.id, node, origin: sourceOrigin });
+      return;
+    }
+
     if (node.type === 'FunctionDeclaration') {
       const fnName = node.id || currentFnName;
-      if (fnName) {
+      if (fnName && currentFnName === null) {
         functions.set(fnName, {
           name: fnName,
           params: node.params,
@@ -648,16 +1028,16 @@ export function extractSymbolsAndCallsFromAst(ast, sourceOrigin) {
           origin: sourceOrigin,
           calls: []
         });
-        visitNodeChildren(node.body, fnName);
-        return;
       }
+      visitNodeChildren(node.body, fnName);
+      return;
     }
 
     if (node.type === 'VariableDeclaration') {
       for (const decl of node.declarations) {
         if (decl.init && (decl.init.type === 'ArrowFunctionExpression' || decl.init.type === 'FunctionDeclaration')) {
           const fnName = decl.id;
-          if (typeof fnName === 'string') {
+          if (typeof fnName === 'string' && currentFnName === null) {
             functions.set(fnName, {
               name: fnName,
               params: decl.init.params,
@@ -665,11 +1045,16 @@ export function extractSymbolsAndCallsFromAst(ast, sourceOrigin) {
               origin: sourceOrigin,
               calls: []
             });
-            visitNodeChildren(decl.init.body, fnName);
-            continue;
           }
+          visitNodeChildren(decl.init.body, fnName);
+        } else {
+          if (currentFnName === null && typeof decl.id === 'string') {
+            constants.set(decl.id, { name: decl.id, node: decl, origin: sourceOrigin });
+          }
+          visit(decl.init, currentFnName);
         }
       }
+      return;
     }
 
     if (node.type === 'Property' && node.value && (node.value.type === 'FunctionDeclaration' || node.value.type === 'ArrowFunctionExpression')) {
@@ -722,7 +1107,7 @@ export function extractSymbolsAndCallsFromAst(ast, sourceOrigin) {
   }
 
   visit(ast);
-  return { functions, directCalls, methodCalls };
+  return { functions, enums, constants, directCalls, methodCalls };
 }
 
 function extractReceiverName(node) {
@@ -798,9 +1183,9 @@ export function countSemanticUnits(node) {
   return units;
 }
 
-export function computeAstTransitiveClosure(entrypointNames, symbolPool) {
+export function computeAstTransitiveClosure(entrypoints, symbolPool) {
   const closure = new Map();
-  const queue = [...entrypointNames];
+  const queue = [...entrypoints];
   const visited = new Set();
 
   while (queue.length > 0) {
@@ -856,27 +1241,24 @@ export class LinAstEmitter {
 
       case 'SwitchStatement': {
         const disc = this.emitExpression(stmt.discriminant);
-        const branches = [];
-        let defaultBranch = null;
-        for (const c of stmt.cases) {
-          const bodyStr = c.consequent.map(s => this.emitStatement(s)).filter(Boolean).join('\n');
+        const cases = stmt.cases || [];
+        const lines = [];
+        lines.push(`switch (${disc}) {`);
+        for (const c of cases) {
           if (c.test) {
-            const testStr = this.emitExpression(c.test);
-            branches.push({ test: `(${disc} == ${testStr})`, body: bodyStr });
+            lines.push(`  case ${this.emitExpression(c.test)}:`);
           } else {
-            defaultBranch = bodyStr;
+            lines.push(`  default:`);
+          }
+          if (c.consequent && c.consequent.length > 0) {
+            for (const s of c.consequent) {
+              const stmtStr = this.emitStatement(s);
+              if (stmtStr) lines.push(`    ${stmtStr}`);
+            }
           }
         }
-        let result = defaultBranch || '';
-        for (let i = branches.length - 1; i >= 0; i--) {
-          const b = branches[i];
-          if (result) {
-            result = `?(${b.test}){\n${b.body}\n}:{\n${result}\n};`;
-          } else {
-            result = `?(${b.test}){\n${b.body}\n};`;
-          }
-        }
-        return result;
+        lines.push(`};`);
+        return lines.join('\n');
       }
 
       case 'IfStatement': {
@@ -904,18 +1286,19 @@ export class LinAstEmitter {
       }
 
       case 'VariableDeclaration': {
+        const kind = stmt.kind || 'var';
         const assigns = [];
         for (const d of stmt.declarations) {
           if (Array.isArray(d.id)) {
             const rhs = d.init ? this.emitExpression(d.init) : '[]';
-            assigns.push(`_destruct = ${rhs};`);
+            assigns.push(`${kind} _destruct = ${rhs};`);
             d.id.forEach((item, idx) => {
-              assigns.push(`${item} = _destruct[${idx}];`);
+              assigns.push(`${kind} ${item} = _destruct[${idx}];`);
             });
           } else if (d.init) {
-            assigns.push(`${d.id} = ${this.emitExpression(d.init)};`);
+            assigns.push(`${kind} ${d.id} = ${this.emitExpression(d.init)};`);
           } else {
-            assigns.push(`${d.id} = null;`);
+            assigns.push(`${kind} ${d.id};`);
           }
         }
         return assigns.join('\n');
@@ -925,6 +1308,53 @@ export class LinAstEmitter {
         const pipelineLowered = this.tryLowerPipeline(stmt.expression);
         if (pipelineLowered) return pipelineLowered;
         return `${this.emitExpression(stmt.expression)};`;
+      }
+
+      case 'FunctionDeclaration': {
+        const params = (stmt.params || []).join(',');
+        const bodyLin = this.emitBody(stmt.body);
+        return `!${stmt.id}(${params}){\n${bodyLin}\n};`;
+      }
+
+      case 'DoWhileStatement': {
+        const body = this.emitStatementAsBlock(stmt.body);
+        const test = this.emitExpression(stmt.test);
+        return `;do {\n${body}\n} while(${test});`;
+      }
+
+      case 'LabeledStatement':
+        return `${stmt.label}: ${this.emitStatement(stmt.body)}`;
+
+      case 'BreakStatement':
+        return stmt.label ? `break ${stmt.label};` : `break;`;
+
+      case 'ContinueStatement':
+        return stmt.label ? `continue ${stmt.label};` : `continue;`;
+
+      case 'ForOfStatement': {
+        const left = stmt.left.type === 'VariableDeclaration' ? stmt.left.declarations[0].id : this.emitExpression(stmt.left);
+        const right = this.emitExpression(stmt.right);
+        const body = this.emitStatementAsBlock(stmt.body);
+        return `for (${left} of ${right}) {\n${body}\n};`;
+      }
+
+      case 'ForInStatement': {
+        const left = stmt.left.type === 'VariableDeclaration' ? stmt.left.declarations[0].id : this.emitExpression(stmt.left);
+        const right = this.emitExpression(stmt.right);
+        const body = this.emitStatementAsBlock(stmt.body);
+        return `for (${left} in ${right}) {\n${body}\n};`;
+      }
+
+      case 'TryStatement': {
+        const blockStr = this.emitBody(stmt.block);
+        const catchStr = stmt.handler ? this.emitBody(stmt.handler.body) : '';
+        const param = stmt.handler && stmt.handler.param ? stmt.handler.param : 'e';
+        return `try {\n${blockStr}\n} catch(${param}) {\n${catchStr}\n};`;
+      }
+
+      case 'EnumDeclaration': {
+        const membersStr = stmt.members.map(m => `${JSON.stringify(m.name)}:${this.emitExpression(m.value)}`).join(',');
+        return `$${stmt.id} = {${membersStr}};`;
       }
 
       case 'BlockStatement':
@@ -1028,7 +1458,7 @@ export class LinAstEmitter {
     switch (expr.type) {
       case 'Literal':
         if (expr.regex) return expr.raw || expr.value;
-        if (typeof expr.value === 'string') return `"${expr.value}"`;
+        if (typeof expr.value === 'string') return JSON.stringify(expr.value);
         if (expr.value === null) return 'null';
         return String(expr.value);
 
@@ -1072,7 +1502,13 @@ export class LinAstEmitter {
       }
 
       case 'ObjectExpression': {
-        const props = expr.properties.map(p => `${JSON.stringify(p.key)}:${this.emitExpression(p.value)}`).join(',');
+        const props = expr.properties.map(p => {
+          if (p.computed) {
+            return `[${this.emitExpression(p.key)}]:${this.emitExpression(p.value)}`;
+          }
+          const k = typeof p.key === 'string' ? JSON.stringify(p.key) : (p.key && p.key.type ? this.emitExpression(p.key) : JSON.stringify(p.key));
+          return `${k}:${this.emitExpression(p.value)}`;
+        }).join(',');
         return `{${props}}`;
       }
 
@@ -1108,6 +1544,12 @@ export class LinAstEmitter {
         return `((${params}) => ${bodyStr})`;
       }
 
+      case 'SequenceExpression':
+        return `(${expr.expressions.map(e => this.emitExpression(e)).join(', ')})`;
+
+      case 'SpreadElement':
+        return `...${this.emitExpression(expr.argument)}`;
+
       default:
         return 'null';
     }
@@ -1129,19 +1571,33 @@ export function runSemanticClosurePipeline(userSource, opts = {}) {
   const userSymbols = extractSymbolsAndCallsFromAst(userAst, TAXONOMY.USER_DEFINED);
 
   const libSymbols = new Map();
+  const libEnums = new Map();
+  const libConstants = new Map();
+
   for (const [libName, libCode] of Object.entries(libSources)) {
     const libAst = TrueAstParser.parse(libCode);
     const symbols = extractSymbolsAndCallsFromAst(libAst, TAXONOMY.LIBRARY_SOURCE);
     for (const [k, v] of symbols.functions) {
       libSymbols.set(k, v);
     }
+    for (const [k, v] of symbols.enums) {
+      libEnums.set(k, v);
+    }
+    for (const [k, v] of symbols.constants) {
+      libConstants.set(k, v);
+    }
   }
+
+  const allEnums = new Map([...libEnums, ...userSymbols.enums]);
+  const allConstants = new Map([...libConstants, ...userSymbols.constants]);
 
   const symbolPool = new Map([...libSymbols, ...userSymbols.functions]);
 
-  const effectiveEntrypoints = entrypoints.length > 0
-    ? entrypoints
-    : Array.from(userSymbols.functions.keys());
+  const topCalls = userSymbols.directCalls.map(c => c.name).filter(n => symbolPool.has(n));
+  const effectiveEntrypoints = Array.from(new Set([
+    ...(entrypoints.length > 0 ? entrypoints : Array.from(userSymbols.functions.keys())),
+    ...topCalls
+  ]));
 
   const closure = computeAstTransitiveClosure(effectiveEntrypoints, symbolPool);
 
@@ -1209,8 +1665,27 @@ export function runSemanticClosurePipeline(userSource, opts = {}) {
     }
   }
 
-  const program_lin = formatLinModule(userFnsLin, effectiveEntrypoints);
-  const extracted_runtime_lin = formatLinModule(runtimeFnsLin, Array.from(libSymbols.keys()));
+  const allEnumsLin = [];
+  for (const [name, enumDef] of allEnums.entries()) {
+    const variants = enumDef.node.members.map(m => {
+      const valStr = LinAstEmitter.emitExpression(m.value);
+      return `  ${m.name}: ${valStr}`;
+    }).join(',\n');
+    const enumLin = `enum ${name} {\n${variants}\n}`;
+    allEnumsLin.push(enumLin);
+  }
+
+  const userConsts = [];
+  const runtimeConsts = [];
+  for (const [name, constDef] of allConstants.entries()) {
+    const valStr = LinAstEmitter.emitExpression(constDef.node.init);
+    const constLine = `var ${name} = ${valStr};`;
+    if (constDef.origin === TAXONOMY.USER_DEFINED) userConsts.push(constLine);
+    else runtimeConsts.push(constLine);
+  }
+
+  const program_lin = formatLinModule(userFnsLin, effectiveEntrypoints, allEnumsLin, userConsts);
+  const extracted_runtime_lin = formatLinModule(runtimeFnsLin, Array.from(libSymbols.keys()), allEnumsLin, runtimeConsts);
 
   return {
     program_lin,
@@ -1231,20 +1706,38 @@ export function runSemanticClosurePipeline(userSource, opts = {}) {
   };
 }
 
-function formatLinModule(fnStrings, exports) {
-  if (fnStrings.length === 0) {
+function formatLinModule(fnStrings, exports, enumsStrings = [], constsList = []) {
+  if (fnStrings.length === 0 && enumsStrings.length === 0 && constsList.length === 0) {
     return `@LIN:L1c:0.2\n^schema_once ^lossy=true\n~G{?=if #=for ^=ret :else}\n\n=ex{}`;
   }
 
-  return [
+  const parts = [
     '@LIN:L1c:0.2',
     '^schema_once ^lossy=true',
-    '~G{?=if #=for ^=ret :else}',
-    '',
-    fnStrings.join('\n\n'),
-    '',
-    `=ex{${exports.join(', ')}}`
-  ].join('\n');
+    '~G{?=if #=for ^=ret :else}'
+  ];
+
+  if (enumsStrings.length > 0) {
+    parts.push('');
+    parts.push(enumsStrings.join('\n\n'));
+  }
+
+  if (constsList.length > 0) {
+    parts.push('');
+    parts.push(constsList.join('\n'));
+  }
+
+  if (fnStrings.length > 0) {
+    parts.push('');
+    parts.push(fnStrings.join('\n\n'));
+  }
+
+  if (exports.length > 0) {
+    parts.push('');
+    parts.push(`=ex{${exports.join(', ')}}`);
+  }
+
+  return parts.join('\n');
 }
 
 export function isolateFailureCause(testCase, oracleResult, linResult, manifest) {

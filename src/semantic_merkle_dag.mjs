@@ -79,6 +79,18 @@ export class SemanticMerkleDagStore {
   }
 
   saveLedgerToFile(filepath) {
+    if (fs.existsSync(filepath)) {
+      try {
+        const existing = JSON.parse(fs.readFileSync(filepath, 'utf8'));
+        if (existing && existing.certificates) {
+          for (const [k, v] of Object.entries(existing.certificates)) {
+            if (!this.proofCertificates.has(k)) {
+              this.proofCertificates.set(k, v);
+            }
+          }
+        }
+      } catch {}
+    }
     fs.writeFileSync(filepath, JSON.stringify(this.exportLedgerJson(), null, 2), 'utf8');
   }
 

@@ -48,16 +48,29 @@ export function renderBody(stmts) {
   return out;
 }
 
-function renderStmt(st) {
+export function renderStmt(st) {
+  if (!st) return '';
   switch (st.type) {
+    case 'function': {
+      const fn = st.fn;
+      return `function ${fn.name}(${fnParamsText(fn)}){${renderBody(fn.body)}}`;
+    }
+    case 'var': {
+      const declStrs = (st.decls || []).map(d => `${d.id}${d.init ? ` = ${renderExpr(d.init)}` : ''}`).join(', ');
+      return `${st.kind || 'var'} ${declStrs};`;
+    }
+    case 'labeled':
+      return `${st.label}: ${renderStmt(st.body)}`;
+    case 'dowhile':
+      return `do {${renderBody(st.body)}} while(${renderExpr(st.cond)});`;
     case 'return':
       return `return ${renderExpr(st.expr)};`;
     case 'throw':
       return `throw ${renderExpr(st.expr)};`;
     case 'break':
-      return 'break;';
+      return st.label ? `break ${st.label};` : 'break;';
     case 'continue':
-      return 'continue;';
+      return st.label ? `continue ${st.label};` : 'continue;';
     case 'expr': {
       const text = renderExpr(st.expr).trim();
       if (!text) return '';
@@ -72,8 +85,23 @@ function renderStmt(st) {
       return `(${renderExpr(st.cond)}?${renderBody(st.then)}:${renderBody(st.elseExpr)});`;
     case 'for':
       return `for(${st.init};${renderExpr(st.cond)};${st.step}){${renderBody(st.body)}}`;
+    case 'forof':
+      return `for(const ${st.left} of ${st.right}){${renderBody(st.body)}}`;
+    case 'forin':
+      return `for(const ${st.left} in ${st.right}){${renderBody(st.body)}}`;
     case 'while':
       return `while(${renderExpr(st.cond)}){${renderBody(st.body)}}`;
+    case 'switch': {
+      const disc = renderExpr(st.discriminant);
+      const caseStrs = (st.cases || []).map(c => {
+        const bodyStr = renderBody(c.consequent);
+        if (c.type === 'default') {
+          return `default:\n${bodyStr}`;
+        }
+        return `case ${renderExpr(c.test)}:\n${bodyStr}`;
+      }).join('\n');
+      return `switch (${disc}) {\n${caseStrs}\n}`;
+    }
     case 'match': {
       const target = renderExpr(st.target);
       return renderMatchArms(target, st.arms);
