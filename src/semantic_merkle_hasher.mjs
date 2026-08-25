@@ -130,7 +130,7 @@ export function hashCanonicalNode(irNode) {
 
     case 'Function': {
       const bodyH = hashCanonicalNode(irNode.body);
-      const capsH = (irNode.captures || []).map(c => `${c.name}->${c.ref}`).join(',');
+      const capsH = (irNode.captures || []).map(c => `${c.outerRef}->${c.ref}`).join(',');
       return hashString(`Fn:v${CANONICALIZATION_VERSION}:${irNode.effect}:p${irNode.paramCount}:[${capsH}]:${bodyH}`);
     }
 

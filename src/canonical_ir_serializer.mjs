@@ -27,9 +27,9 @@ const IO_SYMBOLS = new Set([
  */
 export class CanonicalIrSerializer {
   static serializeFunction(fnNode, outerScope = null) {
+    // New local frame: parameters start at local $0, $1, $2...
     const scope = new ScopeEnv(outerScope);
     
-    // Bind parameters to De Bruijn indexes $0, $1, $2...
     const params = fnNode.params || [];
     params.forEach(p => scope.bindLocal(p));
 
@@ -80,7 +80,6 @@ export class CanonicalIrSerializer {
 
       case 'IfStatement': {
         const test = this.serializeNode(node.test, scope);
-        // Normalize unbraced consequent / alternate into canonical Block
         const consBlock = node.consequent.type === 'BlockStatement' ? node.consequent : { type: 'BlockStatement', body: [node.consequent] };
         const consequent = this.serializeNode(consBlock, scope);
         
@@ -143,7 +142,6 @@ export class CanonicalIrSerializer {
       }
 
       case 'BinaryExpression': {
-        // Strict preservation of left-to-right evaluation order
         const left = this.serializeNode(node.left, scope);
         const right = this.serializeNode(node.right, scope);
         let op = node.operator;
@@ -219,13 +217,13 @@ export class CanonicalIrSerializer {
 export class ScopeEnv {
   constructor(parent = null) {
     this.parent = parent;
-    this.locals = new Map();
-    this.captures = new Map();
-    this.nextIndex = parent ? parent.nextIndex : 0;
+    this.locals = new Map(); // name -> index ($0, $1)
+    this.captures = new Map(); // name -> { capIdx: $c0, outerRef: $0 }
+    this.localIndex = 0;
   }
 
   bindLocal(name) {
-    const idx = this.nextIndex++;
+    const idx = this.localIndex++;
     this.locals.set(name, `$${idx}`);
     return `$${idx}`;
   }
@@ -240,9 +238,12 @@ export class ScopeEnv {
       if (parentResolved.kind === 'LocalRef' || parentResolved.kind === 'CaptureRef') {
         if (!this.captures.has(name)) {
           const capIdx = `$c${this.captures.size}`;
-          this.captures.set(name, capIdx);
+          this.captures.set(name, {
+            capIdx,
+            outerRef: parentResolved.ref
+          });
         }
-        return { kind: 'CaptureRef', ref: this.captures.get(name), original: name };
+        return { kind: 'CaptureRef', ref: this.captures.get(name).capIdx, outerRef: this.captures.get(name).outerRef };
       }
       return parentResolved;
     }
@@ -251,7 +252,7 @@ export class ScopeEnv {
   }
 
   getCaptures() {
-    return Array.from(this.captures.entries()).map(([name, ref]) => ({ name, ref }));
+    return Array.from(this.captures.values()).map(c => ({ ref: c.capIdx, outerRef: c.outerRef }));
   }
 }
 
