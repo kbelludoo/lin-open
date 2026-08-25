@@ -1,0 +1,6 @@
+@RULEL:LEGACY_TS_AUTH_TS:1.0.0
+~LANG{source_ext="ts"}
+// Auth Module
+export function verify(token: string) {
+  return { ok: true, token };
+}

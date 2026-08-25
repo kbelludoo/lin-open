@@ -1,0 +1,35 @@
+@RULEL:ARTIFACT_JS_MS_LIKE_JS:1.0.0
+~LANG{source_ext="js"}
+function parse(ms) {
+  if (typeof ms === 'string') {
+    return split(ms);
+  } else if (typeof ms === 'number') {
+    return formatShort(ms);
+  }
+  throw new Error('invalid input');
+}
+
+function split(str) {
+  const m = str.match(/^-?(\d+\.?\d*?)\s*(ms|s|m|h|d|w|y)$/);
+  if (!m) return null;
+  const n = parseFloat(m[1]);
+  const unit = m[2];
+  if (unit === 'ms') return n;
+  if (unit === 's') return n * 1000;
+  if (unit === 'm') return n * 60000;
+  if (unit === 'h') return n * 3600000;
+  if (unit === 'd') return n * 86400000;
+  if (unit === 'w') return n * 604800000;
+  if (unit === 'y') return n * 31557600000;
+  return null;
+}
+
+function formatShort(ms) {
+  const abs = Math.abs(ms);
+  if (abs >= 31557600000) return Math.round(ms / 31557600000) + 'y';
+  if (abs >= 86400000) return Math.round(ms / 86400000) + 'd';
+  if (abs >= 3600000) return Math.round(ms / 3600000) + 'h';
+  if (abs >= 60000) return Math.round(ms / 60000) + 'm';
+  if (abs >= 1000) return Math.round(ms / 1000) + 's';
+  return ms + 'ms';
+}

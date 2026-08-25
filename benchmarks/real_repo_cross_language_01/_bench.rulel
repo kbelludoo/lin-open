@@ -1,38 +1,34 @@
-@RULEL:POLYGLOT_PY__BENCH_PY:1.0.0
-~LANG{source_ext="py"}
+@RULEL:ARTIFACT_TS__BENCH_TS:1.0.0
+~LANG{source_ext="ts"}
 
-import time
-import sys
-sys.path.insert(0, '.')
-from ms_library import ms, parse, format_ms
+import { parse, format } from '../real_repo_ms/src/index.ts';
 
-ITERATIONS = 100000
-test_cases = ["100","1m","1h","2d","1y","1.5h","-100ms","100 milliseconds","2.5 hrs"]
-format_cases = [100,60000,3600000,172800000,31557600000,-5400000,0,1500,86400000]
+const ITERATIONS = 100000;
+const testCases = ["100","1m","1h","2d","1y","1.5h","-100ms","100 milliseconds","2.5 hrs"];
+const formatCases = [100,60000,3600000,172800000,31557600000,-5400000,0,1500,86400000];
 
-# Warmup
-for _ in range(1000):
-    for case in test_cases:
-        parse(case)
-    for val in format_cases:
-        format_ms(val)
+// Warmup
+for (let i = 0; i < 1000; i++) {
+  for (const t of testCases) parse(t);
+  for (const v of formatCases) format(v);
+}
 
-# Parse benchmark
-start = time.perf_counter()
-for _ in range(ITERATIONS):
-    for case in test_cases:
-        parse(case)
-parse_time = time.perf_counter() - start
+// Parse benchmark
+const parseStart = performance.now();
+for (let i = 0; i < ITERATIONS; i++) {
+  for (const t of testCases) parse(t);
+}
+const parseTime = (performance.now() - parseStart) / 1000;
 
-# Format benchmark
-start = time.perf_counter()
-for _ in range(ITERATIONS):
-    for val in format_cases:
-        format_ms(val)
-format_time = time.perf_counter() - start
+// Format benchmark
+const formatStart = performance.now();
+for (let i = 0; i < ITERATIONS; i++) {
+  for (const v of formatCases) format(v);
+}
+const formatTime = (performance.now() - formatStart) / 1000;
 
-total_parse_ops = ITERATIONS * len(test_cases)
-total_format_ops = ITERATIONS * len(format_cases)
+const totalParseOps = ITERATIONS * testCases.length;
+const totalFormatOps = ITERATIONS * formatCases.length;
 
-print(f"Parse: {parse_time:.3f}s ({parse_time/total_parse_ops*1e6:.3f}µs/op)")
-print(f"Format: {format_time:.3f}s ({format_time/total_format_ops*1e6:.3f}µs/op)")
+console.log(`Parse: ${parseTime.toFixed(3)}s (${(parseTime/totalParseOps*1000).toFixed(3)}µs/op)`);
+console.log(`Format: ${formatTime.toFixed(3)}s (${(formatTime/totalFormatOps*1000).toFixed(3)}µs/op)`);
