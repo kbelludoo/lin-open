@@ -2,7 +2,7 @@
 // Spec: spec/LIN_IR_CROSS_BACKEND.rulel
 
 import assert from 'node:assert/strict';
-import { transpileToLin } from '../src/transpiler_to_lin.mjs';
+import { transpileToLin, transpileToLinWithManifest } from '../src/transpiler_to_lin.mjs';
 import { compile } from '../src/compiler.mjs';
 import { runInMemory } from '../src/vm.mjs';
 
@@ -114,3 +114,22 @@ console.log("    -> JS in-memory execution: square_sum(3, 4)=25 [PASS]");
 console.log("\n================================================================================");
 console.log("   POLYGLOT MULTI-LANGUAGE TRANSPILER: ALL 5 LANGUAGES PASSED 100%             ");
 console.log("================================================================================");
+
+// 6. JS/TS -> Semantic Closure -> Specialized LIN -> JS execution
+console.log("\n[+] 6. JS/TS -> Semantic Closure Pipeline & Capability Manifest...");
+const jsPipelineCode = `
+function processItems(numbers) {
+    return numbers.filter(x => x > 10).map(x => x * 2).join(",");
+}
+`;
+const { lin: linFromPipeline, manifest, coverage } = transpileToLinWithManifest(jsPipelineCode, { filename: 'pipeline.js' });
+assert.ok(linFromPipeline.includes('!processItems(numbers){'));
+assert.equal(coverage, 1.0);
+assert.equal(manifest.unresolved.length, 0);
+
+const jsModPipeline = runInMemory(compile(linFromPipeline, { target: 'js' }).code);
+const pipelineFn = getFn(jsModPipeline, 'processItems');
+assert.equal(pipelineFn([5, 12, 8, 20, 3]), "24,40");
+assert.equal(pipelineFn([1, 2]), "");
+console.log("    -> JS in-memory execution: processItems([5, 12, 8, 20, 3])='24,40' [PASS]");
+console.log("    -> Capability Manifest: ClosureCoverage=100.0%, host_required=[] [PASS]");
