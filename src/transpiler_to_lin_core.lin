@@ -6,7 +6,7 @@
   ?(filename.endsWith(".py")){ ^"py" }
   :(filename.endsWith(".rs")){ ^"rs" }
   :(filename.endsWith(".go")){ ^"go" }
-  :(filename.endsWith(".c") || filename.endsWith(".h")){ ^"c" }
+  :(filename.endsWith(".c") || filename.endsWith(".h") || filename.endsWith(".cc") || filename.endsWith(".cpp") || filename.endsWith(".hpp") || filename.endsWith(".cxx")){ ^"c" }
   :(filename.endsWith(".zig")){ ^"zig" }
   :(filename.endsWith(".ts")){ ^"ts" }
   :(filename.endsWith(".js") || filename.endsWith(".mjs") || filename.endsWith(".cjs")){ ^"js" }
