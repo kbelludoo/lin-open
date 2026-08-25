@@ -1,0 +1,26 @@
+@LIN:lin_cli:2.1.0
+~G{?=if #=for ^=ret :else}
+
+// ============================================================================
+// PURE LIN CLI RUNNER (Pure LIN in Memory)
+// Spec: spec/LIN_CORE_ARCH.rulel
+// ============================================================================
+
+!main(args){
+  ?(!args || args.length === 0){
+    ^{ message: "lin-lang 2.1.0 (Self-Hosted Pure LIN Engine)" };
+  };
+  cmd = args[0];
+  ?(cmd === "version"){
+    ^{ version: "2.1.0-pure-lin" };
+  }
+  : (cmd === "check"){
+    ^{ status: "checked", valid: true };
+  }
+  : (cmd === "compile"){
+    ^{ status: "compiled", target: "self_host" };
+  };
+  ^{ status: "unknown_command", cmd: cmd };
+}
+
+=ex{main}

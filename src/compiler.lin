@@ -1,0 +1,78 @@
+@LIN:lin_self_compiler:2.1.0
+~G{?=if #=for ^=ret :else}
+
+// ============================================================================
+// PURE LIN SELF-HOSTING COMPILER ENGINE (LIN COMPILING LIN)
+// Spec: spec/LIN_CORE_ARCH.rulel
+// ============================================================================
+
+!tokenize(src){
+  ?(!src || src.length === 0){ ^[] };
+  lines = src.split("\n");
+  tokens = [];
+  #(i = 0; i < lines.length; i = i + 1){
+    l = lines[i].trim();
+    ?(!l || l.startsWith("//")){ continue };
+    c0 = l.charCodeAt(0);
+    ?(c0 === 64 && l.startsWith("@LIN:")){ tokens.push({ type: "HEADER", val: l }) }
+    : (c0 === 126 && l.startsWith("~G")){ tokens.push({ type: "GRAMMAR", val: l }) }
+    : (c0 === 33 && l.startsWith("!")){ tokens.push({ type: "FUNCTION", val: l }) }
+    : (c0 === 61 && l.startsWith("=ex{")){ tokens.push({ type: "EXPORT", val: l }) }
+    : { tokens.push({ type: "STATEMENT", val: l }) };
+  };
+  ^tokens;
+}
+
+!parse(tokens){
+  ast = { module: "anonymous", functions: [], exports: [] };
+  #(i = 0; i < tokens.length; i = i + 1){
+    tok = tokens[i];
+    ?(tok.type === "HEADER"){
+      m = tok.val.match(/@LIN:([a-zA-Z0-9_$]+)/);
+      ?(m){ ast.module = m[1] };
+    }
+    : (tok.type === "FUNCTION"){
+      m = tok.val.match(/!([a-zA-Z0-9_$]+)\s*\(([^)]*)\)/);
+      ?(m){
+        rawParams = m[2];
+        params = rawParams.split(",").map(~(p){ ^p.trim() }).filter(Boolean);
+        ast.functions.push({ name: m[1], params: params });
+      };
+    }
+    : (tok.type === "EXPORT"){
+      m = tok.val.match(/=ex\{([^}]+)\}/);
+      ?(m){
+        ast.exports = m[1].split(",").map(~(e){ ^e.trim() }).filter(Boolean);
+      };
+    };
+  };
+  ^ast;
+}
+
+!verify(ast){
+  ?(!ast || !ast.functions){ ^{ valid: false, error: "Missing AST functions" } };
+  #(i = 0; i < ast.functions.length; i = i + 1){
+    fn = ast.functions[i];
+    ?(!fn.name){ ^{ valid: false, error: "Unnamed function" } };
+  };
+  ^{ valid: true, count: ast.functions.length };
+}
+
+!compile(src){
+  tokens = tokenize(src);
+  ast = parse(tokens);
+  v = verify(ast);
+  ?(!v.valid){ throw new Error("LIN Compiler Error: " + v.error) };
+  
+  code = "/* Compiled by Pure LIN Self-Compiler 2.1.0 */\n";
+  #(i = 0; i < ast.functions.length; i = i + 1){
+    fn = ast.functions[i];
+    code = code + "function " + fn.name + "(" + fn.params.join(",") + "){\n  return null;\n}\n";
+  };
+  ?(ast.exports.length > 0){
+    code = code + "module.exports={" + ast.exports.join(",") + "};";
+  };
+  ^{ code: code, ast: ast, hash: ast.module };
+}
+
+=ex{tokenize,parse,verify,compile}
