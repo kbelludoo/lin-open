@@ -110,8 +110,10 @@
   joined = joined.replace(/([0-9a-fA-F])'([0-9a-fA-F])/g, "$1$2");
   lines = joined.split("\n");
   out = [];
+  strs = [];
   #(k = 0; k < lines.length; k++){
     line = lines[k];
+    line = line.replace(/"(?:[^"\\]|\\.)*"/g, function(m){ strs.push(m); ^"\u0000S" + (strs.length - 1) + "\u0000" });
     t = line.trim();
     ?(!t.startsWith("#")){ out.push(line); continue };
     ?(t.startsWith("#if") || t.startsWith("#ifdef") || t.startsWith("#ifndef")){
@@ -130,11 +132,17 @@
     ?(t.startsWith("#define")){ out.push("// cpp_define"); continue };
     ?(t.startsWith("#include") || t.startsWith("#pragma") || t.startsWith("#undef") || t.startsWith("#import") || t.startsWith("#error") || t.startsWith("#warning")){ continue };
   };
-  ^out.join("\n")
+  res = out.join("\n");
+  res = res.replace(/\u0000S(\d+)\u0000/g, function(m, i){ ^strs[+i] });
+  ^res
 }
 
 !transpileCToLin(cSource){
-  clean = cppStripPreprocessor(cSource).replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
+  clean = cppStripPreprocessor(cSource);
+  cstrs = [];
+  clean = clean.replace(/"(?:[^"\\]|\\.)*"/g, function(m){ cstrs.push(m); ^"\u0000C" + (cstrs.length - 1) + "\u0000" });
+  clean = clean.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
+  clean = clean.replace(/\u0000C(\d+)\u0000/g, function(m, i){ ^cstrs[+i] });
   rawFns = extractBracedFunctions(clean, /(?:[A-Za-z0-9_*]+\s+)+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);
   fns = [];
   #(i = 0; i < rawFns.length; i++){
