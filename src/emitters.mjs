@@ -1340,6 +1340,21 @@ pub fn _lia_cat(a: anytype, b: anytype) []const u8 {
 }
 fn _lia_eqs(a: []const u8, b: []const u8) bool {
     return std.mem.eql(u8, a, b);
+}
+fn _lia_len(x: anytype) i64 {
+    const T = @TypeOf(x);
+    if (T == []const u8 or T == []u8) return @as(i64, @intCast(x.len));
+    return 0;
+}
+fn _lia_char_at(s: []const u8, i: i64) []const u8 {
+    const idx = @as(usize, @intCast(i));
+    if (idx < s.len) return s[idx .. idx + 1];
+    return "";
+}
+fn _lia_char_code_at(s: []const u8, i: i64) i64 {
+    const idx = @as(usize, @intCast(i));
+    if (idx < s.len) return @as(i64, s[idx]);
+    return 0;
 }`;
 
 function zigType(t) {
@@ -1387,6 +1402,7 @@ function emitZigFn(lines, fn) {
   for (const p of ps) if (zigType(p.type) === '[]const u8') stringIds.add(p.name);
   const ctx = { stringIds, params: ps };
   lines.push(`pub fn ${safeEmitId(snakeCase(fn.name))}(${sig}) ${retT} {`);
+  for (const p of ps) lines.push(`    _ = ${safeEmitId(p.name)};`);
   const locals = new Set();
   for (const st of fn.body) collectLocalsGo(st, locals, ps.map((p) => p.name));
   const bodyRaw = zigStmts(fn.body, 1, ctx);
