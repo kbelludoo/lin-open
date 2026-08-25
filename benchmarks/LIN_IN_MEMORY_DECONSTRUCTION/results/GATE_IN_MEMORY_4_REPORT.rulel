@@ -1,0 +1,69 @@
+@RULEL:GATE_IN_MEMORY_4_REPORT:1.0.0
+~DATA
+.adversarial_capability_enforcement{
+  .attacks{
+      .violations{
+          .type="DIRECT_HOST_ACCESS" capability="process" detail="Direct reference to host capability 'process' in *(Pure) function 'leakSecret'"
+      }
+      .id="ATTACK_01_DIRECT_PROCESS" name="Direct process.env Access" blocked=true
+      .violations{
+          .type="DIRECT_HOST_ACCESS" capability="fetch" detail="Direct reference to host capability 'fetch' in *(Pure) function 'exfiltrate'"
+          .type="DIRECT_HOST_ACCESS" capability="https" detail="Direct reference to host capability 'https' in *(Pure) function 'exfiltrate'"
+      }
+      .id="ATTACK_02_DIRECT_FETCH" name="Direct fetch() I/O Call" blocked=true
+      .violations{
+          .type="DIRECT_HOST_ACCESS" capability="eval" detail="Direct reference to host capability 'eval' in *(Pure) function 'runUnsafe'"
+      }
+      .id="ATTACK_03_DIRECT_EVAL" name="Direct eval() String Execution" blocked=true
+      .violations{
+          .type="DIRECT_HOST_ACCESS" capability="Function" detail="Direct reference to host capability 'Function' in *(Pure) function 'makeFn'"
+          .type="CONSTRUCTOR_ESCALATION_ESCAPE" capability="Function.constructor" detail="Constructor prototype chain escalation attempt in *(Pure) function 'makeFn'"
+      }
+      .id="ATTACK_04_DIRECT_FUNCTION_CTOR" name="Direct Function() Constructor" blocked=true
+      .violations{
+          .type="DIRECT_HOST_ACCESS" capability="process" detail="Direct reference to host capability 'process' in *(Pure) function 'getProcDynamic'"
+          .type="DIRECT_HOST_ACCESS" capability="globalThis" detail="Direct reference to host capability 'globalThis' in *(Pure) function 'getProcDynamic'"
+          .type="COMPUTED_HOST_ACCESS" capability="process" detail="Reflected computed property access 'globalThis['process']' in *(Pure) function 'getProcDynamic'"
+      }
+      .id="ATTACK_05_DYNAMIC_INDEX_GLOBALTHIS" name="Computed globalThis['process'] Access" blocked=true
+      .violations{
+          .type="DIRECT_HOST_ACCESS" capability="window" detail="Direct reference to host capability 'window' in *(Pure) function 'getFetchDynamic'"
+          .type="DIRECT_HOST_ACCESS" capability="fetch" detail="Direct reference to host capability 'fetch' in *(Pure) function 'getFetchDynamic'"
+          .type="DIRECT_HOST_ACCESS" capability="net" detail="Direct reference to host capability 'net' in *(Pure) function 'getFetchDynamic'"
+          .type="COMPUTED_HOST_ACCESS" capability="fetch" detail="Reflected computed property access 'window['fetch']' in *(Pure) function 'getFetchDynamic'"
+      }
+      .id="ATTACK_06_DYNAMIC_INDEX_WINDOW_FETCH" name="Computed window['fetch'] Access" blocked=true
+      .violations{
+          .type="DIRECT_HOST_ACCESS" capability="process" detail="Direct reference to host capability 'process' in *(Pure) function 'escapeViaCtor'"
+          .type="CONSTRUCTOR_ESCALATION_ESCAPE" capability="Function.constructor" detail="Constructor prototype chain escalation attempt in *(Pure) function 'escapeViaCtor'"
+      }
+      .id="ATTACK_07_PROTOTYPE_CONSTRUCTOR_CHAIN" name="Prototype Chain Constructor Escalation" blocked=true
+      .violations{
+          .type="CONSTRUCTOR_ESCALATION_ESCAPE" capability="Function.constructor" detail="Constructor prototype chain escalation attempt in *(Pure) function 'stringCtorEscape'"
+      }
+      .id="ATTACK_08_STRING_PROTOTYPE_ESCALATION" name="String Prototype Constructor Escalation" blocked=true
+      .violations{
+          .type="DIRECT_HOST_ACCESS" capability="process" detail="Direct reference to host capability 'process' in *(Pure) function 'reflectEscape'"
+          .type="DIRECT_HOST_ACCESS" capability="globalThis" detail="Direct reference to host capability 'globalThis' in *(Pure) function 'reflectEscape'"
+          .type="DIRECT_HOST_ACCESS" capability="Reflect" detail="Direct reference to host capability 'Reflect' in *(Pure) function 'reflectEscape'"
+          .type="REFLECTION_ESCAPE" capability="Reflect" detail="Reflective host escape via 'Reflect.*' in *(Pure) function 'reflectEscape'"
+      }
+      .id="ATTACK_09_REFLECT_GET_ESCAPE" name="Meta-Programming Reflect.get() Host Escape" blocked=true
+      .violations{
+          .type="DIRECT_HOST_ACCESS" capability="eval" detail="Direct reference to host capability 'eval' in *(Pure) function 'indirectEval'"
+          .type="INDIRECT_EVAL_ESCAPE" capability="eval" detail="Indirect eval invocation in *(Pure) function 'indirectEval'"
+      }
+      .id="ATTACK_10_INDIRECT_EVAL_ESCAPE" name="Indirect (0, eval) Comma Operator Escape" blocked=true
+  }
+  .total_vectors=10 blocked_count=10 defense_rate_percent=100
+}
+.semantic_hashcons_verification{
+  .telemetry{
+    .total_queries=50000 p50_us=0.121 p95_us=0.424 p99_us=0.794 avg_us=0.318 execution_avg_us=0.224
+  }
+  .hash_identity_match=true canonical_pointer_identity=true
+}
+.pathway_comparison{
+  .path_a_python_cold_ms=22.06 path_b_lin_disk_ms=0.912 path_c_lin_in_memory_ms=0.16 path_d_lin_semantic_hashcons_ms=0.0083 disk_elimination_speedup=5.7
+}
+.gate="GATE_IN_MEMORY_4" timestamp="2026-08-24T00:00:40.620Z"

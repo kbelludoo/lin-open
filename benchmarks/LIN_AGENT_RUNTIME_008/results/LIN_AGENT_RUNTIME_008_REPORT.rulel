@@ -1,0 +1,150 @@
+@RULEL:LIN_AGENT_RUNTIME_008_REPORT:1.0.0
+~DATA
+.RAW{
+  .depth_localization_curve{
+    .D1{
+      .total=3 localization_accuracy="66.7%" success_rate="66.7%"
+    }
+    .D2{
+      .total=3 localization_accuracy="100.0%" success_rate="100.0%"
+    }
+    .D3{
+      .total=3 localization_accuracy="66.7%" success_rate="33.3%"
+    }
+    .D4{
+      .total=3 localization_accuracy="33.3%" success_rate="33.3%"
+    }
+    .D5{
+      .total=3 localization_accuracy="33.3%" success_rate="33.3%"
+    }
+  }
+  .tasks{
+      .task_id="DEPTH1_01" depth=1 arm="RAW" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=4392 evalTokens=53 durationMs=23450.18549
+      .task_id="DEPTH1_02" depth=1 arm="RAW" success=true initialSuccess=true recoveredSuccess=false rootCauseFound=true attempts=1 wrongFileEdits=0 promptTokens=1462 evalTokens=500 durationMs=3281.9745169999987
+      .task_id="DEPTH1_03" depth=1 arm="RAW" success=true initialSuccess=true recoveredSuccess=false rootCauseFound=true attempts=1 wrongFileEdits=0 promptTokens=1459 evalTokens=193 durationMs=3991.6267609999995
+      .task_id="DEPTH2_01" depth=2 arm="RAW" success=true initialSuccess=true recoveredSuccess=false rootCauseFound=true attempts=1 wrongFileEdits=0 promptTokens=1468 evalTokens=649 durationMs=4087.8545300000005
+      .task_id="DEPTH2_02" depth=2 arm="RAW" success=true initialSuccess=true recoveredSuccess=false rootCauseFound=true attempts=1 wrongFileEdits=0 promptTokens=1465 evalTokens=511 durationMs=3628.304175999998
+      .task_id="DEPTH2_03" depth=2 arm="RAW" success=true initialSuccess=true recoveredSuccess=false rootCauseFound=true attempts=1 wrongFileEdits=0 promptTokens=1463 evalTokens=233 durationMs=4600.354213999999
+      .task_id="DEPTH3_01" depth=3 arm="RAW" success=true initialSuccess=true recoveredSuccess=false rootCauseFound=true attempts=1 wrongFileEdits=0 promptTokens=1467 evalTokens=162 durationMs=4318.076276
+      .task_id="DEPTH3_02" depth=3 arm="RAW" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=true attempts=3 wrongFileEdits=1 promptTokens=4407 evalTokens=53 durationMs=22788.524031000015
+      .task_id="DEPTH3_03" depth=3 arm="RAW" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=4404 evalTokens=40 durationMs=23202.583450000006
+      .task_id="DEPTH4_01" depth=4 arm="RAW" success=true initialSuccess=true recoveredSuccess=false rootCauseFound=true attempts=1 wrongFileEdits=0 promptTokens=1468 evalTokens=565 durationMs=4931.9579229999945
+      .task_id="DEPTH4_02" depth=4 arm="RAW" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=4395 evalTokens=40 durationMs=22351.747546
+      .task_id="DEPTH4_03" depth=4 arm="RAW" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=4401 evalTokens=54 durationMs=22354.723656999995
+      .task_id="DEPTH5_01" depth=5 arm="RAW" success=true initialSuccess=true recoveredSuccess=false rootCauseFound=true attempts=1 wrongFileEdits=0 promptTokens=1473 evalTokens=524 durationMs=4090.88320500002
+      .task_id="DEPTH5_02" depth=5 arm="RAW" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=4452 evalTokens=70 durationMs=22961.612215
+      .task_id="DEPTH5_03" depth=5 arm="RAW" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=4434 evalTokens=51 durationMs=22661.729787999997
+  }
+  .arm_id="RAW" arm_name="Arm A: Raw Model (Zero-State Baseline)" total_tasks=15 root_cause_localization_rate=0.6 initial_success=8 recovered_success=0 persistent_failures=7 task_success_rate=0.5333333333333333 hypothesis_recovery_rate=0 total_wrong_file_edits=1 avg_attempts_per_task=1.9333333333333333 avg_prompt_tokens_per_task=2840.6666666666665 total_duration_s=192.702137779
+}
+.CHAT_HISTORY{
+  .depth_localization_curve{
+    .D1{
+      .total=3 localization_accuracy="66.7%" success_rate="66.7%"
+    }
+    .D2{
+      .total=3 localization_accuracy="100.0%" success_rate="100.0%"
+    }
+    .D3{
+      .total=3 localization_accuracy="33.3%" success_rate="33.3%"
+    }
+    .D4{
+      .total=3 localization_accuracy="0.0%" success_rate="0.0%"
+    }
+    .D5{
+      .total=3 localization_accuracy="33.3%" success_rate="33.3%"
+    }
+  }
+  .tasks{
+      .task_id="DEPTH1_01" depth=1 arm="CHAT_HISTORY" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=4392 evalTokens=77 durationMs=23063.114050999982
+      .task_id="DEPTH1_02" depth=1 arm="CHAT_HISTORY" success=true initialSuccess=false recoveredSuccess=true rootCauseFound=true attempts=2 wrongFileEdits=0 promptTokens=2924 evalTokens=521 durationMs=10856.079266999994
+      .task_id="DEPTH1_03" depth=1 arm="CHAT_HISTORY" success=true initialSuccess=true recoveredSuccess=false rootCauseFound=true attempts=1 wrongFileEdits=0 promptTokens=1459 evalTokens=200 durationMs=3927.5082530000072
+      .task_id="DEPTH2_01" depth=2 arm="CHAT_HISTORY" success=true initialSuccess=false recoveredSuccess=true rootCauseFound=true attempts=2 wrongFileEdits=0 promptTokens=2936 evalTokens=678 durationMs=11565.443572000018
+      .task_id="DEPTH2_02" depth=2 arm="CHAT_HISTORY" success=true initialSuccess=true recoveredSuccess=false rootCauseFound=true attempts=1 wrongFileEdits=0 promptTokens=1465 evalTokens=523 durationMs=4553.001824000006
+      .task_id="DEPTH2_03" depth=2 arm="CHAT_HISTORY" success=true initialSuccess=true recoveredSuccess=false rootCauseFound=true attempts=1 wrongFileEdits=0 promptTokens=1463 evalTokens=244 durationMs=5032.093324999994
+      .task_id="DEPTH3_01" depth=3 arm="CHAT_HISTORY" success=true initialSuccess=true recoveredSuccess=false rootCauseFound=true attempts=1 wrongFileEdits=0 promptTokens=1467 evalTokens=238 durationMs=4473.184108000016
+      .task_id="DEPTH3_02" depth=3 arm="CHAT_HISTORY" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=4407 evalTokens=52 durationMs=23037.907051000046
+      .task_id="DEPTH3_03" depth=3 arm="CHAT_HISTORY" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=4404 evalTokens=53 durationMs=22753.873235000065
+      .task_id="DEPTH4_01" depth=4 arm="CHAT_HISTORY" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=4404 evalTokens=47 durationMs=22838.70015499997
+      .task_id="DEPTH4_02" depth=4 arm="CHAT_HISTORY" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=4395 evalTokens=45 durationMs=22913.895523999992
+      .task_id="DEPTH4_03" depth=4 arm="CHAT_HISTORY" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=4401 evalTokens=66 durationMs=23024.75225900003
+      .task_id="DEPTH5_01" depth=5 arm="CHAT_HISTORY" success=true initialSuccess=false recoveredSuccess=true rootCauseFound=true attempts=2 wrongFileEdits=0 promptTokens=2946 evalTokens=545 durationMs=13693.190337000007
+      .task_id="DEPTH5_02" depth=5 arm="CHAT_HISTORY" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=4452 evalTokens=48 durationMs=22770.612326000002
+      .task_id="DEPTH5_03" depth=5 arm="CHAT_HISTORY" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=4434 evalTokens=60 durationMs=22595.928970999958
+  }
+  .arm_id="CHAT_HISTORY" arm_name="Arm B: Chat History Buffer" total_tasks=15 root_cause_localization_rate=0.4666666666666667 initial_success=4 recovered_success=3 persistent_failures=8 task_success_rate=0.4666666666666667 hypothesis_recovery_rate=0.2727272727272727 total_wrong_file_edits=0 avg_attempts_per_task=2.2666666666666666 avg_prompt_tokens_per_task=3329.9333333333334 total_duration_s=237.0992842580001
+}
+.LIN_CUMULATIVE{
+  .depth_localization_curve{
+    .D1{
+      .total=3 localization_accuracy="66.7%" success_rate="66.7%"
+    }
+    .D2{
+      .total=3 localization_accuracy="33.3%" success_rate="33.3%"
+    }
+    .D3{
+      .total=3 localization_accuracy="0.0%" success_rate="0.0%"
+    }
+    .D4{
+      .total=3 localization_accuracy="33.3%" success_rate="33.3%"
+    }
+    .D5{
+      .total=3 localization_accuracy="0.0%" success_rate="66.7%"
+    }
+  }
+  .tasks{
+      .task_id="DEPTH1_01" depth=1 arm="LIN_CUMULATIVE" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=2112 evalTokens=90 durationMs=23573.24863300001
+      .task_id="DEPTH1_02" depth=1 arm="LIN_CUMULATIVE" success=true initialSuccess=true recoveredSuccess=false rootCauseFound=true attempts=1 wrongFileEdits=0 promptTokens=582 evalTokens=505 durationMs=3881.4920820000116
+      .task_id="DEPTH1_03" depth=1 arm="LIN_CUMULATIVE" success=true initialSuccess=true recoveredSuccess=false rootCauseFound=true attempts=1 wrongFileEdits=0 promptTokens=275 evalTokens=158 durationMs=3898.558820999984
+      .task_id="DEPTH2_01" depth=2 arm="LIN_CUMULATIVE" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=2121 evalTokens=78 durationMs=25167.875986000057
+      .task_id="DEPTH2_02" depth=2 arm="LIN_CUMULATIVE" success=true initialSuccess=true recoveredSuccess=false rootCauseFound=true attempts=1 wrongFileEdits=0 promptTokens=585 evalTokens=498 durationMs=3304.132333000016
+      .task_id="DEPTH2_03" depth=2 arm="LIN_CUMULATIVE" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=1776 evalTokens=77 durationMs=25404.730915999913
+      .task_id="DEPTH3_01" depth=3 arm="LIN_CUMULATIVE" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=2 promptTokens=2022 evalTokens=511 durationMs=21723.802605000034
+      .task_id="DEPTH3_02" depth=3 arm="LIN_CUMULATIVE" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=819 evalTokens=102 durationMs=26185.402959999978
+      .task_id="DEPTH3_03" depth=3 arm="LIN_CUMULATIVE" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=816 evalTokens=86 durationMs=23616.66840299999
+      .task_id="DEPTH4_01" depth=4 arm="LIN_CUMULATIVE" success=true initialSuccess=false recoveredSuccess=true rootCauseFound=true attempts=2 wrongFileEdits=1 promptTokens=866 evalTokens=604 durationMs=9009.122711000033
+      .task_id="DEPTH4_02" depth=4 arm="LIN_CUMULATIVE" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=807 evalTokens=50 durationMs=23839.859623000026
+      .task_id="DEPTH4_03" depth=4 arm="LIN_CUMULATIVE" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=2121 evalTokens=62 durationMs=23229.974503000034
+      .task_id="DEPTH5_01" depth=5 arm="LIN_CUMULATIVE" success=true initialSuccess=false recoveredSuccess=true rootCauseFound=false attempts=3 wrongFileEdits=1 promptTokens=891 evalTokens=202 durationMs=23171.8659930001
+      .task_id="DEPTH5_02" depth=5 arm="LIN_CUMULATIVE" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=864 evalTokens=102 durationMs=24537.99732299999
+      .task_id="DEPTH5_03" depth=5 arm="LIN_CUMULATIVE" success=true initialSuccess=false recoveredSuccess=true rootCauseFound=false attempts=2 wrongFileEdits=1 promptTokens=1434 evalTokens=680 durationMs=13537.918259999948
+  }
+  .arm_id="LIN_CUMULATIVE" arm_name="Arm C1: LIN Cumulative (Passive Boost - 007)" total_tasks=15 root_cause_localization_rate=0.26666666666666666 initial_success=3 recovered_success=3 persistent_failures=9 task_success_rate=0.4 hypothesis_recovery_rate=0.25 total_wrong_file_edits=5 avg_attempts_per_task=2.466666666666667 avg_prompt_tokens_per_task=1206.0666666666666 total_duration_s=274.0826511520001
+}
+.LIN_FRONTIER{
+  .depth_localization_curve{
+    .D1{
+      .total=3 localization_accuracy="66.7%" success_rate="66.7%"
+    }
+    .D2{
+      .total=3 localization_accuracy="33.3%" success_rate="33.3%"
+    }
+    .D3{
+      .total=3 localization_accuracy="0.0%" success_rate="33.3%"
+    }
+    .D4{
+      .total=3 localization_accuracy="33.3%" success_rate="66.7%"
+    }
+    .D5{
+      .total=3 localization_accuracy="33.3%" success_rate="33.3%"
+    }
+  }
+  .tasks{
+      .task_id="DEPTH1_01" depth=1 arm="LIN_FRONTIER" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=2013 evalTokens=87 durationMs=23258.241327999975
+      .task_id="DEPTH1_02" depth=1 arm="LIN_FRONTIER" success=true initialSuccess=true recoveredSuccess=false rootCauseFound=true attempts=1 wrongFileEdits=0 promptTokens=600 evalTokens=494 durationMs=3097.452879999997
+      .task_id="DEPTH1_03" depth=1 arm="LIN_FRONTIER" success=true initialSuccess=true recoveredSuccess=false rootCauseFound=true attempts=1 wrongFileEdits=0 promptTokens=299 evalTokens=157 durationMs=3219.764637000044
+      .task_id="DEPTH2_01" depth=2 arm="LIN_FRONTIER" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=2022 evalTokens=105 durationMs=23324.42336600006
+      .task_id="DEPTH2_02" depth=2 arm="LIN_FRONTIER" success=true initialSuccess=true recoveredSuccess=false rootCauseFound=true attempts=1 wrongFileEdits=0 promptTokens=603 evalTokens=510 durationMs=5437.354452999891
+      .task_id="DEPTH2_03" depth=2 arm="LIN_FRONTIER" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=1901 evalTokens=83 durationMs=23765.187860999955
+      .task_id="DEPTH3_01" depth=3 arm="LIN_FRONTIER" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=2037 evalTokens=51 durationMs=24064.17671300005
+      .task_id="DEPTH3_02" depth=3 arm="LIN_FRONTIER" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=1602 evalTokens=80 durationMs=23460.895522999926
+      .task_id="DEPTH3_03" depth=3 arm="LIN_FRONTIER" success=true initialSuccess=false recoveredSuccess=true rootCauseFound=false attempts=3 wrongFileEdits=1 promptTokens=1599 evalTokens=528 durationMs=21917.111980999936
+      .task_id="DEPTH4_01" depth=4 arm="LIN_FRONTIER" success=true initialSuccess=false recoveredSuccess=true rootCauseFound=true attempts=3 wrongFileEdits=1 promptTokens=1691 evalTokens=627 durationMs=19283.15238600003
+      .task_id="DEPTH4_02" depth=4 arm="LIN_FRONTIER" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=1590 evalTokens=52 durationMs=23671.243990000105
+      .task_id="DEPTH4_03" depth=4 arm="LIN_FRONTIER" success=true initialSuccess=true recoveredSuccess=false rootCauseFound=false attempts=1 wrongFileEdits=1 promptTokens=729 evalTokens=584 durationMs=4218.557324000052
+      .task_id="DEPTH5_01" depth=5 arm="LIN_FRONTIER" success=true initialSuccess=false recoveredSuccess=true rootCauseFound=true attempts=2 wrongFileEdits=0 promptTokens=978 evalTokens=565 durationMs=12620.153754999978
+      .task_id="DEPTH5_02" depth=5 arm="LIN_FRONTIER" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=1645 evalTokens=60 durationMs=23636.131492999964
+      .task_id="DEPTH5_03" depth=5 arm="LIN_FRONTIER" success=false initialSuccess=false recoveredSuccess=false rootCauseFound=false attempts=3 wrongFileEdits=0 promptTokens=2052 evalTokens=81 durationMs=23360.272856000112
+  }
+  .arm_id="LIN_FRONTIER" arm_name="Arm C2: LIN Causal Frontier Expansion" total_tasks=15 root_cause_localization_rate=0.3333333333333333 initial_success=4 recovered_success=3 persistent_failures=8 task_success_rate=0.4666666666666667 hypothesis_recovery_rate=0.2727272727272727 total_wrong_file_edits=3 avg_attempts_per_task=2.4 avg_prompt_tokens_per_task=1424.0666666666666 total_duration_s=258.33412054600007
+}

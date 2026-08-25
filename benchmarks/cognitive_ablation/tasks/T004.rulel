@@ -1,0 +1,17 @@
+@RULEL:T004:1.0.0
+~DATA
+.test_cases{
+    .input{
+    }
+    .expected{
+    }
+    .input{
+    }
+    .expected{
+    }
+    .input=[] expected=[]
+}
+.oracle{
+  .type="deterministic_unit" entrypoint="oracles/oracle_T004.mjs"
+}
+.id="T004" family="logic_state" difficulty="hard" specification="União de intervalos numéricos sobrepostos. Entrada: array de intervalos [[inicio, fim], ...]. Saída: array de intervalos mesclados ordenados." allowed_effects=[] forbidden_effects=["globalState","mut"]

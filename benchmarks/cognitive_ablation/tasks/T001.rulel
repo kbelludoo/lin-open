@@ -1,0 +1,12 @@
+@RULEL:T001:1.0.0
+~DATA
+.test_cases{
+    .input="RED" expected="GREEN"
+    .input="GREEN" expected="YELLOW"
+    .input="YELLOW" expected="RED"
+    .input="BLUE" expected="ERROR"
+}
+.oracle{
+  .type="deterministic_unit" entrypoint="oracles/oracle_T001.mjs"
+}
+.id="T001" family="logic_state" difficulty="easy" specification="Implemente uma máquina de estados finita pura para semáforo. Entrada: estado atual (\"RED\", \"GREEN\", \"YELLOW\"). Saída: próximo estado (\"GREEN\", \"YELLOW\", \"RED\"). Qualquer outro estado deve retornar \"ERROR\"." allowed_effects=[] forbidden_effects=["globalState","mut","console.log","process."]

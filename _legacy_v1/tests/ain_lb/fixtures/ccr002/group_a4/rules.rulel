@@ -1,0 +1,5 @@
+@RULEL:RULES:1.0.0
+~DATA
+.INV_STORAGE_WRITE{
+  .when="Storage.write" requires=["encrypted=true","audit=true"] on_violation="human_text_only" compiler_bound=false semantic_hash=false proof_before_change=false
+}

@@ -1,0 +1,3 @@
+@RULEL:CAPABILITY_IO_NO_PERM:1.0.0
+~DATA
+.intent="add_io_without_permission" target="Transfer" constraints=["transfer_gt_10000_needs_approval","no_data_loss"] allowed_effects=["memory"] ops=["Storage.write"]
