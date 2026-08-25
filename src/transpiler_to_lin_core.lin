@@ -104,8 +104,35 @@
   ^outLines.join("\n")
 }
 
+!cppStripPreprocessor(cSource){
+  joined = cSource.replace(/\\\r?\n/g, " ");
+  lines = joined.split("\n");
+  out = [];
+  #(k = 0; k < lines.length; k++){
+    line = lines[k];
+    t = line.trim();
+    ?(!t.startsWith("#")){ out.push(line); continue };
+    ?(t.startsWith("#if") || t.startsWith("#ifdef") || t.startsWith("#ifndef")){
+      out.push("?(CPP_TRUE){");
+      continue
+    };
+    ?(t.startsWith("#elif")){
+      out.push("}:{");
+      continue
+    };
+    ?(t.startsWith("#else")){
+      out.push("}:{");
+      continue
+    };
+    ?(t.startsWith("#endif")){ out.push("}"); continue };
+    ?(t.startsWith("#define")){ out.push("// cpp_define"); continue };
+    ?(t.startsWith("#include") || t.startsWith("#pragma") || t.startsWith("#undef") || t.startsWith("#import") || t.startsWith("#error") || t.startsWith("#warning")){ continue };
+  };
+  ^out.join("\n")
+}
+
 !transpileCToLin(cSource){
-  clean = cSource.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
+  clean = cppStripPreprocessor(cSource).replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
   rawFns = extractBracedFunctions(clean, /(?:[A-Za-z0-9_*]+\s+)+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);
   fns = [];
   #(i = 0; i < rawFns.length; i++){
