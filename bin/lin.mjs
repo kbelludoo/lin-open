@@ -73,11 +73,13 @@ if (cmd === 'compile') {
   argv = outT.args;
   const tgt = takeFlag(argv, '--target');
   argv = tgt.args;
+  const stubFlag = argv.includes('--stub-js-runtime-only');
+  argv = argv.filter((a) => a !== '--stub-js-runtime-only');
   const target = String(tgt.value || DEFAULT_EMIT_TARGET).toLowerCase();
   const file = argv[0];
   const text = readInput(file);
   try {
-    const r = compile(text, { target });
+    const r = compile(text, { target, stubJsRuntimeOnly: stubFlag });
     if (outT.value) {
       fs.writeFileSync(path.resolve(outT.value), r.code, 'utf8');
       console.log(JSON.stringify({ out: path.resolve(outT.value), target, fns: r.fns }));

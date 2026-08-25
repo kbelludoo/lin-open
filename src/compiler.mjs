@@ -3,14 +3,14 @@ import { renderProgramJs } from './render_js.mjs';
 import { programHashes } from './semantic_hash.mjs';
 import { assertJsSyntax, runInMemory } from './vm.mjs';
 import {
-  emitTs, emitPy, emitGo, emitRust, emitC, emitJava,
+  emitTs, emitPy, emitGo, emitRust, emitC, emitJava, emitZig,
   isJsRuntimeOnly, stmtsText,
 } from './emitters.mjs';
 import { EmitUnsupportedError } from './emitters.mjs';
 import { validateRegex } from './regex_ir.mjs';
 
 export const LIN_VERSION = '2.0.0';
-export const REAL_TARGETS = ['js', 'ts', 'py', 'go', 'rust', 'c', 'java'];
+export const REAL_TARGETS = ['js', 'ts', 'py', 'go', 'rust', 'c', 'java', 'zig'];
 export const DEFAULT_EMIT_TARGET = 'js';
 
 export function compile(source, opts = {}) {
@@ -49,6 +49,7 @@ export function compile(source, opts = {}) {
       case 'rust': return finish(prog, emitRust(prog, opts), target);
       case 'c': return finish(prog, emitC(prog, opts), target);
       case 'java': return finish(prog, emitJava(prog, opts), target);
+      case 'zig': return finish(prog, emitZig(prog, opts), target);
       default: throw new Error(`LIN_EMIT_TARGET: ${target}`);
     }
   } catch (e) {

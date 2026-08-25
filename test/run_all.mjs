@@ -430,7 +430,7 @@ await testAsync('bin/lin.mjs version|check|compile|run|hash|effects|rulel-check|
   assert.ok(emitted.startsWith('@LIN:'));
 
   const targets = REAL_TARGETS;
-  assert.equal(targets.length, 7);
+  assert.ok(targets.length >= 7 && targets.includes('zig'));
 });
 
 console.log('T19 self-host clone loop');
@@ -471,6 +471,18 @@ test('improve applies repairs and reports applied ids', async () => {
   assert.ok(r.applied.includes('R_strip_imports'), r.applied.join(','));
   assert.ok(r.applied.includes('R_strip_export_keywords'));
   assert.ok(!/^import/m.test(r.source));
+});
+
+test('LIN_REGEX_001: regex como capability nativa (T1 literal + T2 corpus 1000+ + T3 ms.parse + fail-closed)', async () => {
+  const { execFileSync } = await import('node:child_process');
+  const out = execFileSync(process.execPath, [path.join(root, 'test', 'lin_regex_001.test.mjs')], { encoding: 'utf8', cwd: root });
+  assert.ok(/15 ok, 0 falhas/.test(out), out.slice(-400));
+});
+
+test('LIN_REGEX_002: self-hosting scanner (A1 unit-A/B + A2 diferencial tokenize + A3 integridade)', async () => {
+  const { execFileSync } = await import('node:child_process');
+  const out = execFileSync(process.execPath, [path.join(root, 'test', 'lin_regex_002.test.mjs')], { encoding: 'utf8', cwd: root });
+  assert.ok(/6 ok, 0 falhas/.test(out), out.slice(-400));
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);
