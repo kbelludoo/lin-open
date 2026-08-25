@@ -2,6 +2,8 @@ export const PUNCT3 = ['>>>=', '===', '!==', '**=', '...', '<<=', '>>=', '>>>', 
 export const PUNCT2 = ['==', '!=', '<=', '>=', '&&', '||', '++', '--', '+=', '-=', '*=', '/=', '%=', '&=', '|=', '^=', '**', '??', '?.', '=>', '->', '::', '<<', '>>'];
 export const PUNCT1 = '+-*/%^<>=!&|~?:;,.()[]{}#@';
 
+import { lexerSlices } from './lexer_slices_load.mjs';
+
 const REGEX_PREV_OK = new Set([
   ';', ',', '=', ':', '[', '!', '&', '|', '?', '{', '(', '+', '-', '*', '%', '<', '>', '^', '~',
   '=>', '==', '!=', '<=', '>=', '&&', '||', '+=', '-=', '*=', '/=', '%=', '&=', '|=', '^=', '??', '?.',
@@ -23,6 +25,7 @@ export function tokenize(src) {
   let i = 0;
   let line = 1;
   let lineStart = 0;
+  const SL = lexerSlices();
 
   function push(type, value, start, end) {
     toks.push({ type, value, start, end, line, col: start - lineStart + 1 });
@@ -38,6 +41,11 @@ export function tokenize(src) {
       continue;
     }
     if (c === ' ' || c === '\t' || c === '\r') {
+      if (SL) {
+        const run = SL.wsRunAt(s, i);
+        i += run > 0 ? run : 1;
+        continue;
+      }
       i++;
       continue;
     }
@@ -142,7 +150,15 @@ export function tokenize(src) {
         }
       }
     }
-    if (/[0-9]/.test(c) || (c === '.' && /[0-9]/.test(s[i + 1] || ''))) {
+    if (SL) {
+      const nl = SL.numLenAt(s, i);
+      if (nl > 0) {
+        const start = i;
+        i += nl;
+        push('num', s.slice(start, i), start, i);
+        continue;
+      }
+    } else if (/[0-9]/.test(c) || (c === '.' && /[0-9]/.test(s[i + 1] || ''))) {
       const start = i;
       if (c === '0' && /[xXbBoO]/.test(s[i + 1] || '')) {
         i += 2;
@@ -162,7 +178,15 @@ export function tokenize(src) {
       push('num', s.slice(start, i), start, i);
       continue;
     }
-    if (/[A-Za-z_$]/.test(c)) {
+    if (SL) {
+      const il = SL.identLenAt(s, i);
+      if (il > 0) {
+        const start = i;
+        i += il;
+        push('id', s.slice(start, i), start, i);
+        continue;
+      }
+    } else if (/[A-Za-z_$]/.test(c)) {
       const start = i;
       i++;
       while (i < s.length && /[A-Za-z0-9_$]/.test(s[i])) i++;

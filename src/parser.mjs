@@ -1,4 +1,5 @@
 import { tokenize } from './lexer.mjs';
+import { parseRegexLiteral } from './regex_ir.mjs';
 
 export const LIN_HEADER = '@LIN:L1c:0.2';
 
@@ -500,6 +501,14 @@ class Parser {
     while (i < endIdxExclusive) {
       const t = this.toks[i];
       if (t.type === 'eof') break;
+      if (t.type === 'regex') {
+        flush(i);
+        const lit = parseRegexLiteral(this.src.slice(t.start, t.end));
+        parts.push({ kind: 'node', node: lit || { kind: 'regex', pattern: '', flags: '', rawPattern: '' } });
+        i++;
+        rawStart = i;
+        continue;
+      }
       if (t.type === 'punct') {
         if (depth === 0 && stops.has(t.value)) break;
         if (depth === 0 && t.value === '#') {

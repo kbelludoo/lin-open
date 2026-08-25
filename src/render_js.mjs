@@ -10,6 +10,9 @@ export function renderProgramJs(prog, opts = {}) {
       .map(([k, v]) => `${JSON.stringify(k)}:${v}`)
       .join(',');
     parts.push(`var $K={${obj}};`);
+    // LIN_REGEX_001/T3 descobriu: corpos usam nomes soltos; vincula identificadores
+    const cnames = Object.keys(prog.consts);
+    if (cnames.length) parts.push(`var ${cnames.map((n) => `${n}=$K[${JSON.stringify(n)}]`).join(',')};`);
   }
   for (const mod of prog.modules || []) {
     parts.push(`const ${mod.name} = ${renderModuleObj(mod)};`);

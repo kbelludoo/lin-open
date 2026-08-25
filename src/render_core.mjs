@@ -10,6 +10,8 @@ export function renderExpr(expr) {
 
 export function renderNode(node) {
   switch (node.kind) {
+    case 'regex':
+      return `/${node.rawPattern}/${node.flags || ''}`;
     case 'closure':
     case 'fnlit': {
       const name = node.name ? ` ${node.name}` : '';
