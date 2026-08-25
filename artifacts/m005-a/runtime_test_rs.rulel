@@ -1,0 +1,3 @@
+@RULEL:TRANSPOSED_SOURCE:1.0
+~METADATA{original="artifacts/m005-a/runtime_test.rs" ext=".rs"}
+.source{content="// runtime test for generated artifacts/m005-a using rlib\nextern crate generated_m005a;\n\nfn main() {\n    // Verify reachable functionality computes accurately\n    assert_eq!(generated_m005a::live_compute(12, 30), 42);\n    assert_eq!(generated_m005a::ActiveMath::usedAdd(100, 200), 300);\n\n    println!(\"M005_A_ALL_TESTS_PASS\");\n}\n"}
