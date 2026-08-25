@@ -107,6 +107,7 @@
 !cppStripPreprocessor(cSource){
   joined = cSource.replace(/\\\r?\n/g, " ");
   joined = joined.replace(/\[\[(?:[^\[\]]|\[[^\]]*\])*\]\]/g, " ");
+  joined = joined.replace(/([0-9a-fA-F])'([0-9a-fA-F])/g, "$1$2");
   lines = joined.split("\n");
   out = [];
   #(k = 0; k < lines.length; k++){
