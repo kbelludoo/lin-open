@@ -1,3 +1,3 @@
 #!/usr/bin/env node
-/** Legacy `lia` CLI → forwards to `lin` (same argv). */
-import './lin.mjs';
+/** Alias de dialeto: @LIA — mesmo CLI canônico (dual-read @LIN|@LIA|@AIL). */
+await import('./lin.mjs');

@@ -1,0 +1,148 @@
+@LIN:compiler_core:1.0.0
+^schema_once ^lossy=true ^ops=compiler_core
+~G{?=if #=for ^=ret :else}
+
+!skipRegexLit(s,i){
+  j=i+1;
+  inClass=false;
+  n=s.length;
+  while(j<n){
+    ?(s.charAt(j)=="\\"){j=j+2;continue}
+    ?(s.charAt(j)=="["&&inClass==false){inClass=true;j++;continue}
+    ?(s.charAt(j)=="]"&&inClass==true){inClass=false;j++;continue}
+    ?(s.charAt(j)=="/"&&inClass==false){
+      j++;
+      flagRe=/[gimsuy]/;
+      while(j<n&&flagRe.test(s.charAt(j))){j++}
+      ^(j)
+    }
+    ?(s.charAt(j)=="\n"){^(i+1)}
+    j++
+  }
+  ^(i+1)
+}
+!isWsCh(c){^(c==" "||c=="\t"||c=="\n"||c=="\r")}
+!prevNonSpace(s,i){
+  k=i-1;
+  while(k>=0&&isWsCh(s.charAt(k))){k--}
+  ^(k<0)?"":s.charAt(k)
+}
+!regexStartPrev(prev){
+  ?(prev==""){^true}
+  opRe=/[=(:,;!?{[&|^~+\-*%<>]/
+  ^(opRe.test(prev))
+}
+!findMatching(s,openIdx,openCh,closeCh){
+  depth=0;
+  quote="";
+  n=s.length;
+  #(i=openIdx;i<n;i++){
+    c=s.charAt(i);
+    ?(quote!=""){
+      ?(c=="\\"){i++;continue}
+      ?(quote=="\`"&&c=="$"&&s.charAt(i+1)=="{"){
+        inner=findMatching(s,i+1,"{","}");
+        ?(inner>=0){i=inner}
+        continue
+      }
+      ?(c==quote){quote=""}
+      continue
+    }
+    ?(c=="/"&&openCh!="/"){
+      prev=prevNonSpace(s,i);
+      ?(regexStartPrev(prev)){i=skipRegexLit(s,i)-1;continue}
+    }
+    ?(c=="\""||c=="'"||c=="\`"){quote=c;continue}
+    ?(c==openCh){depth++}
+    :(c==closeCh){
+      depth--;
+      ?(depth==0){^i}
+    }
+  }
+  ^(-1)
+}
+!parseConstTable(line){
+  re=/^\$K\{([^}]*)\}\s*$/;
+  m=re.exec(line);
+  ?(m==null){^null}
+  entries={};
+  parts=m[1].trim().split(/\s+/);
+  #(i=0;i<parts.length;i++){
+    part=parts[i];
+    ?(part==""){continue}
+    eq2=part.indexOf("=");
+    ?(eq2<0){continue}
+    entries[part.substring(0,eq2)]=part.substring(eq2+1)
+  }
+  ^(entries)
+}
+!stripTypeAnn(params){
+  ?(params==null){^""}
+  parts=[];
+  cur="";
+  depth=0;
+  n=params.length;
+  #(k=0;k<n;k++){
+    ch=params.charAt(k);
+    ?(ch=="("||ch=="<"||ch=="{"||ch=="["){depth++}
+    :(ch==")"||ch==">"||ch=="}"||ch=="]"){depth--}
+    ?(ch==","&&depth==0){
+      parts.push(cur.trim());
+      cur=""
+    }:{
+      cur=cur+ch
+    }
+  }
+  ?(cur.trim()!=""){parts.push(cur.trim())}
+  cleaned=parts.map(function(p){
+    colon=p.indexOf(":");
+    ^(colon>=0?p.substring(0,colon):p).trim()
+  }).filter(Boolean);
+  ^(cleaned.join(", "))
+}
+!skipQuote(s,i){
+  q=s.charAt(i);
+  j=i+1;
+  n=s.length;
+  while(j<n){
+    ?(s.charAt(j)=="\\"){j=j+2;continue}
+    ?(q=="\`"&&s.charAt(j)=="$"&&s.charAt(j+1)=="{"){
+      inner=findMatching(s,j+1,"{","}");
+      j=(inner>=0)?inner+1:j+2;
+      continue
+    }
+    ?(s.charAt(j)==q){^(j+1)}
+    j++
+  }
+  ^(n)
+}
+!isCtrlHeader(s){
+  ?(s.indexOf("if(")==0){^true}
+  ?(s.indexOf("for(")==0){^true}
+  ?(s.indexOf("while(")==0){^true}
+  ^false
+}
+!insertCtrlSeps(s){
+  out="";
+  i=0;
+  n=s.length;
+  while(i<n){
+    c=s.charAt(i);
+    ?(c=="\""||c=="'"||c=="\`"){
+      end=skipQuote(s,i);
+      out=out+s.substring(i,end);
+      i=end;
+      continue
+    }
+    ?((c==")"||c=="}")&&isCtrlHeader(s.substring(i+1))){
+      out=out+c+";";
+      i++;
+      continue
+    }
+    out=out+c;
+    i++
+  }
+  ^(out)
+}
+
+=ex{skipRegexLit,skipQuote,insertCtrlSeps,isCtrlHeader,isWsCh,prevNonSpace,regexStartPrev,findMatching,parseConstTable,stripTypeAnn}

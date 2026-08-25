@@ -1,0 +1,11 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=native_targets_fixture
+~G{?=if #=for ^=ret :else}
+
+!add(a:int,b:int)->int{^a+b}
+!mul(a:int,b:int)->int{^a*b}
+!fact(n:int)->int{x=1;#(i=2;i<=n;i++){x=x*i};^x}
+!isEven(n:int)->bool{^(n%2)==0}
+!max3(a:int,b:int,c:int)->int{?(a>=b&&a>=c){^a}:?(b>=c){^b}:{^c}}
+
+=ex{add,mul,fact,isEven,max3}

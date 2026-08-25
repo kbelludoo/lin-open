@@ -1,51 +1,37 @@
 #!/usr/bin/env node
-/**
- * LIN CLI — lingua ia nativa (canonical). Aliases: lia, ail.
- * Usage: lin compile file.lin|.lia --target ts|js|py|go|rust|c|java [-o out]
- */
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { emitAil, emitAilFile, estTokens, LIN_HEADER } from '../src/emitter.mjs';
-import { parseLia } from '../src/compiler.mjs';
-import { compileLiaToTargetFile, REAL_TARGETS, DEFAULT_EMIT_TARGET } from '../src/multi_emit.mjs';
-import { compileLiaFile } from '../src/compiler.mjs';
-import { defaultEmitTarget } from '../scripts/clone_lin_full_repo_gate.mjs';
-import { parseRulel, validateComms } from '../src/rulel_parser.mjs';
+import { compile, REAL_TARGETS, DEFAULT_EMIT_TARGET, LIN_VERSION } from '../src/compiler.mjs';
+import { parseProgram } from '../src/parser.mjs';
+import { programHashes } from '../src/semantic_hash.mjs';
+import { parseRulel, validateComms } from '../src/rulel.mjs';
+import { verify } from '../src/verifier.mjs';
+import { runInMemory } from '../src/vm.mjs';
+import { emitLinFromJs } from '../src/emit_from_js.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function usage() {
-  console.error(`lin <command> [args]   (aliases: lia, ail)
+  console.error(`lin <command> [args] — LIN v${LIN_VERSION} (in-memory rewrite)
 
 Commands:
-  emit <file.js|PROJECT.dicel> [-o out.lin]     JS/legacy L0 → LIN
-  compile <file.lin|file.lia|file.ail> [--target <t>] [-o out]
+  check <file.lin>                    parse + list fns/exports/consts
+  compile <file.lin> [--target t] [-o out]
        targets: ${REAL_TARGETS.join('|')} (default ${DEFAULT_EMIT_TARGET})
-  check <file.lin|file.lia|file.ail>            parse + list fns
-  clone-lin [--cycles N] [--stop-file path]     clone→rewrite→improve→publish
-  clone-lia ...                                 alias → clone-lin
-  improve                                       auto-improve (self-repair → ledger)
-  evolve                                        auto-evolve epoch (candidates_only)
-  autonomy [--cycles N]                         FULL pipeline until clone-lin 100%
-       --clone-cycles N  cap clone retries (default 0=until queue_complete)
-       --skip-clone      improve+evolve only
-  autonomy-status                               memory + gates snapshot
-  agent-ir <file.json>                          JSON Agent IR → LIN validate (no sigils)
-  ingest-ir <file.json>                         alias → agent-ir
-  ain-lb-clr                                    CLR-001 LIN-only harness (ACCEPT/DENIED)
-  rulel-check <file.rulel>                      parse + validate RULEL/COMMS file
-  version
-
-Policy: WRITE=LIN; on_error=FIX_COMPILER_OUTSIDE_NUCLEUS; LIN_ge_Dicel; RULEL=rules
-Stop clone loop: Ctrl+C | --cycles N | --stop-file path
-Header emit: ${LIN_HEADER} (dual-read @LIN|@LIA|@AIL)
-`);
+  run <file.lin> [jsonArgs...]        compile + execute exports in memory
+  hash <file.lin>                     semantic hashes per fn
+  effects <file.lin>                  effect inference per fn
+  emit <file.js> [-o out.lin]         JS subset → LIN source
+  rulel-check <file.rulel>            RULEL parse + COMMS validation
+  verify <file.lin> [--behavior cases.json]
+                                      full gate report
+  version`);
   process.exit(2);
 }
 
 const [cmd, ...rest] = process.argv.slice(2);
-if (!cmd) usage();
+if (!cmd || cmd === 'help') usage();
 
 function takeFlag(argv, name) {
   const i = argv.indexOf(name);
@@ -55,144 +41,176 @@ function takeFlag(argv, name) {
   return { value: null, args: argv };
 }
 
-function takeOut(argv) {
-  return takeFlag(argv, '-o');
+function readInput(file) {
+  if (!file) usage();
+  const resolved = path.resolve(file);
+  return fs.readFileSync(resolved, 'utf8');
 }
 
 if (cmd === 'version') {
-  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
-  console.log(pkg.version);
+  console.log(LIN_VERSION);
   process.exit(0);
 }
 
-if (cmd === 'emit') {
-  const { value: out, args } = takeOut(rest);
-  const file = args[0];
-  if (!file) usage();
-  const r = emitAilFile(file, out);
-  console.log(JSON.stringify({ out: r.outPath, chars: r.chars, tokens_est: r.tokens_est }, null, 2));
+if (cmd === 'check') {
+  const text = readInput(rest[0]);
+  const prog = parseProgram(text);
+  console.log(JSON.stringify({
+    header: prog.header,
+    fns: prog.fns.map((f) => f.name),
+    exports: prog.exports,
+    consts: prog.consts ? Object.keys(prog.consts) : [],
+    structs: prog.structs.map((s) => s.name),
+    enums: prog.enums.map((e) => e.name),
+    modules: prog.modules.map((m) => m.name),
+  }, null, 2));
   process.exit(0);
 }
 
 if (cmd === 'compile') {
   let argv = rest;
-  const outT = takeOut(argv);
+  const outT = takeFlag(argv, '-o');
   argv = outT.args;
   const tgt = takeFlag(argv, '--target');
   argv = tgt.args;
-  let target = tgt.value || defaultEmitTarget() || DEFAULT_EMIT_TARGET;
-  argv = argv.filter((a) => {
-    if (a.startsWith('--target=')) {
-      target = a.slice('--target='.length);
-      return false;
+  const target = String(tgt.value || DEFAULT_EMIT_TARGET).toLowerCase();
+  const file = argv[0];
+  const text = readInput(file);
+  try {
+    const r = compile(text, { target });
+    if (outT.value) {
+      fs.writeFileSync(path.resolve(outT.value), r.code, 'utf8');
+      console.log(JSON.stringify({ out: path.resolve(outT.value), target, fns: r.fns }));
+    } else {
+      process.stdout.write(r.code);
     }
-    return true;
-  });
+    process.exit(0);
+  } catch (e) {
+    console.error(e.message);
+    process.exit(1);
+  }
+}
+
+if (cmd === 'run') {
+  const file = rest[0];
+  const text = readInput(file);
+  try {
+    const r = compile(text, { target: 'js' });
+    const mod = runInMemory(r.code);
+    const callArgs = rest.slice(1).filter((a) => a.trim());
+    const out = {};
+    for (const name of Object.keys(mod)) {
+      const fnRef = mod[name];
+      if (typeof fnRef === 'function' && callArgs.length && mod.hasOwnProperty(name)) {
+        out[name] = fnRef(...JSON.parse(callArgs[0]));
+      } else {
+        out[name] = typeof fnRef === 'function' ? `[fn ${(fnRef.length)} args]` : fnRef;
+      }
+    }
+    console.log(JSON.stringify(out, null, 2));
+    process.exit(0);
+  } catch (e) {
+    console.error(e.message);
+    process.exit(1);
+  }
+}
+
+if (cmd === 'hash') {
+  const text = readInput(rest[0]);
+  const prog = parseProgram(text);
+  console.log(JSON.stringify(programHashes(prog), null, 2));
+  process.exit(0);
+}
+
+if (cmd === 'effects') {
+  const text = readInput(rest[0]);
+  const r = compile(text, { target: 'js' });
+  const out = Object.fromEntries(r.program.fns.map((f) => [f.name, f.effect]));
+  console.log(JSON.stringify(out, null, 2));
+  process.exit(0);
+}
+
+if (cmd === 'emit') {
+  let argv = rest;
+  const outT = takeFlag(argv, '-o');
+  argv = outT.args;
   const file = argv[0];
   if (!file) usage();
-  target = String(target).toLowerCase();
-  if (!REAL_TARGETS.includes(target)) {
-    console.error(`unsupported target ${target}; want ${REAL_TARGETS.join('|')} (default ${DEFAULT_EMIT_TARGET})`);
-    process.exit(2);
+  try {
+    const js = fs.readFileSync(path.resolve(file), 'utf8');
+    const r = emitLinFromJs(js);
+    if (outT.value) {
+      fs.writeFileSync(path.resolve(outT.value), r.lin, 'utf8');
+      console.log(JSON.stringify({ out: path.resolve(outT.value), fns: r.fns }));
+    } else {
+      process.stdout.write(r.lin);
+    }
+    process.exit(0);
+  } catch (e) {
+    console.error(e.message);
+    process.exit(1);
   }
-  if (target === 'js' && !outT.value) {
-    const r = compileLiaFile(file, null);
-    console.log(JSON.stringify({ out: r.outPath, target, fns: r.program.fns.map((f) => f.name) }, null, 2));
-  } else {
-    const r = compileLiaToTargetFile(file, outT.value, { target, stubRuntime: false, withMain: false });
-    console.log(
-      JSON.stringify({ out: r.outPath, target, fns: r.program.fns.map((f) => f.name) }, null, 2),
-    );
-  }
-  process.exit(0);
-}
-
-if (cmd === 'check') {
-  const file = rest[0];
-  if (!file) usage();
-  const text = fs.readFileSync(file, 'utf8');
-  const prog = parseLia(text);
-  console.log(
-    JSON.stringify(
-      {
-        header: prog.header,
-        fns: prog.fns.map((f) => f.name),
-        exports: prog.exports,
-        consts: prog.consts ? Object.keys(prog.consts) : [],
-        tokens_est: estTokens(text),
-      },
-      null,
-      2,
-    ),
-  );
-  process.exit(0);
-}
-
-if (cmd === 'autonomy') {
-  const { spawnSync } = await import('node:child_process');
-  const r = spawnSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'autonomy_run.mjs'), ...rest], {
-    cwd: path.join(__dirname, '..'),
-    encoding: 'utf8',
-    stdio: 'inherit',
-  });
-  process.exit(r.status ?? 1);
-}
-
-if (cmd === 'improve' || cmd === 'evolve' || cmd === 'autonomy-status' || cmd === 'status') {
-  const { spawnSync } = await import('node:child_process');
-  const sub = cmd === 'status' ? 'status' : cmd === 'autonomy-status' ? 'status' : cmd;
-  const r = spawnSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'evolve_loop.mjs'), sub], {
-    cwd: path.join(__dirname, '..'),
-    encoding: 'utf8',
-    stdio: 'inherit',
-  });
-  process.exit(r.status ?? 1);
-}
-
-if (cmd === 'clone-lin' || cmd === 'clone_lin' || cmd === 'clone-lia' || cmd === 'clone_lia') {
-  const { spawnSync } = await import('node:child_process');
-  const r = spawnSync(process.execPath, [path.join(__dirname, '..', 'scripts', 'clone_lin_loop.mjs'), ...rest], {
-    cwd: path.join(__dirname, '..'),
-    encoding: 'utf8',
-    stdio: 'inherit',
-  });
-  process.exit(r.status ?? 1);
-}
-
-if (cmd === 'agent-ir' || cmd === 'ingest-ir') {
-  const file = rest[0];
-  if (!file) usage();
-  const { ingestFile } = await import('../src/lin_agent_ir_ingest_load.mjs');
-  const result = ingestFile(file);
-  console.log(JSON.stringify(result, null, 2));
-  process.exit(result.ok ? 0 : 1);
-}
-
-if (cmd === 'ain-lb-clr' || cmd === 'ain_lb_clr') {
-  const { spawnSync } = await import('node:child_process');
-  const r = spawnSync(process.execPath, [path.join(__dirname, '..', 'tests', 'ain_lb', 'runner.mjs'), ...rest], {
-    cwd: path.join(__dirname, '..'),
-    encoding: 'utf8',
-    stdio: 'inherit',
-  });
-  process.exit(r.status ?? 1);
-}
-
-if (cmd === 'build-meta' || cmd === 'build_meta') {
-  const { buildLinmeta } = await import('../scripts/build_linmeta.mjs');
-  const targetDir = path.resolve(rest[0] || '.');
-  buildLinmeta(targetDir);
-  process.exit(0);
 }
 
 if (cmd === 'rulel-check') {
-  const file = rest[0];
-  if (!file) usage();
-  const text = fs.readFileSync(file, 'utf8');
+  const text = readInput(rest[0]);
   const parsed = parseRulel(text);
   const validation = validateComms(parsed);
-  console.log(JSON.stringify({ parsed, validation }, null, 2));
+  console.log(JSON.stringify({ header: parsed.header, validation }, null, 2));
   process.exit(validation.ok ? 0 : 1);
+}
+
+if (cmd === 'verify') {
+  const bt = takeFlag(rest, '--behavior');
+  const file = bt.args[0];
+  const text = readInput(file);
+  const opts = {};
+  if (bt.value) opts.behavior = JSON.parse(fs.readFileSync(path.resolve(bt.value), 'utf8'));
+  const report = verify(text, opts);
+  console.log(JSON.stringify(report, null, 2));
+  process.exit(report.ok ? 0 : 1);
+}
+
+if (cmd === 'clone-lin' || cmd === 'clone_lin') {
+  const { runCloneLoop } = await import('../src/selfhost/loop.mjs');
+  const st = takeFlag(rest, '--stop-file');
+  const cy = takeFlag(st.args, '--cycles');
+  const mf = takeFlag(cy.args, '--max-fns');
+  const pd = takeFlag(mf.args, '--publish-dir');
+  const sourceDir = pd.args[0];
+  if (!sourceDir) usage();
+  const queue = [];
+  for (const e of fs.readdirSync(path.resolve(sourceDir), { withFileTypes: true })) {
+    if (e.isFile() && /\.js$/.test(e.name)) {
+      queue.push({ name: e.name.replace(/\.js$/, ''), source: fs.readFileSync(path.join(path.resolve(sourceDir), e.name), 'utf8') });
+    }
+  }
+  const state = runCloneLoop({
+    queue,
+    cycles: cy.value ? Number(cy.value) : 0,
+    stopFile: st.value ? path.resolve(st.value) : null,
+    maxFns: mf.value ? Number(mf.value) : 0,
+    publishDir: pd.value ? path.resolve(pd.value) : null,
+    dryPublish: !pd.value,
+  });
+  console.log(JSON.stringify(state, null, 2));
+  process.exit(state.suiteRate === 1 ? 0 : state.partial.length || state.repos.length ? (state.suiteRate === 1 ? 0 : 3) : 1);
+}
+
+if (cmd === 'improve' || cmd === 'evolve') {
+  const { improveSource } = await import('../src/selfhost/loop.mjs');
+  const file = rest[0];
+  const text = readInput(file);
+  const r = improveSource(text);
+  console.log(JSON.stringify({ applied: r.applied, changed: r.source !== text }, null, 2));
+  process.exit(0);
+}
+
+if (cmd === 'autonomy-status' || cmd === 'autonomy_status') {
+  const { autonomyStatus } = await import('../src/selfhost/loop.mjs');
+  const sp = path.resolve(rest[0] || '.clone_state.json');
+  console.log(JSON.stringify(autonomyStatus(sp), null, 2));
+  process.exit(0);
 }
 
 usage();

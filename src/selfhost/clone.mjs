@@ -1,0 +1,164 @@
+import { extractJsFunctions, extractTopLevelVars } from './extract.mjs';
+import { buildOracle, verifyAgainstOracle, hashOutputs } from './oracle.mjs';
+import { emitLinFromJs } from '../emit_from_js.mjs';
+import { compile } from '../compiler.mjs';
+import { runInMemory } from '../vm.mjs';
+
+export function cloneUnit(fn, allFns) {
+  const unit = {
+    name: fn.name,
+    params: fn.rawParams,
+    status: 'PENDING',
+    oracleHash: null,
+    cloneLin: null,
+    detail: null,
+  };
+  try {
+    const lin = emitLinFromJs(`function ${fn.name}(${fn.rawParams}){${fn.body}}\nmodule.exports={${fn.name}};`);
+    unit.cloneLin = lin.lin.trim();
+  } catch (e) {
+    unit.status = 'EMIT_FAIL';
+    unit.detail = e.message.slice(0, 160);
+    return unit;
+  }
+  return unit;
+}
+
+export function verifyCloneUnit(unit, fn, allFns, oracle) {
+  if (!oracle.ok) {
+    unit.status = 'SKIP';
+    unit.detail = `skip:${oracle.reason}`;
+    return unit;
+  }
+  unit.oracleHash = oracle.hash;
+  let compiled;
+  try {
+    compiled = compile(unit.cloneLin, { target: 'js', exportMode: 'single' });
+  } catch (e) {
+    unit.status = 'COMPILE_FAIL';
+    unit.detail = e.message.slice(0, 160);
+    return unit;
+  }
+  let mod;
+  try {
+    mod = runInMemory(compiled.code);
+  } catch (e) {
+    unit.status = 'RUNTIME_FAIL';
+    unit.detail = e.message.slice(0, 160);
+    return unit;
+  }
+  const clonedFn = mod[unit.name];
+  if (typeof clonedFn !== 'function') {
+    unit.status = 'EXPORT_FAIL';
+    unit.detail = 'clone export not callable';
+    return unit;
+  }
+  const verdict = verifyAgainstOracle(fn, clonedFn, oracle);
+  unit.status = verdict.pass ? 'PASS' : 'BEHAVIOR_DIFF';
+  unit.detail = verdict.detail;
+  return unit;
+}
+
+export function cloneRepo(sourceText, repoName, opts = {}) {
+  const { fns } = extractJsFunctions(sourceText);
+  const varsPrelude = extractTopLevelVars(sourceText)
+    .map((v) => `var ${v.name}=${v.init};`)
+    .join('\n');
+  let fileLin = null;
+  try {
+    const emitted = emitLinFromJs(sourceText);
+    fileLin = emitted.lin.trim();
+  } catch {}
+  if (fileLin) {
+    const units = [];
+    for (const fn of fns) {
+      if (opts.maxFns && units.length >= opts.maxFns) break;
+      const oracle = buildOracle(fn, fns, { varsPrelude });
+      const unit = {
+        name: fn.name,
+        params: fn.rawParams,
+        status: 'PENDING',
+        oracleHash: null,
+        cloneLin: fileLin,
+        detail: null,
+      };
+      verifyFileCloneUnit(unit, fn, oracle, fileLin);
+      units.push(unit);
+    }
+    const pass = units.filter((u) => u.status === 'PASS').length;
+    const fail = units.filter((u) => !['PASS', 'SKIP'].includes(u.status)).length;
+    const skip = units.filter((u) => u.status === 'SKIP').length;
+    const total = pass + fail;
+    return {
+      repo: repoName,
+      mode: 'file',
+      fileLin,
+      units,
+      pass,
+      fail,
+      skip,
+      suiteRate: total > 0 ? pass / total : 0,
+      complete: fail === 0 && pass > 0,
+      outputsHash: hashOutputs(units.filter((u) => u.status === 'PASS').map((u) => `${u.name}:${u.oracleHash}`)),
+    };
+  }
+  const units = [];
+  for (const fn of fns) {
+    if (opts.maxFns && units.length >= opts.maxFns) break;
+    const oracle = buildOracle(fn, fns, { varsPrelude });
+    const unit = cloneUnit(fn, fns);
+    verifyCloneUnit(unit, fn, fns, oracle);
+    units.push(unit);
+  }
+  const pass = units.filter((u) => u.status === 'PASS').length;
+  const fail = units.filter((u) => !['PASS', 'SKIP'].includes(u.status)).length;
+  const skip = units.filter((u) => u.status === 'SKIP').length;
+  const total = pass + fail;
+  const suiteRate = total > 0 ? pass / total : 0;
+  return {
+    repo: repoName,
+    mode: 'per_fn',
+    units,
+    pass,
+    fail,
+    skip,
+    suiteRate,
+    complete: fail === 0 && pass > 0,
+    outputsHash: hashOutputs(units.filter((u) => u.status === 'PASS').map((u) => `${u.name}:${u.oracleHash}`)),
+  };
+}
+
+function verifyFileCloneUnit(unit, fn, oracle, fileLin) {
+  if (!oracle.ok) {
+    unit.status = 'SKIP';
+    unit.detail = `skip:${oracle.reason}`;
+    return unit;
+  }
+  unit.oracleHash = oracle.hash;
+  let compiled;
+  try {
+    compiled = compile(fileLin, { target: 'js', exportMode: 'multiple' });
+  } catch (e) {
+    unit.status = 'COMPILE_FAIL';
+    unit.detail = e.message.slice(0, 160);
+    return unit;
+  }
+  let mod;
+  try {
+    mod = runInMemory(compiled.code);
+  } catch (e) {
+    unit.status = 'RUNTIME_FAIL';
+    unit.detail = e.message.slice(0, 160);
+    return unit;
+  }
+  const clonedFn = mod[unit.name];
+  if (typeof clonedFn !== 'function') {
+    unit.status = 'EXPORT_FAIL';
+    unit.detail = 'clone export not callable';
+    return unit;
+  }
+  const verdict = verifyAgainstOracle(fn, clonedFn, oracle);
+  unit.status = verdict.pass ? 'PASS' : 'BEHAVIOR_DIFF';
+  unit.detail = verdict.detail;
+  return unit;
+}
