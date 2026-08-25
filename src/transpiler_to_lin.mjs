@@ -13,11 +13,25 @@ const {
   transpileZigToLin: linTranspileZigToLin,
 } = require('./transpiler_to_lin_core.compiled.cjs');
 
+import { runSemanticClosurePipeline } from './semantic_closure_engine.mjs';
+
 export const detectLanguage = linDetectLanguage;
 export const transpileRustToLin = linTranspileRustToLin;
 export const transpileGoToLin = linTranspileGoToLin;
 export const transpileCToLin = linTranspileCToLin;
 export const transpileZigToLin = linTranspileZigToLin;
+
+export function transpileToLinWithManifest(sourceCode, opts = {}) {
+  const res = runSemanticClosurePipeline(sourceCode, opts);
+  return {
+    lin: res.program_lin,
+    program_lin: res.program_lin,
+    manifest: res.capability_manifest,
+    capability_manifest: res.capability_manifest,
+    coverage: res.coverage,
+    closure_size: res.closure_size
+  };
+}
 
 export function transpileToLin(sourceCode, opts = {}) {
   const lang = String(opts.lang || detectLanguage(sourceCode, opts.filename || '')).toLowerCase();

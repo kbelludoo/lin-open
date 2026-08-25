@@ -27,7 +27,6 @@ const IO_SYMBOLS = new Set([
  */
 export class CanonicalIrSerializer {
   static serializeFunction(fnNode, outerScope = null) {
-    // New local frame: parameters start at local $0, $1, $2...
     const scope = new ScopeEnv(outerScope);
     
     const params = fnNode.params || [];
@@ -35,7 +34,6 @@ export class CanonicalIrSerializer {
 
     const effect = inferNodeEffect(fnNode);
 
-    // Normalize single-expression arrow bodies: (a, b) => expr === (a, b) => { return expr; }
     let bodyNode = fnNode.body;
     if (bodyNode && bodyNode.type !== 'BlockStatement') {
       bodyNode = {
@@ -76,6 +74,11 @@ export class CanonicalIrSerializer {
       case 'ReturnStatement': {
         const argument = node.argument ? this.serializeNode(node.argument, scope) : null;
         return { kind: 'Return', argument };
+      }
+
+      case 'ThrowStatement': {
+        const argument = node.argument ? this.serializeNode(node.argument, scope) : null;
+        return { kind: 'Throw', argument };
       }
 
       case 'IfStatement': {
@@ -167,6 +170,12 @@ export class CanonicalIrSerializer {
         return { kind: 'Call', callee, args };
       }
 
+      case 'NewExpression': {
+        const callee = this.serializeNode(node.callee, scope);
+        const args = (node.arguments || []).map(a => this.serializeNode(a, scope));
+        return { kind: 'New', callee, args };
+      }
+
       case 'MemberExpression': {
         const object = this.serializeNode(node.object, scope);
         if (node.computed) {
@@ -194,6 +203,7 @@ export class CanonicalIrSerializer {
       }
 
       case 'Literal': {
+        if (node.regex) return { kind: 'Literal', type: 'regex', value: node.raw || node.value };
         if (typeof node.value === 'string') return { kind: 'Literal', type: 'string', value: node.value };
         if (typeof node.value === 'number') return { kind: 'Literal', type: 'number', value: node.value };
         if (typeof node.value === 'boolean') return { kind: 'Literal', type: 'boolean', value: node.value };
@@ -217,8 +227,8 @@ export class CanonicalIrSerializer {
 export class ScopeEnv {
   constructor(parent = null) {
     this.parent = parent;
-    this.locals = new Map(); // name -> index ($0, $1)
-    this.captures = new Map(); // name -> { capIdx: $c0, outerRef: $0 }
+    this.locals = new Map();
+    this.captures = new Map();
     this.localIndex = 0;
   }
 

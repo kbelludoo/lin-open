@@ -142,6 +142,13 @@ export class TrueAstParser {
         return new AstNode('TryStatement', { block, handler });
       }
 
+      if (tok.value === 'throw') {
+        next();
+        const arg = parseExpression();
+        match(';');
+        return new AstNode('ThrowStatement', { argument: arg });
+      }
+
       if (tok.value === '{') {
         return parseBlockStatement();
       }
@@ -261,8 +268,21 @@ export class TrueAstParser {
 
       if (tok.value === 'new') {
         next();
-        const callee = parsePrimary();
-        return new AstNode('NewExpression', { callee });
+        let callee = null;
+        if (peek().type === 'IDENTIFIER') {
+          callee = new AstNode('Identifier', { name: next().value });
+        } else {
+          callee = parsePrimary();
+        }
+        let args = [];
+        if (match('(')) {
+          while (peek().value !== ')' && peek().type !== 'EOF') {
+            args.push(parseExpression());
+            if (!match(',')) break;
+          }
+          expect(')');
+        }
+        return new AstNode('NewExpression', { callee, arguments: args });
       }
 
       if (tok.value === '...' ) {
@@ -271,13 +291,39 @@ export class TrueAstParser {
         return new AstNode('SpreadElement', { argument: arg });
       }
 
-      if (tok.value === '++' || tok.value === '--') {
+      if (tok.type === 'STRING_LITERAL') {
+        next();
+        node = new AstNode('Literal', { value: tok.value, raw: tok.raw || JSON.stringify(tok.value) });
+        return node;
+      }
+      if (tok.type === 'NUMERIC_LITERAL') {
+        next();
+        node = new AstNode('Literal', { value: Number(tok.value), raw: tok.value });
+        return node;
+      }
+      if (tok.type === 'BOOLEAN_LITERAL') {
+        next();
+        node = new AstNode('Literal', { value: tok.value === 'true', raw: tok.value });
+        return node;
+      }
+      if (tok.type === 'NULL_LITERAL') {
+        next();
+        node = new AstNode('Literal', { value: null, raw: 'null' });
+        return node;
+      }
+      if (tok.type === 'REGEXP_LITERAL') {
+        next();
+        node = new AstNode('Literal', { value: tok.value, raw: tok.value, regex: { pattern: tok.pattern, flags: tok.flags } });
+        return node;
+      }
+
+      if (tok.type === 'PUNCTUATOR' && (tok.value === '++' || tok.value === '--')) {
         const op = next().value;
         const arg = parsePrimary();
         return new AstNode('UpdateExpression', { operator: op, argument: arg, prefix: true });
       }
 
-      if (tok.value === '!' || tok.value === '-' || tok.value === '+' || tok.value === 'typeof' || tok.value === '~') {
+      if ((tok.type === 'PUNCTUATOR' && ['!', '-', '+', '~'].includes(tok.value)) || (tok.type === 'IDENTIFIER' && ['typeof', 'delete'].includes(tok.value))) {
         const op = next().value;
         const arg = parsePrimary();
         return new AstNode('UnaryExpression', { operator: op, argument: arg, prefix: true });
@@ -296,18 +342,6 @@ export class TrueAstParser {
         }
         expect(']');
         node = new AstNode('ArrayExpression', { elements });
-      } else if (tok.type === 'STRING_LITERAL') {
-        next();
-        node = new AstNode('Literal', { value: tok.value, raw: tok.raw || JSON.stringify(tok.value) });
-      } else if (tok.type === 'NUMERIC_LITERAL') {
-        next();
-        node = new AstNode('Literal', { value: Number(tok.value), raw: tok.value });
-      } else if (tok.type === 'BOOLEAN_LITERAL') {
-        next();
-        node = new AstNode('Literal', { value: tok.value === 'true', raw: tok.value });
-      } else if (tok.type === 'NULL_LITERAL') {
-        next();
-        node = new AstNode('Literal', { value: null, raw: 'null' });
       } else if (tok.value === '{') {
         next();
         const properties = [];
@@ -427,6 +461,38 @@ export class TrueAstParser {
         continue;
       }
 
+      // Regex Literal detection
+      if (c === '/' && source[i + 1] !== '/' && source[i + 1] !== '*') {
+        const lastTok = tokens[tokens.length - 1];
+        const isRegexStart = !lastTok || (
+          lastTok.type === 'PUNCTUATOR' && ['(', ',', '=', ':', '[', '!', '?', '+', '-', '*', '%', '&&', '||', '??', '=>'].includes(lastTok.value)
+        ) || (
+          lastTok.type === 'IDENTIFIER' && ['return', 'case', 'throw', 'typeof'].includes(lastTok.value)
+        );
+
+        if (isRegexStart) {
+          let reStr = '';
+          i++; // skip initial /
+          while (i < len && source[i] !== '/') {
+            if (source[i] === '\\' && i + 1 < len) {
+              reStr += source[i] + source[i + 1];
+              i += 2;
+            } else {
+              reStr += source[i];
+              i++;
+            }
+          }
+          if (i < len && source[i] === '/') i++; // skip closing /
+          let flags = '';
+          while (i < len && /[a-z]/i.test(source[i])) {
+            flags += source[i];
+            i++;
+          }
+          tokens.push({ type: 'REGEXP_LITERAL', value: `/${reStr}/${flags}`, pattern: reStr, flags });
+          continue;
+        }
+      }
+
       if (c === '"' || c === "'") {
         const quote = c;
         let str = '';
@@ -513,13 +579,14 @@ const HOST_CAPABILITY_REGISTRY = new Set([
   'Date.now', 'Date.parse', 'JSON.parse', 'JSON.stringify',
   'console.log', 'console.error', 'console.warn',
   'fetch', 'setTimeout', 'clearTimeout', 'setInterval', 'clearInterval',
-  'RegExp', 'Buffer', 'process', 'window', 'document'
+  'RegExp', 'Buffer', 'process', 'window', 'document', 'parseInt', 'parseFloat', 'Error', 'TypeError'
 ]);
 
 const BUILTIN_PURE_METHODS = new Set([
   'map', 'filter', 'reduce', 'some', 'every', 'find', 'findIndex',
   'indexOf', 'includes', 'join', 'slice', 'concat', 'reverse', 'flat',
-  'push', 'pop', 'shift', 'unshift', 'length', 'keys', 'values', 'entries'
+  'push', 'pop', 'shift', 'unshift', 'length', 'keys', 'values', 'entries',
+  'splice', 'split', 'replace', 'charCodeAt', 'indexOf'
 ]);
 
 export function extractSymbolsAndCallsFromAst(ast, sourceOrigin) {
@@ -743,6 +810,9 @@ export class LinAstEmitter {
         return `^${this.emitExpression(stmt.argument)};`;
       }
 
+      case 'ThrowStatement':
+        return `throw ${this.emitExpression(stmt.argument)};`;
+
       case 'IfStatement': {
         const test = this.emitExpression(stmt.test);
         const cons = this.emitStatementAsBlock(stmt.consequent);
@@ -891,6 +961,7 @@ export class LinAstEmitter {
 
     switch (expr.type) {
       case 'Literal':
+        if (expr.regex) return expr.raw || expr.value;
         if (typeof expr.value === 'string') return `"${expr.value}"`;
         if (expr.value === null) return 'null';
         return String(expr.value);
@@ -908,8 +979,14 @@ export class LinAstEmitter {
         return `(${left} ${op} ${right})`;
       }
 
-      case 'UnaryExpression':
-        return `(${expr.operator}${this.emitExpression(expr.argument)})`;
+      case 'UnaryExpression': {
+        const op = expr.operator;
+        const arg = this.emitExpression(expr.argument);
+        if (op === 'delete' || op === 'typeof') {
+          return `(${op} ${arg})`;
+        }
+        return `(${op}${arg})`;
+      }
 
       case 'UpdateExpression': {
         const arg = this.emitExpression(expr.argument);
@@ -949,6 +1026,12 @@ export class LinAstEmitter {
 
       case 'CallExpression':
         return this.emitCall(expr);
+
+      case 'NewExpression': {
+        const callee = this.emitExpression(expr.callee);
+        const args = (expr.arguments || []).map(a => this.emitExpression(a)).join(',');
+        return `new ${callee}(${args})`;
+      }
 
       case 'ArrowFunctionExpression':
       case 'FunctionDeclaration': {
