@@ -106,6 +106,7 @@
 
 !cppStripPreprocessor(cSource){
   joined = cSource.replace(/\\\r?\n/g, " ");
+  joined = joined.replace(/\[\[(?:[^\[\]]|\[[^\]]*\])*\]\]/g, " ");
   lines = joined.split("\n");
   out = [];
   #(k = 0; k < lines.length; k++){
@@ -138,6 +139,8 @@
   #(i = 0; i < rawFns.length; i++){
     rf = rawFns[i];
     ?(["if", "while", "for", "switch"].includes(rf.name)){ continue }
+    ?(rf.name.indexOf(":") >= 0){ continue }
+    ?(/^[A-Z][A-Z0-9_]*$/.test(rf.name) && rf.rawParams.indexOf(",") >= 0){ continue }
     params = rf.rawParams.split(",").map(function(p){
       parts = p.trim().split(/\s+/);
       ^parts[parts.length - 1].replace(/^\*/, "")
