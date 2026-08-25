@@ -545,9 +545,18 @@ export class TrueAstParser {
 
       if (/\d/.test(c)) {
         let num = '';
-        while (i < len && /[\d.]/.test(source[i])) {
-          num += source[i];
-          i++;
+        if (c === '0' && i + 1 < len && (source[i + 1] === 'x' || source[i + 1] === 'X')) {
+          num += source[i] + source[i + 1];
+          i += 2;
+          while (i < len && /[\da-fA-F]/.test(source[i])) {
+            num += source[i];
+            i++;
+          }
+        } else {
+          while (i < len && /[\d.]/.test(source[i])) {
+            num += source[i];
+            i++;
+          }
         }
         tokens.push({ type: 'NUMERIC_LITERAL', value: num });
         continue;

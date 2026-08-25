@@ -46,7 +46,7 @@ export function renderProgramJs(prog, opts = {}) {
       return true;
     });
     const decl = locals.length ? `var ${locals.join(',')};` : '';
-    const isAsync = /\bawait\b/.test(bodyText) || fn.isAsync;
+    const isAsync = Boolean(fn.isAsync) || /\bawait\s+[\w$(]/.test(bodyText.replace(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g, ''));
     parts.push(`/* effect:${fn.effect} */${isAsync ? 'async ' : ''}function ${fn.name}(${fnParamsText(fn)}){${decl}${bodyText}}`);
   }
   if (opts.epilogue) {
