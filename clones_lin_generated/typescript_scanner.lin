@@ -1,0 +1,2986 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true
+~G{?=if #=for ^=ret :else}
+
+enum CharacterCodes {
+  EOF: (-1),
+  nullCharacter: 0,
+  maxAsciiCharacter: 127,
+  lineFeed: 10,
+  carriageReturn: 13,
+  lineSeparator: 8232,
+  paragraphSeparator: 8233,
+  nextLine: 133,
+  space: 32,
+  nonBreakingSpace: 160,
+  enQuad: 8192,
+  emQuad: 8193,
+  enSpace: 8194,
+  emSpace: 8195,
+  threePerEmSpace: 8196,
+  fourPerEmSpace: 8197,
+  sixPerEmSpace: 8198,
+  figureSpace: 8199,
+  punctuationSpace: 8200,
+  thinSpace: 8201,
+  hairSpace: 8202,
+  zeroWidthSpace: 8203,
+  narrowNoBreakSpace: 8239,
+  ideographicSpace: 12288,
+  mathematicalSpace: 8287,
+  ogham: 5760,
+  replacementCharacter: 65533,
+  _: 95,
+  $: 36,
+  _0: 48,
+  _1: 49,
+  _2: 50,
+  _3: 51,
+  _4: 52,
+  _5: 53,
+  _6: 54,
+  _7: 55,
+  _8: 56,
+  _9: 57,
+  a: 97,
+  b: 98,
+  c: 99,
+  d: 100,
+  e: 101,
+  f: 102,
+  g: 103,
+  h: 104,
+  i: 105,
+  j: 106,
+  k: 107,
+  l: 108,
+  m: 109,
+  n: 110,
+  o: 111,
+  p: 112,
+  q: 113,
+  r: 114,
+  s: 115,
+  t: 116,
+  u: 117,
+  v: 118,
+  w: 119,
+  x: 120,
+  y: 121,
+  z: 122,
+  A: 65,
+  B: 66,
+  C: 67,
+  D: 68,
+  E: 69,
+  F: 70,
+  G: 71,
+  H: 72,
+  I: 73,
+  J: 74,
+  K: 75,
+  L: 76,
+  M: 77,
+  N: 78,
+  O: 79,
+  P: 80,
+  Q: 81,
+  R: 82,
+  S: 83,
+  T: 84,
+  U: 85,
+  V: 86,
+  W: 87,
+  X: 88,
+  Y: 89,
+  Z: 90,
+  ampersand: 38,
+  asterisk: 42,
+  at: 64,
+  backslash: 92,
+  backtick: 96,
+  bar: 124,
+  caret: 94,
+  closeBrace: 125,
+  closeBracket: 93,
+  closeParen: 41,
+  colon: 58,
+  comma: 44,
+  dot: 46,
+  doubleQuote: 34,
+  equals: 61,
+  exclamation: 33,
+  greaterThan: 62,
+  hash: 35,
+  lessThan: 60,
+  minus: 45,
+  openBrace: 123,
+  openBracket: 91,
+  openParen: 40,
+  percent: 37,
+  plus: 43,
+  question: 63,
+  semicolon: 59,
+  singleQuote: 39,
+  slash: 47,
+  tilde: 126,
+  backspace: 8,
+  formFeed: 12,
+  byteOrderMark: 65279,
+  tab: 9,
+  verticalTab: 11
+}
+
+enum CheckFlags {
+  None: 0,
+  Instantiated: (1 << 0),
+  SyntheticProperty: (1 << 1),
+  SyntheticMethod: (1 << 2),
+  Readonly: (1 << 3),
+  ReadPartial: (1 << 4),
+  WritePartial: (1 << 5),
+  HasNonUniformType: (1 << 6),
+  HasLiteralType: (1 << 7),
+  ContainsPublic: (1 << 8),
+  ContainsProtected: (1 << 9),
+  ContainsPrivate: (1 << 10),
+  ContainsWritePublic: (1 << 11),
+  ContainsWriteProtected: (1 << 12),
+  ContainsWritePrivate: (1 << 13),
+  ContainsStatic: (1 << 14),
+  Late: (1 << 15),
+  ReverseMapped: (1 << 16),
+  OptionalParameter: (1 << 17),
+  RestParameter: (1 << 18),
+  DeferredType: (1 << 19),
+  HasNeverType: (1 << 20),
+  Mapped: (1 << 21),
+  StripOptional: (1 << 22),
+  Unresolved: (1 << 23),
+  IsDiscriminantComputed: (1 << 24),
+  IsDiscriminant: (1 << 25),
+  IndexSymbol: (1 << 26),
+  Synthetic: (SyntheticProperty | SyntheticMethod),
+  NonUniformAndLiteral: (HasNonUniformType | HasLiteralType),
+  Partial: (ReadPartial | WritePartial)
+}
+
+enum CommentDirectiveType {
+  ExpectError: 0,
+  Ignore: 1
+}
+
+enum CompletionItemKind {
+  Text: 1,
+  Method: 2,
+  Function: 3,
+  Constructor: 4,
+  Field: 5,
+  Variable: 6,
+  Class: 7,
+  Interface: 8,
+  Module: 9,
+  Property: 10,
+  Unit: 11,
+  Value: 12,
+  Enum: 13,
+  Keyword: 14,
+  Snippet: 15,
+  Color: 16,
+  File: 17,
+  Reference: 18,
+  Folder: 19,
+  EnumMember: 20,
+  Constant: 21,
+  Struct: 22,
+  Event: 23,
+  Operator: 24,
+  TypeParameter: 25
+}
+
+enum DiagnosticCategory {
+  Warning: 0,
+  Error: 1,
+  Suggestion: 2,
+  Message: 3
+}
+
+enum DiagnosticDirectivePolicy {
+  Ignore: 0,
+  Expect: 1
+}
+
+enum ElementFlags {
+  None: 0,
+  Required: (1 << 0),
+  Optional: (1 << 1),
+  Rest: (1 << 2),
+  Variadic: (1 << 3),
+  Fixed: (Required | Optional),
+  Variable: (Rest | Variadic),
+  NonRequired: ((Optional | Rest) | Variadic),
+  NonRest: ((Required | Optional) | Variadic)
+}
+
+enum EmitOnly {
+  All: 0,
+  OnlyJs: 1,
+  OnlyDts: 2
+}
+
+enum InternalSymbolName {
+  Call: "__call",
+  Constructor: "__constructor",
+  New: "__new",
+  Index: "__index",
+  ExportStar: "__export",
+  Global: "__global",
+  Missing: "__missing",
+  Type: "__type",
+  Object: "__object",
+  JSXAttributes: "__jsxAttributes",
+  Class: "__class",
+  Function: "__function",
+  Computed: "__computed",
+  AssignmentDeclaration: "__assignment",
+  InstantiationExpression: "__instantiationExpression",
+  ImportAttributes: "__importAttributes",
+  ExportEquals: "export=",
+  Default: "default",
+  This: "this",
+  ModuleExports: "module.exports"
+}
+
+enum JsxEmit {
+  None: 0,
+  Preserve: 1,
+  ReactNative: 2,
+  React: 3,
+  ReactJSX: 4,
+  ReactJSXDev: 5
+}
+
+enum LanguageVariant {
+  Standard: 0,
+  JSX: 1
+}
+
+enum ModifierFlags {
+  None: 0,
+  Public: (1 << 0),
+  Private: (1 << 1),
+  Protected: (1 << 2),
+  Readonly: (1 << 3),
+  Override: (1 << 4),
+  Export: (1 << 5),
+  Abstract: (1 << 6),
+  Ambient: (1 << 7),
+  Static: (1 << 8),
+  Accessor: (1 << 9),
+  Async: (1 << 10),
+  Default: (1 << 11),
+  Const: (1 << 12),
+  In: (1 << 13),
+  Out: (1 << 14),
+  Decorator: (1 << 15),
+  Deprecated: (1 << 16),
+  JSDocPublic: (1 << 23),
+  JSDocPrivate: (1 << 24),
+  JSDocProtected: (1 << 25),
+  JSDocReadonly: (1 << 26),
+  JSDocOverride: (1 << 27),
+  HasComputedJSDocModifiers: (1 << 28),
+  HasComputedFlags: (1 << 29),
+  SyntacticOrJSDocModifiers: ((((Public | Private) | Protected) | Readonly) | Override),
+  SyntacticOnlyModifiers: ((((((((((Export | Ambient) | Abstract) | Static) | Accessor) | Async) | Default) | Const) | In) | Out) | Decorator),
+  SyntacticModifiers: (SyntacticOrJSDocModifiers | SyntacticOnlyModifiers),
+  JSDocCacheOnlyModifiers: ((((JSDocPublic | JSDocPrivate) | JSDocProtected) | JSDocReadonly) | JSDocOverride),
+  JSDocOnlyModifiers: Deprecated,
+  NonCacheOnlyModifiers: ((SyntacticOrJSDocModifiers | SyntacticOnlyModifiers) | JSDocOnlyModifiers),
+  AccessibilityModifier: ((Public | Private) | Protected),
+  ParameterPropertyModifier: ((AccessibilityModifier | Readonly) | Override),
+  NonPublicAccessibilityModifier: (Private | Protected),
+  TypeScriptModifier: (((((((((Ambient | Public) | Private) | Protected) | Readonly) | Abstract) | Const) | Override) | In) | Out),
+  ExportDefault: (Export | Default),
+  All: ((((((((((((((((Export | Ambient) | Public) | Private) | Protected) | Static) | Readonly) | Abstract) | Accessor) | Async) | Default) | Const) | Deprecated) | Override) | In) | Out) | Decorator),
+  Modifier: (All & (~Decorator)),
+  JavaScript: ((((Export | Static) | Accessor) | Async) | Default)
+}
+
+enum ModuleDetectionKind {
+  None: 0,
+  Auto: 1,
+  Legacy: 2,
+  Force: 3
+}
+
+enum ModuleKind {
+  None: 0,
+  CommonJS: 1,
+  AMD: 2,
+  UMD: 3,
+  System: 4,
+  ES2015: 5,
+  ES2020: 6,
+  ES2022: 7,
+  ESNext: 99,
+  Node16: 100,
+  Node18: 101,
+  Node20: 102,
+  NodeNext: 199,
+  Preserve: 200
+}
+
+enum ModuleResolutionKind {
+  Unknown: 0,
+  Classic: 1,
+  Node10: 2,
+  Node16: 3,
+  NodeNext: 99,
+  Bundler: 100
+}
+
+enum NewLineKind {
+  None: 0,
+  CRLF: 1,
+  LF: 2
+}
+
+enum NodeBuilderFlags {
+  None: 0,
+  NoTruncation: (1 << 0),
+  WriteArrayAsGenericType: (1 << 1),
+  GenerateNamesForShadowedTypeParams: (1 << 2),
+  UseStructuralFallback: (1 << 3),
+  ForbidIndexedAccessSymbolReferences: (1 << 4),
+  WriteTypeArgumentsOfSignature: (1 << 5),
+  UseFullyQualifiedType: (1 << 6),
+  UseOnlyExternalAliasing: (1 << 7),
+  SuppressAnyReturnType: (1 << 8),
+  WriteTypeParametersInQualifiedName: (1 << 9),
+  MultilineObjectLiterals: (1 << 10),
+  WriteClassExpressionAsTypeLiteral: (1 << 11),
+  UseTypeOfFunction: (1 << 12),
+  OmitParameterModifiers: (1 << 13),
+  UseAliasDefinedOutsideCurrentScope: (1 << 14),
+  UseSingleQuotesForStringLiteralType: (1 << 28),
+  NoTypeReduction: (1 << 29),
+  UseInstantiationExpressions: (1 << 30),
+  OmitThisParameter: (1 << 25),
+  WriteCallStyleSignature: (1 << 27),
+  AllowThisInObjectLiteral: (1 << 15),
+  AllowQualifiedNameInPlaceOfIdentifier: (1 << 16),
+  AllowAnonymousIdentifier: (1 << 17),
+  AllowEmptyUnionOrIntersection: (1 << 18),
+  AllowEmptyTuple: (1 << 19),
+  AllowUniqueESSymbolType: (1 << 20),
+  AllowEmptyIndexInfoType: (1 << 21),
+  AllowNodeModulesRelativePaths: (1 << 26),
+  IgnoreErrors: ((((((AllowThisInObjectLiteral | AllowQualifiedNameInPlaceOfIdentifier) | AllowAnonymousIdentifier) | AllowEmptyUnionOrIntersection) | AllowEmptyTuple) | AllowEmptyIndexInfoType) | AllowNodeModulesRelativePaths),
+  InObjectTypeLiteral: (1 << 22),
+  InTypeAlias: (1 << 23),
+  InInitialEntityName: (1 << 24)
+}
+
+enum NodeFlags {
+  None: 0,
+  Let: (1 << 0),
+  Const: (1 << 1),
+  Using: (1 << 2),
+  Reparsed: (1 << 3),
+  Synthesized: (1 << 4),
+  OptionalChain: (1 << 5),
+  ExportContext: (1 << 6),
+  ContainsThis: (1 << 7),
+  HasImplicitReturn: (1 << 8),
+  HasExplicitReturn: (1 << 9),
+  DisallowInContext: (1 << 10),
+  YieldContext: (1 << 11),
+  DecoratorContext: (1 << 12),
+  AwaitContext: (1 << 13),
+  DisallowConditionalTypesContext: (1 << 14),
+  ThisNodeHasError: (1 << 15),
+  JavaScriptFile: (1 << 16),
+  ThisNodeOrAnySubNodesHasError: (1 << 17),
+  HasAsyncFunctions: (1 << 18),
+  PossiblyContainsDynamicImport: (1 << 19),
+  PossiblyContainsImportMeta: (1 << 20),
+  HasJSDoc: (1 << 21),
+  JSDoc: (1 << 22),
+  Ambient: (1 << 23),
+  InWithStatement: (1 << 24),
+  JsonFile: (1 << 25),
+  PossiblyContainsDeprecatedTag: (1 << 26),
+  Unreachable: (1 << 27),
+  ReparserTransformedLiteral: (1 << 28),
+  BlockScoped: ((Let | Const) | Using),
+  Constant: (Const | Using),
+  AwaitUsing: (Const | Using),
+  ReachabilityCheckFlags: (HasImplicitReturn | HasExplicitReturn),
+  ReachabilityAndEmitFlags: (ReachabilityCheckFlags | HasAsyncFunctions),
+  ContextFlags: (((((((DisallowInContext | DisallowConditionalTypesContext) | YieldContext) | DecoratorContext) | AwaitContext) | JavaScriptFile) | InWithStatement) | Ambient),
+  TypeExcludesFlags: (YieldContext | AwaitContext),
+  PermanentlySetIncrementalFlags: (PossiblyContainsDynamicImport | PossiblyContainsImportMeta),
+  IdentifierHasExtendedUnicodeEscape: ContainsThis,
+  IdentifierIsInJSDocNamespace: HasAsyncFunctions,
+  NestedNamespace: OptionalChain
+}
+
+enum ObjectFlags {
+  None: 0,
+  Class: (1 << 0),
+  Interface: (1 << 1),
+  Reference: (1 << 2),
+  Tuple: (1 << 3),
+  Anonymous: (1 << 4),
+  Mapped: (1 << 5),
+  Instantiated: (1 << 6),
+  ObjectLiteral: (1 << 7),
+  EvolvingArray: (1 << 8),
+  ObjectLiteralPatternWithComputedProperties: (1 << 9),
+  ReverseMapped: (1 << 10),
+  JsxAttributes: (1 << 11),
+  JSLiteral: (1 << 12),
+  FreshLiteral: (1 << 13),
+  ArrayLiteral: (1 << 14),
+  PrimitiveUnion: (1 << 15),
+  ContainsWideningType: (1 << 16),
+  ContainsObjectOrArrayLiteral: (1 << 17),
+  NonInferrableType: (1 << 18),
+  CouldContainTypeVariablesComputed: (1 << 19),
+  CouldContainTypeVariables: (1 << 20),
+  MembersResolved: (1 << 21),
+  ClassOrInterface: (Class | Interface),
+  RequiresWidening: (ContainsWideningType | ContainsObjectOrArrayLiteral),
+  PropagatingFlags: ((ContainsWideningType | ContainsObjectOrArrayLiteral) | NonInferrableType),
+  InstantiatedMapped: (Mapped | Instantiated),
+  InstantiationExpressionType: (1 << 24),
+  SingleSignatureType: (1 << 25),
+  ObjectTypeKindMask: ((((((((ClassOrInterface | Reference) | Tuple) | Anonymous) | Mapped) | ReverseMapped) | EvolvingArray) | InstantiationExpressionType) | SingleSignatureType),
+  ContainsSpread: (1 << 22),
+  ObjectRestType: (1 << 23),
+  IsClassInstanceClone: (1 << 26),
+  IdenticalBaseTypeCalculated: (1 << 27),
+  IdenticalBaseTypeExists: (1 << 28),
+  UnresolvedMembers: (1 << 29),
+  FromTypeNode: (1 << 30),
+  IsGenericTypeComputed: (1 << 22),
+  IsGenericObjectType: (1 << 23),
+  IsGenericIndexType: (1 << 24),
+  IsGenericType: (IsGenericObjectType | IsGenericIndexType),
+  ContainsIntersections: (1 << 25),
+  IsUnknownLikeUnionComputed: (1 << 26),
+  IsUnknownLikeUnion: (1 << 27),
+  IsUniformEnumComputed: (1 << 28),
+  IsUniformEnum: (1 << 29),
+  IsNeverIntersectionComputed: (1 << 25),
+  IsNeverIntersection: (1 << 26),
+  IsConstrainedTypeVariable: (1 << 27)
+}
+
+enum OuterExpressionKinds {
+  Parentheses: (1 << 0),
+  TypeAssertions: (1 << 1),
+  NonNullAssertions: (1 << 2),
+  PartiallyEmittedExpressions: (1 << 3),
+  ExpressionsWithTypeArguments: (1 << 4),
+  Satisfies: (1 << 5),
+  ExcludeJSDocTypeAssertion: (1 << 6),
+  Assignments: (1 << 7),
+  Comma: (1 << 8),
+  Assertions: ((TypeAssertions | NonNullAssertions) | Satisfies),
+  All: (((Parentheses | Assertions) | PartiallyEmittedExpressions) | ExpressionsWithTypeArguments),
+  AllExceptAssertionsOrExpressionsWithTypeArguments: ((All & (~Assertions)) & (~ExpressionsWithTypeArguments)),
+  ExpressionTypePassthrough: ((Parentheses | Assignments) | Comma)
+}
+
+enum RegularExpressionFlags {
+  None: 0,
+  HasIndices: (1 << 0),
+  Global: (1 << 1),
+  IgnoreCase: (1 << 2),
+  Multiline: (1 << 3),
+  DotAll: (1 << 4),
+  Unicode: (1 << 5),
+  UnicodeSets: (1 << 6),
+  Sticky: (1 << 7),
+  AnyUnicodeMode: (Unicode | UnicodeSets)
+}
+
+enum ScriptKind {
+  Unknown: 0,
+  JS: 1,
+  JSX: 2,
+  TS: 3,
+  TSX: 4,
+  JSON: 6
+}
+
+enum ScriptTarget {
+  ES2015: 2,
+  ES2016: 3,
+  ES2017: 4,
+  ES2018: 5,
+  ES2019: 6,
+  ES2020: 7,
+  ES2021: 8,
+  ES2022: 9,
+  ES2023: 10,
+  ES2024: 11,
+  ES2025: 12,
+  ESNext: 99,
+  JSON: 100,
+  Latest: ESNext
+}
+
+enum SignatureFlags {
+  None: 0,
+  HasRestParameter: (1 << 0),
+  HasLiteralTypes: (1 << 1),
+  Construct: (1 << 2),
+  Abstract: (1 << 3),
+  IsInnerCallChain: (1 << 4),
+  IsOuterCallChain: (1 << 5),
+  IsUntypedSignatureInJSFile: (1 << 6),
+  IsNonInferrable: (1 << 7),
+  IsSignatureCandidateForOverloadFailure: (1 << 8),
+  PropagatingFlags: (((((HasRestParameter | HasLiteralTypes) | Construct) | Abstract) | IsUntypedSignatureInJSFile) | IsSignatureCandidateForOverloadFailure),
+  CallChainFlags: (IsInnerCallChain | IsOuterCallChain)
+}
+
+enum SignatureKind {
+  Call: 0,
+  Construct: 1
+}
+
+enum SpanMapFeature {
+  Hover: (1 << 0),
+  SignatureHelp: (1 << 1),
+  Completion: (1 << 2),
+  Definition: (1 << 3),
+  TypeDefinition: (1 << 4),
+  Implementation: (1 << 5),
+  References: (1 << 6),
+  DocumentHighlights: (1 << 7),
+  Rename: (1 << 8),
+  CallHierarchy: (1 << 9),
+  CodeActions: (1 << 10),
+  Formatting: (1 << 11),
+  InlayHints: (1 << 12),
+  SemanticTokens: (1 << 13),
+  FoldingRanges: (1 << 14),
+  SelectionRanges: (1 << 15),
+  LinkedEditing: (1 << 16),
+  AutoInsert: (1 << 17),
+  DocumentSymbols: (1 << 18),
+  CodeLens: (1 << 19),
+  None: 0,
+  All: ((CodeLens << 1) - 1)
+}
+
+enum SpanMapFidelity {
+  Exact: 0,
+  Atom: 1,
+  Approximate: 2,
+  None: 3
+}
+
+enum SpanMapKind {
+  Verbatim: 0,
+  Atom: 1,
+  Alias: 2
+}
+
+enum SymbolFlags {
+  None: 0,
+  FunctionScopedVariable: (1 << 0),
+  BlockScopedVariable: (1 << 1),
+  Property: (1 << 2),
+  EnumMember: (1 << 3),
+  Function: (1 << 4),
+  Class: (1 << 5),
+  Interface: (1 << 6),
+  ConstEnum: (1 << 7),
+  RegularEnum: (1 << 8),
+  ValueModule: (1 << 9),
+  NamespaceModule: (1 << 10),
+  TypeLiteral: (1 << 11),
+  ObjectLiteral: (1 << 12),
+  Method: (1 << 13),
+  Constructor: (1 << 14),
+  GetAccessor: (1 << 15),
+  SetAccessor: (1 << 16),
+  Signature: (1 << 17),
+  TypeParameter: (1 << 18),
+  TypeAlias: (1 << 19),
+  ExportValue: (1 << 20),
+  Alias: (1 << 21),
+  Prototype: (1 << 22),
+  ExportStar: (1 << 23),
+  Optional: (1 << 24),
+  Transient: (1 << 25),
+  Assignment: (1 << 26),
+  ModuleExports: (1 << 27),
+  ConstEnumOnlyModule: (1 << 28),
+  ReplaceableByMethod: (1 << 29),
+  GlobalLookup: (1 << 30),
+  All: (1 << (30 - 1)),
+  Enum: (RegularEnum | ConstEnum),
+  Variable: (FunctionScopedVariable | BlockScopedVariable),
+  Value: ((((((((((Variable | Property) | EnumMember) | ObjectLiteral) | Function) | Class) | Enum) | ValueModule) | Method) | GetAccessor) | SetAccessor),
+  Type: ((((((Class | Interface) | Enum) | EnumMember) | TypeLiteral) | TypeParameter) | TypeAlias),
+  Namespace: ((ValueModule | NamespaceModule) | Enum),
+  Module: (ValueModule | NamespaceModule),
+  Accessor: (GetAccessor | SetAccessor),
+  FunctionScopedVariableExcludes: (Value & (~FunctionScopedVariable)),
+  BlockScopedVariableExcludes: Value,
+  ParameterExcludes: Value,
+  PropertyExcludes: (Value & (~(Property | Accessor))),
+  EnumMemberExcludes: (Value | Type),
+  FunctionExcludes: (Value & (~((Function | ValueModule) | Class))),
+  ClassExcludes: ((Value | Type) & (~((ValueModule | Interface) | Function))),
+  InterfaceExcludes: (Type & (~(Interface | Class))),
+  RegularEnumExcludes: ((Value | Type) & (~(RegularEnum | ValueModule))),
+  ConstEnumExcludes: ((Value | Type) & (~ConstEnum)),
+  ValueModuleExcludes: (Value & (~(((Function | Class) | RegularEnum) | ValueModule))),
+  NamespaceModuleExcludes: None,
+  MethodExcludes: (Value & (~Method)),
+  GetAccessorExcludes: (Value & (~(SetAccessor | Property))),
+  SetAccessorExcludes: (Value & (~(GetAccessor | Property))),
+  AccessorExcludes: (Value & (~Property)),
+  TypeParameterExcludes: (Type & (~TypeParameter)),
+  TypeAliasExcludes: Type,
+  AliasExcludes: Alias,
+  ModuleMember: (((((((Variable | Function) | Class) | Interface) | Enum) | Module) | TypeAlias) | Alias),
+  ExportHasLocal: (((Function | Class) | Enum) | ValueModule),
+  BlockScoped: ((BlockScopedVariable | Class) | Enum),
+  PropertyOrAccessor: (Property | Accessor),
+  ClassMember: ((Method | Accessor) | Property),
+  ExportSupportsDefaultModifier: ((Class | Function) | Interface),
+  ExportDoesNotSupportDefaultModifier: (~ExportSupportsDefaultModifier),
+  LateBindingContainer: ((((Class | Interface) | TypeLiteral) | ObjectLiteral) | Function)
+}
+
+enum SyntaxKind {
+  Unknown: 0,
+  EndOfFile: 1,
+  SingleLineCommentTrivia: 2,
+  MultiLineCommentTrivia: 3,
+  NewLineTrivia: 4,
+  WhitespaceTrivia: 5,
+  ConflictMarkerTrivia: 6,
+  NonTextFileMarkerTrivia: 7,
+  NumericLiteral: 8,
+  BigIntLiteral: 9,
+  StringLiteral: 10,
+  JsxText: 11,
+  JsxTextAllWhiteSpaces: 12,
+  RegularExpressionLiteral: 13,
+  NoSubstitutionTemplateLiteral: 14,
+  TemplateHead: 15,
+  TemplateMiddle: 16,
+  TemplateTail: 17,
+  OpenBraceToken: 18,
+  CloseBraceToken: 19,
+  OpenParenToken: 20,
+  CloseParenToken: 21,
+  OpenBracketToken: 22,
+  CloseBracketToken: 23,
+  DotToken: 24,
+  DotDotDotToken: 25,
+  SemicolonToken: 26,
+  CommaToken: 27,
+  QuestionDotToken: 28,
+  LessThanToken: 29,
+  LessThanSlashToken: 30,
+  GreaterThanToken: 31,
+  LessThanEqualsToken: 32,
+  GreaterThanEqualsToken: 33,
+  EqualsEqualsToken: 34,
+  ExclamationEqualsToken: 35,
+  EqualsEqualsEqualsToken: 36,
+  ExclamationEqualsEqualsToken: 37,
+  EqualsGreaterThanToken: 38,
+  PlusToken: 39,
+  MinusToken: 40,
+  AsteriskToken: 41,
+  AsteriskAsteriskToken: 42,
+  SlashToken: 43,
+  PercentToken: 44,
+  PlusPlusToken: 45,
+  MinusMinusToken: 46,
+  LessThanLessThanToken: 47,
+  GreaterThanGreaterThanToken: 48,
+  GreaterThanGreaterThanGreaterThanToken: 49,
+  AmpersandToken: 50,
+  BarToken: 51,
+  CaretToken: 52,
+  ExclamationToken: 53,
+  TildeToken: 54,
+  AmpersandAmpersandToken: 55,
+  BarBarToken: 56,
+  QuestionToken: 57,
+  ColonToken: 58,
+  AtToken: 59,
+  QuestionQuestionToken: 60,
+  BacktickToken: 61,
+  HashToken: 62,
+  EqualsToken: 63,
+  PlusEqualsToken: 64,
+  MinusEqualsToken: 65,
+  AsteriskEqualsToken: 66,
+  AsteriskAsteriskEqualsToken: 67,
+  SlashEqualsToken: 68,
+  PercentEqualsToken: 69,
+  LessThanLessThanEqualsToken: 70,
+  GreaterThanGreaterThanEqualsToken: 71,
+  GreaterThanGreaterThanGreaterThanEqualsToken: 72,
+  AmpersandEqualsToken: 73,
+  BarEqualsToken: 74,
+  BarBarEqualsToken: 75,
+  AmpersandAmpersandEqualsToken: 76,
+  QuestionQuestionEqualsToken: 77,
+  CaretEqualsToken: 78,
+  Identifier: 79,
+  PrivateIdentifier: 80,
+  JSDocCommentTextToken: 81,
+  BreakKeyword: 82,
+  CaseKeyword: 83,
+  CatchKeyword: 84,
+  ClassKeyword: 85,
+  ConstKeyword: 86,
+  ContinueKeyword: 87,
+  DebuggerKeyword: 88,
+  DefaultKeyword: 89,
+  DeleteKeyword: 90,
+  DoKeyword: 91,
+  ElseKeyword: 92,
+  EnumKeyword: 93,
+  ExportKeyword: 94,
+  ExtendsKeyword: 95,
+  FalseKeyword: 96,
+  FinallyKeyword: 97,
+  ForKeyword: 98,
+  FunctionKeyword: 99,
+  IfKeyword: 100,
+  ImportKeyword: 101,
+  InKeyword: 102,
+  InstanceOfKeyword: 103,
+  NewKeyword: 104,
+  NullKeyword: 105,
+  ReturnKeyword: 106,
+  SuperKeyword: 107,
+  SwitchKeyword: 108,
+  ThisKeyword: 109,
+  ThrowKeyword: 110,
+  TrueKeyword: 111,
+  TryKeyword: 112,
+  TypeOfKeyword: 113,
+  VarKeyword: 114,
+  VoidKeyword: 115,
+  WhileKeyword: 116,
+  WithKeyword: 117,
+  ImplementsKeyword: 118,
+  InterfaceKeyword: 119,
+  LetKeyword: 120,
+  PackageKeyword: 121,
+  PrivateKeyword: 122,
+  ProtectedKeyword: 123,
+  PublicKeyword: 124,
+  StaticKeyword: 125,
+  YieldKeyword: 126,
+  AbstractKeyword: 127,
+  AccessorKeyword: 128,
+  AsKeyword: 129,
+  AssertsKeyword: 130,
+  AssertKeyword: 131,
+  AnyKeyword: 132,
+  AsyncKeyword: 133,
+  AwaitKeyword: 134,
+  BooleanKeyword: 135,
+  ConstructorKeyword: 136,
+  DeclareKeyword: 137,
+  GetKeyword: 138,
+  ImmediateKeyword: 139,
+  InferKeyword: 140,
+  IntrinsicKeyword: 141,
+  IsKeyword: 142,
+  KeyOfKeyword: 143,
+  ModuleKeyword: 144,
+  NamespaceKeyword: 145,
+  NeverKeyword: 146,
+  OutKeyword: 147,
+  ReadonlyKeyword: 148,
+  RequireKeyword: 149,
+  NumberKeyword: 150,
+  ObjectKeyword: 151,
+  SatisfiesKeyword: 152,
+  SetKeyword: 153,
+  StringKeyword: 154,
+  SymbolKeyword: 155,
+  TypeKeyword: 156,
+  UndefinedKeyword: 157,
+  UniqueKeyword: 158,
+  UnknownKeyword: 159,
+  UsingKeyword: 160,
+  FromKeyword: 161,
+  GlobalKeyword: 162,
+  BigIntKeyword: 163,
+  OverrideKeyword: 164,
+  OfKeyword: 165,
+  DeferKeyword: 166,
+  QualifiedName: 167,
+  ComputedPropertyName: 168,
+  TypeParameter: 169,
+  Parameter: 170,
+  Decorator: 171,
+  PropertySignature: 172,
+  PropertyDeclaration: 173,
+  MethodSignature: 174,
+  MethodDeclaration: 175,
+  ClassStaticBlockDeclaration: 176,
+  Constructor: 177,
+  GetAccessor: 178,
+  SetAccessor: 179,
+  CallSignature: 180,
+  ConstructSignature: 181,
+  IndexSignature: 182,
+  TypePredicate: 183,
+  TypeReference: 184,
+  FunctionType: 185,
+  ConstructorType: 186,
+  TypeQuery: 187,
+  TypeLiteral: 188,
+  ArrayType: 189,
+  TupleType: 190,
+  OptionalType: 191,
+  RestType: 192,
+  UnionType: 193,
+  IntersectionType: 194,
+  ConditionalType: 195,
+  InferType: 196,
+  ParenthesizedType: 197,
+  ThisType: 198,
+  TypeOperator: 199,
+  IndexedAccessType: 200,
+  MappedType: 201,
+  LiteralType: 202,
+  NamedTupleMember: 203,
+  TemplateLiteralType: 204,
+  TemplateLiteralTypeSpan: 205,
+  ImportType: 206,
+  ObjectBindingPattern: 207,
+  ArrayBindingPattern: 208,
+  BindingElement: 209,
+  ArrayLiteralExpression: 210,
+  ObjectLiteralExpression: 211,
+  PropertyAccessExpression: 212,
+  ElementAccessExpression: 213,
+  CallExpression: 214,
+  NewExpression: 215,
+  TaggedTemplateExpression: 216,
+  TypeAssertionExpression: 217,
+  ParenthesizedExpression: 218,
+  FunctionExpression: 219,
+  ArrowFunction: 220,
+  DeleteExpression: 221,
+  TypeOfExpression: 222,
+  VoidExpression: 223,
+  AwaitExpression: 224,
+  PrefixUnaryExpression: 225,
+  PostfixUnaryExpression: 226,
+  BinaryExpression: 227,
+  ConditionalExpression: 228,
+  TemplateExpression: 229,
+  YieldExpression: 230,
+  SpreadElement: 231,
+  ClassExpression: 232,
+  OmittedExpression: 233,
+  ExpressionWithTypeArguments: 234,
+  AsExpression: 235,
+  NonNullExpression: 236,
+  MetaProperty: 237,
+  SyntheticExpression: 238,
+  SatisfiesExpression: 239,
+  TemplateSpan: 240,
+  SemicolonClassElement: 241,
+  Block: 242,
+  EmptyStatement: 243,
+  VariableStatement: 244,
+  ExpressionStatement: 245,
+  IfStatement: 246,
+  DoStatement: 247,
+  WhileStatement: 248,
+  ForStatement: 249,
+  ForInStatement: 250,
+  ForOfStatement: 251,
+  ContinueStatement: 252,
+  BreakStatement: 253,
+  ReturnStatement: 254,
+  WithStatement: 255,
+  SwitchStatement: 256,
+  LabeledStatement: 257,
+  ThrowStatement: 258,
+  TryStatement: 259,
+  DebuggerStatement: 260,
+  VariableDeclaration: 261,
+  VariableDeclarationList: 262,
+  FunctionDeclaration: 263,
+  ClassDeclaration: 264,
+  InterfaceDeclaration: 265,
+  TypeAliasDeclaration: 266,
+  EnumDeclaration: 267,
+  ModuleDeclaration: 268,
+  ModuleBlock: 269,
+  CaseBlock: 270,
+  NamespaceExportDeclaration: 271,
+  ImportEqualsDeclaration: 272,
+  ImportDeclaration: 273,
+  ImportClause: 274,
+  NamespaceImport: 275,
+  NamedImports: 276,
+  ImportSpecifier: 277,
+  ExportAssignment: 278,
+  ExportDeclaration: 279,
+  NamedExports: 280,
+  NamespaceExport: 281,
+  ExportSpecifier: 282,
+  MissingDeclaration: 283,
+  ExternalModuleReference: 284,
+  JsxElement: 285,
+  JsxSelfClosingElement: 286,
+  JsxOpeningElement: 287,
+  JsxClosingElement: 288,
+  JsxFragment: 289,
+  JsxOpeningFragment: 290,
+  JsxClosingFragment: 291,
+  JsxAttribute: 292,
+  JsxAttributes: 293,
+  JsxSpreadAttribute: 294,
+  JsxExpression: 295,
+  JsxNamespacedName: 296,
+  CaseClause: 297,
+  DefaultClause: 298,
+  HeritageClause: 299,
+  CatchClause: 300,
+  ImportAttributes: 301,
+  ImportAttribute: 302,
+  PropertyAssignment: 303,
+  ShorthandPropertyAssignment: 304,
+  SpreadAssignment: 305,
+  EnumMember: 306,
+  SourceFile: 307,
+  JSDocTypeExpression: 308,
+  JSDocNameReference: 309,
+  JSDocAllType: 310,
+  JSDocNullableType: 311,
+  JSDocNonNullableType: 312,
+  JSDocOptionalType: 313,
+  JSDocVariadicType: 314,
+  JSDoc: 315,
+  JSDocText: 316,
+  JSDocTypeLiteral: 317,
+  JSDocSignature: 318,
+  JSDocLink: 319,
+  JSDocLinkCode: 320,
+  JSDocLinkPlain: 321,
+  JSDocUnknownTag: 322,
+  JSDocAugmentsTag: 323,
+  JSDocImplementsTag: 324,
+  JSDocDeprecatedTag: 325,
+  JSDocPublicTag: 326,
+  JSDocPrivateTag: 327,
+  JSDocProtectedTag: 328,
+  JSDocReadonlyTag: 329,
+  JSDocOverrideTag: 330,
+  JSDocCallbackTag: 331,
+  JSDocOverloadTag: 332,
+  JSDocParameterTag: 333,
+  JSDocReturnTag: 334,
+  JSDocThisTag: 335,
+  JSDocTypeTag: 336,
+  JSDocTemplateTag: 337,
+  JSDocTypedefTag: 338,
+  JSDocSeeTag: 339,
+  JSDocPropertyTag: 340,
+  JSDocThrowsTag: 341,
+  JSDocSatisfiesTag: 342,
+  JSDocImportTag: 343,
+  SyntaxList: 344,
+  JSTypeAliasDeclaration: 345,
+  JSImportDeclaration: 346,
+  NotEmittedStatement: 347,
+  PartiallyEmittedExpression: 348,
+  SyntheticReferenceExpression: 349,
+  NotEmittedTypeElement: 350,
+  Count: 351,
+  FirstAssignment: EqualsToken,
+  LastAssignment: CaretEqualsToken,
+  FirstCompoundAssignment: PlusEqualsToken,
+  LastCompoundAssignment: CaretEqualsToken,
+  FirstReservedWord: BreakKeyword,
+  LastReservedWord: WithKeyword,
+  FirstKeyword: BreakKeyword,
+  LastKeyword: DeferKeyword,
+  FirstFutureReservedWord: ImplementsKeyword,
+  LastFutureReservedWord: YieldKeyword,
+  FirstTypeNode: TypePredicate,
+  LastTypeNode: ImportType,
+  FirstPunctuation: OpenBraceToken,
+  LastPunctuation: CaretEqualsToken,
+  FirstToken: Unknown,
+  LastToken: LastKeyword,
+  FirstLiteralToken: NumericLiteral,
+  LastLiteralToken: NoSubstitutionTemplateLiteral,
+  FirstTemplateToken: NoSubstitutionTemplateLiteral,
+  LastTemplateToken: TemplateTail,
+  FirstBinaryOperator: LessThanToken,
+  LastBinaryOperator: CaretEqualsToken,
+  FirstStatement: VariableStatement,
+  LastStatement: DebuggerStatement,
+  FirstNode: QualifiedName,
+  FirstJSDocNode: JSDocTypeExpression,
+  LastJSDocNode: JSDocImportTag,
+  FirstJSDocTagNode: JSDocUnknownTag,
+  LastJSDocTagNode: JSDocImportTag,
+  FirstContextualKeyword: AbstractKeyword,
+  LastContextualKeyword: DeferKeyword,
+  LastUnaryOperator: TildeToken,
+  FirstTriviaToken: SingleLineCommentTrivia,
+  LastTriviaToken: ConflictMarkerTrivia
+}
+
+enum TokenFlags {
+  None: 0,
+  PrecedingLineBreak: (1 << 0),
+  PrecedingJSDocComment: (1 << 1),
+  Unterminated: (1 << 2),
+  ExtendedUnicodeEscape: (1 << 3),
+  Scientific: (1 << 4),
+  Octal: (1 << 5),
+  HexSpecifier: (1 << 6),
+  BinarySpecifier: (1 << 7),
+  OctalSpecifier: (1 << 8),
+  ContainsSeparator: (1 << 9),
+  UnicodeEscape: (1 << 10),
+  ContainsInvalidEscape: (1 << 11),
+  HexEscape: (1 << 12),
+  ContainsLeadingZero: (1 << 13),
+  ContainsInvalidSeparator: (1 << 14),
+  PrecedingJSDocLeadingAsterisks: (1 << 15),
+  SingleQuote: (1 << 16),
+  PrecedingJSDocWithDeprecated: (1 << 17),
+  PrecedingJSDocWithSeeOrLink: (1 << 18),
+  BinaryOrOctalSpecifier: (BinarySpecifier | OctalSpecifier),
+  WithSpecifier: (HexSpecifier | BinaryOrOctalSpecifier),
+  StringLiteralFlags: (((((Unterminated | HexEscape) | UnicodeEscape) | ExtendedUnicodeEscape) | ContainsInvalidEscape) | SingleQuote),
+  NumericLiteralFlags: (((((Scientific | Octal) | ContainsLeadingZero) | WithSpecifier) | ContainsSeparator) | ContainsInvalidSeparator),
+  TemplateLiteralLikeFlags: ((((Unterminated | HexEscape) | UnicodeEscape) | ExtendedUnicodeEscape) | ContainsInvalidEscape),
+  RegularExpressionLiteralFlags: Unterminated,
+  IsInvalid: (((Octal | ContainsLeadingZero) | ContainsInvalidSeparator) | ContainsInvalidEscape)
+}
+
+enum TypeFlags {
+  None: 0,
+  Any: (1 << 0),
+  Unknown: (1 << 1),
+  Undefined: (1 << 2),
+  Null: (1 << 3),
+  Void: (1 << 4),
+  String: (1 << 5),
+  Number: (1 << 6),
+  BigInt: (1 << 7),
+  Boolean: (1 << 8),
+  ESSymbol: (1 << 9),
+  StringLiteral: (1 << 10),
+  NumberLiteral: (1 << 11),
+  BigIntLiteral: (1 << 12),
+  BooleanLiteral: (1 << 13),
+  UniqueESSymbol: (1 << 14),
+  EnumLiteral: (1 << 15),
+  Enum: (1 << 16),
+  NonPrimitive: (1 << 17),
+  Never: (1 << 18),
+  TypeParameter: (1 << 19),
+  Object: (1 << 20),
+  Index: (1 << 21),
+  TemplateLiteral: (1 << 22),
+  StringMapping: (1 << 23),
+  Substitution: (1 << 24),
+  IndexedAccess: (1 << 25),
+  Conditional: (1 << 26),
+  Union: (1 << 27),
+  Intersection: (1 << 28),
+  Reserved1: (1 << 29),
+  Reserved2: (1 << 30),
+  Reserved3: (1 << 31),
+  AnyOrUnknown: (Any | Unknown),
+  Nullable: (Undefined | Null),
+  Literal: (((StringLiteral | NumberLiteral) | BigIntLiteral) | BooleanLiteral),
+  Unit: (((Enum | Literal) | UniqueESSymbol) | Nullable),
+  Freshable: (Enum | Literal),
+  StringOrNumberLiteral: (StringLiteral | NumberLiteral),
+  StringOrNumberLiteralOrUnique: ((StringLiteral | NumberLiteral) | UniqueESSymbol),
+  DefinitelyFalsy: ((((((StringLiteral | NumberLiteral) | BigIntLiteral) | BooleanLiteral) | Void) | Undefined) | Null),
+  PossiblyFalsy: ((((DefinitelyFalsy | String) | Number) | BigInt) | Boolean),
+  Intrinsic: ((((((((((Any | Unknown) | String) | Number) | BigInt) | ESSymbol) | Void) | Undefined) | Null) | Never) | NonPrimitive),
+  StringLike: (((String | StringLiteral) | TemplateLiteral) | StringMapping),
+  NumberLike: ((Number | NumberLiteral) | Enum),
+  BigIntLike: (BigInt | BigIntLiteral),
+  BooleanLike: (Boolean | BooleanLiteral),
+  EnumLike: (Enum | EnumLiteral),
+  ESSymbolLike: (ESSymbol | UniqueESSymbol),
+  VoidLike: (Void | Undefined),
+  Primitive: (((((((StringLike | NumberLike) | BigIntLike) | BooleanLike) | EnumLike) | ESSymbolLike) | VoidLike) | Null),
+  DefinitelyNonNullable: (((((((StringLike | NumberLike) | BigIntLike) | BooleanLike) | EnumLike) | ESSymbolLike) | Object) | NonPrimitive),
+  DisjointDomains: (((((((NonPrimitive | StringLike) | NumberLike) | BigIntLike) | BooleanLike) | ESSymbolLike) | VoidLike) | Null),
+  UnionOrIntersection: (Union | Intersection),
+  StructuredType: ((Object | Union) | Intersection),
+  TypeVariable: (TypeParameter | IndexedAccess),
+  InstantiableNonPrimitive: ((TypeVariable | Conditional) | Substitution),
+  InstantiablePrimitive: ((Index | TemplateLiteral) | StringMapping),
+  Instantiable: (InstantiableNonPrimitive | InstantiablePrimitive),
+  StructuredOrInstantiable: (StructuredType | Instantiable),
+  ObjectFlagsType: (((((Any | Nullable) | Never) | Object) | Union) | Intersection),
+  Simplifiable: ((IndexedAccess | Conditional) | Index),
+  Singleton: (((((((((((Any | Unknown) | String) | Number) | Boolean) | BigInt) | ESSymbol) | Void) | Undefined) | Null) | Never) | NonPrimitive),
+  Narrowable: (((((((((Any | Unknown) | StructuredOrInstantiable) | StringLike) | NumberLike) | BigIntLike) | BooleanLike) | ESSymbol) | UniqueESSymbol) | NonPrimitive),
+  IncludesMask: (((((((((Any | Unknown) | Primitive) | Never) | Object) | Union) | Intersection) | NonPrimitive) | TemplateLiteral) | StringMapping),
+  IncludesMissingType: TypeParameter,
+  IncludesNonWideningType: Index,
+  IncludesWildcard: IndexedAccess,
+  IncludesEmptyObject: Conditional,
+  IncludesInstantiable: Substitution,
+  IncludesConstrainedTypeVariable: Reserved1,
+  IncludesError: Reserved2,
+  NotPrimitiveUnion: ((((((Any | Unknown) | Void) | Never) | Object) | Intersection) | IncludesInstantiable)
+}
+
+enum TypeFormatFlags {
+  None: 0,
+  NoTruncation: (1 << 0),
+  WriteArrayAsGenericType: (1 << 1),
+  GenerateNamesForShadowedTypeParams: (1 << 2),
+  UseStructuralFallback: (1 << 3),
+  WriteTypeArgumentsOfSignature: (1 << 5),
+  UseFullyQualifiedType: (1 << 6),
+  SuppressAnyReturnType: (1 << 8),
+  MultilineObjectLiterals: (1 << 10),
+  WriteClassExpressionAsTypeLiteral: (1 << 11),
+  UseTypeOfFunction: (1 << 12),
+  OmitParameterModifiers: (1 << 13),
+  UseAliasDefinedOutsideCurrentScope: (1 << 14),
+  UseSingleQuotesForStringLiteralType: (1 << 28),
+  NoTypeReduction: (1 << 29),
+  UseInstantiationExpressions: (1 << 30),
+  OmitThisParameter: (1 << 25),
+  WriteCallStyleSignature: (1 << 27),
+  AllowUniqueESSymbolType: (1 << 20),
+  AddUndefined: (1 << 17),
+  WriteArrowStyleSignature: (1 << 18),
+  InArrayType: (1 << 19),
+  InElementType: (1 << 21),
+  InFirstTypeArgument: (1 << 22),
+  InTypeAlias: (1 << 23),
+  NodeBuilderFlagsMask: (((((((((((((((((NoTruncation | WriteArrayAsGenericType) | GenerateNamesForShadowedTypeParams) | UseStructuralFallback) | WriteTypeArgumentsOfSignature) | UseFullyQualifiedType) | SuppressAnyReturnType) | MultilineObjectLiterals) | WriteClassExpressionAsTypeLiteral) | UseTypeOfFunction) | OmitParameterModifiers) | UseAliasDefinedOutsideCurrentScope) | AllowUniqueESSymbolType) | InTypeAlias) | UseInstantiationExpressions) | UseSingleQuotesForStringLiteralType) | NoTypeReduction) | OmitThisParameter)
+}
+
+enum TypePredicateKind {
+  This: 0,
+  Identifier: 1,
+  AssertsThis: 2,
+  AssertsIdentifier: 3
+}
+
+var EscapeSequenceScanningFlags = {"String":(1 << 0),"ReportErrors":(1 << 1),"RegularExpression":(1 << 2),"AnnexB":(1 << 3),"AnyUnicodeMode":(1 << 4),"AtomEscape":(1 << 5),"ReportInvalidEscapeErrors":((1 << 2) | (1 << 1)),"AllowExtendedUnicodeEscape":((1 << 0) | (1 << 4))};
+var textToKeywordObj = {"abstract":SyntaxKind.AbstractKeyword,"accessor":SyntaxKind.AccessorKeyword,"any":SyntaxKind.AnyKeyword,"as":SyntaxKind.AsKeyword,"asserts":SyntaxKind.AssertsKeyword,"assert":SyntaxKind.AssertKeyword,"bigint":SyntaxKind.BigIntKeyword,"boolean":SyntaxKind.BooleanKeyword,"break":SyntaxKind.BreakKeyword,"case":SyntaxKind.CaseKeyword,"catch":SyntaxKind.CatchKeyword,"class":SyntaxKind.ClassKeyword,"continue":SyntaxKind.ContinueKeyword,"const":SyntaxKind.ConstKeyword,[("" + "constructor")]:SyntaxKind.ConstructorKeyword,"debugger":SyntaxKind.DebuggerKeyword,"declare":SyntaxKind.DeclareKeyword,"default":SyntaxKind.DefaultKeyword,"defer":SyntaxKind.DeferKeyword,"delete":SyntaxKind.DeleteKeyword,"do":SyntaxKind.DoKeyword,"else":SyntaxKind.ElseKeyword,"enum":SyntaxKind.EnumKeyword,"export":SyntaxKind.ExportKeyword,"extends":SyntaxKind.ExtendsKeyword,"false":SyntaxKind.FalseKeyword,"finally":SyntaxKind.FinallyKeyword,"for":SyntaxKind.ForKeyword,"from":SyntaxKind.FromKeyword,"function":SyntaxKind.FunctionKeyword,"get":SyntaxKind.GetKeyword,"if":SyntaxKind.IfKeyword,"implements":SyntaxKind.ImplementsKeyword,"import":SyntaxKind.ImportKeyword,"in":SyntaxKind.InKeyword,"infer":SyntaxKind.InferKeyword,"instanceof":SyntaxKind.InstanceOfKeyword,"interface":SyntaxKind.InterfaceKeyword,"intrinsic":SyntaxKind.IntrinsicKeyword,"is":SyntaxKind.IsKeyword,"keyof":SyntaxKind.KeyOfKeyword,"let":SyntaxKind.LetKeyword,"module":SyntaxKind.ModuleKeyword,"namespace":SyntaxKind.NamespaceKeyword,"never":SyntaxKind.NeverKeyword,"new":SyntaxKind.NewKeyword,"null":SyntaxKind.NullKeyword,"number":SyntaxKind.NumberKeyword,"object":SyntaxKind.ObjectKeyword,"package":SyntaxKind.PackageKeyword,"private":SyntaxKind.PrivateKeyword,"protected":SyntaxKind.ProtectedKeyword,"public":SyntaxKind.PublicKeyword,"override":SyntaxKind.OverrideKeyword,"out":SyntaxKind.OutKeyword,"readonly":SyntaxKind.ReadonlyKeyword,"require":SyntaxKind.RequireKeyword,"global":SyntaxKind.GlobalKeyword,"return":SyntaxKind.ReturnKeyword,"satisfies":SyntaxKind.SatisfiesKeyword,"set":SyntaxKind.SetKeyword,"static":SyntaxKind.StaticKeyword,"string":SyntaxKind.StringKeyword,"super":SyntaxKind.SuperKeyword,"switch":SyntaxKind.SwitchKeyword,"symbol":SyntaxKind.SymbolKeyword,"this":SyntaxKind.ThisKeyword,"throw":SyntaxKind.ThrowKeyword,"true":SyntaxKind.TrueKeyword,"try":SyntaxKind.TryKeyword,"type":SyntaxKind.TypeKeyword,"typeof":SyntaxKind.TypeOfKeyword,"undefined":SyntaxKind.UndefinedKeyword,"unique":SyntaxKind.UniqueKeyword,"unknown":SyntaxKind.UnknownKeyword,"using":SyntaxKind.UsingKeyword,"var":SyntaxKind.VarKeyword,"void":SyntaxKind.VoidKeyword,"while":SyntaxKind.WhileKeyword,"with":SyntaxKind.WithKeyword,"yield":SyntaxKind.YieldKeyword,"async":SyntaxKind.AsyncKeyword,"await":SyntaxKind.AwaitKeyword,"of":SyntaxKind.OfKeyword};
+var textToKeyword = new Map(Object.entries(textToKeywordObj));
+var textToToken = new Map(Object.entries({undefined:null,"{":SyntaxKind.OpenBraceToken,"}":SyntaxKind.CloseBraceToken,"(":SyntaxKind.OpenParenToken,")":SyntaxKind.CloseParenToken,"[":SyntaxKind.OpenBracketToken,"]":SyntaxKind.CloseBracketToken,".":SyntaxKind.DotToken,"...":SyntaxKind.DotDotDotToken,";":SyntaxKind.SemicolonToken,",":SyntaxKind.CommaToken,"<":SyntaxKind.LessThanToken,">":SyntaxKind.GreaterThanToken,"<=":SyntaxKind.LessThanEqualsToken,">=":SyntaxKind.GreaterThanEqualsToken,"==":SyntaxKind.EqualsEqualsToken,"!=":SyntaxKind.ExclamationEqualsToken,"===":SyntaxKind.EqualsEqualsEqualsToken,"!==":SyntaxKind.ExclamationEqualsEqualsToken,"=>":SyntaxKind.EqualsGreaterThanToken,"+":SyntaxKind.PlusToken,"-":SyntaxKind.MinusToken,"**":SyntaxKind.AsteriskAsteriskToken,"*":SyntaxKind.AsteriskToken,"/":SyntaxKind.SlashToken,"%":SyntaxKind.PercentToken,"++":SyntaxKind.PlusPlusToken,"--":SyntaxKind.MinusMinusToken,"<<":SyntaxKind.LessThanLessThanToken,"</":SyntaxKind.LessThanSlashToken,">>":SyntaxKind.GreaterThanGreaterThanToken,">>>":SyntaxKind.GreaterThanGreaterThanGreaterThanToken,"&":SyntaxKind.AmpersandToken,"|":SyntaxKind.BarToken,"^":SyntaxKind.CaretToken,"!":SyntaxKind.ExclamationToken,"~":SyntaxKind.TildeToken,"&&":SyntaxKind.AmpersandAmpersandToken,"||":SyntaxKind.BarBarToken,"?":SyntaxKind.QuestionToken,"??":SyntaxKind.QuestionQuestionToken,"?.":SyntaxKind.QuestionDotToken,":":SyntaxKind.ColonToken,"=":SyntaxKind.EqualsToken,"+=":SyntaxKind.PlusEqualsToken,"-=":SyntaxKind.MinusEqualsToken,"*=":SyntaxKind.AsteriskEqualsToken,"**=":SyntaxKind.AsteriskAsteriskEqualsToken,"/=":SyntaxKind.SlashEqualsToken,"%=":SyntaxKind.PercentEqualsToken,"<<=":SyntaxKind.LessThanLessThanEqualsToken,">>=":SyntaxKind.GreaterThanGreaterThanEqualsToken,">>>=":SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken,"&=":SyntaxKind.AmpersandEqualsToken,"|=":SyntaxKind.BarEqualsToken,"^=":SyntaxKind.CaretEqualsToken,"||=":SyntaxKind.BarBarEqualsToken,"&&=":SyntaxKind.AmpersandAmpersandEqualsToken,"??=":SyntaxKind.QuestionQuestionEqualsToken,"@":SyntaxKind.AtToken,"#":SyntaxKind.HashToken,"`":SyntaxKind.BacktickToken}));
+var charCodeToRegExpFlag = new Map([[CharacterCodes.d,RegularExpressionFlags.HasIndices],[CharacterCodes.g,RegularExpressionFlags.Global],[CharacterCodes.i,RegularExpressionFlags.IgnoreCase],[CharacterCodes.m,RegularExpressionFlags.Multiline],[CharacterCodes.s,RegularExpressionFlags.DotAll],[CharacterCodes.u,RegularExpressionFlags.Unicode],[CharacterCodes.v,RegularExpressionFlags.UnicodeSets],[CharacterCodes.y,RegularExpressionFlags.Sticky]]);
+var unicodeESNextIdentifierStart = [65,90,97,122,170,170,181,181,186,186,192,214,216,246,248,705,710,721,736,740,748,748,750,750,880,884,886,887,890,893,895,895,902,902,904,906,908,908,910,929,931,1013,1015,1153,1162,1327,1329,1366,1369,1369,1376,1416,1488,1514,1519,1522,1568,1610,1646,1647,1649,1747,1749,1749,1765,1766,1774,1775,1786,1788,1791,1791,1808,1808,1810,1839,1869,1957,1969,1969,1994,2026,2036,2037,2042,2042,2048,2069,2074,2074,2084,2084,2088,2088,2112,2136,2144,2154,2160,2183,2185,2190,2208,2249,2308,2361,2365,2365,2384,2384,2392,2401,2417,2432,2437,2444,2447,2448,2451,2472,2474,2480,2482,2482,2486,2489,2493,2493,2510,2510,2524,2525,2527,2529,2544,2545,2556,2556,2565,2570,2575,2576,2579,2600,2602,2608,2610,2611,2613,2614,2616,2617,2649,2652,2654,2654,2674,2676,2693,2701,2703,2705,2707,2728,2730,2736,2738,2739,2741,2745,2749,2749,2768,2768,2784,2785,2809,2809,2821,2828,2831,2832,2835,2856,2858,2864,2866,2867,2869,2873,2877,2877,2908,2909,2911,2913,2929,2929,2947,2947,2949,2954,2958,2960,2962,2965,2969,2970,2972,2972,2974,2975,2979,2980,2984,2986,2990,3001,3024,3024,3077,3084,3086,3088,3090,3112,3114,3129,3133,3133,3160,3162,3165,3165,3168,3169,3200,3200,3205,3212,3214,3216,3218,3240,3242,3251,3253,3257,3261,3261,3293,3294,3296,3297,3313,3314,3332,3340,3342,3344,3346,3386,3389,3389,3406,3406,3412,3414,3423,3425,3450,3455,3461,3478,3482,3505,3507,3515,3517,3517,3520,3526,3585,3632,3634,3635,3648,3654,3713,3714,3716,3716,3718,3722,3724,3747,3749,3749,3751,3760,3762,3763,3773,3773,3776,3780,3782,3782,3804,3807,3840,3840,3904,3911,3913,3948,3976,3980,4096,4138,4159,4159,4176,4181,4186,4189,4193,4193,4197,4198,4206,4208,4213,4225,4238,4238,4256,4293,4295,4295,4301,4301,4304,4346,4348,4680,4682,4685,4688,4694,4696,4696,4698,4701,4704,4744,4746,4749,4752,4784,4786,4789,4792,4798,4800,4800,4802,4805,4808,4822,4824,4880,4882,4885,4888,4954,4992,5007,5024,5109,5112,5117,5121,5740,5743,5759,5761,5786,5792,5866,5870,5880,5888,5905,5919,5937,5952,5969,5984,5996,5998,6000,6016,6067,6103,6103,6108,6108,6176,6264,6272,6312,6314,6314,6320,6389,6400,6430,6480,6509,6512,6516,6528,6571,6576,6601,6656,6678,6688,6740,6823,6823,6917,6963,6981,6988,7043,7072,7086,7087,7098,7141,7168,7203,7245,7247,7258,7293,7296,7304,7312,7354,7357,7359,7401,7404,7406,7411,7413,7414,7418,7418,7424,7615,7680,7957,7960,7965,7968,8005,8008,8013,8016,8023,8025,8025,8027,8027,8029,8029,8031,8061,8064,8116,8118,8124,8126,8126,8130,8132,8134,8140,8144,8147,8150,8155,8160,8172,8178,8180,8182,8188,8305,8305,8319,8319,8336,8348,8450,8450,8455,8455,8458,8467,8469,8469,8472,8477,8484,8484,8486,8486,8488,8488,8490,8505,8508,8511,8517,8521,8526,8526,8544,8584,11264,11492,11499,11502,11506,11507,11520,11557,11559,11559,11565,11565,11568,11623,11631,11631,11648,11670,11680,11686,11688,11694,11696,11702,11704,11710,11712,11718,11720,11726,11728,11734,11736,11742,12293,12295,12321,12329,12337,12341,12344,12348,12353,12438,12443,12447,12449,12538,12540,12543,12549,12591,12593,12686,12704,12735,12784,12799,13312,19903,19968,42124,42192,42237,42240,42508,42512,42527,42538,42539,42560,42606,42623,42653,42656,42735,42775,42783,42786,42888,42891,42954,42960,42961,42963,42963,42965,42969,42994,43009,43011,43013,43015,43018,43020,43042,43072,43123,43138,43187,43250,43255,43259,43259,43261,43262,43274,43301,43312,43334,43360,43388,43396,43442,43471,43471,43488,43492,43494,43503,43514,43518,43520,43560,43584,43586,43588,43595,43616,43638,43642,43642,43646,43695,43697,43697,43701,43702,43705,43709,43712,43712,43714,43714,43739,43741,43744,43754,43762,43764,43777,43782,43785,43790,43793,43798,43808,43814,43816,43822,43824,43866,43868,43881,43888,44002,44032,55203,55216,55238,55243,55291,63744,64109,64112,64217,64256,64262,64275,64279,64285,64285,64287,64296,64298,64310,64312,64316,64318,64318,64320,64321,64323,64324,64326,64433,64467,64829,64848,64911,64914,64967,65008,65019,65136,65140,65142,65276,65313,65338,65345,65370,65382,65470,65474,65479,65482,65487,65490,65495,65498,65500,65536,65547,65549,65574,65576,65594,65596,65597,65599,65613,65616,65629,65664,65786,65856,65908,66176,66204,66208,66256,66304,66335,66349,66378,66384,66421,66432,66461,66464,66499,66504,66511,66513,66517,66560,66717,66736,66771,66776,66811,66816,66855,66864,66915,66928,66938,66940,66954,66956,66962,66964,66965,66967,66977,66979,66993,66995,67001,67003,67004,67072,67382,67392,67413,67424,67431,67456,67461,67463,67504,67506,67514,67584,67589,67592,67592,67594,67637,67639,67640,67644,67644,67647,67669,67680,67702,67712,67742,67808,67826,67828,67829,67840,67861,67872,67897,67968,68023,68030,68031,68096,68096,68112,68115,68117,68119,68121,68149,68192,68220,68224,68252,68288,68295,68297,68324,68352,68405,68416,68437,68448,68466,68480,68497,68608,68680,68736,68786,68800,68850,68864,68899,69248,69289,69296,69297,69376,69404,69415,69415,69424,69445,69488,69505,69552,69572,69600,69622,69635,69687,69745,69746,69749,69749,69763,69807,69840,69864,69891,69926,69956,69956,69959,69959,69968,70002,70006,70006,70019,70066,70081,70084,70106,70106,70108,70108,70144,70161,70163,70187,70207,70208,70272,70278,70280,70280,70282,70285,70287,70301,70303,70312,70320,70366,70405,70412,70415,70416,70419,70440,70442,70448,70450,70451,70453,70457,70461,70461,70480,70480,70493,70497,70656,70708,70727,70730,70751,70753,70784,70831,70852,70853,70855,70855,71040,71086,71128,71131,71168,71215,71236,71236,71296,71338,71352,71352,71424,71450,71488,71494,71680,71723,71840,71903,71935,71942,71945,71945,71948,71955,71957,71958,71960,71983,71999,71999,72001,72001,72096,72103,72106,72144,72161,72161,72163,72163,72192,72192,72203,72242,72250,72250,72272,72272,72284,72329,72349,72349,72368,72440,72704,72712,72714,72750,72768,72768,72818,72847,72960,72966,72968,72969,72971,73008,73030,73030,73056,73061,73063,73064,73066,73097,73112,73112,73440,73458,73474,73474,73476,73488,73490,73523,73648,73648,73728,74649,74752,74862,74880,75075,77712,77808,77824,78895,78913,78918,82944,83526,92160,92728,92736,92766,92784,92862,92880,92909,92928,92975,92992,92995,93027,93047,93053,93071,93760,93823,93952,94026,94032,94032,94099,94111,94176,94177,94179,94179,94208,100343,100352,101589,101632,101640,110576,110579,110581,110587,110589,110590,110592,110882,110898,110898,110928,110930,110933,110933,110948,110951,110960,111355,113664,113770,113776,113788,113792,113800,113808,113817,119808,119892,119894,119964,119966,119967,119970,119970,119973,119974,119977,119980,119982,119993,119995,119995,119997,120003,120005,120069,120071,120074,120077,120084,120086,120092,120094,120121,120123,120126,120128,120132,120134,120134,120138,120144,120146,120485,120488,120512,120514,120538,120540,120570,120572,120596,120598,120628,120630,120654,120656,120686,120688,120712,120714,120744,120746,120770,120772,120779,122624,122654,122661,122666,122928,122989,123136,123180,123191,123197,123214,123214,123536,123565,123584,123627,124112,124139,124896,124902,124904,124907,124909,124910,124912,124926,124928,125124,125184,125251,125259,125259,126464,126467,126469,126495,126497,126498,126500,126500,126503,126503,126505,126514,126516,126519,126521,126521,126523,126523,126530,126530,126535,126535,126537,126537,126539,126539,126541,126543,126545,126546,126548,126548,126551,126551,126553,126553,126555,126555,126557,126557,126559,126559,126561,126562,126564,126564,126567,126570,126572,126578,126580,126583,126585,126588,126590,126590,126592,126601,126603,126619,126625,126627,126629,126633,126635,126651,131072,173791,173824,177977,177984,178205,178208,183969,183984,191456,191472,192093,194560,195101,196608,201546,201552,205743];
+var unicodeESNextIdentifierPart = [48,57,65,90,95,95,97,122,170,170,181,181,183,183,186,186,192,214,216,246,248,705,710,721,736,740,748,748,750,750,768,884,886,887,890,893,895,895,902,906,908,908,910,929,931,1013,1015,1153,1155,1159,1162,1327,1329,1366,1369,1369,1376,1416,1425,1469,1471,1471,1473,1474,1476,1477,1479,1479,1488,1514,1519,1522,1552,1562,1568,1641,1646,1747,1749,1756,1759,1768,1770,1788,1791,1791,1808,1866,1869,1969,1984,2037,2042,2042,2045,2045,2048,2093,2112,2139,2144,2154,2160,2183,2185,2190,2200,2273,2275,2403,2406,2415,2417,2435,2437,2444,2447,2448,2451,2472,2474,2480,2482,2482,2486,2489,2492,2500,2503,2504,2507,2510,2519,2519,2524,2525,2527,2531,2534,2545,2556,2556,2558,2558,2561,2563,2565,2570,2575,2576,2579,2600,2602,2608,2610,2611,2613,2614,2616,2617,2620,2620,2622,2626,2631,2632,2635,2637,2641,2641,2649,2652,2654,2654,2662,2677,2689,2691,2693,2701,2703,2705,2707,2728,2730,2736,2738,2739,2741,2745,2748,2757,2759,2761,2763,2765,2768,2768,2784,2787,2790,2799,2809,2815,2817,2819,2821,2828,2831,2832,2835,2856,2858,2864,2866,2867,2869,2873,2876,2884,2887,2888,2891,2893,2901,2903,2908,2909,2911,2915,2918,2927,2929,2929,2946,2947,2949,2954,2958,2960,2962,2965,2969,2970,2972,2972,2974,2975,2979,2980,2984,2986,2990,3001,3006,3010,3014,3016,3018,3021,3024,3024,3031,3031,3046,3055,3072,3084,3086,3088,3090,3112,3114,3129,3132,3140,3142,3144,3146,3149,3157,3158,3160,3162,3165,3165,3168,3171,3174,3183,3200,3203,3205,3212,3214,3216,3218,3240,3242,3251,3253,3257,3260,3268,3270,3272,3274,3277,3285,3286,3293,3294,3296,3299,3302,3311,3313,3315,3328,3340,3342,3344,3346,3396,3398,3400,3402,3406,3412,3415,3423,3427,3430,3439,3450,3455,3457,3459,3461,3478,3482,3505,3507,3515,3517,3517,3520,3526,3530,3530,3535,3540,3542,3542,3544,3551,3558,3567,3570,3571,3585,3642,3648,3662,3664,3673,3713,3714,3716,3716,3718,3722,3724,3747,3749,3749,3751,3773,3776,3780,3782,3782,3784,3790,3792,3801,3804,3807,3840,3840,3864,3865,3872,3881,3893,3893,3895,3895,3897,3897,3902,3911,3913,3948,3953,3972,3974,3991,3993,4028,4038,4038,4096,4169,4176,4253,4256,4293,4295,4295,4301,4301,4304,4346,4348,4680,4682,4685,4688,4694,4696,4696,4698,4701,4704,4744,4746,4749,4752,4784,4786,4789,4792,4798,4800,4800,4802,4805,4808,4822,4824,4880,4882,4885,4888,4954,4957,4959,4969,4977,4992,5007,5024,5109,5112,5117,5121,5740,5743,5759,5761,5786,5792,5866,5870,5880,5888,5909,5919,5940,5952,5971,5984,5996,5998,6000,6002,6003,6016,6099,6103,6103,6108,6109,6112,6121,6155,6157,6159,6169,6176,6264,6272,6314,6320,6389,6400,6430,6432,6443,6448,6459,6470,6509,6512,6516,6528,6571,6576,6601,6608,6618,6656,6683,6688,6750,6752,6780,6783,6793,6800,6809,6823,6823,6832,6845,6847,6862,6912,6988,6992,7001,7019,7027,7040,7155,7168,7223,7232,7241,7245,7293,7296,7304,7312,7354,7357,7359,7376,7378,7380,7418,7424,7957,7960,7965,7968,8005,8008,8013,8016,8023,8025,8025,8027,8027,8029,8029,8031,8061,8064,8116,8118,8124,8126,8126,8130,8132,8134,8140,8144,8147,8150,8155,8160,8172,8178,8180,8182,8188,8204,8205,8255,8256,8276,8276,8305,8305,8319,8319,8336,8348,8400,8412,8417,8417,8421,8432,8450,8450,8455,8455,8458,8467,8469,8469,8472,8477,8484,8484,8486,8486,8488,8488,8490,8505,8508,8511,8517,8521,8526,8526,8544,8584,11264,11492,11499,11507,11520,11557,11559,11559,11565,11565,11568,11623,11631,11631,11647,11670,11680,11686,11688,11694,11696,11702,11704,11710,11712,11718,11720,11726,11728,11734,11736,11742,11744,11775,12293,12295,12321,12335,12337,12341,12344,12348,12353,12438,12441,12447,12449,12543,12549,12591,12593,12686,12704,12735,12784,12799,13312,19903,19968,42124,42192,42237,42240,42508,42512,42539,42560,42607,42612,42621,42623,42737,42775,42783,42786,42888,42891,42954,42960,42961,42963,42963,42965,42969,42994,43047,43052,43052,43072,43123,43136,43205,43216,43225,43232,43255,43259,43259,43261,43309,43312,43347,43360,43388,43392,43456,43471,43481,43488,43518,43520,43574,43584,43597,43600,43609,43616,43638,43642,43714,43739,43741,43744,43759,43762,43766,43777,43782,43785,43790,43793,43798,43808,43814,43816,43822,43824,43866,43868,43881,43888,44010,44012,44013,44016,44025,44032,55203,55216,55238,55243,55291,63744,64109,64112,64217,64256,64262,64275,64279,64285,64296,64298,64310,64312,64316,64318,64318,64320,64321,64323,64324,64326,64433,64467,64829,64848,64911,64914,64967,65008,65019,65024,65039,65056,65071,65075,65076,65101,65103,65136,65140,65142,65276,65296,65305,65313,65338,65343,65343,65345,65370,65381,65470,65474,65479,65482,65487,65490,65495,65498,65500,65536,65547,65549,65574,65576,65594,65596,65597,65599,65613,65616,65629,65664,65786,65856,65908,66045,66045,66176,66204,66208,66256,66272,66272,66304,66335,66349,66378,66384,66426,66432,66461,66464,66499,66504,66511,66513,66517,66560,66717,66720,66729,66736,66771,66776,66811,66816,66855,66864,66915,66928,66938,66940,66954,66956,66962,66964,66965,66967,66977,66979,66993,66995,67001,67003,67004,67072,67382,67392,67413,67424,67431,67456,67461,67463,67504,67506,67514,67584,67589,67592,67592,67594,67637,67639,67640,67644,67644,67647,67669,67680,67702,67712,67742,67808,67826,67828,67829,67840,67861,67872,67897,67968,68023,68030,68031,68096,68099,68101,68102,68108,68115,68117,68119,68121,68149,68152,68154,68159,68159,68192,68220,68224,68252,68288,68295,68297,68326,68352,68405,68416,68437,68448,68466,68480,68497,68608,68680,68736,68786,68800,68850,68864,68903,68912,68921,69248,69289,69291,69292,69296,69297,69373,69404,69415,69415,69424,69456,69488,69509,69552,69572,69600,69622,69632,69702,69734,69749,69759,69818,69826,69826,69840,69864,69872,69881,69888,69940,69942,69951,69956,69959,69968,70003,70006,70006,70016,70084,70089,70092,70094,70106,70108,70108,70144,70161,70163,70199,70206,70209,70272,70278,70280,70280,70282,70285,70287,70301,70303,70312,70320,70378,70384,70393,70400,70403,70405,70412,70415,70416,70419,70440,70442,70448,70450,70451,70453,70457,70459,70468,70471,70472,70475,70477,70480,70480,70487,70487,70493,70499,70502,70508,70512,70516,70656,70730,70736,70745,70750,70753,70784,70853,70855,70855,70864,70873,71040,71093,71096,71104,71128,71133,71168,71232,71236,71236,71248,71257,71296,71352,71360,71369,71424,71450,71453,71467,71472,71481,71488,71494,71680,71738,71840,71913,71935,71942,71945,71945,71948,71955,71957,71958,71960,71989,71991,71992,71995,72003,72016,72025,72096,72103,72106,72151,72154,72161,72163,72164,72192,72254,72263,72263,72272,72345,72349,72349,72368,72440,72704,72712,72714,72758,72760,72768,72784,72793,72818,72847,72850,72871,72873,72886,72960,72966,72968,72969,72971,73014,73018,73018,73020,73021,73023,73031,73040,73049,73056,73061,73063,73064,73066,73102,73104,73105,73107,73112,73120,73129,73440,73462,73472,73488,73490,73530,73534,73538,73552,73561,73648,73648,73728,74649,74752,74862,74880,75075,77712,77808,77824,78895,78912,78933,82944,83526,92160,92728,92736,92766,92768,92777,92784,92862,92864,92873,92880,92909,92912,92916,92928,92982,92992,92995,93008,93017,93027,93047,93053,93071,93760,93823,93952,94026,94031,94087,94095,94111,94176,94177,94179,94180,94192,94193,94208,100343,100352,101589,101632,101640,110576,110579,110581,110587,110589,110590,110592,110882,110898,110898,110928,110930,110933,110933,110948,110951,110960,111355,113664,113770,113776,113788,113792,113800,113808,113817,113821,113822,118528,118573,118576,118598,119141,119145,119149,119154,119163,119170,119173,119179,119210,119213,119362,119364,119808,119892,119894,119964,119966,119967,119970,119970,119973,119974,119977,119980,119982,119993,119995,119995,119997,120003,120005,120069,120071,120074,120077,120084,120086,120092,120094,120121,120123,120126,120128,120132,120134,120134,120138,120144,120146,120485,120488,120512,120514,120538,120540,120570,120572,120596,120598,120628,120630,120654,120656,120686,120688,120712,120714,120744,120746,120770,120772,120779,120782,120831,121344,121398,121403,121452,121461,121461,121476,121476,121499,121503,121505,121519,122624,122654,122661,122666,122880,122886,122888,122904,122907,122913,122915,122916,122918,122922,122928,122989,123023,123023,123136,123180,123184,123197,123200,123209,123214,123214,123536,123566,123584,123641,124112,124153,124896,124902,124904,124907,124909,124910,124912,124926,124928,125124,125136,125142,125184,125259,125264,125273,126464,126467,126469,126495,126497,126498,126500,126500,126503,126503,126505,126514,126516,126519,126521,126521,126523,126523,126530,126530,126535,126535,126537,126537,126539,126539,126541,126543,126545,126546,126548,126548,126551,126551,126553,126553,126555,126555,126557,126557,126559,126559,126561,126562,126564,126564,126567,126570,126572,126578,126580,126583,126585,126588,126590,126590,126592,126601,126603,126619,126625,126627,126629,126633,126635,126651,130032,130041,131072,173791,173824,177977,177984,178205,178208,183969,183984,191456,191472,192093,194560,195101,196608,201546,201552,205743,917760,917999];
+var commentDirectiveRegExSingleLine = /^\/\/\/?\s*@(ts-expect-error|ts-ignore)/;
+var commentDirectiveRegExMultiLine = /^(?:\/|\*)*\s*@(ts-expect-error|ts-ignore)/;
+var jsDocTagTerminators = new Set([" ","t","n","r","}","*"]);
+var tokenStrings = makeReverseMap(textToToken);
+
+!createScanner(skipTrivia,languageVariant,textInitial,start,length){
+var text = textInitial;
+var pos;
+var end;
+var fullStartPos;
+var tokenStart;
+var token;
+var tokenValue;
+var tokenFlags;
+var commentDirectives;
+var skipJsDocLeadingAsterisks = 0;
+setText(text,start,length);
+var scanner = {"getTokenFullStart":(() => (fullStartPos)),"getTokenEnd":(() => (pos)),"getToken":(() => (token)),"getTokenStart":(() => (tokenStart)),"getTokenText":(() => (text.substring(tokenStart,pos))),"getTokenValue":(() => (tokenValue)),"hasUnicodeEscape":(() => (((tokenFlags & TokenFlags.UnicodeEscape) != 0))),"hasExtendedUnicodeEscape":(() => (((tokenFlags & TokenFlags.ExtendedUnicodeEscape) != 0))),"hasPrecedingLineBreak":(() => (((tokenFlags & TokenFlags.PrecedingLineBreak) != 0))),"hasPrecedingJSDocComment":(() => (((tokenFlags & TokenFlags.PrecedingJSDocComment) != 0))),"hasPrecedingJSDocLeadingAsterisks":(() => (((tokenFlags & TokenFlags.PrecedingJSDocLeadingAsterisks) != 0))),"hasPrecedingJSDocWithDeprecatedTag":(() => (((tokenFlags & TokenFlags.PrecedingJSDocWithDeprecated) != 0))),"hasPrecedingJSDocWithSeeOrLink":(() => (((tokenFlags & TokenFlags.PrecedingJSDocWithSeeOrLink) != 0))),"isIdentifier":(() => (((token == SyntaxKind.Identifier) || (token > SyntaxKind.LastReservedWord)))),"isReservedWord":(() => (((token >= SyntaxKind.FirstReservedWord) && (token <= SyntaxKind.LastReservedWord)))),"isUnterminated":(() => (((tokenFlags & TokenFlags.Unterminated) != 0))),"getCommentDirectives":(() => (commentDirectives)),"getNumericLiteralFlags":(() => ((tokenFlags & TokenFlags.NumericLiteralFlags))),"getTokenFlags":(() => (tokenFlags)),"reScanGreaterToken":reScanGreaterToken,"reScanAsteriskEqualsToken":reScanAsteriskEqualsToken,"reScanSlashToken":reScanSlashToken,"reScanTemplateToken":reScanTemplateToken,"reScanTemplateHeadOrNoSubstitutionTemplate":reScanTemplateHeadOrNoSubstitutionTemplate,"scanJsxIdentifier":scanJsxIdentifier,"scanJsxAttributeValue":scanJsxAttributeValue,"reScanJsxAttributeValue":reScanJsxAttributeValue,"reScanJsxToken":reScanJsxToken,"reScanLessThanToken":reScanLessThanToken,"reScanHashToken":reScanHashToken,"reScanQuestionToken":reScanQuestionToken,"reScanInvalidIdentifier":reScanInvalidIdentifier,"scanJsxToken":scanJsxToken,"scanJsDocToken":scanJsDocToken,"scanJSDocCommentTextToken":scanJSDocCommentTextToken,"scan":scan,"getText":getText,"clearCommentDirectives":clearCommentDirectives,"setText":setText,"setLanguageVariant":setLanguageVariant,"resetTokenState":resetTokenState,"setSkipJsDocLeadingAsterisks":setSkipJsDocLeadingAsterisks,"tryScan":tryScan,"lookAhead":lookAhead,"scanRange":scanRange};
+^scanner;
+!codePointUnchecked(pos){
+^codePointAt(text,pos);
+};
+!codePointChecked(pos){
+^(((pos >= 0) && (pos < end)) ? codePointUnchecked(pos) : CharacterCodes.EOF);
+};
+!charCodeUnchecked(pos){
+^text.charCodeAt(pos);
+};
+!charCodeChecked(pos){
+^(((pos >= 0) && (pos < end)) ? charCodeUnchecked(pos) : CharacterCodes.EOF);
+};
+!scanNumberFragment(){
+let start = pos;
+let allowSeparator = false;
+let isPreviousTokenSeparator = false;
+let result = "";
+;while(true){
+const ch = charCodeUnchecked(pos);
+?((ch == CharacterCodes._)){
+tokenFlags |= TokenFlags.ContainsSeparator;
+?(allowSeparator){
+allowSeparator = false;
+isPreviousTokenSeparator = true;
+result += text.substring(start,pos);
+}:{
+tokenFlags |= TokenFlags.ContainsInvalidSeparator;
+};
+pos++;
+start = pos;
+continue;
+};
+?(isDigit(ch)){
+allowSeparator = true;
+isPreviousTokenSeparator = false;
+pos++;
+continue;
+};
+break;
+};
+?((charCodeUnchecked((pos - 1)) == CharacterCodes._)){
+tokenFlags |= TokenFlags.ContainsInvalidSeparator;
+};
+^(result + text.substring(start,pos));
+};
+!scanNumber(){
+let start = pos;
+let mainFragment;
+?((charCodeUnchecked(pos) == CharacterCodes._0)){
+pos++;
+?((charCodeUnchecked(pos) == CharacterCodes._)){
+tokenFlags |= (TokenFlags.ContainsSeparator | TokenFlags.ContainsInvalidSeparator);
+pos--;
+mainFragment = scanNumberFragment();
+}:{
+?((!scanDigits())){
+tokenFlags |= TokenFlags.ContainsLeadingZero;
+mainFragment = ("" + (+tokenValue));
+}:{
+?((!tokenValue)){
+mainFragment = "0";
+}:{
+tokenValue = ("" + parseInt(tokenValue,8));
+tokenFlags |= TokenFlags.Octal;
+const withMinus = (token == SyntaxKind.MinusToken);
+const literal = (((withMinus ? "-" : "") + "0o") + (+tokenValue).toString(8));
+?(withMinus){
+start--;
+};
+^SyntaxKind.NumericLiteral;
+};
+};
+};
+}:{
+mainFragment = scanNumberFragment();
+};
+let decimalFragment;
+let scientificFragment;
+?((charCodeUnchecked(pos) == CharacterCodes.dot)){
+pos++;
+decimalFragment = scanNumberFragment();
+};
+let end = pos;
+?(((charCodeUnchecked(pos) == CharacterCodes.E) || (charCodeUnchecked(pos) == CharacterCodes.e))){
+pos++;
+tokenFlags |= TokenFlags.Scientific;
+?(((charCodeUnchecked(pos) == CharacterCodes.plus) || (charCodeUnchecked(pos) == CharacterCodes.minus))){
+pos++;
+};
+const preNumericPart = pos;
+const finalFragment = scanNumberFragment();
+?(finalFragment){
+scientificFragment = (text.substring(end,preNumericPart) + finalFragment);
+end = pos;
+};
+};
+let result;
+?((tokenFlags & TokenFlags.ContainsSeparator)){
+result = mainFragment;
+?(decimalFragment){
+result += ("." + decimalFragment);
+};
+?(scientificFragment){
+result += scientificFragment;
+};
+}:{
+result = text.substring(start,end);
+};
+?((tokenFlags & TokenFlags.ContainsLeadingZero)){
+tokenValue = ("" + (+result));
+^SyntaxKind.NumericLiteral;
+};
+?(((decimalFragment != undefined) || (tokenFlags & TokenFlags.Scientific))){
+checkForIdentifierStartAfterNumericLiteral();
+tokenValue = ("" + (+result));
+^SyntaxKind.NumericLiteral;
+}:{
+tokenValue = result;
+const type = checkBigIntSuffix();
+checkForIdentifierStartAfterNumericLiteral();
+^type;
+};
+};
+!checkForIdentifierStartAfterNumericLiteral(){
+?((!isIdentifierStart(codePointUnchecked(pos)))){
+^null;
+};
+const identifierStart = pos;
+const _destruct = scanIdentifierParts();
+const length = _destruct[0];
+?((!((length == 1) && (text[identifierStart] == "n")))){
+pos = identifierStart;
+};
+};
+!scanDigits(){
+const start = pos;
+let isOctal = true;
+;while(isDigit(charCodeChecked(pos))){
+?((!isOctalDigit(charCodeUnchecked(pos)))){
+isOctal = false;
+};
+pos++;
+};
+tokenValue = text.substring(start,pos);
+^isOctal;
+};
+!scanExactNumberOfHexDigits(count,canHaveSeparators){
+const valueString = scanHexDigits(count,false,canHaveSeparators);
+^(valueString ? parseInt(valueString,16) : (-1));
+};
+!scanMinimumNumberOfHexDigits(count,canHaveSeparators){
+^scanHexDigits(count,true,canHaveSeparators);
+};
+!scanHexDigits(minCount,scanAsManyAsPossible,canHaveSeparators){
+let valueChars = [];
+let allowSeparator = false;
+;while(((valueChars.length < minCount) || scanAsManyAsPossible)){
+let ch = charCodeUnchecked(pos);
+?((canHaveSeparators && (ch == CharacterCodes._))){
+tokenFlags |= TokenFlags.ContainsSeparator;
+?(allowSeparator){
+allowSeparator = false;
+};
+pos++;
+continue;
+};
+allowSeparator = canHaveSeparators;
+?(((ch >= CharacterCodes.A) && (ch <= CharacterCodes.F))){
+ch += (CharacterCodes.a - CharacterCodes.A);
+}:{
+?((!(((ch >= CharacterCodes._0) && (ch <= CharacterCodes._9)) || ((ch >= CharacterCodes.a) && (ch <= CharacterCodes.f))))){
+break;
+};
+};
+valueChars.push(ch);
+pos++;
+};
+?((valueChars.length < minCount)){
+valueChars = [];
+};
+^String.fromCharCode(...valueChars);
+};
+!scanString(jsxAttributeString){
+const quote = charCodeUnchecked(pos);
+pos++;
+let result = "";
+let start = pos;
+;while(true){
+?((pos >= end)){
+result += text.substring(start,pos);
+tokenFlags |= TokenFlags.Unterminated;
+break;
+};
+const ch = charCodeUnchecked(pos);
+?((ch == quote)){
+result += text.substring(start,pos);
+pos++;
+break;
+};
+?(((ch == CharacterCodes.backslash) && (!jsxAttributeString))){
+result += text.substring(start,pos);
+result += scanEscapeSequence((EscapeSequenceScanningFlags.String | EscapeSequenceScanningFlags.ReportErrors));
+start = pos;
+continue;
+};
+?((((ch == CharacterCodes.lineFeed) || (ch == CharacterCodes.carriageReturn)) && (!jsxAttributeString))){
+result += text.substring(start,pos);
+tokenFlags |= TokenFlags.Unterminated;
+break;
+};
+pos++;
+};
+^result;
+};
+!scanTemplateAndSetTokenValue(shouldEmitInvalidEscapeError){
+const startedWithBacktick = (charCodeUnchecked(pos) == CharacterCodes.backtick);
+pos++;
+let start = pos;
+let contents = "";
+let resultingToken;
+;while(true){
+?((pos >= end)){
+contents += text.substring(start,pos);
+tokenFlags |= TokenFlags.Unterminated;
+resultingToken = (startedWithBacktick ? SyntaxKind.NoSubstitutionTemplateLiteral : SyntaxKind.TemplateTail);
+break;
+};
+const currChar = charCodeUnchecked(pos);
+?((currChar == CharacterCodes.backtick)){
+contents += text.substring(start,pos);
+pos++;
+resultingToken = (startedWithBacktick ? SyntaxKind.NoSubstitutionTemplateLiteral : SyntaxKind.TemplateTail);
+break;
+};
+?((((currChar == CharacterCodes.$) && ((pos + 1) < end)) && (charCodeUnchecked((pos + 1)) == CharacterCodes.openBrace))){
+contents += text.substring(start,pos);
+pos += 2;
+resultingToken = (startedWithBacktick ? SyntaxKind.TemplateHead : SyntaxKind.TemplateMiddle);
+break;
+};
+?((currChar == CharacterCodes.backslash)){
+contents += text.substring(start,pos);
+contents += scanEscapeSequence((EscapeSequenceScanningFlags.String | (shouldEmitInvalidEscapeError ? EscapeSequenceScanningFlags.ReportErrors : 0)));
+start = pos;
+continue;
+};
+?((currChar == CharacterCodes.carriageReturn)){
+contents += text.substring(start,pos);
+pos++;
+?(((pos < end) && (charCodeUnchecked(pos) == CharacterCodes.lineFeed))){
+pos++;
+};
+contents += "n";
+start = pos;
+continue;
+};
+pos++;
+};
+tokenValue = contents;
+^resultingToken;
+};
+!scanEscapeSequence(flags){
+const start = pos;
+pos++;
+?((pos >= end)){
+^"";
+};
+const ch = charCodeUnchecked(pos);
+pos++;
+switch (ch) {
+  case CharacterCodes._0:
+    ?(((pos >= end) || (!isDigit(charCodeUnchecked(pos))))){
+^"0";
+};
+  case CharacterCodes._1:
+  case CharacterCodes._2:
+  case CharacterCodes._3:
+    ?(((pos < end) && isOctalDigit(charCodeUnchecked(pos)))){
+pos++;
+};
+  case CharacterCodes._4:
+  case CharacterCodes._5:
+  case CharacterCodes._6:
+  case CharacterCodes._7:
+    ?(((pos < end) && isOctalDigit(charCodeUnchecked(pos)))){
+pos++;
+};
+    tokenFlags |= TokenFlags.ContainsInvalidEscape;
+    ?((flags & EscapeSequenceScanningFlags.ReportInvalidEscapeErrors)){
+const code = parseInt(text.substring((start + 1),pos),8);
+^String.fromCharCode(code);
+};
+    ^text.substring(start,pos);
+  case CharacterCodes._8:
+  case CharacterCodes._9:
+    tokenFlags |= TokenFlags.ContainsInvalidEscape;
+    ?((flags & EscapeSequenceScanningFlags.ReportInvalidEscapeErrors)){
+^String.fromCharCode(ch);
+};
+    ^text.substring(start,pos);
+  case CharacterCodes.b:
+    ^"b";
+  case CharacterCodes.t:
+    ^"t";
+  case CharacterCodes.n:
+    ^"n";
+  case CharacterCodes.v:
+    ^"v";
+  case CharacterCodes.f:
+    ^"f";
+  case CharacterCodes.r:
+    ^"r";
+  case CharacterCodes.singleQuote:
+    ^"'";
+  case CharacterCodes.doubleQuote:
+    ^"\"";
+  case CharacterCodes.u:
+    ?(((pos < end) && (charCodeUnchecked(pos) == CharacterCodes.openBrace))){
+pos -= 2;
+const result = scanExtendedUnicodeEscape();
+?((!(flags & EscapeSequenceScanningFlags.AllowExtendedUnicodeEscape))){
+tokenFlags |= TokenFlags.ContainsInvalidEscape;
+};
+^result;
+};
+    #(; (pos < (start + 6)); pos++){
+?((!((pos < end) && isHexDigit(charCodeUnchecked(pos))))){
+tokenFlags |= TokenFlags.ContainsInvalidEscape;
+^text.substring(start,pos);
+};
+};
+    tokenFlags |= TokenFlags.UnicodeEscape;
+    const escapedValue = parseInt(text.substring((start + 2),pos),16);
+const escapedValueString = String.fromCharCode(escapedValue);
+?(((((((flags & EscapeSequenceScanningFlags.AnyUnicodeMode) && (escapedValue >= 55296)) && (escapedValue <= 56319)) && ((pos + 6) < end)) && (text.substring(pos,(pos + 2)) == "\\u")) && (charCodeUnchecked((pos + 2)) != CharacterCodes.openBrace))){
+const nextStart = pos;
+let nextPos = (pos + 2);
+#(; (nextPos < (nextStart + 6)); nextPos++){
+?((!isHexDigit(charCodeUnchecked(nextPos)))){
+^escapedValueString;
+};
+};
+const nextEscapedValue = parseInt(text.substring((nextStart + 2),nextPos),16);
+?(((nextEscapedValue >= 56320) && (nextEscapedValue <= 57343))){
+pos = nextPos;
+^(escapedValueString + String.fromCharCode(nextEscapedValue));
+};
+};
+^escapedValueString;
+  case CharacterCodes.x:
+    #(; (pos < (start + 4)); pos++){
+?((!((pos < end) && isHexDigit(charCodeUnchecked(pos))))){
+tokenFlags |= TokenFlags.ContainsInvalidEscape;
+^text.substring(start,pos);
+};
+};
+    tokenFlags |= TokenFlags.HexEscape;
+    ^String.fromCharCode(parseInt(text.substring((start + 2),pos),16));
+  case CharacterCodes.carriageReturn:
+    ?(((pos < end) && (charCodeUnchecked(pos) == CharacterCodes.lineFeed))){
+pos++;
+};
+  case CharacterCodes.lineFeed:
+  case CharacterCodes.lineSeparator:
+  case CharacterCodes.paragraphSeparator:
+    ^"";
+  default:
+    ^String.fromCharCode(ch);
+};
+};
+!scanExtendedUnicodeEscape(){
+const start = pos;
+pos += 3;
+const escapedValueString = scanMinimumNumberOfHexDigits(1,false);
+const escapedValue = (escapedValueString ? parseInt(escapedValueString,16) : (-1));
+let isInvalidExtendedEscape = false;
+?((escapedValue < 0)){
+isInvalidExtendedEscape = true;
+}:{
+?((escapedValue > 1114111)){
+isInvalidExtendedEscape = true;
+};
+};
+?((pos >= end)){
+isInvalidExtendedEscape = true;
+}:{
+?((charCodeUnchecked(pos) == CharacterCodes.closeBrace)){
+pos++;
+}:{
+isInvalidExtendedEscape = true;
+};
+};
+?(isInvalidExtendedEscape){
+tokenFlags |= TokenFlags.ContainsInvalidEscape;
+^text.substring(start,pos);
+};
+tokenFlags |= TokenFlags.ExtendedUnicodeEscape;
+^utf16EncodeAsString(escapedValue);
+};
+!peekUnicodeEscape(){
+?((((pos + 5) < end) && (charCodeUnchecked((pos + 1)) == CharacterCodes.u))){
+const start = pos;
+pos += 2;
+const value = scanExactNumberOfHexDigits(4,false);
+pos = start;
+^value;
+};
+^(-1);
+};
+!peekExtendedUnicodeEscape(){
+?(((codePointUnchecked((pos + 1)) == CharacterCodes.u) && (codePointUnchecked((pos + 2)) == CharacterCodes.openBrace))){
+const start = pos;
+pos += 3;
+const escapedValueString = scanMinimumNumberOfHexDigits(1,false);
+const escapedValue = (escapedValueString ? parseInt(escapedValueString,16) : (-1));
+pos = start;
+^escapedValue;
+};
+^(-1);
+};
+!scanIdentifierParts(){
+let result = "";
+let start = pos;
+;while((pos < end)){
+let ch = codePointUnchecked(pos);
+?(isIdentifierPart(ch)){
+pos += charSize(ch);
+}:{
+?((ch == CharacterCodes.backslash)){
+ch = peekExtendedUnicodeEscape();
+?(((ch >= 0) && isIdentifierPart(ch))){
+result += scanExtendedUnicodeEscape();
+start = pos;
+continue;
+};
+ch = peekUnicodeEscape();
+?((!((ch >= 0) && isIdentifierPart(ch)))){
+break;
+};
+tokenFlags |= TokenFlags.UnicodeEscape;
+result += text.substring(start,pos);
+result += utf16EncodeAsString(ch);
+pos += 6;
+start = pos;
+}:{
+break;
+};
+};
+};
+result += text.substring(start,pos);
+^result;
+};
+!getIdentifierToken(){
+const len = tokenValue.length;
+?(((len >= 2) && (len <= 12))){
+const ch = tokenValue.charCodeAt(0);
+?(((ch >= CharacterCodes.a) && (ch <= CharacterCodes.z))){
+const keyword = textToKeyword.get(tokenValue);
+?((keyword != undefined)){
+^token = keyword;
+};
+};
+};
+^token = SyntaxKind.Identifier;
+};
+!scanBinaryOrOctalDigits(base){
+let value = "";
+let separatorAllowed = false;
+let isPreviousTokenSeparator = false;
+;while(true){
+const ch = charCodeUnchecked(pos);
+?((ch == CharacterCodes._)){
+tokenFlags |= TokenFlags.ContainsSeparator;
+?(separatorAllowed){
+separatorAllowed = false;
+isPreviousTokenSeparator = true;
+};
+pos++;
+continue;
+};
+separatorAllowed = true;
+?(((!isDigit(ch)) || ((ch - CharacterCodes._0) >= base))){
+break;
+};
+value += text[pos];
+pos++;
+isPreviousTokenSeparator = false;
+};
+^value;
+};
+!checkBigIntSuffix(){
+?((charCodeUnchecked(pos) == CharacterCodes.n)){
+tokenValue += "n";
+?((tokenFlags & TokenFlags.BinaryOrOctalSpecifier)){
+tokenValue = (parsePseudoBigInt(tokenValue) + "n");
+};
+pos++;
+^SyntaxKind.BigIntLiteral;
+}:{
+const numericValue = ((tokenFlags & TokenFlags.BinarySpecifier) ? parseInt(tokenValue.slice(2),2) : ((tokenFlags & TokenFlags.OctalSpecifier) ? parseInt(tokenValue.slice(2),8) : (+tokenValue)));
+tokenValue = ("" + numericValue);
+^SyntaxKind.NumericLiteral;
+};
+};
+!scan(){
+fullStartPos = pos;
+tokenFlags = TokenFlags.None;
+;while(true){
+tokenStart = pos;
+?((pos >= end)){
+^token = SyntaxKind.EndOfFile;
+};
+const ch = codePointUnchecked(pos);
+?((pos == 0)){
+?(((ch == CharacterCodes.hash) && isShebangTrivia(text,pos))){
+pos = scanShebangTrivia(text,pos);
+?(skipTrivia){
+continue;
+}:{
+^token = SyntaxKind.Unknown;
+};
+};
+};
+switch (ch) {
+  case CharacterCodes.lineFeed:
+  case CharacterCodes.carriageReturn:
+    tokenFlags |= TokenFlags.PrecedingLineBreak;
+    ?(skipTrivia){
+pos++;
+continue;
+}:{
+?((((ch == CharacterCodes.carriageReturn) && ((pos + 1) < end)) && (charCodeUnchecked((pos + 1)) == CharacterCodes.lineFeed))){
+pos += 2;
+}:{
+pos++;
+};
+^token = SyntaxKind.NewLineTrivia;
+};
+  case CharacterCodes.tab:
+  case CharacterCodes.verticalTab:
+  case CharacterCodes.formFeed:
+  case CharacterCodes.space:
+  case CharacterCodes.nonBreakingSpace:
+  case CharacterCodes.ogham:
+  case CharacterCodes.enQuad:
+  case CharacterCodes.emQuad:
+  case CharacterCodes.enSpace:
+  case CharacterCodes.emSpace:
+  case CharacterCodes.threePerEmSpace:
+  case CharacterCodes.fourPerEmSpace:
+  case CharacterCodes.sixPerEmSpace:
+  case CharacterCodes.figureSpace:
+  case CharacterCodes.punctuationSpace:
+  case CharacterCodes.thinSpace:
+  case CharacterCodes.hairSpace:
+  case CharacterCodes.zeroWidthSpace:
+  case CharacterCodes.narrowNoBreakSpace:
+  case CharacterCodes.mathematicalSpace:
+  case CharacterCodes.ideographicSpace:
+  case CharacterCodes.byteOrderMark:
+    ?(skipTrivia){
+pos++;
+continue;
+}:{
+;while(((pos < end) && isWhiteSpaceSingleLine(charCodeUnchecked(pos)))){
+pos++;
+};
+^token = SyntaxKind.WhitespaceTrivia;
+};
+  case CharacterCodes.exclamation:
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.equals)){
+?((charCodeUnchecked((pos + 2)) == CharacterCodes.equals)){
+^(pos += 3, token = SyntaxKind.ExclamationEqualsEqualsToken);
+};
+^(pos += 2, token = SyntaxKind.ExclamationEqualsToken);
+};
+    pos++;
+    ^token = SyntaxKind.ExclamationToken;
+  case CharacterCodes.doubleQuote:
+  case CharacterCodes.singleQuote:
+    tokenValue = scanString();
+    ^token = SyntaxKind.StringLiteral;
+  case CharacterCodes.backtick:
+    ^token = scanTemplateAndSetTokenValue(false);
+  case CharacterCodes.percent:
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.equals)){
+^(pos += 2, token = SyntaxKind.PercentEqualsToken);
+};
+    pos++;
+    ^token = SyntaxKind.PercentToken;
+  case CharacterCodes.ampersand:
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.ampersand)){
+?((charCodeUnchecked((pos + 2)) == CharacterCodes.equals)){
+^(pos += 3, token = SyntaxKind.AmpersandAmpersandEqualsToken);
+};
+^(pos += 2, token = SyntaxKind.AmpersandAmpersandToken);
+};
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.equals)){
+^(pos += 2, token = SyntaxKind.AmpersandEqualsToken);
+};
+    pos++;
+    ^token = SyntaxKind.AmpersandToken;
+  case CharacterCodes.openParen:
+    pos++;
+    ^token = SyntaxKind.OpenParenToken;
+  case CharacterCodes.closeParen:
+    pos++;
+    ^token = SyntaxKind.CloseParenToken;
+  case CharacterCodes.asterisk:
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.equals)){
+^(pos += 2, token = SyntaxKind.AsteriskEqualsToken);
+};
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.asterisk)){
+?((charCodeUnchecked((pos + 2)) == CharacterCodes.equals)){
+^(pos += 3, token = SyntaxKind.AsteriskAsteriskEqualsToken);
+};
+^(pos += 2, token = SyntaxKind.AsteriskAsteriskToken);
+};
+    pos++;
+    ?(((skipJsDocLeadingAsterisks && ((tokenFlags & TokenFlags.PrecedingJSDocLeadingAsterisks) == 0)) && (tokenFlags & TokenFlags.PrecedingLineBreak))){
+tokenFlags |= TokenFlags.PrecedingJSDocLeadingAsterisks;
+continue;
+};
+    ^token = SyntaxKind.AsteriskToken;
+  case CharacterCodes.plus:
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.plus)){
+^(pos += 2, token = SyntaxKind.PlusPlusToken);
+};
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.equals)){
+^(pos += 2, token = SyntaxKind.PlusEqualsToken);
+};
+    pos++;
+    ^token = SyntaxKind.PlusToken;
+  case CharacterCodes.comma:
+    pos++;
+    ^token = SyntaxKind.CommaToken;
+  case CharacterCodes.minus:
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.minus)){
+^(pos += 2, token = SyntaxKind.MinusMinusToken);
+};
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.equals)){
+^(pos += 2, token = SyntaxKind.MinusEqualsToken);
+};
+    pos++;
+    ^token = SyntaxKind.MinusToken;
+  case CharacterCodes.dot:
+    ?(isDigit(charCodeUnchecked((pos + 1)))){
+scanNumber();
+^token = SyntaxKind.NumericLiteral;
+};
+    ?(((charCodeUnchecked((pos + 1)) == CharacterCodes.dot) && (charCodeUnchecked((pos + 2)) == CharacterCodes.dot))){
+^(pos += 3, token = SyntaxKind.DotDotDotToken);
+};
+    pos++;
+    ^token = SyntaxKind.DotToken;
+  case CharacterCodes.slash:
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.slash)){
+pos += 2;
+;while((pos < end)){
+?(isLineBreak(charCodeUnchecked(pos))){
+break;
+};
+pos++;
+};
+commentDirectives = appendIfCommentDirective(commentDirectives,text.slice(tokenStart,pos),commentDirectiveRegExSingleLine,tokenStart);
+?(skipTrivia){
+continue;
+}:{
+^token = SyntaxKind.SingleLineCommentTrivia;
+};
+};
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.asterisk)){
+pos += 2;
+const isJSDoc = ((charCodeUnchecked(pos) == CharacterCodes.asterisk) && (charCodeUnchecked((pos + 1)) != CharacterCodes.slash));
+let commentClosed = false;
+let lastLineStart = tokenStart;
+;while((pos < end)){
+const ch = charCodeUnchecked(pos);
+?(((ch == CharacterCodes.asterisk) && (charCodeUnchecked((pos + 1)) == CharacterCodes.slash))){
+pos += 2;
+commentClosed = true;
+break;
+};
+pos++;
+?(isLineBreak(ch)){
+lastLineStart = pos;
+tokenFlags |= TokenFlags.PrecedingLineBreak;
+};
+};
+?(isJSDoc){
+tokenFlags |= TokenFlags.PrecedingJSDocComment;
+tokenFlags = scanJSDocCommentForTags(text.slice(tokenStart,pos),tokenFlags);
+};
+commentDirectives = appendIfCommentDirective(commentDirectives,text.slice(lastLineStart,pos),commentDirectiveRegExMultiLine,lastLineStart);
+?(skipTrivia){
+continue;
+}:{
+?((!commentClosed)){
+tokenFlags |= TokenFlags.Unterminated;
+};
+^token = SyntaxKind.MultiLineCommentTrivia;
+};
+};
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.equals)){
+^(pos += 2, token = SyntaxKind.SlashEqualsToken);
+};
+    pos++;
+    ^token = SyntaxKind.SlashToken;
+  case CharacterCodes._0:
+    ?((((pos + 2) < end) && ((charCodeUnchecked((pos + 1)) == CharacterCodes.X) || (charCodeUnchecked((pos + 1)) == CharacterCodes.x)))){
+pos += 2;
+tokenValue = scanMinimumNumberOfHexDigits(1,true);
+?((!tokenValue)){
+tokenValue = "0";
+};
+tokenValue = ("0x" + tokenValue);
+tokenFlags |= TokenFlags.HexSpecifier;
+^token = checkBigIntSuffix();
+}:{
+?((((pos + 2) < end) && ((charCodeUnchecked((pos + 1)) == CharacterCodes.B) || (charCodeUnchecked((pos + 1)) == CharacterCodes.b)))){
+pos += 2;
+tokenValue = scanBinaryOrOctalDigits(2);
+?((!tokenValue)){
+tokenValue = "0";
+};
+tokenValue = ("0b" + tokenValue);
+tokenFlags |= TokenFlags.BinarySpecifier;
+^token = checkBigIntSuffix();
+}:{
+?((((pos + 2) < end) && ((charCodeUnchecked((pos + 1)) == CharacterCodes.O) || (charCodeUnchecked((pos + 1)) == CharacterCodes.o)))){
+pos += 2;
+tokenValue = scanBinaryOrOctalDigits(8);
+?((!tokenValue)){
+tokenValue = "0";
+};
+tokenValue = ("0o" + tokenValue);
+tokenFlags |= TokenFlags.OctalSpecifier;
+^token = checkBigIntSuffix();
+};
+};
+};
+  case CharacterCodes._1:
+  case CharacterCodes._2:
+  case CharacterCodes._3:
+  case CharacterCodes._4:
+  case CharacterCodes._5:
+  case CharacterCodes._6:
+  case CharacterCodes._7:
+  case CharacterCodes._8:
+  case CharacterCodes._9:
+    ^token = scanNumber();
+  case CharacterCodes.colon:
+    pos++;
+    ^token = SyntaxKind.ColonToken;
+  case CharacterCodes.semicolon:
+    pos++;
+    ^token = SyntaxKind.SemicolonToken;
+  case CharacterCodes.lessThan:
+    ?(isConflictMarkerTrivia(text,pos)){
+pos = scanConflictMarkerTrivia(text,pos);
+?(skipTrivia){
+continue;
+}:{
+^token = SyntaxKind.ConflictMarkerTrivia;
+};
+};
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.lessThan)){
+?((charCodeUnchecked((pos + 2)) == CharacterCodes.equals)){
+^(pos += 3, token = SyntaxKind.LessThanLessThanEqualsToken);
+};
+^(pos += 2, token = SyntaxKind.LessThanLessThanToken);
+};
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.equals)){
+^(pos += 2, token = SyntaxKind.LessThanEqualsToken);
+};
+    ?((((languageVariant == LanguageVariant.JSX) && (charCodeUnchecked((pos + 1)) == CharacterCodes.slash)) && (charCodeUnchecked((pos + 2)) != CharacterCodes.asterisk))){
+^(pos += 2, token = SyntaxKind.LessThanSlashToken);
+};
+    pos++;
+    ^token = SyntaxKind.LessThanToken;
+  case CharacterCodes.equals:
+    ?(isConflictMarkerTrivia(text,pos)){
+pos = scanConflictMarkerTrivia(text,pos);
+?(skipTrivia){
+continue;
+}:{
+^token = SyntaxKind.ConflictMarkerTrivia;
+};
+};
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.equals)){
+?((charCodeUnchecked((pos + 2)) == CharacterCodes.equals)){
+^(pos += 3, token = SyntaxKind.EqualsEqualsEqualsToken);
+};
+^(pos += 2, token = SyntaxKind.EqualsEqualsToken);
+};
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.greaterThan)){
+^(pos += 2, token = SyntaxKind.EqualsGreaterThanToken);
+};
+    pos++;
+    ^token = SyntaxKind.EqualsToken;
+  case CharacterCodes.greaterThan:
+    ?(isConflictMarkerTrivia(text,pos)){
+pos = scanConflictMarkerTrivia(text,pos);
+?(skipTrivia){
+continue;
+}:{
+^token = SyntaxKind.ConflictMarkerTrivia;
+};
+};
+    pos++;
+    ^token = SyntaxKind.GreaterThanToken;
+  case CharacterCodes.question:
+    ?(((charCodeUnchecked((pos + 1)) == CharacterCodes.dot) && (!isDigit(charCodeUnchecked((pos + 2)))))){
+^(pos += 2, token = SyntaxKind.QuestionDotToken);
+};
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.question)){
+?((charCodeUnchecked((pos + 2)) == CharacterCodes.equals)){
+^(pos += 3, token = SyntaxKind.QuestionQuestionEqualsToken);
+};
+^(pos += 2, token = SyntaxKind.QuestionQuestionToken);
+};
+    pos++;
+    ^token = SyntaxKind.QuestionToken;
+  case CharacterCodes.openBracket:
+    pos++;
+    ^token = SyntaxKind.OpenBracketToken;
+  case CharacterCodes.closeBracket:
+    pos++;
+    ^token = SyntaxKind.CloseBracketToken;
+  case CharacterCodes.caret:
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.equals)){
+^(pos += 2, token = SyntaxKind.CaretEqualsToken);
+};
+    pos++;
+    ^token = SyntaxKind.CaretToken;
+  case CharacterCodes.openBrace:
+    pos++;
+    ^token = SyntaxKind.OpenBraceToken;
+  case CharacterCodes.bar:
+    ?(isConflictMarkerTrivia(text,pos)){
+pos = scanConflictMarkerTrivia(text,pos);
+?(skipTrivia){
+continue;
+}:{
+^token = SyntaxKind.ConflictMarkerTrivia;
+};
+};
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.bar)){
+?((charCodeUnchecked((pos + 2)) == CharacterCodes.equals)){
+^(pos += 3, token = SyntaxKind.BarBarEqualsToken);
+};
+^(pos += 2, token = SyntaxKind.BarBarToken);
+};
+    ?((charCodeUnchecked((pos + 1)) == CharacterCodes.equals)){
+^(pos += 2, token = SyntaxKind.BarEqualsToken);
+};
+    pos++;
+    ^token = SyntaxKind.BarToken;
+  case CharacterCodes.closeBrace:
+    pos++;
+    ^token = SyntaxKind.CloseBraceToken;
+  case CharacterCodes.tilde:
+    pos++;
+    ^token = SyntaxKind.TildeToken;
+  case CharacterCodes.at:
+    pos++;
+    ^token = SyntaxKind.AtToken;
+  case CharacterCodes.backslash:
+    const extendedCookedChar = peekExtendedUnicodeEscape();
+?(((extendedCookedChar >= 0) && isIdentifierStart(extendedCookedChar))){
+tokenValue = (scanExtendedUnicodeEscape() + scanIdentifierParts());
+^token = getIdentifierToken();
+};
+const cookedChar = peekUnicodeEscape();
+?(((cookedChar >= 0) && isIdentifierStart(cookedChar))){
+pos += 6;
+tokenFlags |= TokenFlags.UnicodeEscape;
+tokenValue = (String.fromCharCode(cookedChar) + scanIdentifierParts());
+^token = getIdentifierToken();
+};
+pos++;
+^token = SyntaxKind.Unknown;
+  case CharacterCodes.hash:
+    ?(((pos != 0) && (text[(pos + 1)] == "!"))){
+pos++;
+^token = SyntaxKind.Unknown;
+};
+    const charAfterHash = codePointUnchecked((pos + 1));
+?((charAfterHash == CharacterCodes.backslash)){
+pos++;
+const extendedCookedChar = peekExtendedUnicodeEscape();
+?(((extendedCookedChar >= 0) && isIdentifierStart(extendedCookedChar))){
+tokenValue = (("#" + scanExtendedUnicodeEscape()) + scanIdentifierParts());
+^token = SyntaxKind.PrivateIdentifier;
+};
+const cookedChar = peekUnicodeEscape();
+?(((cookedChar >= 0) && isIdentifierStart(cookedChar))){
+pos += 6;
+tokenFlags |= TokenFlags.UnicodeEscape;
+tokenValue = (("#" + String.fromCharCode(cookedChar)) + scanIdentifierParts());
+^token = SyntaxKind.PrivateIdentifier;
+};
+pos--;
+};
+?(isIdentifierStart(charAfterHash)){
+pos++;
+scanIdentifier(charAfterHash);
+}:{
+tokenValue = "#";
+};
+^token = SyntaxKind.PrivateIdentifier;
+  case CharacterCodes.replacementCharacter:
+    pos = end;
+    ^token = SyntaxKind.NonTextFileMarkerTrivia;
+  default:
+    const identifierKind = scanIdentifier(ch);
+?(identifierKind){
+^token = identifierKind;
+}:{
+?(isWhiteSpaceSingleLine(ch)){
+pos += charSize(ch);
+continue;
+}:{
+?(isLineBreak(ch)){
+tokenFlags |= TokenFlags.PrecedingLineBreak;
+pos += charSize(ch);
+continue;
+};
+};
+};
+const size = charSize(ch);
+pos += size;
+^token = SyntaxKind.Unknown;
+};
+};
+};
+!reScanInvalidIdentifier(){
+pos = tokenStart = fullStartPos;
+tokenFlags = 0;
+const ch = codePointUnchecked(pos);
+const identifierKind = scanIdentifier(ch);
+?(identifierKind){
+^token = identifierKind;
+};
+pos += charSize(ch);
+^token;
+};
+!scanIdentifier(startCharacter){
+let ch = startCharacter;
+?(isIdentifierStart(ch)){
+pos += charSize(ch);
+;while(((pos < end) && isIdentifierPart(ch = codePointUnchecked(pos)))){
+pos += charSize(ch);
+};
+tokenValue = text.substring(tokenStart,pos);
+?((ch == CharacterCodes.backslash)){
+tokenValue += scanIdentifierParts();
+};
+^getIdentifierToken();
+};
+};
+!reScanGreaterToken(){
+?((token == SyntaxKind.GreaterThanToken)){
+?((charCodeUnchecked(pos) == CharacterCodes.greaterThan)){
+?((charCodeUnchecked((pos + 1)) == CharacterCodes.greaterThan)){
+?((charCodeUnchecked((pos + 2)) == CharacterCodes.equals)){
+^(pos += 3, token = SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken);
+};
+^(pos += 2, token = SyntaxKind.GreaterThanGreaterThanGreaterThanToken);
+};
+?((charCodeUnchecked((pos + 1)) == CharacterCodes.equals)){
+^(pos += 2, token = SyntaxKind.GreaterThanGreaterThanEqualsToken);
+};
+pos++;
+^token = SyntaxKind.GreaterThanGreaterThanToken;
+};
+?((charCodeUnchecked(pos) == CharacterCodes.equals)){
+pos++;
+^token = SyntaxKind.GreaterThanEqualsToken;
+};
+};
+^token;
+};
+!reScanAsteriskEqualsToken(){
+pos = (tokenStart + 1);
+^token = SyntaxKind.EqualsToken;
+};
+!reScanSlashToken(){
+?(((token == SyntaxKind.SlashToken) || (token == SyntaxKind.SlashEqualsToken))){
+const startOfRegExpBody = (tokenStart + 1);
+pos = startOfRegExpBody;
+let inEscape = false;
+let inCharacterClass = false;
+;while(true){
+const ch = charCodeChecked(pos);
+?(((ch == CharacterCodes.EOF) || isLineBreak(ch))){
+tokenFlags |= TokenFlags.Unterminated;
+break;
+};
+?(inEscape){
+inEscape = false;
+}:{
+?(((ch == CharacterCodes.slash) && (!inCharacterClass))){
+break;
+}:{
+?((ch == CharacterCodes.openBracket)){
+inCharacterClass = true;
+}:{
+?((ch == CharacterCodes.backslash)){
+inEscape = true;
+}:{
+?((ch == CharacterCodes.closeBracket)){
+inCharacterClass = false;
+};
+};
+};
+};
+};
+pos++;
+};
+?((tokenFlags & TokenFlags.Unterminated)){
+pos = startOfRegExpBody;
+inEscape = false;
+let characterClassDepth = 0;
+let inDecimalQuantifier = false;
+let groupDepth = 0;
+;while(((pos < end) && (!isLineBreak(charCodeUnchecked(pos))))){
+const ch = charCodeUnchecked(pos);
+?(inEscape){
+inEscape = false;
+}:{
+?((ch == CharacterCodes.backslash)){
+inEscape = true;
+}:{
+?((ch == CharacterCodes.openBracket)){
+characterClassDepth++;
+}:{
+?(((ch == CharacterCodes.closeBracket) && characterClassDepth)){
+characterClassDepth--;
+}:{
+?((!characterClassDepth)){
+?((ch == CharacterCodes.openBrace)){
+inDecimalQuantifier = true;
+}:{
+?(((ch == CharacterCodes.closeBrace) && inDecimalQuantifier)){
+inDecimalQuantifier = false;
+}:{
+?((!inDecimalQuantifier)){
+?((ch == CharacterCodes.openParen)){
+groupDepth++;
+}:{
+?(((ch == CharacterCodes.closeParen) && groupDepth)){
+groupDepth--;
+}:{
+?((((ch == CharacterCodes.closeParen) || (ch == CharacterCodes.closeBracket)) || (ch == CharacterCodes.closeBrace))){
+break;
+};
+};
+};
+};
+};
+};
+};
+};
+};
+};
+};
+pos++;
+};
+;while((isWhiteSpaceLike(charCodeChecked((pos - 1))) || (charCodeChecked((pos - 1)) == CharacterCodes.semicolon))){
+pos--;
+};
+}:{
+pos++;
+let regExpFlags = RegularExpressionFlags.None;
+;while(true){
+const ch = codePointChecked(pos);
+?(((ch == CharacterCodes.EOF) || (!isIdentifierPart(ch)))){
+break;
+};
+const size = charSize(ch);
+const flag = characterCodeToRegularExpressionFlag(ch);
+?((flag != undefined)){
+regExpFlags |= flag;
+};
+pos += size;
+};
+};
+tokenValue = text.substring(tokenStart,pos);
+token = SyntaxKind.RegularExpressionLiteral;
+};
+^token;
+};
+!appendIfCommentDirective(commentDirectives,text,commentDirectiveRegEx,lineStart){
+const type = getDirectiveFromComment(text.trimStart(),commentDirectiveRegEx);
+?((type == undefined)){
+^commentDirectives;
+};
+?((!commentDirectives)){
+commentDirectives = [];
+};
+commentDirectives.push({"range":{"pos":lineStart,"end":pos},"type":type});
+^commentDirectives;
+};
+!getDirectiveFromComment(text,commentDirectiveRegEx){
+const match = commentDirectiveRegEx.exec(text);
+?((!match)){
+^undefined;
+};
+switch (match[1]) {
+  case "ts-expect-error":
+    ^CommentDirectiveType.ExpectError;
+  case "ts-ignore":
+    ^CommentDirectiveType.Ignore;
+};
+^undefined;
+};
+!reScanTemplateToken(isTaggedTemplate){
+pos = tokenStart;
+^token = scanTemplateAndSetTokenValue((!isTaggedTemplate));
+};
+!reScanTemplateHeadOrNoSubstitutionTemplate(){
+pos = tokenStart;
+^token = scanTemplateAndSetTokenValue(true);
+};
+!reScanJsxToken(allowMultilineJsxText){
+pos = tokenStart = fullStartPos;
+^token = scanJsxToken(allowMultilineJsxText);
+};
+!reScanLessThanToken(){
+?((token == SyntaxKind.LessThanLessThanToken)){
+pos = (tokenStart + 1);
+^token = SyntaxKind.LessThanToken;
+};
+^token;
+};
+!reScanHashToken(){
+?((token == SyntaxKind.PrivateIdentifier)){
+pos = (tokenStart + 1);
+^token = SyntaxKind.HashToken;
+};
+^token;
+};
+!reScanQuestionToken(){
+pos = (tokenStart + 1);
+^token = SyntaxKind.QuestionToken;
+};
+!scanJsxToken(allowMultilineJsxText){
+fullStartPos = tokenStart = pos;
+?((pos >= end)){
+^token = SyntaxKind.EndOfFile;
+};
+let char = charCodeUnchecked(pos);
+?((char == CharacterCodes.lessThan)){
+?((charCodeUnchecked((pos + 1)) == CharacterCodes.slash)){
+pos += 2;
+^token = SyntaxKind.LessThanSlashToken;
+};
+pos++;
+^token = SyntaxKind.LessThanToken;
+};
+?((char == CharacterCodes.openBrace)){
+pos++;
+^token = SyntaxKind.OpenBraceToken;
+};
+let firstNonWhitespace = 0;
+;while((pos < end)){
+char = charCodeUnchecked(pos);
+?((char == CharacterCodes.openBrace)){
+break;
+};
+?((char == CharacterCodes.lessThan)){
+?(isConflictMarkerTrivia(text,pos)){
+pos = scanConflictMarkerTrivia(text,pos);
+^token = SyntaxKind.ConflictMarkerTrivia;
+};
+break;
+};
+?((isLineBreak(char) && (firstNonWhitespace == 0))){
+firstNonWhitespace = (-1);
+}:{
+?((((!allowMultilineJsxText) && isLineBreak(char)) && (firstNonWhitespace > 0))){
+break;
+}:{
+?((!isWhiteSpaceLike(char))){
+firstNonWhitespace = pos;
+};
+};
+};
+pos++;
+};
+tokenValue = text.substring(fullStartPos,pos);
+^((firstNonWhitespace == (-1)) ? SyntaxKind.JsxTextAllWhiteSpaces : SyntaxKind.JsxText);
+};
+!scanJsxIdentifier(){
+?(tokenIsIdentifierOrKeyword(token)){
+;while((pos < end)){
+const ch = charCodeUnchecked(pos);
+?((ch == CharacterCodes.minus)){
+tokenValue += "-";
+pos++;
+continue;
+};
+const oldPos = pos;
+tokenValue += scanIdentifierParts();
+?((pos == oldPos)){
+break;
+};
+};
+^getIdentifierToken();
+};
+^token;
+};
+!scanJsxAttributeValue(){
+fullStartPos = pos;
+switch (charCodeUnchecked(pos)) {
+  case CharacterCodes.doubleQuote:
+  case CharacterCodes.singleQuote:
+    tokenValue = scanString(true);
+    ^token = SyntaxKind.StringLiteral;
+  default:
+    ^scan();
+};
+};
+!reScanJsxAttributeValue(){
+pos = tokenStart = fullStartPos;
+^scanJsxAttributeValue();
+};
+!scanJSDocCommentTextToken(inBackticks){
+fullStartPos = tokenStart = pos;
+tokenFlags = TokenFlags.None;
+?((pos >= end)){
+^token = SyntaxKind.EndOfFile;
+};
+#(ch = charCodeUnchecked(pos); ((pos < end) && ((!isLineBreak(ch)) && (ch != CharacterCodes.backtick))); ch = codePointUnchecked(++pos)){
+?((!inBackticks)){
+?((ch == CharacterCodes.openBrace)){
+break;
+}:{
+?((((((ch == CharacterCodes.at) && ((pos - 1) >= 0)) && isWhiteSpaceSingleLine(charCodeUnchecked((pos - 1)))) && ((pos + 1) < end)) && isIdentifierStart(charCodeUnchecked((pos + 1))))){
+break;
+};
+};
+};
+};
+?((pos == tokenStart)){
+^scanJsDocToken();
+};
+tokenValue = text.substring(tokenStart,pos);
+^token = SyntaxKind.JSDocCommentTextToken;
+};
+!scanJsDocToken(){
+fullStartPos = tokenStart = pos;
+tokenFlags = TokenFlags.None;
+?((pos >= end)){
+^token = SyntaxKind.EndOfFile;
+};
+const ch = codePointUnchecked(pos);
+pos += charSize(ch);
+switch (ch) {
+  case CharacterCodes.tab:
+  case CharacterCodes.verticalTab:
+  case CharacterCodes.formFeed:
+  case CharacterCodes.space:
+    ;while(((pos < end) && isWhiteSpaceSingleLine(charCodeUnchecked(pos)))){
+pos++;
+};
+    ^token = SyntaxKind.WhitespaceTrivia;
+  case CharacterCodes.at:
+    ^token = SyntaxKind.AtToken;
+  case CharacterCodes.carriageReturn:
+    ?((charCodeUnchecked(pos) == CharacterCodes.lineFeed)){
+pos++;
+};
+  case CharacterCodes.lineFeed:
+    tokenFlags |= TokenFlags.PrecedingLineBreak;
+    ^token = SyntaxKind.NewLineTrivia;
+  case CharacterCodes.asterisk:
+    ^token = SyntaxKind.AsteriskToken;
+  case CharacterCodes.openBrace:
+    ^token = SyntaxKind.OpenBraceToken;
+  case CharacterCodes.closeBrace:
+    ^token = SyntaxKind.CloseBraceToken;
+  case CharacterCodes.openBracket:
+    ^token = SyntaxKind.OpenBracketToken;
+  case CharacterCodes.closeBracket:
+    ^token = SyntaxKind.CloseBracketToken;
+  case CharacterCodes.openParen:
+    ^token = SyntaxKind.OpenParenToken;
+  case CharacterCodes.closeParen:
+    ^token = SyntaxKind.CloseParenToken;
+  case CharacterCodes.lessThan:
+    ^token = SyntaxKind.LessThanToken;
+  case CharacterCodes.greaterThan:
+    ^token = SyntaxKind.GreaterThanToken;
+  case CharacterCodes.equals:
+    ^token = SyntaxKind.EqualsToken;
+  case CharacterCodes.comma:
+    ^token = SyntaxKind.CommaToken;
+  case CharacterCodes.dot:
+    ^token = SyntaxKind.DotToken;
+  case CharacterCodes.backtick:
+    ^token = SyntaxKind.BacktickToken;
+  case CharacterCodes.hash:
+    ^token = SyntaxKind.HashToken;
+  case CharacterCodes.backslash:
+    pos--;
+    const extendedCookedChar = peekExtendedUnicodeEscape();
+?(((extendedCookedChar >= 0) && isIdentifierStart(extendedCookedChar))){
+tokenValue = (scanExtendedUnicodeEscape() + scanIdentifierParts());
+^token = getIdentifierToken();
+};
+const cookedChar = peekUnicodeEscape();
+?(((cookedChar >= 0) && isIdentifierStart(cookedChar))){
+pos += 6;
+tokenFlags |= TokenFlags.UnicodeEscape;
+tokenValue = (String.fromCharCode(cookedChar) + scanIdentifierParts());
+^token = getIdentifierToken();
+};
+    pos++;
+    ^token = SyntaxKind.Unknown;
+};
+?(isIdentifierStart(ch)){
+let char = ch;
+;while((((pos < end) && isIdentifierPart(char = codePointUnchecked(pos))) || (char == CharacterCodes.minus))){
+pos += charSize(char);
+};
+tokenValue = text.substring(tokenStart,pos);
+?((char == CharacterCodes.backslash)){
+tokenValue += scanIdentifierParts();
+};
+^token = getIdentifierToken();
+}:{
+^token = SyntaxKind.Unknown;
+};
+};
+!speculationHelper(callback,isLookahead){
+const savePos = pos;
+const saveStartPos = fullStartPos;
+const saveTokenPos = tokenStart;
+const saveToken = token;
+const saveTokenValue = tokenValue;
+const saveTokenFlags = tokenFlags;
+const result = callback();
+?(((!result) || isLookahead)){
+pos = savePos;
+fullStartPos = saveStartPos;
+tokenStart = saveTokenPos;
+token = saveToken;
+tokenValue = saveTokenValue;
+tokenFlags = saveTokenFlags;
+};
+^result;
+};
+!scanRange(start,length,callback){
+const saveEnd = end;
+const savePos = pos;
+const saveStartPos = fullStartPos;
+const saveTokenPos = tokenStart;
+const saveToken = token;
+const saveTokenValue = tokenValue;
+const saveTokenFlags = tokenFlags;
+const saveErrorExpectations = commentDirectives;
+setText(text,start,length);
+const result = callback();
+end = saveEnd;
+pos = savePos;
+fullStartPos = saveStartPos;
+tokenStart = saveTokenPos;
+token = saveToken;
+tokenValue = saveTokenValue;
+tokenFlags = saveTokenFlags;
+commentDirectives = saveErrorExpectations;
+^result;
+};
+!lookAhead(callback){
+^speculationHelper(callback,true);
+};
+!tryScan(callback){
+^speculationHelper(callback,false);
+};
+!getText(){
+^text;
+};
+!clearCommentDirectives(){
+commentDirectives = undefined;
+};
+!setText(newText,start,length){
+text = (newText || "");
+end = ((length == undefined) ? text.length : (start + length));
+resetTokenState((start || 0));
+};
+!setLanguageVariant(variant){
+languageVariant = variant;
+};
+!resetTokenState(position){
+pos = position;
+fullStartPos = position;
+tokenStart = position;
+token = SyntaxKind.Unknown;
+tokenValue = undefined;
+tokenFlags = TokenFlags.None;
+};
+!setSkipJsDocLeadingAsterisks(skip){
+skipJsDocLeadingAsterisks += (skip ? 1 : (-1));
+};
+}
+
+!tokenIsIdentifierOrKeyword(token){
+^(token >= SyntaxKind.Identifier);
+}
+
+!tokenIsIdentifierOrKeywordOrGreaterThan(token){
+^((token == SyntaxKind.GreaterThanToken) || tokenIsIdentifierOrKeyword(token));
+}
+
+!hasJSDocTag(text,offset,tags){
+for (tag of tags) {
+?(text.startsWith(tag,offset)){
+?(((offset + tag.length) == text.length)){
+^true;
+};
+?(jsDocTagTerminators.has(text[(offset + tag.length)])){
+^true;
+};
+};
+};
+^false;
+}
+
+!lookupInUnicodeMap(code,map){
+?((code < map[0])){
+^false;
+};
+let lo = 0;
+let hi = map.length;
+let mid;
+;while(((lo + 1) < hi)){
+mid = (lo + ((hi - lo) / 2));
+mid -= (mid % 2);
+?(((map[mid] <= code) && (code <= map[(mid + 1)]))){
+^true;
+};
+?((code < map[mid])){
+hi = mid;
+}:{
+lo = (mid + 2);
+};
+};
+^false;
+}
+
+!makeReverseMap(source){
+const result = [];
+source.forEach(((value,name) => {
+result[value] = name;
+}));
+^result;
+}
+
+!isLineBreak(ch){
+^((((ch == CharacterCodes.lineFeed) || (ch == CharacterCodes.carriageReturn)) || (ch == CharacterCodes.lineSeparator)) || (ch == CharacterCodes.paragraphSeparator));
+}
+
+!isWhiteSpaceSingleLine(ch){
+^((((((((((((ch == CharacterCodes.space) || (ch == CharacterCodes.tab)) || (ch == CharacterCodes.verticalTab)) || (ch == CharacterCodes.formFeed)) || (ch == CharacterCodes.nonBreakingSpace)) || (ch == CharacterCodes.nextLine)) || (ch == CharacterCodes.ogham)) || ((ch >= CharacterCodes.enQuad) && (ch <= CharacterCodes.zeroWidthSpace))) || (ch == CharacterCodes.narrowNoBreakSpace)) || (ch == CharacterCodes.mathematicalSpace)) || (ch == CharacterCodes.ideographicSpace)) || (ch == CharacterCodes.byteOrderMark));
+}
+
+!isDigit(ch){
+^((ch >= CharacterCodes._0) && (ch <= CharacterCodes._9));
+}
+
+!isConflictMarkerTrivia(text,pos){
+?((pos >= text.length)){
+^false;
+};
+const ch = text.charCodeAt(pos);
+?(((pos == 0) || isLineBreak(text.charCodeAt((pos - 1))))){
+?((((ch == CharacterCodes.lessThan) || (ch == CharacterCodes.greaterThan)) || (ch == CharacterCodes.equals))){
+?(((((((((pos + 6) < text.length) && (text.charCodeAt((pos + 1)) == ch)) && (text.charCodeAt((pos + 2)) == ch)) && (text.charCodeAt((pos + 3)) == ch)) && (text.charCodeAt((pos + 4)) == ch)) && (text.charCodeAt((pos + 5)) == ch)) && (text.charCodeAt((pos + 6)) == ch))){
+^((ch == CharacterCodes.equals) || (text.charCodeAt((pos + 7)) == CharacterCodes.space));
+};
+};
+?(((((((((ch == CharacterCodes.bar) && ((pos + 6) < text.length)) && (text.charCodeAt((pos + 1)) == ch)) && (text.charCodeAt((pos + 2)) == ch)) && (text.charCodeAt((pos + 3)) == ch)) && (text.charCodeAt((pos + 4)) == ch)) && (text.charCodeAt((pos + 5)) == ch)) && (text.charCodeAt((pos + 6)) == ch))){
+^true;
+};
+};
+^false;
+}
+
+!scanConflictMarkerTrivia(text,pos){
+const ch = text.charCodeAt(pos);
+const len = text.length;
+?(((ch == CharacterCodes.lessThan) || (ch == CharacterCodes.greaterThan))){
+;while(((pos < len) && (!isLineBreak(text.charCodeAt(pos))))){
+pos++;
+};
+}:{
+pos += 7;
+;while((pos < len)){
+const currentChar = text.charCodeAt(pos);
+?((((currentChar == CharacterCodes.equals) || (currentChar == CharacterCodes.greaterThan)) && isConflictMarkerTrivia(text,pos))){
+break;
+};
+pos++;
+};
+};
+^pos;
+}
+
+!isShebangTrivia(text,pos){
+^(((pos == 0) && (text.charCodeAt(0) == CharacterCodes.hash)) && (text.charCodeAt(1) == CharacterCodes.exclamation));
+}
+
+!scanShebangTrivia(text,pos){
+pos += 2;
+;while((pos < text.length)){
+?(isLineBreak(text.charCodeAt(pos))){
+break;
+};
+pos++;
+};
+^pos;
+}
+
+!isWhiteSpaceLike(ch){
+^(isWhiteSpaceSingleLine(ch) || isLineBreak(ch));
+}
+
+!getShebang(text){
+const shebang = /^#!.*/;
+?(isShebangTrivia(text,0)){
+const match = shebang.exec(text);
+?(match){
+^match[0];
+};
+};
+^undefined;
+}
+
+!iterateCommentRanges(reduce,text,pos,trailing,cb,state,initial){
+let pendingPos;
+let pendingEnd;
+let pendingKind;
+let pendingHasTrailingNewLine;
+let hasPendingCommentRange = false;
+let collecting = trailing;
+let accumulator = initial;
+?((pos == 0)){
+collecting = true;
+const shebang = getShebang(text);
+?(shebang){
+pos = shebang.length;
+};
+};
+scan: ;while(((pos >= 0) && (pos < text.length))){
+const ch = text.charCodeAt(pos);
+switch (ch) {
+  case CharacterCodes.carriageReturn:
+    ?((text.charCodeAt((pos + 1)) == CharacterCodes.lineFeed)){
+pos++;
+};
+  case CharacterCodes.lineFeed:
+    pos++;
+    ?(trailing){
+break scan;
+};
+    collecting = true;
+    ?(hasPendingCommentRange){
+pendingHasTrailingNewLine = true;
+};
+    continue;
+  case CharacterCodes.tab:
+  case CharacterCodes.verticalTab:
+  case CharacterCodes.formFeed:
+  case CharacterCodes.space:
+    pos++;
+    continue;
+  case CharacterCodes.slash:
+    const nextChar = text.charCodeAt((pos + 1));
+    let hasTrailingNewLine = false;
+    ?(((nextChar == CharacterCodes.slash) || (nextChar == CharacterCodes.asterisk))){
+const kind = ((nextChar == CharacterCodes.slash) ? SyntaxKind.SingleLineCommentTrivia : SyntaxKind.MultiLineCommentTrivia);
+const startPos = pos;
+pos += 2;
+?((nextChar == CharacterCodes.slash)){
+;while((pos < text.length)){
+?(isLineBreak(text.charCodeAt(pos))){
+hasTrailingNewLine = true;
+break;
+};
+pos++;
+};
+}:{
+;while((pos < text.length)){
+?(((text.charCodeAt(pos) == CharacterCodes.asterisk) && (text.charCodeAt((pos + 1)) == CharacterCodes.slash))){
+pos += 2;
+break;
+};
+pos++;
+};
+};
+?(collecting){
+?(hasPendingCommentRange){
+accumulator = cb(pendingPos,pendingEnd,pendingKind,pendingHasTrailingNewLine,state,accumulator);
+?(((!reduce) && accumulator)){
+^accumulator;
+};
+};
+pendingPos = startPos;
+pendingEnd = pos;
+pendingKind = kind;
+pendingHasTrailingNewLine = hasTrailingNewLine;
+hasPendingCommentRange = true;
+};
+continue;
+};
+    scan;
+  default:
+    ?(((ch > CharacterCodes.maxAsciiCharacter) && isWhiteSpaceLike(ch))){
+?((hasPendingCommentRange && isLineBreak(ch))){
+pendingHasTrailingNewLine = true;
+};
+pos++;
+continue;
+};
+    scan;
+};
+};
+?(hasPendingCommentRange){
+accumulator = cb(pendingPos,pendingEnd,pendingKind,pendingHasTrailingNewLine,state,accumulator);
+};
+^accumulator;
+}
+
+!reduceEachLeadingCommentRange(text,pos,cb,state,initial){
+^iterateCommentRanges(true,text,pos,false,cb,state,initial);
+}
+
+!reduceEachTrailingCommentRange(text,pos,cb,state,initial){
+^iterateCommentRanges(true,text,pos,true,cb,state,initial);
+}
+
+!isUnicodeIdentifierStart(code){
+^lookupInUnicodeMap(code,unicodeESNextIdentifierStart);
+}
+
+!isUnicodeIdentifierPart(code){
+^lookupInUnicodeMap(code,unicodeESNextIdentifierPart);
+}
+
+!isIdentifierStart(ch,_languageVersion){
+^((((((ch >= CharacterCodes.A) && (ch <= CharacterCodes.Z)) || ((ch >= CharacterCodes.a) && (ch <= CharacterCodes.z))) || (ch == CharacterCodes.$)) || (ch == CharacterCodes._)) || ((ch > CharacterCodes.maxAsciiCharacter) && isUnicodeIdentifierStart(ch)));
+}
+
+!charSize(ch){
+?((ch >= 65536)){
+^2;
+};
+?((ch == CharacterCodes.EOF)){
+^0;
+};
+^1;
+}
+
+!isIdentifierPart(ch,_languageVersion,identifierVariant){
+^((((((((ch >= CharacterCodes.A) && (ch <= CharacterCodes.Z)) || ((ch >= CharacterCodes.a) && (ch <= CharacterCodes.z))) || ((ch >= CharacterCodes._0) && (ch <= CharacterCodes._9))) || (ch == CharacterCodes.$)) || (ch == CharacterCodes._)) || ((identifierVariant == LanguageVariant.JSX) ? ((ch == CharacterCodes.minus) || (ch == CharacterCodes.colon)) : false)) || ((ch > CharacterCodes.maxAsciiCharacter) && isUnicodeIdentifierPart(ch)));
+}
+
+!codePointAt(s,i){
+^s.codePointAt(i);
+}
+
+!isOctalDigit(ch){
+^((ch >= CharacterCodes._0) && (ch <= CharacterCodes._7));
+}
+
+!isHexDigit(ch){
+^((isDigit(ch) || ((ch >= CharacterCodes.A) && (ch <= CharacterCodes.F))) || ((ch >= CharacterCodes.a) && (ch <= CharacterCodes.f)));
+}
+
+!utf16EncodeAsString(codePoint){
+^String.fromCodePoint(codePoint);
+}
+
+!parsePseudoBigInt(stringValue){
+let log2Base;
+switch (stringValue.charCodeAt(1)) {
+  case CharacterCodes.b:
+  case CharacterCodes.B:
+    log2Base = 1;
+  case CharacterCodes.o:
+  case CharacterCodes.O:
+    log2Base = 3;
+  case CharacterCodes.x:
+  case CharacterCodes.X:
+    log2Base = 4;
+  default:
+    const nIndex = (stringValue.length - 1);
+    let nonZeroStart = 0;
+    ;while((stringValue.charCodeAt(nonZeroStart) == CharacterCodes._0)){
+nonZeroStart++;
+};
+    ^(stringValue.slice(nonZeroStart,nIndex) || "0");
+};
+const startIndex = 2;
+const endIndex = (stringValue.length - 1);
+const bitsNeeded = ((endIndex - startIndex) * log2Base);
+const segments = new Uint16Array(((bitsNeeded >>> 4) + ((bitsNeeded & 15) ? 1 : 0)));
+#(i = ((endIndex - 1), bitOffset = 0); (i >= startIndex); (i--, bitOffset += log2Base)){
+const segment = (bitOffset >>> 4);
+const digitChar = stringValue.charCodeAt(i);
+const digit = ((digitChar <= CharacterCodes._9) ? (digitChar - CharacterCodes._0) : ((10 + digitChar) - ((digitChar <= CharacterCodes.F) ? CharacterCodes.A : CharacterCodes.a)));
+const shiftedDigit = (digit << (bitOffset & 15));
+segments[segment] |= shiftedDigit;
+const residual = (shiftedDigit >>> 16);
+?(residual){
+segments[(segment + 1)] |= residual;
+};
+};
+let base10Value = "";
+let firstNonzeroSegment = (segments.length - 1);
+let segmentsRemaining = true;
+;while(segmentsRemaining){
+let mod10 = 0;
+segmentsRemaining = false;
+#(segment = firstNonzeroSegment; (segment >= 0); segment--){
+const newSegment = ((mod10 << 16) | segments[segment]);
+const segmentValue = ((newSegment / 10) | 0);
+segments[segment] = segmentValue;
+mod10 = (newSegment - (segmentValue * 10));
+?((segmentValue && (!segmentsRemaining))){
+firstNonzeroSegment = segment;
+segmentsRemaining = true;
+};
+};
+base10Value = (mod10 + base10Value);
+};
+^base10Value;
+}
+
+!scanJSDocCommentForTags(text,tokenFlags){
+let offset = 0;
+;while(true){
+const i = text.indexOf("@",offset);
+?((i < 0)){
+^tokenFlags;
+};
+offset = (i + 1);
+?(((!(tokenFlags & TokenFlags.PrecedingJSDocWithDeprecated)) && hasJSDocTag(text,offset,"deprecated"))){
+tokenFlags |= TokenFlags.PrecedingJSDocWithDeprecated;
+};
+?(((!(tokenFlags & TokenFlags.PrecedingJSDocWithSeeOrLink)) && hasJSDocTag(text,offset,"see","link","linkcode","linkplain"))){
+tokenFlags |= TokenFlags.PrecedingJSDocWithSeeOrLink;
+};
+?(((tokenFlags & (TokenFlags.PrecedingJSDocWithDeprecated | TokenFlags.PrecedingJSDocWithSeeOrLink)) == (TokenFlags.PrecedingJSDocWithDeprecated | TokenFlags.PrecedingJSDocWithSeeOrLink))){
+^tokenFlags;
+};
+};
+}
+
+!characterCodeToRegularExpressionFlag(ch){
+^charCodeToRegExpFlag.get(ch);
+}
+
+=ex{createScanner, tokenIsIdentifierOrKeyword, tokenIsIdentifierOrKeywordOrGreaterThan, hasJSDocTag, lookupInUnicodeMap, makeReverseMap, isLineBreak, isWhiteSpaceSingleLine, isDigit, isConflictMarkerTrivia, scanConflictMarkerTrivia, isShebangTrivia, scanShebangTrivia, isWhiteSpaceLike, getShebang, iterateCommentRanges, reduceEachLeadingCommentRange, reduceEachTrailingCommentRange, isUnicodeIdentifierStart, isUnicodeIdentifierPart, isIdentifierStart, charSize, isIdentifierPart, codePointAt, isOctalDigit, isHexDigit, utf16EncodeAsString, parsePseudoBigInt, scanJSDocCommentForTags, characterCodeToRegularExpressionFlag}

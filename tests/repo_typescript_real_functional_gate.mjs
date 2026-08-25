@@ -79,6 +79,10 @@ console.log(`  ✔ DAG Nodes count: ${store.nodes.size}\n`);
 // ---------------------------------------------------------------------------------
 console.log('▶ [PHASE 3: COMPILATION & IN-MEMORY VM INSTANTIATION]');
 
+fs.mkdirSync('clones_lin_generated', { recursive: true });
+fs.writeFileSync('clones_lin_generated/typescript_scanner.lin', closureResult.program_lin, 'utf8');
+console.log('  ✔ Persisted native LIN module to clones_lin_generated/typescript_scanner.lin');
+
 const t0Compile = performance.now();
 const compiled = compile(closureResult.program_lin, { target: 'js' });
 const dtCompile = performance.now() - t0Compile;
@@ -216,8 +220,8 @@ const cert = store.registerProofCertificate({
   behavior_eq: behavior_eq
 });
 
-store.saveLedgerToFile('storage/lin_proof_ledger.json');
-console.log(`  ✔ Proof Certificate recorded in storage/lin_proof_ledger.json\n`);
+store.saveLedgerToFile('storage/lin_proof_ledger.rulel');
+console.log(`  ✔ Proof Certificate recorded in storage/lin_proof_ledger.rulel\n`);
 
 // ---------------------------------------------------------------------------------
 // Step 6: Gate Summary & Verdict

@@ -293,7 +293,7 @@ const cert = store.registerProofCertificate({
   behavior_eq: behavior_eq
 });
 
-store.saveLedgerToFile('storage/lin_proof_ledger.json');
+store.saveLedgerToFile('storage/lin_proof_ledger.rulel');
 
 console.log('\n================================================================================');
 console.log(`   FAST-JSON-PATCH REPOSITORY GATE SUMMARY:                                     `);

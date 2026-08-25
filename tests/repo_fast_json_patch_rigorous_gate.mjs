@@ -202,6 +202,10 @@ console.log(`  - App Merkle Root Hash:            ${appRootHash}\n`);
 // ---------------------------------------------------------------------------------
 console.log('▶ [PHASE 2: IN-MEMORY LIN COMPILATION]');
 
+fs.mkdirSync('clones_lin_generated', { recursive: true });
+fs.writeFileSync('clones_lin_generated/fast_json_patch.lin', closureResult.program_lin, 'utf8');
+console.log('  ✔ Persisted native LIN module to clones_lin_generated/fast_json_patch.lin');
+
 let compiledLinModule;
 try {
   const compiled = compile(closureResult.program_lin, { target: 'js' });
@@ -448,7 +452,8 @@ const cert = store.registerProofCertificate({
   behavior_eq: behavior_eq
 });
 
-store.saveLedgerToFile('storage/lin_proof_ledger.json');
+store.saveLedgerToFile('storage/lin_proof_ledger.rulel');
+console.log('  ✔ Proof Certificate recorded in storage/lin_proof_ledger.rulel\n');
 
 console.log('================================================================================');
 console.log(`   RIGOROUS REPOSITORY GATE FINAL SUMMARY:                                      `);

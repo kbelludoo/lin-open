@@ -68,6 +68,47 @@ export class SemanticMerkleDagStore {
     return { valid: true, cert };
   }
 
+  exportLedgerRulel() {
+    const lines = [
+      `@LEDGER:LIN_PROOF:${CANONICALIZATION_VERSION}`,
+      `~MERKLE_SUMMARY{unique_nodes=${this.nodes.size} total_encountered=${this.totalEncountered} deduplication=${this.getDeduplicationRatio().toFixed(2)}x}`
+    ];
+    for (const [hash, cert] of this.proofCertificates.entries()) {
+      lines.push(`.cert{hash="${cert.semantic_hash}" v="${cert.canonicalization_version}" lang="${cert.source_language}" target="${cert.target}" oracle="${cert.oracle}" suite="${cert.test_suite_hash}" eq=${Number(cert.behavior_eq).toFixed(4)} ts="${cert.timestamp}"}`);
+    }
+    return lines.join('\n') + '\n';
+  }
+
+  importLedgerRulel(content) {
+    const lines = content.split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith('.cert{')) continue;
+      const m = trimmed.match(/\.cert\{([^}]+)\}/);
+      if (!m) continue;
+      const body = m[1];
+      const entry = {};
+      const pairs = body.matchAll(/(\w+)=(?:"([^"]*)"|([\w.-]+))/g);
+      for (const p of pairs) {
+        const k = p[1];
+        const v = p[2] !== undefined ? p[2] : p[3];
+        entry[k] = v;
+      }
+      if (entry.hash) {
+        this.proofCertificates.set(entry.hash, {
+          semantic_hash: entry.hash,
+          canonicalization_version: entry.v || CANONICALIZATION_VERSION,
+          source_language: entry.lang,
+          target: entry.target || 'lin',
+          oracle: entry.oracle,
+          test_suite_hash: entry.suite,
+          behavior_eq: parseFloat(entry.eq || '1.0'),
+          timestamp: entry.ts || new Date().toISOString()
+        });
+      }
+    }
+  }
+
   exportLedgerJson() {
     return {
       version: CANONICALIZATION_VERSION,
@@ -80,24 +121,24 @@ export class SemanticMerkleDagStore {
 
   saveLedgerToFile(filepath) {
     if (fs.existsSync(filepath)) {
-      try {
-        const existing = JSON.parse(fs.readFileSync(filepath, 'utf8'));
-        if (existing && existing.certificates) {
-          for (const [k, v] of Object.entries(existing.certificates)) {
-            if (!this.proofCertificates.has(k)) {
-              this.proofCertificates.set(k, v);
-            }
-          }
-        }
-      } catch {}
+      this.loadLedgerFromFile(filepath);
     }
-    fs.writeFileSync(filepath, JSON.stringify(this.exportLedgerJson(), null, 2), 'utf8');
+    if (filepath.endsWith('.rulel') || !filepath.endsWith('.json')) {
+      fs.writeFileSync(filepath, this.exportLedgerRulel(), 'utf8');
+    } else {
+      fs.writeFileSync(filepath, JSON.stringify(this.exportLedgerJson(), null, 2), 'utf8');
+    }
   }
 
   loadLedgerFromFile(filepath) {
     if (!fs.existsSync(filepath)) return false;
     try {
-      const data = JSON.parse(fs.readFileSync(filepath, 'utf8'));
+      const content = fs.readFileSync(filepath, 'utf8');
+      if (filepath.endsWith('.rulel') || content.startsWith('@LEDGER:')) {
+        this.importLedgerRulel(content);
+        return true;
+      }
+      const data = JSON.parse(content);
       if (data.certificates) {
         for (const [hash, cert] of Object.entries(data.certificates)) {
           this.proofCertificates.set(hash, cert);
