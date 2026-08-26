@@ -34,7 +34,7 @@
       k++
     }
     body = source.slice(openBrace + 1, k - 1);
-    fns.push({ name: fnName, rawParams: rawParams, body: body })
+    fns.push({ name: fnName, rawParams: rawParams, body: body, index: m.index })
   }
   ^fns
 }
@@ -104,17 +104,64 @@
   ^outLines.join("\n")
 }
 
+!stripCommentsKeepStrings(s){
+  res = "";
+  inStr = false;
+  inChr = false;
+  i = 0;
+  n = s.length;
+  while(i < n){
+    ch = s.charAt(i);
+    nx = s.charAt(i + 1);
+    ?(inStr){
+      res = res + ch;
+      ?(ch === "\\"){ res = res + nx; i = i + 2; continue };
+      ?(ch === "\""){ inStr = false };
+      i = i + 1;
+      continue
+    };
+    ?(inChr){
+      res = res + ch;
+      ?(ch === "\\"){ res = res + nx; i = i + 2; continue };
+      ?(ch === "'"){ inChr = false };
+      i = i + 1;
+      continue
+    };
+    ?((ch === "/" ) && (nx === "/")){
+      while(i < n && s.charAt(i) !== "\n"){ i = i + 1 };
+      continue
+    };
+    ?((ch === "/") && (nx === "*")){
+      i = i + 2;
+      while(i < n && !((s.charAt(i) === "*") && (s.charAt(i+1) === "/"))){ i = i + 1 };
+      i = i + 2;
+      continue
+    };
+    ?(ch === "\""){ inStr = true; res = res + ch; i = i + 1; continue };
+    ?(ch === "'"){ inChr = true; res = res + ch; i = i + 1; continue };
+    res = res + ch;
+    i = i + 1
+  };
+  ^res
+}
+
 !cppStripPreprocessor(cSource){
   joined = cSource.replace(/\\\r?\n/g, " ");
   joined = joined.replace(/\[\[(?:[^\[\]]|\[[^\]]*\])*\]\]/g, " ");
   joined = joined.replace(/([0-9a-fA-F])'([0-9a-fA-F])/g, "$1$2");
+  strs = [];
+  joined = joined.replace(/"(?:[^"\\]|\\.)*"/g, function(m){ strs.push(m); ^"\u0000S" + (strs.length - 1) + "\u0000" });
   lines = joined.split("\n");
   out = [];
-  strs = [];
+  nsDepth = 0;
   #(k = 0; k < lines.length; k++){
     line = lines[k];
-    line = line.replace(/"(?:[^"\\]|\\.)*"/g, function(m){ strs.push(m); ^"\u0000S" + (strs.length - 1) + "\u0000" });
     t = line.trim();
+    nsOpen = t.match(/^namespace\s+[A-Za-z0-9_:]*\s*\{$/);
+    ?(nsOpen){ nsDepth = nsDepth + 1; continue };
+    ?(/^}\s*\/\/\s*namespace/.test(t)){
+      ?(nsDepth > 0){ nsDepth = nsDepth - 1; continue }
+    };
     ?(!t.startsWith("#")){ out.push(line); continue };
     ?(t.startsWith("#if") || t.startsWith("#ifdef") || t.startsWith("#ifndef")){
       out.push("?(CPP_TRUE){");
@@ -134,15 +181,12 @@
   };
   res = out.join("\n");
   res = res.replace(/\u0000S(\d+)\u0000/g, function(m, i){ ^strs[+i] });
+  res = res.replace(/^[ \t]*\}[ \t]*\/\/\s*namespace.*$/gm, "");
   ^res
 }
 
 !transpileCToLin(cSource){
-  clean = cppStripPreprocessor(cSource);
-  cstrs = [];
-  clean = clean.replace(/"(?:[^"\\]|\\.)*"/g, function(m){ cstrs.push(m); ^"\u0000C" + (cstrs.length - 1) + "\u0000" });
-  clean = clean.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
-  clean = clean.replace(/\u0000C(\d+)\u0000/g, function(m, i){ ^cstrs[+i] });
+  clean = stripCommentsKeepStrings(cppStripPreprocessor(cSource));
   rawFns = extractBracedFunctions(clean, /(?:[A-Za-z0-9_*]+\s+)+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);
   fns = [];
   #(i = 0; i < rawFns.length; i++){
@@ -151,6 +195,11 @@
     ?(rf.name.indexOf(":") >= 0){ continue }
     ?(/^[A-Z][A-Z0-9_]*$/.test(rf.name)){ continue }
     ?(rf.rawParams.indexOf("(") >= 0){ continue }
+    lineStart = clean.lastIndexOf("\n", rf.index);
+    linePrefix = clean.slice(lineStart + 1, rf.index);
+    pt = linePrefix.trim();
+    ?(pt !== "" && !/^(?:const\s+|static\s+|inline\s+|virtual\s+|explicit\s+|unsigned\s+|signed\s+|long\s+|short\s+|[A-Za-z_][A-Za-z0-9_:<>*&\s]*::\s*)*[A-Za-z_][A-Za-z0-9_:<>*&\s]*$/.test(pt)){ continue }
+    ?(linePrefix !== "" && /[^\w\s:<>&*~,]/.test(linePrefix)){ continue }
     params = rf.rawParams.split(",").map(function(p){
       parts = p.trim().split(/\s+/);
       ^parts[parts.length - 1].replace(/^\*/, "")
@@ -165,9 +214,14 @@
     body = body.replace(/\bif\s*\(([^)]+)\)\s*\{/g, "?($1){");
     body = body.replace(/\bwhile\s*\(([^)]+)\)\s*\{/g, ";while($1){");
     body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");
-    fns.push({ name: rf.name, params: params, body: body })
+    // arquivos com switch/case: marcado como não suportado na fase atual
+    ?(/switch\s*\(/.test(body)){ continue };
   }
   exportNames = fns.map(function(f){ ^f.name });
+  ?(exportNames.length === 0){
+    exportNames = ["empty_module"];
+    fns.push({ name: "empty_module", params: "", body: "^0" })
+  };
   outLines = ["@LIN:L1c:0.2"];
   #(j = 0; j < fns.length; j++){
     fn = fns[j];

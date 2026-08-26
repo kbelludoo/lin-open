@@ -1,0 +1,737 @@
+@LIN:L1c:0.2
+@LIN_SELFHOST{version=5.0 purpose=full_compiler_self_hosted}
+
+!tokenize(src){
+  toks = [];
+  i = 0;
+  len = src.length;
+  while (i < len) {
+    ch = src[i];
+    if (ch === "\n") {
+      toks = toks.concat([{t:"nl",v:"\n"}]);
+      i = i + 1;
+    } else if (ch === " " || ch === "\t" || ch === "\r") {
+      i = i + 1;
+    } else if (ch === "/" && i + 1 < len && src[i + 1] === "/") {
+      j = i;
+      while (j < len && src[j] !== "\n") { j = j + 1; }
+      toks = toks.concat([{t:"cmt",v:src.slice(i,j)}]);
+      i = j;
+    } else if (ch === "/" && i + 1 < len && src[i + 1] === "*") {
+      j = i + 2;
+      while (j < len - 1 && !(src[j] === "*" && src[j + 1] === "/")) { j = j + 1; }
+      j = j + 2;
+      toks = toks.concat([{t:"cmt",v:src.slice(i,j)}]);
+      i = j;
+    } else if (ch === '"' || ch === "'") {
+      start = i;
+      q = ch;
+      i = i + 1;
+      while (i < len && src[i] !== q) {
+        if (src[i] === "\\") { i = i + 1; }
+        i = i + 1;
+      }
+      i = i + 1;
+      toks = toks.concat([{t:"str",v:src.slice(start,i)}]);
+    } else if (ch === "`") {
+      start = i;
+      i = i + 1;
+      d = 1;
+      while (i < len && d > 0) {
+        if (src[i] === "\\") { i = i + 1; }
+        else if (src[i] === "$" && i + 1 < len && src[i + 1] === "{") { d = d + 1; i = i + 1; }
+        else if (src[i] === "}") { d = d - 1; }
+        i = i + 1;
+      }
+      toks = toks.concat([{t:"tpl",v:src.slice(start,i)}]);
+    } else if ((ch >= "0" && ch <= "9") || (ch === "." && i + 1 < len && src[i + 1] >= "0" && src[i + 1] <= "9")) {
+      start = i;
+      if (ch === "0" && i + 1 < len && (src[i + 1] === "x" || src[i + 1] === "X")) {
+        i = i + 2;
+        while (i < len && ((src[i] >= "0" && src[i] <= "9") || (src[i] >= "a" && src[i] <= "f") || (src[i] >= "A" && src[i] <= "F") || src[i] === "_")) { i = i + 1; }
+      } else {
+        while (i < len && ((src[i] >= "0" && src[i] <= "9") || src[i] === "_")) { i = i + 1; }
+        if (i < len && src[i] === ".") {
+          i = i + 1;
+          while (i < len && ((src[i] >= "0" && src[i] <= "9") || src[i] === "_")) { i = i + 1; }
+        }
+      }
+      toks = toks.concat([{t:"num",v:src.slice(start,i)}]);
+    } else if ((ch >= "a" && ch <= "z") || (ch >= "A" && ch <= "Z") || ch === "_" || ch === "$") {
+      start = i;
+      while (i < len && ((src[i] >= "a" && src[i] <= "z") || (src[i] >= "A" && src[i] <= "Z") || (src[i] >= "0" && src[i] <= "9") || src[i] === "_" || src[i] === "$")) { i = i + 1; }
+      toks = toks.concat([{t:"id",v:src.slice(start,i)}]);
+    } else {
+      if (i + 2 < len) {
+        three = src.slice(i, i + 3);
+        if (three === ">>>" || three === "===" || three === "!==") {
+          toks = toks.concat([{t:"p",v:three}]);
+          i = i + 3;
+          continue;
+        }
+      }
+      if (i + 1 < len) {
+        two = src.slice(i, i + 2);
+        if (two === "==" || two === "!=" || two === "<=" || two === ">=" || two === "&&" || two === "||" || two === "++" || two === "--" || two === "+=" || two === "-=" || two === "*=" || two === "/=" || two === "%=" || two === "=>") {
+          toks = toks.concat([{t:"p",v:two}]);
+          i = i + 2;
+          continue;
+        }
+      }
+      toks = toks.concat([{t:"p",v:ch}]);
+      i = i + 1;
+    }
+  }
+  toks = toks.concat([{t:"eof",v:""}]);
+  ^toks;
+}
+
+!findMatch(toks, openIdx, openCh, closeCh){
+  depth = 1;
+  i = openIdx + 1;
+  while (i < toks.length) {
+    if (toks[i].t === "p" && toks[i].v === openCh) { depth = depth + 1; }
+    if (toks[i].t === "p" && toks[i].v === closeCh) {
+      depth = depth - 1;
+      if (depth === 0) { ^i; }
+    }
+    i = i + 1;
+  }
+  ^(-1);
+}
+
+!skipNL(toks, pos){
+  while (pos < toks.length && (toks[pos].t === "nl" || toks[pos].t === "cmt")) { pos = pos + 1; }
+  ^pos;
+}
+
+!tokText(toks, from, to){
+  s = "";
+  i = from;
+  while (i < to) { s = s + toks[i].v; i = i + 1; }
+  ^s;
+}
+
+!parseParams(paramStr){
+  if (!paramStr || paramStr === "") { ^[]; }
+  parts = [];
+  current = "";
+  depth = 0;
+  i = 0;
+  while (i < paramStr.length) {
+    ch = paramStr[i];
+    if (ch === "(" || ch === "<" || ch === "[") { depth = depth + 1; }
+    if (ch === ")" || ch === ">" || ch === "]") { depth = depth - 1; }
+    if (ch === "," && depth === 0) {
+      parts = parts.concat([current.trim()]);
+      current = "";
+    } else {
+      current = current + ch;
+    }
+    i = i + 1;
+  }
+  if (current.trim() !== "") { parts = parts.concat([current.trim()]); }
+  result = [];
+  i = 0;
+  while (i < parts.length) {
+    p = parts[i];
+    name = p;
+    typ = "";
+    def = "";
+    colonIdx = -1;
+    j = 0;
+    while (j < p.length) {
+      if (p[j] === ":") { colonIdx = j; break; }
+      j = j + 1;
+    }
+    eqIdx = -1;
+    j = 0;
+    d2 = 0;
+    while (j < p.length) {
+      if (p[j] === "(" || p[j] === "<" || p[j] === "[") { d2 = d2 + 1; }
+      if (p[j] === ")" || p[j] === ">" || p[j] === "]") { d2 = d2 - 1; }
+      if (p[j] === "=" && d2 === 0) { eqIdx = j; break; }
+      j = j + 1;
+    }
+    if (colonIdx >= 0) {
+      name = p.slice(0, colonIdx).trim();
+      if (eqIdx > colonIdx) {
+        typ = p.slice(colonIdx + 1, eqIdx).trim();
+        def = p.slice(eqIdx + 1).trim();
+      } else {
+        typ = p.slice(colonIdx + 1).trim();
+      }
+    } else if (eqIdx >= 0) {
+      name = p.slice(0, eqIdx).trim();
+      def = p.slice(eqIdx + 1).trim();
+    }
+    result = result.concat([{name: name, type: typ, def: def}]);
+    i = i + 1;
+  }
+  ^result;
+}
+
+!parseFn(toks, pos){
+  pos = pos + 1;
+  name = toks[pos].v;
+  pos = pos + 1;
+  if (pos < toks.length && toks[pos].t === "p" && toks[pos].v === "<") {
+    depth = 1;
+    pos = pos + 1;
+    while (depth > 0 && pos < toks.length) {
+      if (toks[pos].v === "<") { depth = depth + 1; }
+      if (toks[pos].v === ">") { depth = depth - 1; }
+      pos = pos + 1;
+    }
+  }
+  if (pos >= toks.length || toks[pos].v !== "(") {
+    ^{fn: null, pos: pos};
+  }
+  closeParen = findMatch(toks, pos, "(", ")");
+  if (closeParen < 0) {
+    ^{fn: null, pos: pos};
+  }
+  paramStr = tokText(toks, pos + 1, closeParen);
+  pos = closeParen + 1;
+  returnType = "";
+  while (pos < toks.length && toks[pos].v !== "{" && toks[pos].v !== "~") {
+    pos = pos + 1;
+  }
+  prev = pos - 1;
+  if (prev >= 0 && toks[prev].v === ":") {
+    prev = prev - 1;
+  }
+  if (prev >= 0 && toks[prev].v === "->") {
+    rtStart = prev + 1;
+    returnType = tokText(toks, rtStart, pos).trim();
+  }
+  if (pos >= toks.length || toks[pos].v !== "{") {
+    ^{fn: null, pos: pos};
+  }
+  openBrace = pos;
+  closeBrace = findMatch(toks, openBrace, "{", "}");
+  if (closeBrace < 0) {
+    ^{fn: null, pos: pos};
+  }
+  bodyStmts = parseStmts(toks, openBrace + 1, closeBrace);
+  pos = closeBrace + 1;
+  params = parseParams(paramStr);
+  ^{fn: {name: name, params: params, returnType: returnType, body: bodyStmts}, pos: pos};
+}
+
+!parseStmts(toks, start, end){
+  stmts = [];
+  pos = start;
+  while (pos < end) {
+    while (pos < end && (toks[pos].t === "nl" || toks[pos].t === "cmt" || (toks[pos].t === "p" && toks[pos].v === ";"))) {
+      pos = pos + 1;
+    }
+    if (pos >= end) { break; }
+    t = toks[pos];
+    if (t.t === "p" && t.v === "}") { break; }
+    if (t.t === "p" && t.v === "!" && pos + 1 < end && toks[pos + 1].t === "id") {
+      r = parseFn(toks, pos);
+      if (r.fn) { stmts = stmts.concat([{type: "fn", fn: r.fn}]); }
+      pos = r.pos;
+    } else if (t.t === "id" && t.v === "fn" && pos + 1 < end && toks[pos + 1].t === "id") {
+      r = parseFn(toks, pos);
+      if (r.fn) { stmts = stmts.concat([{type: "fn", fn: r.fn}]); }
+      pos = r.pos;
+    } else if (t.t === "p" && t.v === "^") {
+      pos = pos + 1;
+      es = pos;
+      while (pos < end && toks[pos].t !== "nl" && toks[pos].t !== "eof" && !(toks[pos].t === "p" && toks[pos].v === ";")) {
+        pos = pos + 1;
+      }
+      stmts = stmts.concat([{type: "return", expr: tokText(toks, es, pos).trim()}]);
+    } else if (t.t === "id" && t.v === "if") {
+      r = parseIf(toks, pos, end);
+      stmts = stmts.concat([r.stmt]);
+      pos = r.pos;
+    } else if (t.t === "p" && t.v === "?") {
+      r = parseSigilIf(toks, pos, end);
+      stmts = stmts.concat([r.stmt]);
+      pos = r.pos;
+    } else if (t.t === "id" && t.v === "while") {
+      pos = pos + 1;
+      cp = findMatch(toks, pos, "(", ")");
+      cond = tokText(toks, pos + 1, cp).trim();
+      pos = cp + 1;
+      ob = pos;
+      cb = findMatch(toks, ob, "{", "}");
+      body = parseStmts(toks, ob + 1, cb);
+      pos = cb + 1;
+      stmts = stmts.concat([{type: "while", cond: cond, body: body}]);
+    } else if (t.t === "p" && t.v === "#") {
+      pos = pos + 1;
+      cp = findMatch(toks, pos, "(", ")");
+      head = tokText(toks, pos + 1, cp).trim();
+      pos = cp + 1;
+      ob = pos;
+      cb = findMatch(toks, ob, "{", "}");
+      body = parseStmts(toks, ob + 1, cb);
+      pos = cb + 1;
+      stmts = stmts.concat([{type: "for", head: head, body: body}]);
+    } else if (t.t === "id" && t.v === "throw") {
+      pos = pos + 1;
+      es = pos;
+      while (pos < end && toks[pos].t !== "nl" && toks[pos].t !== "eof") {
+        pos = pos + 1;
+      }
+      stmts = stmts.concat([{type: "throw", expr: tokText(toks, es, pos).trim()}]);
+    } else if (t.t === "id" && t.v === "break") {
+      pos = pos + 1;
+      stmts = stmts.concat([{type: "break"}]);
+    } else if (t.t === "id" && t.v === "continue") {
+      pos = pos + 1;
+      stmts = stmts.concat([{type: "continue"}]);
+    } else {
+      hasAssign = false;
+      assignOp = "";
+      lhsEnd = -1;
+      k = pos;
+      d2 = 0;
+      while (k < end && toks[k].t !== "nl" && toks[k].t !== "eof") {
+        if (toks[k].t === "p" && (toks[k].v === "(" || toks[k].v === "[" || toks[k].v === "{")) { d2 = d2 + 1; }
+        if (toks[k].t === "p" && (toks[k].v === ")" || toks[k].v === "]" || toks[k].v === "}")) { d2 = d2 - 1; }
+        if (d2 === 0 && toks[k].t === "p" && k > pos && toks[k - 1].t === "id") {
+          op = toks[k].v;
+          if (op === "=" || op === "+=" || op === "-=" || op === "*=" || op === "/=" || op === "%=" || op === "&=" || op === "|=" || op === "^=") {
+            hasAssign = true;
+            assignOp = op;
+            lhsEnd = k;
+          }
+        }
+        k = k + 1;
+      }
+      if (hasAssign) {
+        lhs = tokText(toks, pos, lhsEnd);
+        pos = lhsEnd + 1;
+        es = pos;
+        while (pos < end && toks[pos].t !== "nl" && toks[pos].t !== "eof") {
+          pos = pos + 1;
+        }
+        rhs = tokText(toks, es, pos).trim();
+        stmts = stmts.concat([{type: "assign", lhs: lhs.trim(), op: assignOp, rhs: rhs}]);
+      } else {
+        es = pos;
+        while (pos < end && toks[pos].t !== "nl" && toks[pos].t !== "eof" && !(toks[pos].t === "p" && toks[pos].v === "}")) {
+          pos = pos + 1;
+        }
+        et = tokText(toks, es, pos).trim();
+        if (et !== "") {
+          stmts = stmts.concat([{type: "expr", expr: et}]);
+        }
+      }
+    }
+  }
+  ^stmts;
+}
+
+!parseIf(toks, pos, end){
+  pos = pos + 1;
+  cp = findMatch(toks, pos, "(", ")");
+  cond = tokText(toks, pos + 1, cp).trim();
+  pos = cp + 1;
+  ob = pos;
+  cb = findMatch(toks, ob, "{", "}");
+  thenBody = parseStmts(toks, ob + 1, cb);
+  pos = cb + 1;
+  elseIfs = [];
+  elseBody = null;
+  guard = 0;
+  while (guard < 50 && pos < end) {
+    pos = skipNL(toks, pos);
+    if (pos >= end) { break; }
+    if (toks[pos].t === "id" && toks[pos].v === "else") {
+      pos = pos + 1;
+      pos = skipNL(toks, pos);
+      if (pos < end && toks[pos].t === "id" && toks[pos].v === "if") {
+        pos = pos + 1;
+        cp2 = findMatch(toks, pos, "(", ")");
+        cond2 = tokText(toks, pos + 1, cp2).trim();
+        pos = cp2 + 1;
+        ob2 = pos;
+        cb2 = findMatch(toks, ob2, "{", "}");
+        body2 = parseStmts(toks, ob2 + 1, cb2);
+        pos = cb2 + 1;
+        elseIfs = elseIfs.concat([{cond: cond2, body: body2}]);
+        guard = guard + 1;
+        continue;
+      }
+      ob3 = pos;
+      cb3 = findMatch(toks, ob3, "{", "}");
+      elseBody = parseStmts(toks, ob3 + 1, cb3);
+      pos = cb3 + 1;
+      break;
+    }
+    break;
+    guard = guard + 1;
+  }
+  ^{stmt: {type: "if", cond: cond, then: thenBody, elseIfs: elseIfs, elseBody: elseBody}, pos: pos};
+}
+
+!parseSigilIf(toks, pos, end){
+  pos = pos + 1;
+  cp = findMatch(toks, pos, "(", ")");
+  cond = tokText(toks, pos + 1, cp).trim();
+  pos = cp + 1;
+  ob = pos;
+  cb = findMatch(toks, ob, "{", "}");
+  thenBody = parseStmts(toks, ob + 1, cb);
+  pos = cb + 1;
+  elseBody = null;
+  pos = skipNL(toks, pos);
+  if (pos < end && toks[pos].t === "p" && toks[pos].v === "{") {
+    ob2 = pos;
+    cb2 = findMatch(toks, ob2, "{", "}");
+    elseBody = parseStmts(toks, ob2 + 1, cb2);
+    pos = cb2 + 1;
+  }
+  ^{stmt: {type: "if", cond: cond, then: thenBody, elseIfs: [], elseBody: elseBody}, pos: pos};
+}
+
+!parseProgram(src){
+  toks = tokenize(src);
+  exps = [];
+  fns = [];
+  header = "";
+  pos = 0;
+  len = toks.length;
+  while (pos < len) {
+    pos = skipNL(toks, pos);
+    if (pos >= len) { break; }
+    if (toks[pos].t === "eof") { break; }
+    if (toks[pos].t === "p" && toks[pos].v === "@") {
+      ls = pos;
+      pos = pos + 1;
+      while (pos < len && toks[pos].t !== "nl" && toks[pos].t !== "eof") { pos = pos + 1; }
+      header = tokText(toks, ls, pos);
+    } else if (toks[pos].t === "p" && toks[pos].v === "=" && pos + 1 < len && toks[pos + 1].t === "id" && toks[pos + 1].v === "ex") {
+      pos = pos + 2;
+      ob = pos;
+      cb = findMatch(toks, ob, "{", "}");
+      exBody = tokText(toks, ob + 1, cb);
+      parts = exBody.split(",");
+      i2 = 0;
+      while (i2 < parts.length) {
+        tr = parts[i2].trim();
+        if (tr !== "") { exps = exps.concat([tr]); }
+        i2 = i2 + 1;
+      }
+      pos = cb + 1;
+    } else if (toks[pos].t === "p" && toks[pos].v === "!" && pos + 1 < len && toks[pos + 1].t === "id") {
+      r = parseFn(toks, pos);
+      if (r.fn) { fns = fns.concat([r.fn]); }
+      pos = r.pos;
+    } else if (toks[pos].t === "id" && toks[pos].v === "fn" && pos + 1 < len && toks[pos + 1].t === "id") {
+      r = parseFn(toks, pos);
+      if (r.fn) { fns = fns.concat([r.fn]); }
+      pos = r.pos;
+    } else {
+      pos = pos + 1;
+    }
+  }
+  ^{header: header, exports: exps, fns: fns};
+}
+
+!emitLinFn(fn){
+  out = "!" + fn.name + "(";
+  i = 0;
+  while (i < fn.params.length) {
+    p = fn.params[i];
+    if (i > 0) { out = out + ", "; }
+    out = out + p.name;
+    if (p.type !== "") { out = out + ":" + p.type; }
+    if (p.def !== "") { out = out + "=" + p.def; }
+    i = i + 1;
+  }
+  out = out + ")";
+  if (fn.returnType !== "") { out = out + "->" + fn.returnType; }
+  out = out + "{";
+  i = 0;
+  while (i < fn.body.length) {
+    out = out + emitLinStmt(fn.body[i]);
+    i = i + 1;
+  }
+  out = out + "}";
+  ^out;
+}
+
+!emitLinStmt(st){
+  if (st.type === "return") { ^"^" + st.expr + ";"; }
+  if (st.type === "throw") { ^"throw " + st.expr + ";"; }
+  if (st.type === "break") { ^"break;"; }
+  if (st.type === "continue") { ^"continue;"; }
+  if (st.type === "assign") { ^st.lhs + " " + st.op + " " + st.rhs + ";"; }
+  if (st.type === "expr") { ^st.expr + ";"; }
+  if (st.type === "while") { ^"while(" + st.cond + "){" + emitLinStmts(st.body) + "}"; }
+  if (st.type === "for") { ^"#(" + st.head + "){" + emitLinStmts(st.body) + "}"; }
+  if (st.type === "if") {
+    out = "if(" + st.cond + "){" + emitLinStmts(st.then) + "}";
+    i = 0;
+    while (i < st.elseIfs.length) {
+      out = out + "else if(" + st.elseIfs[i].cond + "){" + emitLinStmts(st.elseIfs[i].body) + "}";
+      i = i + 1;
+    }
+    if (st.elseBody) { out = out + "else{" + emitLinStmts(st.elseBody) + "}"; }
+    ^out;
+  }
+  if (st.type === "fn") { ^emitLinFn(st.fn); }
+  ^"";
+}
+
+!emitLinStmts(stmts){
+  out = "";
+  i = 0;
+  while (i < stmts.length) {
+    out = out + emitLinStmt(stmts[i]);
+    i = i + 1;
+  }
+  ^out;
+}
+
+!emitLin(prog){
+  out = "";
+  if (prog.header !== "") { out = prog.header + "\n"; }
+  i = 0;
+  while (i < prog.fns.length) {
+    out = out + emitLinFn(prog.fns[i]) + "\n";
+    i = i + 1;
+  }
+  if (prog.exports.length > 0) {
+    out = out + "=ex{" + prog.exports.join(",") + "}";
+  }
+  ^out;
+}
+
+!collectLocals(stmts, params){
+  names = [];
+  i = 0;
+  while (i < stmts.length) {
+    st = stmts[i];
+    if (st.type === "assign") {
+      id = st.lhs.split(".")[0].split("[")[0].trim();
+      isParam = false;
+      j = 0;
+      while (j < params.length) {
+        if (params[j] === id) { isParam = true; }
+        j = j + 1;
+      }
+      if (!isParam && id !== "" && id !== "i" && id !== "pos") {
+        found = false;
+        k = 0;
+        while (k < names.length) {
+          if (names[k] === id) { found = true; }
+          k = k + 1;
+        }
+        if (!found) { names = names.concat([id]); }
+      }
+    }
+    if (st.type === "while" || st.type === "for") {
+      sub = collectLocals(st.body, params);
+      k = 0;
+      while (k < sub.length) {
+        found = false;
+        m = 0;
+        while (m < names.length) { if (names[m] === sub[k]) { found = true; } m = m + 1; }
+        if (!found) { names = names.concat([sub[k]]); }
+        k = k + 1;
+      }
+    }
+    if (st.type === "if") {
+      sub = collectLocals(st.then, params);
+      k = 0;
+      while (k < sub.length) {
+        found = false;
+        m = 0;
+        while (m < names.length) { if (names[m] === sub[k]) { found = true; } m = m + 1; }
+        if (!found) { names = names.concat([sub[k]]); }
+        k = k + 1;
+      }
+      if (st.elseBody) {
+        sub = collectLocals(st.elseBody, params);
+        k = 0;
+        while (k < sub.length) {
+          found = false;
+          m = 0;
+          while (m < names.length) { if (names[m] === sub[k]) { found = true; } m = m + 1; }
+          if (!found) { names = names.concat([sub[k]]); }
+          k = k + 1;
+        }
+      }
+    }
+    i = i + 1;
+  }
+  ^names;
+}
+
+!emitJSFn(fn){
+  params = "";
+  paramNames = [];
+  i = 0;
+  while (i < fn.params.length) {
+    if (i > 0) { params = params + ","; }
+    params = params + fn.params[i].name;
+    paramNames = paramNames.concat([fn.params[i].name]);
+    i = i + 1;
+  }
+  locals = collectLocals(fn.body, paramNames);
+  varDecl = "";
+  if (locals.length > 0) {
+    varDecl = "var " + locals.join(",") + ";";
+  }
+  body = emitJSStmts(fn.body);
+  ^"function " + fn.name + "(" + params + "){" + varDecl + body + "}";
+}
+
+!emitJSStmts(stmts){
+  out = "";
+  i = 0;
+  while (i < stmts.length) {
+    out = out + emitJSStmt(stmts[i]);
+    i = i + 1;
+  }
+  ^out;
+}
+
+!emitJSStmt(st){
+  if (st.type === "return") { ^"return " + st.expr + ";"; }
+  if (st.type === "throw") { ^"throw " + st.expr + ";"; }
+  if (st.type === "break") { ^"break;"; }
+  if (st.type === "continue") { ^"continue;"; }
+  if (st.type === "assign") { ^st.lhs + " " + st.op + " " + st.rhs + ";"; }
+  if (st.type === "expr") { ^st.expr + ";"; }
+  if (st.type === "while") { ^"while(" + st.cond + "){" + emitJSStmts(st.body) + "}"; }
+  if (st.type === "for") {
+    parts = st.head.split(";");
+    init = parts.length > 0 ? parts[0].trim() : "";
+    cond = parts.length > 1 ? parts[1].trim() : "";
+    step = parts.length > 2 ? parts[2].trim() : "";
+    ^"for(" + init + ";" + cond + ";" + step + "){" + emitJSStmts(st.body) + "}";
+  }
+  if (st.type === "if") {
+    out = "if(" + st.cond + "){" + emitJSStmts(st.then) + "}";
+    i = 0;
+    while (i < st.elseIfs.length) {
+      out = out + "else if(" + st.elseIfs[i].cond + "){" + emitJSStmts(st.elseIfs[i].body) + "}";
+      i = i + 1;
+    }
+    if (st.elseBody) { out = out + "else{" + emitJSStmts(st.elseBody) + "}"; }
+    ^out;
+  }
+  if (st.type === "fn") { ^emitJSFn(st.fn); }
+  ^"";
+}
+
+!emitJS(prog){
+  out = "/* compiler.lin self-hosted output */\n";
+  i = 0;
+  while (i < prog.fns.length) {
+    out = out + emitJSFn(prog.fns[i]) + "\n";
+    i = i + 1;
+  }
+  if (prog.exports.length > 0) {
+    out = out + "module.exports={" + prog.exports.join(",") + "};";
+  }
+  ^out;
+}
+
+!snakeCase(name){
+  out = "";
+  i = 0;
+  while (i < name.length) {
+    ch = name[i];
+    if (ch >= "A" && ch <= "Z") {
+      if (i > 0) { out = out + "_"; }
+      out = out + ch.toLowerCase();
+    } else {
+      out = out + ch;
+    }
+    i = i + 1;
+  }
+  ^out;
+}
+
+!emitZigFn(fn){
+  params = "";
+  i = 0;
+  while (i < fn.params.length) {
+    if (i > 0) { params = params + ", "; }
+    params = params + fn.params[i].name + ": i64";
+    i = i + 1;
+  }
+  out = "pub fn " + snakeCase(fn.name) + "(" + params + ") i64 {\n";
+  i = 0;
+  while (i < fn.body.length) {
+    out = out + emitZigStmt(fn.body[i]);
+    i = i + 1;
+  }
+  out = out + "}\n";
+  ^out;
+}
+
+!emitZigStmts(stmts){
+  out = "";
+  i = 0;
+  while (i < stmts.length) {
+    out = out + emitZigStmt(stmts[i]);
+    i = i + 1;
+  }
+  ^out;
+}
+
+!emitZigStmt(st){
+  if (st.type === "return") { ^"    return " + st.expr + ";\n"; }
+  if (st.type === "throw") { ^"    @panic(" + st.expr + ");\n"; }
+  if (st.type === "break") { ^"    break;\n"; }
+  if (st.type === "continue") { ^"    continue;\n"; }
+  if (st.type === "assign") { ^"    " + st.lhs + " " + st.op + " " + st.rhs + ";\n"; }
+  if (st.type === "expr") { ^"    _ = " + st.expr + ";\n"; }
+  if (st.type === "while") {
+    ^"    while (" + st.cond + ") {\n" + emitZigStmts(st.body) + "    }\n";
+  }
+  if (st.type === "for") {
+    parts = st.head.split(";");
+    init = parts.length > 0 ? parts[0].trim() : "";
+    cond = parts.length > 1 ? parts[1].trim() : "";
+    step = parts.length > 2 ? parts[2].trim() : "";
+    out = "";
+    if (init !== "") { out = out + "    var " + init + ";\n"; }
+    out = out + "    while (" + cond + ") {\n";
+    out = out + emitZigStmts(st.body);
+    if (step !== "") { out = out + "        " + step + ";\n"; }
+    out = out + "    }\n";
+    ^out;
+  }
+  if (st.type === "if") {
+    out = "    if (" + st.cond + ") {\n" + emitZigStmts(st.then) + "    }";
+    i = 0;
+    while (i < st.elseIfs.length) {
+      out = out + " else if (" + st.elseIfs[i].cond + ") {\n" + emitZigStmts(st.elseIfs[i].body) + "    }";
+      i = i + 1;
+    }
+    if (st.elseBody) { out = out + " else {\n" + emitZigStmts(st.elseBody) + "    }"; }
+    out = out + "\n";
+    ^out;
+  }
+  if (st.type === "fn") { ^emitZigFn(st.fn); }
+  ^"";
+}
+
+!emitZig(prog){
+  out = "const std = @import(\"std\");\n\n";
+  i = 0;
+  while (i < prog.fns.length) {
+    out = out + emitZigFn(prog.fns[i]) + "\n";
+    i = i + 1;
+  }
+  ^out;
+}
+
+!compile(src){
+  prog = parseProgram(src);
+  ^{prog: prog, js: emitJS(prog), lin: emitLin(prog), zig: emitZig(prog)};
+}
+
+=ex{tokenize, parseProgram, emitLin, emitJS, emitZig, compile}
