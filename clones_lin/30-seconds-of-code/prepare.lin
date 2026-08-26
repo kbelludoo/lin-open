@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!prepare(){;?(!this.searchIndexInitialized){};fetch('/search-data.json') .then(~(data){^data.json()}) .then(~(json){; const documents = json.searchIndex.map( ~()){^(_lia_obj())});; this.searchIndex = new DocumentIndex(documents);; this.searchDocuments = search(this.searchIndex);; this.searchIndexInitialized = true;})}
+=ex{prepare}

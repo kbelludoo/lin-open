@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!snippet(template,name){;date=new Date();dateString=(String(date.getFullYear())+"-"+String(pad(date.getMonth()+1))+"-"+String(pad( date.getDate() )));^template .replace(/title:\s*.*\n/,("title: "+String(name)+"\n")) .replace(/dateModified:\s*.*\n/,("dateModified: "+String(dateString)+"\n"))}
+=ex{snippet}

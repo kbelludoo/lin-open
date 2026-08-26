@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!applyStyle(self,string){;?(self[GENERATOR][LEVEL]<=0||!string){^(((__c)=>{?(__c){return('')}return(string)})(self[IS_EMPTY]))};styler=self[STYLER];?(styler===undefined){^string};({openAll,closeAll}=styler);?(string.includes('\u{1B}')){while (styler!==undefined){string=stringReplaceAll(string,styler.close,styler.open);styler=styler.parent}};lfIndex=string.indexOf('\n');?(lfIndex!=-1){string=stringEncaseCRLFWithFirstIndex(string,closeAll,openAll,lfIndex)};^openAll+string+closeAll}
+=ex{applyStyle}

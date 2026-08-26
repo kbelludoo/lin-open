@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!resolveTemplate(key,number,isFuture,withoutSuffix){;suffixIndex=(((__c)=>{?(__c){return(1)}return(2)})(isFuture));index=(((__c)=>{?(__c){return(0)}return(suffixIndex)})(withoutSuffix));keyShouldBeSingular=key.length==2&&number%10==1;correctedKey=(((__c)=>{?(__c){return(key[0])}return(key)})(keyShouldBeSingular));unitText=texts[correctedKey];text=unitText[index];^(((__c)=>{?(__c){return(text)}return(("%d "+String(text)))})(key.length==1))}
+=ex{resolveTemplate}

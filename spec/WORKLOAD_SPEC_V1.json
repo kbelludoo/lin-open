@@ -1,0 +1,78 @@
+{
+  "spec_version": "WORKLOAD_SPEC_V1",
+  "ir_version": "LIN/IR/0.1",
+  "protocol": "E8_E9_CROSS_BACKEND_EQUIVALENCE",
+  "created_at": "2026-08-16T16:30:00Z",
+  "workloads": [
+    {
+      "case_id": "C01",
+      "name": "reduction_hashcons",
+      "description": "Deterministic algebraic folding and modular hash reduction over 10,000 recursive steps",
+      "ir": {
+        "format": "LIN/IR/0.1",
+        "entry": "main",
+        "instructions": [
+          {"op": "const_int", "dest": "r0", "value": 0},
+          {"op": "const_int", "dest": "r1", "value": 1},
+          {"op": "const_int", "dest": "r_steps", "value": 10000},
+          {"op": "const_int", "dest": "r_mod", "value": 1000000007},
+          {"op": "const_int", "dest": "r_factor", "value": 7},
+          {"op": "const_int", "dest": "r_acc", "value": 42},
+          {"op": "loop_reduce", "steps": "r_steps", "state": ["r0", "r1", "r_acc"], "body": [
+            {"op": "add", "dest": "r_next", "src1": "r0", "src2": "r1"},
+            {"op": "mul", "dest": "r_scaled", "src1": "r_next", "src2": "r_factor"},
+            {"op": "add", "dest": "r_acc_next", "src1": "r_acc", "src2": "r_scaled"},
+            {"op": "mod", "dest": "r_acc_mod", "src1": "r_acc_next", "src2": "r_mod"},
+            {"op": "mod", "dest": "r1_mod", "src1": "r_next", "src2": "r_mod"},
+            {"op": "set", "dest": "r0", "src": "r1"},
+            {"op": "set", "dest": "r1", "src": "r1_mod"},
+            {"op": "set", "dest": "r_acc", "src": "r_acc_mod"}
+          ]},
+          {"op": "return", "src": "r_acc"}
+        ]
+      }
+    },
+    {
+      "case_id": "C02",
+      "name": "pattern_match_ast",
+      "description": "Deterministic structural AST construction, pattern-matching classification, and rewrite pass over 2,500 nodes",
+      "ir": {
+        "format": "LIN/IR/0.1",
+        "entry": "main",
+        "instructions": [
+          {"op": "const_int", "dest": "r_nodes", "value": 2500},
+          {"op": "const_int", "dest": "r_acc", "value": 0},
+          {"op": "loop_ast_match", "count": "r_nodes", "state": ["r_acc"], "body": [
+            {"op": "ast_gen_node", "dest": "r_node", "index": "$idx"},
+            {"op": "ast_match_rule", "src": "r_node", "cases": [
+              {"kind": "Literal", "action": "add_val", "weight": 3},
+              {"kind": "Variable", "action": "hash_name", "weight": 5},
+              {"kind": "Application", "action": "recurse_both", "weight": 11},
+              {"kind": "Lambda", "action": "bind_and_eval", "weight": 17},
+              {"kind": "LetBinding", "action": "substitute", "weight": 23}
+            ], "dest": "r_weight"},
+            {"op": "add", "dest": "r_acc_next", "src1": "r_acc", "src2": "r_weight"},
+            {"op": "mod", "dest": "r_acc", "src1": "r_acc_next", "src2_imm": 1000000007}
+          ]},
+          {"op": "return", "src": "r_acc"}
+        ]
+      }
+    },
+    {
+      "case_id": "C03",
+      "name": "dag_dependency_toposort",
+      "description": "Deterministic DAG construction (500 tasks, 1,250 edges), Kahn topological ordering with tie-breaking, and state machine transition folding",
+      "ir": {
+        "format": "LIN/IR/0.1",
+        "entry": "main",
+        "instructions": [
+          {"op": "const_int", "dest": "r_task_count", "value": 500},
+          {"op": "dag_build_deterministic", "num_tasks": "r_task_count", "edge_factor": 5, "dest": "r_dag"},
+          {"op": "dag_toposort_kahn", "src": "r_dag", "tie_breaker": "lexicographical", "dest": "r_topo_order"},
+          {"op": "fold_state_transitions", "sequence": "r_topo_order", "init": 1337, "dest": "r_final_state"},
+          {"op": "return", "src": "r_final_state"}
+        ]
+      }
+    }
+  ]
+}

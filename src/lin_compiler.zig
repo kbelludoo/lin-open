@@ -1,0 +1,156 @@
+// ============================================================================
+// LIN NATIVE ZIG COMPILER ENGINE (Zero-Dependency High Performance Substrate)
+// Spec: spec/LIN_CORE_ARCH.rulel & spec/LIN_SEMANTIC_MERKLE_DAG.rulel
+// ============================================================================
+
+const std = @import("std");
+
+pub const LIN_VERSION = "2.1.0-native-zig";
+
+pub const Effect = enum {
+    Pure,
+    Read,
+    Write,
+    Throw,
+    Native,
+
+    pub fn toString(self: Effect) []const u8 {
+        return switch (self) {
+            .Pure => "Pure",
+            .Read => "Read",
+            .Write => "Write",
+            .Throw => "Throw",
+            .Native => "Native",
+        };
+    }
+};
+
+pub const LinFunction = struct {
+    name: []const u8,
+    params: [][]const u8,
+    body: []const u8,
+    effect: Effect,
+};
+
+pub const LinProgram = struct {
+    allocator: std.mem.Allocator,
+    header: []const u8,
+    functions: std.ArrayList(LinFunction),
+    exports: std.ArrayList([]const u8),
+
+    pub fn init(allocator: std.mem.Allocator) LinProgram {
+        return .{
+            .allocator = allocator,
+            .header = "@LIN:L1c:0.2",
+            .functions = std.ArrayList(LinFunction).init(allocator),
+            .exports = std.ArrayList([]const u8).init(allocator),
+        };
+    }
+
+    pub fn deinit(self: *LinProgram) void {
+        for (self.functions.items) |f| {
+            self.allocator.free(f.params);
+        }
+        self.functions.deinit();
+        self.exports.deinit();
+    }
+};
+
+pub const LinCompiler = struct {
+    allocator: std.mem.Allocator,
+
+    pub fn init(allocator: std.mem.Allocator) LinCompiler {
+        return .{ .allocator = allocator };
+    }
+
+    pub fn parse(self: *LinCompiler, source: []const u8) !LinProgram {
+        var prog = LinProgram.init(self.allocator);
+        var lines = std.mem.splitScalar(u8, source, '\n');
+
+        while (lines.next()) |rawLine| {
+            const line = std.mem.trim(u8, rawLine, " \t\r");
+            if (line.len == 0 or std.mem.startsWith(u8, line, "//")) continue;
+
+            if (std.mem.startsWith(u8, line, "@LIN:")) {
+                prog.header = line;
+            } else if (std.mem.startsWith(u8, line, "!")) {
+                // Function header: !name(p1, p2){ ... }
+                const fnStart = 1;
+                const parenOpen = std.mem.indexOfScalar(u8, line, '(') orelse continue;
+                const parenClose = std.mem.indexOfScalar(u8, line, ')') orelse continue;
+                const fnName = std.mem.trim(u8, line[fnStart..parenOpen], " \t");
+                const paramsStr = line[parenOpen + 1 .. parenClose];
+
+                var paramList = std.ArrayList([]const u8).init(self.allocator);
+                var pIter = std.mem.splitScalar(u8, paramsStr, ',');
+                while (pIter.next()) |p| {
+                    const pTrimmed = std.mem.trim(u8, p, " \t");
+                    if (pTrimmed.len > 0) try paramList.append(pTrimmed);
+                }
+
+                const bodyStart = std.mem.indexOfScalar(u8, line, '{') orelse 0;
+                const body = if (bodyStart > 0) line[bodyStart..] else "{}";
+
+                var eff = Effect.Pure;
+                if (std.mem.indexOf(u8, body, "console") != null or std.mem.indexOf(u8, body, "print") != null) {
+                    eff = .Write;
+                } else if (std.mem.indexOf(u8, body, "throw") != null or std.mem.indexOf(u8, body, "Error") != null) {
+                    eff = .Throw;
+                }
+
+                try prog.functions.append(.{
+                    .name = fnName,
+                    .params = try paramList.toOwnedSlice(),
+                    .body = body,
+                    .effect = eff,
+                });
+            } else if (std.mem.startsWith(u8, line, "=ex{")) {
+                const close = std.mem.indexOfScalar(u8, line, '}') orelse continue;
+                const expStr = line[4..close];
+                var expIter = std.mem.splitScalar(u8, expStr, ',');
+                while (expIter.next()) |e| {
+                    const eTrimmed = std.mem.trim(u8, e, " \t");
+                    if (eTrimmed.len > 0) try prog.exports.append(eTrimmed);
+                }
+            }
+        }
+
+        return prog;
+    }
+
+    pub fn computeSemanticHash(self: *LinCompiler, params: []const u8, body: []const u8) ![16]u8 {
+        _ = self;
+        var hasher = std.crypto.hash.sha2.Sha256.init(.{});
+        hasher.update(params);
+        hasher.update("::");
+        hasher.update(body);
+        var digest: [32]u8 = undefined;
+        hasher.final(&digest);
+
+        var hex: [16]u8 = undefined;
+        _ = try std.fmt.bufPrint(&hex, "{s}", .{std.fmt.fmtSliceHexLower(digest[0..8])});
+        return hex;
+    }
+
+    pub fn compileToZig(self: *LinCompiler, prog: *const LinProgram) ![]const u8 {
+        var out = std.ArrayList(u8).init(self.allocator);
+        const writer = out.writer();
+
+        try writer.print("// Generated by LIN Native Zig Compiler {s}\n", .{LIN_VERSION});
+        try writer.print("const std = @import(\"std\");\n\n", .{});
+
+        for (prog.functions.items) |f| {
+            try writer.print("pub fn {s}(", .{f.name});
+            for (f.params, 0..) |p, idx| {
+                if (idx > 0) try writer.writeAll(", ");
+                try writer.print("{s}: i64", .{p});
+            }
+            try writer.print(") i64 {{\n", .{});
+            try writer.print("    // effect: {s}\n", .{f.effect.toString()});
+            try writer.print("    return 0;\n", .{});
+            try writer.print("}}\n\n", .{});
+        }
+
+        return out.toOwnedSlice();
+    }
+};

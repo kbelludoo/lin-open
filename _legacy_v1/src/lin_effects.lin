@@ -1,0 +1,7 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=lin_effects
+~G{?=if #=for ^=ret :else}
+!inferEffects(body,params){effects=[];s=String(body||'');?(s.match(/\b(fs|path|http|fetch|console|readFile|writeFile)\b/)){effects.push('io')};?(s.match(/\bthis\.\b/)||s.match(/\bglobal\b/)){effects.push('state')};?(s.match(/\bawait\b|\basync\b|\bPromise\b/)){effects.push('async')};?(s.match(/\bthrow\b|\bpanic\b|\braise\b/)){effects.push('fail')};?(s.match(/\bMath\.random\b|\brandom\b/)){effects.push('random')};?(s.match(/\bDate\.now\b|\bnew Date\b/)){effects.push('time')};?(s.match(/\bpostMessage\b|\bspawn\b|\bsend\b/)){effects.push('agent')};?(effects.length==0){effects.push('pure')};^effects}
+!validateEffects(declared,inferred){declSet={};list=declared||[];#(i=0;i<list.length;i++){declSet[list[i]]=1};?(declSet.pure&&list.length==1){violations=[];inf=inferred||[];#(j=0;j<inf.length;j++){?(inf[j]!='pure'){violations.push(inf[j])}};^violations};violations=[];inf=inferred||[];#(k=0;k<inf.length;k++){?(inf[k]!='pure'&&!declSet[inf[k]]){violations.push(inf[k])}};^violations}
+!emitEffectAnnotation(effects,target){effs=(effects||['pure']).join(', ');?(target=='js'||target=='ts'){^('/* @effects: '+effs+' */')};?(target=='py'){^('# @effects: '+effs)};?(target=='haskell'){^('{- @effects: '+effs+' -}')};^('// @effects: '+effs)}
+=ex{inferEffects,validateEffects,emitEffectAnnotation}

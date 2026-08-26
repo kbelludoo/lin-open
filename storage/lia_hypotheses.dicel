@@ -1,0 +1,273 @@
+@DICEL:lia_hypotheses:0.2.0
+^status=ACTIVE
+^note="transferable Hypothesis records from learn loop"
+^fix_target=compiler_not_lia
+
+@ENTRIES {
+  @H001 {
+    from_trauma: [CLOSURE, HOLDING_GAP]
+    claim: "preserve free-var / closure bindings when extracting public API fns to LIA AST+emit"
+    measure: "lodash public-API suite pass count; must rise from 1/14 without soft_match"
+    transfer: "any monolith with cross-fn free refs (lodash-shaped)"
+    forbid: "mutate fixture LIA; weaken behavior_eq"
+    status: OPEN
+  }
+  @H002 {
+    from_trauma: [ARROW_EXTRACT_OVERREAD, ASI_SEMICOLON_FREE]
+    claim: "arrow newline-bound + ASI before controls generalizes beyond dayjs utils"
+    measure: "clone-lia transfer on other semicolon-free arrow-heavy libs"
+    transfer: "underscore modules / dayjs plugins"
+    status: APPLIED_PARTIAL
+    evidence: "INTEL_CLONE_LIA_dayjs absFloor+isUndefined PASS"
+  }
+}
+
+@E{t="2026-08-13T04:08:09.614Z" id=H_CLONE_dayjs_msqzzq8d from=[RUNTIME_HELPER] claim="raise exact-hash pass on clone surface without soft_match" transfer=same_class_repos status=OPEN}
+
+@E{t="2026-08-13T04:15:55.045Z" id=H_CLONE_LIN_underscore_msr09pd1 from=[SEMANTICS_GAP|RUNTIME_HELPER] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T04:16:45.341Z" id=H_CLONE_LIN_underscore_msr0as65 from=[SEMANTICS_GAP|RUNTIME_HELPER] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T04:25:35.313Z" id=H_CLONE_LIN_dayjs_msr0m53l from=[RUNTIME_HELPER] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T04:25:37.242Z" id=H_CLONE_LIN_dayjs_msr0m6l5 from=[RUNTIME_HELPER] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T04:25:38.917Z" id=H_CLONE_LIN_dayjs_msr0m7vp from=[RUNTIME_HELPER] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T22:30:40.535Z" id=H_CLONE_LIN_underscore_mss3dklz from=[SEMANTICS_GAP|RUNTIME_HELPER] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T22:30:42.308Z" id=H_CLONE_LIN_underscore_mss3dlz8 from=[SEMANTICS_GAP|RUNTIME_HELPER] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T22:33:27.874Z" id=H_CLONE_LIN_underscore_mss3h5qa from=[RUNTIME_HELPER] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T22:33:29.657Z" id=H_CLONE_LIN_underscore_mss3h73t from=[RUNTIME_HELPER] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T22:37:07.066Z" id=H_CLONE_LIN_ms_mss3luuy from=[RUNTIME_HELPER] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T22:37:08.305Z" id=H_CLONE_LIN_ms_mss3lvtd from=[RUNTIME_HELPER] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T22:44:35.363Z" id=H_CLONE_LIN_left-pad_mss3vgrn from=[RUNTIME_HELPER] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T22:44:36.598Z" id=H_CLONE_LIN_left-pad_mss3vhpy from=[RUNTIME_HELPER] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T22:45:27.239Z" id=H_CLONE_LIN_left-pad_mss3wksn from=[RUNTIME_HELPER] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T22:45:28.464Z" id=H_CLONE_LIN_left-pad_mss3wlqo from=[RUNTIME_HELPER] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T22:45:46.454Z" id=H_CLONE_LIN_left-pad_mss3wzme from=[RUNTIME_HELPER] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:00:14.715Z" id=H_CLONE_LIN_chalk_mss4flkq from=[SEMANTICS_GAP] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:02:51.815Z" id=H_CLONE_LIN_chalk_mss4iysn from=[SEMANTICS_GAP] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:04:06.976Z" id=H_CLONE_LIN_chalk_mss4kksf from=[SEMANTICS_GAP] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:37.529Z" id=H_CLONE_LIN_ecc_mss6eth5 from=[SEMANTICS_GAP] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:38.016Z" id=H_NEW_LANG_ecc_py_mss6etun from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:38.476Z" id=H_NEW_LANG_ecc_go_mss6eu7f from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:38.745Z" id=H_NEW_LANG_ecc_rust_mss6euew from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:39.065Z" id=H_NEW_LANG_ecc_py_mss6euns from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:39.498Z" id=H_NEW_LANG_ecc_go_mss6euzt from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:39.760Z" id=H_NEW_LANG_ecc_rust_mss6ev73 from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:40.064Z" id=H_NEW_LANG_ecc_py_mss6evfj from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:40.491Z" id=H_NEW_LANG_ecc_go_mss6evre from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:40.749Z" id=H_NEW_LANG_ecc_rust_mss6evyk from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:41.054Z" id=H_NEW_LANG_ecc_py_mss6ew71 from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:41.485Z" id=H_NEW_LANG_ecc_go_mss6ewj0 from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:41.747Z" id=H_NEW_LANG_ecc_rust_mss6ewqa from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:41.777Z" id=H_NEW_LANG_ecc_ts_mss6ewr4 from=[NEW_LANG|ts] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:41.779Z" id=H_NEW_LANG_ecc_py_mss6ewr6 from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:41.781Z" id=H_NEW_LANG_ecc_go_mss6ewr8 from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:41.783Z" id=H_NEW_LANG_ecc_rust_mss6ewra from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:42.064Z" id=H_NEW_LANG_ecc_py_mss6ewz4 from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:42.489Z" id=H_NEW_LANG_ecc_go_mss6exaw from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:42.739Z" id=H_NEW_LANG_ecc_rust_mss6exhu from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:42.767Z" id=H_NEW_LANG_ecc_py_go_rust_ts_mss6exin from=[NEW_LANG|py|go|rust|ts] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:59.705Z" id=H_CLONE_LIN_ecc_mss6fal5 from=[SEMANTICS_GAP] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:55:59.994Z" id=H_NEW_LANG_ecc_py_mss6fat5 from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:56:00.449Z" id=H_NEW_LANG_ecc_go_mss6fb5s from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:56:00.723Z" id=H_NEW_LANG_ecc_rust_mss6fbde from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:56:01.024Z" id=H_NEW_LANG_ecc_py_mss6fblr from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:56:01.464Z" id=H_NEW_LANG_ecc_go_mss6fbxz from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:56:01.740Z" id=H_NEW_LANG_ecc_rust_mss6fc5n from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:56:02.168Z" id=H_NEW_LANG_ecc_py_mss6fchj from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:56:02.676Z" id=H_NEW_LANG_ecc_go_mss6fcvn from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:56:02.947Z" id=H_NEW_LANG_ecc_rust_mss6fd36 from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:56:03.261Z" id=H_NEW_LANG_ecc_py_mss6fdbw from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:56:03.694Z" id=H_NEW_LANG_ecc_go_mss6fdny from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:56:03.963Z" id=H_NEW_LANG_ecc_rust_mss6fdve from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:56:03.991Z" id=H_NEW_LANG_ecc_py_go_rust_mss6fdw6 from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:59:23.117Z" id=H_CLONE_LIN_ecc_mss6jnjh from=[SEMANTICS_GAP] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:59:23.401Z" id=H_NEW_LANG_ecc_py_mss6jnrd from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:59:23.866Z" id=H_NEW_LANG_ecc_go_mss6jo49 from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:59:24.153Z" id=H_NEW_LANG_ecc_rust_mss6joc8 from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:59:24.464Z" id=H_NEW_LANG_ecc_py_mss6jokv from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:59:24.887Z" id=H_NEW_LANG_ecc_go_mss6jowm from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:59:25.150Z" id=H_NEW_LANG_ecc_rust_mss6jp3x from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:59:25.460Z" id=H_NEW_LANG_ecc_py_mss6jpcj from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:59:25.883Z" id=H_NEW_LANG_ecc_go_mss6jpob from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:59:26.199Z" id=H_NEW_LANG_ecc_rust_mss6jpx2 from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:59:26.538Z" id=H_NEW_LANG_ecc_py_mss6jq6h from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:59:26.992Z" id=H_NEW_LANG_ecc_go_mss6jqj3 from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:59:27.294Z" id=H_NEW_LANG_ecc_rust_mss6jqrh from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-13T23:59:27.327Z" id=H_NEW_LANG_ecc_py_go_rust_mss6jqse from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:01:01.935Z" id=H_CLONE_LIN_is-number_mss6lrsf from=[SEMANTICS_GAP] claim="raise exact-hash pass on clone-lin surface" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:01:02.547Z" id=H_NEW_LANG_is-number_py_mss6ls9e from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:01:03.101Z" id=H_NEW_LANG_is-number_go_mss6lsos from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:01:03.380Z" id=H_NEW_LANG_is-number_rust_mss6lswj from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:01:03.697Z" id=H_NEW_LANG_is-number_py_mss6lt5c from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:01:04.160Z" id=H_NEW_LANG_is-number_go_mss6lti7 from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:01:04.424Z" id=H_NEW_LANG_is-number_rust_mss6ltpj from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:01:04.761Z" id=H_NEW_LANG_is-number_py_mss6ltyv from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:01:05.209Z" id=H_NEW_LANG_is-number_go_mss6lubc from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:01:05.475Z" id=H_NEW_LANG_is-number_rust_mss6luiq from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:01:05.793Z" id=H_NEW_LANG_is-number_py_mss6lurk from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:01:06.235Z" id=H_NEW_LANG_is-number_go_mss6lv3u from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:01:06.501Z" id=H_NEW_LANG_is-number_rust_mss6lvb9 from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:01:06.813Z" id=H_NEW_LANG_is-number_py_mss6lvjw from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:01:07.252Z" id=H_NEW_LANG_is-number_go_mss6lvw3 from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:01:07.555Z" id=H_NEW_LANG_is-number_rust_mss6lw4i from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:01:07.592Z" id=H_NEW_LANG_is-number_py_go_rust_mss6lw5j from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:04:27.589Z" id=H_NEW_LANG_dayjs_py_mss6q6gz from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:04:28.161Z" id=H_NEW_LANG_dayjs_go_mss6q6ww from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:04:28.731Z" id=H_NEW_LANG_dayjs_rust_mss6q7cq from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:04:29.224Z" id=H_NEW_LANG_dayjs_py_mss6q7qf from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:04:29.773Z" id=H_NEW_LANG_dayjs_go_mss6q85o from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:04:30.330Z" id=H_NEW_LANG_dayjs_rust_mss6q8l5 from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:04:30.813Z" id=H_NEW_LANG_dayjs_py_mss6q8yk from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:04:31.368Z" id=H_NEW_LANG_dayjs_go_mss6q9dz from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:04:31.911Z" id=H_NEW_LANG_dayjs_rust_mss6q9t2 from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:04:32.369Z" id=H_NEW_LANG_dayjs_py_mss6qa5s from=[NEW_LANG|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:04:32.923Z" id=H_NEW_LANG_dayjs_go_mss6qal6 from=[NEW_LANG|go] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:04:33.465Z" id=H_NEW_LANG_dayjs_rust_mss6qb09 from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:04:34.511Z" id=H_NEW_LANG_dayjs_rust_mss6qbta from=[NEW_LANG|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:04:34.687Z" id=H_NEW_LANG_dayjs_py_go_rust_mss6qby6 from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:06:21.318Z" id=H_NEW_LANG_left-pad_py_go_rust_mss6sm85 from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:08:33.305Z" id=H_NEW_LANG_left-pad_py_go_rust_mss6vg2g from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:09:08.536Z" id=H_NEW_LANG_left-pad_go_rust_mss6w793 from=[NEW_LANG|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:09:21.125Z" id=H_NEW_LANG_ecc_go_rust_py_mss6wgys from=[NEW_LANG|go|rust|py] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:12:50.045Z" id=H_NEW_LANG_ponytail_py_go_rust_mss70y64 from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:13:01.733Z" id=H_NEW_LANG_ponytail_py_go_rust_mss7176s from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:13:13.642Z" id=H_NEW_LANG_ponytail_py_go_rust_mss71gdl from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:13:25.288Z" id=H_NEW_LANG_ponytail_py_go_rust_mss71pd3 from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:13:37.017Z" id=H_NEW_LANG_ponytail_py_go_rust_mss71yew from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:13:48.873Z" id=H_NEW_LANG_ponytail_py_go_rust_mss727k8 from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:14:00.414Z" id=H_NEW_LANG_ponytail_py_go_rust_mss72ggt from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:14:12.121Z" id=H_NEW_LANG_ponytail_py_go_rust_mss72pi1 from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:14:23.754Z" id=H_NEW_LANG_ponytail_py_go_rust_mss72yh5 from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:14:35.392Z" id=H_NEW_LANG_ponytail_py_go_rust_mss737gf from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:14:47.047Z" id=H_NEW_LANG_ponytail_py_go_rust_mss73gg6 from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:14:58.732Z" id=H_NEW_LANG_ponytail_py_go_rust_mss73pgr from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:15:10.518Z" id=H_NEW_LANG_ponytail_py_go_rust_mss73yk5 from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:15:22.814Z" id=H_NEW_LANG_ponytail_py_go_rust_mss7481p from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:15:35.505Z" id=H_NEW_LANG_ponytail_py_go_rust_mss74hu8 from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:15:49.290Z" id=H_NEW_LANG_ponytail_py_go_rust_mss74sh5 from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:16:01.307Z" id=H_NEW_LANG_ponytail_py_go_rust_mss751qy from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:16:13.426Z" id=H_NEW_LANG_ponytail_py_go_rust_mss75b3l from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:16:25.464Z" id=H_NEW_LANG_ponytail_py_go_rust_mss75kdz from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:16:37.757Z" id=H_NEW_LANG_ponytail_py_go_rust_mss75tvg from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}
+
+@E{t="2026-08-14T00:16:49.803Z" id=H_NEW_LANG_ponytail_py_go_rust_mss76362 from=[NEW_LANG|py|go|rust] claim="raise emit+run on new/failing target without nucleus mutate" transfer=same_class status=OPEN}

@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!parseDate(cfg){;({date,utc}=cfg);?(date===null){^new Date(NaN)};?(Utils.u(date)){^new Date()};?(date instanceof Date){^new Date(date)};?(typeof date=='string'&&!/Z$/i.test(date)){d=date.match(C.REGEX_PARSE);?(d){m=d[2]-1||0;ms=(d[7]||'0').substring(0,3);?(utc){^new Date(Date.UTC(d[1],m,d[3]||1,d[4]||0,d[5]||0,d[6]||0,ms))};^new Date(d[1],m,d[3]||1,d[4]||0,d[5]||0,d[6]||0,ms)}};^new Date(date)}
+=ex{parseDate}

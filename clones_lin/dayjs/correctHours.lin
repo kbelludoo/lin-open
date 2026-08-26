@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!correctHours(time){;({afternoon}=time);?(afternoon!==undefined){({hours}=time);?(afternoon){?(hours<12){time.hours+=12}}:(hours==12){time.hours=0}delete time.afternoon}}
+=ex{correctHours}

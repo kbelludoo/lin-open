@@ -1,0 +1,11 @@
+{
+  "intent": "add_international_payments",
+  "target": "Transfer",
+  "constraints": [
+    "fx_rate_required",
+    "country_limits",
+    "transfer_gt_10000_needs_approval"
+  ],
+  "allowed_effects": ["memory"],
+  "ops": ["Storage.write"]
+}

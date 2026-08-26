@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!wrapHighlightedCode(code){;preAttributesString=Object.entries(preAttributes) .map(~(){^`${key}="${value}"`}) .join(' ');codeAttributesString=Object.entries(codeAttributes) .map(~(){^`${key}="${value}"`}) .join(' ');^("<pre "+String(preAttributesString)+"><code "+String(codeAttributesString)+">"+String(code)+"</code></pre>")}
+=ex{wrapHighlightedCode}

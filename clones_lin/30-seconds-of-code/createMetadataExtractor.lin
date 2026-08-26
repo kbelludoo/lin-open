@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!createMetadataExtractor(languages){^~(node){; const languageName = getLanguageName(node);; const meta = parseMeta(node.meta || '');; const title = getMetaString(meta, 'title')?.value || null;; const languageStringLiteral = languages[languageName] || '';; const highlightedLines = getMetaRanges(meta, null);; const insertedLines = getMetaRanges(meta, 'ins');; const deletedLines = getMetaRanges(meta, 'del');; const foldedSections = getMetaRangeBoundaries(meta, 'collapse');; return { languageName, title, languageStringLiteral, highlightedLines, insertedLines, deletedLines, foldedSections, };}}
+=ex{createMetadataExtractor}

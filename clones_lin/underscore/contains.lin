@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!contains(obj,item,fromIndex,guard){;?(!isArrayLike(obj)){obj=values(obj)};?(typeof fromIndex!='number'||guard){fromIndex=0};^indexOf(obj,item,fromIndex)>=0}
+=ex{contains}

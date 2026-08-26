@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!linkInlineCode(references){;^~(tree){visitParents( tree, { type: `element`, tagName: `code` }, ~(node,ancestors){ const { properties } = node;; properties.className = `notranslate`;; properties.translate = `no`;;; if (references.size === 0) return;; const parentNode = ancestors[ancestors.length - 1];; const isParentLink = parentNode.tagName === `a`;; const isParentHeading = parentNode.tagName.match(/^h[123456]$/);;; if (isParentLink || isParentHeading) return;; const text = node.children[0].value;; const hasReference = references.has(text);;; if (!hasReference) return;; const reference = references.get(text);; const innerNode = _lia_obj();; node.tagName = `a`;; node.properties = { href, dataCodeReference: 'true' };; node.children = [innerNode]; } );; return tree;}}
+=ex{linkInlineCode}

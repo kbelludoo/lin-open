@@ -1,0 +1,32 @@
+{
+  "id": "T005",
+  "family": "logic_state",
+  "difficulty": "easy",
+  "specification": "Contador monotônico com teto. Entrada: { current: number, step: number, max: number }. Saída: number (current + step se <= max, senão max).",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "globalState"
+  ],
+  "test_cases": [
+    {
+      "input": {
+        "current": 5,
+        "step": 2,
+        "max": 10
+      },
+      "expected": 7
+    },
+    {
+      "input": {
+        "current": 9,
+        "step": 3,
+        "max": 10
+      },
+      "expected": 10
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T005.mjs"
+  }
+}

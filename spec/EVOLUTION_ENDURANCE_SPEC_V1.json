@@ -1,0 +1,65 @@
+{
+  "spec_id": "EVOLUTION_ENDURANCE_SPEC_V1",
+  "version": "1.0.0",
+  "protocol": "EVOLUTION_ENDURANCE_EVALUATION",
+  "created_at": "2026-08-16T17:53:00Z",
+  "meta": {
+    "purpose": "Evaluate compositional stability across 5 successive generations of reflexive runtime self-optimization, zero semantic drift against canonical oracle, nucleus immutability, cumulative regression preservation, and automatic rollback upon regression detection",
+    "hypothesis": "O mecanismo de auto-otimização reflexiva do LIN preserva estabilidade composicional ao longo de 5 gerações sucessivas sem desvio semântico, sem regressões nos gates anteriores e executando rollback determinístico quando um candidato falha."
+  },
+  "invariants": {
+    "immutable_nucleus": ["verifier", "semantic_hash", "behavior_eq_gate", "core_invariants"],
+    "performance_floor_ratio": 1.0
+  },
+  "generations_plan": [
+    {
+      "generation_id": "G1",
+      "name": "proof_engine_flat_array_tabling",
+      "target_component": "proof_engine",
+      "description": "Dense flat array lookup tabling for cycle-safe proof resolution",
+      "expected_outcome": "PROMOTE"
+    },
+    {
+      "generation_id": "G2",
+      "name": "state_symbol_bitwise_hashconsing",
+      "target_component": "state_symbols",
+      "description": "Bitwise numeric interning for state and delegation graph keys",
+      "expected_outcome": "PROMOTE"
+    },
+    {
+      "generation_id": "G3",
+      "name": "simd_chunked_state_linearization",
+      "target_component": "linearizer",
+      "description": "Chunked range scanning for state snapshot verification",
+      "expected_outcome": "PROMOTE"
+    },
+    {
+      "generation_id": "G4_FAULT",
+      "name": "flawed_speculative_bypass_candidate",
+      "target_component": "gate_bypass",
+      "description": "Flawed speculative bypass candidate with intentional invariant regression",
+      "expected_outcome": "REJECT_AND_ROLLBACK"
+    },
+    {
+      "generation_id": "G4",
+      "name": "dependency_dag_compact_bitset",
+      "target_component": "plan_dependencies",
+      "description": "Bitset-based in-flight dependency tracking and invalidation",
+      "expected_outcome": "PROMOTE"
+    },
+    {
+      "generation_id": "G5",
+      "name": "zero_copy_dispatch_serialization",
+      "target_component": "tool_dispatch",
+      "description": "Zero-copy buffer emission for tool call authorizations",
+      "expected_outcome": "PROMOTE"
+    }
+  ],
+  "gates": {
+    "GATE_ZERO_DRIFT": "Output(Gk) == Oracle for all promoted generations",
+    "GATE_CUMULATIVE_REGRESSION": "All 6 prior gates pass for all promoted generations",
+    "GATE_NUCLEUS_INVARIANCE": "nucleus_hash(Gk) == nucleus_hash(G0) for all generations",
+    "GATE_NON_REGRESSIVE_PERFORMANCE": "Performance of Gk >= G0 baseline for all promoted generations",
+    "GATE_ROLLBACK_VERIFICATION": "G4_FAULT rejected and G3 state cleanly restored without side-effects"
+  }
+}

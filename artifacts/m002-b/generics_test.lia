@@ -1,0 +1,11 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+
+!identity<T>(x:T):T { ^x }
+
+!swap<T,U>(a:T, b:U):[U,T] { ^[b,a] }
+
+!first<T>(arr:[T]):T { ^arr[0] }
+
+=ex{identity,swap,first}

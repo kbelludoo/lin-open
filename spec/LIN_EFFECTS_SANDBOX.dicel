@@ -1,0 +1,54 @@
+@DICEL:LIN_EFFECTS_SANDBOX:0.1.0
+
+^lang="LIN"
+^status="DRAFT"
+^goal="implement_effect_inference_and_sandbox_aligned_with_P200_semantic_hash"
+
+@MOTIVATION {
+  priority: "Causal/effects/sandbox P200"
+  spec_base: "LIA_SEMANTIC_CORE.dicel@EFFECTS"
+  need: "Compiler must know Pure/Read/Write/Throw/Native per fn to sandbox unsafe runs"
+}
+
+@EFFECTS {
+  Pure: "no observable side effects; output depends only on inputs"
+  Read: "reads global/const state only (deterministic if state is frozen)"
+  Write: "mutates non-local state"
+  Throw: "may throw"
+  Native: "calls host builtins (String, Math, Buffer, etc.)"
+}
+
+@INFERENCE_RULES {
+  R1_default: "fn effect starts as Pure"
+  R2_native: "any call to String|Number|Math|Buffer|Array|Object|Error|JSON|console|process|require -> Native"
+  R3_throw: "throw/Error()/new Error() -> Throw"
+  R4_write: "assignment to non-local identifier -> Write"
+  R5_read: "reference to non-local non-param identifier -> Read"
+  R6_closure: "closure inherits captured effect of its body"
+  R7_propagation: "fn effect = join(effects in body)"
+}
+
+@SANDBOX {
+  mode_safe: "only Pure/Read fns allowed; Throw/Write/Native rejected or wrapped"
+  mode_default: "allow all; emit warning for Write/Throw"
+  mode_p200: "exact semantic hash holdout runs in safe sandbox; Native allowed only for deterministic builtins"
+}
+
+@EMIT {
+  js: "annotate as comment /* effect: X */; no runtime change unless sandbox wrapper requested"
+  runtime_sandbox: "wrap module.exports with Proxy that rejects Write/Native in safe mode"
+}
+
+@IMPLEMENTED {
+  I1: "inferEffect(fn, program) in compiler.mjs detects Pure/Read/Write/Throw/Native"
+  I2: "effect attached to program.fns[*].effect and annotated in emitted JS"
+  I3: "compileLiaToJs supports sandbox:['Pure','Read',...] to block unsafe exports"
+  I4: "tests for Pure/Native/Throw detection and sandbox blocking"
+}
+
+@TODO {
+  T1: "propagate effects through closures and nested calls more precisely"
+  T2: "add --sandbox flag to bench_400k.mjs and clone_lin_loop.mjs"
+  T3: "integrate safe sandbox into clone-lin oracle holdout runner"
+  T4: "causal tracking: ensure Native builtins are deterministic (Math, String, etc.)"
+}

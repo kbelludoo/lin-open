@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!transfomImagePaths(assetPath){;^~(tree){visit(tree, { type: `element`, tagName: `img` }, ~(node){ const { properties } = node;;; if (!properties || !properties.src) return;; properties.src = properties.src .split('/') .reduce(~(acc,segment,index,segments){; if (segment === '.') return acc;;; if (index === segments.length - 1) {; const [fileName, extension] = segment.split('.');; return `${acc}/${fileName}.${ ['png', 'svg'].includes(extension) ? extension : 'webp' }`; }; return `${acc}/${segment}`; }, `${assetPath}`); });; return tree;}}
+=ex{transfomImagePaths}

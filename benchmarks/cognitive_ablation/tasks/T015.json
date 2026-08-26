@@ -1,0 +1,27 @@
+{
+  "id": "T015",
+  "family": "effects_contracts",
+  "difficulty": "medium",
+  "specification": "Gerador Linear Congruencial puro (LCG). Entrada: { seed: number, a: number, c: number, m: number }. Saída: próximo número pseudo-aleatório (seed * a + c) % m.",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "Math.random",
+    "Date.now",
+    "globalState"
+  ],
+  "test_cases": [
+    {
+      "input": {
+        "seed": 42,
+        "a": 1664525,
+        "c": 1013904223,
+        "m": 4294967296
+      },
+      "expected": 1083814273
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T015.mjs"
+  }
+}

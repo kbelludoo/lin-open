@@ -1,0 +1,189 @@
+{
+  "id": "V4_B1_TRUST_BOUNDARY_MODEL",
+  "version": "1.0.0",
+  "repository": "axios@v1.14.0",
+  "description": "Trust boundary model for system-model-driven analysis",
+
+  "sources": [
+    {
+      "id": "SRC-001",
+      "type": "user_config",
+      "description": "User-provided config object passed to axios() or axios.create()",
+      "files": ["lib/core/Axios.js", "lib/core/mergeConfig.js"],
+      "trust_level": "UNTRUSTED",
+      "properties": ["url", "method", "headers", "auth", "proxy", "socketPath", "timeout", "maxContentLength", "maxBodyLength", "responseType", "responseEncoding", "httpVersion", "transport", "transformRequest", "transformResponse", "parseReviver"]
+    },
+    {
+      "id": "SRC-002",
+      "type": "url_input",
+      "description": "URL string or URL object provided by user",
+      "files": ["lib/core/buildFullPath.js", "lib/helpers/buildURL.js"],
+      "trust_level": "UNTRUSTED",
+      "properties": ["hostname", "pathname", "search", "protocol", "username", "password"]
+    },
+    {
+      "id": "SRC-003",
+      "type": "header_input",
+      "description": "HTTP headers from user config or FormData",
+      "files": ["lib/core/AxiosHeaders.js", "lib/helpers/resolveConfig.js"],
+      "trust_level": "UNTRUSTED",
+      "properties": ["header_name", "header_value"]
+    },
+    {
+      "id": "SRC-004",
+      "type": "network_response",
+      "description": "HTTP response from remote server",
+      "files": ["lib/adapters/http.js"],
+      "trust_level": "UNTRUSTED",
+      "properties": ["status", "headers", "body", "content_length", "content_encoding"]
+    },
+    {
+      "id": "SRC-005",
+      "type": "environment",
+      "description": "Environment variables, proxy settings, platform detection",
+      "files": ["lib/helpers/shouldBypassProxy.js", "lib/helpers/cookies.js", "lib/helpers/isURLSameOrigin.js"],
+      "trust_level": "SEMI_TRUSTED",
+      "properties": ["NO_PROXY", "HTTP_PROXY", "HTTPS_PROXY", "document.cookie", "window.location"]
+    },
+    {
+      "id": "SRC-006",
+      "type": "formdata_input",
+      "description": "FormData entries with user-controlled keys and values",
+      "files": ["lib/helpers/formDataToJSON.js", "lib/helpers/formDataToStream.js"],
+      "trust_level": "UNTRUSTED",
+      "properties": ["entry_key", "entry_value"]
+    },
+    {
+      "id": "SRC-007",
+      "type": "xhr_event",
+      "description": "Upload/download progress events from XHR or fetch",
+      "files": ["lib/helpers/progressEventReducer.js", "lib/adapters/xhr.js"],
+      "trust_level": "SEMI_TRUSTED",
+      "properties": ["loaded", "total", "lengthComputable"]
+    }
+  ],
+
+  "sinks": [
+    {
+      "id": "SNK-001",
+      "type": "http_request",
+      "description": "Outbound HTTP request to remote server",
+      "files": ["lib/adapters/http.js"],
+      "sensitivity": "CRITICAL",
+      "impact": "SSRF, credential theft, data exfiltration"
+    },
+    {
+      "id": "SNK-002",
+      "type": "header_output",
+      "description": "HTTP headers sent in request or set on response",
+      "files": ["lib/adapters/http.js", "lib/core/AxiosHeaders.js"],
+      "sensitivity": "HIGH",
+      "impact": "Header injection, cache poisoning, cloud metadata exfiltration"
+    },
+    {
+      "id": "SNK-003",
+      "type": "json_parse",
+      "description": "JSON.parse with user-controlled reviver",
+      "files": ["lib/defaults/index.js"],
+      "sensitivity": "CRITICAL",
+      "impact": "Arbitrary code execution via reviver function"
+    },
+    {
+      "id": "SNK-004",
+      "type": "socket_operation",
+      "description": "Unix socket connection or TCP keepalive",
+      "files": ["lib/adapters/http.js"],
+      "sensitivity": "HIGH",
+      "impact": "SSRF via socketPath, resource exhaustion"
+    },
+    {
+      "id": "SNK-005",
+      "type": "stream_output",
+      "description": "Response stream returned to user without size limit",
+      "files": ["lib/adapters/http.js"],
+      "sensitivity": "MEDIUM",
+      "impact": "Unbounded memory consumption"
+    },
+    {
+      "id": "SNK-006",
+      "type": "regex_construction",
+      "description": "Dynamic regex from user input",
+      "files": ["lib/helpers/cookies.js"],
+      "sensitivity": "MEDIUM",
+      "impact": "Regex injection, ReDoS"
+    }
+  ],
+
+  "trust_boundaries": [
+    {
+      "id": "TB-001",
+      "name": "config_to_request",
+      "source": "SRC-001",
+      "sink": "SNK-001",
+      "path": "user_config → mergeConfig → http_adapter → transport.request",
+      "guards": ["__proto__ filter in mergeConfig:100", "supportedProtocols check"],
+      "guard_gaps": ["prop in config2 traverses prototype chain", "destructuring reads inherited properties"],
+      "risk": "HIGH — prototype pollution can inject arbitrary request parameters"
+    },
+    {
+      "id": "TB-002",
+      "name": "url_to_network",
+      "source": "SRC-002",
+      "sink": "SNK-001",
+      "path": "user_url → buildFullPath → URL parsing → http.request",
+      "guards": ["supportedProtocols check", "isAbsoluteURL check"],
+      "guard_gaps": ["shouldBypassProxy hostname normalization bypass"],
+      "risk": "HIGH — SSRF via proxy bypass"
+    },
+    {
+      "id": "TB-003",
+      "name": "header_to_wire",
+      "source": "SRC-003",
+      "sink": "SNK-002",
+      "path": "user_headers → AxiosHeaders.from → headers.toJSON → http.request",
+      "guards": ["AxiosHeaders normalization"],
+      "guard_gaps": ["No CRLF sanitization in header values"],
+      "risk": "HIGH — header injection via CRLF"
+    },
+    {
+      "id": "TB-004",
+      "name": "response_to_user",
+      "source": "SRC-004",
+      "sink": "SNK-003",
+      "path": "network_response → transformResponse → JSON.parse(data, this.parseReviver)",
+      "guards": ["transitional.silentJSONParsing"],
+      "guard_gaps": ["this.parseReviver inherited from prototype"],
+      "risk": "CRITICAL — code execution via polluted parseReviver"
+    },
+    {
+      "id": "TB-005",
+      "name": "formdata_to_object",
+      "source": "SRC-006",
+      "sink": "SNK-003",
+      "path": "formdata_entries → formDataToJSON → buildPath → nested_object",
+      "guards": ["__proto__ filter in buildPath:53"],
+      "guard_gaps": ["Missing constructor/prototype filter"],
+      "risk": "MEDIUM — correctness issues from inherited constructor"
+    },
+    {
+      "id": "TB-006",
+      "name": "environment_to_config",
+      "source": "SRC-005",
+      "sink": "SNK-001",
+      "path": "env_vars → shouldBypassProxy → proxy decisions → request routing",
+      "guards": ["NO_PROXY matching"],
+      "guard_gaps": ["Hostname normalization bypass in shouldBypassProxy"],
+      "risk": "HIGH — SSRF via proxy bypass"
+    },
+    {
+      "id": "TB-007",
+      "name": "xhr_to_progress",
+      "source": "SRC-007",
+      "sink": "SNK-005",
+      "path": "xhr_event → progressEventReducer → onUploadProgress callback",
+      "guards": ["None"],
+      "guard_gaps": ["No validation of event.loaded/event.total"],
+      "risk": "LOW — correctness issues in progress reporting"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!handleKeyDown(e){;shouldHandle=(((__c)=>{?(__c){return(e.metaKey)}return(e.ctrlKey)})(this.isMac));isModalOpen=this.omnisearchDialog.open;?(!isModalOpen&&shouldHandle&&Object.keys(this.navActionMap).includes(e.key) ){this.hideHotkeys();e.preventDefault();this.triggerAction(this.navActionMap[e.key])}:( shouldHandle&&!isModalOpen&&e.key==((((__c)=>{?(__c){return('Meta')}return('Control')})(this.isMac))) ){this.showHotkeys()}:{this.hideHotkeys()}}
+=ex{handleKeyDown}

@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!collectNonEnumProps(obj,keys){keys=emulatedSet(keys);nonEnumIdx=nonEnumerableProps.length;constructor=obj.constructor;proto=(isFunction(constructor)&&constructor.prototype)||ObjProto;prop='constructor';?(has(obj,prop)&&!keys.contains(prop)){keys.push(prop)};while (nonEnumIdx--){prop=nonEnumerableProps[nonEnumIdx];?(prop in obj&&obj[prop]!=proto[prop]&&!keys.contains(prop)){keys.push(prop)}}}
+=ex{collectNonEnumProps}

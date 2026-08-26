@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!focusNextResult(){;results=this.resultsSection.querySelectorAll('a');?(results.length==0){return};this.focusedResult+=1;?(this.focusedResult>=results.length){this.focusedResult=0};results[this.focusedResult].focus()}
+=ex{focusNextResult}

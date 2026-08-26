@@ -1,0 +1,31 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=m003_b_literal_guards
+~G{?=if #=for ^=ret :else}
+
+!classifyStatus(code: int): String {
+  match(code) {
+    200 | 201 | 204 => { ^"SUCCESS" }
+    400 | 401 | 403 | 404 => { ^"CLIENT_ERROR" }
+    500 | 502 | 503 => { ^"SERVER_ERROR" }
+    _ => { ^"UNKNOWN" }
+  }
+}
+
+!evaluateScore(score: int): String {
+  match(score) {
+    s if s >= 90 => { ^"EXCELLENT" }
+    s if s >= 70 => { ^"GOOD" }
+    s if s >= 50 => { ^"PASS" }
+    _ => { ^"FAIL" }
+  }
+}
+
+!matchBool(flag: bool): int {
+  match(flag) {
+    true => { ^1 }
+    false => { ^0 }
+    _ => { ^-1 }
+  }
+}
+
+=ex{classifyStatus,evaluateScore,matchBool}

@@ -1,0 +1,9 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=ccr002d_storage
+~G{?=if #=for ^=ret :else}
+!moduleRef(){^'Storage'}
+!declaredEffects(){^'io,state'}
+!caps(){^'disk,encryption'}
+!semanticHash(){^'ccr002d-storage-v1'}
+!write(key,val){encrypted=encrypt(val);^({ok:1,key:key,val:encrypted})}
+=ex{moduleRef,declaredEffects,caps,semanticHash,write}

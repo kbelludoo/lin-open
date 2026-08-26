@@ -1,0 +1,8 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_safe_ids
+~G{?=if #=for ^=ret :else}
+!rawParamName(item){p=String(item||'').trim();p=p.replace(/\?$/,'');p=p.replace(/:\s*[\w]+$/,'');p=p.replace(/\s*=.+$/,'');^p.trim()}
+!rawParamNamesCsv(paramsRaw){items=String(paramsRaw||'').split(',');out='';#(i=0;i<items.length;i++){n=rawParamName(items[i]);?(n){?(out!=''){out=out+','};out=out+n}};^out}
+!rewriteOneId(body,raw,safe){?(String(safe)==String(raw)){^body};?(String(raw)==''){^body};re_=new RegExp('\\b'+raw+'\\b','g');^String(body||'').replace(re_,safe)}
+!rewriteSafeParamIds(body,rawCsv,safeCsv){s=String(body||'');raws=String(rawCsv||'').split(',');safes=String(safeCsv||'').split(',');n=raws.length;#(i=0;i<n;i++){r=rawParamName(raws[i]);k=String(safes[i]||'').trim();?(r&&k){s=rewriteOneId(s,r,k)}};^s}
+=ex{rawParamName,rawParamNamesCsv,rewriteOneId,rewriteSafeParamIds}

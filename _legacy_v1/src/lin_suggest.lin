@@ -1,0 +1,44 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=lin_suggest
+~G{?=if #=for ^=ret :else}
+!mkSug(id,goal,why,gate,repair,status){^({id:id,goal:goal,why_for_ai:why,proof_or_gate:gate,next_repair:repair,status:status})}
+!sug0(){^mkSug('S001','fail_closed_emit','IA precisa saber: JS ilegal nunca e OK; erro aponta o que falhou no emit','spec/LIN_EMIT_FAIL_CLOSED.rulel + src/js_syntax_check.mjs node --check','se LIN_EMIT_JS_SYNTAX: corrigir emit_js fora do nucleo; nao reescrever LIN para aplacar emitter','DONE')}
+!sug1(){^mkSug('S002','INV_REFINEMENT_SOUND_div','IA ve caminho: bloqueio causal + repairs, nao type mismatch','src/lin_refine_div.lin checkFn + spec/LIN_M006_PROOF.rulel','refine b:int{>0} | require b>0 | insert check; slice1 nao e solver geral','SLICE1')}
+!sug2(){^mkSug('S003','goal_intent_mutation_records','IA emite JSON Agent IR; LIN valida estrutura; sem sigils neste path','src/lin_agent_ir_ingest.lin validateAgentIr','intent+target+constraints+allowed_effects; reject causal; Storage.write needs io','SLICE1')}
+!sug3(){^mkSug('S004','autogen_from_INTEL_fails','IA gera candidato LIN a partir de fail honesto; stub nunca e PASS','src/lin_auto_generate.lin + scripts/lin_auto_generate.mjs','INTEL fail -> candidates/*.lin -> compile -> behavior_eq; neverPassIfStub','DONE')}
+!sug4(){^mkSug('S005','nucleus_immutable','IA nunca redefinine verifier semantic_hash behavior_eq_gate; senao provas mentem','AGENTS.md nucleus + spec/LIN_CORE_ARCH.rulel','fix compiler OUTSIDE nucleus; candidates + promote; nao tocar hash','RULE')}
+!sug5(){^mkSug('S006','ts_cli_rust_host','IA sabe o alvo default e o host de memoria; nao inventa 20 linguas','spec/LIN_CORE_ARCH.rulel R_CLI=ts R_HOST=rust','emit default ts; rust in-memory host; C e unsafe target nao runtime winner','DONE')}
+!sug6(){^mkSug('S007','seven_lang_gate_honest','IA le INTEL sem mentira: stub != PASS; c SKIP so se gcc ausente apos retry','spec/LIN_CLONE_LIN_LOOP.rulel gate ts!js!py!go!rust!c!java','se stub_as_PASS: recusar; experimental_not_PASS; full_repo_100_hash_eq','DONE')}
+!sug7(){^mkSug('S008','semantic_compression_codec','IA comprime significado: menos tokens + mais estrutura + mais verificabilidade; nao zip de texto','src/lin_agent_ir.lin semCompress + EXISTING_semantic_hash','sem_ref + memByHash + incrState; compact MUST NOT lose info; never redefine hash','NEXT')}
+!suggestCount(){^8}
+!suggestionAt(i){?(i==0){^sug0()};?(i==1){^sug1()};?(i==2){^sug2()};?(i==3){^sug3()};?(i==4){^sug4()};?(i==5){^sug5()};?(i==6){^sug6()};?(i==7){^sug7()};^null}
+!suggestById(id){s=String(id||'');#(i=0;i<8;i++){row=suggestionAt(i);?(row&&row.id==s){^row}};^null}
+!suggestIds(){^'S001|S002|S003|S004|S005|S006|S007|S008'}
+!suggestLine(row){?(row==null){^''};^('id='+row.id+' goal='+row.goal+' why_for_ai='+row.why_for_ai+' proof_or_gate='+row.proof_or_gate+' next_repair='+row.next_repair+' status='+row.status)}
+!suggestAllLines(){out='';#(i=0;i<8;i++){?(i>0){out=out+'\n'};out=out+suggestLine(suggestionAt(i))};^out}
+!mkMech(rank,mechanism,absorb_from,stars,why_for_ai,lin_now){^({rank:rank,mechanism:mechanism,absorb_from:absorb_from,stars:stars,why_for_ai:why_for_ai,not_a_language:1,copy_language:0,lin_now:lin_now})}
+!mech0(){^mkMech(1,'rules_plus_causal_diagnosis','prolog',5,'IA precisa de regras + diagnostico causal, nao type mismatch','INV_REFINEMENT_SOUND blockedMsg + repairs')}
+!mech1(){^mkMech(2,'invariants_plus_small_proof_obligations','lean',5,'Provar propriedade ANTES do emit; obrigacao e objeto verificavel','spec/LIN_M006_PROOF.rulel slice1 checkFn')}
+!mech2(){^mkMech(3,'ast_as_data_declarative_transform','lisp',5,'Transformar AST, nao editar linha; mutacao so se proven','src/lin_ast_data.lin walkAst transformAst')}
+!mech3(){^mkMech(4,'types_that_carry_meaning','haskell',4,'int{0..300} e int{>0} carregam prova, nao so tag','b:int{>0} refine + src/refinement_types.lin')}
+!mech4(){^mkMech(5,'safe_execution_ownership_no_ub','rust',4,'Host in-memory seguro; nao e lingua de emit unica','spec/LIN_CORE_ARCH.rulel in_memory_host=rust')}
+!mech5(){^mkMech(6,'scientific_math_first_class','julia',3,'Mais tarde; nao e o nucleo agora','M009 later; not weight learning')}
+!mechCount(){^6}
+!mechAt(i){?(i==0){^mech0()};?(i==1){^mech1()};?(i==2){^mech2()};?(i==3){^mech3()};?(i==4){^mech4()};?(i==5){^mech5()};^null}
+!intentShape(){^({objective:'',constraints:'',allowed_changes:'',forbidden:''})}
+!intentWhy(){^'LIN unique: AI states intent{objective,constraints,allowed_changes,forbidden} before mutate; apply iff proven'}
+!agreeRank(){^1}
+!rankLine(row){?(row==null){^''};^('rank='+String(row.rank)+' mechanism='+row.mechanism+' absorb_from='+row.absorb_from+' stars='+String(row.stars)+' why_for_ai='+row.why_for_ai+' lin_now='+row.lin_now+' copy_language=0')}
+!rankAllLines(){out='';#(i=0;i<6;i++){?(i>0){out=out+'\n'};out=out+rankLine(mechAt(i))};^out+'\nunique=intent{objective,constraints,allowed_changes,forbidden}'}
+!agentIrPath(){^'src/lin_agent_ir.lin'}
+!agreeAgentLangs(){^1}
+!agreeAiCriteria(){^1}
+!agreeCompact(){^1}
+!compactMustNotLoseInfo(){^1}
+!redefineHash(){^0}
+!archThree(){^'LIN + LIN_Agent_IR + LIN_Proof_Layer'}
+!stackLine(){^'IA|LIN(intent+semantics+proof)|emit7(ts!js!py!go!rust!c!java)|machine'}
+!pipeline(){^'goal->constraints->knowledge->plan->transform->proof->execute'}
+!irNative(){^'intent->LIN_semantic_IR->code'}
+!semCompressWhy(){^'less_tokens+more_structure+more_verifiability;codec=meaning;not=text_zip'}
+=ex{mkSug,sug0,sug1,sug2,sug3,sug4,sug5,sug6,sug7,suggestCount,suggestionAt,suggestById,suggestIds,suggestLine,suggestAllLines,mkMech,mech0,mech1,mech2,mech3,mech4,mech5,mechCount,mechAt,intentShape,intentWhy,agreeRank,rankLine,rankAllLines,agentIrPath,agreeAgentLangs,agreeAiCriteria,agreeCompact,compactMustNotLoseInfo,redefineHash,archThree,stackLine,pipeline,irNative,semCompressWhy}

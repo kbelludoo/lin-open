@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!stringReplaceAll(string,substring,postfix){;index=string.indexOf(substring);?(index==-1){^string};substringLength=substring.length;endIndex=0;returnValue='';do{returnValue+=string.slice(endIndex,index)+substring+postfix;endIndex=index+substringLength;index=string.indexOf(substring,endIndex)}while (index!=-1);returnValue+=string.slice(endIndex);^returnValue}
+=ex{stringReplaceAll}

@@ -1,0 +1,290 @@
+{
+  "v4_a_output": {
+    "repo": "Jonas56/express-api",
+    "loc": 1744,
+    "files": 48,
+    "timestamp": "2026-08-16"
+  },
+  "architecture_model": {
+    "components": [
+      {
+        "name": "ExpressApp",
+        "responsibility": "HTTP server entry point, middleware pipeline, CORS, static files",
+        "confidence": 0.95,
+        "evidence": ["app.js:1-28"]
+      },
+      {
+        "name": "AuthRouter",
+        "responsibility": "User registration and login endpoints",
+        "confidence": 0.93,
+        "evidence": ["routes/loginRouter.js", "routes/registerRouter.js"]
+      },
+      {
+        "name": "AuthMiddleware",
+        "responsibility": "JWT token extraction, verification, user lookup",
+        "confidence": 0.92,
+        "evidence": ["utils/middleware.js:34-56"]
+      },
+      {
+        "name": "BooksRouter",
+        "responsibility": "CRUD operations for books",
+        "confidence": 0.94,
+        "evidence": ["routes/booksRouter.js"]
+      },
+      {
+        "name": "AuthorsRouter",
+        "responsibility": "CRUD operations for authors",
+        "confidence": 0.94,
+        "evidence": ["routes/authorsRouter.js"]
+      },
+      {
+        "name": "CollectionRouter",
+        "responsibility": "User book collection management",
+        "confidence": 0.91,
+        "evidence": ["routes/collectionRouter.js"]
+      },
+      {
+        "name": "ReadingRouter",
+        "responsibility": "User reading list management",
+        "confidence": 0.91,
+        "evidence": ["routes/readingRouter.js"]
+      },
+      {
+        "name": "UserService",
+        "responsibility": "User registration business logic, password hashing",
+        "confidence": 0.90,
+        "evidence": ["services/registerServices.js"]
+      },
+      {
+        "name": "LoginService",
+        "responsibility": "Authentication logic, JWT token generation",
+        "confidence": 0.90,
+        "evidence": ["services/loginServices.js"]
+      },
+      {
+        "name": "BooksService",
+        "responsibility": "Book CRUD business logic",
+        "confidence": 0.88,
+        "evidence": ["services/booksServices.js"]
+      },
+      {
+        "name": "AuthorsService",
+        "responsibility": "Author CRUD business logic",
+        "confidence": 0.88,
+        "evidence": ["services/authorsServices.js"]
+      },
+      {
+        "name": "CollectionService",
+        "responsibility": "User collection business logic",
+        "confidence": 0.87,
+        "evidence": ["services/collectionServices.js"]
+      },
+      {
+        "name": "ReadingService",
+        "responsibility": "Reading list business logic",
+        "confidence": 0.87,
+        "evidence": ["services/readingServices.js"]
+      },
+      {
+        "name": "SequelizeORM",
+        "responsibility": "Database connection, model loading, associations",
+        "confidence": 0.95,
+        "evidence": ["models/index.js"]
+      },
+      {
+        "name": "ErrorHandler",
+        "responsibility": "Sequelize validation errors, unique constraint errors",
+        "confidence": 0.90,
+        "evidence": ["utils/middleware.js:16-32"]
+      },
+      {
+        "name": "Logger",
+        "responsibility": "Request logging",
+        "confidence": 0.85,
+        "evidence": ["utils/logger.js"]
+      }
+    ],
+    "data_models": [
+      {
+        "name": "User",
+        "fields": ["id", "name", "email", "username", "hashed_password"],
+        "confidence": 0.95,
+        "evidence": ["models/user.js"]
+      },
+      {
+        "name": "Book",
+        "fields": ["id", "title", "isbn", "page_count", "published_date", "image_link", "description", "status"],
+        "confidence": 0.95,
+        "evidence": ["models/book.js"]
+      },
+      {
+        "name": "Author",
+        "fields": ["id", "name"],
+        "confidence": 0.90,
+        "evidence": ["models/author.js"]
+      },
+      {
+        "name": "Category",
+        "fields": ["id", "name"],
+        "confidence": 0.90,
+        "evidence": ["models/category.js"]
+      },
+      {
+        "name": "UserCollection",
+        "fields": ["user_id", "book_id"],
+        "confidence": 0.88,
+        "evidence": ["models/usercollection.js"]
+      },
+      {
+        "name": "Reading",
+        "fields": ["user_id", "book_id"],
+        "confidence": 0.88,
+        "evidence": ["models/reading.js"]
+      },
+      {
+        "name": "AuthorBooks",
+        "fields": ["author_id", "book_id"],
+        "confidence": 0.88,
+        "evidence": ["models/authorbooks.js"]
+      },
+      {
+        "name": "CategoryBooks",
+        "fields": ["category_id", "book_id"],
+        "confidence": 0.88,
+        "evidence": ["models/categorybooks.js"]
+      }
+    ],
+    "relationships": [
+      {
+        "from": "User",
+        "to": "Book",
+        "type": "many_to_many",
+        "through": "UserCollection",
+        "alias": "collection",
+        "confidence": 0.93,
+        "evidence": ["models/user.js:14-18"]
+      },
+      {
+        "from": "User",
+        "to": "Book",
+        "type": "many_to_many",
+        "through": "Reading",
+        "alias": "reading",
+        "confidence": 0.93,
+        "evidence": ["models/user.js:20-24"]
+      },
+      {
+        "from": "Book",
+        "to": "Author",
+        "type": "many_to_many",
+        "through": "AuthorBooks",
+        "alias": "authors",
+        "confidence": 0.93,
+        "evidence": ["models/book.js:20-25"]
+      },
+      {
+        "from": "Book",
+        "to": "Category",
+        "type": "many_to_many",
+        "through": "CategoryBooks",
+        "alias": "categories",
+        "confidence": 0.93,
+        "evidence": ["models/book.js:27-32"]
+      }
+    ],
+    "critical_flows": [
+      {
+        "name": "Authentication Flow",
+        "path": "HTTP POST /v1/api/login → LoginRouter → LoginService → JWT verify → User.findOne → Response",
+        "confidence": 0.90,
+        "evidence": ["routes/loginRouter.js", "services/loginServices.js", "utils/middleware.js:42-56"]
+      },
+      {
+        "name": "Registration Flow",
+        "path": "HTTP POST /v1/api/register → RegisterRouter → RegisterService → User.create (bcrypt hash) → Response",
+        "confidence": 0.90,
+        "evidence": ["routes/registerRouter.js", "services/registerServices.js", "models/user.js:91-99"]
+      },
+      {
+        "name": "Protected Resource Flow",
+        "path": "HTTP GET /v1/api/books → BooksRouter → BooksService → Book.findAll → Response",
+        "confidence": 0.88,
+        "evidence": ["routes/booksRouter.js"],
+        "note": "CRITICAL: userAuthentication middleware exists but is NOT applied to any routes. All endpoints are unprotected."
+      }
+    ],
+    "middleware_pipeline": [
+      "CORS (origin: *)",
+      "express.json()",
+      "Static files (dist/)",
+      "RequestLogger",
+      "API Router (/v1)",
+      "UnknownEndpoint (404)",
+      "ErrorHandler"
+    ],
+    "invariants": [
+      {
+        "statement": "All protected routes require valid JWT token",
+        "confidence": 0.92,
+        "evidence": ["utils/middleware.js:42-56"],
+        "actual": false,
+        "note": "CRITICAL: middleware exists but is NOT applied to any routes"
+      },
+      {
+        "statement": "Passwords are bcrypt-hashed before storage",
+        "confidence": 0.95,
+        "evidence": ["models/user.js:91-99"]
+      },
+      {
+        "statement": "Email must be unique per user",
+        "confidence": 0.93,
+        "evidence": ["models/user.js:45-48"]
+      },
+      {
+        "statement": "Username length must be 5-10 characters",
+        "confidence": 0.93,
+        "evidence": ["models/user.js:59-64"]
+      },
+      {
+        "statement": "Password must contain letter, number, and special character",
+        "confidence": 0.93,
+        "evidence": ["models/user.js:71-80"]
+      }
+    ],
+    "risks": [
+      {
+        "statement": "CRITICAL: Authentication middleware defined but NOT applied to any routes - all endpoints are unprotected",
+        "severity": "critical",
+        "confidence": 0.95,
+        "evidence": ["utils/middleware.js:42-56", "routes/booksRouter.js", "routes/authorsRouter.js", "routes/collectionRouter.js", "routes/readingRouter.js"]
+      },
+      {
+        "statement": "CORS origin: * allows any domain",
+        "severity": "medium",
+        "confidence": 0.85,
+        "evidence": ["app.js:11-13"]
+      },
+      {
+        "statement": "JWT secret from environment variable, no fallback validation",
+        "severity": "high",
+        "confidence": 0.80,
+        "evidence": ["utils/middleware.js:45"]
+      },
+      {
+        "statement": "No rate limiting on login endpoint",
+        "severity": "medium",
+        "confidence": 0.75,
+        "evidence": ["routes/loginRouter.js"]
+      }
+    ],
+    "summary": {
+      "total_components": 16,
+      "total_data_models": 8,
+      "total_relationships": 4,
+      "total_flows": 3,
+      "total_invariants": 5,
+      "total_risks": 3,
+      "average_confidence": 0.90
+    }
+  }
+}

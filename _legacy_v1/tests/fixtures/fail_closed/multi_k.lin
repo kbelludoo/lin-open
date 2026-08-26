@@ -1,0 +1,7 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=test
+~G{?=if #=for ^=ret :else}
+$K{a=1 b=2}
+$K{c=3 d=4}
+!sum(){^$K.a+$K.c}
+=ex{sum}

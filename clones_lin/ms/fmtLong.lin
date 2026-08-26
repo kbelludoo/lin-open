@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!fmtLong(ms){;msAbs=Math.abs(ms);?(msAbs>=y){^plural(ms,msAbs,y,'year')};?(msAbs>=mo){^plural(ms,msAbs,mo,'month')};?(msAbs>=w){^plural(ms,msAbs,w,'week')};?(msAbs>=d){^plural(ms,msAbs,d,'day')};?(msAbs>=h){^plural(ms,msAbs,h,'hour')};?(msAbs>=m){^plural(ms,msAbs,m,'minute')};?(msAbs>=s){^plural(ms,msAbs,s,'second')};^((ms)+" ms")}
+=ex{fmtLong}

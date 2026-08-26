@@ -1,0 +1,9 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=pay_transfer
+~G{?=if #=for ^=ret :else}
+!moduleRef(){^'Transfer'}
+!effects(){^'memory'}
+!approvalThreshold(){^10000}
+!needsApproval(amount){?(amount>10000){^1};^0}
+!transfer(from,to,amount){?(needsApproval(amount)){^({ok:0,need:'approval'})};^({ok:1,from:from,to:to,amount:amount})}
+=ex{moduleRef,effects,approvalThreshold,needsApproval,transfer}

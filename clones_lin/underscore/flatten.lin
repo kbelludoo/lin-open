@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!flatten(input,depth,strict){;?(!depth&&depth!=0){depth=Infinity};output=[];idx=0;i=0;length=getLength(input)||0;stack=[];while (true){?(i>=length){?(!stack.length){break};frame=stack.pop();i=frame.i;input=frame.v;length=getLength(input);continue};value=input[i++];?(stack.length>=depth){output[idx++]=value}:(isArrayLike(value)&&(isArray(value)||isArguments(value))){stack.push({i: i,v: input});i=0;input=value;length=getLength(input)}:(!strict){output[idx++]=value}};^output}
+=ex{flatten}

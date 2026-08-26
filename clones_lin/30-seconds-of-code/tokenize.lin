@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!tokenize(contents){;tokenized=Object.entries(contents).reduce( ~(acc){^acc.concat(tokenizeByContentType(contentType, content))},[] );tokenSet=new Set(tokenized);tokenizedMapped=tokenized.reduce(~(acc,tkn){;; if (tokenFilter(tkn, tokenSet)) {; if (!acc.has(tkn)) acc.set(tkn, 0);; acc.set(tkn, acc.get(tkn) + 1); }; return acc;},new Map());^[...tokenizedMapped.entries()] .map(~(){;; if (count === 1) return token;; else return `${token}:${count}`;}) .join(' ')}
+=ex{tokenize}

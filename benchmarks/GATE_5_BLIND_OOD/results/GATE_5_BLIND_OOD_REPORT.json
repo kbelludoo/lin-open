@@ -1,0 +1,63 @@
+{
+  "benchmark": "GATE_5_BLIND_GENERALIZATION_OOD",
+  "certified": true,
+  "total_tasks": 100,
+  "total_test_vectors": 410,
+  "exact_execution_strict": {
+    "passed": 100,
+    "total": 100,
+    "rate_percent": 100,
+    "invariant_status": "PASSED (100% Strict Parity on Unseen Tasks)"
+  },
+  "token_footprint": {
+    "total_js_tokens": 6575,
+    "total_lin_tokens": 4750,
+    "token_reduction_percent": 27.8
+  },
+  "statistical_hypothesis_testing": {
+    "test": "Paired Wilcoxon Signed-Rank Test",
+    "alpha_bonferroni_threshold": 0.005,
+    "wilcoxon_results": {
+      "N": 100,
+      "W_pos": 4917.5,
+      "W_neg": 132.5,
+      "W_stat": 132.5,
+      "z_score": 8.2262,
+      "pValue": 1e-15,
+      "significant_at_bonferroni_0_005": true
+    }
+  },
+  "family_breakdown": {
+    "FINANCIAL_MATH": {
+      "total": 20,
+      "passed": 20,
+      "tokensJs": 820,
+      "tokensLin": 570
+    },
+    "GEOSPATIAL_ALGORITHMS": {
+      "total": 20,
+      "passed": 20,
+      "tokensJs": 1500,
+      "tokensLin": 1010
+    },
+    "DATA_STRUCTURES_GRAPH": {
+      "total": 20,
+      "passed": 20,
+      "tokensJs": 1665,
+      "tokensLin": 1250
+    },
+    "STRING_CRYPTO_ENCODING": {
+      "total": 20,
+      "passed": 20,
+      "tokensJs": 1195,
+      "tokensLin": 895
+    },
+    "SIGNAL_PROCESSING_STATS": {
+      "total": 20,
+      "passed": 20,
+      "tokensJs": 1395,
+      "tokensLin": 1025
+    }
+  },
+  "timestamp": "2026-08-24T00:19:31.089Z"
+}

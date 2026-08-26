@@ -1,0 +1,13 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_host_pick
+~G{?=if #=for ^=ret :else}
+
+!cliEmitDefault(){^'ts'}
+!inMemoryHostLang(){^'rust'}
+!cMemoryLabel(){^'unsafe'}
+!langMemoryKind(lang){t=String(lang||'');?(t=='c'){^'unsafe'};?(t=='rust'){^'ownership'};?(t=='go'){^'gc'};?(t=='java'){^'gc'};?(t=='ts'){^'agent'};?(t=='js'){^'agent'};?(t=='py'){^'agent'};^'unknown'}
+!langIsMemorySafe(lang){k=langMemoryKind(lang);?(k=='unsafe'){^0};^1}
+!memoryClassRank(lang){k=langMemoryKind(lang);?(k=='ownership'){^0};?(k=='gc'){^1};?(k=='agent'){^2};^9}
+!hostPickBanner(){^('in_memory_host=rust cli_default=ts c_memory=unsafe')}
+
+=ex{cliEmitDefault,inMemoryHostLang,cMemoryLabel,langMemoryKind,langIsMemorySafe,memoryClassRank,hostPickBanner}

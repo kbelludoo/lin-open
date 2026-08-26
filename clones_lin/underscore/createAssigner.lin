@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!createAssigner(keysFunc,defaults){;^function(obj){length=arguments.length;?(defaults){obj=Object(obj)};?(length<2||obj==null){^obj};#(index=1;index<length;index++){source=arguments[index];keys=keysFunc(source);l=keys.length;#(i=0;i<l;i++){key=keys[i];?(!defaults||obj[key]==void 0){obj[key]=source[key]}}};^obj}}
+=ex{createAssigner}

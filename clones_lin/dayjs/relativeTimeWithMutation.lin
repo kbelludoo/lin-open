@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!relativeTimeWithMutation(number,withoutSuffix,key){;format={mm: 'munutenn',MM: 'miz',dd: 'devezh'};^(String(number)+" "+String(mutation(format[key],number)))}
+=ex{relativeTimeWithMutation}

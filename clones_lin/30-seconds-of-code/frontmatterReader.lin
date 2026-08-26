@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!frontmatterReader(data,filePath){;({body,attributes}=frontmatter(data));_lia_obj()=attributes;^_lia_obj()}
+=ex{frontmatterReader}

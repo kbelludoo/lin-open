@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!find(obj,predicate,context){;keyFinder=(((__c)=>{?(__c){return(findIndex)}return(findKey)})(isArrayLike(obj)));key=keyFinder(obj,predicate,context);?(key!=void 0&&key!=-1){^obj[key]}}
+=ex{find}

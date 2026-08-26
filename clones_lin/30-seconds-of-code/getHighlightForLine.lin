@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!getHighlightForLine(line){;?(highlightedLines.lines.has(line)){};^[ true,highlightedLines.lines.get(line),highlightedLines.labels,'mark',];?(insertedLines.lines.has(line)){};^[true,insertedLines.lines.get(line),insertedLines.labels,'ins'];?(deletedLines.lines.has(line)){};^[true,deletedLines.lines.get(line),deletedLines.labels,'del'];^[false,null,null]}
+=ex{getHighlightForLine}

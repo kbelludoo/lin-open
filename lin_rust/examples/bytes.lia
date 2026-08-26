@@ -1,0 +1,8 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+$K{b=1 kb=1024 mb=1048576 gb=1073741824 tb=1099511627776 pb=1125899906842624}
+!bytes(v,o){?(typeof v=='string'){^parse(v)}?(typeof v=='number'){^format(v,o)}^null}
+!format(v,o){?(!Number.isFinite(v)){^null}m=Math.abs(v);thousandsSeparator=(o&&o.thousandsSeparator)||'';unitSeparator=(o&&o.unitSeparator)||'';decimalPlaces=(o&&o.decimalPlaces!=undefined)?o.decimalPlaces : 2;fixedDecimals=Boolean(o&&o.fixedDecimals);u=(o&&o.unit)||'';?(!u||!$K[u.toLowerCase()]){?(m>=$K.pb){u='PB'}:(m>=$K.tb){u='TB'}:(m>=$K.gb){u='GB'}:(m>=$K.mb){u='MB'}:(m>=$K.kb){u='KB'}:{u='B'}}v=v/$K[u.toLowerCase()];str=v.toFixed(decimalPlaces);?(!fixedDecimals){str=str.replace(formatDecimalsRegExp,'$1')}?(thousandsSeparator){str=str.split('.').map(function (s,i){^i==0?s.replace(formatThousandsRegExp,thousandsSeparator) : s}).join('.')}^str+unitSeparator+u}
+!parse(v){?(typeof v=='number'&&!isNaN(v)){^v}?(typeof v!='string'){^null}r=parseRegExp.exec(v);f;u='b';?(!r){f=parseInt(v,10);u='b'}:{f=parseFloat(r[1]);u=r[4].toLowerCase()}?(isNaN(f)){^null}^Math.floor($K[u]*f)}
+=ex{bytes,format,parse}

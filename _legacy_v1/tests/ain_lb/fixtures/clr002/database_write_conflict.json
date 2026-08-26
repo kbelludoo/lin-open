@@ -1,0 +1,20 @@
+{
+  "fixture_id": "CLR-002-CONFLICT",
+  "kind": "declaration",
+  "intent": "persist_balance",
+  "target": "Ledger",
+  "operation": "database.write",
+  "allowed_effects": ["pure"],
+  "allowed_context": [],
+  "function": {
+    "name": "persistBalance",
+    "params": "balance",
+    "body": "return database.write('balances', balance);"
+  },
+  "proposed_change": {
+    "kind": "allowed_effect",
+    "from": "pure",
+    "to": "io"
+  },
+  "target_path": "tests/ain_lb/fixtures/clr002/database_write_conflict.json"
+}

@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!loadWebComponents(componentsPath){;^~(tree){visit(tree, { type: `raw` }, ~(node){ const { value } = node;; const isWebComponent = value.match( /<(?<component>[a-zA-Z0-9]+-[a-zA-Z0-9]+).*>/ );;; if (!isWebComponent) return;; const { component } = isWebComponent.groups;;; if (component === 'article-embed') return;; node.value = [ `<script type="module" src="${componentsPath}scripts/${component}.mjs"></script>`, value.replace(component, `${component} interactive="false"`), ].join('\n'); });; return tree;}}
+=ex{loadWebComponents}

@@ -1,0 +1,9 @@
+@DICEL:LIN_CANDIDATE:1.0.0
+^from_clone="clone-lin-left-pad"
+^stage="IMPROVE_LIN_FROM_CLONE"
+^forbid_nucleus=true
+
+@HARVEST {
+  emit_peripheral{gap="template_literal" n=1 proposal="preserve_or_desugar_template_literals_in_applySourceSigils" nucleus=false}
+  emit_peripheral{gap="CLOSURE" n=1 proposal="preserve_free_var_bindings_when_extracting_named_fns" nucleus=false}
+}

@@ -1,0 +1,59 @@
+{
+  "id": "T007",
+  "family": "code_transformation",
+  "difficulty": "medium",
+  "specification": "Flatten recursivo puro de arrays aninhados. Entrada: array aninhado de profundidade arbitrária. Saída: array plano com todos os elementos primitivos.",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "globalState",
+    "Array.prototype.flat"
+  ],
+  "test_cases": [
+    {
+      "input": [
+        1,
+        [
+          2,
+          [
+            3,
+            4
+          ],
+          5
+        ],
+        6
+      ],
+      "expected": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ]
+    },
+    {
+      "input": [
+        [
+          []
+        ]
+      ],
+      "expected": []
+    },
+    {
+      "input": [
+        1,
+        2,
+        3
+      ],
+      "expected": [
+        1,
+        2,
+        3
+      ]
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T007.mjs"
+  }
+}

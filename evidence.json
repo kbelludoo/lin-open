@@ -1,0 +1,115 @@
+{
+  "protocol": "E8_E9_CROSS_BACKEND_EQUIVALENCE",
+  "run_id": "RUN-E8-E9-20260816-002",
+  "spec_version": "WORKLOAD_SPEC_V1",
+  "ir_version": "LIN/IR/0.1",
+  "timestamp_utc": "2026-08-16T16:47:08.203Z",
+  "environment_lock": {
+    "host_os": "win32 (Windows_NT 10.0.26200; x64)",
+    "node_version": "v24.19.0",
+    "rustc_version": "1.97.1 (8bab26f4f 2026-07-14)",
+    "cargo_version": "1.97.1 (c980f4866 2026-06-30)",
+    "nim_version": "2.2.0 (native compiler: orc, release, opt:speed)",
+    "gcc_version": "16.2.0 (MinGW-w64 x86_64-posix-seh-ucrt)",
+    "opt_level_rust": "release (-O)",
+    "opt_level_nim": "release (-d:release --opt:speed)",
+    "baseline_compatibility": "ENVIRONMENT_CHANGED_DO_NOT_COMPARE_WITH_RUST_1.75_NIM_2.0_BASELINE"
+  },
+  "provenance_manifest": {
+    "workload_spec_file": "spec/WORKLOAD_SPEC_V1.json",
+    "workload_spec_sha256": "505bef5580055d34b66f3e27dd2096bb07777e13d465ad4061362400254c5520",
+    "rust_runner_src_file": "benchmarks/rust/src/lin_ir_runner.rs",
+    "rust_runner_src_sha256": "ef9ff655260e3b791dda77d537f4c098dd255fbfcd84b2160eac286e274fce06",
+    "rust_runner_bin_file": "benchmarks/rust/lin_ir_runner.exe",
+    "rust_runner_bin_sha256": "85c17af1edbdc7038f1a2b65ef92c92d24b57d9be579bd1f0a7509c713ee02a3",
+    "rust_compiler_cmd": "rustc -O benchmarks/rust/src/lin_ir_runner.rs -o benchmarks/rust/lin_ir_runner.exe",
+    "nim_runner_src_file": "benchmarks/nim/src/lin_ir_runner.nim",
+    "nim_runner_src_sha256": "73a9215b3fd3733e6094e9f446fa24ddc65a0e735cbd1f5b2a87888fdc017536",
+    "nim_runner_bin_file": "benchmarks/nim/lin_ir_runner.exe",
+    "nim_runner_bin_sha256": "f7c333ac2b53628fbd8a30f5aa4179c32b7c608a809fb1f0773ed9caa1c51ed6",
+    "nim_compiler_cmd": "nim c -d:release --opt:speed -o:benchmarks/nim/lin_ir_runner.exe benchmarks/nim/src/lin_ir_runner.nim",
+    "orchestrator_script_file": "scripts/run_e8_e9_ir_equivalence.mjs",
+    "orchestrator_script_sha256": "f4104e5c0b52e8eb5bd6cdc476f23ca6e44e73be2db2ceae5d27a6eb85d4bc85"
+  },
+  "cases": [
+    {
+      "case_id": "C01",
+      "name": "reduction_hashcons",
+      "canonical_bytes_len": 871,
+      "canonical_bytes_sha256": "sha256:4b431379521c5c4e383cd1488f4f5b47cf782d8ba18de61f6aa7b2b06c7f2b42",
+      "lin_ir_hash_expected": "sha256:0288ed22f223fd06f802811356ca6b8c6a45f91ce7e1df0b998e2031b215582d",
+      "lin_ir_hash_rust": "sha256:0288ed22f223fd06f802811356ca6b8c6a45f91ce7e1df0b998e2031b215582d",
+      "lin_ir_hash_nim": "sha256:0288ed22f223fd06f802811356ca6b8c6a45f91ce7e1df0b998e2031b215582d",
+      "oracle_expected": "sha256:7f7b810fdd98403977e780c59b6468d2a871fedb91a1e96f1d2a248d0dba7b76",
+      "rust_result": "sha256:7f7b810fdd98403977e780c59b6468d2a871fedb91a1e96f1d2a248d0dba7b76",
+      "nim_result": "sha256:7f7b810fdd98403977e780c59b6468d2a871fedb91a1e96f1d2a248d0dba7b76",
+      "values": {
+        "oracle_value": 239602526,
+        "rust_value": 239602526,
+        "nim_value": 239602526
+      },
+      "checks": {
+        "integrity": true,
+        "rust_correct": true,
+        "nim_correct": true,
+        "equivalent": true
+      },
+      "gate_eligible": true
+    },
+    {
+      "case_id": "C02",
+      "name": "pattern_match_ast",
+      "canonical_bytes_len": 774,
+      "canonical_bytes_sha256": "sha256:c6d3b28fd34f25cd5728e9d85fe0088dc1dae3ad6e9fbec7c2249f9ca38f2748",
+      "lin_ir_hash_expected": "sha256:a062e0db6f911ad01eaeed77bed50007ba758ef3f33b684c3e5a654a9c277503",
+      "lin_ir_hash_rust": "sha256:a062e0db6f911ad01eaeed77bed50007ba758ef3f33b684c3e5a654a9c277503",
+      "lin_ir_hash_nim": "sha256:a062e0db6f911ad01eaeed77bed50007ba758ef3f33b684c3e5a654a9c277503",
+      "oracle_expected": "sha256:8b8ee029c742dbdaff160c3cbb412a067ff9be484a79f88741c530a937bb3398",
+      "rust_result": "sha256:8b8ee029c742dbdaff160c3cbb412a067ff9be484a79f88741c530a937bb3398",
+      "nim_result": "sha256:8b8ee029c742dbdaff160c3cbb412a067ff9be484a79f88741c530a937bb3398",
+      "values": {
+        "oracle_value": 291693058,
+        "rust_value": 291693058,
+        "nim_value": 291693058
+      },
+      "checks": {
+        "integrity": true,
+        "rust_correct": true,
+        "nim_correct": true,
+        "equivalent": true
+      },
+      "gate_eligible": true
+    },
+    {
+      "case_id": "C03",
+      "name": "dag_dependency_toposort",
+      "canonical_bytes_len": 425,
+      "canonical_bytes_sha256": "sha256:fe93b2f92ab089594e394c1b1f4ea4e0fa1d6efda54d7e5509292cb5e4db7881",
+      "lin_ir_hash_expected": "sha256:de5cf785d6c06b99a6fbeeef45034fd44cfb05e0a763440bf4ae57308bc95d97",
+      "lin_ir_hash_rust": "sha256:de5cf785d6c06b99a6fbeeef45034fd44cfb05e0a763440bf4ae57308bc95d97",
+      "lin_ir_hash_nim": "sha256:de5cf785d6c06b99a6fbeeef45034fd44cfb05e0a763440bf4ae57308bc95d97",
+      "oracle_expected": "sha256:625487c59a5fc5b3647c408f17866134222446d00a0c44b8f7d4e0207e6bf615",
+      "rust_result": "sha256:625487c59a5fc5b3647c408f17866134222446d00a0c44b8f7d4e0207e6bf615",
+      "nim_result": "sha256:625487c59a5fc5b3647c408f17866134222446d00a0c44b8f7d4e0207e6bf615",
+      "values": {
+        "oracle_value": 1055207419,
+        "rust_value": 1055207419,
+        "nim_value": 1055207419
+      },
+      "checks": {
+        "integrity": true,
+        "rust_correct": true,
+        "nim_correct": true,
+        "equivalent": true
+      },
+      "gate_eligible": true
+    }
+  ],
+  "gate_e11": true,
+  "summary": {
+    "total_cases": 3,
+    "passed_cases": 3,
+    "gate_status": "GATE_E11 = TRUE",
+    "conclusion": "E8/E9 demonstrou conformidade semântica do LIN-IR v0.1 entre os executores nativos Rust 1.97.1 e Nim 2.2.0 para C01–C03, sob o protocolo executado, e habilitou formalmente E11 com custódia criptográfica completa de fontes e binários compilados."
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "id": "T021",
+  "family": "debug_repair",
+  "difficulty": "hard",
+  "specification": "Clone profundo à prova de ciclos ou dados nested. Entrada: objeto { a: 1, b: { c: 2 } }. Saída: cópia exata desvinculada por referência.",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "globalState",
+    "mut"
+  ],
+  "test_cases": [
+    {
+      "input": {
+        "a": 1,
+        "b": {
+          "c": 2
+        }
+      },
+      "expected": {
+        "a": 1,
+        "b": {
+          "c": 2
+        }
+      }
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T021.mjs"
+  }
+}

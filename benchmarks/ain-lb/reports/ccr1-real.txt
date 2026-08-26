@@ -1,0 +1,12 @@
+AIN-LB CCR (Catastrophic Context Loss Recovery)
+==========================================
+model: 9router  mock: false
+
+######## CCR-1 ########
+[CCR-1] Total amnesia — only source + tests + bug instruction
+
+  py: recon_tokens=1411  wrong_assumptions=0  repair_ok=true  behavior_eq=1
+  ts: recon_tokens=1071  wrong_assumptions=0  repair_ok=false  behavior_eq=0
+  rust: recon_tokens=1338  wrong_assumptions=0  repair_ok=false  behavior_eq=0
+  lin: recon_tokens=1137  wrong_assumptions=0  repair_ok=true  behavior_eq=1
+

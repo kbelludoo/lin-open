@@ -1,0 +1,34 @@
+[package]
+name = "lin-benchmarks"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "01_parsing"
+path = "src/01_parsing.rs"
+
+[[bin]]
+name = "03_hashcons"
+path = "src/03_hashcons.rs"
+
+[[bin]]
+name = "04_content_hash"
+path = "src/04_content_hash.rs"
+
+[[bin]]
+name = "04_content_hash_v2"
+path = "src/04_content_hash_v2.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+hashbrown = "0.14"
+once_cell = "1.19"
+sha2 = "0.10"
+regex = "1"
+hex = "0.4"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

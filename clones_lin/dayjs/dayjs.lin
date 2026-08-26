@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!dayjs(date,c){;?(isDayjs(date)){^date.clone()};cfg=(((__c)=>{?(__c){return(c)}return({})})(typeof c=='object'));cfg.date=date;cfg.args=arguments;^new Dayjs(cfg)}
+=ex{dayjs}

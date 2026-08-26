@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!cleanUpSegments(segments){;^( segments .map(~(segment){;; if (isDelimited(segment)) return segment;; return segment.split(' ').map(~(s){^s.trim()});}) .flat() .filter(Boolean) )}
+=ex{cleanUpSegments}

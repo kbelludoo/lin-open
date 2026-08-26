@@ -1,0 +1,32 @@
+{
+  "spec_id": "CROSS_OPTIMIZATION_COMPOSITION_SPEC_V1",
+  "version": "1.0.0",
+  "protocol": "CROSS_OPTIMIZATION_COMPOSITION_EVALUATION",
+  "created_at": "2026-08-16T17:54:00Z",
+  "meta": {
+    "purpose": "Evaluate cross-composition of individually verified optimizations (A, B, C), testing for emergent semantic conflicts, superadditivity of speedup, and detection/rollback of conflicting combinations (A + X_CONFLICT)",
+    "hypothesis": "Otimizações de runtime individualmente verificadas mantêm equivalência semântica e ganhos cumulativos quando compostas simultaneamente (A+B, B+C, A+C, A+B+C), e combinações conflitantes emergentes são interceptadas pelo harness de regressão."
+  },
+  "primitives": {
+    "OPT_A": { "name": "flat_array_tabling", "type": "memory_layout" },
+    "OPT_B": { "name": "bitwise_hashconsing", "type": "symbol_space" },
+    "OPT_C": { "name": "lockfree_cas_concurrency", "type": "concurrency_primitive" },
+    "OPT_X": { "name": "aliasing_speculative_pointer", "type": "flawed_emergent_conflict" }
+  },
+  "composition_matrix": [
+    { "combination_id": "C_A", "components": ["OPT_A"], "expected_verdict": "ACCEPT" },
+    { "combination_id": "C_B", "components": ["OPT_B"], "expected_verdict": "ACCEPT" },
+    { "combination_id": "C_C", "components": ["OPT_C"], "expected_verdict": "ACCEPT" },
+    { "combination_id": "C_AB", "components": ["OPT_A", "OPT_B"], "expected_verdict": "ACCEPT" },
+    { "combination_id": "C_BC", "components": ["OPT_B", "OPT_C"], "expected_verdict": "ACCEPT" },
+    { "combination_id": "C_AC", "components": ["OPT_A", "OPT_C"], "expected_verdict": "ACCEPT" },
+    { "combination_id": "C_AX_FAULT", "components": ["OPT_A", "OPT_X"], "expected_verdict": "REJECT_AND_ROLLBACK" },
+    { "combination_id": "C_ABC", "components": ["OPT_A", "OPT_B", "OPT_C"], "expected_verdict": "ACCEPT" }
+  ],
+  "gates": {
+    "GATE_COMPOSITION_EQUIVALENCE": "Output(Composed) == Oracle for all valid combinations",
+    "GATE_EMERGENT_CONFLICT_DETECTION": "C_AX_FAULT caught and rejected by regression audit",
+    "GATE_PERFORMANCE_BENEFIT": "Speedup(Composed) >= max(Speedup(Components))",
+    "GATE_NUCLEUS_IMMUTABILITY": "nucleus_hash unmodified"
+  }
+}

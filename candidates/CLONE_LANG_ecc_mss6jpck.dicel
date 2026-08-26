@@ -1,0 +1,10 @@
+@DICEL:LIN_CANDIDATE:1.0.0
+^from_clone="clone-lin-ecc"
+^stage="LEARN_NEW_LANG"
+^forbid_nucleus=true
+
+@HARVEST {
+  emit_fail{target="py" fn="isAbsolutePath" emit="ok" run="FAIL" reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_ecc_TWK5LL\py\isAbsolutePath.py', line 3
+    return path.isAbsolute(val" nucleus=false}
+  proposal{fix="emit_ts|emit_py|emit_go|emit_rust|emit_shared peripheral; retry; no one-file hardcode"}
+}

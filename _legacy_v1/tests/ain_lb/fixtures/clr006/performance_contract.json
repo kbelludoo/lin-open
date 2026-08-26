@@ -1,0 +1,14 @@
+{
+  "intent": "system is becoming slow; improve performance while preserving contract",
+  "artifacts_reference": "../clr004/wipe/context_artifacts.json",
+  "graph_reference": "../clr004/repo",
+  "constraints": {
+    "preserved_contracts": true,
+    "allowed_effects": ["pure", "memory"],
+    "allowed_caps": ["memory", "cpu"],
+    "forbidden_effects": ["io"],
+    "forbidden_caps": ["io", "storage"],
+    "architecture_approval": false,
+    "concurrency_approval": false
+  }
+}

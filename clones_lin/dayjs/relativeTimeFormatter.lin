@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!relativeTimeFormatter(number,withoutSuffix,key,isFuture){;wordKey=translator.words[key];?(key.length==1){?(key=='y'&&withoutSuffix){^'jedna godina'};^(((__c)=>{?(__c){return(wordKey[0])}return(wordKey[1])})(isFuture||withoutSuffix))};word=translator.correctGrammarCase(number,wordKey);?(key=='yy'&&withoutSuffix&&word=='%d godinu'){^(String(number)+" godina")};^word.replace('%d',number)}
+=ex{relativeTimeFormatter}

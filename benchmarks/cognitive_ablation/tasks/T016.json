@@ -1,0 +1,27 @@
+{
+  "id": "T016",
+  "family": "effects_contracts",
+  "difficulty": "easy",
+  "specification": "Sanitizador de strings puro (remove tags HTML). Entrada: string com tags HTML. Saída: string limpa sem tags.",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "document.",
+    "window.",
+    "eval",
+    "globalState"
+  ],
+  "test_cases": [
+    {
+      "input": "<p>Hello <b>World</b></p>",
+      "expected": "Hello World"
+    },
+    {
+      "input": "Simple text",
+      "expected": "Simple text"
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T016.mjs"
+  }
+}

@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!absFloor(n){^((((__c)=>{?(__c){return(Math.ceil(n)||0)}return(Math.floor(n))})(n<0)))}
+=ex{absFloor}

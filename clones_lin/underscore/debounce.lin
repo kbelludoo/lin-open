@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!debounce(func,wait,immediate){later=~(){; var passed = now() - previous;;; if (wait > passed) { timeout = setTimeout(later, wait - passed); } else { timeout = null;;; if (!immediate) result = func.apply(context, args);;; if (!timeout) args = context = null; }};;timeout=undefined;previous=undefined;args=undefined;result=undefined;context=undefined;debounced=restArguments(~(_args){context = this;; args = _args;; previous = now();;; if (!timeout) { timeout = setTimeout(later, wait);;; if (immediate) result = func.apply(context, args); }; return result;});debounced.cancel=~(){clearTimeout(timeout);; timeout = args = context = null;};^debounced}
+=ex{debounce}

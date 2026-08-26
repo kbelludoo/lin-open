@@ -1,0 +1,8 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=rust_match_fixture
+~G{?=if #=for ^=ret :else}
+
+!matchNumber(n:int)->int{match(n){0=>{^100}1=>{^200}_=>{^999}}}
+!grade(s:int)->int{match(s){90=>{^4}80=>{^3}_=>{^0}}}
+
+=ex{matchNumber,grade}

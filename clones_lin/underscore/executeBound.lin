@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!executeBound(sourceFunc,boundFunc,context,callingContext,args){;?(!(callingContext instanceof boundFunc)){^sourceFunc.apply(context,args)};self=baseCreate(sourceFunc.prototype);result=sourceFunc.apply(self,args);?(isObject(result)){^result};^self}
+=ex{executeBound}

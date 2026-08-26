@@ -1,0 +1,505 @@
+@DICEL:lia_trauma:0.2.0
+^status=ACTIVE
+^note="failure_class patterns; compress into emit rules; fix_target=compiler_not_lia"
+^source_bench="INTEL_AIL_SIZE_DISK_BENCHMARK + INTEL_AIL_400K_ROUNDTRIP 2026-08-13"
+^no_padding=true
+
+@ENTRIES {
+  @E001 {
+    class: CLOSURE
+    severity: HIGH
+    observed: "lodash public-API toString→LIA suite 1 pass / 14 fail"
+    symptom: "free refs (toNumber/baseToNumber/isArray) lost; monolith rewrite breaks closures"
+    corpus: "lodash (clone-400k + real node test/test)"
+    baseline: "node test/test PASS on original"
+    fix_target: compiler_not_lia
+    forbid: "edit_LIA_to_hide_gap; claim_full_suite_green"
+    next: "emitter preserve free-var binding / closure capture across fn extract"
+  }
+  @E002 {
+    class: HOLDING_GAP
+    severity: MED
+    observed: "TypeScript/src holdout 183/500 (36.6%); lodash isolated 246/400 (61.5%)"
+    symptom: "fns_fail+fns_skip dominate; behavior_eq exact sha256 gate; soft_match forbidden"
+    corpus: "TypeScript/src 453359 LOC; lodash.js isolated classic fns"
+    fix_target: compiler_not_lia
+    forbid: "pad_pass_rate; claim_LIA_beats_full_lodash_suite"
+    next: "raise holdout pass without weakening semantic_hash_exact_like_P200"
+  }
+  @E003 {
+    class: ARROW_EXTRACT_OVERREAD
+    severity: MED
+    observed: "clone-lia dayjs utils: arrow expr body ate following const/export until fixed"
+    symptom: "absFloor/isUndefined bodies included prettyUnit/export default"
+    fix_applied: "extractArrowExpr stop on newline at depth0"
+    fix_target: compiler_not_lia
+    status: FIXED_IN_EMITTER
+  }
+  @E004 {
+    class: ASI_SEMICOLON_FREE
+    severity: MED
+    observed: "dayjs padStart style: newline if without ; → emit glued String(x)?(cond)"
+    fix_applied: "applySourceSigils insert ; before if|for|return|const|let|var|else at line start"
+    fix_target: compiler_not_lia
+    status: FIXED_IN_EMITTER
+    remaining: "template_literal still unsupported (honest skip)"
+  }
+}
+
+@E{t="2026-08-13T04:08:09.612Z" class=RUNTIME_HELPER corpus=clone-lia-dayjs count=2 fix_target=compiler_not_lia}
+
+@E{t="2026-08-13T04:15:43.040Z" class=HARVEST corpus=clone-lin-dayjs note="emit_peripheral:template_literal×2|emit_peripheral:CLOSURE×2|positive_transfer:ok×2" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T04:15:50.778Z" class=HARVEST corpus=clone-lin-ms note="observe:none_new×0" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T04:15:55.044Z" class=SEMANTICS_GAP corpus=clone-lin-underscore count=4 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T04:15:55.044Z" class=RUNTIME_HELPER corpus=clone-lin-underscore count=1 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T04:15:55.048Z" class=HARVEST corpus=clone-lin-underscore note="emit_peripheral:template_literal×2|positive_transfer:ok×23" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T04:16:41.610Z" class=HARVEST corpus=clone-lin-ms note="emit_peripheral:template_literal×5" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T04:16:45.340Z" class=SEMANTICS_GAP corpus=clone-lin-underscore count=4 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T04:16:45.341Z" class=RUNTIME_HELPER corpus=clone-lin-underscore count=1 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T04:16:45.343Z" class=HARVEST corpus=clone-lin-underscore note="emit_peripheral:template_literal×2|positive_transfer:ok×23" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T04:17:01.901Z" class=HARVEST corpus=clone-lin-left-pad note="emit_peripheral:template_literal×1|emit_peripheral:CLOSURE×1" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T04:24:38.516Z" class=HARVEST corpus=clone-lin-dayjs note="emit_peripheral:CLOSURE×2|positive_transfer:ok×4" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T04:25:35.311Z" class=RUNTIME_HELPER corpus=clone-lin-dayjs count=1 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T04:25:35.315Z" class=HARVEST corpus=clone-lin-dayjs note="positive_transfer:ok×5" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T04:25:37.241Z" class=RUNTIME_HELPER corpus=clone-lin-dayjs count=1 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T04:25:37.243Z" class=HARVEST corpus=clone-lin-dayjs note="positive_transfer:ok×5" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T04:25:38.916Z" class=RUNTIME_HELPER corpus=clone-lin-dayjs count=1 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T04:25:38.919Z" class=HARVEST corpus=clone-lin-dayjs note="positive_transfer:ok×5" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:30:30.330Z" class=HARVEST corpus=clone-lin-dayjs note="positive_transfer:ok×6" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:30:40.534Z" class=SEMANTICS_GAP corpus=clone-lin-underscore count=4 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:30:40.535Z" class=RUNTIME_HELPER corpus=clone-lin-underscore count=3 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:30:40.537Z" class=HARVEST corpus=clone-lin-underscore note="positive_transfer:ok×17" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:30:42.307Z" class=SEMANTICS_GAP corpus=clone-lin-underscore count=4 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:30:42.308Z" class=RUNTIME_HELPER corpus=clone-lin-underscore count=3 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:30:42.310Z" class=HARVEST corpus=clone-lin-underscore note="positive_transfer:ok×17" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:33:27.873Z" class=RUNTIME_HELPER corpus=clone-lin-underscore count=1 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:33:27.877Z" class=HARVEST corpus=clone-lin-underscore note="positive_transfer:ok×23" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:33:29.656Z" class=RUNTIME_HELPER corpus=clone-lin-underscore count=1 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:33:29.659Z" class=HARVEST corpus=clone-lin-underscore note="positive_transfer:ok×23" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:34:10.499Z" class=HARVEST corpus=clone-lin-underscore note="positive_transfer:ok×24" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:34:18.934Z" class=HARVEST corpus=clone-lin-ms note="observe:none_new×0" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:36:39.178Z" class=HARVEST corpus=clone-lin-ms note="positive_transfer:ok×6" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:36:40.437Z" class=HARVEST corpus=clone-lin-ms note="positive_transfer:ok×6" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:36:41.746Z" class=HARVEST corpus=clone-lin-ms note="positive_transfer:ok×6" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:37:07.065Z" class=RUNTIME_HELPER corpus=clone-lin-ms count=1 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:37:07.069Z" class=HARVEST corpus=clone-lin-ms note="positive_transfer:ok×6" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:37:08.305Z" class=RUNTIME_HELPER corpus=clone-lin-ms count=1 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:37:08.307Z" class=HARVEST corpus=clone-lin-ms note="positive_transfer:ok×6" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:43:27.503Z" class=HARVEST corpus=clone-lin-ms note="positive_transfer:ok×7" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:43:34.744Z" class=HARVEST corpus=clone-lin-left-pad note="emit_peripheral:CLOSURE×1" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:43:35.930Z" class=HARVEST corpus=clone-lin-left-pad note="emit_peripheral:CLOSURE×1" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:43:37.137Z" class=HARVEST corpus=clone-lin-left-pad note="emit_peripheral:CLOSURE×1" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:44:35.362Z" class=RUNTIME_HELPER corpus=clone-lin-left-pad count=1 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:44:35.365Z" class=HARVEST corpus=clone-lin-left-pad note="emit_peripheral:CLOSURE×1" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:44:36.598Z" class=RUNTIME_HELPER corpus=clone-lin-left-pad count=1 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:44:36.600Z" class=HARVEST corpus=clone-lin-left-pad note="emit_peripheral:CLOSURE×1" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:45:27.238Z" class=RUNTIME_HELPER corpus=clone-lin-left-pad count=1 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:45:27.242Z" class=HARVEST corpus=clone-lin-left-pad note="observe:none_new×0" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:45:28.463Z" class=RUNTIME_HELPER corpus=clone-lin-left-pad count=1 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:45:28.466Z" class=HARVEST corpus=clone-lin-left-pad note="observe:none_new×0" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:45:46.452Z" class=RUNTIME_HELPER corpus=clone-lin-left-pad count=1 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:45:46.457Z" class=HARVEST corpus=clone-lin-left-pad note="observe:none_new×0" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:47:17.953Z" class=HARVEST corpus=clone-lin-left-pad note="positive_transfer:ok×1" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T22:59:43.919Z" class=HARVEST corpus=clone-lin-nanoid note="positive_transfer:ok×4" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:00:14.713Z" class=SEMANTICS_GAP corpus=clone-lin-chalk count=2 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:00:14.717Z" class=HARVEST corpus=clone-lin-chalk note="positive_transfer:ok×11" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:02:51.813Z" class=SEMANTICS_GAP corpus=clone-lin-chalk count=2 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:02:51.818Z" class=HARVEST corpus=clone-lin-chalk note="positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:04:06.973Z" class=SEMANTICS_GAP corpus=clone-lin-chalk count=3 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:04:06.980Z" class=HARVEST corpus=clone-lin-chalk note="positive_transfer:ok×9" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:05:08.284Z" class=HARVEST corpus=clone-lin-chalk note="positive_transfer:ok×12" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:05:54.315Z" class=HARVEST corpus=clone-lin-dedent note="positive_transfer:ok×2" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:05:56.100Z" class=HARVEST corpus=clone-lin-dedent note="positive_transfer:ok×2" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:05:57.838Z" class=HARVEST corpus=clone-lin-dedent note="positive_transfer:ok×2" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:05:59.528Z" class=HARVEST corpus=clone-lin-dedent note="positive_transfer:ok×2" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:06:01.288Z" class=HARVEST corpus=clone-lin-dedent note="positive_transfer:ok×2" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:06:03.058Z" class=HARVEST corpus=clone-lin-dedent note="positive_transfer:ok×2" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:06:05.196Z" class=HARVEST corpus=clone-lin-dedent note="positive_transfer:ok×2" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:06:07.016Z" class=HARVEST corpus=clone-lin-dedent note="positive_transfer:ok×2" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:07:28.742Z" class=HARVEST corpus=clone-lin-dedent note="observe:none_new×0" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:07:30.033Z" class=HARVEST corpus=clone-lin-dedent note="observe:none_new×0" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:07:31.349Z" class=HARVEST corpus=clone-lin-dedent note="observe:none_new×0" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:07:32.627Z" class=HARVEST corpus=clone-lin-dedent note="observe:none_new×0" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:09:56.784Z" class=HARVEST corpus=clone-lin-dedent note="positive_transfer:ok×1" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:10:05.139Z" class=HARVEST corpus=clone-lin-is-number note="observe:none_new×0" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:10:06.368Z" class=HARVEST corpus=clone-lin-is-number note="observe:none_new×0" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:10:57.877Z" class=HARVEST corpus=clone-lin-is-number note="positive_transfer:ok×1" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:11:07.361Z" class=HARVEST corpus=clone-lin-dayjs note="positive_transfer:ok×5" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:55:37.529Z" class=SEMANTICS_GAP corpus=clone-lin-ecc count=6 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:55:38.016Z" class=NEW_LANG corpus=clone-lin-ecc targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:55:38.475Z" class=NEW_LANG corpus=clone-lin-ecc targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:55:38.745Z" class=NEW_LANG corpus=clone-lin-ecc targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:55:39.065Z" class=NEW_LANG corpus=clone-lin-ecc targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:55:39.497Z" class=NEW_LANG corpus=clone-lin-ecc targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:55:39.759Z" class=NEW_LANG corpus=clone-lin-ecc targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:55:40.064Z" class=NEW_LANG corpus=clone-lin-ecc targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:55:40.490Z" class=NEW_LANG corpus=clone-lin-ecc targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:55:40.748Z" class=NEW_LANG corpus=clone-lin-ecc targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:55:41.054Z" class=NEW_LANG corpus=clone-lin-ecc targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:55:41.484Z" class=NEW_LANG corpus=clone-lin-ecc targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:55:41.747Z" class=NEW_LANG corpus=clone-lin-ecc targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:55:41.776Z" class=NEW_LANG corpus=clone-lin-ecc targets=ts count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:55:41.778Z" class=NEW_LANG corpus=clone-lin-ecc targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:55:41.780Z" class=NEW_LANG corpus=clone-lin-ecc targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:55:41.782Z" class=NEW_LANG corpus=clone-lin-ecc targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:55:42.064Z" class=NEW_LANG corpus=clone-lin-ecc targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:55:42.488Z" class=NEW_LANG corpus=clone-lin-ecc targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:55:42.738Z" class=NEW_LANG corpus=clone-lin-ecc targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:55:42.767Z" class=NEW_LANG corpus=clone-lin-ecc targets=py,go,rust,ts count=19 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:55:42.776Z" class=HARVEST corpus=clone-lin-ecc note="positive_transfer:ok×6" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:55:59.704Z" class=SEMANTICS_GAP corpus=clone-lin-ecc count=4 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:55:59.993Z" class=NEW_LANG corpus=clone-lin-ecc targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:56:00.448Z" class=NEW_LANG corpus=clone-lin-ecc targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:56:00.723Z" class=NEW_LANG corpus=clone-lin-ecc targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:56:01.023Z" class=NEW_LANG corpus=clone-lin-ecc targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:56:01.464Z" class=NEW_LANG corpus=clone-lin-ecc targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:56:01.739Z" class=NEW_LANG corpus=clone-lin-ecc targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:56:02.167Z" class=NEW_LANG corpus=clone-lin-ecc targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:56:02.675Z" class=NEW_LANG corpus=clone-lin-ecc targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:56:02.946Z" class=NEW_LANG corpus=clone-lin-ecc targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:56:03.261Z" class=NEW_LANG corpus=clone-lin-ecc targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:56:03.694Z" class=NEW_LANG corpus=clone-lin-ecc targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:56:03.962Z" class=NEW_LANG corpus=clone-lin-ecc targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:56:03.990Z" class=NEW_LANG corpus=clone-lin-ecc targets=py,go,rust count=12 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:56:03.998Z" class=HARVEST corpus=clone-lin-ecc note="positive_transfer:ok×4" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:59:23.116Z" class=SEMANTICS_GAP corpus=clone-lin-ecc count=4 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-13T23:59:23.401Z" class=NEW_LANG corpus=clone-lin-ecc targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:59:23.865Z" class=NEW_LANG corpus=clone-lin-ecc targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:59:24.152Z" class=NEW_LANG corpus=clone-lin-ecc targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:59:24.464Z" class=NEW_LANG corpus=clone-lin-ecc targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:59:24.886Z" class=NEW_LANG corpus=clone-lin-ecc targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:59:25.149Z" class=NEW_LANG corpus=clone-lin-ecc targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:59:25.459Z" class=NEW_LANG corpus=clone-lin-ecc targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:59:25.883Z" class=NEW_LANG corpus=clone-lin-ecc targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:59:26.198Z" class=NEW_LANG corpus=clone-lin-ecc targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:59:26.537Z" class=NEW_LANG corpus=clone-lin-ecc targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:59:26.992Z" class=NEW_LANG corpus=clone-lin-ecc targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:59:27.293Z" class=NEW_LANG corpus=clone-lin-ecc targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:59:27.326Z" class=NEW_LANG corpus=clone-lin-ecc targets=py,go,rust count=12 fix_target=emit_peripheral}
+
+@E{t="2026-08-13T23:59:27.336Z" class=HARVEST corpus=clone-lin-ecc note="positive_transfer:ok×4" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:01:01.933Z" class=SEMANTICS_GAP corpus=clone-lin-is-number count=1 fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:01:02.546Z" class=NEW_LANG corpus=clone-lin-is-number targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:01:03.100Z" class=NEW_LANG corpus=clone-lin-is-number targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:01:03.380Z" class=NEW_LANG corpus=clone-lin-is-number targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:01:03.697Z" class=NEW_LANG corpus=clone-lin-is-number targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:01:04.160Z" class=NEW_LANG corpus=clone-lin-is-number targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:01:04.423Z" class=NEW_LANG corpus=clone-lin-is-number targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:01:04.760Z" class=NEW_LANG corpus=clone-lin-is-number targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:01:05.208Z" class=NEW_LANG corpus=clone-lin-is-number targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:01:05.475Z" class=NEW_LANG corpus=clone-lin-is-number targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:01:05.793Z" class=NEW_LANG corpus=clone-lin-is-number targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:01:06.234Z" class=NEW_LANG corpus=clone-lin-is-number targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:01:06.501Z" class=NEW_LANG corpus=clone-lin-is-number targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:01:06.812Z" class=NEW_LANG corpus=clone-lin-is-number targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:01:07.252Z" class=NEW_LANG corpus=clone-lin-is-number targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:01:07.554Z" class=NEW_LANG corpus=clone-lin-is-number targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:01:07.591Z" class=NEW_LANG corpus=clone-lin-is-number targets=py,go,rust count=15 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:01:07.603Z" class=HARVEST corpus=clone-lin-is-number note="positive_transfer:ok×5" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:04:27.587Z" class=NEW_LANG corpus=clone-lin-dayjs targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:04:28.160Z" class=NEW_LANG corpus=clone-lin-dayjs targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:04:28.730Z" class=NEW_LANG corpus=clone-lin-dayjs targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:04:29.223Z" class=NEW_LANG corpus=clone-lin-dayjs targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:04:29.772Z" class=NEW_LANG corpus=clone-lin-dayjs targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:04:30.330Z" class=NEW_LANG corpus=clone-lin-dayjs targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:04:30.812Z" class=NEW_LANG corpus=clone-lin-dayjs targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:04:31.367Z" class=NEW_LANG corpus=clone-lin-dayjs targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:04:31.911Z" class=NEW_LANG corpus=clone-lin-dayjs targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:04:32.368Z" class=NEW_LANG corpus=clone-lin-dayjs targets=py count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:04:32.922Z" class=NEW_LANG corpus=clone-lin-dayjs targets=go count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:04:33.465Z" class=NEW_LANG corpus=clone-lin-dayjs targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:04:34.510Z" class=NEW_LANG corpus=clone-lin-dayjs targets=rust count=1 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:04:34.686Z" class=NEW_LANG corpus=clone-lin-dayjs targets=py,go,rust count=13 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:04:34.695Z" class=HARVEST corpus=clone-lin-dayjs note="positive_transfer:ok×5" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:06:21.317Z" class=NEW_LANG corpus=clone-lin-left-pad targets=py,go,rust count=3 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:06:21.321Z" class=HARVEST corpus=clone-lin-left-pad note="positive_transfer:ok×1" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:08:33.304Z" class=NEW_LANG corpus=clone-lin-left-pad targets=py,go,rust count=3 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:08:33.308Z" class=HARVEST corpus=clone-lin-left-pad note="positive_transfer:ok×1" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:09:08.535Z" class=NEW_LANG corpus=clone-lin-left-pad targets=go,rust count=2 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:09:08.540Z" class=HARVEST corpus=clone-lin-left-pad note="positive_transfer:ok×1" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:09:21.124Z" class=NEW_LANG corpus=clone-lin-ecc targets=go,rust,py count=20 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:09:21.129Z" class=HARVEST corpus=clone-lin-ecc note="positive_transfer:ok×8" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:12:50.044Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:12:50.048Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:13:01.733Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:13:01.736Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:13:13.641Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:13:13.645Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:13:25.287Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:13:25.290Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:13:37.016Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:13:37.020Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:13:48.872Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:13:48.875Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:14:00.414Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:14:00.417Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:14:12.121Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:14:12.125Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:14:23.753Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:14:23.757Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:14:35.391Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:14:35.394Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:14:47.046Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:14:47.049Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:14:58.731Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:14:58.734Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:15:10.517Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:15:10.521Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:15:22.814Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:15:22.817Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:15:35.505Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:15:35.508Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:15:49.289Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:15:49.293Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:16:01.307Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:16:01.310Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:16:13.425Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:16:13.428Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:16:25.464Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:16:25.468Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:16:37.757Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:16:37.760Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-14T00:16:49.802Z" class=NEW_LANG corpus=clone-lin-ponytail targets=py,go,rust count=29 fix_target=emit_peripheral}
+
+@E{t="2026-08-14T00:16:49.806Z" class=HARVEST corpus=clone-lin-ponytail note="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-15T18:40:10.985Z" class=HARVEST corpus=clone-lin-open-design note="observe:none_new×0|autogen=createArtifactParser:COMPILE_OK_NO_ORACLE|randomUuid:BEHAVIOR_EQ_FAIL|createTerminalService:COMPILE_OK_NO_ORACLE" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-15T18:40:44.014Z" class=HARVEST corpus=clone-lin-open-design note="observe:none_new×0|autogen=createArtifactParser:COMPILE_OK_NO_ORACLE|randomUuid:BEHAVIOR_EQ_FAIL|createTerminalService:STUB_NOT_PASS" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-15T20:52:49.137Z" class=HARVEST corpus=clone-lin-dayjs note="positive_transfer:ok×292" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-15T21:09:58.936Z" class=HARVEST corpus=clone-lin-dayjs note="positive_transfer:ok×292" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-15T21:30:15.144Z" class=HARVEST corpus=clone-lin-dayjs note="positive_transfer:ok×292" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-15T21:47:27.116Z" class=HARVEST corpus=clone-lin-dayjs note="positive_transfer:ok×292" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-15T22:33:25.903Z" class=HARVEST corpus=clone-lin-dayjs note="positive_transfer:ok×292" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-15T23:10:17.912Z" class=HARVEST corpus=clone-lin-dayjs note="positive_transfer:ok×292" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-15T23:44:40.429Z" class=HARVEST corpus=clone-lin-dayjs note="positive_transfer:ok×292" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-16T00:11:21.032Z" class=HARVEST corpus=clone-lin-dayjs note="positive_transfer:ok×292" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-16T00:28:05.857Z" class=HARVEST corpus=clone-lin-dayjs note="positive_transfer:ok×292" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-16T00:52:57.072Z" class=HARVEST corpus=clone-lin-dayjs note="positive_transfer:ok×292" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-16T01:18:03.735Z" class=HARVEST corpus=clone-lin-dayjs note="positive_transfer:ok×292" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-18T04:59:09.319Z" class=HARVEST corpus=clone-lin-30-seconds-of-code note="positive_transfer:ok×179" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-18T05:03:42.968Z" class=HARVEST corpus=clone-lin-dayjs note="positive_transfer:ok×292" fix_target=compiler_outside_nucleus}
+
+@E{t="2026-08-19T00:03:16.313Z" class=HARVEST corpus=clone-lin-underscore note="positive_transfer:ok×168" fix_target=compiler_outside_nucleus}

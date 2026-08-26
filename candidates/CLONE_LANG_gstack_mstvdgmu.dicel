@@ -1,0 +1,32 @@
+@DICEL:LIN_CANDIDATE:1.0.0
+^from_clone="clone-lin-gstack"
+^stage="LEARN_NEW_LANG"
+^forbid_nucleus=true
+
+@HARVEST {
+  emit_fail{target="py" fn="getCacheFile" emit="ok" run="FAIL" reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_gstack_jAHUI1\py\getCacheFile.py', line 22
+    throw _lia_obj()))
+    " nucleus=false}
+  emit_fail{target="go" fn="getCacheFile" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_gstack_jAHUI1\go\getCacheFile.go:94:9: syntax error: unexpected name _lia_obj at" nucleus=false}
+  emit_fail{target="rust" fn="getCacheFile" emit="ok" run="FAIL" reason="error: unexpected closing delimiter: `}`
+  --> C:\Users\k\AppData\Local\Temp\lin_multi_gstack_jAHUI1\rust\getCacheFile.r" nucleus=false}
+  emit_fail{target="java" fn="getCacheFile" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_gstack_jAHUI1\java\getCacheFile.java:2: error: illegal character: '#'
+#![allow(" nucleus=false}
+  emit_fail{target="py" fn="getSkillSubset" emit="ok" run="FAIL" reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_gstack_jAHUI1\py\getSkillSubset.py', line 22
+    throw _lia_obj()))
+  " nucleus=false}
+  emit_fail{target="go" fn="getSkillSubset" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_gstack_jAHUI1\go\getSkillSubset.go:93:9: syntax error: unexpected name _lia_obj " nucleus=false}
+  emit_fail{target="rust" fn="getSkillSubset" emit="ok" run="FAIL" reason="error: unexpected closing delimiter: `}`
+  --> C:\Users\k\AppData\Local\Temp\lin_multi_gstack_jAHUI1\rust\getSkillSubset" nucleus=false}
+  emit_fail{target="java" fn="getSkillSubset" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_gstack_jAHUI1\java\getSkillSubset.java:2: error: illegal character: '#'
+#![allo" nucleus=false}
+  emit_fail{target="py" fn="getSkillBudget" emit="ok" run="FAIL" reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_gstack_jAHUI1\py\getSkillBudget.py', line 22
+    throw _lia_obj()))
+  " nucleus=false}
+  emit_fail{target="go" fn="getSkillBudget" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_gstack_jAHUI1\go\getSkillBudget.go:93:9: syntax error: unexpected name _lia_obj " nucleus=false}
+  emit_fail{target="rust" fn="getSkillBudget" emit="ok" run="FAIL" reason="error: unexpected closing delimiter: `}`
+  --> C:\Users\k\AppData\Local\Temp\lin_multi_gstack_jAHUI1\rust\getSkillBudget" nucleus=false}
+  emit_fail{target="java" fn="getSkillBudget" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_gstack_jAHUI1\java\getSkillBudget.java:2: error: illegal character: '#'
+#![allo" nucleus=false}
+  proposal{fix="emit_ts|emit_py|emit_go|emit_rust|emit_c|emit_shared peripheral; retry; no one-file hardcode"}
+}

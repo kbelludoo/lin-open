@@ -1,0 +1,30 @@
+{
+  "milestone": "M005-A",
+  "optimization": "dead_code_elimination_across_modules",
+  "symbols_before": 9,
+  "symbols_after": 3,
+  "removed_symbols": 6,
+  "details_before": {
+    "topFns": 2,
+    "modules": 2,
+    "moduleFns": 3,
+    "structs": 2,
+    "enums": 2
+  },
+  "details_after": {
+    "topFns": 1,
+    "modules": 1,
+    "moduleFns": 1,
+    "structs": 1,
+    "enums": 0
+  },
+  "dependency_graph_hash": "dce_reachability_closure_ok",
+  "pruned_items": [
+    "DeadModule",
+    "ActiveMath::deadMultiply",
+    "DeadStruct",
+    "UsedEnum (unreferenced)",
+    "DeadEnum",
+    "deadFunction"
+  ]
+}

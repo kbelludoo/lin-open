@@ -1,0 +1,53 @@
+{
+  "id": "T028",
+  "family": "multi_step_composition",
+  "difficulty": "medium",
+  "specification": "Agrupamento (groupBy) de array de objetos por uma chave de propriedade. Entrada: { arr: [{cat: \"A\", val: 1}, {cat: \"B\", val: 2}, {cat: \"A\", val: 3}], key: \"cat\" }. Saída: objeto agrupado.",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "globalState"
+  ],
+  "test_cases": [
+    {
+      "input": {
+        "arr": [
+          {
+            "cat": "A",
+            "val": 1
+          },
+          {
+            "cat": "B",
+            "val": 2
+          },
+          {
+            "cat": "A",
+            "val": 3
+          }
+        ],
+        "key": "cat"
+      },
+      "expected": {
+        "A": [
+          {
+            "cat": "A",
+            "val": 1
+          },
+          {
+            "cat": "A",
+            "val": 3
+          }
+        ],
+        "B": [
+          {
+            "cat": "B",
+            "val": 2
+          }
+        ]
+      }
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T028.mjs"
+  }
+}

@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!meridiem(hour,minute){;hm=(hour*100)+minute;?(hm<600){^'凌晨'}:(hm<900){^'早上'}:(hm<1100){^'上午'}:(hm<1300){^'中午'}:(hm<1800){^'下午'};^'晚上'}
+=ex{meridiem}

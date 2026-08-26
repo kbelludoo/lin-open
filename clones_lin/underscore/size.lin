@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!size(obj){;?(obj==null){^0};^(((__c)=>{?(__c){return(obj.length)}return(keys(obj).length)})(isArrayLike(obj)))}
+=ex{size}

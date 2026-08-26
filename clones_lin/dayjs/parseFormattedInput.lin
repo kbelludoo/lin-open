@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!parseFormattedInput(input,format,utc,dayjs){try{?(['x','X'].indexOf(format)>-1){^new Date(((((__c)=>{?(__c){return(1000)}return(1)})(format=='X')))*input)};parser=makeParser(format);({year,month,day,hours,minutes,seconds,milliseconds,zone,week}=parser(input));now=new Date();d=day||((((__c)=>{?(__c){return(now.getDate())}return(1)})((!year&&!month))));y=year||now.getFullYear();M=0;?(!(year&&!month)){M=(((__c)=>{?(__c){return(month-1)}return(now.getMonth())})(month>0))};h=hours||0;m=minutes||0;s=seconds||0;ms=milliseconds||0;?(zone){^new Date(Date.UTC(y,M,d,h,m,s,ms+(zone.offset*60*1000)))};?(utc){^new Date(Date.UTC(y,M,d,h,m,s,ms))};newDate=new Date(y,M,d,h,m,s,ms);?(week){newDate=dayjs(newDate).week(week).toDate()};^newDate}catch (e){^new Date('')}}
+=ex{parseFormattedInput}

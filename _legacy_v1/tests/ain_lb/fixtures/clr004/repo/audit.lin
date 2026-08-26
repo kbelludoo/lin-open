@@ -1,0 +1,11 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=clr004_audit
+~G{?=if #=for ^=ret :else}
+!moduleRef(){^'Audit'}
+!dependencies(){^'Auth,Storage'}
+!declaredEffects(){^'io'}
+!caps(){^'io'}
+!contract(){^'audit.append_immutable'}
+!semanticHash(){^'clr004-audit-v1'}
+!append(event){^event}
+=ex{moduleRef,dependencies,declaredEffects,caps,contract,semanticHash,append}

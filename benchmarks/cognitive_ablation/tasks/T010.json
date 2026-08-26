@@ -1,0 +1,28 @@
+{
+  "id": "T010",
+  "family": "code_transformation",
+  "difficulty": "medium",
+  "specification": "Normalizador de query params para objeto estruturado. Entrada: \"a=1&b=test&c=true\". Saída: { a: \"1\", b: \"test\", c: \"true\" } (vazio para string vazia).",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "globalState"
+  ],
+  "test_cases": [
+    {
+      "input": "a=1&b=test&c=true",
+      "expected": {
+        "a": "1",
+        "b": "test",
+        "c": "true"
+      }
+    },
+    {
+      "input": "",
+      "expected": {}
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T010.mjs"
+  }
+}

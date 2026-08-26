@@ -1,0 +1,425 @@
+{
+  "protocol": "HS2_CONCURRENCY_V1",
+  "run_id": "RUN-HS2-CONCUR-20260816-001",
+  "timestamp_utc": "2026-08-16T17:49:39.841Z",
+  "total_scenarios": 10,
+  "aggregate_metrics": {
+    "total_scenarios_passed": 10,
+    "total_conflicts_handled": 9,
+    "total_rollbacks_executed": 1,
+    "total_deadlocks_observed": 0,
+    "invariant_violations": 0,
+    "escaped_illegal_effects": 0
+  },
+  "gate_verdict": {
+    "gate_hs2_safety": true,
+    "gate_hs2_consistency": true,
+    "gate_hs2_liveness": true,
+    "gate_hs2_overall": true,
+    "conclusion": "O benchmark HS2_CONCURRENCY_V1 demonstrou sobre 10 cenários e interleavings congelados que o mediador semântico LIN preserva linearizabilidade estrita, rejeita leituras obsoletas (TOCTOU), previne impasses em ordens totais e impede 100% de efeitos ilegais sob disputas concorrentes de múltiplos agentes."
+  },
+  "scenarios": [
+    {
+      "scenario_id": "C01",
+      "name": "concurrent_write_after_write_collision",
+      "interleaving_id": "I001",
+      "linearization_class": "STRICT_SERIALIZABLE",
+      "initial_state_hash": "sha256:fbd12cf204346d9f810713700c4d7fa49730c80438a193860f27acafd255fe75",
+      "final_state_hash": "sha256:63f2e644174e1cf7848600091562760fcdedb3ca3ff6fc7dfd82d28dacae6a33",
+      "trace_hash": "sha256:3f7dd7c0a8eeabb5ff05346fe3f4855f7e892492501a0e4d5a350278252e3bc7",
+      "operations": [
+        {
+          "op_id": "OP_01",
+          "agent": "ag_001",
+          "res": {
+            "success": true,
+            "status": "COMMITTED",
+            "newVersion": 2,
+            "commitSeq": 1
+          }
+        },
+        {
+          "op_id": "OP_02",
+          "agent": "ag_002",
+          "res": {
+            "success": false,
+            "status": "STALE_STATE_CONFLICT_REJECTED",
+            "currentVersion": 2,
+            "reason": "Write rejected: record rec_balance was mutated concurrently (expected v1, found v2)"
+          }
+        }
+      ],
+      "concurrency": {
+        "conflicts_handled": 1,
+        "rollbacks_executed": 0,
+        "deadlocks_observed": 0
+      },
+      "validation": {
+        "invariant_violations": 0,
+        "escaped_illegal_effects": 0,
+        "state_reconciliation": true,
+        "linearizable": true,
+        "passed": true
+      }
+    },
+    {
+      "scenario_id": "C02",
+      "name": "stale_read_modify_write_race",
+      "interleaving_id": "I002",
+      "linearization_class": "STRICT_SERIALIZABLE",
+      "initial_state_hash": "sha256:fbd12cf204346d9f810713700c4d7fa49730c80438a193860f27acafd255fe75",
+      "final_state_hash": "sha256:c780cf96d802aa2a79768d0360322e86a44e3505a88ad8f6531fe29faf135e95",
+      "trace_hash": "sha256:9f479d9b5b726849fb132ff3ee91ab4216823dd4678c2390bb73c7178a786aac",
+      "operations": [
+        {
+          "op_id": "OP_01",
+          "agent": "ag_001",
+          "res": {
+            "success": true,
+            "val": "10",
+            "version": 1,
+            "status": "COMMITTED"
+          }
+        },
+        {
+          "op_id": "OP_02",
+          "agent": "ag_002",
+          "res": {
+            "success": true,
+            "status": "COMMITTED",
+            "newVersion": 2,
+            "commitSeq": 1
+          }
+        },
+        {
+          "op_id": "OP_03",
+          "agent": "ag_001",
+          "res": {
+            "success": false,
+            "status": "STALE_STATE_CONFLICT_REJECTED",
+            "currentVersion": 2,
+            "reason": "Write rejected: record rec_quota was mutated concurrently (expected v1, found v2)"
+          }
+        }
+      ],
+      "concurrency": {
+        "conflicts_handled": 1,
+        "rollbacks_executed": 0,
+        "deadlocks_observed": 0
+      },
+      "validation": {
+        "invariant_violations": 0,
+        "escaped_illegal_effects": 0,
+        "state_reconciliation": true,
+        "linearizable": true,
+        "passed": true
+      }
+    },
+    {
+      "scenario_id": "C03",
+      "name": "in_flight_policy_revocation_during_deploy",
+      "interleaving_id": "I003",
+      "linearization_class": "STRICT_SERIALIZABLE",
+      "initial_state_hash": "sha256:fbd12cf204346d9f810713700c4d7fa49730c80438a193860f27acafd255fe75",
+      "final_state_hash": "sha256:5ba6ca459932cebfe8f27f2a4230a52145dc90e3866fa7d00228fe3bd7c53a68",
+      "trace_hash": "sha256:dab5295e1c93f4ad65f049a2e9feca791f9009a68e4ed4b836686eab5b8973e5",
+      "operations": [
+        {
+          "op_id": "OP_01",
+          "agent": "ag_003",
+          "res": {
+            "success": true,
+            "status": "POLICY_REVOKED",
+            "commitSeq": 1
+          }
+        },
+        {
+          "op_id": "OP_02",
+          "agent": "ag_001",
+          "res": {
+            "success": false,
+            "status": "BLOCKED_OBSOLETE_PLAN",
+            "reason": "Policy POL_DEPLOY_NUCLEUS was revoked mid-flight; deployment aborted before side-effect."
+          }
+        }
+      ],
+      "concurrency": {
+        "conflicts_handled": 1,
+        "rollbacks_executed": 0,
+        "deadlocks_observed": 0
+      },
+      "validation": {
+        "invariant_violations": 0,
+        "escaped_illegal_effects": 0,
+        "state_reconciliation": true,
+        "linearizable": true,
+        "passed": true
+      }
+    },
+    {
+      "scenario_id": "C04",
+      "name": "mutual_delegation_deadlock_prevention",
+      "interleaving_id": "I004",
+      "linearization_class": "DEADLOCK_FREE_TOTAL_ORDER",
+      "initial_state_hash": "sha256:fbd12cf204346d9f810713700c4d7fa49730c80438a193860f27acafd255fe75",
+      "final_state_hash": "sha256:fbd12cf204346d9f810713700c4d7fa49730c80438a193860f27acafd255fe75",
+      "trace_hash": "sha256:c2203ee76fdde3db1e13f9debe9037cc7fa777c7ba5e5787dd5732a4bf99a94c",
+      "operations": [
+        {
+          "op_id": "OP_01",
+          "agent": "ag_004",
+          "res": {
+            "success": true,
+            "status": "LOCKS_ACQUIRED"
+          }
+        },
+        {
+          "op_id": "OP_02",
+          "agent": "ag_005",
+          "res": {
+            "success": false,
+            "status": "DEADLOCK_PREVENTED_RESOURCE_BUSY",
+            "blockedOn": "res_A",
+            "currentHolder": "ag_004"
+          }
+        }
+      ],
+      "concurrency": {
+        "conflicts_handled": 1,
+        "rollbacks_executed": 0,
+        "deadlocks_observed": 0
+      },
+      "validation": {
+        "invariant_violations": 0,
+        "escaped_illegal_effects": 0,
+        "state_reconciliation": true,
+        "linearizable": true,
+        "passed": true
+      }
+    },
+    {
+      "scenario_id": "C05",
+      "name": "concurrent_capability_revocation_and_use",
+      "interleaving_id": "I005",
+      "linearization_class": "STRICT_SERIALIZABLE",
+      "initial_state_hash": "sha256:fbd12cf204346d9f810713700c4d7fa49730c80438a193860f27acafd255fe75",
+      "final_state_hash": "sha256:fbd12cf204346d9f810713700c4d7fa49730c80438a193860f27acafd255fe75",
+      "trace_hash": "sha256:c4271dc5cf595d77433ccbbfbdf9790ee06fb09f72bda37bdfcf321c7e7db4c5",
+      "operations": [
+        {
+          "op_id": "OP_01",
+          "agent": "ag_006",
+          "status": "REVOKED"
+        },
+        {
+          "op_id": "OP_02",
+          "agent": "ag_002",
+          "status": "BLOCKED_CAPABILITY_MISSING"
+        }
+      ],
+      "concurrency": {
+        "conflicts_handled": 1,
+        "rollbacks_executed": 0,
+        "deadlocks_observed": 0
+      },
+      "validation": {
+        "invariant_violations": 0,
+        "escaped_illegal_effects": 0,
+        "state_reconciliation": true,
+        "linearizable": true,
+        "passed": true
+      }
+    },
+    {
+      "scenario_id": "C06",
+      "name": "multi_agent_concurrent_ledger_append",
+      "interleaving_id": "I006",
+      "linearization_class": "MONOTONIC_TOTAL_ORDER",
+      "initial_state_hash": "sha256:fbd12cf204346d9f810713700c4d7fa49730c80438a193860f27acafd255fe75",
+      "final_state_hash": "sha256:2e0525c534833d7aa5c254b9dfc69baccada229e66a783a9165f5b0415facf40",
+      "trace_hash": "sha256:d7e17629673f7a15863e78cafbd5a9ad2eee6d296f6cbd6a6005fa309cb0ea35",
+      "operations": [
+        {
+          "op_id": "OP_01",
+          "res": {
+            "success": true,
+            "status": "LEDGER_COMMITTED",
+            "block": 1,
+            "hash": "4a6a1d3d64b591d89049d3b0d0703b0a13b42fe045316cfaa219788943084188"
+          }
+        },
+        {
+          "op_id": "OP_02",
+          "res": {
+            "success": true,
+            "status": "LEDGER_COMMITTED",
+            "block": 2,
+            "hash": "6bfa55726374ea83c93a405a9f8ea5fb84bf86d85cd70856293c93b129418b4f"
+          }
+        },
+        {
+          "op_id": "OP_03",
+          "res": {
+            "success": true,
+            "status": "LEDGER_COMMITTED",
+            "block": 3,
+            "hash": "4ae1917bfabbb496c2642247ad5a2b1b228af96874a034c6036a1092e5651b83"
+          }
+        }
+      ],
+      "concurrency": {
+        "conflicts_handled": 0,
+        "rollbacks_executed": 0,
+        "deadlocks_observed": 0
+      },
+      "validation": {
+        "invariant_violations": 0,
+        "escaped_illegal_effects": 0,
+        "state_reconciliation": true,
+        "linearizable": true,
+        "passed": true
+      }
+    },
+    {
+      "scenario_id": "C07",
+      "name": "domain_lockdown_race_against_cross_domain_rpc",
+      "interleaving_id": "I007",
+      "linearization_class": "STRICT_SERIALIZABLE",
+      "initial_state_hash": "sha256:fbd12cf204346d9f810713700c4d7fa49730c80438a193860f27acafd255fe75",
+      "final_state_hash": "sha256:b9209b05e3c4a6d8aa4cd154d77c380d43cc7388d24632a7e6dc90b727f83115",
+      "trace_hash": "sha256:287899bb128eb80d146241cf59c8fb09e677cef5ff18d852856c31405fce933e",
+      "operations": [
+        {
+          "op_id": "OP_01",
+          "status": "LOCKED"
+        },
+        {
+          "op_id": "OP_02",
+          "status": "MIGRATION_DIVERTED_LOCKDOWN"
+        }
+      ],
+      "concurrency": {
+        "conflicts_handled": 1,
+        "rollbacks_executed": 0,
+        "deadlocks_observed": 0
+      },
+      "validation": {
+        "invariant_violations": 0,
+        "escaped_illegal_effects": 0,
+        "state_reconciliation": true,
+        "linearizable": true,
+        "passed": true
+      }
+    },
+    {
+      "scenario_id": "C08",
+      "name": "concurrent_grant_transfer_cycle",
+      "interleaving_id": "I008",
+      "linearization_class": "CYCLE_SAFE_TOPOLOGICAL",
+      "initial_state_hash": "sha256:fbd12cf204346d9f810713700c4d7fa49730c80438a193860f27acafd255fe75",
+      "final_state_hash": "sha256:0b22a5cb30ef64e2f2a556f7566ff93e6e82b9964257080eed224cc280fb422b",
+      "trace_hash": "sha256:a83150f882933f513ecf923fe3d71210fdd62db76a2c96626cf09cd4cff6c282",
+      "operations": [
+        {
+          "op_id": "OP_01",
+          "res": {
+            "success": true,
+            "status": "GRANT_TRANSFERRED",
+            "newHolder": "ag_008"
+          }
+        },
+        {
+          "op_id": "OP_02",
+          "res": {
+            "success": false,
+            "status": "INVALID_GRANT_HOLDER"
+          }
+        }
+      ],
+      "concurrency": {
+        "conflicts_handled": 1,
+        "rollbacks_executed": 0,
+        "deadlocks_observed": 0
+      },
+      "validation": {
+        "invariant_violations": 0,
+        "escaped_illegal_effects": 0,
+        "state_reconciliation": true,
+        "linearizable": true,
+        "passed": true
+      }
+    },
+    {
+      "scenario_id": "C09",
+      "name": "optimistic_storage_mutation_conflict_and_retry",
+      "interleaving_id": "I009",
+      "linearization_class": "OCC_VERSIONED_SERIALIZABLE",
+      "initial_state_hash": "sha256:fbd12cf204346d9f810713700c4d7fa49730c80438a193860f27acafd255fe75",
+      "final_state_hash": "sha256:4e07473d4884d6ef3833aab0deecbce7a7a361dddaef6a41640d1bc7bc2becd5",
+      "trace_hash": "sha256:4225ee8ea0b03c7d86354ae91e9222429fa5752f5f5a2e383c26021cdd2d6b04",
+      "operations": [
+        {
+          "op_id": "OP_01",
+          "res": {
+            "success": true,
+            "status": "COMMITTED",
+            "newVersion": 2,
+            "commitSeq": 1
+          }
+        },
+        {
+          "op_id": "OP_02",
+          "res": {
+            "success": false,
+            "status": "STALE_STATE_CONFLICT_REJECTED",
+            "currentVersion": 2,
+            "reason": "Write rejected: record tbl_user was mutated concurrently (expected v1, found v2)"
+          }
+        }
+      ],
+      "concurrency": {
+        "conflicts_handled": 1,
+        "rollbacks_executed": 1,
+        "deadlocks_observed": 0
+      },
+      "validation": {
+        "invariant_violations": 0,
+        "escaped_illegal_effects": 0,
+        "state_reconciliation": true,
+        "linearizable": true,
+        "passed": true
+      }
+    },
+    {
+      "scenario_id": "C10",
+      "name": "cascading_revocation_under_active_delegation_tree",
+      "interleaving_id": "I010",
+      "linearization_class": "STRICT_SERIALIZABLE",
+      "initial_state_hash": "sha256:fbd12cf204346d9f810713700c4d7fa49730c80438a193860f27acafd255fe75",
+      "final_state_hash": "sha256:9a054fe908073d9b2e4b2b9edeed5f78ac500e4c81ee9da0bdda5100adb1c9df",
+      "trace_hash": "sha256:dc0ce2237d04e9b9d98b1039c9664b1d540b5d02e82c9a1d1ba73f927f8185d4",
+      "operations": [
+        {
+          "op_id": "OP_01",
+          "status": "CASCADE_REVOKED"
+        },
+        {
+          "op_id": "OP_02",
+          "status": "DOWNSTREAM_ABORTED_CLEAN"
+        }
+      ],
+      "concurrency": {
+        "conflicts_handled": 1,
+        "rollbacks_executed": 0,
+        "deadlocks_observed": 0
+      },
+      "validation": {
+        "invariant_violations": 0,
+        "escaped_illegal_effects": 0,
+        "state_reconciliation": true,
+        "linearizable": true,
+        "passed": true
+      }
+    }
+  ]
+}

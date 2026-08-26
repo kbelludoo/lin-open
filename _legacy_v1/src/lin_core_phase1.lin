@@ -1,0 +1,20 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=lin_core_phase1
+~G{?=if #=for ^=ret :else}
+
+!coreHostLang(){^'rust'}
+!cliDefaultLang(){^'ts'}
+!bootstrapLang(){^'js'}
+!gatewayLang(){^'go'}
+!unsafeTargetLang(){^'c'}
+!phase1Name(){^'ast_parser'}
+!astKindFn(){^'fn'}
+!astKindIf(){^'if'}
+!astKindFor(){^'for'}
+!astKindRet(){^'ret'}
+!coreBanner(){^('core=rust rank=1 cli=ts bootstrap=js gateway=go c=unsafe phase=ast_parser')}
+!rank1Lang(){^'rust'}
+!rank2Lang(){^'ocaml'}
+!rank3Lang(){^'zig'}
+
+=ex{coreHostLang,cliDefaultLang,bootstrapLang,gatewayLang,unsafeTargetLang,phase1Name,astKindFn,astKindIf,astKindFor,astKindRet,coreBanner,rank1Lang,rank2Lang,rank3Lang}

@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AblationRunMetrics",
+  "type": "object",
+  "required": [
+    "run_id",
+    "system_id",
+    "model_id",
+    "timestamp",
+    "manifest_sha256",
+    "summary",
+    "task_results"
+  ],
+  "properties": {
+    "run_id": { "type": "string" },
+    "system_id": { "type": "string", "enum": ["A", "B", "C", "D", "E", "F"] },
+    "model_id": { "type": "string" },
+    "timestamp": { "type": "string" },
+    "manifest_sha256": { "type": "string" },
+    "summary": {
+      "type": "object",
+      "required": [
+        "total_tasks",
+        "initial_pass_p1",
+        "recovered_pass_pr",
+        "final_fail_ff",
+        "pass_at_1",
+        "pass_at_k",
+        "recovery_success_rate",
+        "avg_tokens_per_pass",
+        "avg_attempts_per_pass",
+        "error_repetition_rate"
+      ],
+      "properties": {
+        "total_tasks": { "type": "integer" },
+        "initial_pass_p1": { "type": "integer" },
+        "recovered_pass_pr": { "type": "integer" },
+        "final_fail_ff": { "type": "integer" },
+        "pass_at_1": { "type": "number" },
+        "pass_at_k": { "type": "number" },
+        "recovery_success_rate": { "type": "number" },
+        "avg_tokens_per_pass": { "type": "number" },
+        "avg_attempts_per_pass": { "type": "number" },
+        "error_repetition_rate": { "type": "number" }
+      }
+    },
+    "task_results": { "type": "array" }
+  }
+}

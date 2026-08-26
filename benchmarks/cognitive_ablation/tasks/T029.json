@@ -1,0 +1,58 @@
+{
+  "id": "T029",
+  "family": "multi_step_composition",
+  "difficulty": "hard",
+  "specification": "Motor de regras de acesso (ACL). Entrada: { user: { role, permissions }, resource: string, action: string, rules: [{ role, resource, action, allow }] }. Saída: boolean.",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "globalState"
+  ],
+  "test_cases": [
+    {
+      "input": {
+        "user": {
+          "role": "admin"
+        },
+        "resource": "file",
+        "action": "delete",
+        "rules": [
+          {
+            "role": "admin",
+            "resource": "*",
+            "action": "*",
+            "allow": true
+          }
+        ]
+      },
+      "expected": true
+    },
+    {
+      "input": {
+        "user": {
+          "role": "guest"
+        },
+        "resource": "file",
+        "action": "delete",
+        "rules": [
+          {
+            "role": "admin",
+            "resource": "*",
+            "action": "*",
+            "allow": true
+          },
+          {
+            "role": "guest",
+            "resource": "file",
+            "action": "read",
+            "allow": true
+          }
+        ]
+      },
+      "expected": false
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T029.mjs"
+  }
+}

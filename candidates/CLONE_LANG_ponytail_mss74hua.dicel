@@ -1,0 +1,31 @@
+@DICEL:LIN_CANDIDATE:1.0.0
+^from_clone="clone-lin-ponytail"
+^stage="LEARN_NEW_LANG"
+^forbid_nucleus=true
+
+@HARVEST {
+  emit_fail{target="py" fn="render" emit="ok" run="FAIL" reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_ponytail_yCjCW3\py\render.py', line 22
+    throw new Error(('descriptio" nucleus=false}
+  emit_fail{target="go" fn="render" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_ponytail_yCjCW3\go\render.go:9:9: syntax error: unexpected name new at end of st" nucleus=false}
+  emit_fail{target="rust" fn="render" emit="ok" run="FAIL" reason="error: expected one of `!`, `.`, `::`, `;`, `?`, `{`, `}`, or an operator, found `new`
+  --> C:\Users\k\AppData\Local\Te" nucleus=false}
+  emit_fail{target="py" fn="read" emit="ok" run="FAIL" reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_ponytail_yCjCW3\py\read.py', line 20
+    return fs.readFileSync(path.jo" nucleus=false}
+  emit_fail{target="go" fn="read" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_ponytail_yCjCW3\go\read.go:5:65: syntax error: unexpected /, expected expression" nucleus=false}
+  emit_fail{target="rust" fn="read" emit="ok" run="FAIL" reason="error: unknown start of token: \
+ --> C:\Users\k\AppData\Local\Temp\lin_multi_ponytail_yCjCW3\rust\read.rs:7:69
+  |
+7 | " nucleus=false}
+  emit_fail{target="py" fn="stripFrontmatter" emit="ok" run="FAIL" reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_ponytail_yCjCW3\py\stripFrontmatter.py', line 20
+    return text.replac" nucleus=false}
+  emit_fail{target="go" fn="stripFrontmatter" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_ponytail_yCjCW3\go\stripFrontmatter.go:5:22: syntax error: unexpected /, expecte" nucleus=false}
+  emit_fail{target="rust" fn="stripFrontmatter" emit="ok" run="FAIL" reason="error: unknown start of token: \
+ --> C:\Users\k\AppData\Local\Temp\lin_multi_ponytail_yCjCW3\rust\stripFrontmatter.rs:7" nucleus=false}
+  emit_fail{target="py" fn="readVersion" emit="ok" run="FAIL" reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_ponytail_yCjCW3\py\readVersion.py', line 20
+    try{raw=fs.readFileSync" nucleus=false}
+  emit_fail{target="go" fn="readVersion" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_ponytail_yCjCW3\go\readVersion.go:5:9: syntax error: unexpected = in composite l" nucleus=false}
+  emit_fail{target="rust" fn="readVersion" emit="ok" run="FAIL" reason="error: unknown start of token: \
+ --> C:\Users\k\AppData\Local\Temp\lin_multi_ponytail_yCjCW3\rust\readVersion.rs:7:71
+ " nucleus=false}
+  proposal{fix="emit_ts|emit_py|emit_go|emit_rust|emit_shared peripheral; retry; no one-file hardcode"}
+}

@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!isTypedArray(obj){;^(((__c)=>{?(__c){return((nativeIsView(obj)&&!isDataView(obj)))}return(isBufferLike(obj)&&typedArrayPattern.test(toString.call(obj)))})(nativeIsView))}
+=ex{isTypedArray}

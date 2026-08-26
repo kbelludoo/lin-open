@@ -1,0 +1,13 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=core
+~G{?=if #=for ^=ret :else}
+
+!add(a, b){
+    ^return a + b;
+}
+
+!sub(a, b){
+    ^return a - b;
+}
+
+=ex{add, sub}

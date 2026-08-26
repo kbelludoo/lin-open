@@ -1,0 +1,11 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=clr004_fx
+~G{?=if #=for ^=ret :else}
+!moduleRef(){^'FX'}
+!dependencies(){^'CountryLimits'}
+!declaredEffects(){^'pure'}
+!caps(){^'math'}
+!contract(){^'fx.quote_requires_supported_country'}
+!semanticHash(){^'clr004-fx-v1'}
+!quote(amount,country){^({amount:amount,country:country})}
+=ex{moduleRef,dependencies,declaredEffects,caps,contract,semanticHash,quote}

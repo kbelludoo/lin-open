@@ -1,0 +1,8 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_sql
+~G{?=if #=for ^=ret :else}
+!emitSqlSelect(table,columns,where){cols='*';?(columns&&columns.length>0){cols=columns.join(', ')};sql='SELECT '+cols+' FROM '+table;?(where){sql=sql+' WHERE '+where};^(sql+';')}
+!emitSqlInsert(table,columns,values){cols=columns.join(', ');vals=values.join(', ');^('INSERT INTO '+table+' ('+cols+') VALUES ('+vals+');')}
+!emitSqlCreateTable(table,schema){parts=[];parts.push('CREATE TABLE IF NOT EXISTS '+table+' (');fields=schema||[];#(i=0;i<fields.length;i++){f=fields[i];line='  '+f.name+' '+f.type;?(f.pk){line=line+' PRIMARY KEY'};?(f.notnull){line=line+' NOT NULL'};?(i<fields.length-1){line=line+','};parts.push(line)};parts.push(');');^parts.join('\n')}
+!emitPrql(table,filter,select){parts=[];parts.push('from '+table);?(filter){parts.push('filter '+filter)};?(select){parts.push('select {'+select+'}')};^parts.join('\n')}
+=ex{emitSqlSelect,emitSqlInsert,emitSqlCreateTable,emitPrql}

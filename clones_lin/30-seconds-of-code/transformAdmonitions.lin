@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!transformAdmonitions(tip,warning,caution,important){;matcher=new RegExp(("^\\[!("+String(Object.keys(types).join('|'))+")\\]$"),'i');^~(tree){visit(tree, { type: `element`, tagName: `blockquote` }, ~(node){ const { children } = node;;; if (!children || !children.length) return;; const firstChild = children[1];;; if (!firstChild || !firstChild.children || !firstChild.children.length); return;; const match = firstChild.children[0]?.value?.match(matcher);;; if (!match) return;; const type = match[1].toLowerCase();; const typeIcon = types[type];; node.tagName = 'figure';; node.properties = { className: 'admonition', 'data-admonition-type': type, };; firstChild.tagName = 'figcaption';; firstChild.children = [ { type: 'text', value: `${typeIcon} ${StringUtils.capitalize(type.toLowerCase())}`, }, ]; });; return tree;}}
+=ex{transformAdmonitions}

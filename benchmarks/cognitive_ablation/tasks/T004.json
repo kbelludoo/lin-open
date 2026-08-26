@@ -1,0 +1,73 @@
+{
+  "id": "T004",
+  "family": "logic_state",
+  "difficulty": "hard",
+  "specification": "União de intervalos numéricos sobrepostos. Entrada: array de intervalos [[inicio, fim], ...]. Saída: array de intervalos mesclados ordenados.",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "globalState",
+    "mut"
+  ],
+  "test_cases": [
+    {
+      "input": [
+        [
+          1,
+          3
+        ],
+        [
+          2,
+          6
+        ],
+        [
+          8,
+          10
+        ],
+        [
+          15,
+          18
+        ]
+      ],
+      "expected": [
+        [
+          1,
+          6
+        ],
+        [
+          8,
+          10
+        ],
+        [
+          15,
+          18
+        ]
+      ]
+    },
+    {
+      "input": [
+        [
+          1,
+          4
+        ],
+        [
+          4,
+          5
+        ]
+      ],
+      "expected": [
+        [
+          1,
+          5
+        ]
+      ]
+    },
+    {
+      "input": [],
+      "expected": []
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T004.mjs"
+  }
+}

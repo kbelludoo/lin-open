@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!fmtShort(ms){;msAbs=Math.abs(ms);?(msAbs>=y){^((Math.round(ms/y))+"y")};?(msAbs>=mo){^((Math.round(ms/mo))+"mo")};?(msAbs>=w){^((Math.round(ms/w))+"w")};?(msAbs>=d){^((Math.round(ms/d))+"d")};?(msAbs>=h){^((Math.round(ms/h))+"h")};?(msAbs>=m){^((Math.round(ms/m))+"m")};?(msAbs>=s){^((Math.round(ms/s))+"s")};^((ms)+"ms")}
+=ex{fmtShort}

@@ -1,0 +1,830 @@
+{
+  "gate": "GATE_11_FP_AUDIT",
+  "timestamp": "2026-08-19T01:23:49.353Z",
+  "summary": {
+    "totalEvaluated": 289,
+    "totalSemantic": 119,
+    "totalNonSemantic": 170,
+    "totalTP": 119,
+    "totalTN": 121,
+    "totalFP": 49,
+    "totalFN": 0,
+    "recall": 1,
+    "precision": 0.7083333333333334,
+    "overInvalidation": 0.28823529411764703,
+    "accuracy": 0.8304498269896193
+  },
+  "taxonomy": {
+    "DEAD_CODE_IN_EXPORTED": 49
+  },
+  "fpCases": [
+    {
+      "repo": "dayjs",
+      "file": "src/index.js",
+      "trialIdx": 1,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "211c481eabaa303e023aed7460f5dd64dcfe0ff774181a807df42b0240d1da64",
+      "hMut": "281a407d5208c22b5a16c1b5a7584d834b91b4cf97166d5735fad62a10ecce32",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!dayjs(date,c){;?(isDayjs(date)){^date.clone()};cfg=(((__c)=>{?(__c){return(c)}return({})})(typeof c=='object'));cfg.date=date;cfg.args=arguments;^new Dayjs(cfg)}\n!isDayjs(d){^d instanc",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!dayjs(date,c){\n  __mut_flag = 99;\n;?(isDayjs(date)){^date.clone()};cfg=(((__c)=>{?(__c){return(c)}return({})})(typeof c=='object'));cfg.date=date;cfg.args=arguments;^new Dayjs(cfg)}\n!i"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/ar-ma.js",
+      "trialIdx": 8,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "2a7266277329b233be816f8247985cb4ca67ad65e277bc3e110bbbb7876d4980",
+      "hMut": "0c84c2af00b999bb88a3e8cb6e716d73ea4cabd77654a1831069aa3faf4e76db",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){^n}\n!meridiem(hour){^((((__c)=>{?(__c){return('م')}return('ص')})(hour>12)))}\n=ex{ordinal,meridiem}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n^n}\n!meridiem(hour){^((((__c)=>{?(__c){return('م')}return('ص')})(hour>12)))}\n=ex{ordinal,meridiem}\n// edge annotation 8"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/be.js",
+      "trialIdx": 13,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "f163b4482cc5d8bc396b4988bb343185504e321f3ac719e624fb40d81696c584",
+      "hMut": "c4b4c9877b8a716bdc842ae2b52e38545e5b82ff2477e1fb7a5433f89a2330c4",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!plural(word,num){;forms=word.split('_');^(((__c)=>{?(__c){return(forms[0])}return(((((__c)=>{?(__c){return(forms[1])}return(forms[2])})(num%10>=2&&num%10<=4&&(num%100<10||num%100>=20))",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!plural(word,num){\n  __mut_flag = 99;\n;forms=word.split('_');^(((__c)=>{?(__c){return(forms[0])}return(((((__c)=>{?(__c){return(forms[1])}return(forms[2])})(num%10>=2&&num%10<=4&&(num%1"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/br.js",
+      "trialIdx": 20,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "db5c516dc7fb37204fb53a9e88c2c797f51f120ee4cfb881a3f4ca26fd668839",
+      "hMut": "b02c212e037df93562e834078113c8f115018e895ac10f25087eb1cedfaecd9c",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!lastNumber(number){;?(number>9){^lastNumber(number%10)};^number}\n!softMutation(text){;mutationTable={m: 'v',b: 'v',d: 'z'};^mutationTable[text.charAt(0)]+text.substring(1)}\n!mutation(t",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!lastNumber(number){\n  __mut_flag = 99;\n;?(number>9){^lastNumber(number%10)};^number}\n!softMutation(text){;mutationTable={m: 'v',b: 'v',d: 'z'};^mutationTable[text.charAt(0)]+text.subst"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/cy.js",
+      "trialIdx": 25,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "5e1287229fa5039e9f5465d564f9604478242427c98357c3da4230864d01a4b4",
+      "hMut": "374c99b68262f311139dede3bbfe34c9b7c2047714dfddacf61be38c3ab9f227",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){^n}\n=ex{ordinal}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n^n}\n=ex{ordinal}\n// noop_ref"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/en-au.js",
+      "trialIdx": 32,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "407094c3edee6b82a7ea69fca04762de786307e4caff2d1b23183de1049d82ca",
+      "hMut": "d544c841c063ac2755c1b4f21a3d172a9a62aa2b8d3b0830356793e2546c259d",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){;s=['th','st','nd','rd'];v=n%100;^(\"[\"+String(n)+String((s[(v-20)%10]||s[v]||s[0]))+\"]\")}\n=ex{ordinal}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n;s=['th','st','nd','rd'];v=n%100;^(\"[\"+String(n)+String((s[(v-20)%10]||s[v]||s[0]))+\"]\")}\n=ex{ordinal}\n// edge annotation 32"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/en-in.js",
+      "trialIdx": 37,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "407094c3edee6b82a7ea69fca04762de786307e4caff2d1b23183de1049d82ca",
+      "hMut": "d544c841c063ac2755c1b4f21a3d172a9a62aa2b8d3b0830356793e2546c259d",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){;s=['th','st','nd','rd'];v=n%100;^(\"[\"+String(n)+String((s[(v-20)%10]||s[v]||s[0]))+\"]\")}\n=ex{ordinal}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n;s=['th','st','nd','rd'];v=n%100;^(\"[\"+String(n)+String((s[(v-20)%10]||s[v]||s[0]))+\"]\")}\n=ex{ordinal}\n// noop_ref"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/es-mx.js",
+      "trialIdx": 44,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "e5305a2d77001180f936bfc7b731e413905c5b6578e06686910562c0a4b47485",
+      "hMut": "7fb84785eb289c65d9b3bb1d6b1d4dbe5ad6e10841cc1bad9a4a379ee7fc3a54",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){^(String(n)+\"º\")}\n=ex{ordinal}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n^(String(n)+\"º\")}\n=ex{ordinal}\n// edge annotation 44"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/eu.js",
+      "trialIdx": 49,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "5e1287229fa5039e9f5465d564f9604478242427c98357c3da4230864d01a4b4",
+      "hMut": "374c99b68262f311139dede3bbfe34c9b7c2047714dfddacf61be38c3ab9f227",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){^n}\n=ex{ordinal}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n^n}\n=ex{ordinal}\n// noop_ref"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/fy.js",
+      "trialIdx": 56,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "5e1287229fa5039e9f5465d564f9604478242427c98357c3da4230864d01a4b4",
+      "hMut": "374c99b68262f311139dede3bbfe34c9b7c2047714dfddacf61be38c3ab9f227",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){^n}\n=ex{ordinal}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n^n}\n=ex{ordinal}\n// edge annotation 56"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/gu.js",
+      "trialIdx": 61,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "5e1287229fa5039e9f5465d564f9604478242427c98357c3da4230864d01a4b4",
+      "hMut": "374c99b68262f311139dede3bbfe34c9b7c2047714dfddacf61be38c3ab9f227",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){^n}\n=ex{ordinal}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n^n}\n=ex{ordinal}\n// noop_ref"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/id.js",
+      "trialIdx": 68,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "f7e738c57562256ab01680908f375e3a8ece2d84312390502738aceaeeb694dc",
+      "hMut": "d6ca66559894ce0e701db161b3c1624601ca769669aa0f90bc3e7fdf0a128716",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){^(String(n)+\".\")}\n=ex{ordinal}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n^(String(n)+\".\")}\n=ex{ordinal}\n// edge annotation 68"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/jv.js",
+      "trialIdx": 73,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "5e1287229fa5039e9f5465d564f9604478242427c98357c3da4230864d01a4b4",
+      "hMut": "374c99b68262f311139dede3bbfe34c9b7c2047714dfddacf61be38c3ab9f227",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){^n}\n=ex{ordinal}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n^n}\n=ex{ordinal}\n// noop_ref"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/ky.js",
+      "trialIdx": 80,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "5e1287229fa5039e9f5465d564f9604478242427c98357c3da4230864d01a4b4",
+      "hMut": "374c99b68262f311139dede3bbfe34c9b7c2047714dfddacf61be38c3ab9f227",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){^n}\n=ex{ordinal}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n^n}\n=ex{ordinal}\n// edge annotation 80"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/me.js",
+      "trialIdx": 85,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "5e1287229fa5039e9f5465d564f9604478242427c98357c3da4230864d01a4b4",
+      "hMut": "374c99b68262f311139dede3bbfe34c9b7c2047714dfddacf61be38c3ab9f227",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){^n}\n=ex{ordinal}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n^n}\n=ex{ordinal}\n// noop_ref"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/ms.js",
+      "trialIdx": 92,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "f7e738c57562256ab01680908f375e3a8ece2d84312390502738aceaeeb694dc",
+      "hMut": "d6ca66559894ce0e701db161b3c1624601ca769669aa0f90bc3e7fdf0a128716",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){^(String(n)+\".\")}\n=ex{ordinal}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n^(String(n)+\".\")}\n=ex{ordinal}\n// edge annotation 92"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/nl-be.js",
+      "trialIdx": 97,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "5e1287229fa5039e9f5465d564f9604478242427c98357c3da4230864d01a4b4",
+      "hMut": "374c99b68262f311139dede3bbfe34c9b7c2047714dfddacf61be38c3ab9f227",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){^n}\n=ex{ordinal}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n^n}\n=ex{ordinal}\n// noop_ref"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/pt.js",
+      "trialIdx": 104,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "e5305a2d77001180f936bfc7b731e413905c5b6578e06686910562c0a4b47485",
+      "hMut": "7fb84785eb289c65d9b3bb1d6b1d4dbe5ad6e10841cc1bad9a4a379ee7fc3a54",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){^(String(n)+\"º\")}\n=ex{ordinal}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n^(String(n)+\"º\")}\n=ex{ordinal}\n// edge annotation 104"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/sd.js",
+      "trialIdx": 109,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "5e1287229fa5039e9f5465d564f9604478242427c98357c3da4230864d01a4b4",
+      "hMut": "374c99b68262f311139dede3bbfe34c9b7c2047714dfddacf61be38c3ab9f227",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){^n}\n=ex{ordinal}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n^n}\n=ex{ordinal}\n// noop_ref"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/sr.js",
+      "trialIdx": 116,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "644b38ad4dbf918295d8c1dbdd9725b6d40ccb226a1f451b1e5c18f58900a47b",
+      "hMut": "6dee3014ec376048c19305fbfa95a1312b17592530db8dd64dec68d76ea2bb48",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){^(String(n)+\".\")}\n!correctGrammarCase(number,wordKey){;?(number%10>=1&&number%10<=4&&(number%100<10||number%100>=20)){^(((__c)=>{?(__c){return(wordKey[0])}return(wordKey[1])",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n^(String(n)+\".\")}\n!correctGrammarCase(number,wordKey){;?(number%10>=1&&number%10<=4&&(number%100<10||number%100>=20)){^(((__c)=>{?(__c){return(wordKey[0]"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/ta.js",
+      "trialIdx": 121,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "5e1287229fa5039e9f5465d564f9604478242427c98357c3da4230864d01a4b4",
+      "hMut": "374c99b68262f311139dede3bbfe34c9b7c2047714dfddacf61be38c3ab9f227",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){^n}\n=ex{ordinal}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n^n}\n=ex{ordinal}\n// noop_ref"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/tlh.js",
+      "trialIdx": 128,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "5e1287229fa5039e9f5465d564f9604478242427c98357c3da4230864d01a4b4",
+      "hMut": "374c99b68262f311139dede3bbfe34c9b7c2047714dfddacf61be38c3ab9f227",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){^n}\n=ex{ordinal}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n^n}\n=ex{ordinal}\n// edge annotation 128"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/ug-cn.js",
+      "trialIdx": 133,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "5e1287229fa5039e9f5465d564f9604478242427c98357c3da4230864d01a4b4",
+      "hMut": "374c99b68262f311139dede3bbfe34c9b7c2047714dfddacf61be38c3ab9f227",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){^n}\n=ex{ordinal}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n^n}\n=ex{ordinal}\n// noop_ref"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/locale/yo.js",
+      "trialIdx": 140,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "5e1287229fa5039e9f5465d564f9604478242427c98357c3da4230864d01a4b4",
+      "hMut": "374c99b68262f311139dede3bbfe34c9b7c2047714dfddacf61be38c3ab9f227",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){^n}\n=ex{ordinal}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!ordinal(n){\n  __mut_flag = 99;\n^n}\n=ex{ordinal}\n// edge annotation 140"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/plugin/advancedFormat/index.js",
+      "trialIdx": 145,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "ef168de2787e30644541bef091113a3c1ecb813f0908f2402e49c8753f7cea43",
+      "hMut": "9adcfc00d2629cfc28e013f9f9a766d8f0812360c8a3dfc2fa90038491c3a05d",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!defaultExport(o,c){FORMAT_DEFAULT='';;proto=c.prototype;oldFormat=proto.format;proto.format=~(formatStr){; const locale = this.$locale();; if (!this.isValid()) { return oldFormat.bind(",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!defaultExport(o,c){\n  __mut_flag = 99;\nFORMAT_DEFAULT='';;proto=c.prototype;oldFormat=proto.format;proto.format=~(formatStr){; const locale = this.$locale();; if (!this.isValid()) { re"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/plugin/dayOfYear/index.js",
+      "trialIdx": 152,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "826942bc86d4d3d2536b6995a5b2dcf1a6463627ba6fdf30e2205a243c1b3dbd",
+      "hMut": "cdfd02570eca437ea0e2c177213a569fc389a1d30e3a04092c0ab41517122a48",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!defaultExport(o,c,d){;proto=c.prototype;proto.dayOfYear=~(input){; const dayOfYear = Math.round((d(this).startOf('day') - d(this).startOf('year')) / 864e5) + 1; return (((__c)=>{if(__c",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!defaultExport(o,c,d){\n  __mut_flag = 99;\n;proto=c.prototype;proto.dayOfYear=~(input){; const dayOfYear = Math.round((d(this).startOf('day') - d(this).startOf('year')) / 864e5) + 1; ret"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/plugin/isMoment/index.js",
+      "trialIdx": 157,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "d69b2b251d477f2b00047cf6f86ef9fe71881d42b9ef563c4068ef7043423249",
+      "hMut": "da7f6554c85f270f9121bbcabd22d534c77588e5917d9b3d9a50beaeaed09353",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!defaultExport(o,c,f){f.isMoment=~(input){; return f.isDayjs(input)}}\n=ex{defaultExport}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!defaultExport(o,c,f){\n  __mut_flag = 99;\nf.isMoment=~(input){; return f.isDayjs(input)}}\n=ex{defaultExport}\n// noop_ref"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/plugin/isoWeeksInYear/index.js",
+      "trialIdx": 164,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "5469c5990d2d664e83a9ff97dc02af4f74363e4cfdbea6d67875e172a2f9b3b8",
+      "hMut": "f94d2def08ce93db315de37ac052bfb12c60d1fc2db55b9e24cdb7cf49ab297a",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!defaultExport(o,c){;proto=c.prototype;proto.isoWeeksInYear=~(){; const isLeapYear = this.isLeapYear(); const last = this.endOf('y'); const day = last.day();; if (day === 4 || (isLeapYe",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!defaultExport(o,c){\n  __mut_flag = 99;\n;proto=c.prototype;proto.isoWeeksInYear=~(){; const isLeapYear = this.isLeapYear(); const last = this.endOf('y'); const day = last.day();; if (da"
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/plugin/negativeYear/index.js",
+      "trialIdx": 169,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "01921aeada86e699ad4c569fbab1facd51d3bcdc071921356c4d1ab6383387c7",
+      "hMut": "85e43d3139b2ea939b7b68fa47784e570a834db342f5d17ab66f62dbd8206293",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!defaultExport(_,c,dayjs){parseDate=~(cfg){; const { date, utc } = cfg;; if (typeof date === 'string' && date.charAt(0) === '-') { const normalData = date.slice(1); let newDate = dayjs(",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!defaultExport(_,c,dayjs){\n  __mut_flag = 99;\nparseDate=~(cfg){; const { date, utc } = cfg;; if (typeof date === 'string' && date.charAt(0) === '-') { const normalData = date.slice(1); "
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/plugin/toObject/index.js",
+      "trialIdx": 176,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "fb65832181e64f0a71bfc620beea152a479b5890ceddcc9126251964ededae3a",
+      "hMut": "fa339653bfe61699682575755cf2985be22d59799a4b8a924636123eeeb93dce",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!defaultExport(o,c){;proto=c.prototype;proto.toObject=~(){; return { years: this.$y, months: this.$M, date: this.$D, hours: this.$H, minutes: this.$m, seconds: this.$s, milliseconds: th",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!defaultExport(o,c){\n  __mut_flag = 99;\n;proto=c.prototype;proto.toObject=~(){; return { years: this.$y, months: this.$M, date: this.$D, hours: this.$H, minutes: this.$m, seconds: this."
+    },
+    {
+      "repo": "dayjs",
+      "file": "src/plugin/weekday/index.js",
+      "trialIdx": 181,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "32b525af5cb4e335c3095176a3bc244aa339ebd431808850a7afdb1c091c348c",
+      "hMut": "99b3b789f17f72553dd612f516294b1e0d3e6d40076c894e7137a58025c213da",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!defaultExport(o,c){;proto=c.prototype;proto.weekday=~(input){; const weekStart = this.$locale().weekStart || 0; const { $W } = this; const weekday = ((((__c)=>{if(__c){return($W + 7);}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!defaultExport(o,c){\n  __mut_flag = 99;\n;proto=c.prototype;proto.weekday=~(input){; const weekStart = this.$locale().weekStart || 0; const { $W } = this; const weekday = ((((__c)=>{if(_"
+    },
+    {
+      "repo": "underscore",
+      "file": "karma.conf.js",
+      "trialIdx": 1,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "dca0b082a3cf78e7531c29e24c701269bc543980092f410bc060fcaf7de528a8",
+      "hMut": "36a0fb4c1487307ba91c713b9e80bd185db29fa9d92a71f47d870dacc6c4f660",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!defaultExport(config){config.set({basePath: '',frameworks: ['qunit'],logLevel: config.LOG_INFO,port: 9876,files: [ 'test/qunit-setup.js','test/overrides.js','underscore-umd.js','test/*",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!defaultExport(config){\n  __mut_flag = 99;\nconfig.set({basePath: '',frameworks: ['qunit'],logLevel: config.LOG_INFO,port: 9876,files: [ 'test/qunit-setup.js','test/overrides.js','unders"
+    },
+    {
+      "repo": "underscore",
+      "file": "modules/_createEscaper.js",
+      "trialIdx": 8,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "d3dd173c93515c72066ec352b75a2aa719328de7c60544e28dcf2b5b448d9ce0",
+      "hMut": "fd639623c5ddc3fd693060c7165269085b7e22d4ccced906e0a0241a1babff39",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!createEscaper(map){escaper=~(match){; return map[match];};;source='(?:'+keys(map).join('|')+')';testRegexp=RegExp(source);replaceRegexp=RegExp(source,'g');^function(string){string=(((_",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!createEscaper(map){\n  __mut_flag = 99;\nescaper=~(match){; return map[match];};;source='(?:'+keys(map).join('|')+')';testRegexp=RegExp(source);replaceRegexp=RegExp(source,'g');^function"
+    },
+    {
+      "repo": "underscore",
+      "file": "modules/_deepGet.js",
+      "trialIdx": 13,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "f1ee2805637fea0336144886538725b7549f6ded6ebfed912afda11743e770cf",
+      "hMut": "ee94eb163e8d44eede0a3eb6768e5a059b7f7e25bc9eec0f32de23c4b8a391c8",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!deepGet(obj,path){;length=path.length;#(i=0;i<length;i++){?(obj==null){^void 0};obj=obj[path[i]]};^(((__c)=>{?(__c){return(obj)}return(void 0)})(length))}\n=ex{deepGet}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!deepGet(obj,path){\n  __mut_flag = 99;\n;length=path.length;#(i=0;i<length;i++){?(obj==null){^void 0};obj=obj[path[i]]};^(((__c)=>{?(__c){return(obj)}return(void 0)})(length))}\n=ex{deepG"
+    },
+    {
+      "repo": "underscore",
+      "file": "modules/_optimizeCb.js",
+      "trialIdx": 20,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "0529952f620931817831f92fea573e9ac6ffaa6869804db6151553ca884cf6cf",
+      "hMut": "1941ac1e309a3303d2bbbba58dc51d5f00fa68ea35d1c663ee62d3b3ca6caffa",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!optimizeCb(func,context,argCount){;?(context==void 0){^func};switch ((((__c)=>{?(__c){return(3)}return(argCount)})(argCount==null))){case 1:^function(value){^func.call(context,value)};",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!optimizeCb(func,context,argCount){\n  __mut_flag = 99;\n;?(context==void 0){^func};switch ((((__c)=>{?(__c){return(3)}return(argCount)})(argCount==null))){case 1:^function(value){^func.c"
+    },
+    {
+      "repo": "underscore",
+      "file": "modules/after.js",
+      "trialIdx": 25,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "cb86c01215c15b3b6b84661386edcb19bb2752fc1b1e550baa6f0056492d9f84",
+      "hMut": "1d450af8942b281e3e40efe0c0c1a0d526697133bb84f4d9907b65cb5d6073f2",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!after(times,func){;^function(){?(--times<1){^func.apply(this,arguments)}}}\n=ex{after}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!after(times,func){\n  __mut_flag = 99;\n;^function(){?(--times<1){^func.apply(this,arguments)}}}\n=ex{after}\n// noop_ref"
+    },
+    {
+      "repo": "underscore",
+      "file": "modules/compose.js",
+      "trialIdx": 32,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "ee09c551ba9246bc196c57b1fd88c5fa4b794137f10d58cdc72b239ba9282c0c",
+      "hMut": "d4616d2db3ab04e62fd411caaaa6b8274d4498fb66d58058fabd9d709824d357",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!compose(){;args=arguments;start=args.length-1;^function(){i=start;result=args[start].apply(this,arguments);while (i--) result=args[i].call(this,result);^result}}\n=ex{compose}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!compose(){\n  __mut_flag = 99;\n;args=arguments;start=args.length-1;^function(){i=start;result=args[start].apply(this,arguments);while (i--) result=args[i].call(this,result);^result}}\n=e"
+    },
+    {
+      "repo": "underscore",
+      "file": "modules/each.js",
+      "trialIdx": 37,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "7d052de3a3ee3498c269ee726da67ebdc08292eae1f59ddfd3e54e7c865dd54d",
+      "hMut": "99a3862b8c1fd880c7b057b53f4927437ff6eebeb0a6caedbd9fc2fd5c2112c2",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!each(obj,iteratee,context){iteratee=optimizeCb(iteratee,context);i=undefined;length=undefined;?(isArrayLike(obj)){#(i=0,length=obj.length;i<length;i++){iteratee(obj[i],i,obj)}}:{_keys=",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!each(obj,iteratee,context){\n  __mut_flag = 99;\niteratee=optimizeCb(iteratee,context);i=undefined;length=undefined;?(isArrayLike(obj)){#(i=0,length=obj.length;i<length;i++){iteratee(obj"
+    },
+    {
+      "repo": "underscore",
+      "file": "modules/flatten.js",
+      "trialIdx": 44,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "78330af8bdd67c3fd4f7d5a42a17c0bbe036da41204a67372683a8c2c61b6e02",
+      "hMut": "3c3a4524b0f2853f2c441a0490da066043f62a1fff7a30d0f6a2245c357f60f2",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!flatten(array,depth){;^_flatten(array,depth,false)}\n=ex{flatten}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!flatten(array,depth){\n  __mut_flag = 99;\n;^_flatten(array,depth,false)}\n=ex{flatten}\n// edge annotation 44"
+    },
+    {
+      "repo": "underscore",
+      "file": "modules/initial.js",
+      "trialIdx": 49,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "07299313aa71ebd38aabf2bbf0ee3c5fce005ba92472b820d99a39591864b544",
+      "hMut": "643c52ee78e86617e00ab20d0b1c4db74ad51c64567faa48e9ec9e7ee2bb89b2",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!initial(array,n,guard){slice='';;^slice.call(array,0,Math.max(0,array.length-((((__c)=>{?(__c){return(1)}return(n)})(n==null||guard)))))}\n=ex{initial}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!initial(array,n,guard){\n  __mut_flag = 99;\nslice='';;^slice.call(array,0,Math.max(0,array.length-((((__c)=>{?(__c){return(1)}return(n)})(n==null||guard)))))}\n=ex{initial}\n// noop_ref"
+    },
+    {
+      "repo": "underscore",
+      "file": "modules/isFinite.js",
+      "trialIdx": 56,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "6a4ec0fdc7def8cff9ecd1af839aaea6a58506611622d62b4107642bbab7efa3",
+      "hMut": "fc8e537cad3272e896e29de88e5c7f7c1ba238bd3ad55d6c031f15148933338c",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!isFinite(obj){_isFinite='';;^!isSymbol(obj)&&_isFinite(obj)&&!isNaN(parseFloat(obj))}\n=ex{isFinite}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!isFinite(obj){\n  __mut_flag = 99;\n_isFinite='';;^!isSymbol(obj)&&_isFinite(obj)&&!isNaN(parseFloat(obj))}\n=ex{isFinite}\n// edge annotation 56"
+    },
+    {
+      "repo": "underscore",
+      "file": "modules/isTypedArray.js",
+      "trialIdx": 61,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "4fff86f9521b38381664c7f8ecf56146c1f53fab8fee7129c9d3074f5319f861",
+      "hMut": "73d1ac51aa201ede0bc86b5bf1a198eb96927a2b3009a705030d3cffe249ef02",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!isTypedArray(obj){nativeIsView='';toString='';;^(((__c)=>{?(__c){return((nativeIsView(obj)&&!isDataView(obj)))}return(isBufferLike(obj)&&typedArrayPattern.test(toString.call(obj)))})(n",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!isTypedArray(obj){\n  __mut_flag = 99;\nnativeIsView='';toString='';;^(((__c)=>{?(__c){return((nativeIsView(obj)&&!isDataView(obj)))}return(isBufferLike(obj)&&typedArrayPattern.test(toSt"
+    },
+    {
+      "repo": "underscore",
+      "file": "modules/matcher.js",
+      "trialIdx": 68,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "760875263f13c1bd386157c823032eef4d7041ca6b2ebf0c2026fbfe5fc4ffcf",
+      "hMut": "c33e929b42257174e5fffd25abedf87a25c98ffd6ccf422c2fb1f6a16e163d5e",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!matcher(attrs){attrs=extendOwn({},attrs);^function(obj){^isMatch(obj,attrs)}}\n=ex{matcher}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!matcher(attrs){\n  __mut_flag = 99;\nattrs=extendOwn({},attrs);^function(obj){^isMatch(obj,attrs)}}\n=ex{matcher}\n// edge annotation 68"
+    },
+    {
+      "repo": "underscore",
+      "file": "modules/negate.js",
+      "trialIdx": 73,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "79002ab6e4d934fdb2afd926ee3c87529ad9a0b8651c83d32c7931d7c976fe31",
+      "hMut": "9347462ae354dace5ec70ca5aed3e8671970c3ab1644e78025292e5d92b42cc4",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!negate(predicate){;^function(){^!predicate.apply(this,arguments)}}\n=ex{negate}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!negate(predicate){\n  __mut_flag = 99;\n;^function(){^!predicate.apply(this,arguments)}}\n=ex{negate}\n// noop_ref"
+    },
+    {
+      "repo": "underscore",
+      "file": "modules/propertyOf.js",
+      "trialIdx": 80,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "8b347fac2dddf526d6228a5c9f6b1e77db8e785d36f646d0e5d86b553d2d7f6b",
+      "hMut": "9d039700d61aaf17058cb7d9afda9a8b4dabeb9b7798eefbc6dc76665de2baa2",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!propertyOf(obj){;?(obj==null){^noop};^function(path){^get(obj,path)}}\n=ex{propertyOf}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!propertyOf(obj){\n  __mut_flag = 99;\n;?(obj==null){^noop};^function(path){^get(obj,path)}}\n=ex{propertyOf}\n// edge annotation 80"
+    },
+    {
+      "repo": "underscore",
+      "file": "modules/result.js",
+      "trialIdx": 85,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "c34a7fe1b45194a1b49dd253516c4c222159d4902edf2134c384e9f179330595",
+      "hMut": "81cf08b0879b9044ed8c49f4f1aa7e0062eebf24977b04da67429c0fcf5022de",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!result(obj,path,fallback){path=toPath(path);length=path.length;?(!length){^(((__c)=>{?(__c){return(fallback.call(obj))}return(fallback)})(isFunction(fallback)))};#(i=0;i<length;i++){pr",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!result(obj,path,fallback){\n  __mut_flag = 99;\npath=toPath(path);length=path.length;?(!length){^(((__c)=>{?(__c){return(fallback.call(obj))}return(fallback)})(isFunction(fallback)))};#("
+    },
+    {
+      "repo": "underscore",
+      "file": "modules/tap.js",
+      "trialIdx": 92,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "b3a209d44296dabb13a8d8ac46d48df3aa02cd4a16c4b754aa9e759c79f628ba",
+      "hMut": "dc1fbab76445c4c548221b2ceece7a44cfec9d964a8a6171d3a95b01c1fbdb8d",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!tap(obj,interceptor){interceptor(obj);^obj}\n=ex{tap}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!tap(obj,interceptor){\n  __mut_flag = 99;\ninterceptor(obj);^obj}\n=ex{tap}\n// edge annotation 92"
+    },
+    {
+      "repo": "underscore",
+      "file": "modules/toPath.js",
+      "trialIdx": 97,
+      "mutators": [
+        "alter_refinement",
+        "alter_exported_symbol",
+        "alias_reexport"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "6e4e9872c96edf69d7b263451919872fee5d77cea1c9d34d2a7754031482c0f9",
+      "hMut": "5f496794e70be861e9ea664e30ba3801b28c716a9e95fa657928ba4634cca1ec",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!toPath(path){;^(((__c)=>{?(__c){return(path)}return([path])})(isArray(path)))}\n=ex{toPath}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!toPath(path){\n  __mut_flag = 99;\n;^(((__c)=>{?(__c){return(path)}return([path])})(isArray(path)))}\n=ex{toPath}\n// noop_ref"
+    },
+    {
+      "repo": "underscore",
+      "file": "modules/where.js",
+      "trialIdx": 104,
+      "mutators": [
+        "alter_exported_symbol",
+        "alias_reexport",
+        "dependency_edge",
+        "body_semantics"
+      ],
+      "category": "DEAD_CODE_IN_EXPORTED",
+      "oracleReason": "IDENTICAL_BEHAVIOR_AND_CONTRACT",
+      "hOrig": "5ce8d1f1def276e0e1696441330d5f3ad680dcb1a78d62a13ae290edac2c4027",
+      "hMut": "44c098475732fe1ac4ccb4ff7fde47c1352f1f628ad36629a4880c79c992871e",
+      "origLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!where(obj,attrs){;^filter(obj,matcher(attrs))}\n=ex{where}",
+      "mutatedLinPreview": "@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops=strip_tests-sigil_ops+named_only+const_table\n~G{?=if #=for ^=ret :else}\n!where(obj,attrs){\n  __mut_flag = 99;\n;^filter(obj,matcher(attrs))}\n=ex{where}\n// edge annotation 104"
+    }
+  ]
+}

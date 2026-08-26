@@ -1,0 +1,9 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=ccr002d_cache
+~G{?=if #=for ^=ret :else}
+!moduleRef(){^'CacheLayer'}
+!declaredEffects(){^'memory'}
+!caps(){^'cache'}
+!semanticHash(){^'ccr002d-cache-v1'}
+!put(key,val){^({ok:1,key:key,val:val})}
+=ex{moduleRef,declaredEffects,caps,semanticHash,put}

@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!cycleTracker(){;?(typeof Map=='function'){^{map: new Map(),tracked: [],push: ~(a,b){this.tracked.push(a);; this.map.set(a, b);},pop: ~(){this.map['delete'](this.tracked.pop());},has: ~(a){; return this.map.has(a);},match: ~(a,b){; return this.map.get(a) === b;},abort: ~(a,b){this.tracked.length = 0;; this.map.clear();; return false;}}};^{tracked: [],trackedB: [],lookups: 0,push: ~(a,b){this.tracked.push(a);; this.trackedB.push(b);},pop: ~(){this.tracked.pop();; this.trackedB.pop();},has: ~(a){;; if (this.lookups >= comparisonLimit) throw RangeError( 'Comparison limit exceeded. Wrap call to isEqual in try/catch or ' + 'limit the depth of compared objects.' );;; for (var i = 0, l = this.tracked.length; i < l; ++i) {; if (this.tracked[i] === a) break; }; this.lookups += i;; return (((__c)=>{if(__c){return(i + 1);}return(false);})(i < l));},match: ~(a,b,i){; return this.trackedB[i - 1] === b;},abort: ~(){this.tracked.length = 0;; this.trackedB.length = 0;; return false;}}}
+=ex{cycleTracker}

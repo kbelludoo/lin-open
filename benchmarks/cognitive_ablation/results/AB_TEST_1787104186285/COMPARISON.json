@@ -1,0 +1,222 @@
+{
+  "experiment": "LIN_ABLATION_A_B_C",
+  "version": "1.0.0",
+  "protocol_version": "PHASE0_SMOKE",
+  "timestamp": "2026-08-19T01:55:51.746Z",
+  "status": "PRELIMINARY / NOT A FINAL DENSITY BENCHMARK",
+  "per_task": [
+    {
+      "task_id": "T001",
+      "family": "logic_state",
+      "difficulty": "easy",
+      "conditions": {
+        "A": {
+          "failure_class": "PASS",
+          "compile_pass": true,
+          "oracle_pass": true,
+          "oracle_executed": true,
+          "total_tokens": 259,
+          "total_latency_ms": 19747,
+          "attempts_count": 1
+        },
+        "B": {
+          "failure_class": "ORACLE_FAILURE",
+          "compile_pass": true,
+          "oracle_pass": false,
+          "oracle_executed": true,
+          "total_tokens": 600,
+          "total_latency_ms": 22096,
+          "attempts_count": 1
+        },
+        "C": {
+          "failure_class": "PASS",
+          "compile_pass": true,
+          "oracle_pass": true,
+          "oracle_executed": true,
+          "total_tokens": 682,
+          "total_latency_ms": 13716,
+          "attempts_count": 1
+        }
+      }
+    },
+    {
+      "task_id": "T002",
+      "family": "logic_state",
+      "difficulty": "medium",
+      "conditions": {
+        "A": {
+          "failure_class": "ORACLE_FAILURE",
+          "compile_pass": true,
+          "oracle_pass": false,
+          "oracle_executed": true,
+          "total_tokens": 313,
+          "total_latency_ms": 39759,
+          "attempts_count": 1
+        },
+        "B": {
+          "failure_class": "INVALID_LIN",
+          "compile_pass": false,
+          "oracle_pass": false,
+          "oracle_executed": false,
+          "total_tokens": 603,
+          "total_latency_ms": 17357,
+          "attempts_count": 1
+        },
+        "C": {
+          "failure_class": "INVALID_LIN",
+          "compile_pass": false,
+          "oracle_pass": false,
+          "oracle_executed": false,
+          "total_tokens": 695,
+          "total_latency_ms": 18444,
+          "attempts_count": 1
+        }
+      }
+    },
+    {
+      "task_id": "T003",
+      "family": "logic_state",
+      "difficulty": "medium",
+      "conditions": {
+        "A": {
+          "failure_class": "ORACLE_FAILURE",
+          "compile_pass": true,
+          "oracle_pass": false,
+          "oracle_executed": true,
+          "total_tokens": 352,
+          "total_latency_ms": 58084,
+          "attempts_count": 1
+        },
+        "B": {
+          "failure_class": "ORACLE_FAILURE",
+          "compile_pass": true,
+          "oracle_pass": false,
+          "oracle_executed": true,
+          "total_tokens": 794,
+          "total_latency_ms": 83112,
+          "attempts_count": 1
+        },
+        "C": {
+          "failure_class": "ORACLE_FAILURE",
+          "compile_pass": true,
+          "oracle_pass": false,
+          "oracle_executed": true,
+          "total_tokens": 882,
+          "total_latency_ms": 89936,
+          "attempts_count": 1
+        }
+      }
+    }
+  ],
+  "conditions": [
+    {
+      "id": "A",
+      "name": "LIN Zero-Shot",
+      "mode": "ZERO_SHOT",
+      "compile_pass_rate": 1,
+      "oracle_pass_rate": 0.3333333333333333,
+      "invalid_lin_rate": 0,
+      "model_failure_rate": 0,
+      "timeout_rate": 0,
+      "avg_tokens_per_task": 308,
+      "avg_latency_per_task": 39196.666666666664,
+      "avg_tokens_per_pass": 259,
+      "counts": {
+        "PASS": 1,
+        "INVALID_LIN": 0,
+        "COMPILATION_FAILURE": 0,
+        "ORACLE_FAILURE": 2,
+        "MODEL_FAILURE": 0,
+        "TIMEOUT": 0
+      }
+    },
+    {
+      "id": "B",
+      "name": "LIN Few-Shot (5 examples)",
+      "mode": "FEW_SHOT",
+      "compile_pass_rate": 0.6666666666666666,
+      "oracle_pass_rate": 0,
+      "invalid_lin_rate": 0.3333333333333333,
+      "model_failure_rate": 0,
+      "timeout_rate": 0,
+      "avg_tokens_per_task": 665.6666666666666,
+      "avg_latency_per_task": 40855,
+      "avg_tokens_per_pass": null,
+      "counts": {
+        "PASS": 0,
+        "INVALID_LIN": 1,
+        "COMPILATION_FAILURE": 0,
+        "ORACLE_FAILURE": 2,
+        "MODEL_FAILURE": 0,
+        "TIMEOUT": 0
+      }
+    },
+    {
+      "id": "C",
+      "name": "LIN Constrained (5 examples + grammar rules)",
+      "mode": "CONSTRAINED",
+      "compile_pass_rate": 0.6666666666666666,
+      "oracle_pass_rate": 0.3333333333333333,
+      "invalid_lin_rate": 0.3333333333333333,
+      "model_failure_rate": 0,
+      "timeout_rate": 0,
+      "avg_tokens_per_task": 753,
+      "avg_latency_per_task": 40698.666666666664,
+      "avg_tokens_per_pass": 682,
+      "counts": {
+        "PASS": 1,
+        "INVALID_LIN": 1,
+        "COMPILATION_FAILURE": 0,
+        "ORACLE_FAILURE": 1,
+        "MODEL_FAILURE": 0,
+        "TIMEOUT": 0
+      }
+    }
+  ],
+  "deltas": {
+    "A_vs_B": {
+      "compile_pass_rate_delta": -0.33333333333333337,
+      "oracle_pass_rate_delta": -0.3333333333333333,
+      "tokens_delta": 357.66666666666663,
+      "latency_delta": 1658.3333333333358,
+      "invalid_lin_rate_delta": 0.3333333333333333
+    },
+    "A_vs_C": {
+      "compile_pass_rate_delta": -0.33333333333333337,
+      "oracle_pass_rate_delta": 0,
+      "tokens_delta": 445,
+      "latency_delta": 1502,
+      "invalid_lin_rate_delta": 0.3333333333333333
+    },
+    "B_vs_C": {
+      "compile_pass_rate_delta": 0,
+      "oracle_pass_rate_delta": 0.3333333333333333,
+      "tokens_delta": 87.33333333333337,
+      "latency_delta": -156.33333333333576,
+      "invalid_lin_rate_delta": 0
+    }
+  },
+  "efficiency": {
+    "A_vs_B": {
+      "efficiency_gain": 0,
+      "efficiency_gain_reason": "NO_PASS_TARGET",
+      "token_savings": -1.1613,
+      "efficiency_a": 0.00108225,
+      "efficiency_b": 0
+    },
+    "A_vs_C": {
+      "efficiency_gain": 0.409,
+      "efficiency_gain_reason": null,
+      "token_savings": -1.4448,
+      "efficiency_a": 0.00108225,
+      "efficiency_b": 0.00044267
+    },
+    "B_vs_C": {
+      "efficiency_gain": null,
+      "efficiency_gain_reason": "NO_PASS_BASELINE",
+      "token_savings": -0.1312,
+      "efficiency_a": 0,
+      "efficiency_b": 0.00044267
+    }
+  }
+}

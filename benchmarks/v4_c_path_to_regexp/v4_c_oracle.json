@@ -1,0 +1,60 @@
+{
+  "id": "V4_C_ORACLE",
+  "version": "1.0.0",
+  "repository": "path-to-regexp@6.3.0",
+  "url": "https://github.com/pillarjs/path-to-regexp",
+  "loc": "~640 (src/index.ts)",
+  "description": "Oracle for V4-C UNKNOWN FLOW GENERALIZATION. Tests whether agent finds vulnerability classes not present in V4-B training.",
+
+  "vulnerability_classes_in_v4_b": ["prototype_pollution", "ssrf", "header_injection", "resource_exhaustion", "input_validation"],
+  "vulnerability_classes_in_v4_c": ["redos"],
+  "novelty": "ReDoS is a completely different class from V4-B. It involves regex generation, not data flow. The agent has never seen ReDoS patterns in the V4-B/V4-B.1 training.",
+
+  "bugs": [
+    {
+      "bug_id": "BUG-C001",
+      "cve": "CVE-2024-45296",
+      "vulnerability_class": "redos",
+      "severity": "HIGH",
+      "cvss": 7.5,
+      "description": "path-to-regexp outputs backtracking regular expressions when two parameters are in a single segment separated by something that is not a period. The generated regex has catastrophic backtracking, causing denial of service.",
+      "affected_versions": ">=0.2.0,<1.9.0; >=2.0.0,<3.3.0; >=4.0.0,<6.3.0; >=7.0.0,<8.0.0",
+      "fixed_version": "8.0.0",
+      "root_cause": "safePattern() generates lookahead patterns that create exponential backtracking when two parameters are adjacent in a segment",
+      "vulnerable_patterns": ["/:a-:b", "/:x{/foobar/:y}?-:z", "/:a.:b"],
+      "source_location": {
+        "file": "src/index.ts",
+        "function": "safePattern",
+        "line": 184,
+        "code": "return `(?:(?!${escapeString(prevText)})[^${escapeString(delimiter)}])+?`;"
+      },
+      "exploit": {
+        "pattern": "/:a-:b",
+        "input": "/a-aaaaaaaaaaaaaaaaaaaaaa-a",
+        "impact": "Event loop blocked for >1000x longer than safe regex",
+        "description": "The negative lookahead (?:(?!-)[^/])+? causes exponential backtracking when the input contains repeated separators"
+      },
+      "fix": {
+        "description": "Version 8.0.0 removes the features that can cause ReDoS. Alternatively, provide custom regex for parameters after the first in a single segment.",
+        "example": "/:a-:b([^-/]+)"
+      }
+    }
+  ],
+
+  "non_vulnerabilities": [
+    {
+      "pattern": "safePattern generating [^/]+? for safe paths",
+      "reason": "When the previous text contains a delimiter character, the pattern is safe because the delimiter acts as a natural boundary"
+    },
+    {
+      "pattern": "tokensToRegexp generating standard capture groups",
+      "reason": "Standard regex capture groups without lookahead are safe from catastrophic backtracking"
+    }
+  ],
+
+  "evaluation_criteria": {
+    "must_find": ["BUG-C001"],
+    "must_not_flag": ["safePattern with delimiter", "standard capture groups"],
+    "generalization_test": "Agent has never seen ReDoS in V4-B. Can it detect a vulnerability in a completely different class using only system model analysis?"
+  }
+}

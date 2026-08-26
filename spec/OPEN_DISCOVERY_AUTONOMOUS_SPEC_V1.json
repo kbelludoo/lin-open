@@ -1,0 +1,25 @@
+{
+  "spec_id": "OPEN_DISCOVERY_AUTONOMOUS_SPEC_V1",
+  "version": "1.0.0",
+  "protocol": "OPEN_DISCOVERY_AUTONOMOUS_EVALUATION",
+  "created_at": "2026-08-16T17:58:00Z",
+  "meta": {
+    "purpose": "Evaluate end-to-end autonomous discovery of an unlisted toolchain (Go 1.26 on Windows), probe execution, LIN-IR backend emission, semantic verification against canonical oracle, performance benchmarking, knowledge ledger persistence, and autonomous selection in future workloads",
+    "hypothesis": "O LIN é capaz de descobrir autonomamente uma nova toolchain no host, sintetizar um backend funcional, verificar equivalência semântica estrita, registrar o perfil no ledger de conhecimento e selecionar esse backend em decisões futuras de compilação sem intervenção manual e sem alterar o núcleo protegido."
+  },
+  "phases": [
+    { "phase_id": "P1_DISCOVER", "name": "Toolchain Detection & Probe Synthesis" },
+    { "phase_id": "P2_SYNTHESIS", "name": "LIN-IR to Discovered Backend Code Emission" },
+    { "phase_id": "P3_VERIFY", "name": "Semantic Equality & Canonical Proof Verification" },
+    { "phase_id": "P4_BENCHMARK", "name": "Empirical Execution & Latency Profiling" },
+    { "phase_id": "P5_KNOWLEDGE", "name": "Structured Knowledge Ledger Update" },
+    { "phase_id": "P6_SELECTION", "name": "Autonomous Selection in Subsequent Workload Task" }
+  ],
+  "gates": {
+    "GATE_DISCOVERY_INTEGRITY": "Toolchain discovered and verified on host",
+    "GATE_EMISSION_AND_VERIFY": "Emitted code compiles and Output == Oracle",
+    "GATE_KNOWLEDGE_PERSISTENCE": "Empirical profile saved to knowledge ledger",
+    "GATE_FUTURE_SELECTION": "Autonomous selector chooses discovered backend for its domain",
+    "GATE_NUCLEUS_IMMUTABILITY": "nucleus_hash unmodified throughout entire cycle"
+  }
+}

@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!correctGrammarCase(number,wordKey){;?(number%10>=1&&number%10<=4&&(number%100<10||number%100>=20)){^(((__c)=>{?(__c){return(wordKey[0])}return(wordKey[1])})(number%10==1))};^wordKey[2]}
+=ex{correctGrammarCase}

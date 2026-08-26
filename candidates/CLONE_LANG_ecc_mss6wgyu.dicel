@@ -1,0 +1,33 @@
+@DICEL:LIN_CANDIDATE:1.0.0
+^from_clone="clone-lin-ecc"
+^stage="LEARN_NEW_LANG"
+^forbid_nucleus=true
+
+@HARVEST {
+  emit_fail{target="go" fn="reviewPrompt" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_ecc_aX9pcv\go\reviewPrompt.go:5:93: syntax error: unexpected comma; expected ]
+" nucleus=false}
+  emit_fail{target="rust" fn="reviewPrompt" emit="ok" run="FAIL" reason="error[E0369]: cannot add `impl ToString` to `&str`
+ --> C:\Users\k\AppData\Local\Temp\lin_multi_ecc_aX9pcv\rust\reviewPr" nucleus=false}
+  emit_fail{target="py" fn="verifyPrompt" emit="ok" run="FAIL" reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_ecc_aX9pcv\py\verifyPrompt.py', line 20
+    return [ 'You are an indepe" nucleus=false}
+  emit_fail{target="go" fn="verifyPrompt" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_ecc_aX9pcv\go\verifyPrompt.go:5:153: syntax error: unexpected comma; expected ]
+" nucleus=false}
+  emit_fail{target="rust" fn="verifyPrompt" emit="ok" run="FAIL" reason="error: expected one of `)`, `,`, `.`, `?`, or an operator, found `=>`
+ --> C:\Users\k\AppData\Local\Temp\lin_multi_ecc_a" nucleus=false}
+  emit_fail{target="go" fn="isBlocking" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_ecc_aX9pcv\go\isBlocking.go:5:11: f.severity undefined (type interface{} has no " nucleus=false}
+  emit_fail{target="rust" fn="isBlocking" emit="ok" run="FAIL" reason="error[E0609]: no field `severity` on type `impl ToString`
+ --> C:\Users\k\AppData\Local\Temp\lin_multi_ecc_aX9pcv\rust\i" nucleus=false}
+  emit_fail{target="py" fn="normalize" emit="ok" run="FAIL" reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_ecc_aX9pcv\py\normalize.py', line 20
+    return (s or '').replace(/\s+/" nucleus=false}
+  emit_fail{target="go" fn="normalize" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_ecc_aX9pcv\go\normalize.go:5:25: syntax error: unexpected /, expected expression" nucleus=false}
+  emit_fail{target="rust" fn="normalize" emit="ok" run="FAIL" reason="error: unknown start of token: \
+ --> C:\Users\k\AppData\Local\Temp\lin_multi_ecc_aX9pcv\rust\normalize.rs:7:29
+  |
+7 | " nucleus=false}
+  emit_fail{target="go" fn="usage" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_ecc_aX9pcv\go\usage.go:5:9: cannot use ('Open an executable and its argument arr" nucleus=false}
+  emit_fail{target="rust" fn="usage" emit="ok" run="FAIL" reason="error[E0308]: mismatched types
+ --> C:\Users\k\AppData\Local\Temp\lin_multi_ecc_aX9pcv\rust\usage.rs:7:12
+  |
+6 | ...sag" nucleus=false}
+  proposal{fix="emit_ts|emit_py|emit_go|emit_rust|emit_shared peripheral; retry; no one-file hardcode"}
+}

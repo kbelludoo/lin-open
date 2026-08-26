@@ -1,0 +1,25 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=lin_refine_div
+~G{?=if #=for ^=ret :else}
+!isWs(ch){^ch==' '||ch=='\t'||ch=='\n'||ch=='\r'}
+!isDigit(ch){^ch>='0'&&ch<='9'}
+!isIdentStart(ch){^((ch>='A'&&ch<='Z')||(ch>='a'&&ch<='z')||ch=='_'||ch=='$')}
+!isIdent(ch){^(isIdentStart(ch)||isDigit(ch))}
+!blockedMsg(divName){d=String(divName||'?');^('EMIT BLOCKED INV_REFINEMENT_SOUND\nNode: BinaryExpression /\nMissing: '+d+' > 0\nrepairs: refine '+d+':int{>0} | require '+d+'>0 | insert check')}
+!skipQuote(s,i){q=s.charAt(i);j=i+1;n=s.length;#(;j<n;j++){ch=s.charAt(j);?(ch=='\\'){j=j+1};?(ch!='\\'){?(ch==q){^j+1}}};^n}
+!skipRegex(s,i){j=i+1;inClass=0;n=s.length;#(;j<n;j++){ch=s.charAt(j);?(ch=='\\'){j=j+1};?(ch=='['&&inClass==0){inClass=1};?(ch==']'&&inClass==1){inClass=0};?(ch=='/'&&inClass==0){k=j+1;#(;k<n;k++){f=s.charAt(k);?(f!='g'&&f!='i'&&f!='m'&&f!='s'&&f!='u'&&f!='y'&&f!='d'){^k}};^k};?(ch=='\n'){^i+1}};^i+1}
+!prevNonWs(s,i){k=i-1;#(;k>=0;k=k-1){p=s.charAt(k);?(!isWs(p)){^p}};^''}
+!isDivSlash(s,i){p=prevNonWs(s,i);?(p==''){^0};?(isIdent(p)||isDigit(p)||p==')'||p==']'){^1};^0}
+!isRegexStart(s,i){^(isDivSlash(s,i)==0)}
+!nextSlash(s,from){i=from;n=s.length;#(;i<n;i=i+1){ch=s.charAt(i);?(ch=='"'||ch=="'"||ch=='`'){i=skipQuote(s,i)-1};?(ch=='/'){nxt=s.charAt(i+1);?(nxt=='/'){#(;i<n&&s.charAt(i)!='\n';i=i+1){}};?(nxt=='*'){i=i+2;#(;i<n;i=i+1){?(s.charAt(i)=='*'&&s.charAt(i+1)=='/'){i=i+1;break}}};?(nxt=='='){};?(nxt!='/'&&nxt!='*'&&nxt!='='){div=isDivSlash(s,i);?(div){^i};?(div==0){i=skipRegex(s,i)-1}}}};^-1}
+!rhsAfter(s,slashIdx){j=slashIdx+1;n=s.length;#(;j<n&&isWs(s.charAt(j));j++){};?(j>=n){^({kind:'expr',text:'?'})};ch=s.charAt(j);?(ch=='('){k=j+1;#(;k<n&&isWs(s.charAt(k));k++){};?(isIdentStart(s.charAt(k))){start=k;#(;k<n&&isIdent(s.charAt(k));k++){};id=s.slice(start,k);#(;k<n&&isWs(s.charAt(k));k++){};?(s.charAt(k)==')'){^({kind:'ident',text:id})}};^({kind:'expr',text:s.slice(j,j+16)})};?(isDigit(ch)){start=j;#(;j<n&&isDigit(s.charAt(j));j++){};^({kind:'lit',text:s.slice(start,j)})};?(isIdentStart(ch)){start=j;#(;j<n&&isIdent(s.charAt(j));j++){};^({kind:'ident',text:s.slice(start,j)})};^({kind:'expr',text:s.slice(j,j+16)})}
+!splitParams(raw){items=[];cur='';depth=0;s=String(raw||'');#(i=0;i<s.length;i++){ch=s.charAt(i);?(ch==','){?(depth==0){?(cur.trim()!=''){items.push(cur.trim())};cur=''};?(depth!=0){cur=cur+ch}};?(ch!=','){?(ch=='{'){depth=depth+1};?(ch=='}'){depth=depth-1};cur=cur+ch}};?(cur.trim()!=''){items.push(cur.trim())};^items}
+!paramStarts(p,name){?(p==name){^1};n=name.length;?(p.indexOf(name)!=0){^0};nxt=p.charAt(n);^(nxt==':'||nxt=='{'||nxt==' '||nxt=='?')}
+!paramConstraint(rawParams,name){items=splitParams(rawParams);#(i=0;i<items.length;i++){p=items[i];?(paramStarts(p,name)){ob=p.indexOf('{');cb=p.lastIndexOf('}');?(ob>=0&&cb>ob){^p.slice(ob+1,cb)}}};^''}
+!numAfter(s,start){j=start;n=s.length;acc='';#(;j<n&&isDigit(s.charAt(j));j++){acc=acc+s.charAt(j)};?(acc==''){^-1};^Number(acc)}
+!constraintProvesGt0(raw){s=String(raw||'');parts=s.split(',');#(i=0;i<parts.length;i++){p=parts[i].trim();?(p.charAt(0)=='!'&&p.charAt(1)=='='&&p.charAt(2)=='0'&&p.length==3){^1};?(p.indexOf('>=')==0){n=numAfter(p,2);?(n>=1){^1}};?(p.indexOf('>')==0&&p.indexOf('>=')!=0){n=numAfter(p,1);?(n>=0){^1}};dot=p.indexOf('..');?(dot>0){n=numAfter(p,0);?(n>=1){^1}}};^0}
+!constProvesGt0(constCsv,name){parts=String(constCsv||'').split('|');#(i=0;i<parts.length;i++){p=parts[i];eq=p.indexOf('=');?(eq>0){k=p.slice(0,eq);v=p.slice(eq+1);?(k==name){n=Number(v);?(n>0){^1}}}};^0}
+!hasRequireBefore(body,name,divIdx){needles=['?('+name+'>0)','?('+name+'>=1)','?('+name+' > 0)','?('+name+' >= 1)','require '+name+'>0','require '+name+' > 0'];#(i=0;i<needles.length;i++){idx=String(body||'').indexOf(needles[i]);?(idx>=0&&idx<divIdx){^1}};^0}
+!provesGt0(kind,text,rawParams,constCsv,body,divIdx){?(kind=='lit'){n=Number(text);?(n>0){^1};^0};?(kind=='ident'){?(constraintProvesGt0(paramConstraint(rawParams,text))){^1};?(constProvesGt0(constCsv,text)){^1};?(hasRequireBefore(body,text,divIdx)){^1};^0};^0}
+!checkFn(fnName,rawParams,constCsv,body){s=String(body||'');?(s.indexOf('/')<0){^''};from=0;#(;from<s.length;from=from+1){idx=nextSlash(s,from);?(idx<0){^''};rhs=rhsAfter(s,idx);ok=provesGt0(rhs.kind,rhs.text,rawParams,constCsv,s,idx);?(ok==0){^blockedMsg(rhs.text)};from=idx};^''}
+=ex{isWs,isDigit,isIdentStart,isIdent,blockedMsg,skipQuote,skipRegex,prevNonWs,isDivSlash,isRegexStart,nextSlash,rhsAfter,splitParams,paramStarts,paramConstraint,numAfter,constraintProvesGt0,constProvesGt0,hasRequireBefore,provesGt0,checkFn}

@@ -1,0 +1,36 @@
+{
+  "id": "T026",
+  "family": "multi_step_composition",
+  "difficulty": "hard",
+  "specification": "Avaliador de expressões booleanas simples com tokens [op, arg1, arg2]. Entrada: [\"AND\", true, [\"OR\", false, true]]. Saída: boolean.",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "eval",
+    "globalState"
+  ],
+  "test_cases": [
+    {
+      "input": [
+        "AND",
+        true,
+        [
+          "OR",
+          false,
+          true
+        ]
+      ],
+      "expected": true
+    },
+    {
+      "input": [
+        "NOT",
+        true
+      ],
+      "expected": false
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T026.mjs"
+  }
+}

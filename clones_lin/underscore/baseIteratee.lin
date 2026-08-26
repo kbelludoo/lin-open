@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!baseIteratee(value,context,argCount){;?(value==null){^identity};?(isFunction(value)){^optimizeCb(value,context,argCount)};?(isObject(value)&&!isArray(value)){^matcher(value)};^property(value)}
+=ex{baseIteratee}

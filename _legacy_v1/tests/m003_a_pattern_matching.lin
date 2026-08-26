@@ -1,0 +1,9 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=m003_a_pattern_matching
+~G{?=if #=for ^=ret :else}
+
+!unwrapOption(opt, defaultVal){match(opt){Some(v)=>{^v};None=>{^defaultVal};_=>{^defaultVal}}}
+
+!describeNumber(n){match(n){0=>{^'zero'};1=>{^'one'};_=>{^'other'}}}
+
+=ex{unwrapOption,describeNumber}

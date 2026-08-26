@@ -1,0 +1,29 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=m003_c_destructuring
+~G{?=if #=for ^=ret :else}
+
+struct Point {
+  x: int,
+  y: int
+}
+
+!sumTuple(t: (int, int)): int {
+  match(t) {
+    (0, y) => { ^y }
+    (x, 0) => { ^x }
+    (x, y) => { ^x + y }
+    _ => { ^0 }
+  }
+}
+
+!evalPoint(p: Point): String {
+  match(p) {
+    Point { x: 0, y: 0 } => { ^"ORIGIN" }
+    Point { x: 0, y } => { ^"Y_AXIS" }
+    Point { x, y: 0 } => { ^"X_AXIS" }
+    Point { x, y } if x == y => { ^"DIAGONAL" }
+    _ => { ^"QUADRANT" }
+  }
+}
+
+=ex{sumTuple,evalPoint}

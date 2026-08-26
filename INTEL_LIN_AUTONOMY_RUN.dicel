@@ -1,0 +1,20 @@
+@DICEL:LIN_AUTONOMY_RUN:1.0.0
+^t="2026-08-13T23:55:26.095Z"
+^status="AUTONOMY_EPOCH_OK"
+^nucleus=untouched
+^mode=evolve+improve+fix+expose+clone-lin
+
+@STAGES {
+  toolchains: {"present":["node","tsc","python","go","rustc"],"installed":[],"failed":[],"skip_ok":true,"policy":"ALWAYS_INSTALL_MISSING","skip_only_if":"install_failed_after_retry"}
+  improve: {"raw":"{\n  \"status\": \"IMPROVE_OK\",\n  \"ledger\": \"C:\\\\Users\\\\k\\\\Documents\\\\lia\\\\storage\\\\lia_ledger.dicel\",\n  \"out\": \"{\\n  \\\"smoke\\\": \\\"PASS\\\",\\n  \\\"status\\\": \\\"ACCEPTED\\\",\\n  \\\"before_ok\\\": false,\\n  \\\"after_ok\\\": true,\\n  \\\"behavior_eq\\\": 1,\\n  \\\"hash_match\\\": true,\\n  \\\"oracle_hash\\\": \\\"b59e91d85d208f91e9c49577b03b8b919b61c572b552dd81bdb210c2d8f70aca\\\",\\n  \\\"repaired_hash\\\": \\\"b59e91d85d208f91e9c49577b0"}
+  evolve: {"raw":"{\n  \"status\": \"EVOLVE_EPOCH_GREEN\",\n  \"gate\": \"LIA_ge_Dicel\",\n  \"promote\": [],\n  \"note\": \"no_promote_without_Hypothesis_prove_gates; fix_compiler_on_fail\",\n  \"baseline\": {\n    \"status\": \"AUTONOMY_BOOTSTRAP\",\n    \"goal\": \"LIA_supersedes_Dicel_plus_auto_improve_evolve\",\n    \"gate\": \"LIA_ge_Dicel\",\n    \"memory_bytes\": {\n      \"lia_ledger.dicel\": 20737,\n      \"lia_trauma.dicel\": 12697,\n      \"lia_know"}
+  clone_lin: {"status":"CLONE_EPOCH_FAIL","exit":1}
+}
+
+@EXPOSE {
+  intel_lin="C:\Users\k\Documents\lia\INTEL_LIN_AUTONOMY_RUN.dicel"
+  clone_lin_famous="INTEL_CLONE_LIN_FAMOUS.dicel"
+  ledger="storage/lia_ledger.dicel"
+}
+
+@FORBID { mutate_lia_nucleus }

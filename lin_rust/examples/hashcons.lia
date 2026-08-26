@@ -1,0 +1,10 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=core
+~G{?=if #=for ^=ret :else}
+
+!create_capacity(capacity){^return 0;}
+!intern(ctx,hash,data){?(ctx.table[hash]){^return ctx.table[hash].id;} ^return 0;}
+!release(ctx,id){^return 0;}
+!get_ref_count(ctx,id){^return 0;}
+
+=ex{create_capacity,intern,release,get_ref_count}

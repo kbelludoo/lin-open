@@ -1,0 +1,34 @@
+{
+  "id": "T030",
+  "family": "multi_step_composition",
+  "difficulty": "hard",
+  "specification": "Roundtrip de tokenização semântica: divide string em tokens [TIPO, VALOR] para números, identificadores e operadores (+, -, *, /). Entrada: \"x + 42\". Saída: [[\"ID\",\"x\"], [\"OP\",\"+\"], [\"NUM\",\"42\"]].",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "eval",
+    "globalState"
+  ],
+  "test_cases": [
+    {
+      "input": "x + 42",
+      "expected": [
+        [
+          "ID",
+          "x"
+        ],
+        [
+          "OP",
+          "+"
+        ],
+        [
+          "NUM",
+          "42"
+        ]
+      ]
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T030.mjs"
+  }
+}

@@ -1,0 +1,46 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=clone_full_repo_gate
+~G{?=if #=for ^=ret :else}
+!defaultEmitTarget(){^'ts'}
+!realNucleusLangs(){^(['ts','js','py','go','rust','c','java'])}
+!compileOrder(){^(['ts','js','py','go','rust','c','java'])}
+!gateRequiredLangs(){^(['ts','js','py','go','rust','java'])}
+!stubEmitLangs(){^(['cs','lua','elixir','crystal','kotlin','hcl','julia','scala','haskell','prolog','zig','nim','asm','ocaml'])}
+!formatStubIntel(){stubs=stubEmitLangs();names='';#(i=0;i<stubs.length;i++){?(i>0){names=names+','};names=names+stubs[i]};^('EXPERIMENTAL_NOT_PASS '+names+' no_toolchain_no_oracle')}
+!honestNucleusMulti(summary){langs=realNucleusLangs();out='';#(i=0;i<langs.length;i++){t=langs[i];s=(summary&&summary[t])||{PASS:0,SKIP:0,FAIL:0};?(i>0){out=out+' '};out=out+t+':P'+(s.PASS||0)+'/S'+(s.SKIP||0)+'/F'+(s.FAIL||0)};^out}
+!hasStubPassScore(text){s=String(text||'');stubs=stubEmitLangs();#(i=0;i<stubs.length;i++){?(s.indexOf(stubs[i]+':P')>=0){^true}};^false}
+!refuseStubBenchmark(target){t=String(target||'');stubs=stubEmitLangs();#(i=0;i<stubs.length;i++){?(stubs[i]==t){^true}};^false}
+!benchWarmupCount(){^2}
+!benchRepeatCount(){^9}
+!rowIsFull(row){^(row&&row.compileOk==true&&row.runOk==true)}
+!allRowsFull(rows){list=rows||[];?(list.length==0){^false};#(i=0;i<list.length;i++){?(rowIsFull(list[i])==false){^false}};^true}
+!langMemoryKind(lang){t=String(lang||'');?(t=='c'){^'unsafe'};?(t=='rust'){^'ownership'};?(t=='go'||t=='java'){^'gc'};?(t=='ts'||t=='js'||t=='py'){^'agent'};^'unknown'}
+!langIsMemorySafe(lang){^(langMemoryKind(lang)!='unsafe')}
+!inMemoryHostLang(){^'rust'}
+!cMemoryLabel(){^'unsafe'}
+!memoryClassRank(lang){k=langMemoryKind(lang);?(k=='ownership'){^0};?(k=='gc'){^1};?(k=='agent'){^2};^9}
+!betterFullRow(a,b){aOk=rowIsFull(a);bOk=rowIsFull(b);?(aOk==false){?(bOk){^false};?(a.bytes<b.bytes){^true};?(a.bytes>b.bytes){^false};^(String(a.lang)<String(b.lang))};?(bOk==false){^true};?(a.ms<b.ms){^true};?(a.ms>b.ms){^false};?(a.bytes<b.bytes){^true};?(a.bytes>b.bytes){^false};^(String(a.lang)<String(b.lang))}
+!betterInMemoryRow(a,b){aOk=rowIsFull(a)&&langIsMemorySafe(a.lang);bOk=rowIsFull(b)&&langIsMemorySafe(b.lang);?(aOk==false){?(bOk){^false};?(a.bytes<b.bytes){^true};?(a.bytes>b.bytes){^false};^(String(a.lang)<String(b.lang))};?(bOk==false){^true};ac=memoryClassRank(a.lang);bc=memoryClassRank(b.lang);?(ac<bc){^true};?(ac>bc){^false};?(a.ms<b.ms){^true};?(a.ms>b.ms){^false};?(a.bytes<b.bytes){^true};?(a.bytes>b.bytes){^false};^(String(a.lang)<String(b.lang))}
+!copyBenchRows(rows){out=[];list=rows||[];#(i=0;i<list.length;i++){out.push(list[i])};^out}
+!rankQualityRows(rows){rest=copyBenchRows(rows);ranked=[];#(;rest.length>0;){best=0;#(i=1;i<rest.length;i++){?(betterFullRow(rest[i],rest[best])){best=i}};ranked.push(rest[best]);next=[];#(j=0;j<rest.length;j++){?(j!=best){next.push(rest[j])}};rest=next};#(r=0;r<ranked.length;r++){ranked[r].rank=r+1};^ranked}
+!rankInMemoryRows(rows){rest=copyBenchRows(rows);ranked=[];#(;rest.length>0;){best=0;#(i=1;i<rest.length;i++){?(betterInMemoryRow(rest[i],rest[best])){best=i}};ranked.push(rest[best]);next=[];#(j=0;j<rest.length;j++){?(j!=best){next.push(rest[j])}};rest=next};^ranked}
+!findFullLang(rows,lang){list=rows||[];#(i=0;i<list.length;i++){?(list[i]&&list[i].lang==lang&&rowIsFull(list[i])){^list[i]}};^null}
+!emptyHostPick(status,note){^({status:status,lang:'',ms:0,bytes:0,rank:0,fastest:'',fastest_ms:0,fastest_bytes:0,best_in_memory:'',systems_pick:'',memory_winner:'',in_memory_host:'rust',runtime_winner:'',c_memory:'unsafe',prefer_until_bench:'ts',refuse_stub:true,require_behavior_eq:1,note:note})}
+!notRunPick(){^emptyHostPick('NOT_RUN','measure all 7 FULL compile+run then pick; ts is default not winner; rust is in-memory host policy')}
+!notFullPick(){^emptyHostPick('NOT_FULL','all 7 nucleus langs must FULL compile+run before rank; C FAIL is a bug; C is never runtime_winner')}
+!systemsPickFromRows(rows,memLang){r=findFullLang(rows,'rust');?(r!=null){^'rust'};?(memoryClassRank(memLang)<=1){^memLang};^''}
+!hostPickFrom(status,fastest,mem,rows,note){f=fastest||{lang:'',ms:0,bytes:0};m=mem||{lang:'',ms:0,bytes:0};sys=systemsPickFromRows(rows,m.lang);^({status:status,lang:m.lang,ms:m.ms||0,bytes:m.bytes||0,rank:1,fastest:f.lang,fastest_ms:f.ms||0,fastest_bytes:f.bytes||0,best_in_memory:m.lang,systems_pick:sys,memory_winner:m.lang,in_memory_host:'rust',runtime_winner:m.lang,c_memory:'unsafe',prefer_until_bench:'ts',refuse_stub:true,require_behavior_eq:1,note:note})}
+!pickBestFromRows(rows){?(allRowsFull(rows)==false){^notFullPick()};speed=rankQualityRows(rows);mems=rankInMemoryRows(rows);m=null;#(i=0;i<mems.length;i++){?(m==null){?(langIsMemorySafe(mems[i].lang)&&rowIsFull(mems[i])){m=mems[i]}}};?(m==null){^notFullPick()};^hostPickFrom('MEASURED',speed[0],m,rows,'C is memory=unsafe fastest-only not in-process host; rust is systems/in-memory pick; CLI emit stays ts')}
+!futurePickBestLang(bench){?(bench==null){^notRunPick()};rows=bench.rows;?(rows==null){rows=bench};?(rows==null||rows.length==0){^notRunPick()};^pickBestFromRows(rows)}
+!normalizeSkipToFail(results){out=results||[];#(i=0;i<out.length;i++){r=out[i];?(r&&r.status=='skip'){r.status='fail';r.stage=r.stage||'gate';r.reason='skip_eq_fail:'+(r.reason||'skip')}};pass_names=[];fail_names=[];pass=0;fail=0;#(j=0;j<out.length;j++){r=out[j];label=r.srcRel?(r.srcRel+':'+r.name):String(r.name||'unit');?(r.status=='pass'){pass=pass+1;pass_names.push(label)}:{fail=fail+1;fail_names.push(label+':'+(r.reason||r.stage||'fail'))}};^({pass:pass,fail:fail,skip:0,pass_names:pass_names,fail_names:fail_names,skip_names:[]})}
+!fileCoverage(results){by={};list=results||[];#(i=0;i<list.length;i++){r=list[i];key=r.srcRel||r.name||'unknown';?(by[key]==null){by[key]={pass:0,fail:0}};slot=by[key];?(r.status=='pass'){slot.pass=slot.pass+1}:{slot.fail=slot.fail+1}};files_ok=0;keys=Object.keys(by);files_total=keys.length;#(k=0;k<keys.length;k++){slot=by[keys[k]];?(slot.fail==0&&slot.pass>0){files_ok=files_ok+1}};rate=0;?(files_total>0){rate=files_ok/files_total};^({files_total:files_total,files_ok:files_ok,rate:Number(rate.toFixed(4)),full:files_total>0&&files_ok==files_total})}
+!braceDepthBefore(s,idx){depth=0;quote='';#(i=0;i<idx;i++){c=s.charAt(i);?(quote==''){?(c=='"'||c=="'"||c=='`'){quote=c}:{?(c=='{'){depth=depth+1}:{?(c=='}'){depth=depth-1}}}}:{?(c=='\\' ){i=i+1}:{?(c==quote){quote=''}}}};^depth}
+!closeParenAfter(s,i){d=0;#(k=i;k<s.length;k++){?(s.charAt(k)=='('){d=d+1}:{?(s.charAt(k)==')'){d=d-1;?(d==0){^k+1}}}};^i}
+!skipWs(s,i){#(k=i;k<s.length&&/\s/.test(s.charAt(k));k++){i=k+1};^i}
+!skipTsType(s,i){#(k=i;k<s.length;k++){?(s.charAt(k)=='{'||s.charAt(k)==';'){^k}};^i}
+!isOverloadOrNestedFn(src,name){s=String(src||'');needle='function '+String(name||'')+'(';idx=s.indexOf(needle);#(w=0;w<s.length&&idx>=0;w=w+1){?(braceDepthBefore(s,idx)==0){i=skipWs(s,closeParenAfter(s,idx+needle.length-1));?(s.charAt(i)==':'){i=skipWs(s,skipTsType(s,i))};?(s.charAt(i)=='{'){^false}};idx=s.indexOf(needle,idx+1)};^true}
+!missedExtracts(text,fns){have={};list=fns||[];#(i=0;i<list.length;i++){have[list[i].name]=1};missed=[];src=String(text||'');needle='function ';idx=src.indexOf(needle);#(w=0;w<src.length&&idx>=0;w=w+1){start=idx+needle.length;name='';#(k=start;k<src.length&&/[A-Za-z0-9_$]/.test(src.charAt(k));k=k+1){name=name+src.charAt(k)};ch=src.charAt(k);?(name&&ch=='('&&!have[name]){?(isOverloadOrNestedFn(src,name)){have[name]=1}:{missed.push({name:name,reason:'extract_missed'});have[name]=1}};idx=src.indexOf(needle,idx+1);?(idx<0){w=src.length}};^missed}
+!canPublishFullRepo(g){^!!(g&&g.jsFull&&g.allLangFull&&g.filesFull&&g.skip==0&&g.fail==0&&g.pass>0)}
+!isTypeOnlyModule(text){s=String(text||'');?(s.indexOf('function')>=0){^false};?(s.indexOf('class ')>=0){^false};^true}
+!multiAllFull(summary){?(summary==null){^false};req=gateRequiredLangs();#(i=0;i<req.length;i++){t=req[i];s=summary[t];?(s==null){^false};?(!(s.PASS>0)){^false};?(s.FAIL>0){^false};?(s.SKIP>0){^false}};c=summary.c;?(c==null){^false};?(c.FAIL>0){^false};?(c.PASS==0&&c.SKIP==0){^false};^true}
+=ex{defaultEmitTarget,realNucleusLangs,compileOrder,gateRequiredLangs,stubEmitLangs,formatStubIntel,honestNucleusMulti,hasStubPassScore,refuseStubBenchmark,benchWarmupCount,benchRepeatCount,rowIsFull,allRowsFull,langMemoryKind,langIsMemorySafe,inMemoryHostLang,cMemoryLabel,memoryClassRank,rankQualityRows,rankInMemoryRows,pickBestFromRows,futurePickBestLang,normalizeSkipToFail,fileCoverage,isOverloadOrNestedFn,missedExtracts,canPublishFullRepo,isTypeOnlyModule,multiAllFull}

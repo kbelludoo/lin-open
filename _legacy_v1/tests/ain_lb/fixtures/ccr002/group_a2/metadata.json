@@ -1,0 +1,7 @@
+{
+  "modules": [
+    { "name": "Auth", "effects": ["pure"], "caps": ["identity"] },
+    { "name": "Storage", "effects": ["io", "state"], "caps": ["disk"] },
+    { "name": "Transfer", "effects": ["state"], "caps": ["memory"] }
+  ]
+}

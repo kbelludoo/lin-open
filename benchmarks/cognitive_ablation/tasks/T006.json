@@ -1,0 +1,33 @@
+{
+  "id": "T006",
+  "family": "logic_state",
+  "difficulty": "medium",
+  "specification": "Validador de balanceamento de delimitadores (), [], {}. Entrada: string. Saída: boolean (true se balanceado, false caso contrário).",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "globalState",
+    "eval"
+  ],
+  "test_cases": [
+    {
+      "input": "{[()]}",
+      "expected": true
+    },
+    {
+      "input": "{[(])}",
+      "expected": false
+    },
+    {
+      "input": "((()",
+      "expected": false
+    },
+    {
+      "input": "",
+      "expected": true
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T006.mjs"
+  }
+}

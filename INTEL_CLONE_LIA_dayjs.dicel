@@ -1,0 +1,31 @@
+@DICEL:INTEL_CLONE_LIA:1.0.0
+^slug="dayjs"
+^rule="semantic_hash_exact_like_P200"
+^no_soft_match=true
+^status="PARTIAL_PASS"
+^surface="src/utils.js"
+^source="https://github.com/iamkun/dayjs.git"
+^clone_lia_url="https://github.com/kbelludoo/clone-lia-dayjs"
+^clone_lia_local="C:/Users/k/Documents/lia/.clone_lia_publish/clone-lia-dayjs"
+^temp_cleaned=true
+^pass=2 ^fail=0 ^skip=4
+^behavior_eq_required=1.0
+^claim_full_dayjs_green=false
+
+@COMPARISON {
+  oracle_fns_attempted: 2
+  pass: 2
+  fail: 0
+  skip: 4
+  pass_names: ["absFloor","isUndefined"]
+  fail_names: []
+  skip_reasons: ["template_literal","host_or_module_ref/CLOSURE"]
+  learn: "arrow_expr_newline_bound+ASI_before_controls+builtin_Math_not_host"
+  improve_lia: "emitter extractJsFunctions arrows; applySourceSigils ASI; trauma CLOSURE remains for padStart/padZoneStr/prettyUnit/monthDiff"
+}
+
+@NOTE_PT {
+  Pipeline clone→oracle→rewrite→hash→publish OK na superficie utils.
+  Exact hash: absFloor+isUndefined PASS. Skip honesto: templates + free-refs (C.* / padStart).
+  Nao e green full-dayjs. Temp clone removido. clone-lia: https://github.com/kbelludoo/clone-lia-dayjs
+}

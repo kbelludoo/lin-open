@@ -1,0 +1,29 @@
+@DICEL:INTEL_CLONE_LIN:1.1.0
+^slug="nanoid"
+^lang="LIN"
+^rule="semantic_hash_exact_like_P200"
+^no_soft_match=true
+^status="PASS"
+^done=true
+^published=true
+^suite_rate=1
+^suite_total=4
+^source="https://github.com/ai/nanoid.git"
+^clone_lin_url="https://github.com/kbelludoo/clone-lin-nanoid"
+^clone_lin_local="C:/Users/k/Documents/lia/.clone_lin_publish/clone-lin-nanoid"
+^temp_cleaned=true
+^pass=4 ^fail=0 ^skip=0
+^behavior_eq_required=1.0
+^publish_gate="suite_rate==1.0"
+
+@COMPARISON {
+  pass_names: ["random","customRandom","customAlphabet","nanoid"]
+  fail_names: []
+  skip_names: []
+  learn: "none"
+  improve_lin: "positive_transfer:ok×4"
+}
+
+@NOTE_PT {
+  DONE 100% clone-lin-nanoid: p=4 suite_rate=1.0; improve=positive_transfer:ok×4
+}

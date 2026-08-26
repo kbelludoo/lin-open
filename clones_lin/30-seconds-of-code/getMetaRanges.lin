@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!getMetaRanges(meta,key){;ranges=meta.filter(~(item){^item.key === key && item.type === 'range'});^ranges.reduce( ~(acc,item){; const { label, value } = item;; const labelObject = label ?? null;;; if (!acc.labels.has(labelObject)) acc.labels.set(labelObject, []);; acc.labels.get(labelObject).push(...value);; value.forEach(~(v){ acc.lines.set(v, labelObject); });; return acc;},{lines: new Map(),labels: new Map()})}
+=ex{getMetaRanges}

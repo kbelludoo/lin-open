@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!createEscaper(map){escaper=~(match){; return map[match];};;source='(?:'+keys(map).join('|')+')';testRegexp=RegExp(source);replaceRegexp=RegExp(source,'g');^function(string){string=(((__c)=>{?(__c){return('')}return(''+string)})(string==null));^(((__c)=>{?(__c){return(string.replace(replaceRegexp,escaper))}return(string)})(testRegexp.test(string)))}}
+=ex{createEscaper}

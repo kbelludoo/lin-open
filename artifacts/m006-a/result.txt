@@ -1,0 +1,27 @@
+LIN M006-A EXECUTION RESULTS
+============================
+Protocol: LIN-FORMAL-SEMANTIC-CORE-006
+Name: AST Invariant & Proof Obligation Engine
+Status: VALIDATED
+
+FORMAL GATE (src/formal_gate.mjs) — verified BEFORE any lowering/emission.
+
+POSITIVE (verified.lin)
+- INV_SYMBOL_RESOLVED   : PROVED (0 violations)
+- INV_EFFECT_BOUNDED    : PROVED (0 violations)
+- INV_REFINEMENT_SOUND  : PROVED (0 violations; divisor:int{!=0})
+- INV_EXHAUSTIVE_MATCH  : PROVED (0 violations; wildcard arm present)
+- formal gate exit: 0
+
+NEGATIVE (violations.lin) — all four invariants DETECTED
+- INV_SYMBOL_RESOLVED   : VIOLATED — identifier 'ghost' has no binding
+- INV_EFFECT_BOUNDED    : VIOLATED — mod:Logger::emit uses effect 'IO' exceeding {none}
+- INV_REFINEMENT_SOUND  : VIOLATED — divisor 'b' not statically non-zero
+- INV_EXHAUSTIVE_MATCH  : VIOLATED — match on (n) has 1 arm, no wildcard
+- formal gate exit: 3 (refused to emit non-conforming program)
+
+TARGETS
+- generated.rs  : rustc exit 0
+- generated.js  : node --check pass (requires .cjs under type:module repo)
+- runtime_test  : M006_A_ALL_TESTS_PASS
+    safeDiv(10,2)=5, classify(1)=10, classify(2)=20, classify(9)=0, runTests=5

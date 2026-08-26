@@ -1,0 +1,22 @@
+{
+  "spec_id": "BLIND_TOOLCHAIN_SYNTHESIS_SPEC_V1",
+  "version": "1.0.0",
+  "protocol": "BLIND_TOOLCHAIN_SYNTHESIS_EVALUATION",
+  "created_at": "2026-08-16T18:01:00Z",
+  "meta": {
+    "purpose": "Evaluate blind toolchain discovery and synthesis: the engine probes a generic binary path without hardcoded language templates, dynamically infers execution semantics, emits LIN-IR logic, verifies exact parity with canonical SHA-256 oracle, and registers empirical profile in knowledge ledger",
+    "hypothesis": "O LIN pode sintetizar dinamicamente wrappers e emissões para executáveis genéricos do host sem depender de templates nominais hardcoded, validando a correção exclusivamente pelo oráculo semântico imutável."
+  },
+  "phases": [
+    { "phase_id": "BP1_BLIND_PROBE", "name": "Generic Binary Flag & Stdio Introspection" },
+    { "phase_id": "BP2_DYNAMIC_EMISSION", "name": "Template-Free IR Kernel Synthesis" },
+    { "phase_id": "BP3_ORACLE_GATE", "name": "Canonical SHA-256 Oracle Verification" },
+    { "phase_id": "BP4_KNOWLEDGE_INGEST", "name": "Autonomous Knowledge Ledger Ingestion" }
+  ],
+  "gates": {
+    "GATE_BLIND_INTROSPECTION": "Generic binary probed and execution flags inferred",
+    "GATE_DYNAMIC_VERIFY": "Emitted code passes canonical SHA-256 oracle with zero drift",
+    "GATE_KNOWLEDGE_INGEST": "Empirical profile ingested into toolchain knowledge base",
+    "GATE_NUCLEUS_IMMUTABILITY": "nucleus_hash strictly unmodified"
+  }
+}

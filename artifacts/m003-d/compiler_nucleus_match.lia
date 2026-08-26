@@ -1,0 +1,52 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=m003_d_internal_migration
+~G{?=if #=for ^=ret :else}
+
+enum AstKind {
+  Ident,
+  Literal,
+  BinaryOp,
+  MatchBlock
+}
+
+struct AstNode {
+  kind: AstKind,
+  name: String,
+  value: int
+}
+
+!classifyAstNode(node: AstNode): String {
+  match(node) {
+    AstNode { kind: AstKind::Ident, name, value: _ } => { ^"IDENT:" + name }
+    AstNode { kind: AstKind::Literal, name: _, value } => { ^"LITERAL:" + value }
+    AstNode { kind: AstKind::BinaryOp, name, value } if value > 0 => { ^"BINOP_POS:" + name }
+    AstNode { kind: AstKind::BinaryOp, name, value: _ } => { ^"BINOP:" + name }
+    AstNode { kind: AstKind::MatchBlock, name: _, value: _ } => { ^"MATCH" }
+    _ => { ^"UNKNOWN" }
+  }
+}
+
+!unifyTypesWithMatch(a: String, b: String): String {
+  match((a, b)) {
+    (x, y) if x == y => { ^x }
+    ("any", y) => { ^y }
+    (x, "any") => { ^x }
+    ("int", "float") => { ^"float" }
+    ("float", "int") => { ^"float" }
+    _ => { ^"any" }
+  }
+}
+
+!inferParamTypeWithMatch(name: String): String {
+  match(name) {
+    "i" | "j" | "k" | "n" | "len" | "idx" | "count" => { ^"int" }
+    "str" | "s" | "ch" | "pad" | "name" | "key" | "value" | "id" => { ^"str" }
+    "flag" | "ok" | "done" | "valid" => { ^"bool" }
+    "items" | "list" | "arr" | "args" => { ^"list" }
+    "opts" | "config" | "options" | "obj" => { ^"map" }
+    "fn" | "cb" | "callback" | "handler" => { ^"fn" }
+    _ => { ^"any" }
+  }
+}
+
+=ex{classifyAstNode,unifyTypesWithMatch,inferParamTypeWithMatch}

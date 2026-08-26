@@ -1,0 +1,3 @@
+@RULEL:invariants:1.0.0
+.r{id="INV-AUTH" cond="module=Auth; effects=[pure]; caps=[identity]" sev="CRITICAL" repair="verify_contract: auth.verify_returns_identity"}
+.r{id="INV-STORAGE" cond="module=Storage; effects=[io,state]; caps=[disk]" sev="CRITICAL" repair="verify_contract: storage.write_requires_io"}

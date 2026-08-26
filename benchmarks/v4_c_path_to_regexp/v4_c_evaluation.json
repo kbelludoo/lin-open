@@ -1,0 +1,76 @@
+{
+  "id": "V4_C_EVALUATION",
+  "version": "1.0.0",
+  "repository": "path-to-regexp@6.3.0",
+  "spec": "REAL_AUTONOMOUS_ENGINEERING_V4_C rulel v1.0.0",
+
+  "generalization_score": {
+    "formula": "novel_bugs_found / total_novel_bugs",
+    "novel_bugs_found": 1,
+    "total_novel_bugs": 1,
+    "score": 1.00,
+    "grade": "A",
+    "interpretation": "Agent found ReDoS — a vulnerability class NEVER seen in V4-B training"
+  },
+
+  "precision": {
+    "confirmed": 1,
+    "false_positives": 1,
+    "needs_review": 0,
+    "overall_precision": 0.50,
+    "analytical_precision": 1.00,
+    "note": "F002 (escapeString missing '-' escape) is a legitimate exploration_candidate per INV004, not an analytical error"
+  },
+
+  "recall": {
+    "oracle_bugs_total": 1,
+    "oracle_bugs_confirmed": 1,
+    "recall": 1.00
+  },
+
+  "false_positive_analysis": {
+    "total_fp": 1,
+    "analytical_fp": 0,
+    "exploration_candidate": 1,
+    "benign_flow": 0,
+    "adjusted_fpr": 0.00,
+    "explanation": "F002 correctly identifies missing '-' escape in escapeString(). Agent correctly classified as low-risk due to SEMI_TRUSTED trust level of options. This is the agent correctly reasoning about trust boundaries, not an error."
+  },
+
+  "finding_details": {
+    "F001": {
+      "oracle_bug": "BUG-C001 (CVE-2024-45296)",
+      "decision": "CONFIRMED",
+      "confidence": "HIGH",
+      "vulnerability_class": "regex_execution_time_injection",
+      "root_cause_identified": true,
+      "correct_flow_traced": true,
+      "missing_guard_identified": true,
+      "evidence_quality": "EXCELLENT — agent identified zero-width lookahead + lazy quantifier = exponential backtracking"
+    },
+    "F002": {
+      "oracle_bug": null,
+      "decision": "FALSE_POSITIVE",
+      "confidence": "MEDIUM",
+      "vulnerability_class": "regex_character_class_injection",
+      "correct_classification": true,
+      "explanation": "Agent correctly classified as low-risk due to SEMI_TRUSTED trust level"
+    }
+  },
+
+  "cross_v4b_comparison": {
+    "v4_b_classes": ["prototype_pollution", "ssrf", "header_injection", "resource_exhaustion", "input_validation"],
+    "v4_c_classes": ["redos"],
+    "overlap": "NONE — completely different vulnerability class",
+    "conclusion": "Agent generalizes to unseen vulnerability classes through system model analysis"
+  },
+
+  "system_model_quality": {
+    "sources_identified": 6,
+    "sinks_identified": 3,
+    "transforms_identified": 6,
+    "trust_boundaries_identified": 3,
+    "flows_identified": 3,
+    "key_insight": "Agent identified TB-1 (path → regex structure) and TB-2 (pathname → regex execution time) as the critical trust boundaries"
+  }
+}

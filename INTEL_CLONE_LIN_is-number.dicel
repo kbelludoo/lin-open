@@ -1,0 +1,35 @@
+@DICEL:INTEL_CLONE_LIN:1.2.0
+^slug="is-number"
+^lang="LIN"
+^rule="semantic_hash_exact_like_P200"
+^no_soft_match=true
+^status="PARTIAL_PASS_WITH_FAILS"
+^done=false
+^published=false
+^suite_rate=0.8333
+^suite_total=6
+^source="https://github.com/jonschlinkert/is-number.git"
+^clone_lin_url=""
+^clone_lin_local=""
+^temp_cleaned=true
+^pass=5 ^fail=1 ^skip=0
+^behavior_eq_required=1.0
+^publish_gate="suite_rate==1.0_JS"
+^multi="js:P5/S0/F0 ts:P5/S0/F0 py:P0/S0/F5 go:P0/S0/F5 rust:P0/S0/F5"
+^learn_lang="H_NEW_LANG_is-number_py_go_rust_mss6lw5j"
+
+@MULTI_TARGET {
+  js:P5/S0/F0 ts:P5/S0/F0 py:P0/S0/F5 go:P0/S0/F5 rust:P0/S0/F5
+}
+
+@COMPARISON {
+  pass_names: ["defaultExport","run","isNumberParseFloat","isNumber60","isNumber61"]
+  fail_names: ["bench"]
+  skip_names: []
+  learn: "H_CLONE_LIN_is-number_mss6lrsf"
+  improve_lin: "positive_transfer:ok×5"
+}
+
+@NOTE_PT {
+  PARTIAL (nao publish): p=5 f=1 s=0 suite_rate=0.8333; stay+retry; improve=positive_transfer:ok×5
+}

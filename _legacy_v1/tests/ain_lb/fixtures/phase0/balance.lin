@@ -1,0 +1,8 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=pay_balance
+~G{?=if #=for ^=ret :else}
+!moduleRef(){^'Balance'}
+!effects(){^'memory'}
+!getBalance(user){^0}
+!credit(user,n){^n}
+=ex{moduleRef,effects,getBalance,credit}

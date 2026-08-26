@@ -1,0 +1,74 @@
+[
+  {
+    "task_id": "T003",
+    "family": "logic_state",
+    "difficulty": "medium",
+    "failure_class": "ORACLE_FAILURE",
+    "compile_pass": true,
+    "oracle_pass": false,
+    "total_tokens": 352,
+    "total_latency_ms": 58084,
+    "attempts": [
+      {
+        "attempt": 1,
+        "candidate_hash": "536f8615c0217d9e",
+        "candidate_code": "!solve(input){ \n    let { stack, action, value, history } = input;\n    if (action === \"push\") {\n        history.push({ stack: [...stack], action: \"push\", value });\n        stack = [...stack, value];\n    } else if (action === \"pop\") {\n        if (stack.length > 0) {\n            history.push({ stack: [...stack], action: \"pop\" });\n            stack = stack.slice(0, -1);\n        }\n    } else if (action === \"rollback\") {\n        if (history.length > 0) {\n            let lastAction = history.pop();\n            stack = lastAction.stack;\n        }\n    }\n    return { stack, history };\n}",
+        "tokens": 352,
+        "latency_ms": 58084,
+        "verifier_passed": true,
+        "oracle_executed": true,
+        "oracle_passed": false,
+        "failure_class": "ORACLE_FAILURE",
+        "condition": "ZERO_SHOT"
+      }
+    ]
+  },
+  {
+    "task_id": "T002",
+    "family": "logic_state",
+    "difficulty": "medium",
+    "failure_class": "ORACLE_FAILURE",
+    "compile_pass": true,
+    "oracle_pass": false,
+    "total_tokens": 313,
+    "total_latency_ms": 39759,
+    "attempts": [
+      {
+        "attempt": 1,
+        "candidate_hash": "f4c2cd0406039fd3",
+        "candidate_code": "!solve(input){ \n    var buffer = input.buffer; \n    var item = input.item; \n    var len = buffer.length; \n    if (len < 3) { \n        buffer[len] = item; \n    } else { \n        for (var i = 0; i < len - 1; i++) { \n            buffer[i] = buffer[i + 1]; \n        } \n        buffer[len - 1] = item; \n    } \n    return buffer; \n}",
+        "tokens": 313,
+        "latency_ms": 39759,
+        "verifier_passed": true,
+        "oracle_executed": true,
+        "oracle_passed": false,
+        "failure_class": "ORACLE_FAILURE",
+        "condition": "ZERO_SHOT"
+      }
+    ]
+  },
+  {
+    "task_id": "T001",
+    "family": "logic_state",
+    "difficulty": "easy",
+    "failure_class": "PASS",
+    "compile_pass": true,
+    "oracle_pass": true,
+    "total_tokens": 259,
+    "total_latency_ms": 19747,
+    "attempts": [
+      {
+        "attempt": 1,
+        "candidate_hash": "3b93c93d5914990e",
+        "candidate_code": "!solve(input){\n    ?(input == \"RED\"){ ^\"GREEN\" }\n    ?(input == \"GREEN\"){ ^\"YELLOW\" }\n    ?(input == \"YELLOW\"){ ^\"RED\" }\n    :{ ^\"ERROR\" }\n}",
+        "tokens": 259,
+        "latency_ms": 19747,
+        "verifier_passed": true,
+        "oracle_executed": true,
+        "oracle_passed": true,
+        "failure_class": "PASS",
+        "condition": "ZERO_SHOT"
+      }
+    ]
+  }
+]

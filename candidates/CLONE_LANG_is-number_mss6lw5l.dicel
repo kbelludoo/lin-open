@@ -1,0 +1,25 @@
+@DICEL:LIN_CANDIDATE:1.0.0
+^from_clone="clone-lin-is-number"
+^stage="LEARN_NEW_LANG"
+^forbid_nucleus=true
+
+@HARVEST {
+  emit_fail{target="py" fn="defaultExport" emit="ok" run="FAIL" reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_is-number_1xSzFX\py\defaultExport.py', line 3
+    if typeof num=='numbe" nucleus=false}
+  emit_fail{target="go" fn="defaultExport" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_is-number_1xSzFX\go\defaultExport.go:6:12: syntax error: unexpected name num, ex" nucleus=false}
+  emit_fail{target="rust" fn="defaultExport" emit="ok" run="FAIL" reason="rustc" nucleus=false}
+  emit_fail{target="py" fn="run" emit="ok" run="FAIL" reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_is-number_1xSzFX\py\run.py', line 3
+    [].concat(fixtures[prop]).forEa" nucleus=false}
+  emit_fail{target="go" fn="run" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_is-number_1xSzFX\go\run.go:6:4: syntax error: unexpected ., expected type
+" nucleus=false}
+  emit_fail{target="rust" fn="run" emit="ok" run="FAIL" reason="rustc" nucleus=false}
+  emit_fail{target="py" fn="isNumberParseFloat" emit="ok" run="FAIL" reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_is-number_1xSzFX\py\isNumberParseFloat.py', line 3
+    if typeof num=='" nucleus=false}
+  emit_fail{target="go" fn="isNumberParseFloat" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_is-number_1xSzFX\go\isNumberParseFloat.go:6:12: syntax error: unexpected name nu" nucleus=false}
+  emit_fail{target="rust" fn="isNumberParseFloat" emit="ok" run="FAIL" reason="rustc" nucleus=false}
+  emit_fail{target="py" fn="isNumber60" emit="ok" run="FAIL" reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_is-number_1xSzFX\py\isNumber60.py', line 8
+    if typeof val=='string':" nucleus=false}
+  emit_fail{target="go" fn="isNumber60" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_is-number_1xSzFX\go\isNumber60.go:14:12: syntax error: unexpected name val, expe" nucleus=false}
+  emit_fail{target="rust" fn="isNumber60" emit="ok" run="FAIL" reason="rustc" nucleus=false}
+  proposal{fix="emit_ts|emit_py|emit_go|emit_rust|emit_shared peripheral; retry; no one-file hardcode"}
+}

@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!createResultsHTML(title,results){;^("\r\n      <h2>"+String(title)+"</h2>\r\n      <ul>"+String(results.map(this.createResultHTML).join(''))+"</ul>\r\n    ")}
+=ex{createResultsHTML}

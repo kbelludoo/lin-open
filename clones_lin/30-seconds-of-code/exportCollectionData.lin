@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!exportCollectionData(collectionData){;^collectionData.map(~(collection){; return { model: 'Collection', id: collection.id, title: collection.title, shortTitle: collection.shortTitle, miniTitle: collection.miniTitle, listed: collection.listed, featuredIndex: collection.featuredIndex, cover: collection.splash, content: collection.descriptionHtml, description: collection.shortDescription, topLevel: collection.topLevel, parentId: collection.parent, recTokens: collection.recTokens, docTokens: collection.docTokens, ranking: collection.ranking, };})}
+=ex{exportCollectionData}

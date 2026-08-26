@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!isInsideRangeLabel(buffer,char,openingBracket){;?(char!=RANGE_END_DELIMITER){^false};openingQuotation=buffer.match( new RegExp( '^'+openingBracket+'\\s*('+QUOTE_DELIMITERS.join('|')+')' ) );?(!openingQuotation){^false};openingQuote=openingQuotation[1];openingIndex=buffer.indexOf(openingQuote);closingIndex=buffer.lastIndexOf(openingQuote);?(openingIndex==closingIndex){^true};^isDelimiterEscaped(buffer.slice(openingIndex,closingIndex))}
+=ex{isInsideRangeLabel}

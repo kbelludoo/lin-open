@@ -1,0 +1,49 @@
+{
+  "pass": false,
+  "violations": [
+    {
+      "invariant": "INV_REFINEMENT_SOUND",
+      "node": "top::brokenDiv",
+      "detail": "divisor 'b' is not statically provable non-zero; annotate param as int{!=0}"
+    },
+    {
+      "invariant": "INV_SYMBOL_RESOLVED",
+      "node": "top::brokenMatch",
+      "detail": "identifier 'ghost' has no unambiguous binding in scope"
+    },
+    {
+      "invariant": "INV_EXHAUSTIVE_MATCH",
+      "node": "top::brokenMatch",
+      "detail": "match on (n) has 1 arm(s); needs a wildcard '_' or exhaustive coverage"
+    },
+    {
+      "invariant": "INV_EFFECT_BOUNDED",
+      "node": "mod:Logger::emit",
+      "detail": "effect 'IO' exceeds declared module capabilities {none}"
+    }
+  ],
+  "invariants": [
+    {
+      "id": "INV_SYMBOL_RESOLVED",
+      "status": "VIOLATED",
+      "violations": 1
+    },
+    {
+      "id": "INV_EFFECT_BOUNDED",
+      "status": "VIOLATED",
+      "violations": 1
+    },
+    {
+      "id": "INV_REFINEMENT_SOUND",
+      "status": "VIOLATED",
+      "violations": 1
+    },
+    {
+      "id": "INV_EXHAUSTIVE_MATCH",
+      "status": "VIOLATED",
+      "violations": 1
+    }
+  ],
+  "proofObligations": 4,
+  "verifiedNodes": 7
+}

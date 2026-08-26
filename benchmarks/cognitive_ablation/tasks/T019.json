@@ -1,0 +1,56 @@
+{
+  "id": "T019",
+  "family": "debug_repair",
+  "difficulty": "medium",
+  "specification": "Busca binária corrigida. Entrada: { arr: array ordenado, target: number }. Saída: index do elemento ou -1 se não encontrado. (Evite loop infinito ou erro off-by-one).",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "arr.indexOf",
+    "globalState"
+  ],
+  "test_cases": [
+    {
+      "input": {
+        "arr": [
+          10,
+          20,
+          30,
+          40,
+          50
+        ],
+        "target": 30
+      },
+      "expected": 2
+    },
+    {
+      "input": {
+        "arr": [
+          10,
+          20,
+          30,
+          40,
+          50
+        ],
+        "target": 10
+      },
+      "expected": 0
+    },
+    {
+      "input": {
+        "arr": [
+          10,
+          20,
+          30,
+          40,
+          50
+        ],
+        "target": 99
+      },
+      "expected": -1
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T019.mjs"
+  }
+}

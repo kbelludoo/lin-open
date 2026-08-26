@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!_(obj){;?(obj instanceof _){^obj};?(!(this instanceof _)){^new _(obj)};this._wrapped=obj}
+=ex{_}

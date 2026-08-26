@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!createAttributes(metadata,codeHighlighter){;({languageName,title,languageStringLiteral}=metadata);codeAttributes={class: ("language-"+String(languageName)+" notranslate"),translate: ("no"),};preAttributes={};?(languageStringLiteral){};preAttributes[("data-code-language")]=languageStringLiteral;?(title){preAttributes[("data-code-title")]=title};?(codeHighlighter.name=='prism'){};preAttributes[("data-code-preview")]=true;^{preAttributes,codeAttributes}}
+=ex{createAttributes}

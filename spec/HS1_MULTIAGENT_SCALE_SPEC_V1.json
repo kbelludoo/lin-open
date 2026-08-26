@@ -1,0 +1,22 @@
+{
+  "spec_id": "HS1_MULTIAGENT_SCALE_SPEC_V1",
+  "version": "1.0.0",
+  "protocol": "HS1_MULTIAGENT_SCALING_EVALUATION",
+  "created_at": "2026-08-16T17:50:00Z",
+  "meta": {
+    "purpose": "Evaluate throughput, proof verification latency, conflict density, and invariant preservation as agent population scales from 1 to 100 concurrent agents",
+    "hypothesis": "O mediador semântico LIN escala de 1 a 100 agentes mantendo latência de verificação sub-milissegundo, zero deadlocks e 100% de preservação de invariantes."
+  },
+  "scaling_tiers": [
+    { "tier": "T1", "agent_count": 1, "total_transactions": 100, "description": "Single-agent baseline" },
+    { "tier": "T2", "agent_count": 5, "total_transactions": 500, "description": "Small agent squad" },
+    { "tier": "T3", "agent_count": 10, "total_transactions": 1000, "description": "Medium agent cluster with multi-hop handoffs" },
+    { "tier": "T4", "agent_count": 50, "total_transactions": 5000, "description": "Large agent fleet with dense delegation graph" },
+    { "tier": "T5", "agent_count": 100, "total_transactions": 10000, "description": "Massive agent ecosystem with concurrent mutations" }
+  ],
+  "gates": {
+    "GATE_HS1_SAFETY": "invariant_violations == 0 && escaped_illegal_effects == 0",
+    "GATE_HS1_PERFORMANCE": "p99_proof_latency_ms < 1.0",
+    "GATE_HS1_LIVENESS": "deadlocks_observed == 0"
+  }
+}

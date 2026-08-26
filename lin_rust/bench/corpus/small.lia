@@ -1,0 +1,22 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=test
+~G{?=if #=for ^=ret :else}
+
+!add(a,b){^return a + b;}
+!sub(a,b){^return a - b;}
+!mul(a,b){^return a * b;}
+!div(a,b){^return a / b;}
+!mod(a,b){^return a % b;}
+!pow(a,b){^return a * a;}
+!min(a,b){? (a < b) {^return a;} ^return b;}
+!max(a,b){? (a > b) {^return a;} ^return b;}
+!abs(x){? (x < 0) {^return -x;} ^return x;}
+!inc(x){^return x + 1;}
+!dec(x){^return x - 1;}
+!double(x){^return x * 2;}
+!half(x){^return x / 2;}
+!square(x){^return x * x;}
+!cube(x){^return x * x * x;}
+!fact(n){?(n<=1){^return 1;} ^return n*fact(n-1);}
+=fib(n){?(n<=1){^return n;} ^return fib(n-1)+fib(n-2);}
+=ex{add,sub,mul,div,mod,pow,min,max,abs,inc,dec,double,half,square,cube,fact,fib}

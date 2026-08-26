@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!meridiemMatch(input,isLowerCase){;({meridiem}=locale);?(!meridiem){isAfternoon=input==((((__c)=>{?(__c){return('pm')}return('PM')})(isLowerCase)))}:{#(i=1;i<=24;i+=1){?(input.indexOf(meridiem(i,0,isLowerCase))>-1){isAfternoon=i>12;break}}};^isAfternoon}
+=ex{meridiemMatch}

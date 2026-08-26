@@ -1,0 +1,25 @@
+{
+  "spec_id": "CUMULATIVE_GENERATIONAL_COMPOSITION_SPEC_V1",
+  "version": "1.0.0",
+  "protocol": "CUMULATIVE_GENERATIONAL_COMPOSITION_EVALUATION",
+  "created_at": "2026-08-16T17:55:00Z",
+  "meta": {
+    "purpose": "Evaluate generational composition accumulation: verifying that previously composed runtimes (G_k) remain stable, non-regressive, and capable of integrating new optimization layers (G_k+1) over multi-generational evolution without semantic drift or emergent breakdown",
+    "hypothesis": "O runtime LIN pode acumular camadas compostas de otimização ao longo de gerações sucessivas mantendo equivalência semântica estrita contra o oráculo, ausência de regressões nos 6 gates cumulativos e capacidade contínua de rollback."
+  },
+  "evolution_layers": [
+    { "layer_id": "L0", "name": "base_runtime", "features": ["G0_BASE"], "expected_outcome": "BASE" },
+    { "layer_id": "L1", "name": "layer_layout_composed", "features": ["G0_BASE", "OPT_A_FLAT_ARRAY"], "expected_outcome": "PROMOTE" },
+    { "layer_id": "L2", "name": "layer_symbols_composed", "features": ["L1", "OPT_B_HASHCONSING"], "expected_outcome": "PROMOTE" },
+    { "layer_id": "L3", "name": "layer_concurrency_composed", "features": ["L2", "OPT_C_LOCKFREE_OCC"], "expected_outcome": "PROMOTE" },
+    { "layer_id": "L4_FAULT", "name": "layer_flawed_aliasing_injection", "features": ["L3", "OPT_X_POINTER_ALIASING"], "expected_outcome": "REJECT_AND_ROLLBACK" },
+    { "layer_id": "L4", "name": "layer_bitset_composed", "features": ["L3", "OPT_D_DAG_BITSET"], "expected_outcome": "PROMOTE" },
+    { "layer_id": "L5", "name": "layer_zerocopy_composed", "features": ["L4", "OPT_E_ZEROCOPY_BUFFER"], "expected_outcome": "PROMOTE" }
+  ],
+  "gates": {
+    "GATE_CUMULATIVE_DRIFT": "Output(Lk) == Oracle for all promoted layers",
+    "GATE_ALL_GATES_REGRESSION": "100% pass across all prior 6 validation gates",
+    "GATE_NUCLEUS_IMMUTABILITY": "nucleus_hash unmodified across all layers",
+    "GATE_EMERGENT_ROLLBACK": "L4_FAULT detected and L3 restored cleanly"
+  }
+}

@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!ie11fingerprint(methods){;length=getLength(methods);^function(obj){?(obj==null){^false};keys=allKeys(obj);?(getLength(keys)){^false};#(i=0;i<length;i++){?(!isFunction(obj[methods[i]])){^false}};^methods!=weakMapMethods||!isFunction(obj[forEachName])}}
+=ex{ie11fingerprint}

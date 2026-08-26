@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!toSegments(str){clearBuffer=~(){buffer = '';; openingBracket = null;};;segments=[];buffer='';openingBracket=null;input=str.trim();#(char of input){?(isDelimiter(char)){?(delimitersMatch(openingBracket,char)){?(isInsideRangeLabel(buffer,char,openingBracket)){buffer+=char}:(isDelimiterEscaped(buffer)){buffer+=char}:{segments.push(escapeBackslashes(buffer+char,openingBracket));clearBuffer()}}:{?(buffer.length>0&&!openingBracket){segments.push(buffer);clearBuffer()};buffer+=char;openingBracket??=char}}:{buffer+=char}};?(buffer){segments.push(buffer)};^cleanUpSegments(segments)}
+=ex{toSegments}

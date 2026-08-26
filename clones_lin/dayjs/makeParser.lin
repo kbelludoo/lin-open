@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!makeParser(format){format=u(format,locale&&locale.formats);array=format.match(formattingTokens);({length}=array);#(i=0;i<length;i+=1){token=array[i];parseTo=expressions[token];regex=parseTo&&parseTo[0];parser=parseTo&&parseTo[1];?(parser){array[i]={regex,parser}}:{array[i]=token.replace(/^\[|\]$/g,'')}};^function (input){time={};#(i=0,start=0;i<length;i+=1){token=array[i];?(typeof token=='string'){start+=token.length}:{({regex,parser}=token);part=input.slice(start);match=regex.exec(part);value=match[0];parser.call(time,value);input=input.replace(value,'')}};correctHours(time);^time}}
+=ex{makeParser}

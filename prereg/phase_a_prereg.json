@@ -1,0 +1,26 @@
+{
+  "protocol_version": "PREREG-AIN-LB-001",
+  "phase": "PHASE_A_BASELINE",
+  "status": "LOCKED_AND_SEALED",
+  "sealed_at_utc": "2026-08-16T16:22:30Z",
+  "governance": {
+    "model_id": "cf/@cf/deepseek-ai/deepseek-r1-distill-qwen-32b",
+    "temperature": 0.0,
+    "pacing_delay_ms": 2000,
+    "cross_model_failover": "STRICTLY_FORBIDDEN",
+    "on_infra_error": "INVALIDATE_ENTIRE_SEED_AND_RERUN_CLEAN",
+    "on_model_contract_violation": "RECORD_AS_GENUINE_COMPILER_FAILURE"
+  },
+  "experimental_matrix": {
+    "total_seeds": 20,
+    "seed_range": ["S_01", "S_20"],
+    "seed_integers": [424241, 424242, 424243, 424244, 424245, 424246, 424247, 424248, 424249, 424250, 424251, 424252, 424253, 424254, 424255, 424256, 424257, 424258, 424259, 424260],
+    "tasks": ["T1", "T2", "T3", "T4", "T5", "T6", "T0", "T7"],
+    "languages": ["py", "ts", "rust", "lin"],
+    "total_units": 640
+  },
+  "endpoints": {
+    "primary": "first_pass_rate",
+    "secondary": ["tokens_total", "latency_ms", "context_efficiency", "repair_efficiency"]
+  }
+}

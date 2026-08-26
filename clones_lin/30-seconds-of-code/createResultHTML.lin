@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!createResultHTML(result){;^("\r\n      <li>\r\n        <a href="+String(result.url)+">\r\n          "+String(result.title)+"\r\n          <small>"+String(result.tag)+"</small>\r\n        </a>\r\n      </li>\r\n      ")}
+=ex{createResultHTML}

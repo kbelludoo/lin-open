@@ -1,0 +1,7 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=pay_logs
+~G{?=if #=for ^=ret :else}
+!moduleRef(){^'Logs'}
+!effects(){^'io'}
+!append(line){^({line:line,ok:1})}
+=ex{moduleRef,effects,append}

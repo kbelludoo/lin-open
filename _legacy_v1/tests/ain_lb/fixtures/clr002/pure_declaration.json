@@ -1,0 +1,15 @@
+{
+  "fixture_id": "CLR-002-PURE",
+  "kind": "declaration",
+  "intent": "declare_pure_calculation",
+  "target": "Ledger",
+  "operation": "Ledger.calculate",
+  "allowed_effects": ["pure"],
+  "allowed_context": [],
+  "function": {
+    "name": "calculateBalance",
+    "params": "entries",
+    "body": "return entries.reduce((total, entry) => total + entry.amount, 0);"
+  },
+  "target_path": "tests/ain_lb/fixtures/clr002/pure_declaration.json"
+}

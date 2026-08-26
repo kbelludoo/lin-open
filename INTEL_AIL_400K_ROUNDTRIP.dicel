@@ -1,0 +1,45 @@
+@DICEL:AIL_400K_ROUNDTRIP:1.0.0
+
+^rule="semantic_hash_exact_like_P200"
+^same_content=true
+^no_padding=true
+^soft_match=false
+^behavior_eq_required=1.0
+^status="PARTIAL_PASS"
+^repo_url="https://github.com/microsoft/TypeScript"
+^clone_path="C:/Users/k/Documents/ail-bench/clone-400k/TypeScript"
+^source_root="C:/Users/k/Documents/ail-bench/clone-400k/TypeScript/src"
+^measured_loc=453359
+^files_total=709
+^fns_attempted=500
+^fns_pass=183
+^fns_fail=29
+^fns_skip=288
+^pass_rate=0.366
+^lodash_real_tests_baseline=true
+^lodash_ail_suite_pass=1
+^size_report="C:/Users/k/Documents/lia/INTEL_AIL_SIZE_DISK_BENCHMARK.dicel"
+^generated_at="2026-08-13T03:42:46.413Z"
+
+@RULE_CONFIRM {
+  exact_output_equality: true
+  sha256_of_output_vector: true
+  soft_match_forbidden: true
+  like: "INTEL_AIL_ROUNDTRIP_VERIFY / P200 semantic_hash"
+}
+
+@REAL_TESTS {
+  package: "lodash"
+  command_baseline: "node test/test"
+  baseline_pass: true
+  ail_curated_pass: 1
+  ail_curated_fail: 14
+  lodash_isolated_holdout_pass: 246
+  lodash_isolated_holdout_attempted: 400
+  honest_blocker: "monolith closures; full entry AIL rewrite not green under test:main"
+}
+
+@VERDICT {
+  semantic_match_holdout: true
+  note: "size+disk+real-tests in INTEL_AIL_SIZE_DISK_BENCHMARK.dicel"
+}

@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!sample(obj,n,guard){;?(n==null||guard){?(!isArrayLike(obj)){obj=values(obj)};^obj[random(obj.length-1)]};sample=toArray(obj);length=getLength(sample);n=Math.max(Math.min(n,length),0);last=length-1;#(index=0;index<n;index++){rand=random(index,last);temp=sample[index];sample[index]=sample[rand];sample[rand]=temp};^sample.slice(0,n)}
+=ex{sample}

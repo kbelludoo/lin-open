@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!splitRangeKeyValuePair(str){;?(!str.includes(RANGE_KEY_VALUE_SEPARATOR)){^[null,str]};lastSeparatorIndex=str.lastIndexOf(RANGE_KEY_VALUE_SEPARATOR);([label,value]=[ str.slice(0,lastSeparatorIndex).trim(),str.slice(lastSeparatorIndex+1).trim(),]);?(label[0]==label[label.length-1]){?(QUOTE_DELIMITERS.includes(label[0])){label=escapeBackslashes(undelimitValue(label),label[0])}};^[label||null,value]}
+=ex{splitRangeKeyValuePair}

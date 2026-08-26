@@ -1,0 +1,13 @@
+LIN M005-A Execution Results
+=============================
+
+lin_compile_exit_code: 0
+rustc_exit_code: 0
+runtime_test: PASS
+
+DCE Results:
+- Symbols before: 9
+- Symbols after: 3
+- Removed dead symbols: 6 (DeadModule, deadMultiply, DeadStruct, UsedEnum, DeadEnum, deadFunction)
+- Pruning confirmed across module boundaries in both Rust and JS backends.
+- Evidence files present in artifacts/m005-a/.

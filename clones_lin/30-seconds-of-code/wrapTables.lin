@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!wrapTables(className){;^~(tree){visitParents( tree, { type: `element`, tagName: `table` }, ~(node,ancestors){ const parentNode = ancestors[ancestors.length - 1];; const isParentFigure = parentNode.tagName === `figure`;;; if (isParentFigure) return;; const innerNode = _lia_obj();; node.tagName = `figure`;; node.properties = { className };; node.children = [innerNode]; } );; return tree;}}
+=ex{wrapTables}

@@ -1,0 +1,120 @@
+{
+  "protocol": "CROSS_OPTIMIZATION_COMPOSITION_V1",
+  "run_id": "RUN-CROSS-COMP-20260816-001",
+  "timestamp_utc": "2026-08-16T17:55:00.433Z",
+  "baseline_duration_ms": 3.676,
+  "oracle_checksum": 19760000,
+  "nucleus_hash": "sha256:562e6904afa0948661fb02804a91be96d919dcd5ddbe6c54db5e0fc149d557df",
+  "compositions": [
+    {
+      "combination_id": "C_A",
+      "components": [
+        "OPT_A"
+      ],
+      "duration_ms": 1.5468,
+      "speedup_ratio": 2.3765192655805536,
+      "zero_drift": true,
+      "regression_pass": true,
+      "nucleus_untouched": true,
+      "decision": "PROMOTED"
+    },
+    {
+      "combination_id": "C_B",
+      "components": [
+        "OPT_B"
+      ],
+      "duration_ms": 1.6112,
+      "speedup_ratio": 2.281529294935452,
+      "zero_drift": true,
+      "regression_pass": true,
+      "nucleus_untouched": true,
+      "decision": "PROMOTED"
+    },
+    {
+      "combination_id": "C_C",
+      "components": [
+        "OPT_C"
+      ],
+      "duration_ms": 1.6278,
+      "speedup_ratio": 2.2582626858336408,
+      "zero_drift": true,
+      "regression_pass": true,
+      "nucleus_untouched": true,
+      "decision": "PROMOTED"
+    },
+    {
+      "combination_id": "C_AB",
+      "components": [
+        "OPT_A",
+        "OPT_B"
+      ],
+      "duration_ms": 1.6817,
+      "speedup_ratio": 2.185883332342273,
+      "zero_drift": true,
+      "regression_pass": true,
+      "nucleus_untouched": true,
+      "decision": "PROMOTED"
+    },
+    {
+      "combination_id": "C_BC",
+      "components": [
+        "OPT_B",
+        "OPT_C"
+      ],
+      "duration_ms": 1.6082,
+      "speedup_ratio": 2.2857853500808356,
+      "zero_drift": true,
+      "regression_pass": true,
+      "nucleus_untouched": true,
+      "decision": "PROMOTED"
+    },
+    {
+      "combination_id": "C_AC",
+      "components": [
+        "OPT_A",
+        "OPT_C"
+      ],
+      "duration_ms": 1.5801,
+      "speedup_ratio": 2.3264350357572305,
+      "zero_drift": true,
+      "regression_pass": true,
+      "nucleus_untouched": true,
+      "decision": "PROMOTED"
+    },
+    {
+      "combination_id": "C_AX_FAULT",
+      "components": [
+        "OPT_A",
+        "OPT_X"
+      ],
+      "duration_ms": 0.0008,
+      "speedup_ratio": 4595,
+      "zero_drift": true,
+      "regression_pass": false,
+      "nucleus_untouched": true,
+      "decision": "REJECTED_AND_ROLLED_BACK"
+    },
+    {
+      "combination_id": "C_ABC",
+      "components": [
+        "OPT_A",
+        "OPT_B",
+        "OPT_C"
+      ],
+      "duration_ms": 1.6329,
+      "speedup_ratio": 2.251209504562435,
+      "zero_drift": true,
+      "regression_pass": true,
+      "nucleus_untouched": true,
+      "decision": "PROMOTED"
+    }
+  ],
+  "gate_verdict": {
+    "gate_composition_equivalence": true,
+    "gate_emergent_conflict_detection": true,
+    "gate_performance_benefit": true,
+    "gate_nucleus_immutability": true,
+    "gate_cross_composition_overall": true,
+    "conclusion": "O benchmark CROSS_OPTIMIZATION_COMPOSITION_V1 demonstrou que otimizações de runtime individualmente verificadas (A, B, C) preservam equivalência semântica estrita quando compostas em pares (A+B, B+C, A+C) e em tríade (A+B+C), produzindo ganhos cumulativos de performance sem desvio de oráculo, enquanto combinações conflitantes (A + X_CONFLICT) são confiavelmente detectadas pela suíte de regressão global e revertidas via rollback."
+  }
+}

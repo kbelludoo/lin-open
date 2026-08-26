@@ -1,0 +1,18 @@
+@DICEL:LIN_CANDIDATE:1.0.0
+^from_clone="clone-lin-left-pad"
+^stage="LEARN_NEW_LANG"
+^forbid_nucleus=true
+
+@HARVEST {
+  emit_fail{target="py" fn="leftPad" emit="ok" run="FAIL" reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_left-pad_hnNfHW\py\leftPad.py', line 24
+    if !ch&&ch!=0:
+       ^
+S" nucleus=false}
+  emit_fail{target="go" fn="leftPad" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_left-pad_hnNfHW\go\leftPad.go:6:13: empty rune literal or unescaped '
+C:\Users\k" nucleus=false}
+  emit_fail{target="rust" fn="leftPad" emit="ok" run="FAIL" reason="error: empty character literal
+ --> C:\Users\k\AppData\Local\Temp\lin_multi_left-pad_hnNfHW\rust\leftPad.rs:8:16
+  |
+8 |" nucleus=false}
+  proposal{fix="emit_ts|emit_py|emit_go|emit_rust|emit_shared peripheral; retry; no one-file hardcode"}
+}

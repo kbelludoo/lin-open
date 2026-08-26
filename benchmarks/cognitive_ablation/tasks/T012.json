@@ -1,0 +1,24 @@
+{
+  "id": "T012",
+  "family": "code_transformation",
+  "difficulty": "easy",
+  "specification": "Serializador determinístico de objeto com chaves ordenadas alfabeticamente. Entrada: objeto. Saída: string JSON canônica.",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "globalState"
+  ],
+  "test_cases": [
+    {
+      "input": {
+        "z": 1,
+        "a": 2,
+        "m": 3
+      },
+      "expected": "{\"a\":2,\"m\":3,\"z\":1}"
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T012.mjs"
+  }
+}

@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!range(start,stop,step){;?(stop==null){stop=start||0;start=0};?(!step){step=(((__c)=>{?(__c){return(-1)}return(1)})(stop<start))};length=Math.max(Math.ceil((stop-start)/step),0);range=Array(length);#(idx=0;idx<length;idx++,start+=step){range[idx]=start};^range}
+=ex{range}

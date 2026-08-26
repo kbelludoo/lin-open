@@ -1,0 +1,51 @@
+@LIA:INTEL_MULTI_EMIT:1.1.0
+
+^date="2026-08-13"
+^repo="C:/Users/k/Documents/lia"
+^golden="examples/safe-compare.lia"
+^script="scripts/golden_multi_emit.mjs"
+^cli="lia compile --target js|ts|py|go|rust"
+^dicel_compile="legacy_archive_only"
+^toolchain="ALWAYS_INSTALL_MISSING"
+^ensure="scripts/ensure_toolchains.mjs"
+^verdict="PASS_all_targets_run"
+
+@TARGETS {
+  js: {emit:ok run:ok detail="node require behavior"}
+  ts: {emit:ok run:ok detail="type-strip + node behavior"}
+  py: {emit:ok run:ok detail="ok py safe-compare"}
+  go: {emit:ok run:ok detail="ok go safe-compare"}
+  rust: {emit:ok run:ok detail="ok rust safe-compare"}
+}
+
+@STATUS_TABLE_PT {
+  js: "OK — emit + behavior"
+  ts: "OK — emit + behavior (strip tipos)"
+  py: "OK — emit + behavior"
+  go: "OK — emit + go run"
+  rust: "OK — rustc 1.97.1; emit + run (nao SKIP)"
+}
+
+@TOOLCHAIN_THIS_MACHINE {
+  node: "PRESENT v24.17.0"
+  tsc: "INSTALLED_NOW typescript@7.0.2 as lia devDep (npx tsc); PATH global tsc still absent"
+  python: "PRESENT 3.14.5"
+  go: "PRESENT go1.26.4 (go version; not go --version)"
+  rustc: "INSTALLED_NOW rustc 1.97.1 via rustup; cargo bin=C:/Users/k/.cargo/bin (PowerShell PATH not refreshed until new shell)"
+}
+
+@IMPL {
+  body_ast: "src/body_ast.mjs"
+  emitters: "src/emit_{js,ts,py,go,rust}.mjs"
+  dispatch: "src/multi_emit.mjs"
+  spec: "spec/LIA_MULTI_EMIT.dicel"
+  clone_spec: "spec/LIN_CLONE_LIN_LOOP.dicel ^toolchain=ALWAYS_INSTALL_MISSING"
+  nucleus: "untouched"
+}
+
+@NOTES {
+  nativeTimingSafeEqual: "stub em ts/py/go/rust (Buffer/crypto)"
+  safeCompare: "portável; checado em js/ts/py/go/rust"
+  skip: "somente se install+retry falhar (honesto)"
+  dicel_L0: "não usado no caminho novo"
+}

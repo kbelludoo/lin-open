@@ -1,0 +1,162 @@
+{
+  "id": "V4_B1_DATA_FLOW_GRAPH",
+  "version": "1.0.0",
+  "repository": "axios@v1.14.0",
+  "description": "Data flow graph for system-model-driven analysis. Each flow traces from source to sink through transforms.",
+
+  "flows": [
+    {
+      "id": "FLOW-001",
+      "name": "config_to_http_request",
+      "source": "SRC-001 (user_config)",
+      "sink": "SNK-001 (http_request)",
+      "trust_boundary": "TB-001",
+      "path": [
+        {"step": 1, "file": "lib/core/Axios.js", "line": 33, "transform": "utils.extend(instance, Axios.prototype)", "note": "Copies prototype properties to instance"},
+        {"step": 2, "file": "lib/core/mergeConfig.js", "line": 99, "transform": "forEach(Object.keys({...config1, ...config2}))", "note": "Merges user config with defaults"},
+        {"step": 3, "file": "lib/core/mergeConfig.js", "line": 59, "transform": "prop in config2 (mergeDirectKeys)", "note": "Uses 'in' operator — traverses prototype chain"},
+        {"step": 4, "file": "lib/helpers/resolveConfig.js", "line": 11, "transform": "mergeConfig({}, config)", "note": "Creates merged config object"},
+        {"step": 5, "file": "lib/helpers/resolveConfig.js", "line": 13, "transform": "destructuring auth/xsrfHeaderName", "note": "Reads properties through prototype chain"},
+        {"step": 6, "file": "lib/adapters/http.js", "line": 333, "transform": "destructuring httpVersion/socketPath", "note": "Reads config properties for request setup"},
+        {"step": 7, "file": "lib/adapters/http.js", "line": 658, "transform": "options.socketPath = config.socketPath", "note": "Assigns socketPath without hasOwnProp check"},
+        {"step": 8, "file": "lib/adapters/http.js", "line": 706, "transform": "transport.request(options)", "note": "Sends HTTP request with all config properties"}
+      ],
+      "guards": [
+        {"line": 100, "description": "__proto__/constructor/prototype filter in forEach"},
+        {"line": 409, "description": "__proto__/constructor/prototype filter in utils.merge"}
+      ],
+      "guard_gaps": [
+        {"line": 59, "description": "'prop in config2' traverses prototype chain"},
+        {"line": 13, "description": "Destructuring reads inherited properties"},
+        {"line": 658, "description": "socketPath read without hasOwnProp"}
+      ],
+      "oracle_bugs": ["BUG-001", "BUG-002", "BUG-003", "BUG-005", "BUG-010"]
+    },
+    {
+      "id": "FLOW-002",
+      "name": "url_to_ssr",
+      "source": "SRC-002 (url_input)",
+      "sink": "SNK-001 (http_request)",
+      "trust_boundary": "TB-002",
+      "path": [
+        {"step": 1, "file": "lib/core/buildFullPath.js", "line": 20, "transform": "buildFullPath(baseURL, url, allowAbsoluteUrls)", "note": "Combines baseURL with user URL"},
+        {"step": 2, "file": "lib/adapters/http.js", "line": 427, "transform": "new URL(fullPath)", "note": "Parses URL string"},
+        {"step": 3, "file": "lib/adapters/http.js", "line": 661, "transform": "parsed.hostname", "note": "Extracts hostname for DNS resolution"},
+        {"step": 4, "file": "lib/helpers/shouldBypassProxy.js", "line": 1, "transform": "shouldBypassProxy(url)", "note": "Checks if URL should bypass proxy"},
+        {"step": 5, "file": "lib/adapters/http.js", "line": 665, "transform": "setProxy(options, config.proxy, url)", "note": "Configures proxy routing"},
+        {"step": 6, "file": "lib/adapters/http.js", "line": 706, "transform": "transport.request(options)", "note": "Sends request to resolved target"}
+      ],
+      "guards": [
+        {"line": 486, "description": "supportedProtocols check blocks exotic URI schemes"}
+      ],
+      "guard_gaps": [
+        {"line": 1, "description": "shouldBypassProxy hostname normalization bypass"}
+      ],
+      "oracle_bugs": ["BUG-006"]
+    },
+    {
+      "id": "FLOW-003",
+      "name": "header_to_wire",
+      "source": "SRC-003 (header_input)",
+      "sink": "SNK-002 (header_output)",
+      "trust_boundary": "TB-003",
+      "path": [
+        {"step": 1, "file": "lib/core/AxiosHeaders.js", "line": 1, "transform": "AxiosHeaders.from(headers)", "note": "Creates headers from user input"},
+        {"step": 2, "file": "lib/core/AxiosHeaders.js", "line": 1, "transform": "headers.set(key, value)", "note": "Sets individual header values"},
+        {"step": 3, "file": "lib/adapters/http.js", "line": 492, "transform": "headers.normalize()", "note": "Normalizes header casing"},
+        {"step": 4, "file": "lib/adapters/http.js", "line": 645, "transform": "headers.toJSON()", "note": "Serializes headers for transport"}
+      ],
+      "guards": [
+        {"line": 1, "description": "AxiosHeaders normalization normalizes casing"}
+      ],
+      "guard_gaps": [
+        {"line": 1, "description": "No CRLF sanitization in header values"}
+      ],
+      "oracle_bugs": ["BUG-007"]
+    },
+    {
+      "id": "FLOW-004",
+      "name": "response_to_json_parse",
+      "source": "SRC-004 (network_response)",
+      "sink": "SNK-003 (json_parse)",
+      "trust_boundary": "TB-004",
+      "path": [
+        {"step": 1, "file": "lib/adapters/http.js", "line": 833, "transform": "responseStream.on('end')", "note": "Collects response data"},
+        {"step": 2, "file": "lib/core/settle.js", "line": 15, "transform": "settle(resolve, reject, response)", "note": "Resolves promise with response"},
+        {"step": 3, "file": "lib/defaults/index.js", "line": 106, "transform": "transformResponse(data)", "note": "Applies default response transformation"},
+        {"step": 4, "file": "lib/defaults/index.js", "line": 124, "transform": "JSON.parse(data, this.parseReviver)", "note": "Parses JSON with reviver function"}
+      ],
+      "guards": [
+        {"line": 120, "description": "transitional.silentJSONParsing controls strict parsing"}
+      ],
+      "guard_gaps": [
+        {"line": 124, "description": "this.parseReviver inherited from prototype — can be polluted"}
+      ],
+      "oracle_bugs": ["BUG-005"]
+    },
+    {
+      "id": "FLOW-005",
+      "name": "formdata_to_object",
+      "source": "SRC-006 (formdata_input)",
+      "sink": "SNK-003 (json_parse)",
+      "trust_boundary": "TB-005",
+      "path": [
+        {"step": 1, "file": "lib/helpers/formDataToJSON.js", "line": 82, "transform": "formData.entries()", "note": "Iterates FormData entries"},
+        {"step": 2, "file": "lib/helpers/formDataToJSON.js", "line": 86, "transform": "buildPath(parsePropPath(name), value, obj, 0)", "note": "Builds nested object from key path"},
+        {"step": 3, "file": "lib/helpers/formDataToJSON.js", "line": 53, "transform": "if (name === '__proto__') return true", "note": "Filters __proto__ but not constructor/prototype"},
+        {"step": 4, "file": "lib/defaults/index.js", "line": 54, "transform": "JSON.stringify(formDataToJSON(data))", "note": "Serializes to JSON"}
+      ],
+      "guards": [
+        {"line": 53, "description": "__proto__ filter in buildPath"}
+      ],
+      "guard_gaps": [
+        {"line": 53, "description": "Missing constructor/prototype filter"}
+      ],
+      "oracle_bugs": ["BUG-004"]
+    },
+    {
+      "id": "FLOW-006",
+      "name": "env_to_proxy",
+      "source": "SRC-005 (environment)",
+      "sink": "SNK-001 (http_request)",
+      "trust_boundary": "TB-006",
+      "path": [
+        {"step": 1, "file": "lib/helpers/shouldBypassProxy.js", "line": 1, "transform": "shouldBypassProxy(url)", "note": "Checks NO_PROXY environment variable"},
+        {"step": 2, "file": "lib/adapters/http.js", "line": 193, "transform": "getProxyForUrl(location)", "note": "Reads proxy environment variables"},
+        {"step": 3, "file": "lib/adapters/http.js", "line": 665, "transform": "setProxy(options, config.proxy, url)", "note": "Configures proxy based on environment"},
+        {"step": 4, "file": "lib/adapters/http.js", "line": 706, "transform": "transport.request(options)", "note": "Sends request through proxy"}
+      ],
+      "guards": [],
+      "guard_gaps": [
+        {"line": 1, "description": "Hostname normalization bypass allows SSRF"}
+      ],
+      "oracle_bugs": ["BUG-006"]
+    },
+    {
+      "id": "FLOW-007",
+      "name": "xhr_to_progress",
+      "source": "SRC-007 (xhr_event)",
+      "sink": "SNK-005 (stream_output)",
+      "trust_boundary": "TB-007",
+      "path": [
+        {"step": 1, "file": "lib/adapters/xhr.js", "line": 1, "transform": "xhr.upload.on('progress')", "note": "Listens for upload progress events"},
+        {"step": 2, "file": "lib/helpers/progressEventReducer.js", "line": 1, "transform": "progressEventReducer(callback)", "note": "Reduces progress events to callback invocations"},
+        {"step": 3, "file": "lib/helpers/progressEventReducer.js", "line": 1, "transform": "event.loaded / event.total", "note": "Computes progress ratio from event properties"}
+      ],
+      "guards": [],
+      "guard_gaps": [
+        {"line": 1, "description": "No validation of event.loaded/event.total — malformed events cause NaN"}
+      ],
+      "oracle_bugs": ["BUG-011"]
+    }
+  ],
+
+  "coverage_analysis": {
+    "total_trust_boundaries": 7,
+    "analyzed_in_v4_b": 2,
+    "missed_in_v4_b": 5,
+    "coverage_rate": "29%",
+    "missed_categories": ["ssrf", "header_injection", "input_validation", "resource_exhaustion"],
+    "root_cause": "V4-B agent analyzed files by pattern interest, not by trust boundary traversal. Flows with non-obvious sources (environment, events) were not traced."
+  }
+}

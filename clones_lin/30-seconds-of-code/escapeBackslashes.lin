@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!escapeBackslashes(str,openingBracket){;^str.replace( new RegExp(String.raw("(\\+)")+(String(openingBracket)+"?"),'g'),~(match){; const count = match.length;;; if (match.endsWith(openingBracket)); return '\\'.repeat(Math.floor((count - 1) / 2)) + openingBracket;; return (((__c)=>{if(__c){return(match.slice(-1));}return('');})('\\'.repeat(Math.floor(count / 2)) + (count % 2) !== 0));} )}
+=ex{escapeBackslashes}

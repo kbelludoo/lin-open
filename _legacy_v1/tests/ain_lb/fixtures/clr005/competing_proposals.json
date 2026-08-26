@@ -1,0 +1,68 @@
+{
+  "ambiguity_id": "CLR-005-cache-performance",
+  "task": "add cache to improve performance",
+  "graph_reference": "../clr004/repo",
+  "artifacts_reference": "../clr004/wipe/context_artifacts.json",
+  "constraints": {
+    "allowed_effects": ["pure", "memory"],
+    "allowed_caps": ["memory"],
+    "architecture_approval": false,
+    "storage_io_approval": false
+  },
+  "proposals": [
+    {
+      "proposal_id": "local_memory",
+      "intent": "cache hot values locally",
+      "target_module": "Transfer",
+      "inferred_effects": ["memory"],
+      "required_caps": ["memory"],
+      "architecture_delta": "none",
+      "expected_decision": "ACCEPT"
+    },
+    {
+      "proposal_id": "persistent_storage",
+      "intent": "persist cache entries across process restarts",
+      "target_module": "Transfer",
+      "inferred_effects": ["io"],
+      "required_caps": ["io", "storage"],
+      "architecture_delta": "storage_dependency",
+      "expected_decision": "CONDITIONAL"
+    },
+    {
+      "proposal_id": "effect_escalation",
+      "intent": "add a cache while silently escalating local work to storage io",
+      "target_module": "Transfer",
+      "inferred_effects": ["memory", "io"],
+      "required_caps": ["memory", "io"],
+      "architecture_delta": "none",
+      "expected_decision": "DENIED"
+    },
+    {
+      "proposal_id": "wrong_module",
+      "intent": "add the cache to an unrelated audit module",
+      "target_module": "Audit",
+      "inferred_effects": ["memory"],
+      "required_caps": ["memory"],
+      "architecture_delta": "none",
+      "expected_decision": "DENIED"
+    },
+    {
+      "proposal_id": "new_module",
+      "intent": "create a dedicated cache module",
+      "target_module": "Cache",
+      "inferred_effects": ["memory"],
+      "required_caps": ["memory"],
+      "architecture_delta": "new_module",
+      "expected_decision": "CONDITIONAL"
+    },
+    {
+      "proposal_id": "local_memory_unpermitted",
+      "intent": "cache hot values locally without memory permission",
+      "target_module": "Transfer",
+      "inferred_effects": ["memory"],
+      "required_caps": ["memory"],
+      "architecture_delta": "none",
+      "expected_decision": "DENIED"
+    }
+  ]
+}

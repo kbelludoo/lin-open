@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!unpackRange(start,end){;?(start==end||isNil(end)){^[start]};?(start>end){^[]};^Array.from({length: end-start+1},~(_,i){^start + i})}
+=ex{unpackRange}

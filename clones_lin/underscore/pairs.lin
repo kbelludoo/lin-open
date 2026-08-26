@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!pairs(obj){;_keys=keys(obj);length=_keys.length;pairs=Array(length);#(i=0;i<length;i++){pairs[i]=[_keys[i],obj[_keys[i]]]};^pairs}
+=ex{pairs}

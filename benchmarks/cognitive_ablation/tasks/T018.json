@@ -1,0 +1,37 @@
+{
+  "id": "T018",
+  "family": "effects_contracts",
+  "difficulty": "easy",
+  "specification": "Validador de contrato de tipo estrito. Entrada: any. Saída: string indicando o tipo semântico: \"array\", \"null\", \"object\", \"number\", \"string\", \"boolean\".",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "globalState"
+  ],
+  "test_cases": [
+    {
+      "input": [
+        1,
+        2
+      ],
+      "expected": "array"
+    },
+    {
+      "input": null,
+      "expected": "null"
+    },
+    {
+      "input": {
+        "a": 1
+      },
+      "expected": "object"
+    },
+    {
+      "input": 42,
+      "expected": "number"
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T018.mjs"
+  }
+}

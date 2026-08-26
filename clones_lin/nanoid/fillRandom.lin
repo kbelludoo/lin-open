@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!fillRandom(buffer){;from=0;while (from<buffer.length){to=Math.min(from+GET_RANDOM_LIMIT,buffer.length);crypto.getRandomValues(buffer.subarray(from,to));from=to}}
+=ex{fillRandom}

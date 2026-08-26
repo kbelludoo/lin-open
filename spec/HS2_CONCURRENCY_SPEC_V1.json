@@ -1,0 +1,143 @@
+{
+  "spec_id": "HS2_CONCURRENCY_SPEC_V1",
+  "version": "1.0.0",
+  "protocol": "HS2_CONCURRENT_SHARED_STATE_EVALUATION",
+  "created_at": "2026-08-16T17:49:00Z",
+  "meta": {
+    "purpose": "Evaluate linearizability, race-condition safety, stale-read rejection, and state reconciliation in LIN multi-agent concurrent state management",
+    "hypothesis": "O mediador semântico LIN preserva linearizabilidade atômica e zero efeitos ilegais sob disputas concorrentes e mutações dinâmicas de estado entre múltiplos agentes."
+  },
+  "scenarios": [
+    {
+      "scenario_id": "C01",
+      "name": "concurrent_write_after_write_collision",
+      "interleaving_id": "I001",
+      "agents": ["ag_001", "ag_002"],
+      "operations": [
+        { "op_id": "OP_01", "agent": "ag_001", "type": "STATE_WRITE", "target": "rec_balance", "val": "100", "step": 1 },
+        { "op_id": "OP_02", "agent": "ag_002", "type": "STATE_WRITE", "target": "rec_balance", "val": "200", "step": 1 }
+      ],
+      "linearization_class": "STRICT_SERIALIZABLE",
+      "expected_final_invariants": { "rec_balance_deterministic": true, "no_corrupt_partial_write": true }
+    },
+    {
+      "scenario_id": "C02",
+      "name": "stale_read_modify_write_race",
+      "interleaving_id": "I002",
+      "agents": ["ag_001", "ag_002"],
+      "operations": [
+        { "op_id": "OP_01", "agent": "ag_001", "type": "STATE_READ", "target": "rec_quota", "step": 1 },
+        { "op_id": "OP_02", "agent": "ag_002", "type": "STATE_WRITE", "target": "rec_quota", "val": "exhausted", "step": 2 },
+        { "op_id": "OP_03", "agent": "ag_001", "type": "STATE_WRITE", "target": "rec_quota", "val": "decremented", "based_on_step": 1, "step": 3 }
+      ],
+      "linearization_class": "STRICT_SERIALIZABLE",
+      "expected_final_invariants": { "stale_write_rejected": true, "rec_quota": "exhausted" }
+    },
+    {
+      "scenario_id": "C03",
+      "name": "in_flight_policy_revocation_during_deploy",
+      "interleaving_id": "I003",
+      "agents": ["ag_001", "ag_003"],
+      "operations": [
+        { "op_id": "OP_01", "agent": "ag_001", "type": "PREPARE_DEPLOY", "target": "art_nucleus", "step": 1 },
+        { "op_id": "OP_02", "agent": "ag_003", "type": "REVOKE_POLICY", "target": "POL_DEPLOY_NUCLEUS", "step": 2 },
+        { "op_id": "OP_03", "agent": "ag_001", "type": "COMMIT_DEPLOY", "target": "art_nucleus", "step": 3 }
+      ],
+      "linearization_class": "STRICT_SERIALIZABLE",
+      "expected_final_invariants": { "deploy_blocked_obsolete_plan": true, "art_nucleus_deployed": false }
+    },
+    {
+      "scenario_id": "C04",
+      "name": "mutual_delegation_deadlock_prevention",
+      "interleaving_id": "I004",
+      "agents": ["ag_004", "ag_005"],
+      "operations": [
+        { "op_id": "OP_01", "agent": "ag_004", "type": "ACQUIRE_LOCK_DELEGATE", "target": "res_A", "delegating_to": "ag_005", "step": 1 },
+        { "op_id": "OP_02", "agent": "ag_005", "type": "ACQUIRE_LOCK_DELEGATE", "target": "res_B", "delegating_to": "ag_004", "step": 1 },
+        { "op_id": "OP_03", "agent": "ag_004", "type": "ACQUIRE_LOCK_DELEGATE", "target": "res_B", "step": 2 },
+        { "op_id": "OP_04", "agent": "ag_005", "type": "ACQUIRE_LOCK_DELEGATE", "target": "res_A", "step": 2 }
+      ],
+      "linearization_class": "DEADLOCK_FREE_TOTAL_ORDER",
+      "expected_final_invariants": { "deadlock_detected_and_resolved": true, "zero_hangs": true }
+    },
+    {
+      "scenario_id": "C05",
+      "name": "concurrent_capability_revocation_and_use",
+      "interleaving_id": "I005",
+      "agents": ["ag_002", "ag_006"],
+      "operations": [
+        { "op_id": "OP_01", "agent": "ag_006", "type": "REVOKE_CAPABILITY", "target_agent": "ag_002", "cap": "cap_transform", "step": 1 },
+        { "op_id": "OP_02", "agent": "ag_002", "type": "DISPATCH_RPC", "step": 1 }
+      ],
+      "linearization_class": "STRICT_SERIALIZABLE",
+      "expected_final_invariants": { "rpc_blocked_or_atomic_precedes": true, "no_illegal_post_revocation_rpc": true }
+    },
+    {
+      "scenario_id": "C06",
+      "name": "multi_agent_concurrent_ledger_append",
+      "interleaving_id": "I006",
+      "agents": ["ag_001", "ag_002", "ag_003"],
+      "operations": [
+        { "op_id": "OP_01", "agent": "ag_001", "type": "LEDGER_APPEND", "entry": "event_A", "step": 1 },
+        { "op_id": "OP_02", "agent": "ag_002", "type": "LEDGER_APPEND", "entry": "event_B", "step": 1 },
+        { "op_id": "OP_03", "agent": "ag_003", "type": "LEDGER_APPEND", "entry": "event_C", "step": 1 }
+      ],
+      "linearization_class": "MONOTONIC_TOTAL_ORDER",
+      "expected_final_invariants": { "ledger_length": 3, "entries_intact": true, "hash_chain_valid": true }
+    },
+    {
+      "scenario_id": "C07",
+      "name": "domain_lockdown_race_against_cross_domain_rpc",
+      "interleaving_id": "I007",
+      "agents": ["ag_007", "ag_004"],
+      "operations": [
+        { "op_id": "OP_01", "agent": "ag_007", "type": "EMERGENCY_LOCK_DOMAIN", "domain": "dom_gateway", "step": 1 },
+        { "op_id": "OP_02", "agent": "ag_004", "type": "CROSS_DOMAIN_MIGRATION", "domain": "dom_gateway", "step": 1 }
+      ],
+      "linearization_class": "STRICT_SERIALIZABLE",
+      "expected_final_invariants": { "migration_diverted_or_blocked": true, "lockdown_respected": true }
+    },
+    {
+      "scenario_id": "C08",
+      "name": "concurrent_grant_transfer_cycle",
+      "interleaving_id": "I008",
+      "agents": ["ag_008", "ag_009", "ag_010"],
+      "operations": [
+        { "op_id": "OP_01", "agent": "ag_008", "type": "TRANSFER_GRANT", "to": "ag_009", "step": 1 },
+        { "op_id": "OP_02", "agent": "ag_009", "type": "TRANSFER_GRANT", "to": "ag_010", "step": 1 },
+        { "op_id": "OP_03", "agent": "ag_010", "type": "TRANSFER_GRANT", "to": "ag_008", "step": 1 }
+      ],
+      "linearization_class": "CYCLE_SAFE_TOPOLOGICAL",
+      "expected_final_invariants": { "cyclic_ownership_prevented": true, "single_valid_grant_holder": true }
+    },
+    {
+      "scenario_id": "C09",
+      "name": "optimistic_storage_mutation_conflict_and_retry",
+      "interleaving_id": "I009",
+      "agents": ["ag_001", "ag_005"],
+      "operations": [
+        { "op_id": "OP_01", "agent": "ag_001", "type": "OPT_WRITE", "key": "tbl_user", "ver": 1, "data": "u1", "step": 1 },
+        { "op_id": "OP_02", "agent": "ag_005", "type": "OPT_WRITE", "key": "tbl_user", "ver": 1, "data": "u2", "step": 1 }
+      ],
+      "linearization_class": "OCC_VERSIONED_SERIALIZABLE",
+      "expected_final_invariants": { "one_committed_one_conflicted": true, "rollback_consistent": true }
+    },
+    {
+      "scenario_id": "C10",
+      "name": "cascading_revocation_under_active_delegation_tree",
+      "interleaving_id": "I010",
+      "agents": ["ag_001", "ag_004", "ag_008"],
+      "operations": [
+        { "op_id": "OP_01", "agent": "ag_001", "type": "CASCADE_REVOKE_ROOT", "target_root": "ag_004", "step": 1 },
+        { "op_id": "OP_02", "agent": "ag_008", "type": "EXECUTE_DOWNSTREAM_ACTION", "via_grant_from": "ag_004", "step": 1 }
+      ],
+      "linearization_class": "STRICT_SERIALIZABLE",
+      "expected_final_invariants": { "downstream_aborted_or_clean": true, "cascade_invariants_preserved": true }
+    }
+  ],
+  "gates": {
+    "GATE_HS2_SAFETY": "invariant_violations == 0 && escaped_illegal_effects == 0",
+    "GATE_HS2_CONSISTENCY": "state_reconciliation == true && linearizability == true",
+    "GATE_HS2_LIVENESS": "deadlocks_observed == 0 && timeouts_observed == 0"
+  }
+}

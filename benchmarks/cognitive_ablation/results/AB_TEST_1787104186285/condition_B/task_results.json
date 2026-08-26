@@ -1,0 +1,74 @@
+[
+  {
+    "task_id": "T001",
+    "family": "logic_state",
+    "difficulty": "easy",
+    "failure_class": "ORACLE_FAILURE",
+    "compile_pass": true,
+    "oracle_pass": false,
+    "total_tokens": 600,
+    "total_latency_ms": 22096,
+    "attempts": [
+      {
+        "attempt": 1,
+        "candidate_hash": "3f096ced36535af5",
+        "candidate_code": "!solve(currentState){\n?((currentState==\"RED\")){\n^\"GREEN\"\n}:(currentState==\"GREEN\")){\n^\"YELLOW\"\n}:(currentState==\"YELLOW\")){\n^\"RED\"\n}:{^\"ERROR\"}\n}",
+        "tokens": 600,
+        "latency_ms": 22096,
+        "verifier_passed": true,
+        "oracle_executed": true,
+        "oracle_passed": false,
+        "failure_class": "ORACLE_FAILURE",
+        "condition": "FEW_SHOT"
+      }
+    ]
+  },
+  {
+    "task_id": "T002",
+    "family": "logic_state",
+    "difficulty": "medium",
+    "failure_class": "INVALID_LIN",
+    "compile_pass": false,
+    "oracle_pass": false,
+    "total_tokens": 603,
+    "total_latency_ms": 17357,
+    "attempts": [
+      {
+        "attempt": 1,
+        "candidate_hash": "5b28ea5f9e2a4240",
+        "candidate_code": "!pushPuroEmRingBuffer({ buffer, item }){\n    if(buffer.length < 3){\n        buffer.push(item);\n    } else {\n        buffer.shift();\n        buffer.push(item);\n    }\n    ^buffer;\n}",
+        "tokens": 603,
+        "latency_ms": 17357,
+        "verifier_passed": false,
+        "oracle_executed": false,
+        "oracle_passed": false,
+        "failure_class": "INVALID_LIN",
+        "condition": "FEW_SHOT"
+      }
+    ]
+  },
+  {
+    "task_id": "T003",
+    "family": "logic_state",
+    "difficulty": "medium",
+    "failure_class": "ORACLE_FAILURE",
+    "compile_pass": true,
+    "oracle_pass": false,
+    "total_tokens": 794,
+    "total_latency_ms": 83112,
+    "attempts": [
+      {
+        "attempt": 1,
+        "candidate_hash": "762e9cd5ef320d85",
+        "candidate_code": "!solve(input){\n  stack = input.stack;\n  action = input.action;\n  value = input.value;\n  history = input.history;\n\n  ?(action==\"push\"){\n    newStack = [...stack, value];\n    newHistory = [...history, {type:\"push\", value:value}];\n  }:(action==\"pop\"){\n    ?(stack.length>0){\n      newStack = stack.slice(0, -1);\n      newHistory = [...history, {type:\"pop\", value:stack[stack.length-1]}];\n    }:{newStack = stack; newHistory = history}\n  }:(action==\"rollback\"){\n    ?(history.length>0){\n      lastAction = history[history.length-1];\n      ?(lastAction.type==\"push\"){\n        newStack = stack.slice(0, -1);\n      }:(lastAction.type==\"pop\"){\n        newStack = [...stack, lastAction.value];\n      }\n      newHistory = history.slice(0, -1);\n    }:{newStack = stack; newHistory = history}\n  }:{newStack = stack; newHistory = history}\n\n  ^{stack:newStack, history:newHistory}\n}",
+        "tokens": 794,
+        "latency_ms": 83112,
+        "verifier_passed": true,
+        "oracle_executed": true,
+        "oracle_passed": false,
+        "failure_class": "ORACLE_FAILURE",
+        "condition": "FEW_SHOT"
+      }
+    ]
+  }
+]

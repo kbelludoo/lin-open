@@ -1,0 +1,113 @@
+@DICEL:LIA_400K_ROUNDTRIP:1.0.0
+
+^rule="semantic_hash_exact_like_P200"
+^same_content=true
+^no_padding=true
+^soft_match=false
+^behavior_eq_required=1.0
+^status="PARTIAL"
+^repo_url="https://github.com/microsoft/TypeScript"
+^clone_path="C:/Users/k/Documents/ail-bench/clone-400k/TypeScript"
+^source_root="C:/Users/k/Documents/ail-bench/clone-400k/TypeScript/src"
+^measured_loc=453359
+^files_total=709
+^files_ok=31
+^files_skip=6
+^fns_extracted=1857
+^fns_attempted=500
+^fns_pass=207
+^fns_fail=22
+^fns_skip=271
+^pass_rate=0.414
+^largest_connected_pass=20
+^holdout_n=8
+^protocol="source->LIA->compile_JS->holdout_sha256"
+^emitter="C:/Users/k/Documents/lia/src/emitter.mjs"
+^compiler="C:/Users/k/Documents/lia/src/compiler.mjs"
+^generated_at="2026-08-14T12:15:55.829Z"
+
+@RULE_CONFIRM {
+  exact_output_equality: true
+  sha256_of_output_vector: true
+  soft_match_forbidden: true
+  like: "INTEL_LIA_ROUNDTRIP_VERIFY / P200 semantic_hash"
+}
+
+@INVENTORY {
+  loc: 453359
+  files: 709
+  named_functions_extracted: 1857
+  note: "LOC = lines in .js/.ts/.tsx/.jsx under source_root (skip node_modules/.git/tests/fixtures)"
+}
+
+@COUNTS {
+  files_ok: 31
+  files_skip: 6
+  fns_pass: 207
+  fns_fail: 22
+  fns_skip: 271
+}
+
+@HASH_SAMPLE_PASS {
+  { fn:"addFileToChangeSet", file:"compiler/builder.ts", original_hash:"d786fd83e3b75dbb635b250cf586dbb2dd0395bdafc304acc4edab9ba1a2b31c", compiled_hash:"d786fd83e3b75dbb635b250cf586dbb2dd0395bdafc304acc4edab9ba1a2b31c", eq:true }
+  { fn:"toPathInBuildInfoDirectory", file:"compiler/builder.ts", original_hash:"bf580b81e81e3c37c0a7db41792ddddc4169017ef2c8f2ad4459455b005c4444", compiled_hash:"bf580b81e81e3c37c0a7db41792ddddc4169017ef2c8f2ad4459455b005c4444", eq:true }
+  { fn:"releaseCache", file:"compiler/builder.ts", original_hash:"f8ca03a258b7912f9392ff8da2ddc687f625a23b2ca14be3903a173e7c68d931", compiled_hash:"f8ca03a258b7912f9392ff8da2ddc687f625a23b2ca14be3903a173e7c68d931", eq:true }
+  { fn:"getNextPendingEmitDiagnosticsFile", file:"compiler/builder.ts", original_hash:"fdc7873e0a541e9c044464dabc80d03883e585aa969bc52ecbc9759d38b158c9", compiled_hash:"fdc7873e0a541e9c044464dabc80d03883e585aa969bc52ecbc9759d38b158c9", eq:true }
+  { fn:"removeDiagnosticsOfLibraryFiles", file:"compiler/builder.ts", original_hash:"8bcbb3df15d83e373c9cd7272b58059a2fde3f7538fe7728447268784b3f6061", compiled_hash:"8bcbb3df15d83e373c9cd7272b58059a2fde3f7538fe7728447268784b3f6061", eq:true }
+  { fn:"handleDtsMayChangeOfAffectedFile", file:"compiler/builder.ts", original_hash:"ad23a7832bb64796e8cbe1ccd9d04a2bb939d46dbc601b05fbc5a2656be5d62c", compiled_hash:"ad23a7832bb64796e8cbe1ccd9d04a2bb939d46dbc601b05fbc5a2656be5d62c", eq:true }
+  { fn:"removeSemanticDiagnosticsOf", file:"compiler/builder.ts", original_hash:"1e71750fb1ee6b6906c7ea655f6ae449673148a5dd17d66ccb9699581ee763fb", compiled_hash:"1e71750fb1ee6b6906c7ea655f6ae449673148a5dd17d66ccb9699581ee763fb", eq:true }
+  { fn:"isChangedSignature", file:"compiler/builder.ts", original_hash:"20411aa6caa85bff5e280a918352e83c112375c4bde5a40822d5c7e75dae5811", compiled_hash:"20411aa6caa85bff5e280a918352e83c112375c4bde5a40822d5c7e75dae5811", eq:true }
+  { fn:"writeFile", file:"compiler/builderState.ts", original_hash:"ea0f0330774747212f583dcb0a12facee612d35fa46dacfbde481bf91b37e455", compiled_hash:"ea0f0330774747212f583dcb0a12facee612d35fa46dacfbde481bf91b37e455", eq:true }
+  { fn:"addReferenceFromAmbientModule", file:"compiler/builderState.ts", original_hash:"fdc7873e0a541e9c044464dabc80d03883e585aa969bc52ecbc9759d38b158c9", compiled_hash:"fdc7873e0a541e9c044464dabc80d03883e585aa969bc52ecbc9759d38b158c9", eq:true }
+  { fn:"addReferencedFile", file:"compiler/builderState.ts", original_hash:"f7b4e2278614ed831530007007d0434a5b1c27345c831f5c06a977eb5a797230", compiled_hash:"f7b4e2278614ed831530007007d0434a5b1c27345c831f5c06a977eb5a797230", eq:true }
+  { fn:"containsOnlyAmbientModules", file:"compiler/builderState.ts", original_hash:"a3b7be23536486290d9f81c39dd4790b0ae0b4c717808d6887ff894311bf789f", compiled_hash:"a3b7be23536486290d9f81c39dd4790b0ae0b4c717808d6887ff894311bf789f", eq:true }
+}
+
+@HASH_SAMPLE_FAIL {
+  { fn:"getIsDeclarationVisible", file:"compiler/checker.ts", reason:"comp_load:Unexpected token ';'", original_hash:"", compiled_hash:"" }
+  { fn:"newline", file:"compiler/commandLineParser.ts", reason:"hash_mismatch", original_hash:"6089370a45edb465ea3c2ad736f6ff4dc0a1749cee3ba515dda47a1c93caefe7", compiled_hash:"d790c52fbd6d05df7752d44dfe8f2bfe09f7ee3f006bc8eae4c7a88954156357" }
+  { fn:"createQualifiedName", file:"compiler/factory/nodeFactory.ts", reason:"comp_load:Unexpected token ';'", original_hash:"", compiled_hash:"" }
+  { fn:"update", file:"compiler/moduleNameResolver.ts", reason:"hash_mismatch", original_hash:"863498b0067f5d6168665db5f732f04cb6b221defd7b44f21f05fe718f85daef", compiled_hash:"fbdbca0146aa40ebd329359ef3d45646f3338e75103a76f1fd9f7cefbe43bfb8" }
+  { fn:"sourceFileNotUptoDate", file:"compiler/program.ts", reason:"comp_load:Unexpected token ';'", original_hash:"", compiled_hash:"" }
+  { fn:"projectReferenceUptoDate", file:"compiler/program.ts", reason:"comp_load:Unexpected token ';'", original_hash:"", compiled_hash:"" }
+  { fn:"getResolvedTypeReferenceDirectiveFromTypeReferenceDirective", file:"compiler/program.ts", reason:"comp_load:Unexpected token ';'", original_hash:"", compiled_hash:"" }
+  { fn:"getPackagesMap", file:"compiler/program.ts", reason:"hash_mismatch", original_hash:"15f91785320b9105a1fc55713020249469f32a65007d19fc36fd302c44f9c12b", compiled_hash:"4ccf6a4dca2fc16477fbda9ae52f9e17a87c7a9ba029c36548d9e1628ee67519" }
+  { fn:"getClassifiableNames", file:"compiler/program.ts", reason:"hash_mismatch", original_hash:"25d98fd0e4589dca614054fb1340885b0aaf6bd3969442aa5d605cd2d0beb65f", compiled_hash:"5752c9e7342857c6cd78800b34a9c3da7cbdff120d8f337b065c842697c42bff" }
+  { fn:"populateRelatedInfo", file:"compiler/programDiagnostics.ts", reason:"hash_mismatch", original_hash:"a58415f74d91ff9c0ae796c2bbfc6c148adf59676b47a30391cd80ceb182e71a", compiled_hash:"7e599d9da2ef80a1a8f84dfe4bb9398d45d6fe849aff935f785be8094700f125" }
+  { fn:"finishRecordingFilesWithChangedResolutions", file:"compiler/resolutionCache.ts", reason:"hash_mismatch", original_hash:"e21bd60ec50448396486c292a6097dd96a86441abf8ddee91f2ec31d1d0a96f1", compiled_hash:"fdc7873e0a541e9c044464dabc80d03883e585aa969bc52ecbc9759d38b158c9" }
+  { fn:"parsePartial", file:"compiler/semver.ts", reason:"comp_load:Unexpected token ';'", original_hash:"", compiled_hash:"" }
+}
+
+@BLOCKERS {
+  { reason:"ts_residue", n:63 }
+  { reason:"async", n:49 }
+  { reason:"heavy_template", n:34 }
+  { reason:"orig_load:Unexpected token ')'", n:24 }
+  { reason:"emit_empty", n:16 }
+  { reason:"await", n:15 }
+  { reason:"hash_mismatch", n:12 }
+  { reason:"comp_load:Unexpected token ';'", n:10 }
+  { reason:"orig_load:Unexpected identifier 'module'", n:9 }
+  { reason:"generics_params", n:8 }
+  { reason:"generator", n:7 }
+  { reason:"orig_load:Unexpected token ','", n:7 }
+  { reason:"orig_load:Unexpected token '}'", n:7 }
+  { reason:"orig_load:Unexpected token ';'", n:6 }
+  { reason:"orig_load:Missing initializer in const declaration", n:5 }
+  { reason:"orig_load:Unexpected end of input", n:4 }
+  { reason:"orig_load:Unexpected token '?'", n:4 }
+  { reason:"dynamic_import", n:2 }
+  { reason:"orig_load:Unexpected token '{'", n:2 }
+  { reason:"orig_load:Unexpected identifier 'PrivateIdentifierInExpression'", n:2 }
+}
+
+@LODASH_SECONDARY {
+  skipped: true
+}
+
+@VERDICT {
+  semantic_hash_rule_in_place: true
+  loc_target_met: true
+  connected_set_pass: 20
+  honest_note: "TypeScript/src is ~400k LOC but not Node-requireable as a package; bench verifies extractable classic function() declarations via isolated holdout. Arrow/class/async/TS-heavy and free-ref fns are skipped or fail compile. Lodash secondary provides classic JS control. Exact sha256 holdout only — no soft match."
+}

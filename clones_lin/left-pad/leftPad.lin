@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!leftPad(str,len,ch){str=str+'';len=len-str.length;?(len<=0){^str};?(!ch&&ch!=0){ch=' '};ch=ch+'';?(ch==' '&&len<10){^cache[len]+str};pad='';while (true){?(len&1){pad+=ch};len>>=1;?(len){ch+=ch};:{break}};^pad+str}
+=ex{leftPad}

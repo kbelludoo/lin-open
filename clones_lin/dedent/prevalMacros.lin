@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!prevalMacros(babel,references,state){references.default.forEach(~(referencePath){;; if (referencePath.parentPath.type === "TaggedTemplateExpression") { asTag(referencePath.parentPath.get("quasi"), state, babel); } else if (referencePath.parentPath.type === "CallExpression") { asFunction(referencePath.parentPath.get("arguments"), state, babel); } else { throw new MacroError( `dedent.macro can only be used as tagged template expression or function call. You tried ${referencePath.parentPath.type}.`, ); }})}
+=ex{prevalMacros}

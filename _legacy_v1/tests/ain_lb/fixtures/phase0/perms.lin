@@ -1,0 +1,7 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=pay_perms
+~G{?=if #=for ^=ret :else}
+!moduleRef(){^'Perms'}
+!effects(){^'pure'}
+!canTransfer(role){?(role=='admin'){^1};?(role=='member'){^1};^0}
+=ex{moduleRef,effects,canTransfer}

@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!createBuilder(self,_styler,_isEmpty){builder=~(...arguments_){;; if (arguments_.length === 1) { return applyStyle(builder, '' + arguments_[0]); };; if (arguments_.length === 2) { return applyStyle(builder, arguments_[0] + ' ' + arguments_[1]); }; return applyStyle(builder, arguments_.join(' '));};;Object.setPrototypeOf(builder,proto);builder[GENERATOR]=self[GENERATOR]??self;builder[STYLER]=_styler;builder[IS_EMPTY]=_isEmpty;^builder}
+=ex{createBuilder}

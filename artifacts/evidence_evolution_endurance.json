@@ -1,0 +1,112 @@
+{
+  "protocol": "EVOLUTION_ENDURANCE_V1",
+  "run_id": "RUN-EVO-ENDUR-20260816-001",
+  "timestamp_utc": "2026-08-16T17:53:58.964Z",
+  "oracle_reference": {
+    "checksum": 12350000,
+    "semanticHash": "sha256:de66f8d5c31858ed9d0cc2ca80d0d41a060d77f39e70636a2e08b2dfbe138627"
+  },
+  "nucleus_hash": "sha256:562e6904afa0948661fb02804a91be96d919dcd5ddbe6c54db5e0fc149d557df",
+  "generations": [
+    {
+      "generation_id": "G1",
+      "name": "proof_engine_flat_array_tabling",
+      "parent_generation_hash": "sha256:c73622fea2013293eb810aeecb9d1eea4cd5aacc060bed65a5cf01cc7b992269",
+      "candidate_hash": "sha256:4f9f64a9a622348440bfd1f661ab13aec18ab9b314320982050ee6378d05b27e",
+      "oracle_hash": "sha256:de66f8d5c31858ed9d0cc2ca80d0d41a060d77f39e70636a2e08b2dfbe138627",
+      "semantic_result_hash": "sha256:612394dc08e2dc9d0238c2464f0b34bea00bba9cb6de2d98f829976dda917367",
+      "nucleus_hash": "sha256:562e6904afa0948661fb02804a91be96d919dcd5ddbe6c54db5e0fc149d557df",
+      "duration_ms": 1.5782,
+      "zero_drift": true,
+      "cumulative_regression_pass": true,
+      "nucleus_untouched": true,
+      "decision": "PROMOTED"
+    },
+    {
+      "generation_id": "G2",
+      "name": "state_symbol_bitwise_hashconsing",
+      "parent_generation_hash": "sha256:d8ae78b0692806fcaf3d5dcccb5a42813bdeca38dac5e53526e6f8bda6293198",
+      "candidate_hash": "sha256:64e071f2f453fdac1cf3afa0ef70a234b10ecc333969967d2171b86387f0df6b",
+      "oracle_hash": "sha256:de66f8d5c31858ed9d0cc2ca80d0d41a060d77f39e70636a2e08b2dfbe138627",
+      "semantic_result_hash": "sha256:612394dc08e2dc9d0238c2464f0b34bea00bba9cb6de2d98f829976dda917367",
+      "nucleus_hash": "sha256:562e6904afa0948661fb02804a91be96d919dcd5ddbe6c54db5e0fc149d557df",
+      "duration_ms": 0.9655,
+      "zero_drift": true,
+      "cumulative_regression_pass": true,
+      "nucleus_untouched": true,
+      "decision": "PROMOTED"
+    },
+    {
+      "generation_id": "G3",
+      "name": "simd_chunked_state_linearization",
+      "parent_generation_hash": "sha256:e40a09e4853bdac4c048254a8f0704ccd5a7e23916b168ceabb2c37c5bd56b37",
+      "candidate_hash": "sha256:317485cca52b2287b0c9622e6d678cc9fd09c86a8e1b1b570dea093064488c05",
+      "oracle_hash": "sha256:de66f8d5c31858ed9d0cc2ca80d0d41a060d77f39e70636a2e08b2dfbe138627",
+      "semantic_result_hash": "sha256:612394dc08e2dc9d0238c2464f0b34bea00bba9cb6de2d98f829976dda917367",
+      "nucleus_hash": "sha256:562e6904afa0948661fb02804a91be96d919dcd5ddbe6c54db5e0fc149d557df",
+      "duration_ms": 1.225,
+      "zero_drift": true,
+      "cumulative_regression_pass": true,
+      "nucleus_untouched": true,
+      "decision": "PROMOTED"
+    },
+    {
+      "generation_id": "G4_FAULT",
+      "name": "flawed_speculative_bypass_candidate",
+      "parent_generation_hash": "sha256:e40a09e4853bdac4c048254a8f0704ccd5a7e23916b168ceabb2c37c5bd56b37",
+      "candidate_hash": "sha256:52b08411f20650fa7c4d3940f863bb019a62aa85ad2cdb23f0501da4dcb658a9",
+      "oracle_hash": "sha256:de66f8d5c31858ed9d0cc2ca80d0d41a060d77f39e70636a2e08b2dfbe138627",
+      "semantic_result_hash": "sha256:612394dc08e2dc9d0238c2464f0b34bea00bba9cb6de2d98f829976dda917367",
+      "nucleus_hash": "sha256:562e6904afa0948661fb02804a91be96d919dcd5ddbe6c54db5e0fc149d557df",
+      "duration_ms": 0.0007,
+      "zero_drift": true,
+      "cumulative_regression_pass": false,
+      "nucleus_untouched": true,
+      "decision": "REJECTED_AND_ROLLED_BACK"
+    },
+    {
+      "generation_id": "G4",
+      "name": "dependency_dag_compact_bitset",
+      "parent_generation_hash": "sha256:0d206eb5fa954fcea4fc631108368cefc5aabf3e35af079efdc07c83599e77fd",
+      "candidate_hash": "sha256:808f98072c350242e3eb846c1bd301b32fae90a1e179619ba50114e25dfb3179",
+      "oracle_hash": "sha256:de66f8d5c31858ed9d0cc2ca80d0d41a060d77f39e70636a2e08b2dfbe138627",
+      "semantic_result_hash": "sha256:612394dc08e2dc9d0238c2464f0b34bea00bba9cb6de2d98f829976dda917367",
+      "nucleus_hash": "sha256:562e6904afa0948661fb02804a91be96d919dcd5ddbe6c54db5e0fc149d557df",
+      "duration_ms": 0.9917,
+      "zero_drift": true,
+      "cumulative_regression_pass": true,
+      "nucleus_untouched": true,
+      "decision": "PROMOTED"
+    },
+    {
+      "generation_id": "G5",
+      "name": "zero_copy_dispatch_serialization",
+      "parent_generation_hash": "sha256:a6c20ebbce863562122f8ad54801b13485409ceb9ffc99a3b29481d2a05e2b5d",
+      "candidate_hash": "sha256:8280ecd2dcf3b9be023661ba4f1eed6544def8119cce5b066685e9fce5d57918",
+      "oracle_hash": "sha256:de66f8d5c31858ed9d0cc2ca80d0d41a060d77f39e70636a2e08b2dfbe138627",
+      "semantic_result_hash": "sha256:612394dc08e2dc9d0238c2464f0b34bea00bba9cb6de2d98f829976dda917367",
+      "nucleus_hash": "sha256:562e6904afa0948661fb02804a91be96d919dcd5ddbe6c54db5e0fc149d557df",
+      "duration_ms": 0.9389,
+      "zero_drift": true,
+      "cumulative_regression_pass": true,
+      "nucleus_untouched": true,
+      "decision": "PROMOTED"
+    }
+  ],
+  "summary": {
+    "total_generations_planned": 5,
+    "total_generations_promoted": 5,
+    "rollback_tested_and_passed": true,
+    "semantic_drift_detected": false,
+    "nucleus_invariance_maintained": true
+  },
+  "gate_verdict": {
+    "gate_zero_drift": true,
+    "gate_cumulative_regression": true,
+    "gate_nucleus_invariance": true,
+    "gate_rollback_verification": true,
+    "gate_non_regressive_performance": true,
+    "gate_endurance_overall": true,
+    "conclusion": "O protocolo EVOLUTION_ENDURANCE_V1 demonstrou estabilidade composicional do mecanismo de auto-otimização ao longo de 5 gerações sucessivas (G1..G5) no domínio experimental congelado, preservando equivalência semântica estrita contra o oráculo (zero desvio semântico), 100% de aprovação na matriz de regressão cumulativa, integridade do núcleo protegido e capacidade comprovada de rollback automático e restauração limpa diante de regressões."
+  }
+}

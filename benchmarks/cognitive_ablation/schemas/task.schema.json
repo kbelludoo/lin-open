@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CognitiveAblationTask",
+  "type": "object",
+  "required": [
+    "id",
+    "family",
+    "difficulty",
+    "specification",
+    "allowed_effects",
+    "forbidden_effects",
+    "test_cases",
+    "oracle"
+  ],
+  "properties": {
+    "id": { "type": "string", "pattern": "^T[0-9]{3}$" },
+    "family": {
+      "type": "string",
+      "enum": [
+        "logic_state",
+        "code_transformation",
+        "effects_contracts",
+        "debug_repair",
+        "multi_step_composition"
+      ]
+    },
+    "difficulty": { "type": "string", "enum": ["easy", "medium", "hard"] },
+    "specification": { "type": "string" },
+    "context_code": { "type": "string" },
+    "allowed_effects": { "type": "array", "items": { "type": "string" } },
+    "forbidden_effects": { "type": "array", "items": { "type": "string" } },
+    "test_cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["input", "expected"],
+        "properties": {
+          "input": {},
+          "expected": {}
+        }
+      }
+    },
+    "oracle": {
+      "type": "object",
+      "required": ["type", "entrypoint"],
+      "properties": {
+        "type": { "type": "string", "enum": ["deterministic_unit", "ast_invariant", "property_based"] },
+        "entrypoint": { "type": "string" }
+      }
+    }
+  }
+}

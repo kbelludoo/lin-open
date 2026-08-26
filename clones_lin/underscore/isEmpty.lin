@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!isEmpty(obj){;?(obj==null){^true};length=getLength(obj);?(typeof length=='number'&&( isArray(obj)||isString(obj)||isArguments(obj) )){^length==0};^getLength(keys(obj))==0}
+=ex{isEmpty}

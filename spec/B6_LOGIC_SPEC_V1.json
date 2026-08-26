@@ -1,0 +1,106 @@
+{
+  "spec_id": "B6_LOGIC_V1",
+  "name": "Deductive Agent Capability & Policy Inference",
+  "domain": "Logic Paradigm Evaluation",
+  "version": "1.0.0",
+  "created_at": "2026-08-16T16:50:00Z",
+  "knowledge_base": {
+    "constants": {
+      "agents": ["ag_01", "ag_02", "ag_03", "ag_04", "ag_05", "ag_06", "ag_07", "ag_08", "ag_09", "ag_10"],
+      "capabilities": ["cap_read", "cap_write", "cap_audit", "cap_delegate", "cap_transform"],
+      "domains": ["dom_sandbox", "dom_isolated", "dom_gateway", "dom_nucleus"]
+    },
+    "facts": [
+      {"rel": "has_capability", "args": ["ag_01", "cap_read"]},
+      {"rel": "has_capability", "args": ["ag_01", "cap_write"]},
+      {"rel": "has_capability", "args": ["ag_01", "cap_delegate"]},
+      {"rel": "has_capability", "args": ["ag_02", "cap_read"]},
+      {"rel": "has_capability", "args": ["ag_02", "cap_transform"]},
+      {"rel": "has_capability", "args": ["ag_03", "cap_audit"]},
+      {"rel": "has_capability", "args": ["ag_04", "cap_read"]},
+      {"rel": "has_capability", "args": ["ag_04", "cap_delegate"]},
+      {"rel": "has_capability", "args": ["ag_05", "cap_transform"]},
+      {"rel": "has_capability", "args": ["ag_06", "cap_write"]},
+      {"rel": "has_capability", "args": ["ag_07", "cap_audit"]},
+      {"rel": "has_capability", "args": ["ag_08", "cap_read"]},
+      {"rel": "has_capability", "args": ["ag_09", "cap_transform"]},
+      {"rel": "has_capability", "args": ["ag_10", "cap_delegate"]},
+
+      {"rel": "in_domain", "args": ["ag_01", "dom_nucleus"]},
+      {"rel": "in_domain", "args": ["ag_02", "dom_gateway"]},
+      {"rel": "in_domain", "args": ["ag_03", "dom_isolated"]},
+      {"rel": "in_domain", "args": ["ag_04", "dom_gateway"]},
+      {"rel": "in_domain", "args": ["ag_05", "dom_sandbox"]},
+      {"rel": "in_domain", "args": ["ag_06", "dom_nucleus"]},
+      {"rel": "in_domain", "args": ["ag_07", "dom_isolated"]},
+      {"rel": "in_domain", "args": ["ag_08", "dom_sandbox"]},
+      {"rel": "in_domain", "args": ["ag_09", "dom_gateway"]},
+      {"rel": "in_domain", "args": ["ag_10", "dom_nucleus"]},
+
+      {"rel": "contract_active", "args": ["ag_01"]},
+      {"rel": "contract_active", "args": ["ag_02"]},
+      {"rel": "contract_active", "args": ["ag_04"]},
+      {"rel": "contract_active", "args": ["ag_05"]},
+      {"rel": "contract_active", "args": ["ag_06"]},
+      {"rel": "contract_active", "args": ["ag_08"]},
+      {"rel": "contract_active", "args": ["ag_09"]},
+      {"rel": "contract_active", "args": ["ag_10"]},
+
+      {"rel": "trust_edge", "args": ["ag_01", "ag_02", 4]},
+      {"rel": "trust_edge", "args": ["ag_01", "ag_04", 5]},
+      {"rel": "trust_edge", "args": ["ag_02", "ag_05", 3]},
+      {"rel": "trust_edge", "args": ["ag_04", "ag_08", 4]},
+      {"rel": "trust_edge", "args": ["ag_04", "ag_09", 2]},
+      {"rel": "trust_edge", "args": ["ag_06", "ag_01", 5]},
+      {"rel": "trust_edge", "args": ["ag_06", "ag_07", 3]},
+      {"rel": "trust_edge", "args": ["ag_07", "ag_03", 4]},
+      {"rel": "trust_edge", "args": ["ag_10", "ag_06", 4]}
+    ],
+    "rules": [
+      {
+        "head": {"rel": "direct_delegate", "args": ["?A", "?B", "?Cap"]},
+        "body": [
+          {"rel": "has_capability", "args": ["?A", "cap_delegate"]},
+          {"rel": "has_capability", "args": ["?A", "?Cap"]},
+          {"rel": "trust_edge", "args": ["?A", "?B", "?Level"], "guard": "?Level >= 3"},
+          {"rel": "contract_active", "args": ["?B"]}
+        ]
+      },
+      {
+        "head": {"rel": "chain_delegate", "args": ["?A", "?B", "?Cap"]},
+        "body": [
+          {"rel": "direct_delegate", "args": ["?A", "?B", "?Cap"]}
+        ]
+      },
+      {
+        "head": {"rel": "chain_delegate", "args": ["?A", "?C", "?Cap"]},
+        "body": [
+          {"rel": "direct_delegate", "args": ["?A", "?B", "cap_delegate"]},
+          {"rel": "chain_delegate", "args": ["?B", "?C", "?Cap"]}
+        ]
+      }
+    ]
+  },
+  "query": {
+    "goal": "chain_delegate(?Origin, ?Target, ?Cap)",
+    "ordered_projection": ["?Origin", "?Target", "?Cap"]
+  },
+  "oracle": {
+    "type": "deductive_datalog_sld_fixedpoint",
+    "description": "Exhaustive deterministic resolution with lexicographical solution sort"
+  },
+  "validation_gates": {
+    "input_integrity": "engine_input_hash == expected_input_hash",
+    "solution_correctness": "engine_result_hash == oracle_result_hash",
+    "determinism": "3_consecutive_runs_bit_identical",
+    "termination": "completes_without_infinite_loop_under_5000ms"
+  },
+  "diagnostics_metrics": [
+    "search_nodes_explored",
+    "backtrack_count",
+    "unifications_attempted",
+    "unifications_succeeded",
+    "resolution_wall_time_us",
+    "peak_memory_bytes"
+  ]
+}

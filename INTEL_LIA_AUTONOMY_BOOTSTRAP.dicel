@@ -1,0 +1,26 @@
+@DICEL:INTEL_LIA_AUTONOMY_BOOTSTRAP:1.0.0
+^date="2026-08-13"
+^status="BOOTSTRAP_GREEN"
+^repo="C:/Users/k/Documents/lia"
+^contract="spec/LIA_SUPERSEDES_DICEL.rulel"
+^spec="spec/LIA_AUTONOMY.dicel"
+
+@RUN {
+  autonomy_status: "AUTONOMY_BOOTSTRAP"
+  npm_test: "PASS"
+  multi_emit: "PASS"
+  improve: "IMPROVE_OK self_repair ACCEPTED behavior_eq=1 hash_match=true"
+  evolve: "EVOLVE_EPOCH_GREEN promote=[]"
+}
+
+@CLI {
+  improve: "lia improve"
+  evolve: "lia evolve"
+  status: "lia autonomy-status"
+}
+
+@NEXT {
+  - "candidate_compiler_patches under candidates/"
+  - "vs_dicel continuous bench"
+  - "trauma_compress→emit_rules"
+}

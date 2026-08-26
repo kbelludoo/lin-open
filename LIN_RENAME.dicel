@@ -1,0 +1,32 @@
+@DICEL:LIN_RENAME:1.0.0
+^from=["AIL","LIA"]
+^to="LIN"
+^meaning="lingua_ia_nativa"
+^repo_path="C:/Users/k/Documents/lia"
+^github="https://github.com/kbelludoo/lin"
+^folder_rename="pending_to_lin"
+^date="2026-08-13"
+
+@HEADERS {
+  emit: "@LIN:L1c:0.2"
+  dual_read: ["@LIN","@LIA","@AIL"]
+  extensions: [".lin",".lia",".ail"]
+}
+
+@CLI {
+  canonical: "lin"
+  aliases: ["lia","ail"]
+  clone: "lin clone-lin"
+  stop_loop: "Ctrl+C | --cycles N | --stop-file path"
+}
+
+@PUBLISH {
+  pattern: "clone-lin | clone-lin-<name>"
+  legacy_clone_lia: "compat_alias_only"
+}
+
+@POLICY {
+  WRITE: "LIN"
+  on_error: "FIX_COMPILER_OUTSIDE_NUCLEUS"
+  forbid: "mutate_nucleus; soft_match; fake_hash"
+}

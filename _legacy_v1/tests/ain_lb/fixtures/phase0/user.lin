@@ -1,0 +1,7 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=pay_user
+~G{?=if #=for ^=ret :else}
+!moduleRef(){^'User'}
+!effects(){^'pure'}
+!createUser(email){^({email:email,ok:1})}
+=ex{moduleRef,effects,createUser}

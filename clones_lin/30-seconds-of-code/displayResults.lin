@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!displayResults(results){this.resultsSection.innerHTML=("\r\n      "+String((((__c)=>{?(__c){return(this.createResultsHTML('Search results',results))}return('')})(results.length)))+"\r\n    ")}
+=ex{displayResults}

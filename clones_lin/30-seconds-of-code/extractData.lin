@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!extractData(){;languages=extractLanguageData(languageGlob);grammars=FileHandler.read(grammarPath);hub=FileHandler.read(hubPath);keywordData=FileHandler.read(rankingEnginePath);codeHighlighter=(((__c)=>{?(__c){return(ShikiHighlighter)}return(PrismHighlighter)})(highlighter=='shiki'));codeHighlighter.setup(grammars);MarkdownParser.setupProcessors({languages,grammars,codeHighlighter});Ranker.keywordScores=keywordData;snippets=extractSnippetData(snippetGlob,languages);collections=extractCollectionData(collectionGlob,hub);collectionSnippets=extractCollectionSnippetData( collections,snippets );^{collections,snippets,languages,collectionSnippets,hub}}
+=ex{extractData}

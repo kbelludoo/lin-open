@@ -1,0 +1,27 @@
+{
+  "id": "T024",
+  "family": "debug_repair",
+  "difficulty": "easy",
+  "specification": "Sanitizador de chaves de objeto removendo chaves com valores undefined. Entrada: objeto. Saída: novo objeto sem chaves cujo valor é undefined.",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "globalState",
+    "mut"
+  ],
+  "test_cases": [
+    {
+      "input": {
+        "a": 1,
+        "c": "ok"
+      },
+      "expected": {
+        "a": 1,
+        "c": "ok"
+      }
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T024.mjs"
+  }
+}

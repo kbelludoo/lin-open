@@ -1,0 +1,1015 @@
+@DICEL:lia_knowledge:0.4.0
+^status=ACTIVE
+^honesty=[OBSERVED,INFERRED,UNKNOWN]
+
+@ENTRIES {
+  @K001 {
+    honesty: OBSERVED
+    fact: "TS/src 453359 LOC holdout exact 183/500 (36.6%); lodash isolated 246/400 (61.5%)"
+    source: "INTEL_AIL_SIZE_DISK_BENCHMARK.dicel"
+  }
+  @K002 {
+    honesty: OBSERVED
+    fact: "lodash node test/test PASS on original; public-API toString→LIA 1/14 — NOT full suite green"
+    source: "INTEL_AIL_400K_ROUNDTRIP.dicel"
+  }
+  @K003 {
+    honesty: INFERRED
+    fact: "dominant failure class for monolith rewrite = CLOSURE / free-ref holding gap"
+    source: "trauma E001+E002"
+  }
+  @K004 {
+    honesty: OBSERVED
+    fact: "clone-lia dayjs utils: absFloor+isUndefined exact-hash PASS after arrow+ASI emitter fixes; 4/6 skipped (templates/closures)"
+    source: "INTEL_CLONE_LIA_dayjs.dicel"
+  }
+  @K005 {
+    honesty: OBSERVED
+    fact: "Math.* must not classify as host_or_module_ref; only non-builtin Capitals (e.g. C.M)"
+    source: "clone_lia_oracle unsupported()"
+  }
+
+  @K006 {
+    honesty: OBSERVED
+    fact: "Language fitness is contextual: MJS STRONG for string-heavy+regex-heavy workloads; Rust REJECTED for same"
+    source: "SELF-OPTIMIZE-01"
+    provenance: {
+      module: "content_hash"
+      workload_hash: "sha256:content_hash_10fns"
+      environment: "Node.js v24.19.0 / Windows x64"
+      benchmark_run: "2026-08-16"
+      semantic_hash_mjs: "313817cb68d86490"
+      semantic_hash_rust: "2c22aa13d84f2fc5"
+      semantic_equivalence: false
+      performance_mjs_us: 8.26
+      performance_rust_us: 110.89
+      confidence: "single_module_single_workload"
+    }
+  }
+
+  @K007 {
+    honesty: OBSERVED
+    fact: "Rust regex compilation overhead dominates string-heavy workloads; naive porting can be 13-48x slower than V8"
+    source: "SELF-OPTIMIZE-02"
+    provenance: {
+      module: "content_hash"
+      workload_type: "string_heavy + regex_heavy"
+      v1_naive_rust_us: 252.79
+      v2_optimized_rust_us: 110.89
+      mjs_baseline_us: 8.26
+      optimization_gain: "2.26x (v1→v2) but still 13x slower than MJS"
+    }
+  }
+
+  @K008 {
+    honesty: OBSERVED
+    fact: "WHEN workload: string_heavy AND regex_heavy THEN prefer candidates with strong text-processing evidence"
+    source: "SELF-OPTIMIZE-01+02 inductive"
+    type: "conditional_rule"
+  }
+
+  @K009 {
+    honesty: OBSERVED
+    fact: "Semantic equivalence must be verified BEFORE measuring performance; hash mismatch = immediate reject"
+    source: "SELF-OPTIMIZE-01"
+    type: "methodological_rule"
+  }
+
+  @K010 {
+    honesty: OBSERVED
+    fact: "Python achieves semantic equivalence with MJS for content_hash; 1.3-3.8x slower but acceptable"
+    source: "SELF-OPTIMIZE-03"
+    provenance: {
+      module: "content_hash"
+      workload_type: "string_heavy + regex_heavy"
+      mjs_baseline_us: 8.26
+      python_us: 10.96
+      semantic_match: true
+      confidence: "single_module_single_workload"
+    }
+  }
+
+  @K011 {
+    honesty: OBSERVED
+    fact: "Performance ranking for string-heavy+regex-heavy: MJS > Python > Rust"
+    source: "SELF_OPTIMIZE-03"
+    type: "conditional_rule"
+  }
+
+  @K012 {
+    honesty: OBSERVED
+    fact: "TypeScript variant faster than MJS under Node.js v24 for string-heavy workload"
+    source: "SELF_OPTIMIZE-04"
+    provenance: {
+      module: "content_hash"
+      workload_type: "string_heavy + regex_heavy"
+      typescript_us: 5.51
+      mjs_baseline_us: 8.26
+      speedup: "1.5x"
+      semantic_match: true
+      causal_explanation: "UNKNOWN — may be V8 optimization, parsing, JIT, or other factors"
+      confidence: "single_module_single_workload"
+    }
+  }
+
+  @K013 {
+    honesty: OBSERVED
+    fact: "Updated ranking: TypeScript > MJS > Python > Rust for string-heavy+regex-heavy"
+    source: "SELF_OPTIMIZE-04"
+    type: "conditional_rule"
+  }
+
+  @K014 {
+    honesty: OBSERVED
+    fact: "Rust is a Tier-1 candidate, not a proven winner; backend selection must be empirical"
+    source: "KERNEL_CANDIDATE_V1"
+    type: "architectural_rule"
+  }
+
+  @K015 {
+    honesty: OBSERVED
+    fact: "Language Discovery is a prerequisite for Kernel Candidate; environment scan before assumption"
+    source: "LIN_LANGUAGE_DISCOVERY v1.1"
+    type: "architectural_rule"
+  }
+
+  @K016 {
+    honesty: OBSERVED
+    fact: "Multi-backend architecture is a valid and potentially optimal outcome"
+    source: "KERNEL_CANDIDATE_V1"
+    type: "architectural_rule"
+  }
+
+  @K017 {
+    honesty: OBSERVED
+    fact: "Crystal discovered via environment scan; binary exists as ELF (Linux), recompiled for Windows"
+    source: "END_TO_END_CRYSTAL_01"
+    type: "discovery_record"
+  }
+
+  @K018 {
+    honesty: OBSERVED
+    fact: "Crystal semantic hash algorithm differs from MJS; semantic_equivalence = false; performance comparison is diagnostic only, not valid ranking"
+    source: "END_TO_END_CRYSTAL_01"
+    type: "methodological_rule"
+    provenance: {
+      module: "content_hash"
+      workload_hash: "sha256:content_hash_10fns"
+      environment: "Node.js v24.19.0 / Crystal 1.21.0 / Windows x64"
+      benchmark_run: "2026-08-16"
+      semantic_hash_crystal: "86b480eb51280f0a"
+      semantic_hash_mjs: "313817cb68d86490"
+      semantic_equivalence: false
+      performance_crystal_us: 49039.74
+      performance_typescript_us: 5.51
+      interpretation: "semantic_fail_blocks_valid_ranking; performance is diagnostic_only"
+      confidence: "single_module_single_workload"
+    }
+  }
+
+  @K019 {
+    honesty: OBSERVED
+    fact: "Crystal REJECTED for string_heavy + regex_heavy: semantic mismatch blocks valid ranking; 8,900x slower is diagnostic only"
+    source: "END_TO_END_CRYSTAL_01"
+    type: "conditional_rule"
+  }
+
+  @K020 {
+    honesty: OBSERVED
+    fact: "semantic_equivalence = FAIL enters semantic_repair_loop; if repaired → benchmark valid; if budget exhausted → diagnostic only"
+    source: "SEMANTIC_REPAIR_LOOP"
+    type: "methodological_rule"
+  }
+
+  @K021 {
+    honesty: OBSERVED
+    fact: "LANGUAGE_DISCOVERY can find languages not in knowledge base, profile them, and produce evidence"
+    source: "END_TO_END_CRYSTAL_01"
+    type: "architectural_rule"
+  }
+
+  @K022 {
+    honesty: OBSERVED
+    fact: "Semantic repair loop: mismatch → diagnose → classify → repair → verify; oracle immutable, candidate mutable"
+    source: "SEMANTIC_REPAIR_LOOP"
+    type: "architectural_rule"
+  }
+
+  @K023 {
+    honesty: OBSERVED
+    fact: "Repair budget: max 3 iterations, max 60s time; terminate with REJECTED_AFTER_BUDGET if exceeded"
+    source: "SEMANTIC_REPAIR_LOOP"
+    type: "methodological_rule"
+  }
+
+  @K024 {
+    honesty: OBSERVED
+    fact: "Repair chain is fully auditable: each iteration records candidate_hash_before, repair_applied, candidate_hash_after, semantic_hash_after, repair_diff_hash"
+    source: "SEMANTIC_REPAIR_LOOP v1.1"
+    type: "architectural_rule"
+  }
+
+  @K025 {
+    honesty: OBSERVED
+    fact: "Repair chain includes environment_hash and oracle_version_hash for cross-environment reproducibility"
+    source: "SEMANTIC_REPAIR_LOOP v1.1"
+    type: "architectural_rule"
+  }
+
+  @K026 {
+    honesty: OBSERVED
+    fact: "Repair iterations form a verifiable chain via parent_iteration_hash linking"
+    source: "SEMANTIC_REPAIR_LOOP v1.1"
+    type: "architectural_rule"
+  }
+
+  @K027 {
+    honesty: OBSERVED
+    fact: "Mismatch taxonomy enables learning repair strategies by error class: whitespace→normalize, ordering→sort, regex→dialect compatibility"
+    source: "SEMANTIC_REPAIR_LOOP v1.1"
+    type: "knowledge_rule"
+  }
+
+  @K028 {
+    honesty: OBSERVED
+    fact: "Repair strategy from Crystal (hashing_algorithm → SHA-256 canonicalization) successfully applied to Python; cross-language strategy reuse validated"
+    source: "REPAIR_LEARNING_01"
+    type: "learning_rule"
+    provenance: {
+      source_language: "Crystal",
+      target_language: "Python",
+      mismatch_class: "hashing_algorithm",
+      strategy: "implement SHA-256 canonicalization matching MJS algorithm",
+      initial_result_hash: "526c5da276d5cb73",
+      expected_result_hash: "8e590c4638786070",
+      final_result_hash: "8e590c4638786070",
+      semantic_match: true,
+      iterations_used: 1,
+      confidence: "single_case_single_workload"
+    }
+  }
+
+  @K029 {
+    honesty: OBSERVED
+    fact: "Repair strategy learning is reusable across languages: strategy extracted from one language can repair another language's implementation"
+    source: "REPAIR_LEARNING_01"
+    type: "architectural_rule"
+  }
+
+  @K030 {
+    honesty: OBSERVED
+    fact: "Crystal SHA-256 canonicalization strategy successfully applied to Python AND TypeScript; transfer_success_rate = 1.00 (2/2 tested); portability_coverage = 0.67 (2/3 total)"
+    source: "REPAIR_LEARNING_02"
+    type: "learning_rule"
+    provenance: {
+      source_language: "Crystal",
+      target_languages: ["Python", "TypeScript", "Rust"],
+      strategy: "implement SHA-256 canonicalization matching MJS algorithm",
+      mismatch_class: "hashing_algorithm",
+      tested_targets: 2,
+      successful_transfers: 2,
+      transfer_success_rate: 1.00,
+      blocked_targets: 1,
+      blocked_reason: "TOOLCHAIN_UNAVAILABLE",
+      portability_coverage: 0.67,
+      confidence: "multi_target_single_workload"
+    }
+  }
+
+  @K031 {
+    honesty: OBSERVED
+    fact: "Repair strategy SHA-256 canonicalization transferred successfully to Python and TypeScript; Rust transfer not established due to toolchain unavailability"
+    source: "REPAIR_LEARNING_02"
+    type: "conditional_rule"
+  }
+
+  @K032 {
+    honesty: OBSERVED
+    fact: "BLOCKED_BY_ENVIRONMENT is distinct from REPAIR_FAILED; toolchain unavailability does not indicate semantic incapacity"
+    source: "REPAIR_LEARNING_02"
+    type: "methodological_rule"
+  }
+
+  @K033 {
+    honesty: OBSERVED
+    fact: "Repair knowledge begins to decouple from source language: SHA-256 canonicalization is a causal semantic transformation, not a Crystal-specific repair"
+    source: "REPAIR_LEARNING_02"
+    type: "architectural_rule"
+  }
+
+  @K034 {
+    honesty: OBSERVED
+    fact: "Multi-dimensional state structure prevents false conclusions: availability × execution × semantic × repair × benchmark"
+    source: "REPAIR_LEARNING_02"
+    type: "methodological_rule"
+  }
+
+  @K035 {
+    honesty: OBSERVED
+    fact: "Crypto call is the dominant factor in content_hash: ~2.5 µs out of ~4.5 µs total (55-60%)"
+    source: "EXPLANATION_TS_MJS_V1"
+    type: "performance_rule"
+    provenance: {
+      workload: "content_hash",
+      components: {
+        crypto_call: {cjs: 2.54, mjs: 2.54, ts: 2.62},
+        regex_execution: {cjs: 1.12, mjs: 1.22, ts: 1.19},
+        serialization: {cjs: 0.34, mjs: 0.32, ts: 0.35},
+        buffer_conversion: {cjs: 0.31, mjs: 0.38, ts: 0.31},
+        string_creation: {cjs: 0.21, mjs: 0.19, ts: 0.20}
+      },
+      full_pipeline: {cjs: 4.43, mjs: 4.93, ts: 4.28},
+      dominant_factor: "crypto_call",
+      confidence: "controlled_experiment"
+    }
+  }
+
+  @K036 {
+    honesty: OBSERVED
+    fact: "After controlled decomposition, TS/MJS difference dropped to ~15%; dominant cost was crypto call; residual difference remains compatible with runtime/JIT overhead, without definitive causal attribution"
+    source: "EXPLANATION_TS_MJS_V1"
+    type: "correction_rule"
+  }
+
+  @K037 {
+    honesty: OBSERVED
+    fact: "Optimization priority follows Amdahl-like rule: prioritize components proportional to fraction of total time × potential gain"
+    source: "EXPLANATION_TS_MJS_V1"
+    type: "optimization_rule"
+    provenance: {
+      dominant_component: "crypto_call",
+      dominant_fraction: "55-60%",
+      implication: "optimizing regex/string/serialization has limited return",
+      confidence: "controlled_experiment"
+    }
+  }
+
+  @K038 {
+    honesty: OBSERVED
+    fact: "LIN auto-prioritizer produces experiment rankings from knowledge gaps; PRIORITY_ACCURACY = 0.67 against independent oracle"
+    source: "KNOWLEDGE_GAP_AUTOPRIORITY_01"
+    type: "methodological_rule"
+    provenance: {
+      system_top_3: ["GAP002_Nim", "GAP003_Zig", "GAP005_Cplusplus"],
+      oracle_top_3: ["GAP002_Nim", "GAP003_Zig", "GAP004_Lua"],
+      matches: 2,
+      total: 3,
+      priority_accuracy: 0.67,
+      discovery_yield: 0.38,
+      confidence: "single_experiment"
+    }
+  }
+
+  @K039 {
+    honesty: OBSERVED
+    fact: "LIN can generate its own experimental agenda from knowledge gaps, not just follow manually assigned experiments"
+    source: "KNOWLEDGE_GAP_AUTOPRIORITY_01"
+    type: "architectural_rule"
+  }
+
+  @K040 {
+    honesty: OBSERVED
+    fact: "Current highest-priority knowledge gaps: Nim, Zig, Cplusplus (no evidence yet); Multi_target and Repair_Learning partially resolved"
+    source: "KNOWLEDGE_GAP_AUTOPRIORITY_01"
+    type: "status_record"
+  }
+
+  @K041 {
+    honesty: OBSERVED
+    fact: "Prioritizer learns from feedback: rank correlation improved from 0.9048 to 0.9524 after weight updates; architectural_relevance penalized, other dimensions boosted"
+    source: "KNOWLEDGE_GAP_AUTOPRIORITY_02"
+    type: "learning_rule"
+    provenance: {
+      initial_weights: {impact: 0.25, uncertainty: 0.25, information_gain: 0.25, relevance: 0.25},
+      final_weights: {impact: 0.330, uncertainty: 0.330, information_gain: 0.330, relevance: 0.057},
+      rank_correlation_improvement: 0.0476,
+      priority_correlation_learning_rate: 0.0238,
+      weight_convergence: false,
+      confidence: "single_experiment"
+    }
+  }
+
+  @K042 {
+    honesty: OBSERVED
+    fact: "Binary accuracy metric insufficient for learning evaluation; rank correlation (Spearman's rho) captures finer-grained ranking improvements"
+    source: "KNOWLEDGE_GAP_AUTOPRIORITY_02"
+    type: "methodological_rule"
+  }
+
+  @K043 {
+    honesty: OBSERVED
+    fact: "LIN representation of ms library produces functionally equivalent code with 100% test pass rate and near-identical performance"
+    source: "REAL_REPO_TRANSLATION_AND_OPTIMIZATION_V1"
+    type: "validation_rule"
+    provenance: {
+      repository: "vercel/ms",
+      language: "TypeScript",
+      loc: 244,
+      tests: 167,
+      test_pass_rate: "100%",
+      parse_performance_ratio: 1.04,
+      format_performance_ratio: 0.98,
+      correctness: "equivalent",
+      confidence: "real_world_single_repo"
+    }
+  }
+
+  @K044 {
+    honesty: OBSERVED
+    fact: "LIN → TypeScript compilation preserves functional equivalence; parse is 4% slower, format is 2% faster (within noise)"
+    source: "REAL_REPO_TRANSLATION_AND_OPTIMIZATION_V1"
+    type: "compilation_rule"
+  }
+
+  @K045 {
+    honesty: OBSERVED
+    fact: "Cross-language semantic divergence detected: round(-1.5) = -1 in JS (toward +∞), -2 in Python (bankers rounding). Parse: 17/17 PASS. Format: 9/10 PASS (96.3%). The 1 FAIL is a runtime semantic divergence, not a bug."
+    source: "REAL_REPO_CROSS_LANGUAGE_V1"
+    type: "semantic_divergence_discovery"
+    invariant: "OPERATOR_SEMANTIC_EXPLICITNESS_REQUIRED"
+    detail: {
+      operation: "ROUND"
+      input: -1.5
+      python_result: -2
+      python_semantics: "bankers_round ties_to_even"
+      javascript_result: -1
+      javascript_semantics: "round_toward_positive_infinity"
+      impact: "LIN cannot assume identical operator semantics across runtimes"
+      required_action: "LIN must carry explicit runtime semantic contracts, not just AST"
+    }
+    provenance: {
+      module: "ms_library"
+      source_language: "TypeScript (ms by vercel)"
+      target_languages: ["Python", "TypeScript"]
+      test_cases_total: 27
+      parse_matches: 17
+      format_matches: 9
+      divergence_category: "runtime_semantic"
+      performance_python_parse_us: 1.40
+      performance_ts_parse_us: 0.26
+      performance_python_format_us: 0.72
+      performance_ts_format_us: 0.02
+      benchmark_run: "2026-08-16"
+    }
+  }
+
+  @K046 {
+    honesty: INFERRED
+    fact: "Semantic IR requires runtime contracts. AST equivalente ≠ comportamento equivalente. ROUND(x) must carry strategy, tie_behavior, overflow_behavior, target_runtime_constraints."
+    source: "K045 + analysis"
+    type: "design_constraint"
+    implication: "LIN-IR cannot be AST-level. It must be semantic-graph-level with explicit runtime contract annotations."
+  }
+
+  @K047 {
+    honesty: INFERRED
+    fact: "Cross-language compilation requires operator normalization layer. Without it, LIN produces code that is syntactically correct but semantically divergent."
+    source: "K045 + K046"
+    type: "architecture_requirement"
+    invariant: "OPERATOR_NORMALIZATION_LAYER_REQUIRED"
+    detail: {
+      problem: "round(-1.5) in Python becomes Math.round(-1.5) in JS — same AST, different semantics"
+      solution: "LIN must normalize operators to canonical semantic form before emitting to target"
+      canonical_form: "ROUND(value, strategy=EXPLICIT)"
+      emitter Responsibility: "map canonical form to target-native implementation"
+    }
+  }
+
+  @K048 {
+    honesty: OBSERVED
+    fact: "LIN current state: Semantic IR + Contract-Carrying Transpiler. NOT universal autonomous compiler. Evidence: AST ingestion ✅, structural preservation ✅, type/contract extraction partial ✅, cross-language emission ✅ in controlled cases, runtime semantic preservation 🟡 beginning, autonomous architecture change 🟡 needs evidence, general software evolution ❌ not proven."
+    source: "V3 + all prior benchmarks"
+    type: "state_assessment"
+    maturity_map: {
+      ast_ingestion: "STRONG"
+      structural_preservation: "STRONG"
+      type_contract_extraction: "PARTIAL"
+      cross_language_emission: "STRONG_controlled_cases"
+      runtime_semantic_preservation: "BEGINNING"
+      autonomous_architecture_change: "UNPROVEN"
+      general_software_evolution: "UNPROVEN"
+    }
+    honest_position: "Semantic IR + Contract-Carrying Transpiler"
+    not_yet_proven: "Autonomous software engineering agent"
+  }
+
+  @K049 {
+    honesty: INFERRED
+    fact: "Next decisive test: not more translation (Python→Rust already explored), but autonomous architecture modification on unknown real repo. Test: unknown real repo → LIN discovers model → LIN modifies architecture → humans only approve → tests prove equivalence."
+    source: "K048 analysis"
+    type: "milestone_definition"
+    test_description: "REAL_AUTONOMOUS_ENGINEERING_AGENT_V1"
+    separates: "advanced compiler FROM autonomous engineering agent"
+    requires: [
+      "implicit requirement discovery",
+      "emergent architecture",
+      "large codebase navigation",
+      "semantic decisions without written contracts"
+    ]
+  }
+
+  @K050 {
+    honesty: OBSERVED
+    fact: "Evolution cycle discovered in K045: failure_found → contract_created → benchmark_updated → capability_increased. This is the same pattern needed for K049. Each failure makes LIN stronger, not weaker."
+    source: "K045→K047→V3 pattern analysis"
+    type: "meta_pattern"
+    cycle: {
+      step_1: "failure_found (e.g. round(-1.5) divergence)",
+      step_2: "contract_created (e.g. OPERATOR_SEMANTIC_EXPLICITNESS_REQUIRED)",
+      step_3: "benchmark_updated (e.g. V3 reverse validation)",
+      step_4: "capability_increased (e.g. drift_score=0.00)"
+    }
+    applies_to: "K049 engineering agent development"
+    insight: "Each discovered limit becomes a new contract, which becomes a new benchmark, which increases capability. Failures are features."
+  }
+
+  @K051 {
+    honesty: INFERRED
+    fact: "An engineering agent must prove 6 separate capabilities: (1) codebase understanding MODEL_ACCURACY, (2) problem discovery FINDING_PRECISION, (3) architectural change BEHAVIOR_PRESERVATION, (4) knowing when NOT to change FALSE_OPTIMIZATION_RATE, (5) uncertainty calibration UNCERTAINTY_CALIBRATION, (6) explanation fidelity EXPLANATION_FIDELITY."
+    source: "K049 + V4 protocol"
+    type: "capability_framework"
+    status: "FROZEN"
+    capabilities: {
+      capability_1: {
+        name: "codebase_understanding"
+        metric: "MODEL_ACCURACY"
+        test_repo: "small (~5k LOC)"
+      }
+      capability_2: {
+        name: "problem_discovery"
+        metric: "FINDING_PRECISION"
+        test_repo: "medium (~20k LOC)"
+      }
+      capability_3: {
+        name: "architectural_change"
+        metric: "BEHAVIOR_PRESERVATION"
+        test_repo: "medium (~20k LOC)"
+      }
+      capability_4: {
+        name: "knowing_when_not_to_change"
+        metric: "FALSE_OPTIMIZATION_RATE"
+        test_repo: "large (~100k LOC)"
+      }
+      capability_5: {
+        name: "uncertainty_calibration"
+        metric: "UNCERTAINTY_CALIBRATION"
+        test_repo: "all repos"
+      }
+      capability_6: {
+        name: "explanation_fidelity"
+        metric: "EXPLANATION_FIDELITY"
+        test_repo: "all repos"
+      }
+    }
+  }
+
+  @K052 {
+    honesty: OBSERVED
+    fact: "V4-B FINDING_PRECISION: precision=0.78 (target >= 0.80), recall=0.58, FPR=0.20. Failure mode = coverage_bias, not decision error. Agent found 7/12 bugs: strong on prototype_pollution (5/6), weak on ssrf (0/1), header_injection (0/1), input_validation (0/1), resource_exhaustion (0/1). Zero high-impact false positives. Zero unsupported fix proposals."
+    source: "V4-B evaluation on axios@v1.14.0"
+    type: "benchmark_result"
+    metrics: {
+      precision: 0.78
+      recall: 0.58
+      false_positive_rate: 0.20
+      escalation_rate: 0.10
+      high_impact_false_positives: 0
+      unsupported_fix_proposals: 0
+    }
+    failure_mode: "coverage_bias"
+    diagnosis: "Agent over-indexed on prototype pollution pattern and neglected data flow analysis through external inputs (URLs, headers, events). The agent did not say wrong things — it missed paths."
+    key_insight: "Precision alone can hide blindness. A scanner that finds 7/12 bugs with 0 FP is less useful than one that finds 10/12 with 2 FP."
+    evolution_stage: "decision_conservative"
+  }
+
+  @K053 {
+    honesty: INFERRED
+    fact: "The transition from pattern-driven to system-model-driven analysis is required to close the coverage gap. Pattern-driven: file → pattern match → finding. System-model-driven: repository_model → entry_points → trust_boundaries → data_flows → candidate_risks → probe_evaluation. The probe changes from detector to hypothesis verifier."
+    source: "V4-B diagnosis + V4-B.1 spec"
+    type: "architectural_insight"
+    transition: {
+      before: "pattern_matching"
+      after: "semantic_flow_reasoning"
+    }
+    probe_role_change: {
+      before: "detector"
+      after: "hypothesis_verifier_generated_by_model"
+    }
+    required_artifacts: [
+      "trust_boundary_model",
+      "data_flow_graph",
+      "coverage_metrics"
+    ]
+    evolution_stage: "first_step_toward_engineering_judgment"
+  }
+
+  @K054 {
+    honesty: INFERRED
+    fact: "Flow Discovery Recall separates discovery failure from reasoning failure. Discovery failure: source → ??? → sink (agent didn't find the flow). Reasoning failure: source → transform → sink (agent found the flow but didn't classify as risk). Low FDR = modeling problem. High FDR + low Finding Recall = reasoning problem."
+    source: "V4-B.1 protocol design"
+    type: "diagnostic_framework"
+    metric: {
+      name: "flow_discovery_recall"
+      formula: "discovered_flows / oracle_flows"
+      purpose: "Distinguish 'agent can't see the flow' from 'agent sees the flow but misjudges the risk'"
+    }
+    diagnostic_interpretation: {
+      low_fdr: "modeling problem — agent doesn't discover flows"
+      high_fdr_low_finding_recall: "reasoning problem — agent discovers flows but misclassifies risk"
+      high_fdr_high_finding_recall: "agent is both modeler and judge — target state"
+    }
+    execution_phases: {
+      phase_1: {
+        name: "system_model_construction"
+        output: "sources, sinks, flows, trust boundaries"
+        metric: "flow_discovery_recall"
+      }
+      phase_2: {
+        name: "probe_execution_on_graph"
+        output: "risk candidates with path, boundary, missing guard"
+        metric: "intervention_precision"
+      }
+      phase_3: {
+        name: "intervention_decision"
+        output: "CONFIRMED / FALSE_POSITIVE / NEEDS_REVIEW"
+        metric: "finding_recall"
+      }
+    }
+    frozen_protocol: {
+      repository: "axios@v1.14.0"
+      oracle: "v4_b_oracle.json"
+      vulnerability_classes: "7 classes"
+      trust_model_schema: "v4_b1_trust_boundary_model.json"
+      forbidden: "adding_bug_specific_rules"
+    }
+    evolution_stage: "operational_model_before_intervention"
+  }
+
+  @K055 {
+    honesty: OBSERVED
+    fact: "V4-B.1 system-model-driven analysis achieves perfect recall (1.00) and oracle precision (1.00) on axios@v1.14.0. All 12 oracle bugs confirmed. flow_discovery_recall = 1.00 (7/7 oracle flows discovered). Overall precision across all findings = 0.67 (14 confirmed / 24 total). 8 false positives from non-oracle flows — legitimate safety classifications of extra system model flows."
+    source: "V4-B.1 execution on axios@v1.14.0"
+    type: "benchmark_result"
+    metrics: {
+      flow_discovery_recall: 1.00
+      oracle_precision: 1.00
+      oracle_recall: 1.00
+      overall_precision: 0.67
+      false_positive_rate: 0.33
+      confirmed_findings: 14
+      false_positive_findings: 8
+      needs_review_findings: 3
+      oracle_bugs_confirmed: 12
+      oracle_bugs_missed: 0
+    }
+    comparison_with_v4b: {
+      v4b_recall: 0.58
+      v4b1_recall: 1.00
+      v4b_oracle_precision: 0.78
+      v4b1_oracle_precision: 1.00
+      improvement: "system model approach found all flows that V4-B missed"
+    }
+    root_cause: "V4-B analyzed files by pattern interest; V4-B.1 analyzed by trust boundary traversal. System model forced coverage of all data paths."
+    scenario: "A"
+    evolution_stage: "modeling_complete_reasoning_tested"
+  }
+
+  @K056 {
+    honesty: OBSERVED
+    fact: "FPR in V4-B.1 is inflated by mixing three distinct categories: (1) analytical_fp = risk declared without evidence (true error), (2) exploration_candidate = flow found, risk discarded (correct classification), (3) benign_flow = legitimate behavior modeled (correct classification). Categories 2 and 3 are not errors — they are the agent correctly identifying that a flow is safe. A human engineer also finds paths that are not bugs."
+    source: "User analysis of V4-B.1 FPR=0.33"
+    type: "metric_refinement"
+    fp_split: {
+      analytical_fp: "risk declared without evidence — true error"
+      exploration_candidate: "flow found, risk discarded — correct classification"
+      benign_flow: "legitimate behavior modeled — correct classification"
+    }
+    implication: "Standard precision/FPR metrics conflate 'I was wrong' with 'I found something safe'. For model-based agents, FPR should exclude exploration_candidate and benign_flow."
+    v4_b1_reclassification: {
+      analytical_fp: 0
+      exploration_candidate: 3
+      benign_flow: 5
+      adjusted_fpr: "0.00 (no analytical errors)"
+    }
+  }
+
+  @K057 {
+    honesty: INFERRED
+    fact: "The V4-B → V4-B.1 jump shows the bottleneck was not reasoning capacity but absence of adequate intermediate representation. Pattern detection cannot discover flows it doesn't trace. System model provides the missing representation. This suggests future metrics should measure System Understanding, not just bug detection."
+    source: "User analysis of V4-B vs V4-B.1 architecture"
+    type: "architectural_insight"
+    proposed_metric: {
+      name: "System_Understanding_Score"
+      components: {
+        flow_reconstruction: "discovered_expected_flows / oracle_expected_flows"
+        risk_classification: "correctly_classified_flows / analyzed_flows"
+        intervention_quality: "accepted_actions / proposed_actions"
+      }
+    }
+    baseline_architecture: {
+      v4_b: "pattern_detection → finding → decision"
+      v4_b1: "system_model → source/sink/trust_boundary_graph → flow_analysis → risk_classification → decision"
+    }
+    conclusion: "V4-B.1 demonstrates the agent transitioned from pattern matching to model-based analysis. The next test is whether the model supports generalization to unseen vulnerability classes."
+  }
+
+  @K058 {
+    honesty: OBSERVED
+    fact: "V4-C UNKNOWN FLOW GENERALIZATION: Agent found ReDoS (CVE-2024-45296) in path-to-regexp@6.3.0 — a vulnerability class NEVER seen in V4-B training. Generalization score = 1.00. The agent identified the root cause (negative lookahead + lazy quantifier = exponential backtracking) through pure system model analysis without any vulnerability-specific rules. This confirms the agent transitioned from pattern matching to model-based analysis."
+    source: "V4-C execution on path-to-regexp@6.3.0"
+    type: "benchmark_result"
+    metrics: {
+      generalization_score: 1.00
+      oracle_recall: 1.00
+      analytical_precision: 1.00
+      analytical_fpr: 0.00
+      novel_vulnerability_class: "redos"
+      overlap_with_v4b: "NONE"
+    }
+    key_finding: "Agent identified TB-1 (path → regex structure) and TB-2 (pathname → regex execution time) as critical trust boundaries. Missing guard: safePattern() does not analyze computational complexity of generated regex."
+    scenario: "A"
+    evolution_stage: "generalization_confirmed"
+  }
+}
+
+@LANGUAGE_FITNESS {
+  description: "Contextual fitness based on empirical evidence. UNKNOWN = no evidence yet. REJECTED = evidence against."
+  
+  @TypeScript {
+    string_heavy: STRONG
+    regex_heavy: STRONG
+    CPU_bound: UNKNOWN
+    graph_heavy: UNKNOWN
+    numerical: UNKNOWN
+    embedding: UNKNOWN
+    evidence: [K012, K013]
+    tested_workloads: [string_heavy, regex_heavy]
+    untested_workloads: [CPU_bound, graph_heavy, numerical, embedding]
+  }
+  @MJS {
+    string_heavy: STRONG
+    regex_heavy: STRONG
+    CPU_bound: UNKNOWN
+    graph_heavy: UNKNOWN
+    numerical: UNKNOWN
+    embedding: UNKNOWN
+    evidence: [K006, K007]
+    tested_workloads: [string_heavy, regex_heavy]
+    untested_workloads: [CPU_bound, graph_heavy, numerical, embedding]
+  }
+  @Python {
+    string_heavy: MEDIUM
+    regex_heavy: MEDIUM
+    CPU_bound: UNKNOWN
+    graph_heavy: UNKNOWN
+    numerical: UNKNOWN
+    embedding: UNKNOWN
+    evidence: [K010, K011]
+    tested_workloads: [string_heavy, regex_heavy]
+    untested_workloads: [CPU_bound, graph_heavy, numerical, embedding]
+  }
+  @Rust {
+    string_heavy: REJECTED
+    regex_heavy: REJECTED
+    CPU_bound: UNKNOWN
+    graph_heavy: UNKNOWN
+    numerical: UNKNOWN
+    embedding: UNKNOWN
+    evidence: [K006, K007]
+    tested_workloads: [string_heavy, regex_heavy]
+    untested_workloads: [CPU_bound, graph_heavy, numerical, embedding]
+    rejection_reason: "semantic_mismatch + performance_regression"
+  }
+  @Crystal {
+    string_heavy: REJECTED
+    regex_heavy: REJECTED
+    CPU_bound: UNKNOWN
+    graph_heavy: UNKNOWN
+    numerical: UNKNOWN
+    embedding: UNKNOWN
+    evidence: [K018, K019]
+    tested_workloads: [string_heavy, regex_heavy]
+    untested_workloads: [CPU_bound, graph_heavy, numerical, embedding]
+    note: "Semantic hash algorithm differs; 8900x slower than TypeScript for content_hash"
+  }
+  @Nim {
+    string_heavy: UNKNOWN
+    regex_heavy: UNKNOWN
+    CPU_bound: UNKNOWN
+    graph_heavy: UNKNOWN
+    numerical: UNKNOWN
+    embedding: UNKNOWN
+    evidence: []
+    tested_workloads: []
+    untested_workloads: [string_heavy, regex_heavy, CPU_bound, graph_heavy, numerical, embedding]
+    note: "compiler not installed"
+  }
+  @Zig {
+    string_heavy: UNKNOWN
+    regex_heavy: UNKNOWN
+    CPU_bound: UNKNOWN
+    graph_heavy: UNKNOWN
+    numerical: UNKNOWN
+    embedding: UNKNOWN
+    evidence: []
+    tested_workloads: []
+    untested_workloads: [string_heavy, regex_heavy, CPU_bound, graph_heavy, numerical, embedding]
+    note: "compiler not installed"
+  }
+  @Cplusplus {
+    string_heavy: UNKNOWN
+    regex_heavy: UNKNOWN
+    CPU_bound: UNKNOWN
+    graph_heavy: UNKNOWN
+    numerical: UNKNOWN
+    embedding: UNKNOWN
+    evidence: []
+    tested_workloads: []
+    untested_workloads: [string_heavy, regex_heavy, CPU_bound, graph_heavy, numerical, embedding]
+    note: "build toolchain not configured"
+  }
+  @Lua {
+    string_heavy: UNKNOWN
+    regex_heavy: UNKNOWN
+    CPU_bound: UNKNOWN
+    graph_heavy: UNKNOWN
+    numerical: UNKNOWN
+    embedding: UNKNOWN
+    evidence: []
+    tested_workloads: []
+    untested_workloads: [string_heavy, regex_heavy, CPU_bound, graph_heavy, numerical, embedding]
+    note: "interpreter not installed"
+  }
+  @OCaml {
+    string_heavy: UNKNOWN
+    regex_heavy: UNKNOWN
+    CPU_bound: UNKNOWN
+    graph_heavy: UNKNOWN
+    numerical: UNKNOWN
+    embedding: UNKNOWN
+    evidence: []
+    tested_workloads: []
+    untested_workloads: [string_heavy, regex_heavy, CPU_bound, graph_heavy, numerical, embedding]
+    note: "compiler not installed"
+  }
+}
+
+@KNOWLEDGE_GAPS {
+  description: "UNKNOWN entries that could reduce uncertainty through experimentation"
+  
+  @GAP001 {
+    language: "Crystal",
+    unknown_workloads: [CPU_bound, graph_heavy, numerical, embedding],
+    priority: "LOW",
+    reason: "REJECTED for string_heavy + regex_heavy; semantic mismatch; 8900x slower than TypeScript",
+    proposed_experiment: "EXPAND_CRYSTAL_02",
+    estimated_cost: "MEDIUM (need to fix semantic hash algorithm)",
+    installation: "lin_crystal/lin_cli_win.exe already available"
+  }
+  
+  @GAP002 {
+    language: "Nim",
+    unknown_workloads: [string_heavy, regex_heavy, CPU_bound, graph_heavy, numerical, embedding],
+    priority: "MEDIUM",
+    reason: "Compile-to-C with metaprogramming; no evidence yet",
+    proposed_experiment: "EXPAND_NIM_01",
+    estimated_cost: "MEDIUM (compiler install required)",
+    installation: "nimble install nim OR choco install nim"
+  }
+  
+  @GAP003 {
+    language: "Zig",
+    unknown_workloads: [string_heavy, regex_heavy, CPU_bound, graph_heavy, numerical, embedding],
+    priority: "MEDIUM",
+    reason: "Comptime + manual memory management; interesting for systems workloads",
+    proposed_experiment: "EXPAND_ZIG_01",
+    estimated_cost: "MEDIUM (compiler install required)",
+    installation: "zig download from ziglang.org"
+  }
+  
+  @GAP004 {
+    language: "Lua",
+    unknown_workloads: [string_heavy, regex_heavy, CPU_bound, graph_heavy, numerical, embedding],
+    priority: "LOW",
+    reason: "Embedding-friendly but limited standard library",
+    proposed_experiment: "DISCOVERY_01",
+    estimated_cost: "LOW (interpreter install)",
+    installation: "choco install lua OR luajit from luajit.org"
+  }
+  
+  @GAP005 {
+    language: "Cplusplus",
+    unknown_workloads: [string_heavy, regex_heavy, CPU_bound, graph_heavy, numerical, embedding],
+    priority: "LOW",
+    reason: "Industrial-grade but complex; defer until specific need",
+    proposed_experiment: "EXPAND_CPP_01",
+    estimated_cost: "HIGH (complex build toolchain)",
+    installation: "Visual Studio Build Tools or MinGW"
+  }
+
+  @GAP006 {
+    category: "runtime_semantic_contracts",
+    unknown_operators: ["ROUND", "INTEGER_DIVISION", "OVERFLOW", "UNICODE_NORMALIZATION", "TIMEZONE", "REGEX", "EXCEPTIONS", "FLOAT_NAN", "MAP_ORDERING"],
+    priority: "HIGH",
+    reason: "K045 discovered round() divergence; other operators likely diverge too",
+    proposed_experiment: "REAL_REPO_CROSS_LANGUAGE_V2",
+    estimated_cost: "HIGH (requires systematic operator-by-operator testing across runtimes)",
+    invariant_triggered: "OPERATOR_SEMANTIC_EXPLICITNESS_REQUIRED"
+  }
+}
+
+@INVARIANTS {
+  description: "Invariants derived from experimental evidence. These are mandatory constraints on LIN design."
+
+  @INV001 {
+    id: "OPERATOR_SEMANTIC_EXPLICITNESS_REQUIRED"
+    derived_from: "K045"
+    statement: "LIN must represent operator semantics explicitly with runtime contracts. ROUND(x) must specify strategy=bankers|ieee754|toward_positive_infinity. LIN cannot assume identical operator behavior across target runtimes."
+    scope: "all_cross_language_compilation"
+    enforcement: "LIN-IR must reject operators without explicit semantic_contract annotation when emitting to multiple targets"
+  }
+
+  @INV002 {
+    id: "OPERATOR_NORMALIZATION_LAYER_REQUIRED"
+    derived_from: "K047"
+    statement: "LIN must normalize operators to canonical semantic form before emitting to target. round(-1.5) in Python must become ROUND(value, strategy=bankers) in LIN, then emit as Python-native round() or JS-native custom function depending on target."
+    scope: "cross_language_emission"
+    enforcement: "LIN emitter must map canonical operator to target-native implementation; cannot blindly copy AST"
+  }
+
+  @INV003 {
+    id: "ROUND_TRIP_SEMANTIC_CONSERVATION"
+    derived_from: "K045 analysis"
+    statement: "Given source program P: Transform P → LIN → Target → LIN. Requirement: Intent(P) == Intent(recovered(P)). A true semantic IR conserves intent through foreign runtime passage."
+    scope: "IR_fidelity_test"
+    enforcement: "If Intent(P) ≠ Intent(recovered(P)), LIN is a transpiler, not a semantic compiler. Drift must be measured, not just detected."
+    metric: "SEMANTIC_DRIFT_SCORE = distance(original_intent, recovered_intent)"
+  }
+
+  @INV004 {
+    id: "FALSE_POSITIVE_DECOMPOSITION"
+    derived_from: "K056 analysis"
+    statement: "For model-based agents, FPR must decompose into: (1) analytical_fp (true error), (2) exploration_candidate (correct safety classification), (3) benign_flow (correct behavior modeling). Only analytical_fp counts as agent error. Standard FPR conflates 'I was wrong' with 'I found something safe'."
+    scope: "metric_design"
+    enforcement: "When evaluating model-based analysis agents, report analytical_fpr separately from exploration_fpr. Acceptance criteria should target analytical_fpr, not total_fpr."
+    metric: "ANALYTICAL_FPR = analytical_fp / (confirmed + analytical_fp)"
+  }
+}
+
+@EXPERIMENT_SCHEDULE {
+  description: "Ordered list of experiments to reduce knowledge gaps"
+  
+  @EXP001 {
+    id: "DISCOVERY-01",
+    language: "Lua",
+    type: "LANGUAGE_DISCOVERY",
+    status: "PLANNED",
+    trigger: "knowledge_gap GAP001",
+    expected_outcome: "language_profile + fitness for string_heavy workload",
+    depends_on: []
+  }
+  
+  @EXP002 {
+    id: "SELF_OPTIMIZE-03",
+    type: "PARALLEL_CANDIDATE",
+    status: "COMPLETED",
+    trigger: "after DISCOVERY-01 completes",
+    module: "content_hash",
+    candidates: ["MJS", "Nim", "Lua"],
+    expected_outcome: "evidence-based comparison with baseline included"
+  }
+  
+  @EXP003 {
+    id: "TRANSFER_TEST_01",
+    type: "KNOWLEDGE_TRANSFER",
+    status: "PLANNED",
+    trigger: "after SELF_OPTIMIZE-04 completes",
+    description: "Test if LIN can use prior knowledge to select candidates for new module",
+    new_module: "lin_effects (string_heavy + regex_heavy workload)",
+    prior_knowledge: "TypeScript > MJS > Python > Rust for string_heavy + regex_heavy",
+    expected_outcome: "LIN selects TypeScript as first candidate without re-discovery"
+  }
+}
+
+@KNOWLEDGE_TRANSFER {
+  description: "Mechanism for using prior experimental knowledge in new decisions"
+  
+  @TRANSFER_RULE_001 {
+    condition: "new_module has similar workload_type to previously tested module"
+    action: "retrieve prior ranking from @LANGUAGE_FITNESS"
+    selection: "top_ranked_language_with_STRONG_fitness as first candidate"
+    confidence: "proportional to number of prior experiments supporting ranking"
+  }
+  
+  @TRANSFER_RULE_002 {
+    condition: "new_module has UNKNOWN workload_type"
+    action: "schedule LANGUAGE_DISCOVERY before SELF_OPTIMIZE"
+    selection: "no transfer — must discover from scratch"
+  }
+  
+  @TRANSFER_RULE_003 {
+    condition: "prior evidence shows REJECTED for relevant workload"
+    action: "exclude rejected language from candidate set"
+    selection: "skip directly to next-ranked candidate"
+  }
+}

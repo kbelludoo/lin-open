@@ -1,0 +1,11 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=clr003_storage
+~G{?=if #=for ^=ret :else}
+!moduleRef(){^'Storage'}
+!dependencies(){^''}
+!declaredEffects(){^'io'}
+!caps(){^'io'}
+!contract(){^'storage.write_requires_io'}
+!semanticHash(){^'EXISTING_semantic_hash'}
+!write(record){^record}
+=ex{moduleRef,dependencies,declaredEffects,caps,contract,semanticHash,write}

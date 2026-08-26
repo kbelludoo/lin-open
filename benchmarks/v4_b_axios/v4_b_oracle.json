@@ -1,0 +1,211 @@
+{
+  "id": "V4_B_ORACLE",
+  "version": "1.0.0",
+  "repository": "axios@v1.14.0",
+  "total_known_bugs": 12,
+  "total_false_positive_patterns": 8,
+
+  "confirmed_bugs": [
+    {
+      "id": "BUG-001",
+      "category": "prototype_pollution",
+      "file": "lib/core/mergeConfig.js",
+      "line": 59,
+      "description": "mergeDirectKeys uses 'prop in config2' which traverses prototype chain. If Object.prototype is polluted, attacker can inject arbitrary config properties.",
+      "impact": "SECURITY",
+      "confidence": "HIGH",
+      "fix_reference": "17b90d0",
+      "fix_description": "Guard mergeConfig value reads with hasOwnProp"
+    },
+    {
+      "id": "BUG-002",
+      "category": "prototype_pollution",
+      "file": "lib/adapters/http.js",
+      "line": 658,
+      "description": "config.socketPath is read without own-property check. Prototype pollution on Object.prototype can inject socketPath to redirect requests to attacker-controlled Unix sockets (SSRF).",
+      "impact": "SECURITY",
+      "confidence": "HIGH",
+      "fix_reference": "140a179",
+      "fix_description": "Guard socketPath with own() to prevent prototype pollution SSRF"
+    },
+    {
+      "id": "BUG-003",
+      "category": "prototype_pollution",
+      "file": "lib/adapters/http.js",
+      "line": 331,
+      "description": "HTTP adapter reads multiple config properties (proxy, timeout, auth, transport, etc.) without hasOwnProp checks. Polluted Object.prototype can inject any of these.",
+      "impact": "SECURITY",
+      "confidence": "HIGH",
+      "fix_reference": "74a05bc",
+      "fix_description": "Guard http adapter config reads against prototype pollution"
+    },
+    {
+      "id": "BUG-004",
+      "category": "prototype_pollution",
+      "file": "lib/helpers/formDataToJSON.js",
+      "line": 53,
+      "description": "formDataToJSON only checks for __proto__ but not constructor/prototype. Attacker can use constructor.prototype to pollute via FormData field names like 'constructor[prototype][polluted]'.",
+      "impact": "SECURITY",
+      "confidence": "HIGH",
+      "fix_reference": "78e8dcf",
+      "fix_description": "Defense-in-depth against already-polluted Object.prototype in formDataToJSON"
+    },
+    {
+      "id": "BUG-005",
+      "category": "prototype_pollution",
+      "file": "lib/defaults/index.js",
+      "line": 124,
+      "description": "transformResponse accesses this.parseReviver which is inherited from prototype. If Object.prototype.parseReviver is set, all responses will use the attacker's reviver function.",
+      "impact": "SECURITY",
+      "confidence": "HIGH",
+      "fix_reference": "70302b6",
+      "fix_description": "Ignore inherited parseReviver and related config reads"
+    },
+    {
+      "id": "BUG-006",
+      "category": "ssrf",
+      "file": "lib/helpers/shouldBypassProxy.js",
+      "line": 1,
+      "description": "NO_PROXY hostname normalization bypass. Attacker can craft hostname that bypasses proxy filtering, leading to SSRF against internal services.",
+      "impact": "SECURITY",
+      "confidence": "HIGH",
+      "fix_reference": "fb3befb",
+      "fix_description": "No_proxy hostname normalization bypass leads to SSRF"
+    },
+    {
+      "id": "BUG-007",
+      "category": "header_injection",
+      "file": "lib/adapters/http.js",
+      "line": 492,
+      "description": "Headers are set from user-controlled config without sanitization. Attacker can inject CRLF sequences into header values to inject arbitrary headers (cloud metadata exfiltration, cache poisoning).",
+      "impact": "SECURITY",
+      "confidence": "HIGH",
+      "fix_reference": "3631854",
+      "fix_description": "Unrestricted cloud metadata exfiltration via header injection chain"
+    },
+    {
+      "id": "BUG-008",
+      "category": "stream_bypass",
+      "file": "lib/adapters/http.js",
+      "line": 786,
+      "description": "When responseType is 'stream', maxContentLength is not enforced on the response stream. Attacker can serve unbounded response data.",
+      "impact": "SECURITY",
+      "confidence": "HIGH",
+      "fix_reference": "e8904af",
+      "fix_description": "Stream response bypassed max content length"
+    },
+    {
+      "id": "BUG-009",
+      "category": "deprecated_api",
+      "file": "lib/helpers/resolveConfig.js",
+      "line": 31,
+      "description": "Uses deprecated unescape() function for HTTP basic auth password encoding. This can lead to encoding inconsistencies and potential security issues.",
+      "impact": "SECURITY",
+      "confidence": "MEDIUM",
+      "fix_reference": "66337fc",
+      "fix_description": "Replace deprecated unescape() with modern UTF-8 encoding"
+    },
+    {
+      "id": "BUG-010",
+      "category": "prototype_pollution",
+      "file": "lib/core/mergeConfig.js",
+      "line": 99,
+      "description": "forEach loop iterates Object.keys({ ...config1, ...config2 }) but the spread operator can include inherited properties if Object.prototype is polluted.",
+      "impact": "SECURITY",
+      "confidence": "MEDIUM",
+      "fix_reference": "4791514",
+      "fix_description": "More header pollutions — guard config key iteration"
+    },
+    {
+      "id": "BUG-011",
+      "category": "input_validation",
+      "file": "lib/helpers/progressEventReducer.js",
+      "line": 1,
+      "description": "Malformed XHR upload events (missing loaded/total properties) can cause NaN propagation in progress calculations, leading to incorrect progress reporting.",
+      "impact": "CORRECTNESS",
+      "confidence": "MEDIUM",
+      "fix_reference": "4094886",
+      "fix_description": "Guard malformed XHR upload events"
+    },
+    {
+      "id": "BUG-012",
+      "category": "resource_exhaustion",
+      "file": "lib/adapters/http.js",
+      "line": 875,
+      "description": "socket.setKeepAlive called unconditionally without checking if socket exists or is a proxy agent stream. Can cause errors on certain proxy configurations.",
+      "impact": "RELIABILITY",
+      "confidence": "MEDIUM",
+      "fix_reference": "227c788",
+      "fix_description": "Guard socket.setKeepAlive for proxy agent streams"
+    }
+  ],
+
+  "known_false_positive_patterns": [
+    {
+      "id": "FP-001",
+      "pattern": "utils.merge() __proto__ check",
+      "file": "lib/utils.js",
+      "line": 409,
+      "reason": "merge() already blocks __proto__, constructor, prototype on line 409. This is NOT a vulnerability — it's already patched."
+    },
+    {
+      "id": "FP-002",
+      "pattern": "mergeConfig __proto__ check",
+      "file": "lib/core/mergeConfig.js",
+      "line": 100,
+      "reason": "Line 100 already returns early for __proto__, constructor, prototype. This is a defense-in-depth measure, not a vulnerability."
+    },
+    {
+      "id": "FP-003",
+      "pattern": "formDataToJSON __proto__ check",
+      "file": "lib/helpers/formDataToJSON.js",
+      "line": 53,
+      "reason": "The __proto__ check on line 53 is intentional protection. BUG-004 is about missing constructor/prototype checks, NOT about this existing check."
+    },
+    {
+      "id": "FP-004",
+      "pattern": "isBuffer val.constructor check",
+      "file": "lib/utils.js",
+      "line": 54,
+      "reason": "Accessing val.constructor is standard Node.js Buffer detection. Not a vulnerability — val is already validated as non-null object."
+    },
+    {
+      "id": "FP-005",
+      "pattern": "toFlatObject prototype chain walk",
+      "file": "lib/utils.js",
+      "line": 513,
+      "reason": "Walking prototype chain is intentional for toFlatObject. It's used for merging configs, not for security-sensitive operations."
+    },
+    {
+      "id": "FP-006",
+      "pattern": "kindOf cache object",
+      "file": "lib/utils.js",
+      "line": 11,
+      "reason": "Object.create(null) cache is safe — no prototype chain. Not a vulnerability."
+    },
+    {
+      "id": "FP-007",
+      "pattern": "Http2Sessions Object.create(null)",
+      "file": "lib/adapters/http.js",
+      "line": 61,
+      "reason": "Object.create(null) for session storage is safe — no prototype chain. Not a vulnerability."
+    },
+    {
+      "id": "FP-008",
+      "pattern": "setImmediate postMessage token",
+      "file": "lib/utils.js",
+      "line": 840,
+      "reason": "Math.random() token for postMessage is a well-known pattern. Not cryptographically secure but not a vulnerability in this context."
+    }
+  ],
+
+  "evaluation_notes": {
+    "bug_density": "12 bugs in ~5000 LOC = 0.24 bugs per 100 LOC",
+    "dominant_class": "prototype_pollution (6 of 12 bugs = 50%)",
+    "high_confidence_bugs": 8,
+    "medium_confidence_bugs": 4,
+    "security_impact_bugs": 10,
+    "correctness_impact_bugs": 1,
+    "reliability_impact_bugs": 1
+  }
+}

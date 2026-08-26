@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!restArguments(func,startIndex){startIndex=(((__c)=>{?(__c){return(func.length-1)}return(+startIndex)})(startIndex==null));^function(){length=Math.max(arguments.length-startIndex,0);rest=Array(length);index=0;#(;index<length;index++){rest[index]=arguments[index+startIndex]};switch (startIndex){case 0:^func.call(this,rest);case 1:^func.call(this,arguments[0],rest);case 2:^func.call(this,arguments[0],arguments[1],rest)};args=Array(startIndex+1);#(index=0;index<startIndex;index++){args[index]=arguments[index]};args[startIndex]=rest;^func.apply(this,args)}}
+=ex{restArguments}

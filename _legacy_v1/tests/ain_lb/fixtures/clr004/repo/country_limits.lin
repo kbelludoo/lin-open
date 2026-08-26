@@ -1,0 +1,11 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=clr004_country_limits
+~G{?=if #=for ^=ret :else}
+!moduleRef(){^'CountryLimits'}
+!dependencies(){^''}
+!declaredEffects(){^'pure'}
+!caps(){^'policy'}
+!contract(){^'country_limits.allow_requires_policy'}
+!semanticHash(){^'clr004-country-limits-v1'}
+!allow(country,amount){^({country:country,amount:amount})}
+=ex{moduleRef,dependencies,declaredEffects,caps,contract,semanticHash,allow}

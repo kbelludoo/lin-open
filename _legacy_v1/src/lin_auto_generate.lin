@@ -1,0 +1,14 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=lin_auto_generate
+~G{?=if #=for ^=ret :else}
+!failClass(reason){s=String(reason||'');?(s.indexOf('async_gen')>=0){^'ASYNC_GEN'};?(s.indexOf('holdout_mismatch')>=0){^'HOLDOUT'};?(s.indexOf('extract_missed')>=0){^'EXTRACT_MISSED'};?(s.indexOf('Unexpected')>=0){^'PARSE'};?(s.indexOf('skip_eq_fail')>=0){^'SKIP_EQ_FAIL'};^'UNKNOWN'}
+!isStubLin(text){t=String(text||'');caret=String.fromCharCode(94);?(t.indexOf('{'+caret+'null}')>=0){^true};?(t.indexOf('{'+caret+'undefined}')>=0){^true};^false}
+!neverPassIfStub(gate,isStub){?(isStub){?(gate=='COMPILE_FAIL'){^'COMPILE_FAIL'};^'STUB_NOT_PASS'};^gate}
+!gateFrom(compileOk,behaviorEq,isStub){?(compileOk!=true){^neverPassIfStub('COMPILE_FAIL',isStub)};?(behaviorEq==null){^neverPassIfStub('COMPILE_OK_NO_ORACLE',isStub)};?(behaviorEq==1){^neverPassIfStub('BEHAVIOR_EQ_PASS',isStub)};^neverPassIfStub('BEHAVIOR_EQ_FAIL',isStub)}
+!linHeader(ops){^('@LIN:L1c:0.2\n^schema_once ^lossy=true ^ops='+String(ops||'autogen')+'\n~G{?=if #=for ^=ret :else}\n')}
+!safeIdent(name){s=String(name||'fn');s=s.replace(/[^A-Za-z0-9_]/g,'_');?(s.length==0){^'fn'};^s}
+!wrapCandidate(name,params,body){n=safeIdent(name);p=String(params||'');b=String(body||'^null');^(linHeader('autogen_candidate')+'!'+n+'('+p+'){'+b+'}\n=ex{'+n+'}\n')}
+!proposeCandidate(fail){lia=fail&&fail.lia;?(lia){^String(lia)};n=(fail&&fail.name)||'unknown';p=(fail&&fail.params)||'';^wrapCandidate(n,p,'^null')}
+!rowSummary(name,cls,gate,compileOk,behaviorEq,isStub){^{name:name,class:cls,gate:gate,compileOk:compileOk==true,behaviorEq:behaviorEq,stub:isStub==true}}
+!summarizeRows(rows){list=rows||[];?(list.length==0){^'no_fails'};out='';#(i=0;i<list.length;i++){?(i>0){out=out+'|'};r=list[i];out=out+String(r.name)+':'+String(r.gate)};^out}
+=ex{failClass,isStubLin,neverPassIfStub,gateFrom,linHeader,safeIdent,wrapCandidate,proposeCandidate,rowSummary,summarizeRows}

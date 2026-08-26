@@ -1,0 +1,122 @@
+{
+  "id": "V4_B1_COVERAGE_METRICS",
+  "version": "2.0.0",
+  "description": "Extended metrics for V4-B.1 that go beyond precision to measure reasoning coverage",
+
+  "metrics": {
+    "intervention_precision": {
+      "formula": "confirmed_findings / (confirmed_findings + false_positives_rejected)",
+      "description": "How accurate are the findings when the agent decides to intervene?",
+      "v4_b_result": 0.78,
+      "v4_b1_target": ">= 0.80",
+      "purpose": "Measures decision quality"
+    },
+
+    "risk_surface_coverage": {
+      "formula": "analyzed_boundaries / discovered_boundaries",
+      "description": "What fraction of the trust boundaries did the agent actually analyze?",
+      "v4_b_result": "2/7 = 0.29",
+      "v4_b1_target": ">= 0.80",
+      "purpose": "Measures exploration completeness — how much of the attack surface was examined?"
+    },
+
+    "blind_zone_rate": {
+      "formula": "missed_known_bug_classes / total_known_bug_classes",
+      "description": "What fraction of bug classes did the agent completely miss?",
+      "v4_b_result": "4/7 = 0.57",
+      "v4_b1_target": "<= 0.20",
+      "purpose": "Measures systemic blindness — are entire categories of bugs invisible?"
+    },
+
+    "flow_discovery_recall": {
+      "formula": "discovered_flows / oracle_flows",
+      "description": "Did the agent discover the data flows from source to sink? This separates discovery failure from reasoning failure.",
+      "v4_b_result": "N/A (V4-B did not produce flow graphs)",
+      "v4_b1_target": ">= 0.80",
+      "purpose": "Distinguish modeling problem from reasoning problem",
+      "diagnostic": {
+        "low_fdr": "modeling problem — agent doesn't discover flows",
+        "high_fdr_low_finding_recall": "reasoning problem — agent discovers flows but misclassifies risk",
+        "high_fdr_high_finding_recall": "agent is both modeler and judge — target state"
+      }
+    },
+
+    "flow_completion_rate": {
+      "formula": "fully_traced_flows / total_discovered_flows",
+      "description": "Of the flows the agent identified, how many were traced from source to sink?",
+      "v4_b_result": "unknown (V4-B did not produce flow graphs)",
+      "v4_b1_target": ">= 0.90",
+      "purpose": "Measures depth of analysis — does the agent follow flows to completion?"
+    },
+
+    "source_diversity": {
+      "formula": "unique_source_types_analyzed / total_source_types",
+      "description": "Did the agent analyze inputs from multiple source types (config, URL, headers, events, environment)?",
+      "v4_b_result": "2/7 = 0.29 (only config + URL)",
+      "v4_b1_target": ">= 0.70",
+      "purpose": "Measures whether the agent considers all input channels"
+    },
+
+    "sink_diversity": {
+      "formula": "unique_sink_types_reached / total_sink_types",
+      "description": "Did the agent trace flows to multiple sink types (request, header, json_parse, socket, stream)?",
+      "v4_b_result": "1/6 = 0.17 (only http_request)",
+      "v4_b1_target": ">= 0.60",
+      "purpose": "Measures whether the agent considers all impact points"
+    }
+  },
+
+  "v4_b_baseline": {
+    "intervention_precision": 0.78,
+    "risk_surface_coverage": 0.29,
+    "blind_zone_rate": 0.57,
+    "flow_discovery_recall": "N/A (V4-B did not produce flow graphs)",
+    "source_diversity": 0.29,
+    "sink_diversity": 0.17,
+    "note": "V4-B was a pattern-driven scanner. These metrics expose what precision alone hides."
+  },
+
+  "v4_b1_targets": {
+    "intervention_precision": ">= 0.80",
+    "flow_discovery_recall": ">= 0.80",
+    "risk_surface_coverage": ">= 0.80",
+    "blind_zone_rate": "<= 0.20",
+    "source_diversity": ">= 0.70",
+    "sink_diversity": ">= 0.60",
+    "note": "V4-B.1 is a system-model-driven analyzer. These metrics measure whether the model is complete."
+  },
+
+  "interpretation_guide": {
+    "high_precision_low_coverage": "Agent is cautious but blind. Finds real bugs in the areas it looks, but misses entire attack surfaces. This is V4-B.",
+    "high_precision_high_coverage": "Agent is both careful and thorough. This is V4-B.1 target.",
+    "low_precision_high_coverage": "Agent looks everywhere but can't distinguish real bugs from noise. Better than blind but still problematic.",
+    "low_precision_low_coverage": "Agent is neither careful nor thorough. Fundamental capability gap."
+  },
+
+  "evolution_tracking": {
+    "V1_V2": {
+      "role": "smart_transformer",
+      "metrics_applicable": ["intervention_precision"]
+    },
+    "V3": {
+      "role": "analyzer_plus_repairer",
+      "metrics_applicable": ["intervention_precision"]
+    },
+    "V4_A": {
+      "role": "architectural_modeler",
+      "metrics_applicable": ["intervention_precision"]
+    },
+    "V4_B": {
+      "role": "conservative_decider",
+      "metrics_applicable": ["intervention_precision"],
+      "revealed_need": "coverage metrics"
+    },
+    "V4_B1": {
+      "role": "first_step_engineering_judgment",
+      "metrics_applicable": ["intervention_precision", "flow_discovery_recall", "risk_surface_coverage", "blind_zone_rate", "source_diversity", "sink_diversity"],
+      "phase_1_metric": "flow_discovery_recall",
+      "phase_2_metric": "intervention_precision",
+      "phase_3_metric": "finding_recall"
+    }
+  }
+}

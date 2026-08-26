@@ -1,0 +1,11 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=clr003_auth
+~G{?=if #=for ^=ret :else}
+!moduleRef(){^'Auth'}
+!dependencies(){^''}
+!declaredEffects(){^'pure'}
+!caps(){^'pure'}
+!contract(){^'auth.verify_returns_identity'}
+!semanticHash(){^'EXISTING_semantic_hash'}
+!verify(token){^({ok:1,token:token})}
+=ex{moduleRef,dependencies,declaredEffects,caps,contract,semanticHash,verify}

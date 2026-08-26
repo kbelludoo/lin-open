@@ -1,0 +1,11 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=clr004_storage
+~G{?=if #=for ^=ret :else}
+!moduleRef(){^'Storage'}
+!dependencies(){^'Auth'}
+!declaredEffects(){^'io,state'}
+!caps(){^'disk'}
+!contract(){^'storage.write_requires_io'}
+!semanticHash(){^'clr004-storage-v1'}
+!write(key,val){^({ok:1,key:key,val:val})}
+=ex{moduleRef,dependencies,declaredEffects,caps,contract,semanticHash,write}

@@ -1,0 +1,38 @@
+{
+  "spec_id": "HS3_SELF_OPTIMIZE_SPEC_V1",
+  "version": "1.0.0",
+  "protocol": "HS3_RUNTIME_SELF_OPTIMIZATION_EVALUATION",
+  "created_at": "2026-08-16T17:51:00Z",
+  "meta": {
+    "purpose": "Evaluate reflexive runtime self-optimization: candidate generation, verification gate enforcement, performance benchmarking, regression testing across all prior gates (H-LIN-04, B6, B9, HS4, HS2, HS1), and promotion without touching the immutable nucleus",
+    "hypothesis": "O LIN pode gerar, verificar e promover otimizações de runtime baseadas em evidências, alcançando speedup mensurável enquanto preserva 100% dos gates de segurança, concorrência e equivalência semântica."
+  },
+  "invariants": {
+    "immutable_nucleus": ["semantic_hash", "behavior_eq_gate", "LIN_gate", "core_invariants"],
+    "allowed_mutations": ["candidates/*", "emit_peripheral", "non_core_helpers"]
+  },
+  "candidate_workloads": [
+    {
+      "candidate_id": "OPT_CANDIDATE_01",
+      "target_component": "proof_engine_tabling",
+      "baseline_impl": "dynamic_hashmap_bfs",
+      "candidate_impl": "dense_flat_array_tabling_simd",
+      "benchmark_target": "B6_LOGIC_V2_SCALE",
+      "minimum_speedup_threshold": 1.25
+    },
+    {
+      "candidate_id": "OPT_CANDIDATE_02",
+      "target_component": "occ_concurrency_lock",
+      "baseline_impl": "standard_mutex_table",
+      "candidate_impl": "lockfree_atomic_cas_versioning",
+      "benchmark_target": "HS2_CONCURRENCY_V1",
+      "minimum_speedup_threshold": 1.50
+    }
+  ],
+  "gates": {
+    "GATE_HS3_EQUIVALENCE": "behavior_equivalence == true && result_hashes_identical == true",
+    "GATE_HS3_REGRESSION": "all_prior_gates_pass == true (H-LIN-04, B6, B9, HS4, HS2, HS1)",
+    "GATE_HS3_PERFORMANCE": "speedup_ratio >= minimum_speedup_threshold",
+    "GATE_HS3_NUCLEUS_UNTOUCHED": "nucleus_hash_unmodified == true"
+  }
+}

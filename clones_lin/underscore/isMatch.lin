@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!isMatch(object,attrs){;_keys=keys(attrs);length=_keys.length;?(object==null){^!length};obj=Object(object);#(i=0;i<length;i++){key=_keys[i];?(attrs[key]!=obj[key]||!(key in obj)){^false}};^true}
+=ex{isMatch}

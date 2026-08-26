@@ -1,0 +1,29 @@
+{
+  "id": "T025",
+  "family": "multi_step_composition",
+  "difficulty": "hard",
+  "specification": "Agregador estatístico multi-métrica. Entrada: array de números não vazio. Saída: { min: number, max: number, sum: number, avg: number }.",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "globalState"
+  ],
+  "test_cases": [
+    {
+      "input": [
+        10,
+        20,
+        30
+      ],
+      "expected": {
+        "min": 10,
+        "max": 30,
+        "sum": 60,
+        "avg": 20
+      }
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T025.mjs"
+  }
+}

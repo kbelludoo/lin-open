@@ -1,0 +1,11 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=semantic_parser
+~G{?=if #=for ^=ret :else}
+!parseSemanticBlock(text){s=String(text||'');concept=null;m=s.match(/@CONCEPT\s+([A-Za-z_][\w]*)\s*\{/);?(m){concept=m[1]};input=parseSection(s,'INPUT');rule=parseSection(s,'RULE');constraint=parseSection(s,'CONSTRAINT');verify=parseSection(s,'VERIFY');output=parseSection(s,'OUTPUT');effect=parseSection(s,'EFFECT');target=parseSection(s,'TARGET');^({concept:concept,input:input,rule:rule,constraint:constraint,verify:verify,output:output,effect:effect,target:target})}
+!parseSection(text,name){re=new RegExp(name+':\\s*\\{([^}]*)\\}');m=text.match(re);?(m==null){^null};raw=m[1].trim();lines=raw.split('\n');entries=[];#(i=0;i<lines.length;i++){line=lines[i].trim();?(line&&line.length>0){entries.push(line)}};^entries}
+!parseInputTypes(entries){result=[];list=entries||[];#(i=0;i<list.length;i++){line=list[i];m=line.match(/^([A-Za-z_][\w]*):\s*([a-z]+)(\{[^}]+\})?$/);?(m){result.push({name:m[1],type:m[2],constraint:m[3]||null})}:{result.push({name:line,type:'any',constraint:null})}};^result}
+!parseRules(entries){result=[];list=entries||[];#(i=0;i<list.length;i++){line=list[i];m=line.match(/^([A-Za-z_][\w]*)\s*=\s*(.+)$/);?(m){result.push({binding:m[1],expr:m[2].trim()})}};^result}
+!parseConstraints(entries){result=[];list=entries||[];#(i=0;i<list.length;i++){line=list[i].trim();?(line.length>0){result.push({predicate:line})}};^result}
+!parseEffects(entries){result=[];list=entries||[];#(i=0;i<list.length;i++){line=list[i].trim().replace(/,/g,'');?(line.length>0){result.push(line)}};?(result.length==0){result.push('pure')};^result}
+!parseTarget(entries){prefer=null;require_=null;fallback=null;list=entries||[];#(i=0;i<list.length;i++){line=list[i].trim();m=line.match(/^prefer:\s*(\w+)/);?(m){prefer=m[1]};m2=line.match(/^require:\s*(\w+)/);?(m2){require_=m2[1]};m3=line.match(/^fallback:\s*(\w+)/);?(m3){fallback=m3[1]}};^({prefer:prefer,require:require_,fallback:fallback})}
+=ex{parseSemanticBlock,parseSection,parseInputTypes,parseRules,parseConstraints,parseEffects,parseTarget}

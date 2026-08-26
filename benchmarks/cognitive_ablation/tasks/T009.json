@@ -1,0 +1,39 @@
+{
+  "id": "T009",
+  "family": "code_transformation",
+  "difficulty": "medium",
+  "specification": "Transformação de objeto aninhado em chave-valor plano com dot-notation. Entrada: { a: { b: 1, c: { d: 2 } } }. Saída: { \"a.b\": 1, \"a.c.d\": 2 }.",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "globalState",
+    "mut"
+  ],
+  "test_cases": [
+    {
+      "input": {
+        "a": {
+          "b": 1,
+          "c": {
+            "d": 2
+          }
+        }
+      },
+      "expected": {
+        "a.b": 1,
+        "a.c.d": 2
+      }
+    },
+    {
+      "input": {
+        "x": 10
+      },
+      "expected": {
+        "x": 10
+      }
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T009.mjs"
+  }
+}

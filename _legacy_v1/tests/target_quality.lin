@@ -1,0 +1,11 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=target_quality_test_cases
+~G{?=if #=for ^=ret :else}
+
+!factorial(n){res=1;#(i=2;i<=n;i++){res=res*i};^res}
+!isEven(n){^(n%2==0)}
+!sumTo(n){total=0;#(i=1;i<=n;i++){total=total+i};^total}
+!square(n){^n*n}
+!double(n){^n+n}
+
+=ex{factorial,isEven,sumTo,square,double}

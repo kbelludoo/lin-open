@@ -1,0 +1,51 @@
+@DICEL:AIL_SELF_REPAIR_MVP:1.0.0
+
+^repo="C:/Users/k/Documents/ail"
+^status="PASS"
+^smoke="true"
+^behavior_eq=1
+^hash_match=true
+^oracle_hash="b59e91d85d208f91e9c49577b03b8b919b61c572b552dd81bdb210c2d8f70aca"
+^repaired_hash="b59e91d85d208f91e9c49577b03b8b919b61c572b552dd81bdb210c2d8f70aca"
+^path="deterministic"
+^attempts=1
+
+@WHY_GAP {
+  reason: "LIA extracted as lingua/compiler first; P200 evolution stayed on Dicel L0 path"
+  note_pt: "Nao havia self-repair porque o loop mutation→verify→accept ficou no Dicel; LIA so tinha emit+compile+oracle"
+}
+
+@MVP {
+  detect: "compile_fail | hash_mismatch"
+  fixers: "F1..F5 deterministic"
+  llm: "optional_9router if NINEROUTER_URL"
+  accept: "behavior_eq==1.0 AND exact_hash"
+  immutable: "verifier/hash never mutated"
+}
+
+@SMOKE {
+  injected_bugs: ["missing_return_sigil","comment_line","padding_prose","return_keyword_on_native"]
+  before_ok: false
+  after_ok: true
+  pass: true
+}
+
+@PRIOR_ART_TAKEAWAYS {
+  retry_verifier_feedback: "LangGraph+DSPy+Self-Debugging"
+  deterministic_first: "Roslyn CodeFix"
+  structured_patch: "Outlines/Guidance schema"
+  reflexion_memory: "failed repair notes"
+  detail: "spec/LIA_SELF_REPAIR_PRIOR_ART.dicel"
+}
+
+@FILES {
+  spec: "spec/LIA_SELF_REPAIR.dicel"
+  prior_art: "spec/LIA_SELF_REPAIR_PRIOR_ART.dicel"
+  script: "scripts/self_repair.mjs"
+  report: "INTEL_LIA_SELF_REPAIR_MVP.dicel"
+}
+
+@VERDICT_PT {
+  smoke: "PASS"
+  summary: "Smoke PASS: bug injetado detectado, fixers deterministicos repararam, hash exacto behavior_eq=1.0"
+}

@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!plural(word,num){;forms=word.split('_');^(((__c)=>{?(__c){return(forms[0])}return(((((__c)=>{?(__c){return(forms[1])}return(forms[2])})(num%10>=2&&num%10<=4&&(num%100<10||num%100>=20)))))})(num%10==1&&num%100!=11))}
+=ex{plural}

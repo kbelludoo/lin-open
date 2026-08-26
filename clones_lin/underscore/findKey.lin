@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!findKey(obj,predicate,context){predicate=cb(predicate,context);_keys=keys(obj);key=undefined;#(i=0,length=_keys.length;i<length;i++){key=_keys[i];?(predicate(obj[key],key,obj)){^key}}}
+=ex{findKey}

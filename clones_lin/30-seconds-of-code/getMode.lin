@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!getMode(filePath,mode){;?(mode){^mode};ext=path.extname(filePath).slice(1);^(((__c)=>{?(__c){return('yaml')}return(ext)})(ext=='yml'))}
+=ex{getMode}

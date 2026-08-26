@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!searchForNgrams(documentIndex,terms){;ngramSimilarities=[];queryNgrams=terms.reduce(~(acc,term){; const ngrams = generateNgrams(term);; acc.push(...ngrams);; return acc;},[]);documentIndex.documents.forEach(~(doc,docId){; const docNgrams = doc.ngrams;; let matches = 0;; const totalPossible = Math.min(queryNgrams.length, docNgrams.size);; queryNgrams.forEach(~(ngram){; if (documentIndex.ngramsInvertedIndex.has(ngram)) {; if (documentIndex.ngramsInvertedIndex.get(ngram).has(docId)) matches++; } });; const ngramSimilarity = matches / totalPossible;;; if (ngramSimilarity > 0) ngramSimilarities.push([docId, ngramSimilarity]);});^ngramSimilarities}
+=ex{searchForNgrams}

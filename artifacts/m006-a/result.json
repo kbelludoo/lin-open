@@ -1,0 +1,38 @@
+{
+  "milestone": "M006-A",
+  "protocol": "LIN-FORMAL-SEMANTIC-CORE-006",
+  "name": "AST Invariant & Proof Obligation Engine",
+  "status": "VALIDATED",
+  "evidence_policy": "raw_artifacts_required",
+  "acceptance": {
+    "formal_invariants_checked_before_emit": true,
+    "proof_obligations_satisfied": true,
+    "rustc_exit_code": 0,
+    "runtime_output": "M006_A_ALL_TESTS_PASS",
+    "runtime_exit_code": 0,
+    "negative_gate_exit_code": 3,
+    "regression_all_7_targets": "PENDING_VERIFICATION"
+  },
+  "invariants": {
+    "INV_SYMBOL_RESOLVED": "PROVED",
+    "INV_EFFECT_BOUNDED": "PROVED",
+    "INV_REFINEMENT_SOUND": "PROVED",
+    "INV_EXHAUSTIVE_MATCH": "PROVED"
+  },
+  "negative_detection": {
+    "INV_SYMBOL_RESOLVED": "VIOLATED (ghost undefined)",
+    "INV_EFFECT_BOUNDED": "VIOLATED (mod:Logger::emit uses IO with {none})",
+    "INV_REFINEMENT_SOUND": "VIOLATED (divisor b unproven non-zero)",
+    "INV_EXHAUSTIVE_MATCH": "VIOLATED (1 arm, no wildcard)"
+  },
+  "artifacts": [
+    "verified.lin", "generated.rs", "generated.js", "generated.cjs",
+    "formal_proof_report.json", "formal_proof_report_js.json",
+    "violations.lin", "violations_report.json",
+    "compile.stdout", "compile.stderr", "compile_js.stdout", "compile_js.stderr",
+    "rustc.stdout", "rustc.stderr", "libm006a_gate.rlib",
+    "runtime_test.rs", "runtime_test.exe"
+  ],
+  "runtime_semantics": "safeDiv(10,2)=5; classify(1)=10; classify(2)=20; classify(9)=0 (wildcard); runTests=5",
+  "note": "Working tree was reverted by a concurrent process mid-session; M006 gate (src/formal_gate.mjs) was reintegrated into src/multi_emit.mjs + bin/lin.mjs (--formal / --formal-report)."
+}

@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!transformerColorSwatches(){;^{name: 'color-swatches',span(span){?(span.children?.length!=1){^span};content=span.children[0].value;match=content.match(hexRegexp);?(!match){^span};whitespace=match[1]||'';color=match[2]||'';?(!color){^span};hexColorProp=("--hex-color:"+String(color));?(!whitespace){span.properties.style=[span.properties.style,hexColorProp].join(';')}:{span.children[0]={type: 'text',value: whitespace};span.children[1]={type: 'element',tagName: 'span',children: [{type: 'text',value: color}],properties:{style: hexColorProp},}}},}}
+=ex{transformerColorSwatches}

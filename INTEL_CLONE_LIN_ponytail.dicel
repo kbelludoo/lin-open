@@ -1,0 +1,35 @@
+@DICEL:INTEL_CLONE_LIN:1.2.0
+^slug="ponytail"
+^lang="LIN"
+^rule="semantic_hash_exact_like_P200"
+^no_soft_match=true
+^status="PARTIAL_PASS"
+^done=false
+^published=false
+^suite_rate=0.8333
+^suite_total=12
+^source="https://github.com/DietrichGebert/ponytail.git"
+^clone_lin_url=""
+^clone_lin_local=""
+^temp_cleaned=true
+^pass=10 ^fail=0 ^skip=2
+^behavior_eq_required=1.0
+^publish_gate="suite_rate==1.0_JS"
+^multi="js:P10/S0/F0 ts:P10/S0/F0 py:P1/S0/F9 go:P0/S0/F10 rust:P0/S0/F10"
+^learn_lang="H_NEW_LANG_ponytail_py_go_rust_mss76362"
+
+@MULTI_TARGET {
+  js:P10/S0/F0 ts:P10/S0/F0 py:P1/S0/F9 go:P0/S0/F10 rust:P0/S0/F10
+}
+
+@COMPARISON {
+  pass_names: ["render","read","stripFrontmatter","readVersion","displayName","quote","removeIfExists","resolveMode","buildInstructions","resolveSessionMode"]
+  fail_names: []
+  skip_names: ["sourceBody:host_or_module_ref","outPath:host_or_module_ref"]
+  learn: "none"
+  improve_lin: "emit_peripheral:CLOSURE×2|positive_transfer:ok×10"
+}
+
+@NOTE_PT {
+  PARTIAL (nao publish): p=10 f=0 s=2 suite_rate=0.8333; multi=js:P10/S0/F0 ts:P10/S0/F0 py:P1/S0/F9 go:P0/S0/F10 rust:P0/S0/F10; stay+retry; improve=emit_peripheral:CLOSURE×2|positive_transfer:ok×10
+}

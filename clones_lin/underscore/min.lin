@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!min(obj,iteratee,context){;result=Infinity;lastComputed=Infinity;value=undefined;computed=undefined;?(iteratee==null||(typeof iteratee=='number'&&typeof obj[0]!='object'&&obj!=null)){obj=(((__c)=>{?(__c){return(obj)}return(values(obj))})(isArrayLike(obj)));#(i=0,length=obj.length;i<length;i++){value=obj[i];?(value!=null&&value<result){result=value}}}:{iteratee=cb(iteratee,context);each(obj,~(v,index,list){computed = iteratee(v, index, list);;; if (computed < lastComputed || (computed === Infinity && result === Infinity)) { result = v;; lastComputed = computed; }})};^result}
+=ex{min}

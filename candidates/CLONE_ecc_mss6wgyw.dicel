@@ -1,0 +1,8 @@
+@DICEL:LIN_CANDIDATE:1.0.0
+^from_clone="clone-lin-ecc"
+^stage="IMPROVE_LIN_FROM_CLONE"
+^forbid_nucleus=true
+
+@HARVEST {
+  positive_transfer{gap="null" n=8 proposal="keep_arrow_ASI_fixes; names=reviewPrompt,verifyPrompt,isBlocking,normalize,usage,isAbsolutePath,validateTerminalName,validateCwd" nucleus=false}
+}

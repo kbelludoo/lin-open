@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!format(ms,options){;?(typeof ms!='number'||!Number.isFinite(ms)){throw new Error('Value provided to ms.format() must be of type number.')};^(((__c)=>{?(__c){return(fmtLong(ms))};return(fmtShort(ms))})(options?.long))}
+=ex{format}

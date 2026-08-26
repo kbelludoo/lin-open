@@ -1,0 +1,26 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=m003_a_option_match
+~G{?=if #=for ^=ret :else}
+
+enum Option<T> {
+  Some(T),
+  None
+}
+
+!unwrapOr<T>(opt: Option<T>, defaultVal: T): T {
+  match(opt) {
+    Some(v) => { ^v }
+    None => { ^defaultVal }
+    _ => { ^defaultVal }
+  }
+}
+
+!isSome<T>(opt: Option<T>): bool {
+  match(opt) {
+    Some(v) => { ^true }
+    None => { ^false }
+    _ => { ^false }
+  }
+}
+
+=ex{unwrapOr,isSome}

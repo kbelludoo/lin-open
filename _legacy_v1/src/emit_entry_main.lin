@@ -1,0 +1,12 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_entry_main_policy
+~G{?=if #=for ^=ret :else}
+
+!qualityFnNames(){^(['factorial','isEven','sumTo','square','double'])}
+!qualityCallCount(){^5}
+!qualityCallFn(i){fns=qualityFnNames();^fns[i]}
+!qualityCallArgs(i){args=['10','7','100','8','5'];^args[i]}
+!isQualityFnSet(names){need=qualityFnNames();have=names||[];#(i=0;i<need.length;i++){ok=false;#(j=0;j<have.length;j++){?(have[j]==need[i]){ok=true}};?(ok==false){^false}};^true}
+!wantSafeCompareMain(withMain,names){?(isQualityFnSet(names)){^false};?(withMain==false){^false};list=names||[];#(i=0;i<list.length;i++){?(list[i]=='safeCompare'){^true}};^(withMain==true)}
+
+=ex{qualityFnNames,qualityCallCount,qualityCallFn,qualityCallArgs,isQualityFnSet,wantSafeCompareMain}

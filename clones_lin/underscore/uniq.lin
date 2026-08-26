@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!uniq(array,isSorted,iteratee,context){;?(!isBoolean(isSorted)){context=iteratee;iteratee=isSorted;isSorted=false};?(iteratee!=null){iteratee=cb(iteratee,context)};result=[];seen=[];#(i=0,length=getLength(array);i<length;i++){value=array[i];computed=(((__c)=>{?(__c){return(iteratee(value,i,array))}return(value)})(iteratee));?(isSorted&&!iteratee){?(!i||seen!=computed){result.push(value)};seen=computed}:(iteratee){?(!contains(seen,computed)){seen.push(computed);result.push(value)}}:(!contains(result,value)){result.push(value)}};^result}
+=ex{uniq}

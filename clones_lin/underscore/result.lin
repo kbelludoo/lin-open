@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!result(obj,path,fallback){path=toPath(path);length=path.length;?(!length){^(((__c)=>{?(__c){return(fallback.call(obj))}return(fallback)})(isFunction(fallback)))};#(i=0;i<length;i++){prop=(((__c)=>{?(__c){return(void 0)}return(obj[path[i]])})(obj==null));?(prop==void 0){prop=fallback;i=length};obj=(((__c)=>{?(__c){return(prop.call(obj))}return(prop)})(isFunction(prop)))};^obj}
+=ex{result}

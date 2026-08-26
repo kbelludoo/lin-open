@@ -1,0 +1,42 @@
+{
+  "id": "T027",
+  "family": "multi_step_composition",
+  "difficulty": "hard",
+  "specification": "Diff estrutural entre dois objetos planos. Entrada: { oldObj: {}, newObj: {} }. Saída: { added: [keys], removed: [keys], updated: [keys] } (chaves ordenadas).",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "globalState",
+    "mut"
+  ],
+  "test_cases": [
+    {
+      "input": {
+        "oldObj": {
+          "a": 1,
+          "b": 2,
+          "c": 3
+        },
+        "newObj": {
+          "b": 20,
+          "c": 3,
+          "d": 4
+        }
+      },
+      "expected": {
+        "added": [
+          "d"
+        ],
+        "removed": [
+          "a"
+        ],
+        "updated": [
+          "b"
+        ]
+      }
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T027.mjs"
+  }
+}

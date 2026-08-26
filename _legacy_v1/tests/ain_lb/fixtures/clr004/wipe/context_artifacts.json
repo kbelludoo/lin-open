@@ -1,0 +1,33 @@
+{
+  "agent_ir": {
+    "intent": "add international payments with FX and country limits",
+    "target": "Transfer.international",
+    "constraints": ["authenticated", "country_allowed", "contract_preserved"],
+    "allowed_effects": ["io"]
+  },
+  "module_refs": ["Auth", "Storage", "Transfer", "Audit", "FX", "CountryLimits"],
+  "contracts": {
+    "Auth": "auth.verify_returns_identity",
+    "Storage": "storage.write_requires_io",
+    "Transfer": "transfer.authenticated_write",
+    "Audit": "audit.append_immutable",
+    "FX": "fx.quote_requires_supported_country",
+    "CountryLimits": "country_limits.allow_requires_policy"
+  },
+  "semantic_hashes": {
+    "Auth": "clr004-auth-v1",
+    "Storage": "clr004-storage-v1",
+    "Transfer": "clr004-transfer-v1",
+    "Audit": "clr004-audit-v1",
+    "FX": "clr004-fx-v1",
+    "CountryLimits": "clr004-country-limits-v1"
+  },
+  "effects": {
+    "Auth": ["pure"],
+    "Storage": ["io"],
+    "Transfer": ["io"],
+    "Audit": ["io"],
+    "FX": ["pure"],
+    "CountryLimits": ["pure"]
+  }
+}

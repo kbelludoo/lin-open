@@ -1,0 +1,680 @@
+@DICEL:lia_ledger:0.2.0
+^status=ACTIVE
+^note="append_only evidence; evolve_loop writes here"
+^no_padding=true
+
+@ENTRIES {
+  @L001 {
+    at: "2026-08-13T03:42:46.413Z"
+    kind: BENCH_EVIDENCE
+    milestone: M0
+    reports: [
+      "C:/Users/k/Documents/lia/INTEL_AIL_SIZE_DISK_BENCHMARK.dicel",
+      "C:/Users/k/Documents/lia/INTEL_AIL_400K_ROUNDTRIP.dicel"
+    ]
+    lab_pointers: [
+      "C:/Users/k/Documents/dicel-unified/AIL_400K_BENCH_POINTER.dicel",
+      "C:/Users/k/Documents/dicel-unified/LIA_400K_BENCH_POINTER.dicel"
+    ]
+    measured: {
+      typescript_src_loc: 453359
+      holdout_ts: "183/500"
+      holdout_ts_rate: 0.366
+      lodash_isolated: "246/400"
+      lodash_isolated_rate: 0.615
+      lodash_node_test_baseline: PASS
+      lodash_public_api_lia: "1/14"
+    }
+    trauma_classes: [CLOSURE, HOLDING_GAP]
+    claim_full_lodash_green: false
+    LIA_gate: "ge_Dicel still required; this bench did not generate Dicel L0 for direct ratio"
+    next_gap: "closures / full-repo suite"
+    fix_target: compiler_not_lia
+  }
+}
+
+@E{t="2026-08-13T04:02:49.071Z" kind=improve ok=true path=self_repair_smoke}
+
+@E{t="2026-08-13T04:02:51.783Z" kind=evolve_epoch ok=true promote=none mutate=candidates_only}
+
+@E{t="2026-08-13T04:08:09.614Z" kind=clone_lia_learn slug=dayjs fail=2 classes=RUNTIME_HELPER}
+
+@E{t="2026-08-13T04:08:09.617Z" kind=clone_lia status=FAIL_LEARN slug=dayjs pass=0 fail=2 skip=4}
+
+@E{t="2026-08-13T04:09:09.895Z" kind=clone_lia status=PARTIAL_PASS_LOCAL slug=dayjs pass=2 fail=0 skip=4}
+
+@E{t="2026-08-13T04:09:35.176Z" kind=clone_lia status=PASS slug=dayjs pass=2 fail=0 skip=4}
+
+@E{t="2026-08-13T04:15:43.038Z" kind=improve_lin_from_clone slug=dayjs harvest="emit_peripheral:template_literal×2|emit_peripheral:CLOSURE×2|positive_transfer:ok×2" candidate="CLONE_dayjs_msr09g3h.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T04:15:49.207Z" kind=clone_lin status=PARTIAL_PASS slug=dayjs pass=2 fail=0 skip=4}
+
+@E{t="2026-08-13T04:15:50.777Z" kind=improve_lin_from_clone slug=ms harvest="observe:none_new×0" candidate="CLONE_ms_msr09m2g.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T04:15:50.782Z" kind=clone_lin status=FAIL_LEARN slug=ms pass=0 fail=0 skip=0}
+
+@E{t="2026-08-13T04:15:55.046Z" kind=clone_lin_learn slug=underscore fail=5 classes=SEMANTICS_GAP,RUNTIME_HELPER}
+
+@E{t="2026-08-13T04:15:55.048Z" kind=improve_lin_from_clone slug=underscore harvest="emit_peripheral:template_literal×2|positive_transfer:ok×23" candidate="CLONE_underscore_msr09pd3.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T04:16:01.713Z" kind=clone_lin status=PARTIAL_PASS_WITH_FAILS slug=underscore pass=23 fail=5 skip=2}
+
+@E{t="2026-08-13T04:16:41.609Z" kind=improve_lin_from_clone slug=ms harvest="emit_peripheral:template_literal×5" candidate="CLONE_ms_msr0apag.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T04:16:41.614Z" kind=clone_lin status=FAIL_LEARN slug=ms pass=0 fail=0 skip=7}
+
+@E{t="2026-08-13T04:16:45.342Z" kind=clone_lin_learn slug=underscore fail=5 classes=SEMANTICS_GAP,RUNTIME_HELPER}
+
+@E{t="2026-08-13T04:16:45.343Z" kind=improve_lin_from_clone slug=underscore harvest="emit_peripheral:template_literal×2|positive_transfer:ok×23" candidate="CLONE_underscore_msr0as66.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T04:16:52.349Z" kind=clone_lin status=PARTIAL_PASS_WITH_FAILS slug=underscore pass=23 fail=5 skip=2}
+
+@E{t="2026-08-13T04:17:01.899Z" kind=improve_lin_from_clone slug=left-pad harvest="emit_peripheral:template_literal×1|emit_peripheral:CLOSURE×1" candidate="CLONE_left-pad_msr0b4y2.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T04:17:01.903Z" kind=clone_lin status=FAIL_LEARN slug=left-pad pass=0 fail=0 skip=3}
+
+@E{t="2026-08-13T04:24:38.514Z" kind=improve_lin_from_clone slug=dayjs harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×4" candidate="CLONE_dayjs_msr0kx9t.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T04:24:38.533Z" kind=clone_lin status=PARTIAL_PASS slug=dayjs pass=4 fail=0 skip=2 suite_rate=0.6667 done=false published=false}
+
+@E{t="2026-08-13T04:25:35.313Z" kind=clone_lin_learn slug=dayjs fail=1 classes=RUNTIME_HELPER}
+
+@E{t="2026-08-13T04:25:35.315Z" kind=improve_lin_from_clone slug=dayjs harvest="positive_transfer:ok×5" candidate="CLONE_dayjs_msr0m53m.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T04:25:35.324Z" kind=clone_lin status=PARTIAL_PASS_WITH_FAILS slug=dayjs pass=5 fail=1 skip=0 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-13T04:25:37.242Z" kind=clone_lin_learn slug=dayjs fail=1 classes=RUNTIME_HELPER}
+
+@E{t="2026-08-13T04:25:37.243Z" kind=improve_lin_from_clone slug=dayjs harvest="positive_transfer:ok×5" candidate="CLONE_dayjs_msr0m6l6.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T04:25:37.252Z" kind=clone_lin status=PARTIAL_PASS_WITH_FAILS slug=dayjs pass=5 fail=1 skip=0 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-13T04:25:38.917Z" kind=clone_lin_learn slug=dayjs fail=1 classes=RUNTIME_HELPER}
+
+@E{t="2026-08-13T04:25:38.918Z" kind=improve_lin_from_clone slug=dayjs harvest="positive_transfer:ok×5" candidate="CLONE_dayjs_msr0m7vq.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T04:25:38.926Z" kind=clone_lin status=PARTIAL_PASS_WITH_FAILS slug=dayjs pass=5 fail=1 skip=0 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-13T22:30:30.328Z" kind=improve_lin_from_clone slug=dayjs harvest="positive_transfer:ok×6" candidate="CLONE_dayjs_mss3dcqg.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:30:37.531Z" kind=clone_lin status=PASS slug=dayjs pass=6 fail=0 skip=0 suite_rate=1 done=true published=true}
+
+@E{t="2026-08-13T22:30:40.536Z" kind=clone_lin_learn slug=underscore fail=7 classes=SEMANTICS_GAP,RUNTIME_HELPER}
+
+@E{t="2026-08-13T22:30:40.537Z" kind=improve_lin_from_clone slug=underscore harvest="positive_transfer:ok×17" candidate="CLONE_underscore_mss3dkm0.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:30:40.538Z" kind=clone_lin status=PARTIAL_PASS_WITH_FAILS slug=underscore pass=17 fail=7 skip=0 suite_rate=0.7083 done=false published=false}
+
+@E{t="2026-08-13T22:30:42.308Z" kind=clone_lin_learn slug=underscore fail=7 classes=SEMANTICS_GAP,RUNTIME_HELPER}
+
+@E{t="2026-08-13T22:30:42.309Z" kind=improve_lin_from_clone slug=underscore harvest="positive_transfer:ok×17" candidate="CLONE_underscore_mss3dlz9.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:30:42.310Z" kind=clone_lin status=PARTIAL_PASS_WITH_FAILS slug=underscore pass=17 fail=7 skip=0 suite_rate=0.7083 done=false published=false}
+
+@E{t="2026-08-13T22:33:27.875Z" kind=clone_lin_learn slug=underscore fail=1 classes=RUNTIME_HELPER}
+
+@E{t="2026-08-13T22:33:27.876Z" kind=improve_lin_from_clone slug=underscore harvest="positive_transfer:ok×23" candidate="CLONE_underscore_mss3h5qc.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:33:27.877Z" kind=clone_lin status=PARTIAL_PASS_WITH_FAILS slug=underscore pass=23 fail=1 skip=0 suite_rate=0.9583 done=false published=false}
+
+@E{t="2026-08-13T22:33:29.657Z" kind=clone_lin_learn slug=underscore fail=1 classes=RUNTIME_HELPER}
+
+@E{t="2026-08-13T22:33:29.658Z" kind=improve_lin_from_clone slug=underscore harvest="positive_transfer:ok×23" candidate="CLONE_underscore_mss3h73u.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:33:29.659Z" kind=clone_lin status=PARTIAL_PASS_WITH_FAILS slug=underscore pass=23 fail=1 skip=0 suite_rate=0.9583 done=false published=false}
+
+@E{t="2026-08-13T22:34:10.497Z" kind=improve_lin_from_clone slug=underscore harvest="positive_transfer:ok×24" candidate="CLONE_underscore_mss3i2m9.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:34:17.494Z" kind=clone_lin status=PASS slug=underscore pass=24 fail=0 skip=0 suite_rate=1 done=true published=true}
+
+@E{t="2026-08-13T22:34:18.934Z" kind=improve_lin_from_clone slug=ms harvest="observe:none_new×0" candidate="CLONE_ms_mss3i94l.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:34:18.935Z" kind=clone_lin status=FAIL_LEARN slug=ms pass=0 fail=0 skip=7 suite_rate=0 done=false published=false}
+
+@E{t="2026-08-13T22:36:39.176Z" kind=improve_lin_from_clone slug=ms harvest="positive_transfer:ok×6" candidate="CLONE_ms_mss3l9c7.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:36:39.178Z" kind=clone_lin status=PARTIAL_PASS slug=ms pass=6 fail=0 skip=1 suite_rate=0.8571 done=false published=false}
+
+@E{t="2026-08-13T22:36:40.436Z" kind=improve_lin_from_clone slug=ms harvest="positive_transfer:ok×6" candidate="CLONE_ms_mss3lab8.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:36:40.437Z" kind=clone_lin status=PARTIAL_PASS slug=ms pass=6 fail=0 skip=1 suite_rate=0.8571 done=false published=false}
+
+@E{t="2026-08-13T22:36:41.746Z" kind=improve_lin_from_clone slug=ms harvest="positive_transfer:ok×6" candidate="CLONE_ms_mss3lbbl.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:36:41.746Z" kind=clone_lin status=PARTIAL_PASS slug=ms pass=6 fail=0 skip=1 suite_rate=0.8571 done=false published=false}
+
+@E{t="2026-08-13T22:37:07.067Z" kind=clone_lin_learn slug=ms fail=1 classes=RUNTIME_HELPER}
+
+@E{t="2026-08-13T22:37:07.069Z" kind=improve_lin_from_clone slug=ms harvest="positive_transfer:ok×6" candidate="CLONE_ms_mss3luuz.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:37:07.069Z" kind=clone_lin status=PARTIAL_PASS_WITH_FAILS slug=ms pass=6 fail=1 skip=0 suite_rate=0.8571 done=false published=false}
+
+@E{t="2026-08-13T22:37:08.306Z" kind=clone_lin_learn slug=ms fail=1 classes=RUNTIME_HELPER}
+
+@E{t="2026-08-13T22:37:08.307Z" kind=improve_lin_from_clone slug=ms harvest="positive_transfer:ok×6" candidate="CLONE_ms_mss3lvte.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:37:08.307Z" kind=clone_lin status=PARTIAL_PASS_WITH_FAILS slug=ms pass=6 fail=1 skip=0 suite_rate=0.8571 done=false published=false}
+
+@E{t="2026-08-13T22:43:27.501Z" kind=improve_lin_from_clone slug=ms harvest="positive_transfer:ok×7" candidate="CLONE_ms_mss3u0el.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:43:33.343Z" kind=clone_lin status=PASS slug=ms pass=7 fail=0 skip=0 suite_rate=1 done=true published=true}
+
+@E{t="2026-08-13T22:43:34.743Z" kind=improve_lin_from_clone slug=left-pad harvest="emit_peripheral:CLOSURE×1" candidate="CLONE_left-pad_mss3u5zq.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:43:34.744Z" kind=clone_lin status=FAIL_LEARN slug=left-pad pass=0 fail=0 skip=3 suite_rate=0 done=false published=false}
+
+@E{t="2026-08-13T22:43:35.929Z" kind=improve_lin_from_clone slug=left-pad harvest="emit_peripheral:CLOSURE×1" candidate="CLONE_left-pad_mss3u6wo.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:43:35.930Z" kind=clone_lin status=FAIL_LEARN slug=left-pad pass=0 fail=0 skip=3 suite_rate=0 done=false published=false}
+
+@E{t="2026-08-13T22:43:37.137Z" kind=improve_lin_from_clone slug=left-pad harvest="emit_peripheral:CLOSURE×1" candidate="CLONE_left-pad_mss3u7u8.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:43:37.137Z" kind=clone_lin status=FAIL_LEARN slug=left-pad pass=0 fail=0 skip=3 suite_rate=0 done=false published=false}
+
+@E{t="2026-08-13T22:44:35.364Z" kind=clone_lin_learn slug=left-pad fail=1 classes=RUNTIME_HELPER}
+
+@E{t="2026-08-13T22:44:35.365Z" kind=improve_lin_from_clone slug=left-pad harvest="emit_peripheral:CLOSURE×1" candidate="CLONE_left-pad_mss3vgro.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:44:35.366Z" kind=clone_lin status=FAIL_LEARN slug=left-pad pass=0 fail=1 skip=2 suite_rate=0 done=false published=false}
+
+@E{t="2026-08-13T22:44:36.599Z" kind=clone_lin_learn slug=left-pad fail=1 classes=RUNTIME_HELPER}
+
+@E{t="2026-08-13T22:44:36.600Z" kind=improve_lin_from_clone slug=left-pad harvest="emit_peripheral:CLOSURE×1" candidate="CLONE_left-pad_mss3vhpz.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:44:36.601Z" kind=clone_lin status=FAIL_LEARN slug=left-pad pass=0 fail=1 skip=2 suite_rate=0 done=false published=false}
+
+@E{t="2026-08-13T22:45:27.240Z" kind=clone_lin_learn slug=left-pad fail=1 classes=RUNTIME_HELPER}
+
+@E{t="2026-08-13T22:45:27.241Z" kind=improve_lin_from_clone slug=left-pad harvest="observe:none_new×0" candidate="CLONE_left-pad_mss3wksp.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:45:27.242Z" kind=clone_lin status=FAIL_LEARN slug=left-pad pass=0 fail=1 skip=0 suite_rate=0 done=false published=false}
+
+@E{t="2026-08-13T22:45:28.464Z" kind=clone_lin_learn slug=left-pad fail=1 classes=RUNTIME_HELPER}
+
+@E{t="2026-08-13T22:45:28.465Z" kind=improve_lin_from_clone slug=left-pad harvest="observe:none_new×0" candidate="CLONE_left-pad_mss3wlqp.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:45:28.466Z" kind=clone_lin status=FAIL_LEARN slug=left-pad pass=0 fail=1 skip=0 suite_rate=0 done=false published=false}
+
+@E{t="2026-08-13T22:45:46.455Z" kind=clone_lin_learn slug=left-pad fail=1 classes=RUNTIME_HELPER}
+
+@E{t="2026-08-13T22:45:46.456Z" kind=improve_lin_from_clone slug=left-pad harvest="observe:none_new×0" candidate="CLONE_left-pad_mss3wzmf.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:45:46.457Z" kind=clone_lin status=FAIL_LEARN slug=left-pad pass=0 fail=1 skip=0 suite_rate=0 done=false published=false}
+
+@E{t="2026-08-13T22:47:17.952Z" kind=improve_lin_from_clone slug=left-pad harvest="positive_transfer:ok×1" candidate="CLONE_left-pad_mss3yy7z.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:47:23.938Z" kind=clone_lin status=PASS slug=left-pad pass=1 fail=0 skip=0 suite_rate=1 done=true published=true}
+
+@E{t="2026-08-13T22:59:43.917Z" kind=improve_lin_from_clone slug=nanoid harvest="positive_transfer:ok×4" candidate="CLONE_nanoid_mss4ext8.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T22:59:50.022Z" kind=clone_lin status=PASS slug=nanoid pass=4 fail=0 skip=0 suite_rate=1 done=true published=true}
+
+@E{t="2026-08-13T23:00:14.715Z" kind=clone_lin_learn slug=chalk fail=2 classes=SEMANTICS_GAP}
+
+@E{t="2026-08-13T23:00:14.717Z" kind=improve_lin_from_clone slug=chalk harvest="positive_transfer:ok×11" candidate="CLONE_chalk_mss4flks.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:00:14.718Z" kind=clone_lin status=PARTIAL_PASS_WITH_FAILS slug=chalk pass=11 fail=2 skip=2 suite_rate=0.7333 done=false published=false}
+
+@E{t="2026-08-13T23:02:51.816Z" kind=clone_lin_learn slug=chalk fail=2 classes=SEMANTICS_GAP}
+
+@E{t="2026-08-13T23:02:51.817Z" kind=improve_lin_from_clone slug=chalk harvest="positive_transfer:ok×10" candidate="CLONE_chalk_mss4iysp.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:02:51.818Z" kind=clone_lin status=PARTIAL_PASS_WITH_FAILS slug=chalk pass=10 fail=2 skip=0 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-13T23:04:06.977Z" kind=clone_lin_learn slug=chalk fail=3 classes=SEMANTICS_GAP}
+
+@E{t="2026-08-13T23:04:06.979Z" kind=improve_lin_from_clone slug=chalk harvest="positive_transfer:ok×9" candidate="CLONE_chalk_mss4kksi.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:04:06.980Z" kind=clone_lin status=PARTIAL_PASS_WITH_FAILS slug=chalk pass=9 fail=3 skip=0 suite_rate=0.75 done=false published=false}
+
+@E{t="2026-08-13T23:05:08.282Z" kind=improve_lin_from_clone slug=chalk harvest="positive_transfer:ok×12" candidate="CLONE_chalk_mss4lw3e.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:05:15.509Z" kind=clone_lin status=PASS slug=chalk pass=12 fail=0 skip=0 suite_rate=1 done=true published=true}
+
+@E{t="2026-08-13T23:05:54.313Z" kind=improve_lin_from_clone slug=dedent harvest="positive_transfer:ok×2" candidate="CLONE_dedent_mss4mvm0.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:05:54.315Z" kind=clone_lin status=PARTIAL_PASS slug=dedent pass=2 fail=0 skip=2 suite_rate=0.5 done=false published=false}
+
+@E{t="2026-08-13T23:05:56.099Z" kind=improve_lin_from_clone slug=dedent harvest="positive_transfer:ok×2" candidate="CLONE_dedent_mss4mwzm.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:05:56.100Z" kind=clone_lin status=PARTIAL_PASS slug=dedent pass=2 fail=0 skip=2 suite_rate=0.5 done=false published=false}
+
+@E{t="2026-08-13T23:05:57.837Z" kind=improve_lin_from_clone slug=dedent harvest="positive_transfer:ok×2" candidate="CLONE_dedent_mss4mybx.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:05:57.838Z" kind=clone_lin status=PARTIAL_PASS slug=dedent pass=2 fail=0 skip=2 suite_rate=0.5 done=false published=false}
+
+@E{t="2026-08-13T23:05:59.528Z" kind=improve_lin_from_clone slug=dedent harvest="positive_transfer:ok×2" candidate="CLONE_dedent_mss4mzmv.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:05:59.529Z" kind=clone_lin status=PARTIAL_PASS slug=dedent pass=2 fail=0 skip=2 suite_rate=0.5 done=false published=false}
+
+@E{t="2026-08-13T23:06:01.288Z" kind=improve_lin_from_clone slug=dedent harvest="positive_transfer:ok×2" candidate="CLONE_dedent_mss4n0zr.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:06:01.289Z" kind=clone_lin status=PARTIAL_PASS slug=dedent pass=2 fail=0 skip=2 suite_rate=0.5 done=false published=false}
+
+@E{t="2026-08-13T23:06:03.057Z" kind=improve_lin_from_clone slug=dedent harvest="positive_transfer:ok×2" candidate="CLONE_dedent_mss4n2cx.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:06:03.058Z" kind=clone_lin status=PARTIAL_PASS slug=dedent pass=2 fail=0 skip=2 suite_rate=0.5 done=false published=false}
+
+@E{t="2026-08-13T23:06:05.195Z" kind=improve_lin_from_clone slug=dedent harvest="positive_transfer:ok×2" candidate="CLONE_dedent_mss4n40a.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:06:05.196Z" kind=clone_lin status=PARTIAL_PASS slug=dedent pass=2 fail=0 skip=2 suite_rate=0.5 done=false published=false}
+
+@E{t="2026-08-13T23:06:07.015Z" kind=improve_lin_from_clone slug=dedent harvest="positive_transfer:ok×2" candidate="CLONE_dedent_mss4n5ev.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:06:07.017Z" kind=clone_lin status=PARTIAL_PASS slug=dedent pass=2 fail=0 skip=2 suite_rate=0.5 done=false published=false}
+
+@E{t="2026-08-13T23:07:28.740Z" kind=improve_lin_from_clone slug=dedent harvest="observe:none_new×0" candidate="CLONE_dedent_mss4owgz.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:07:28.742Z" kind=clone_lin status=FAIL_LEARN slug=dedent pass=0 fail=0 skip=2 suite_rate=0 done=false published=false}
+
+@E{t="2026-08-13T23:07:30.033Z" kind=improve_lin_from_clone slug=dedent harvest="observe:none_new×0" candidate="CLONE_dedent_mss4oxgw.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:07:30.034Z" kind=clone_lin status=FAIL_LEARN slug=dedent pass=0 fail=0 skip=2 suite_rate=0 done=false published=false}
+
+@E{t="2026-08-13T23:07:31.349Z" kind=improve_lin_from_clone slug=dedent harvest="observe:none_new×0" candidate="CLONE_dedent_mss4oyhg.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:07:31.350Z" kind=clone_lin status=FAIL_LEARN slug=dedent pass=0 fail=0 skip=2 suite_rate=0 done=false published=false}
+
+@E{t="2026-08-13T23:07:32.626Z" kind=improve_lin_from_clone slug=dedent harvest="observe:none_new×0" candidate="CLONE_dedent_mss4ozgy.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:07:32.627Z" kind=clone_lin status=FAIL_LEARN slug=dedent pass=0 fail=0 skip=2 suite_rate=0 done=false published=false}
+
+@E{t="2026-08-13T23:09:56.782Z" kind=improve_lin_from_clone slug=dedent harvest="positive_transfer:ok×1" candidate="CLONE_dedent_mss4s2pa.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:10:03.876Z" kind=clone_lin status=PASS slug=dedent pass=1 fail=0 skip=0 suite_rate=1 done=true published=true}
+
+@E{t="2026-08-13T23:10:05.138Z" kind=improve_lin_from_clone slug=is-number harvest="observe:none_new×0" candidate="CLONE_is-number_mss4s95d.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:10:05.139Z" kind=clone_lin status=FAIL_LEARN slug=is-number pass=0 fail=0 skip=0 suite_rate=0 done=false published=false}
+
+@E{t="2026-08-13T23:10:06.367Z" kind=improve_lin_from_clone slug=is-number harvest="observe:none_new×0" candidate="CLONE_is-number_mss4sa3j.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:10:06.368Z" kind=clone_lin status=FAIL_LEARN slug=is-number pass=0 fail=0 skip=0 suite_rate=0 done=false published=false}
+
+@E{t="2026-08-13T23:10:57.876Z" kind=improve_lin_from_clone slug=is-number harvest="positive_transfer:ok×1" candidate="CLONE_is-number_mss4tdub.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:11:04.146Z" kind=clone_lin status=PASS slug=is-number pass=1 fail=0 skip=0 suite_rate=1 done=true published=true}
+
+@E{t="2026-08-13T23:11:07.360Z" kind=improve_lin_from_clone slug=dayjs harvest="positive_transfer:ok×5" candidate="CLONE_dayjs_mss4tl5r.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:11:14.657Z" kind=clone_lin status=PASS slug=dayjs pass=5 fail=0 skip=0 suite_rate=1 done=true published=true}
+
+@E{t="2026-08-13T23:46:41.580Z" kind=improve ok=true path=self_repair_smoke}
+
+@E{t="2026-08-13T23:47:05.934Z" kind=evolve_epoch ok=true promote=none mutate=candidates_only}
+
+@E{t="2026-08-13T23:48:58.348Z" kind=improve ok=true path=self_repair_smoke}
+
+@E{t="2026-08-13T23:49:00.530Z" kind=evolve_epoch ok=true promote=none mutate=candidates_only}
+
+@E{t="2026-08-13T23:55:26.736Z" kind=improve ok=true path=self_repair_smoke}
+
+@E{t="2026-08-13T23:55:28.868Z" kind=evolve_epoch ok=true promote=none mutate=candidates_only}
+
+@E{t="2026-08-13T23:55:37.530Z" kind=clone_lin_learn slug=ecc fail=6 classes=SEMANTICS_GAP}
+
+@E{t="2026-08-13T23:55:38.018Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_py_mss6etun fails=1 candidate="CLONE_LANG_ecc_mss6etup.dicel"}
+
+@E{t="2026-08-13T23:55:38.477Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_go_mss6eu7f fails=1 candidate="CLONE_LANG_ecc_mss6eu7g.dicel"}
+
+@E{t="2026-08-13T23:55:38.746Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_rust_mss6euew fails=1 candidate="CLONE_LANG_ecc_mss6euey.dicel"}
+
+@E{t="2026-08-13T23:55:39.066Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_py_mss6euns fails=1 candidate="CLONE_LANG_ecc_mss6eunu.dicel"}
+
+@E{t="2026-08-13T23:55:39.499Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_go_mss6euzt fails=1 candidate="CLONE_LANG_ecc_mss6euzu.dicel"}
+
+@E{t="2026-08-13T23:55:39.761Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_rust_mss6ev73 fails=1 candidate="CLONE_LANG_ecc_mss6ev74.dicel"}
+
+@E{t="2026-08-13T23:55:40.065Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_py_mss6evfj fails=1 candidate="CLONE_LANG_ecc_mss6evfl.dicel"}
+
+@E{t="2026-08-13T23:55:40.492Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_go_mss6evre fails=1 candidate="CLONE_LANG_ecc_mss6evrf.dicel"}
+
+@E{t="2026-08-13T23:55:40.750Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_rust_mss6evyk fails=1 candidate="CLONE_LANG_ecc_mss6evyl.dicel"}
+
+@E{t="2026-08-13T23:55:41.055Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_py_mss6ew71 fails=1 candidate="CLONE_LANG_ecc_mss6ew73.dicel"}
+
+@E{t="2026-08-13T23:55:41.486Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_go_mss6ewj0 fails=1 candidate="CLONE_LANG_ecc_mss6ewj1.dicel"}
+
+@E{t="2026-08-13T23:55:41.748Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_rust_mss6ewqa fails=1 candidate="CLONE_LANG_ecc_mss6ewqc.dicel"}
+
+@E{t="2026-08-13T23:55:41.778Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_ts_mss6ewr4 fails=1 candidate="CLONE_LANG_ecc_mss6ewr5.dicel"}
+
+@E{t="2026-08-13T23:55:41.780Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_py_mss6ewr6 fails=1 candidate="CLONE_LANG_ecc_mss6ewr7.dicel"}
+
+@E{t="2026-08-13T23:55:41.782Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_go_mss6ewr8 fails=1 candidate="CLONE_LANG_ecc_mss6ewr9.dicel"}
+
+@E{t="2026-08-13T23:55:41.784Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_rust_mss6ewra fails=1 candidate="CLONE_LANG_ecc_mss6ewrb.dicel"}
+
+@E{t="2026-08-13T23:55:42.065Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_py_mss6ewz4 fails=1 candidate="CLONE_LANG_ecc_mss6ewz5.dicel"}
+
+@E{t="2026-08-13T23:55:42.490Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_go_mss6exaw fails=1 candidate="CLONE_LANG_ecc_mss6exax.dicel"}
+
+@E{t="2026-08-13T23:55:42.740Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_rust_mss6exhu fails=1 candidate="CLONE_LANG_ecc_mss6exhv.dicel"}
+
+@E{t="2026-08-13T23:55:42.768Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_py_go_rust_ts_mss6exin fails=19 candidate="CLONE_LANG_ecc_mss6exio.dicel"}
+
+@E{t="2026-08-13T23:55:42.775Z" kind=improve_lin_from_clone slug=ecc harvest="positive_transfer:ok×6" candidate="CLONE_ecc_mss6exiu.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:55:42.776Z" kind=clone_lin status=PARTIAL_PASS_WITH_FAILS slug=ecc pass=6 fail=6 skip=0 suite_rate=0.5 done=false published=false}
+
+@E{t="2026-08-13T23:55:59.706Z" kind=clone_lin_learn slug=ecc fail=4 classes=SEMANTICS_GAP}
+
+@E{t="2026-08-13T23:55:59.995Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_py_mss6fat5 fails=1 candidate="CLONE_LANG_ecc_mss6fat6.dicel"}
+
+@E{t="2026-08-13T23:56:00.450Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_go_mss6fb5s fails=1 candidate="CLONE_LANG_ecc_mss6fb5t.dicel"}
+
+@E{t="2026-08-13T23:56:00.724Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_rust_mss6fbde fails=1 candidate="CLONE_LANG_ecc_mss6fbdg.dicel"}
+
+@E{t="2026-08-13T23:56:01.025Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_py_mss6fblr fails=1 candidate="CLONE_LANG_ecc_mss6fbls.dicel"}
+
+@E{t="2026-08-13T23:56:01.465Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_go_mss6fbxz fails=1 candidate="CLONE_LANG_ecc_mss6fby1.dicel"}
+
+@E{t="2026-08-13T23:56:01.741Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_rust_mss6fc5n fails=1 candidate="CLONE_LANG_ecc_mss6fc5o.dicel"}
+
+@E{t="2026-08-13T23:56:02.169Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_py_mss6fchj fails=1 candidate="CLONE_LANG_ecc_mss6fchk.dicel"}
+
+@E{t="2026-08-13T23:56:02.677Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_go_mss6fcvn fails=1 candidate="CLONE_LANG_ecc_mss6fcvo.dicel"}
+
+@E{t="2026-08-13T23:56:02.948Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_rust_mss6fd36 fails=1 candidate="CLONE_LANG_ecc_mss6fd37.dicel"}
+
+@E{t="2026-08-13T23:56:03.263Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_py_mss6fdbw fails=1 candidate="CLONE_LANG_ecc_mss6fdby.dicel"}
+
+@E{t="2026-08-13T23:56:03.695Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_go_mss6fdny fails=1 candidate="CLONE_LANG_ecc_mss6fdnz.dicel"}
+
+@E{t="2026-08-13T23:56:03.964Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_rust_mss6fdve fails=1 candidate="CLONE_LANG_ecc_mss6fdvf.dicel"}
+
+@E{t="2026-08-13T23:56:03.992Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_py_go_rust_mss6fdw6 fails=12 candidate="CLONE_LANG_ecc_mss6fdw7.dicel"}
+
+@E{t="2026-08-13T23:56:03.998Z" kind=improve_lin_from_clone slug=ecc harvest="positive_transfer:ok×4" candidate="CLONE_ecc_mss6fdwd.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:56:03.998Z" kind=clone_lin status=PARTIAL_PASS_WITH_FAILS slug=ecc pass=4 fail=4 skip=0 suite_rate=0.5 done=false published=false}
+
+@E{t="2026-08-13T23:59:23.117Z" kind=clone_lin_learn slug=ecc fail=4 classes=SEMANTICS_GAP}
+
+@E{t="2026-08-13T23:59:23.403Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_py_mss6jnrd fails=1 candidate="CLONE_LANG_ecc_mss6jnre.dicel"}
+
+@E{t="2026-08-13T23:59:23.867Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_go_mss6jo49 fails=1 candidate="CLONE_LANG_ecc_mss6jo4a.dicel"}
+
+@E{t="2026-08-13T23:59:24.154Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_rust_mss6joc8 fails=1 candidate="CLONE_LANG_ecc_mss6joca.dicel"}
+
+@E{t="2026-08-13T23:59:24.465Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_py_mss6jokv fails=1 candidate="CLONE_LANG_ecc_mss6jokx.dicel"}
+
+@E{t="2026-08-13T23:59:24.889Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_go_mss6jowm fails=1 candidate="CLONE_LANG_ecc_mss6jown.dicel"}
+
+@E{t="2026-08-13T23:59:25.151Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_rust_mss6jp3x fails=1 candidate="CLONE_LANG_ecc_mss6jp3y.dicel"}
+
+@E{t="2026-08-13T23:59:25.461Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_py_mss6jpcj fails=1 candidate="CLONE_LANG_ecc_mss6jpck.dicel"}
+
+@E{t="2026-08-13T23:59:25.885Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_go_mss6jpob fails=1 candidate="CLONE_LANG_ecc_mss6jpoc.dicel"}
+
+@E{t="2026-08-13T23:59:26.201Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_rust_mss6jpx2 fails=1 candidate="CLONE_LANG_ecc_mss6jpx4.dicel"}
+
+@E{t="2026-08-13T23:59:26.539Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_py_mss6jq6h fails=1 candidate="CLONE_LANG_ecc_mss6jq6i.dicel"}
+
+@E{t="2026-08-13T23:59:26.993Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_go_mss6jqj3 fails=1 candidate="CLONE_LANG_ecc_mss6jqj5.dicel"}
+
+@E{t="2026-08-13T23:59:27.295Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_rust_mss6jqrh fails=1 candidate="CLONE_LANG_ecc_mss6jqri.dicel"}
+
+@E{t="2026-08-13T23:59:27.328Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_py_go_rust_mss6jqse fails=12 candidate="CLONE_LANG_ecc_mss6jqsf.dicel"}
+
+@E{t="2026-08-13T23:59:27.335Z" kind=improve_lin_from_clone slug=ecc harvest="positive_transfer:ok×4" candidate="CLONE_ecc_mss6jqsm.dicel" nucleus=untouched}
+
+@E{t="2026-08-13T23:59:27.336Z" kind=clone_lin status=PARTIAL_PASS_WITH_FAILS slug=ecc pass=4 fail=4 skip=0 suite_rate=0.5 done=false published=false}
+
+@E{t="2026-08-14T00:01:01.936Z" kind=clone_lin_learn slug=is-number fail=1 classes=SEMANTICS_GAP}
+
+@E{t="2026-08-14T00:01:02.548Z" kind=learn_new_lang slug=is-number hyp=H_NEW_LANG_is-number_py_mss6ls9e fails=1 candidate="CLONE_LANG_is-number_mss6ls9f.dicel"}
+
+@E{t="2026-08-14T00:01:03.102Z" kind=learn_new_lang slug=is-number hyp=H_NEW_LANG_is-number_go_mss6lsos fails=1 candidate="CLONE_LANG_is-number_mss6lsot.dicel"}
+
+@E{t="2026-08-14T00:01:03.382Z" kind=learn_new_lang slug=is-number hyp=H_NEW_LANG_is-number_rust_mss6lswj fails=1 candidate="CLONE_LANG_is-number_mss6lswl.dicel"}
+
+@E{t="2026-08-14T00:01:03.698Z" kind=learn_new_lang slug=is-number hyp=H_NEW_LANG_is-number_py_mss6lt5c fails=1 candidate="CLONE_LANG_is-number_mss6lt5d.dicel"}
+
+@E{t="2026-08-14T00:01:04.162Z" kind=learn_new_lang slug=is-number hyp=H_NEW_LANG_is-number_go_mss6lti7 fails=1 candidate="CLONE_LANG_is-number_mss6lti9.dicel"}
+
+@E{t="2026-08-14T00:01:04.425Z" kind=learn_new_lang slug=is-number hyp=H_NEW_LANG_is-number_rust_mss6ltpj fails=1 candidate="CLONE_LANG_is-number_mss6ltpk.dicel"}
+
+@E{t="2026-08-14T00:01:04.762Z" kind=learn_new_lang slug=is-number hyp=H_NEW_LANG_is-number_py_mss6ltyv fails=1 candidate="CLONE_LANG_is-number_mss6ltyx.dicel"}
+
+@E{t="2026-08-14T00:01:05.210Z" kind=learn_new_lang slug=is-number hyp=H_NEW_LANG_is-number_go_mss6lubc fails=1 candidate="CLONE_LANG_is-number_mss6lubd.dicel"}
+
+@E{t="2026-08-14T00:01:05.476Z" kind=learn_new_lang slug=is-number hyp=H_NEW_LANG_is-number_rust_mss6luiq fails=1 candidate="CLONE_LANG_is-number_mss6luis.dicel"}
+
+@E{t="2026-08-14T00:01:05.794Z" kind=learn_new_lang slug=is-number hyp=H_NEW_LANG_is-number_py_mss6lurk fails=1 candidate="CLONE_LANG_is-number_mss6lurm.dicel"}
+
+@E{t="2026-08-14T00:01:06.236Z" kind=learn_new_lang slug=is-number hyp=H_NEW_LANG_is-number_go_mss6lv3u fails=1 candidate="CLONE_LANG_is-number_mss6lv3w.dicel"}
+
+@E{t="2026-08-14T00:01:06.502Z" kind=learn_new_lang slug=is-number hyp=H_NEW_LANG_is-number_rust_mss6lvb9 fails=1 candidate="CLONE_LANG_is-number_mss6lvba.dicel"}
+
+@E{t="2026-08-14T00:01:06.814Z" kind=learn_new_lang slug=is-number hyp=H_NEW_LANG_is-number_py_mss6lvjw fails=1 candidate="CLONE_LANG_is-number_mss6lvjx.dicel"}
+
+@E{t="2026-08-14T00:01:07.254Z" kind=learn_new_lang slug=is-number hyp=H_NEW_LANG_is-number_go_mss6lvw3 fails=1 candidate="CLONE_LANG_is-number_mss6lvw5.dicel"}
+
+@E{t="2026-08-14T00:01:07.556Z" kind=learn_new_lang slug=is-number hyp=H_NEW_LANG_is-number_rust_mss6lw4i fails=1 candidate="CLONE_LANG_is-number_mss6lw4j.dicel"}
+
+@E{t="2026-08-14T00:01:07.594Z" kind=learn_new_lang slug=is-number hyp=H_NEW_LANG_is-number_py_go_rust_mss6lw5j fails=15 candidate="CLONE_LANG_is-number_mss6lw5l.dicel"}
+
+@E{t="2026-08-14T00:01:07.602Z" kind=improve_lin_from_clone slug=is-number harvest="positive_transfer:ok×5" candidate="CLONE_is-number_mss6lw5t.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:01:07.603Z" kind=clone_lin status=PARTIAL_PASS_WITH_FAILS slug=is-number pass=5 fail=1 skip=0 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:04:27.590Z" kind=learn_new_lang slug=dayjs hyp=H_NEW_LANG_dayjs_py_mss6q6gz fails=1 candidate="CLONE_LANG_dayjs_mss6q6h2.dicel"}
+
+@E{t="2026-08-14T00:04:28.162Z" kind=learn_new_lang slug=dayjs hyp=H_NEW_LANG_dayjs_go_mss6q6ww fails=1 candidate="CLONE_LANG_dayjs_mss6q6wx.dicel"}
+
+@E{t="2026-08-14T00:04:28.732Z" kind=learn_new_lang slug=dayjs hyp=H_NEW_LANG_dayjs_rust_mss6q7cq fails=1 candidate="CLONE_LANG_dayjs_mss6q7cr.dicel"}
+
+@E{t="2026-08-14T00:04:29.225Z" kind=learn_new_lang slug=dayjs hyp=H_NEW_LANG_dayjs_py_mss6q7qf fails=1 candidate="CLONE_LANG_dayjs_mss6q7qg.dicel"}
+
+@E{t="2026-08-14T00:04:29.774Z" kind=learn_new_lang slug=dayjs hyp=H_NEW_LANG_dayjs_go_mss6q85o fails=1 candidate="CLONE_LANG_dayjs_mss6q85p.dicel"}
+
+@E{t="2026-08-14T00:04:30.331Z" kind=learn_new_lang slug=dayjs hyp=H_NEW_LANG_dayjs_rust_mss6q8l5 fails=1 candidate="CLONE_LANG_dayjs_mss6q8l7.dicel"}
+
+@E{t="2026-08-14T00:04:30.814Z" kind=learn_new_lang slug=dayjs hyp=H_NEW_LANG_dayjs_py_mss6q8yk fails=1 candidate="CLONE_LANG_dayjs_mss6q8yl.dicel"}
+
+@E{t="2026-08-14T00:04:31.369Z" kind=learn_new_lang slug=dayjs hyp=H_NEW_LANG_dayjs_go_mss6q9dz fails=1 candidate="CLONE_LANG_dayjs_mss6q9e0.dicel"}
+
+@E{t="2026-08-14T00:04:31.912Z" kind=learn_new_lang slug=dayjs hyp=H_NEW_LANG_dayjs_rust_mss6q9t2 fails=1 candidate="CLONE_LANG_dayjs_mss6q9t4.dicel"}
+
+@E{t="2026-08-14T00:04:32.370Z" kind=learn_new_lang slug=dayjs hyp=H_NEW_LANG_dayjs_py_mss6qa5s fails=1 candidate="CLONE_LANG_dayjs_mss6qa5t.dicel"}
+
+@E{t="2026-08-14T00:04:32.924Z" kind=learn_new_lang slug=dayjs hyp=H_NEW_LANG_dayjs_go_mss6qal6 fails=1 candidate="CLONE_LANG_dayjs_mss6qal7.dicel"}
+
+@E{t="2026-08-14T00:04:33.466Z" kind=learn_new_lang slug=dayjs hyp=H_NEW_LANG_dayjs_rust_mss6qb09 fails=1 candidate="CLONE_LANG_dayjs_mss6qb0a.dicel"}
+
+@E{t="2026-08-14T00:04:34.512Z" kind=learn_new_lang slug=dayjs hyp=H_NEW_LANG_dayjs_rust_mss6qbta fails=1 candidate="CLONE_LANG_dayjs_mss6qbtb.dicel"}
+
+@E{t="2026-08-14T00:04:34.688Z" kind=learn_new_lang slug=dayjs hyp=H_NEW_LANG_dayjs_py_go_rust_mss6qby6 fails=13 candidate="CLONE_LANG_dayjs_mss6qby7.dicel"}
+
+@E{t="2026-08-14T00:04:34.695Z" kind=improve_lin_from_clone slug=dayjs harvest="positive_transfer:ok×5" candidate="CLONE_dayjs_mss6qbye.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:04:43.164Z" kind=clone_lin status=PASS slug=dayjs pass=5 fail=0 skip=0 suite_rate=1 done=true published=true}
+
+@E{t="2026-08-14T00:06:21.319Z" kind=learn_new_lang slug=left-pad hyp=H_NEW_LANG_left-pad_py_go_rust_mss6sm85 fails=3 candidate="CLONE_LANG_left-pad_mss6sm87.dicel"}
+
+@E{t="2026-08-14T00:06:21.321Z" kind=improve_lin_from_clone slug=left-pad harvest="positive_transfer:ok×1" candidate="CLONE_left-pad_mss6sm88.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:06:21.344Z" kind=clone_lin status=PASS slug=left-pad pass=1 fail=0 skip=0 suite_rate=1 done=true published=true}
+
+@E{t="2026-08-14T00:08:33.306Z" kind=learn_new_lang slug=left-pad hyp=H_NEW_LANG_left-pad_py_go_rust_mss6vg2g fails=3 candidate="CLONE_LANG_left-pad_mss6vg2h.dicel"}
+
+@E{t="2026-08-14T00:08:33.308Z" kind=improve_lin_from_clone slug=left-pad harvest="positive_transfer:ok×1" candidate="CLONE_left-pad_mss6vg2j.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:08:33.320Z" kind=clone_lin status=PASS slug=left-pad pass=1 fail=0 skip=0 suite_rate=1 done=true published=true}
+
+@E{t="2026-08-14T00:09:08.538Z" kind=learn_new_lang slug=left-pad hyp=H_NEW_LANG_left-pad_go_rust_mss6w793 fails=2 candidate="CLONE_LANG_left-pad_mss6w795.dicel"}
+
+@E{t="2026-08-14T00:09:08.539Z" kind=improve_lin_from_clone slug=left-pad harvest="positive_transfer:ok×1" candidate="CLONE_left-pad_mss6w796.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:09:08.553Z" kind=clone_lin status=PASS slug=left-pad pass=1 fail=0 skip=0 suite_rate=1 done=true published=true}
+
+@E{t="2026-08-14T00:09:21.127Z" kind=learn_new_lang slug=ecc hyp=H_NEW_LANG_ecc_go_rust_py_mss6wgys fails=20 candidate="CLONE_LANG_ecc_mss6wgyu.dicel"}
+
+@E{t="2026-08-14T00:09:21.128Z" kind=improve_lin_from_clone slug=ecc harvest="positive_transfer:ok×8" candidate="CLONE_ecc_mss6wgyw.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:09:28.928Z" kind=clone_lin status=PASS slug=ecc pass=8 fail=0 skip=0 suite_rate=1 done=true published=true}
+
+@E{t="2026-08-14T00:12:33.197Z" kind=improve ok=true path=self_repair_smoke}
+
+@E{t="2026-08-14T00:12:36.835Z" kind=evolve_epoch ok=true promote=none mutate=candidates_only}
+
+@E{t="2026-08-14T00:12:50.046Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss70y64 fails=29 candidate="CLONE_LANG_ponytail_mss70y65.dicel"}
+
+@E{t="2026-08-14T00:12:50.047Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss70y67.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:12:50.056Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:13:01.734Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss7176s fails=29 candidate="CLONE_LANG_ponytail_mss7176u.dicel"}
+
+@E{t="2026-08-14T00:13:01.736Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss7176v.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:13:01.745Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:13:13.643Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss71gdl fails=29 candidate="CLONE_LANG_ponytail_mss71gdm.dicel"}
+
+@E{t="2026-08-14T00:13:13.644Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss71gdo.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:13:13.654Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:13:25.289Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss71pd3 fails=29 candidate="CLONE_LANG_ponytail_mss71pd4.dicel"}
+
+@E{t="2026-08-14T00:13:25.290Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss71pd5.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:13:25.299Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:13:37.018Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss71yew fails=29 candidate="CLONE_LANG_ponytail_mss71yex.dicel"}
+
+@E{t="2026-08-14T00:13:37.019Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss71yez.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:13:37.028Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:13:48.874Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss727k8 fails=29 candidate="CLONE_LANG_ponytail_mss727k9.dicel"}
+
+@E{t="2026-08-14T00:13:48.875Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss727kb.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:13:48.884Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:14:00.415Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss72ggt fails=29 candidate="CLONE_LANG_ponytail_mss72ggv.dicel"}
+
+@E{t="2026-08-14T00:14:00.416Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss72ggw.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:14:00.426Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:14:12.123Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss72pi1 fails=29 candidate="CLONE_LANG_ponytail_mss72pi2.dicel"}
+
+@E{t="2026-08-14T00:14:12.124Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss72pi3.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:14:12.134Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:14:23.755Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss72yh5 fails=29 candidate="CLONE_LANG_ponytail_mss72yh6.dicel"}
+
+@E{t="2026-08-14T00:14:23.756Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss72yh8.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:14:23.766Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:14:35.393Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss737gf fails=29 candidate="CLONE_LANG_ponytail_mss737gg.dicel"}
+
+@E{t="2026-08-14T00:14:35.394Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss737gh.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:14:35.402Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:14:47.048Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss73gg6 fails=29 candidate="CLONE_LANG_ponytail_mss73gg7.dicel"}
+
+@E{t="2026-08-14T00:14:47.049Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss73gg8.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:14:47.058Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:14:58.733Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss73pgr fails=29 candidate="CLONE_LANG_ponytail_mss73pgs.dicel"}
+
+@E{t="2026-08-14T00:14:58.734Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss73pgt.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:14:58.743Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:15:10.519Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss73yk5 fails=29 candidate="CLONE_LANG_ponytail_mss73yk7.dicel"}
+
+@E{t="2026-08-14T00:15:10.520Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss73yk8.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:15:10.530Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:15:22.815Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss7481p fails=29 candidate="CLONE_LANG_ponytail_mss7481r.dicel"}
+
+@E{t="2026-08-14T00:15:22.817Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss7481s.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:15:22.826Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:15:35.506Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss74hu8 fails=29 candidate="CLONE_LANG_ponytail_mss74hua.dicel"}
+
+@E{t="2026-08-14T00:15:35.508Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss74hub.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:15:35.517Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:15:49.291Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss74sh5 fails=29 candidate="CLONE_LANG_ponytail_mss74sh6.dicel"}
+
+@E{t="2026-08-14T00:15:49.292Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss74sh8.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:15:49.301Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:16:01.309Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss751qy fails=29 candidate="CLONE_LANG_ponytail_mss751r0.dicel"}
+
+@E{t="2026-08-14T00:16:01.310Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss751r1.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:16:01.318Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:16:13.427Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss75b3l fails=29 candidate="CLONE_LANG_ponytail_mss75b3m.dicel"}
+
+@E{t="2026-08-14T00:16:13.428Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss75b3n.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:16:13.437Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:16:25.466Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss75kdz fails=29 candidate="CLONE_LANG_ponytail_mss75ke1.dicel"}
+
+@E{t="2026-08-14T00:16:25.467Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss75ke3.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:16:25.480Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:16:37.758Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss75tvg fails=29 candidate="CLONE_LANG_ponytail_mss75tvi.dicel"}
+
+@E{t="2026-08-14T00:16:37.759Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss75tvj.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:16:37.768Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-14T00:16:49.804Z" kind=learn_new_lang slug=ponytail hyp=H_NEW_LANG_ponytail_py_go_rust_mss76362 fails=29 candidate="CLONE_LANG_ponytail_mss76363.dicel"}
+
+@E{t="2026-08-14T00:16:49.805Z" kind=improve_lin_from_clone slug=ponytail harvest="emit_peripheral:CLOSURE×2|positive_transfer:ok×10" candidate="CLONE_ponytail_mss76365.dicel" nucleus=untouched}
+
+@E{t="2026-08-14T00:16:49.815Z" kind=clone_lin status=PARTIAL_PASS slug=ponytail pass=10 fail=0 skip=2 suite_rate=0.8333 done=false published=false}
+
+@E{t="2026-08-15T18:40:10.983Z" kind=improve_lin_from_clone slug=open-design harvest="observe:none_new×0" autogen="createArtifactParser:COMPILE_OK_NO_ORACLE|randomUuid:BEHAVIOR_EQ_FAIL|createTerminalService:COMPILE_OK_NO_ORACLE" candidate="CLONE_open-design_msuq0uzc.rulel" nucleus=untouched}
+
+@E{t="2026-08-15T18:40:44.012Z" kind=improve_lin_from_clone slug=open-design harvest="observe:none_new×0" autogen="createArtifactParser:COMPILE_OK_NO_ORACLE|randomUuid:BEHAVIOR_EQ_FAIL|createTerminalService:STUB_NOT_PASS" candidate="CLONE_open-design_msuq1kgt.rulel" nucleus=untouched}
+
+@E{t="2026-08-15T20:52:49.136Z" kind=improve_lin_from_clone slug=dayjs harvest="positive_transfer:ok×292" autogen="no_fails" candidate="CLONE_dayjs_msuurfjj.rulel" nucleus=untouched}
+
+@E{t="2026-08-15T21:09:58.935Z" kind=improve_lin_from_clone slug=dayjs harvest="positive_transfer:ok×292" autogen="no_fails" candidate="CLONE_dayjs_msuvdi52.rulel" nucleus=untouched}
+
+@E{t="2026-08-15T21:30:15.143Z" kind=improve_lin_from_clone slug=dayjs harvest="positive_transfer:ok×292" autogen="no_fails" candidate="CLONE_dayjs_msuw3kkm.rulel" nucleus=untouched}
+
+@E{t="2026-08-15T21:47:27.115Z" kind=improve_lin_from_clone slug=dayjs harvest="positive_transfer:ok×292" autogen="no_fails" candidate="CLONE_dayjs_msuwpouh.rulel" nucleus=untouched}
+
+@E{t="2026-08-15T22:33:25.902Z" kind=improve_lin_from_clone slug=dayjs harvest="positive_transfer:ok×292" autogen="no_fails" candidate="CLONE_dayjs_msuyctjh.rulel" nucleus=untouched}
+
+@E{t="2026-08-15T23:10:17.911Z" kind=improve_lin_from_clone slug=dayjs harvest="positive_transfer:ok×292" autogen="no_fails" candidate="CLONE_dayjs_msuzo8c5.rulel" nucleus=untouched}
+
+@E{t="2026-08-15T23:44:40.427Z" kind=improve_lin_from_clone slug=dayjs harvest="positive_transfer:ok×292" autogen="no_fails" candidate="CLONE_dayjs_msv0wfsa.rulel" nucleus=untouched}
+
+@E{t="2026-08-16T00:11:21.031Z" kind=improve_lin_from_clone slug=dayjs harvest="positive_transfer:ok×292" autogen="no_fails" candidate="CLONE_dayjs_msv1uqth.rulel" nucleus=untouched}
+
+@E{t="2026-08-16T00:28:05.855Z" kind=improve_lin_from_clone slug=dayjs harvest="positive_transfer:ok×292" autogen="no_fails" candidate="CLONE_dayjs_msv2ga59.rulel" nucleus=untouched}
+
+@E{t="2026-08-16T00:52:57.071Z" kind=improve_lin_from_clone slug=dayjs harvest="positive_transfer:ok×292" autogen="no_fails" candidate="CLONE_dayjs_msv3c8rx.rulel" nucleus=untouched}
+
+@E{t="2026-08-16T01:18:03.734Z" kind=improve_lin_from_clone slug=dayjs harvest="positive_transfer:ok×292" autogen="no_fails" candidate="CLONE_dayjs_msv48jbo.rulel" nucleus=untouched}
+
+@E{t="2026-08-16T14:40:00.000Z" kind=ccr002_v21_signal thesis="verifiable_cognitive_continuity_layer" a4=just_metadata_competitor metric=ignored_semantic_signal mock_proves=architecture mock_does_not_prove=real_models ccr003=long_horizon_evolution nucleus=untouched}
+
+@E{t="2026-08-18T04:59:09.318Z" kind=improve_lin_from_clone slug=30-seconds-of-code harvest="positive_transfer:ok×179" autogen="no_fails" candidate="CLONE_30-seconds-of-code_msy70kg5.rulel" nucleus=untouched}
+
+@E{t="2026-08-18T05:03:42.968Z" kind=improve_lin_from_clone slug=dayjs harvest="positive_transfer:ok×292" autogen="no_fails" candidate="CLONE_dayjs_msy76flj.rulel" nucleus=untouched}
+
+@E{t="2026-08-19T00:03:16.313Z" kind=improve_lin_from_clone slug=underscore harvest="positive_transfer:ok×168" autogen="no_fails" candidate="CLONE_underscore_mszbvwt4.rulel" nucleus=untouched}

@@ -1,0 +1,9 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=pay_contracts
+~G{?=if #=for ^=ret :else}
+!approvalRule(){^'transfer_gt_10000_needs_approval'}
+!hashNucleus(){^'EXISTING_semantic_hash'}
+!redefineHash(){^0}
+!effectsKept(){^'pure|memory|io'}
+!moduleRefs(){^'User|Balance|Transfer|Audit|Perms|Logs'}
+=ex{approvalRule,hashNucleus,redefineHash,effectsKept,moduleRefs}

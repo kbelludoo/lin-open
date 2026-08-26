@@ -1,0 +1,28 @@
+@DICEL:LIN_CANDIDATE:1.0.0
+^from_clone="clone-lin-ecc"
+^stage="LEARN_NEW_LANG"
+^forbid_nucleus=true
+
+@HARVEST {
+  emit_fail{target="py" fn="isBlocking" emit="ok" run="FAIL" reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_ecc_WArLBl\py\isBlocking.py', line 3
+    return f.severity=='CRITICAL'|" nucleus=false}
+  emit_fail{target="go" fn="isBlocking" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_ecc_WArLBl\go\isBlocking.go:4:8: could not import fmt (file not found)
+C:\Users\" nucleus=false}
+  emit_fail{target="rust" fn="isBlocking" emit="ok" run="FAIL" reason="rustc" nucleus=false}
+  emit_fail{target="py" fn="normalize" emit="ok" run="FAIL" reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_ecc_WArLBl\py\normalize.py', line 3
+    return (s||'').replace(/\s+/g,'" nucleus=false}
+  emit_fail{target="go" fn="normalize" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_ecc_WArLBl\go\normalize.go:6:14: empty rune literal or unescaped '
+C:\Users\k\Ap" nucleus=false}
+  emit_fail{target="rust" fn="normalize" emit="ok" run="FAIL" reason="rustc" nucleus=false}
+  emit_fail{target="py" fn="isAbsolutePath" emit="ok" run="FAIL" reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_ecc_WArLBl\py\isAbsolutePath.py', line 3
+    return path.isAbsolute(val" nucleus=false}
+  emit_fail{target="go" fn="isAbsolutePath" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_ecc_WArLBl\go\isAbsolutePath.go:4:8: could not import fmt (file not found)
+C:\Us" nucleus=false}
+  emit_fail{target="rust" fn="isAbsolutePath" emit="ok" run="FAIL" reason="rustc" nucleus=false}
+  emit_fail{target="py" fn="validateCwd" emit="ok" run="FAIL" reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_ecc_WArLBl\py\validateCwd.py', line 4
+    throw new Error('--cwd must n" nucleus=false}
+  emit_fail{target="go" fn="validateCwd" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_ecc_WArLBl\go\validateCwd.go:6:23: invalid character '\'' in octal escape
+C:\Use" nucleus=false}
+  emit_fail{target="rust" fn="validateCwd" emit="ok" run="FAIL" reason="rustc" nucleus=false}
+  proposal{fix="emit_ts|emit_py|emit_go|emit_rust|emit_shared peripheral; retry; no one-file hardcode"}
+}

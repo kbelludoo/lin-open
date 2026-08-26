@@ -1,0 +1,120 @@
+{
+  "id": "V4_B_FINDINGS",
+  "version": "1.0.0",
+  "repository": "axios@v1.14.0",
+  "analysis_pass": "deep",
+  "total_findings": 10,
+
+  "findings": [
+    {
+      "id": "FINDING-001",
+      "file": "lib/core/mergeConfig.js",
+      "line": 59,
+      "category": "prototype_pollution",
+      "confidence": "HIGH",
+      "description": "mergeDirectKeys uses 'prop in config2' which traverses prototype chain. Polluted validateStatus makes axios accept all HTTP status codes.",
+      "impact": "SECURITY",
+      "oracle_match": "BUG-001",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "id": "FINDING-002",
+      "file": "lib/helpers/resolveConfig.js",
+      "line": 13,
+      "category": "prototype_pollution",
+      "confidence": "HIGH",
+      "description": "Destructuring reads auth/xsrfHeaderName/xsrfCookieName through prototype chain. Polluted auth enables credential theft.",
+      "impact": "SECURITY",
+      "oracle_match": "BUG-005 (related)",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "id": "FINDING-003",
+      "file": "lib/defaults/index.js",
+      "line": 124,
+      "category": "prototype_pollution",
+      "confidence": "HIGH",
+      "description": "this.parseReviver inherited from polluted prototype enables arbitrary code execution via JSON.parse reviver.",
+      "impact": "SECURITY",
+      "oracle_match": "BUG-005",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "id": "FINDING-004",
+      "file": "lib/adapters/http.js",
+      "line": 333,
+      "category": "prototype_pollution",
+      "confidence": "MEDIUM",
+      "description": "Config destructuring reads httpVersion/socketPath through prototype chain. Enables protocol downgrade and SSRF.",
+      "impact": "SECURITY",
+      "oracle_match": "BUG-002, BUG-003",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "id": "FINDING-005",
+      "file": "lib/helpers/formDataToJSON.js",
+      "line": 53,
+      "category": "prototype_pollution",
+      "confidence": "MEDIUM",
+      "description": "Only filters __proto__ but not constructor/prototype. Incomplete protection.",
+      "impact": "SECURITY",
+      "oracle_match": "BUG-004",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "id": "FINDING-006",
+      "file": "lib/utils.js",
+      "line": 529,
+      "category": "prototype_pollution",
+      "confidence": "MEDIUM",
+      "description": "toFlatObject direct assignment can replace destObj.__proto__.",
+      "impact": "RELIABILITY",
+      "oracle_match": null,
+      "verdict": "NEEDS_REVIEW"
+    },
+    {
+      "id": "FINDING-007",
+      "file": "lib/helpers/resolveConfig.js",
+      "line": 31,
+      "category": "deprecated_api",
+      "confidence": "MEDIUM",
+      "description": "Uses deprecated unescape() for HTTP basic auth password encoding.",
+      "impact": "SECURITY",
+      "oracle_match": "BUG-009",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "id": "FINDING-008",
+      "file": "lib/adapters/http.js",
+      "line": 786,
+      "category": "stream_bypass",
+      "confidence": "HIGH",
+      "description": "Stream responses bypass maxContentLength enforcement.",
+      "impact": "SECURITY",
+      "oracle_match": "BUG-008",
+      "verdict": "CONFIRMED"
+    },
+    {
+      "id": "FINDING-009",
+      "file": "lib/helpers/isURLSameOrigin.js",
+      "line": 16,
+      "category": "logic_error",
+      "confidence": "MEDIUM",
+      "description": "isURLSameOrigin returns true in non-browser envs, sending XSRF tokens to all URLs.",
+      "impact": "SECURITY",
+      "oracle_match": null,
+      "verdict": "FALSE_POSITIVE"
+    },
+    {
+      "id": "FINDING-010",
+      "file": "lib/utils.js",
+      "line": 442,
+      "category": "prototype_pollution",
+      "confidence": "MEDIUM",
+      "description": "extend() lacks __proto__/constructor/prototype guard that merge() has.",
+      "impact": "SECURITY",
+      "oracle_match": null,
+      "verdict": "FALSE_POSITIVE"
+    }
+  ]
+}

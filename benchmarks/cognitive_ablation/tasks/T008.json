@@ -1,0 +1,28 @@
+{
+  "id": "T008",
+  "family": "code_transformation",
+  "difficulty": "easy",
+  "specification": "Compressão Run-Length Encoding (RLE). Entrada: string (ex: \"AAABBBCC\"). Saída: string codificada (ex: \"3A3B2C\"). Se string vazia, retorna \"\".",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "globalState"
+  ],
+  "test_cases": [
+    {
+      "input": "AAABBBCC",
+      "expected": "3A3B2C"
+    },
+    {
+      "input": "A",
+      "expected": "1A"
+    },
+    {
+      "input": "",
+      "expected": ""
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T008.mjs"
+  }
+}

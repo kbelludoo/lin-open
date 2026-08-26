@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!ms(value,options){;?(typeof value=='string'){^parse(value)}:(typeof value=='number'){^format(value,options)}throw new Error( ("Value provided to ms() must be a string or number. value="+(JSON.stringify(value))),)}
+=ex{ms}

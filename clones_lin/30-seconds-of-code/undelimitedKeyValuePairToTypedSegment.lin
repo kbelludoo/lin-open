@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!undelimitedKeyValuePairToTypedSegment(segment){;([key,value]=segment.split(KEY_VALUE_SEPARATOR).map(~(s){^s.trim()}));?(!key||!value){^{key: null,value: null,type: null}};?(value.toLowerCase()=='true'){};^{key,value: true,type: 'boolean'};?(value.toLowerCase()=='false'){};^{key,value: false,type: 'boolean'};^{key,value,type: 'string'}}
+=ex{undelimitedKeyValuePairToTypedSegment}

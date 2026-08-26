@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!exportSnippetData(snippetData){;^snippetData.map(~(snippet){; return { model: 'Snippet', id: snippet.id, title: snippet.title, tags: snippet.tags, shortTitle: snippet.shortTitle, dateModified: snippet.dateModified, listed: snippet.listed, description: snippet.descriptionHtml, content: snippet.fullDescriptionHtml, tableOfContents: snippet.tableOfContentsHtml, cover: snippet.cover, languageId: snippet.languageKey, recTokens: snippet.recTokens, docTokens: snippet.docTokens, ranking: snippet.ranking, journeyId: snippet.journeyId, };})}
+=ex{exportSnippetData}

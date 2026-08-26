@@ -1,0 +1,75 @@
+@DICEL:LIA_SELF_REPAIR_PRIOR_ART:1.0.0
+
+^purpose="concrete_patterns_to_steal_for_LIA_SELF_REPAIR"
+^status="RESEARCH"
+^date="2026-08-13"
+
+@SOURCES {
+  LangGraph_fault_tolerance:
+    url: "https://docs.langchain.com/oss/python/langgraph/fault-tolerance"
+    blog: "https://www.langchain.com/blog/fault-tolerance-in-langgraph"
+    patterns: ["RetryPolicy_backoff","error_handler_after_retries","hard_attempt_cap"]
+    adopt: "retry_with_verifier_feedback + max_attempts; no infinite repair loops"
+
+  LangChain_tool_calling_agent:
+    url: "https://python.langchain.com/docs/concepts/tool_calling/"
+    patterns: ["tools_as_repair_actions","stateful_agent_graph"]
+    adopt: "optional_9router as tool-calling repair agent gated by env"
+
+  DSPy_Assertions:
+    url: "https://dspy.ai/learn/programming/7-assertions/"
+    paper: "https://arxiv.org/abs/2312.13382"
+    patterns: ["Assert_hard_halt","Suggest_soft_continue","Retry_injects_error_into_prompt"]
+    adopt: "behavior_eq==1.0 is Assert; failed_repair_memory feeds next attempt"
+
+  Reflexion:
+    paper: "https://arxiv.org/abs/2303.11366"
+    html: "https://ar5iv.labs.arxiv.org/html/2303.11366"
+    patterns: ["actor_evaluator_reflection","episodic_verbal_memory","external_oracle"]
+    adopt: "store short NL reason of failed repair; never mutate verifier"
+
+  ACE_agentic_context_engineering:
+    paper: "https://arxiv.org/html/2510.04618v1"
+    patterns: ["Generator_Reflector_Curator","itemized_playbook","incremental_context_update"]
+    adopt_later: "curate_deterministic_fixer_catalog from failed cases"
+
+  Self_Debugging_Chen:
+    paper: "https://arxiv.org/abs/2304.05128"
+    patterns: ["execute_then_feedback","rubber_duck_explain","unit_test_oracle"]
+    adopt: "holdout execution + hash mismatch message as feedback to optional LLM"
+
+  Tree_of_Thoughts:
+    paper: "https://arxiv.org/abs/2305.10601"
+    apr_extension: "https://doi.org/10.1109/issrew60843.2023.00040"
+    patterns: ["multi_hypothesis_bug_location","BFS_DFS_backtrack"]
+    adopt_later: "branch candidate patches; keep MVP linear"
+
+  Outlines_Guidance_structured:
+    outlines: "https://github.com/doutts/outlines"
+    guidance: "https://github.com/guidance-ai/guidance"
+    patterns: ["JSON_schema_constrained_decoding","structured_patch_object"]
+    adopt: "LLM patch must be structured {op,old,new}; reject free prose patches"
+
+  Roslyn_CodeFix:
+    docs: "https://learn.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/tutorials/how-to-write-csharp-analyzer-code-fix"
+    patterns: ["Diagnostic→CodeFixProvider","FixAll_batch","equivalence_key"]
+    adopt: "deterministic_fixers keyed by diagnostic_id (F1..F5); batch apply then reverify"
+}
+
+@ADOPT_MVP {
+  P1_retry_verifier_feedback: "LangGraph+DSPy+Self-Debugging"
+  P2_deterministic_first: "Roslyn CodeFix before LLM"
+  P3_structured_patch: "Outlines/Guidance schema for 9router"
+  P4_reflexion_memory: "short failed-attempt notes only"
+  P5_immutable_oracle: "Dicel P200 verify_candidate spirit; hash rule frozen"
+}
+
+@REJECT_MVP {
+  soft_match: "no fuzzy/padding to force size parity"
+  mutate_verifier: "forbidden"
+  unconstrained_LLM_rewrite: "whole-file free rewrite without schema"
+}
+
+@VERDICT_PT {
+  takeaway: "Self-repair = oraculo externo + fixers deterministicos + retry com feedback; LLM opcional e estruturado"
+}

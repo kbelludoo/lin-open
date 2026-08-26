@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!relativeTimeWithTense(number,withoutSuffix,key,isFuture){;format={s: ['mõne sekundi','mõni sekund','paar sekundit'],m: ['ühe minuti','üks minut'],mm: ['%d minuti','%d minutit'],h: ['ühe tunni','tund aega','üks tund'],hh: ['%d tunni','%d tundi'],d: ['ühe päeva','üks päev'],M: ['kuu aja','kuu aega','üks kuu'],MM: ['%d kuu','%d kuud'],y: ['ühe aasta','aasta','üks aasta'],yy: ['%d aasta','%d aastat']};?(withoutSuffix){^((((__c)=>{?(__c){return(format[key][2])}return(format[key][1])})(format[key][2]))).replace('%d',number)};^((((__c)=>{?(__c){return(format[key][0])}return(format[key][1])})(isFuture))).replace('%d',number)}
+=ex{relativeTimeWithTense}

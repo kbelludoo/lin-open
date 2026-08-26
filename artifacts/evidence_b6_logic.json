@@ -1,0 +1,132 @@
+{
+  "protocol": "B6_LOGIC_V1_PARADIGM_RESEARCH",
+  "run_id": "RUN-B6-LOGIC-20260816-001",
+  "spec_version": "B6_LOGIC_SPEC_V1",
+  "timestamp_utc": "2026-08-16T16:54:33.685Z",
+  "environment_lock": {
+    "host_os": "win32 (Windows_NT 10.0.26200; x64)",
+    "node_version": "v24.19.0",
+    "swipl_version": "10.0.2",
+    "rustc_version": "1.97.1 (8bab26f4f 2026-07-14)",
+    "nim_version": "2.2.0 (native compiler: orc, release, opt:speed)",
+    "gcc_version": "16.2.0 (MinGW-w64 x86_64-posix-seh-ucrt)"
+  },
+  "provenance_manifest": {
+    "spec_file": "spec/B6_LOGIC_SPEC_V1.json",
+    "spec_sha256": "0f2fc93056ff29b80e694335b0f741b200e820a2ea7970c70673357f088e4d4c",
+    "orchestrator_file": "scripts/run_b6_logic.mjs",
+    "orchestrator_sha256": "e9651415c22e4b83e7137dd5b30b9a3755a4810dcdba271b03ce5c12acca88b2"
+  },
+  "hashes": {
+    "expected_input_hash": "sha256:25136c21a660f888ae8bf143c6461a146e58eb0c1e817dfd729d05eb5afe6ae8",
+    "expected_result_hash": "sha256:df3e90a081c39a0da8ac3b636f4f773c3c9a59ecf00707e0b68cd5e43be087ec"
+  },
+  "engines": [
+    {
+      "engine_id": "prolog",
+      "name": "SWI-Prolog (Relational / Logic Paradigm)",
+      "paradigm": "logic_relational_sld",
+      "version": "10.0.2",
+      "provenance": {
+        "src_file": "benchmarks/prolog/src/b6_logic_runner.pl",
+        "src_sha256": "839e305fd7d5cb78b56c847be8b657aaae8d0af3e4c3c3cee606e41275e89b85",
+        "bin_file": "C:\\Program Files\\swipl\\bin\\swipl.exe",
+        "bin_sha256": "SYSTEM_INSTALLED"
+      },
+      "semantics": {
+        "solutions_distinct": 11,
+        "solutions_total_derivations": 11,
+        "duplicate_bindings_eliminated": 0,
+        "status": "SUCCESS",
+        "result_hash": "sha256:df3e90a081c39a0da8ac3b636f4f773c3c9a59ecf00707e0b68cd5e43be087ec",
+        "expected_result_hash": "sha256:df3e90a081c39a0da8ac3b636f4f773c3c9a59ecf00707e0b68cd5e43be087ec"
+      },
+      "diagnostics": {
+        "inferences_count": 108,
+        "wall_time_us": 0
+      },
+      "checks": {
+        "input_integrity": true,
+        "solution_correctness": true,
+        "determinism": true,
+        "termination": true
+      },
+      "gate_eligible": true
+    },
+    {
+      "engine_id": "rust",
+      "name": "Rust Native (Systems / Imperative Paradigm)",
+      "paradigm": "systems_imperative_frontier",
+      "version": "1.97.1",
+      "provenance": {
+        "src_file": "benchmarks/rust/src/b6_logic_runner.rs",
+        "src_sha256": "88a51b9a83812c91a5936df024fed69dadc4557e9ab2e6231190c612e15556dd",
+        "bin_file": "benchmarks/rust/b6_logic_runner.exe",
+        "bin_sha256": "c0860931c36abb8cf9f98b3e5a2faf75a0eb5dde3d52fda9cc47640c68548937"
+      },
+      "semantics": {
+        "solutions_distinct": 11,
+        "solutions_total_derivations": 11,
+        "duplicate_bindings_eliminated": 0,
+        "status": "SUCCESS",
+        "result_hash": "sha256:df3e90a081c39a0da8ac3b636f4f773c3c9a59ecf00707e0b68cd5e43be087ec",
+        "expected_result_hash": "sha256:df3e90a081c39a0da8ac3b636f4f773c3c9a59ecf00707e0b68cd5e43be087ec"
+      },
+      "diagnostics": {
+        "nodes_explored": 14,
+        "backtracks": 59,
+        "unifications_attempted": 88,
+        "unifications_succeeded": 29,
+        "wall_time_us": 35
+      },
+      "checks": {
+        "input_integrity": true,
+        "solution_correctness": true,
+        "determinism": true,
+        "termination": true
+      },
+      "gate_eligible": true
+    },
+    {
+      "engine_id": "nim",
+      "name": "Nim Native (Metaprogramming / Multi-Paradigm)",
+      "paradigm": "native_metaprogramming_sets",
+      "version": "2.2.0",
+      "provenance": {
+        "src_file": "benchmarks/nim/src/b6_logic_runner.nim",
+        "src_sha256": "0e20b0e1551da990823d3a40c0d8689355369d4c1fca882a5629b81a10aef054",
+        "bin_file": "benchmarks/nim/b6_logic_runner.exe",
+        "bin_sha256": "d4068ca9bd8942da1f9b68fefc96e5addb92deef961e59271d1faf492fca3a5e"
+      },
+      "semantics": {
+        "solutions_distinct": 11,
+        "solutions_total_derivations": 11,
+        "duplicate_bindings_eliminated": 0,
+        "status": "SUCCESS",
+        "result_hash": "sha256:df3e90a081c39a0da8ac3b636f4f773c3c9a59ecf00707e0b68cd5e43be087ec",
+        "expected_result_hash": "sha256:df3e90a081c39a0da8ac3b636f4f773c3c9a59ecf00707e0b68cd5e43be087ec"
+      },
+      "diagnostics": {
+        "nodes_explored": 14,
+        "backtracks": 59,
+        "unifications_attempted": 88,
+        "unifications_succeeded": 29,
+        "wall_time_us": 0
+      },
+      "checks": {
+        "input_integrity": true,
+        "solution_correctness": true,
+        "determinism": true,
+        "termination": true
+      },
+      "gate_eligible": true
+    }
+  ],
+  "gate_b6_overall": true,
+  "summary": {
+    "total_engines": 3,
+    "passed_engines": 3,
+    "gate_status": "GATE_B6 = TRUE",
+    "architectural_takeaway": "B6_LOGIC_V1 demonstrou que os paradigmas lógico (Prolog), sistemas (Rust) e metaprogramação nativa (Nim) convergem exatamente para a mesma semântica relacional de 11 soluções distintas, com diferentes perfis de exploração diagnóstica."
+  }
+}

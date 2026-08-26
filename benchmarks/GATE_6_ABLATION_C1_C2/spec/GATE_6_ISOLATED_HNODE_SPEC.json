@@ -1,0 +1,22 @@
+{
+  "protocol": "GATE_6_STRICT_SINGLE_VARIABLE_HNODE_ABLATION",
+  "version": "2.0.0",
+  "status": "FROZEN",
+  "scientific_objective": "Isolate strictly the causal effect of H_node (Semantic Node Canonical Interning) by holding AST parsing, capability guard, oracle verification, and task inputs completely identical across both experimental arms.",
+  "experimental_conditions": {
+    "C1_with_H_node": "Full pipeline with active H_node interning table (canonical node deduplication enabled).",
+    "C2_without_H_node": "Identical pipeline with capability guard and AST canonicalization, but H_node interning table is bypassed (fresh node allocation per call)."
+  },
+  "controlled_invariants": [
+    "Identical capability guard applied to both C1 and C2",
+    "Identical AST parsing and alpha-canonicalization applied to both C1 and C2",
+    "Identical black-box oracle and identical success criteria (exact output equality) for both C1 and C2",
+    "No hardcoded outcome assignments in the harness"
+  ],
+  "evaluated_dimensions": [
+    "functional_execution_parity_EE_strict",
+    "allocated_canonical_nodes_RAM",
+    "redundant_compilation_overhead_latency_us",
+    "memory_deduplication_ratio"
+  ]
+}

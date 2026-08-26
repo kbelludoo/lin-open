@@ -1,0 +1,56 @@
+{
+  "id": "T002",
+  "family": "logic_state",
+  "difficulty": "medium",
+  "specification": "Implemente push puro em um ring buffer de capacidade 3. Entrada: { buffer: array, item: any }. Saída: novo array com no máximo 3 itens (se exceder, remove o mais antigo da esquerda).",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "buffer.push",
+    "buffer.shift",
+    "globalState"
+  ],
+  "test_cases": [
+    {
+      "input": {
+        "buffer": [
+          1,
+          2
+        ],
+        "item": 3
+      },
+      "expected": [
+        1,
+        2,
+        3
+      ]
+    },
+    {
+      "input": {
+        "buffer": [
+          1,
+          2,
+          3
+        ],
+        "item": 4
+      },
+      "expected": [
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "input": {
+        "buffer": [],
+        "item": 1
+      },
+      "expected": [
+        1
+      ]
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T002.mjs"
+  }
+}

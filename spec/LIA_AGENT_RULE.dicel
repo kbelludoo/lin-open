@@ -1,0 +1,90 @@
+@LIA:LIA_AGENT_RULE:1.3.0
+
+^rule=AIs_MUST_WRITE_CODE_IN_LIA
+^WRITE=LIA_only
+^LIA=canonical_source_of_truth
+^LIA_gate=ge_Dicel
+^on_compile_error=FIX_COMPILER_NOT_LIA
+^immutable_core=NEVER_alter_LIA_nucleus
+^rules_default=RULEL
+^ext=.lia
+^header=@LIA:L1c
+^repo_path="C:/Users/k/Documents/lia"
+^scope="cursor!claude!codex!gemini!hermes!opencode!antigravity!9router!all_CLIs!all_AIs"
+^status="ENFORCED"
+
+@LOOP {
+  step[:1]=write_LIA
+  step[:2]=lia_compile_target
+  step[:3]=if_error_fix_compiler_emitter_runtime_OUTSIDE_nucleus
+  step[:4]=compile_again
+  step[:5]=assert_LIA_ge_Dicel_accuracy_and_tokens
+  forbid_on_emit_bug: "mutate_LIA"
+}
+
+@WHEN {
+  LIA: "ALL_code_drafts!WRITE_always!canonical"
+  Dicel: "policies!conselho!inter_ai_protocol!contracts!audit"
+  compiler_fix: "emit_fail!typecheck_false!behavior_eq_fail!host_map_bug"
+}
+
+@MUST {
+  write: ".lia"
+  start: "@LIA:"
+  legend: "!fn ?if #for ^ret :else $K=consts =ex=exports ~G=grammar"
+  think_in: "LIA_not_TS"
+  on_fail: "patch_lia_repo_OUTSIDE_nucleus_or_candidates_then_recompile"
+}
+
+@MAY_EDIT_LIA {
+  only_if: "explicit_semantic_change_requested OR author_syntax_invalid"
+}
+
+@LEGEND {
+  line: "!fn ?if #for ^ret :else $K=consts =ex=exports ~G=grammar"
+  enough: true
+}
+
+@POINT {
+  compile: "node bin/lia.mjs compile <file.lia> --target js|ts|py|go|rust"
+  check: "node bin/lia.mjs check <file.lia>"
+  fix_surface: "candidates/|emit_*_peripheral|runtime_helpers_non_core|scripts_without_redefining_verifier"
+}
+
+@CORE {
+  never_edit: [
+    verifier,
+    semantic_hash,
+    behavior_eq_gate,
+    LIA_gate_ge_Dicel,
+    core_language_semantics_invariants
+  ]
+  note: "nucleus=immutable; evolution/repair MUST NOT redefine these"
+}
+
+@MAY_MUTATE {
+  ok: [
+    candidates/,
+    emit_helpers_outside_core,
+    documented_non_core_surfaces,
+    storage/lia_trauma,
+    storage/lia_ledger,
+    storage/lia_knowledge,
+    storage/lia_hypotheses,
+    scripts_that_do_not_redefine_verifier_or_hash
+  ]
+  compiler_patch: "OUTSIDE_nucleus OR candidates+promote_gates; NEVER_redefine_verifier|semantic_hash|behavior_eq|LIA_gate"
+}
+
+@FORBID {
+  mutate_lia_nucleus: true
+  hand_authored_typescript: true
+  hand_authored_tsx: true
+  hand_authored_javascript_as_source: true
+  hand_authored_python_go_rust_as_source: true
+  write_ts_then_convert: true
+  draft_in_host_lang: true
+  edit_LIA_to_appease_broken_compiler: true
+  workaround_in_LIA_for_emit_bug: true
+  redefine_verifier_via_candidate_promote: true
+}

@@ -1,0 +1,16 @@
+{
+  "intent": "create_moveFunds",
+  "target": "Transfer",
+  "constraints": ["no_data_loss"],
+  "allowed_effects": ["memory"],
+  "create_fn": {
+    "name": "moveFunds",
+    "params": "from,to,amount",
+    "body": "?(needsApproval(amount)){^({ok:0,need:'approval'})};^({ok:1,from:from,to:to,amount:amount})"
+  },
+  "existing_fn": {
+    "name": "transfer",
+    "params": "from,to,amount",
+    "body": "?(needsApproval(amount)){^({ok:0,need:'approval'})};^({ok:1,from:from,to:to,amount:amount})"
+  }
+}

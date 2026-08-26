@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!highlightCode(grammars,codeHighlighter){;languages=_lia_obj();extractMetadata=createMetadataExtractor(languages);^~(tree){; let promises = [];; visit(tree, `code`, ~(node){ const metadata = extractMetadata(node);; const attributes = createAttributes(metadata, codeHighlighter);; const { languageName } = metadata;; const promise = codeHighlighter .highlightCode(node.value, languageName, metadata) .then(~(highlightedCode){ node.type = `html`;; node.value = wrapHighlightedCode(highlightedCode, attributes); });; promises.push(promise); });; Promise.all(promises);; return tree;}}
+=ex{highlightCode}

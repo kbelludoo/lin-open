@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!createIndexFinder(dir,predicateFind,sortedIndex){;^function(array,item,idx){i=0;length=getLength(array);?(typeof idx=='number'){?(dir>0){i=(((__c)=>{?(__c){return(idx)}return(Math.max(idx+length,i))})(idx>=0))}:{length=(((__c)=>{?(__c){return(Math.min(idx+1,length))}return(idx+length+1)})(idx>=0))}}:(sortedIndex&&idx&&length){idx=sortedIndex(array,item);^(((__c)=>{?(__c){return(idx)}return(-1)})(array[idx]==item))};?(item!=item){idx=predicateFind(slice.call(array,i,length),isNaN);^(((__c)=>{?(__c){return(idx+i)}return(-1)})(idx>=0))};#(idx=(((__c)=>{?(__c){return(i)}return(length-1)})(dir>0));idx>=0&&idx<length;idx+=dir){?(array[idx]==item){^idx}};^-1}}
+=ex{createIndexFinder}

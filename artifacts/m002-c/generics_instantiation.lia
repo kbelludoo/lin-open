@@ -1,0 +1,6 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+
+!identity<T>(x: T): T { return x.to_string(); }
+!main(): void { let a = identity::<i64>(&42); let b = identity::<String>(&"hello".to_string()); println!("i64: {}", a); println!("String: {}", b); }

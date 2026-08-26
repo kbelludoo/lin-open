@@ -1,0 +1,87 @@
+{
+  "id": "V4_B_EVALUATION",
+  "version": "1.0.0",
+  "repository": "axios@v1.14.0",
+
+  "oracle_summary": {
+    "total_known_bugs": 12,
+    "confirmed_bugs": ["BUG-001","BUG-002","BUG-003","BUG-004","BUG-005","BUG-006","BUG-007","BUG-008","BUG-009","BUG-010","BUG-011","BUG-012"],
+    "false_positive_patterns": 8
+  },
+
+  "agent_summary": {
+    "total_findings": 10,
+    "confirmed_by_oracle": 7,
+    "needs_review": 1,
+    "false_positives": 2
+  },
+
+  "detailed_comparison": {
+    "true_positives": [
+      {"agent": "FINDING-001", "oracle": "BUG-001", "match": "EXACT", "category": "prototype_pollution", "file": "lib/core/mergeConfig.js"},
+      {"agent": "FINDING-002", "oracle": "BUG-005", "match": "PARTIAL", "category": "prototype_pollution", "note": "Agent found resolveConfig destructuring auth from prototype"},
+      {"agent": "FINDING-003", "oracle": "BUG-005", "match": "EXACT", "category": "prototype_pollution", "file": "lib/defaults/index.js"},
+      {"agent": "FINDING-004", "oracle": "BUG-002,BUG-003", "match": "PARTIAL", "category": "prototype_pollution", "note": "Agent found http adapter config reads"},
+      {"agent": "FINDING-005", "oracle": "BUG-004", "match": "EXACT", "category": "prototype_pollution", "file": "lib/helpers/formDataToJSON.js"},
+      {"agent": "FINDING-007", "oracle": "BUG-009", "match": "EXACT", "category": "deprecated_api", "file": "lib/helpers/resolveConfig.js"},
+      {"agent": "FINDING-008", "oracle": "BUG-008", "match": "EXACT", "category": "stream_bypass", "file": "lib/adapters/http.js"}
+    ],
+    "missed_bugs": [
+      {"oracle": "BUG-006", "category": "ssrf", "file": "lib/helpers/shouldBypassProxy.js", "reason": "Agent did not analyze shouldBypassProxy.js hostname normalization"},
+      {"oracle": "BUG-007", "category": "header_injection", "file": "lib/adapters/http.js", "reason": "Agent did not identify CRLF injection in header values"},
+      {"oracle": "BUG-010", "category": "prototype_pollution", "file": "lib/core/mergeConfig.js", "reason": "Agent missed spread operator in forEach loop at line 99"},
+      {"oracle": "BUG-011", "category": "input_validation", "file": "lib/helpers/progressEventReducer.js", "reason": "Agent did not analyze progressEventReducer.js"},
+      {"oracle": "BUG-012", "category": "resource_exhaustion", "file": "lib/adapters/http.js", "reason": "Agent did not identify unconditional socket.setKeepAlive"}
+    ],
+    "false_positives": [
+      {"agent": "FINDING-009", "category": "logic_error", "file": "lib/helpers/isURLSameOrigin.js", "reason": "This is intentional design behavior for non-browser environments, not a bug"},
+      {"agent": "FINDING-010", "category": "prototype_pollution", "file": "lib/utils.js", "reason": "extend() uses Object.defineProperty which does not trigger __proto__ setter; constructor overwrite is theoretical"}
+    ],
+    "needs_review": [
+      {"agent": "FINDING-006", "category": "prototype_pollution", "file": "lib/utils.js", "reason": "toFlatObject __proto__ assignment is plausible but depends on specific call sites"}
+    ]
+  },
+
+  "metrics": {
+    "precision": 0.78,
+    "recall": 0.58,
+    "false_positive_rate": 0.20,
+    "escalation_rate": 0.10,
+    "high_impact_false_positives": 0,
+    "unsupported_fix_proposals": 0,
+    "formula": {
+      "precision": "7 confirmed / (7 confirmed + 2 false_positives) = 0.778",
+      "recall": "7 confirmed / 12 known_bugs = 0.583",
+      "false_positive_rate": "2 / 10 total_findings = 0.200",
+      "escalation_rate": "1 / 10 total_findings = 0.100"
+    }
+  },
+
+  "acceptance_criteria": {
+    "precision": {"target": ">= 0.80", "actual": 0.78, "status": "FAIL"},
+    "false_positive_rate": {"target": "<= 0.20", "actual": 0.20, "status": "PASS"},
+    "high_impact_false_positives": {"target": "= 0", "actual": 0, "status": "PASS"},
+    "unsupported_fix_proposals": {"target": "= 0", "actual": 0, "status": "PASS"}
+  },
+
+  "overall_result": "FAIL — precision 0.78 < 0.80 target",
+
+  "analysis": {
+    "strengths": [
+      "Excellent prototype pollution coverage — found 5 of 6 prototype pollution bugs",
+      "Zero high-impact false positives — all 2 FPs are LOW/MEDIUM confidence",
+      "Strong attack chain analysis — identified credential theft, XSRF token theft, code execution paths",
+      "Good root cause analysis — identified defense-in-depth gap (write protection vs read protection)"
+    ],
+    "weaknesses": [
+      "Missed SSRF via shouldBypassProxy hostname normalization (BUG-006)",
+      "Missed header injection / CRLF injection (BUG-007)",
+      "Missed input validation in progressEventReducer (BUG-011)",
+      "Missed resource exhaustion in socket.setKeepAlive (BUG-012)",
+      "Did not analyze shouldBypassProxy.js or progressEventReducer.js at all",
+      "Over-indexed on prototype pollution, missed other bug classes"
+    ],
+    "root_cause": "Agent focused 90% on prototype pollution (its strongest area) and neglected other bug classes. The 5 missed bugs span SSRF, header injection, input validation, and resource exhaustion — areas the agent didn't prioritize.",
+    "improvement_path": "V4-B retry should mandate analysis of ALL files, not just the ones the agent considers interesting. Add a checklist: for each file in lib/, check for: (1) prototype pollution, (2) SSRF, (3) header injection, (4) input validation, (5) resource exhaustion, (6) deprecated APIs."
+  }
+}

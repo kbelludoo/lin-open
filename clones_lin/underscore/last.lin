@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!last(array,n,guard){;?(array==null||array.length<1){^(((__c)=>{?(__c){return(void 0)}return([])})(n==null||guard))};?(n==null||guard){^array[array.length-1]};^rest(array,Math.max(0,array.length-n))}
+=ex{last}

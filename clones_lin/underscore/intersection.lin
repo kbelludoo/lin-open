@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!intersection(array){;result=[];argsLength=arguments.length;#(i=0,length=getLength(array);i<length;i++){item=array[i];?(contains(result,item)){continue};j=undefined;#(j=1;j<argsLength;j++){?(!contains(arguments[j],item)){break}};?(j==argsLength){result.push(item)}};^result}
+=ex{intersection}

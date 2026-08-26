@@ -1,0 +1,110 @@
+{
+  "id": "T003",
+  "family": "logic_state",
+  "difficulty": "medium",
+  "specification": "Implemente transição de pilha imutável com rollback. Entrada: { stack: array, action: \"push\"|\"pop\"|\"rollback\", value?: any, history: array }. Saída: { stack: array, history: array }.",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "globalState",
+    "mut",
+    "splice"
+  ],
+  "test_cases": [
+    {
+      "input": {
+        "stack": [
+          1
+        ],
+        "action": "push",
+        "value": 2,
+        "history": [
+          [
+            1
+          ]
+        ]
+      },
+      "expected": {
+        "stack": [
+          1,
+          2
+        ],
+        "history": [
+          [
+            1
+          ],
+          [
+            1,
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "input": {
+        "stack": [
+          1,
+          2
+        ],
+        "action": "pop",
+        "history": [
+          [
+            1
+          ],
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      "expected": {
+        "stack": [
+          1
+        ],
+        "history": [
+          [
+            1
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "input": {
+        "stack": [
+          1,
+          2
+        ],
+        "action": "rollback",
+        "history": [
+          [
+            1
+          ],
+          [
+            1,
+            2
+          ]
+        ]
+      },
+      "expected": {
+        "stack": [
+          1
+        ],
+        "history": [
+          [
+            1
+          ]
+        ]
+      }
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T003.mjs"
+  }
+}

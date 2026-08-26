@@ -1,0 +1,43 @@
+{
+  "id": "T014",
+  "family": "effects_contracts",
+  "difficulty": "medium",
+  "specification": "Validador de livro-razão (ledger) com garantia de soma zero. Entrada: array de transações [{ from, to, amount }]. Saída: boolean (true se total de saídas == total de entradas e todas positivas).",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "db.write",
+    "network.send",
+    "globalState"
+  ],
+  "test_cases": [
+    {
+      "input": [
+        {
+          "from": "A",
+          "to": "B",
+          "amount": 100
+        },
+        {
+          "from": "B",
+          "to": "C",
+          "amount": 100
+        }
+      ],
+      "expected": true
+    },
+    {
+      "input": [
+        {
+          "from": "A",
+          "to": "B",
+          "amount": -50
+        }
+      ],
+      "expected": false
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T014.mjs"
+  }
+}

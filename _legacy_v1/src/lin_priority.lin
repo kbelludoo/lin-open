@@ -1,0 +1,27 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=lin_priority
+~G{?=if #=for ^=ret :else}
+!mkPri(id,name,status,now,next,lin_now){^({id:id,name:name,status:status,now:now,next:next,lin_now:lin_now,copy_language:0})}
+!p0(){^mkPri('P0','agent_ir','SLICE1_DONE','json_ingest_validate_emit_or_causal_reject','ain_lb_clr_001','src/lin_agent_ir_ingest.lin')}
+!p1(){^mkPri('P1','ain_lb_clr','CLR-001','agent_variability_registry_repair_loop','real_models_then_win_lose','src/lin_ain_lb_clr.lin')}
+!p2(){^mkPri('P2','real_models','WAIT','not_run_until_clr_harness_honest','see_where_lin_wins_loses','src/lin_ain_lb_clr.lin')}
+!p3(){^mkPri('P3','win_lose','AFTER_MODELS','no_invented_scores','deep_M006_only_then','src/lin_ain_lb_clr.lin')}
+!p4(){^mkPri('P4','m006','DEFER','slice1_KEEP_not_deep','not_Lean','src/lin_refine_div.lin')}
+!p5(){^mkPri('P5','fail_closed','KEEP','js_node_check_already','not_expand_6_langs_this_pass','spec/LIN_EMIT_FAIL_CLOSED.rulel')}
+!priCount(){^6}
+!priAt(i){?(i==0){^p0()};?(i==1){^p1()};?(i==2){^p2()};?(i==3){^p3()};?(i==4){^p4()};?(i==5){^p5()};^null}
+!priById(id){s=String(id||'');#(i=0;i<6;i++){row=priAt(i);?(row&&row.id==s){^row}};^null}
+!priLine(row){?(row==null){^''};^('id='+row.id+' name='+row.name+' status='+row.status+' now='+row.now+' next='+row.next+' lin_now='+row.lin_now)}
+!priAllLines(){out='';#(i=0;i<6;i++){?(i>0){out=out+'\n'};out=out+priLine(priAt(i))};^out}
+!pipeNow(){^'P0_done -> CLR-001_LIN_harness -> real_models -> win_lose -> then_M006'}
+!pipeNot(){^'not IA -> LIN_text -> parser; not deep_M006_before_AIN_LB'}
+!sigilRequired(){^0}
+!buildLean(){^0}
+!redefineHash(){^0}
+!expandFailClosedLangs(){^0}
+!inventScore(){^0}
+!fakeAgents(){^0}
+!decisiveExperiment(){^'after_wipe_IR_plus_contracts_ACCEPT_intl_and_DENY_write_without_io'}
+!experimentNow(){^'CLR-001_agent_variability_registry_repair_loop; no_invented_scores; no_fake_py_rust'}
+!hypAinLb(){^'H_CLR001: wipe_chat; remaining=Agent_IR+contracts+allowed_effects; lin_agent_ir ACCEPT wellformed intl payments AND DENY Storage.write without io; if DENY fixture ACCEPTs then H falsified; no win_pct until real models'}
+=ex{mkPri,p0,p1,p2,p3,p4,p5,priCount,priAt,priById,priLine,priAllLines,pipeNow,pipeNot,sigilRequired,buildLean,redefineHash,expandFailClosedLangs,inventScore,fakeAgents,decisiveExperiment,experimentNow,hypAinLb}

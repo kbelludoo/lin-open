@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!every(obj,predicate,context){predicate=cb(predicate,context);_keys=!isArrayLike(obj)&&keys(obj);length=(_keys||obj).length;#(index=0;index<length;index++){currentKey=(((__c)=>{?(__c){return(_keys[index])}return(index)})(_keys));?(!predicate(obj[currentKey],currentKey,obj)){^false}};^true}
+=ex{every}

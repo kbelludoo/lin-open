@@ -1,0 +1,37 @@
+{
+  "id": "T023",
+  "family": "debug_repair",
+  "difficulty": "medium",
+  "specification": "Comparador semântico de versões semânticas (SemVer \"major.minor.patch\"). Entrada: { v1: string, v2: string }. Saída: 1 se v1 > v2, -1 se v1 < v2, 0 se v1 == v2.",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "globalState"
+  ],
+  "test_cases": [
+    {
+      "input": {
+        "v1": "1.2.0",
+        "v2": "1.1.9"
+      },
+      "expected": 1
+    },
+    {
+      "input": {
+        "v1": "2.0.0",
+        "v2": "2.0.0"
+      },
+      "expected": 0
+    },
+    {
+      "input": {
+        "v1": "1.0.5",
+        "v2": "1.0.10"
+      },
+      "expected": -1
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T023.mjs"
+  }
+}

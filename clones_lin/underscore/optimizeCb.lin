@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!optimizeCb(func,context,argCount){;?(context==void 0){^func};switch ((((__c)=>{?(__c){return(3)}return(argCount)})(argCount==null))){case 1:^function(value){^func.call(context,value)};case 3:^function(value,index,collection){^func.call(context,value,index,collection)};case 4:^function(accumulator,value,index,collection){^func.call(context,accumulator,value,index,collection)}};^function(){^func.apply(context,arguments)}}
+=ex{optimizeCb}

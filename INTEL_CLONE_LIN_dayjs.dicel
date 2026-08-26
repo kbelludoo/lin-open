@@ -1,0 +1,35 @@
+@DICEL:INTEL_CLONE_LIN:1.2.0
+^slug="dayjs"
+^lang="LIN"
+^rule="semantic_hash_exact_like_P200"
+^no_soft_match=true
+^status="PASS"
+^done=true
+^published=true
+^suite_rate=1
+^suite_total=5
+^source="https://github.com/iamkun/dayjs.git"
+^clone_lin_url="https://github.com/kbelludoo/clone-lin-dayjs"
+^clone_lin_local="C:/Users/k/Documents/lia/.clone_lin_publish/clone-lin-dayjs"
+^temp_cleaned=true
+^pass=5 ^fail=0 ^skip=0
+^behavior_eq_required=1.0
+^publish_gate="suite_rate==1.0_JS"
+^multi="js:P5/S0/F0 ts:P5/S0/F0 py:P1/S0/F4 go:P1/S0/F4 rust:P0/S0/F5"
+^learn_lang="H_NEW_LANG_dayjs_py_go_rust_mss6qby6"
+
+@MULTI_TARGET {
+  js:P5/S0/F0 ts:P5/S0/F0 py:P1/S0/F4 go:P1/S0/F4 rust:P0/S0/F5
+}
+
+@COMPARISON {
+  pass_names: ["padStart","padZoneStr","absFloor","prettyUnit","isUndefined"]
+  fail_names: []
+  skip_names: []
+  learn: "none"
+  improve_lin: "positive_transfer:ok×5"
+}
+
+@NOTE_PT {
+  DONE 100% clone-lin-dayjs: p=5 suite_rate=1.0; improve=positive_transfer:ok×5
+}

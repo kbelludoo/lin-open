@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!generateNgrams(term){;ngrams=[];#(i=0;i<term.length-n+1;i++){};ngrams.push(term.slice(i,i+n));^ngrams}
+=ex{generateNgrams}

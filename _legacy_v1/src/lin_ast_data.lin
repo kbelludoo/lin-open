@@ -1,0 +1,19 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=lin_ast_data
+~G{?=if #=for ^=ret :else}
+!astNode(type,value,children){^({type:type,value:value||null,children:children||[]})}
+!astFn(name,params,body){^astNode('fn',name,[astNode('params',null,params),astNode('body',null,body)])}
+!astIf(cond,then_,else_){node=astNode('if',null,[astNode('cond',cond,[]),astNode('then',null,then_)]);?(else_){node.children.push(astNode('else',null,else_))};^node}
+!astFor(init,cond,step,body){^astNode('for',null,[astNode('init',init,[]),astNode('cond',cond,[]),astNode('step',step,[]),astNode('body',null,body)])}
+!astAssign(id,op,expr){^astNode('assign',id,[astNode('op',op,[]),astNode('expr',expr,[])])}
+!astReturn(expr){^astNode('return',expr,[])}
+!astCall(name,args){^astNode('call',name,args||[])}
+!astLiteral(value){^astNode('literal',value,[])}
+!astIdent(name){^astNode('ident',name,[])}
+!walkAst(node,visitor){?(node==null){^null};result=null;?(visitor[node.type]){result=visitor[node.type](node)};children=node.children||[];#(i=0;i<children.length;i++){walkAst(children[i],visitor)};^result}
+!transformAst(node,transformer){?(node==null){^null};newNode=node;?(transformer[node.type]){newNode=transformer[node.type](node)};?(newNode==null){^null};?(newNode.children){newChildren=[];#(i=0;i<newNode.children.length;i++){child=transformAst(newNode.children[i],transformer);?(child!=null){newChildren.push(child)}};newNode.children=newChildren};^newNode}
+!astToLin(node){?(node==null){^''};?(node.type=='fn'){params=node.children[0];body=node.children[1];plist='';?(params&&params.children){pnames=[];#(i=0;i<params.children.length;i++){pnames.push(params.children[i].value)};plist=pnames.join(',')};^('!'+node.value+'('+plist+'){'+astBodyToLin(body)+'}')};?(node.type=='return'){^('^'+node.value)};?(node.type=='assign'){^(node.value+'='+node.children[1].value)};?(node.type=='call'){^(node.value+'()')};?(node.type=='literal'){^String(node.value)};?(node.type=='ident'){^node.value};^''}
+!astBodyToLin(bodyNode){?(bodyNode==null){^''};parts=[];children=bodyNode.children||[];#(i=0;i<children.length;i++){parts.push(astToLin(children[i]))};^parts.join(';')}
+!astToJson(node){^JSON.stringify(node,null,2)}
+!astFromJson(json){^JSON.parse(json)}
+=ex{astNode,astFn,astIf,astFor,astAssign,astReturn,astCall,astLiteral,astIdent,walkAst,transformAst,astToLin,astBodyToLin,astToJson,astFromJson}

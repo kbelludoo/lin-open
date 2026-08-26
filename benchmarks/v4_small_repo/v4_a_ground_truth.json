@@ -1,0 +1,158 @@
+{
+  "v4_a_ground_truth": {
+    "repo": "Jonas56/express-api",
+    "verified_date": "2026-08-16",
+    "verified_by": "code_review"
+  },
+  "actual_architecture": {
+    "components": {
+      "ExpressApp": {
+        "responsibility": "HTTP server entry point, middleware pipeline, CORS, static files",
+        "files": ["app.js", "index.js"]
+      },
+      "AuthRouter": {
+        "responsibility": "User registration and login endpoints",
+        "files": ["routes/loginRouter.js", "routes/registerRouter.js"]
+      },
+      "AuthMiddleware": {
+        "responsibility": "JWT token extraction, verification, user lookup",
+        "files": ["utils/middleware.js"],
+        "note": "DEFINED but NOT USED in any routes"
+      },
+      "BooksRouter": {
+        "responsibility": "CRUD operations for books",
+        "files": ["routes/booksRouter.js"]
+      },
+      "AuthorsRouter": {
+        "responsibility": "CRUD operations for authors",
+        "files": ["routes/authorsRouter.js"]
+      },
+      "CollectionRouter": {
+        "responsibility": "User book collection management",
+        "files": ["routes/collectionRouter.js"]
+      },
+      "ReadingRouter": {
+        "responsibility": "User reading list management",
+        "files": ["routes/readingRouter.js"]
+      },
+      "UserService": {
+        "responsibility": "User registration business logic, password hashing",
+        "files": ["services/registerServices.js"]
+      },
+      "LoginService": {
+        "responsibility": "Authentication logic, JWT token generation",
+        "files": ["services/loginServices.js"]
+      },
+      "BooksService": {
+        "responsibility": "Book CRUD business logic",
+        "files": ["services/booksServices.js"]
+      },
+      "AuthorsService": {
+        "responsibility": "Author CRUD business logic",
+        "files": ["services/authorsServices.js"]
+      },
+      "CollectionService": {
+        "responsibility": "User collection business logic",
+        "files": ["services/collectionServices.js"]
+      },
+      "ReadingService": {
+        "responsibility": "Reading list business logic",
+        "files": ["services/readingServices.js"]
+      },
+      "SequelizeORM": {
+        "responsibility": "Database connection, model loading, associations",
+        "files": ["models/index.js"]
+      },
+      "ErrorHandler": {
+        "responsibility": "Sequelize validation errors, unique constraint errors",
+        "files": ["utils/middleware.js"]
+      },
+      "Logger": {
+        "responsibility": "Request logging",
+        "files": ["utils/logger.js"]
+      }
+    },
+    "data_models": {
+      "User": {
+        "fields": ["id", "name", "email", "username", "hashed_password"],
+        "file": "models/user.js"
+      },
+      "Book": {
+        "fields": ["id", "title", "isbn", "page_count", "published_date", "image_link", "description", "status"],
+        "file": "models/book.js"
+      },
+      "Author": {
+        "fields": ["id", "name"],
+        "file": "models/author.js"
+      },
+      "Category": {
+        "fields": ["id", "name"],
+        "file": "models/category.js"
+      },
+      "UserCollection": {
+        "fields": ["user_id", "book_id"],
+        "file": "models/usercollection.js"
+      },
+      "Reading": {
+        "fields": ["user_id", "book_id"],
+        "file": "models/reading.js"
+      },
+      "AuthorBooks": {
+        "fields": ["author_id", "book_id"],
+        "file": "models/authorbooks.js"
+      },
+      "CategoryBooks": {
+        "fields": ["category_id", "book_id"],
+        "file": "models/categorybooks.js"
+      }
+    },
+    "relationships": {
+      "User-Book (Collection)": {
+        "type": "many_to_many",
+        "through": "UserCollection",
+        "file": "models/user.js"
+      },
+      "User-Book (Reading)": {
+        "type": "many_to_many",
+        "through": "Reading",
+        "file": "models/user.js"
+      },
+      "Book-Author": {
+        "type": "many_to_many",
+        "through": "AuthorBooks",
+        "file": "models/book.js"
+      },
+      "Book-Category": {
+        "type": "many_to_many",
+        "through": "CategoryBooks",
+        "file": "models/book.js"
+      }
+    },
+    "critical_flows": {
+      "Authentication": {
+        "path": "POST /v1/api/login → LoginRouter → LoginService → bcrypt.compare → jwt.sign → Response",
+        "note": "No middleware protection"
+      },
+      "Registration": {
+        "path": "POST /v1/api/register → RegisterRouter → RegisterService → User.create (bcrypt hash) → Response"
+      },
+      "CRUD Operations": {
+        "path": "GET/POST/PUT/DELETE /v1/api/books → BooksRouter → BooksService → Book.findAll/create/update/destroy → Response",
+        "note": "No authentication required"
+      }
+    },
+    "security_findings": {
+      "critical": [
+        "Authentication middleware defined but NOT applied to any routes",
+        "All CRUD endpoints are unprotected"
+      ],
+      "high": [
+        "CORS origin: * allows any domain"
+      ],
+      "medium": [
+        "No rate limiting on login endpoint",
+        "JWT secret from environment variable without validation"
+      ]
+    }
+  }
+}

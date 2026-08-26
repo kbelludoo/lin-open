@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!alignValue(value,precedingText){;?(typeof value!="string"||!value.includes("\n")){^value};currentLine=precedingText.slice(precedingText.lastIndexOf("\n")+1);indentMatch=currentLine.match(/^(\s+)/);?(indentMatch){indent=indentMatch[1];^value.replace(/\n/g,("\n"+String(indent)))};^value}
+=ex{alignValue}

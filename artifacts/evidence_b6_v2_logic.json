@@ -1,0 +1,146 @@
+{
+  "protocol": "B6_LOGIC_V2_PARADIGM_RESEARCH",
+  "run_id": "RUN-B6-LOGIC-V2-20260816-001",
+  "spec_version": "B6_LOGIC_SPEC_V2",
+  "timestamp_utc": "2026-08-16T17:02:30.652Z",
+  "environment_lock": {
+    "host_os": "win32 (Windows_NT 10.0.26200; x64)",
+    "node_version": "v24.19.0",
+    "swipl_version": "10.0.2",
+    "rustc_version": "1.97.1 (8bab26f4f 2026-07-14)",
+    "nim_version": "2.2.0 (native compiler: orc, release, opt:speed)",
+    "gcc_version": "16.2.0 (MinGW-w64 x86_64-posix-seh-ucrt)"
+  },
+  "provenance_manifest": {
+    "spec_file": "spec/B6_LOGIC_SPEC_V2.json",
+    "spec_sha256": "c88c0a7770b9ff2772af4d16d585a73fef2ca9d8a613195dc26294ee277a3007",
+    "orchestrator_file": "scripts/run_b6_logic_v2.mjs",
+    "orchestrator_sha256": "61fe297be719fa9c48fef86ee92e0bab6534953a8d6aa71f70f8ce5f81bd5970"
+  },
+  "oracle_hashes": {
+    "b6_v2_input_hash": "sha256:d7b05e8a2e3e2095066fec4794060b599d6e2ccf022999208d17f4d80d3b593c",
+    "q1_expected_hash": "sha256:5cccddbb7e07f42fce30f2ebb5bd3cd9fe3497815a197ab8a26105515ce4d0b8",
+    "q2_expected_hash": "sha256:037e82d83924b267c9825b970103525d1d84c27d9b886b1c99aa8a62ec4e053a",
+    "q3_expected_hash": "sha256:f0e1ee088ed77c01cb3ea8038f41a4541f3da45513c9a44b91aaed833b33aab8",
+    "q4_expected_hash": "sha256:c819681c260d9e264b88e340daa1b1c46fb2457b97f082591ebcf7a9b8b12e10",
+    "q4_expected_canonical_proof_hash": "sha256:0a2bb8d7852cd293f62e163be6e88a0c62f347f69776172b55a60c35c5b08b52",
+    "q5_expected_hash": "sha256:a335133faeb22460bd08035edfe13d9ad17fd20d4fb4f8f162a49d909dcf9e75",
+    "q6_expected_hash": "sha256:e0a77805a46a22ce8a37ee6cbff9eca7e4ca4f6e1fcab0cac46ae99a1c2d2d2b"
+  },
+  "engines": [
+    {
+      "engine_id": "prolog",
+      "name": "SWI-Prolog (Relational / Logic Paradigm with Tabling)",
+      "paradigm": "logic_relational_tabling",
+      "version": "10.0.2",
+      "provenance": {
+        "src_file": "benchmarks/prolog/src/b6_logic_v2_runner.pl",
+        "src_sha256": "d508a5f2a612bcb13cbf9a44fddad3d1568f1df5cda762db4c6df5d49121f446",
+        "bin_file": "C:\\Program Files\\swipl\\bin\\swipl.exe",
+        "bin_sha256": "SYSTEM_INSTALLED"
+      },
+      "verification_gates": {
+        "input_integrity": true,
+        "q1_existence": true,
+        "q2_enumerate": true,
+        "q3_constrained": true,
+        "q4_result": true,
+        "q4_canonical_proof": true,
+        "q5_finite_failure": true,
+        "q6_deep_multi_hop": true,
+        "determinism": true,
+        "termination": true
+      },
+      "gate_b6_v2_status": "PASS",
+      "performance_profile": {
+        "median_wall_time_us": 62000,
+        "cost_per_solution_q2_us": 126.53061224489795,
+        "cost_per_fact_us": 61.386138613861384,
+        "diagnostics": {
+          "inferences_count": 539552
+        }
+      }
+    },
+    {
+      "engine_id": "rust",
+      "name": "Rust Native (Systems / Imperative Paradigm)",
+      "paradigm": "systems_imperative_tabling",
+      "version": "1.97.1",
+      "provenance": {
+        "src_file": "benchmarks/rust/src/b6_logic_v2_runner.rs",
+        "src_sha256": "a4523e6ba1456c65e32ba8827a392891e3ad1c69b1b3ee100cdfa8a2e2ec791b",
+        "bin_file": "benchmarks/rust/b6_logic_v2_runner.exe",
+        "bin_sha256": "4c58ed7121164acf396a69d1caf6c162bbf51da9835a04e74239b2a384469e16"
+      },
+      "verification_gates": {
+        "input_integrity": true,
+        "q1_existence": true,
+        "q2_enumerate": true,
+        "q3_constrained": true,
+        "q4_result": true,
+        "q4_canonical_proof": true,
+        "q5_finite_failure": true,
+        "q6_deep_multi_hop": true,
+        "determinism": true,
+        "termination": true
+      },
+      "gate_b6_v2_status": "PASS",
+      "performance_profile": {
+        "median_wall_time_us": 50271,
+        "cost_per_solution_q2_us": 102.59387755102041,
+        "cost_per_fact_us": 49.77326732673267,
+        "diagnostics": {
+          "nodes_explored": 1163,
+          "backtracks": 11774,
+          "unifications_attempted": 12922,
+          "unifications_succeeded": 6860,
+          "steps_count": 1163
+        }
+      }
+    },
+    {
+      "engine_id": "nim",
+      "name": "Nim Native (Metaprogramming / Multi-Paradigm)",
+      "paradigm": "native_metaprogramming_tabling",
+      "version": "2.2.0",
+      "provenance": {
+        "src_file": "benchmarks/nim/src/b6_logic_v2_runner.nim",
+        "src_sha256": "1cd561395e0e4308e0afee17285c6e438a27d03cbb61160db52bb12188903a72",
+        "bin_file": "benchmarks/nim/b6_logic_v2_runner.exe",
+        "bin_sha256": "ae9ba71c200864df6f6e32334812ade210fec9be628e10c798a99358a151e868"
+      },
+      "verification_gates": {
+        "input_integrity": true,
+        "q1_existence": true,
+        "q2_enumerate": true,
+        "q3_constrained": true,
+        "q4_result": true,
+        "q4_canonical_proof": true,
+        "q5_finite_failure": true,
+        "q6_deep_multi_hop": true,
+        "determinism": true,
+        "termination": true
+      },
+      "gate_b6_v2_status": "PASS",
+      "performance_profile": {
+        "median_wall_time_us": 24000,
+        "cost_per_solution_q2_us": 48.97959183673469,
+        "cost_per_fact_us": 23.762376237623762,
+        "diagnostics": {
+          "nodes_explored": 1163,
+          "backtracks": 11592,
+          "unifications_attempted": 12740,
+          "unifications_succeeded": 6860,
+          "steps_count": 1163
+        }
+      }
+    }
+  ],
+  "gate_b6_v2_overall": true,
+  "summary": {
+    "total_engines": 3,
+    "passed_engines": 3,
+    "gate_status": "GATE_B6_V2 = TRUE",
+    "architectural_conclusion": "B6_LOGIC_V2 demonstrou em escala (1.010 fatos, ciclos, contratos) que os paradigmas lógico (Prolog/Tabling), de sistemas (Rust) e metaprogramação nativa (Nim) convergem com exatidão bit-a-bit para todos os resultados Q1-Q6 e produzem o mesmo Proof DAG canônico, provando que regras, constraints e provas podem ser abstraídas no LIN-IR e compiladas de forma desacoplada."
+  }
+}

@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!each(){;method=ArrayProto[name];_.prototype[name]=~(){; var obj = this._wrapped;;; if (obj != null) { method.apply(obj, arguments);;; if ((name === 'shift' || name === 'splice') && obj.length === 0) { delete obj[0]; } }; return chainResult(this, obj);}}
+=ex{each}

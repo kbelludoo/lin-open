@@ -1,0 +1,203 @@
+{
+  "id": "V4_C_FINDINGS",
+  "version": "1.0.0",
+  "system_model": {
+    "sources": [
+      {
+        "id": "SRC-1",
+        "name": "path_string",
+        "description": "User-provided path pattern string (e.g. '/:a-:b') passed to pathToRegexp/parse/match/compile",
+        "trust_level": "UNTRUSTED",
+        "entry_points": ["pathToRegexp()", "stringToRegexp()", "parse()", "match()", "compile()"]
+      },
+      {
+        "id": "SRC-2",
+        "name": "pathname",
+        "description": "URL path string matched by the function returned from regexpToFunction/match",
+        "trust_level": "UNTRUSTED",
+        "entry_points": ["regexpToFunction() return value"]
+      },
+      {
+        "id": "SRC-3",
+        "name": "data_values",
+        "description": "User-provided data values substituted into path templates by tokensToFunction",
+        "trust_level": "UNTRUSTED",
+        "entry_points": ["tokensToFunction() return value"]
+      },
+      {
+        "id": "SRC-4",
+        "name": "options.delimiter",
+        "description": "Delimiter characters for path segments, embedded in regex character classes",
+        "trust_level": "SEMI_TRUSTED",
+        "entry_points": ["ParseOptions", "TokensToRegexpOptions"]
+      },
+      {
+        "id": "SRC-5",
+        "name": "options.endsWith",
+        "description": "End marker characters, embedded in regex character classes",
+        "trust_level": "SEMI_TRUSTED",
+        "entry_points": ["TokensToRegexpOptions"]
+      },
+      {
+        "id": "SRC-6",
+        "name": "encode_callback",
+        "description": "User-provided encode function for transforming values before regex embedding",
+        "trust_level": "SEMI_TRUSTED",
+        "entry_points": ["TokensToFunctionOptions.encode", "TokensToRegexpOptions.encode"]
+      }
+    ],
+    "sinks": [
+      {
+        "id": "SNK-1",
+        "name": "regex_compilation",
+        "description": "new RegExp(route, flags) — compiled regex from generated route string",
+        "risk": "Regex structure determines execution time characteristics"
+      },
+      {
+        "id": "SNK-2",
+        "name": "regex_execution",
+        "description": "re.exec(pathname) — regex matching against user-provided pathname",
+        "risk": "Execution time is determined by regex structure AND input content"
+      },
+      {
+        "id": "SNK-3",
+        "name": "param_extraction",
+        "description": "Decoded capture group values returned in params object",
+        "risk": "Decoded values flow to application logic"
+      }
+    ],
+    "transforms": [
+      {
+        "id": "TF-1",
+        "name": "lexer",
+        "input": "path string",
+        "output": "LexToken[]",
+        "description": "Tokenizes path string into OPEN/CLOSE/PATTERN/NAME/CHAR/ESCAPED_CHAR/MODIFIER/END tokens",
+        "sanitization": "Identifies token boundaries; no regex escaping"
+      },
+      {
+        "id": "TF-2",
+        "name": "parse",
+        "input": "LexToken[]",
+        "output": "Token[] (semantic tokens with Key objects)",
+        "description": "Converts lex tokens to semantic tokens; generates default patterns for :name parameters",
+        "sanitization": "safePattern() generates default regex patterns for parameters; restricts nested groups to non-capturing"
+      },
+      {
+        "id": "TF-3",
+        "name": "safePattern",
+        "input": "prevText (from preceding path literal or prefix)",
+        "output": "regex pattern string",
+        "description": "Generates default capture pattern for unnamed parameters. When prevText is a non-delimiter, generates negative lookahead pattern.",
+        "sanitization": "Escapes delimiter and prevText in regex via escapeString()",
+        "critical": true
+      },
+      {
+        "id": "TF-4",
+        "name": "tokensToRegexp",
+        "input": "Token[]",
+        "output": "regex route string",
+        "description": "Compiles semantic tokens into a complete regex string with anchors, delimiters, and capture groups",
+        "sanitization": "escapeString() applied to string tokens, prefixes, suffixes, delimiter, endsWith"
+      },
+      {
+        "id": "TF-5",
+        "name": "regex_compilation",
+        "input": "route string",
+        "output": "RegExp object",
+        "description": "Compiles the generated regex string into a executable RegExp",
+        "sanitization": "None — regex string is used as-is"
+      },
+      {
+        "id": "TF-6",
+        "name": "encode_transform",
+        "input": "raw value string",
+        "output": "encoded string",
+        "description": "User-provided encode function transforms values before regex embedding or path construction",
+        "sanitization": "escapeString() applied after encoding in tokensToRegexp"
+      }
+    ],
+    "trust_boundaries": [
+      {
+        "id": "TB-1",
+        "name": "path_to_regex",
+        "description": "User path string content is transformed into regex pattern via safePattern(). User-controlled path structure (adjacent parameters with non-delimiter separators) influences the complexity of the generated regex.",
+        "from": "SRC-1 (path_string)",
+        "to": "SNK-1 (regex_compilation)",
+        "transforms_crossed": ["TF-1", "TF-2", "TF-3", "TF-4", "TF-5"],
+        "guard": "escapeString() for literal tokens; safePattern() generates patterns for parameters; no complexity analysis of generated regex"
+      },
+      {
+        "id": "TB-2",
+        "name": "regex_match",
+        "description": "User pathname is matched against generated regex. Input length and content interact with regex structure to determine execution time.",
+        "from": "SRC-2 (pathname)",
+        "to": "SNK-2 (regex_execution)",
+        "transforms_crossed": [],
+        "guard": "None — regex.exec() with no timeout or complexity bounds"
+      },
+      {
+        "id": "TB-3",
+        "name": "options_to_charclass",
+        "description": "Delimiter and endsWith options are embedded in regex character classes [...]. Unescaped metacharacters (especially -) corrupt the character class semantics.",
+        "from": "SRC-4/5 (options)",
+        "to": "SNK-1 (regex_compilation)",
+        "transforms_crossed": ["TF-4"],
+        "guard": "escapeString() — but does not escape the - character"
+      }
+    ],
+    "flows": [
+      {
+        "id": "FLOW-1",
+        "name": "path_to_executable_regex",
+        "description": "Path string → lexer → parse → safePattern → tokensToRegexp → new RegExp → re.exec",
+        "path": ["SRC-1", "TF-1", "TF-2", "TF-3", "TF-4", "TF-5", "SNK-1", "SNK-2"],
+        "trust_boundary_crossings": ["TB-1", "TB-2"],
+        "critical_flow": true
+      },
+      {
+        "id": "FLOW-2",
+        "name": "data_to_path_template",
+        "description": "Data values → encode → validate against regex → path string concatenation",
+        "path": ["SRC-3", "TF-6", "SNK-3"],
+        "trust_boundary_crossings": [],
+        "critical_flow": false
+      },
+      {
+        "id": "FLOW-3",
+        "name": "options_to_regex_charclass",
+        "description": "delimiter/endsWith options → escapeString → regex character class in route",
+        "path": ["SRC-4", "TF-4", "SNK-1"],
+        "trust_boundary_crossings": ["TB-3"],
+        "critical_flow": true
+      }
+    ]
+  },
+  "findings": [
+    {
+      "finding_id": "F001",
+      "flow_id": "FLOW-1",
+      "path": "SRC-1(path_string) → TF-1(lexer) → TF-2(parse) → TF-3(safePattern) → TF-4(tokensToRegexp) → TF-5(new RegExp) → SNK-2(re.exec)",
+      "vulnerability_class": "regex_execution_time_injection",
+      "decision": "CONFIRMED",
+      "evidence": "When a path string contains two adjacent parameters separated by a non-delimiter character (e.g. '/:a-:b'), the safePattern() function at line 184 generates a negative lookahead pattern: (?:(?!${escapeString(prevText)})[^${escapeString(delimiter)}])+?. This pattern has a structural property where: (1) the negative lookahead (?!X) is zero-width and re-evaluates at every position, (2) the character class [^delimiter]+? is a lazy quantifier that backtracks, (3) the combination creates multiplicative complexity — for input length n with repeated separator characters, the regex engine explores O(2^n) match states. The input '/a-aaaa...-a' (n repetitions of 'a-' followed by 'a') causes the regex engine to spend exponential time exploring match positions for the (?:(?!-)[^/])+? pattern before concluding no match exists. The transform from path tokens (TF-3 safePattern) does not analyze or bound the computational complexity of the generated regex. The trust boundary between library pattern generation and regex engine execution has no guard for execution time.",
+      "confidence": "HIGH",
+      "missing_guard": "The safePattern() function must either: (1) avoid generating patterns with nested quantifiers and zero-width assertions, (2) analyze the generated regex for worst-case complexity before compilation, or (3) use atomic groups/possessive quantifiers to prevent backtracking. The current pattern (?:(?!X)[^Y])+? should be replaced with a possessive or atomic equivalent such as [^Y]*(?:(?!X)[^Y]+)* or a single-pass [^XY]+ pattern."
+    },
+    {
+      "finding_id": "F002",
+      "flow_id": "FLOW-3",
+      "path": "SRC-4(options.delimiter) → TF-4(tokensToRegexp escapeString) → SNK-1(regex character class [...])",
+      "vulnerability_class": "regex_character_class_injection",
+      "decision": "FALSE_POSITIVE",
+      "evidence": "The escapeString() function (line 439) does not escape the '-' character, which is a range operator inside regex character classes [...]. If delimiter contains '-' (e.g. 'a-z'), the character class [^a-z] is interpreted as 'not lowercase letters' instead of 'not a, not -, not z'. However, delimiter and endsWith are typically set by the application developer in code, not derived from user input at runtime. The trust level of these options is SEMI_TRUSTED — they come from configuration, not direct user input. While the missing escape is technically a bug in escapeString(), the practical attack surface is minimal because: (1) delimiters are typically single characters like '/', (2) application developers control these options, (3) an attacker would need to influence the application's configuration to exploit this. Classified as FALSE_POSITIVE because the trust boundary analysis shows the options do not typically cross from UNTRUSTED to TRUSTED.",
+      "confidence": "MEDIUM",
+      "missing_guard": "escapeString() should include '-' in its escape list for completeness, but this is a defense-in-depth improvement rather than a security-critical fix given the trust model of the options."
+    }
+  ],
+  "summary": {
+    "confirmed": 1,
+    "false_positives": 1,
+    "needs_review": 0
+  }
+}

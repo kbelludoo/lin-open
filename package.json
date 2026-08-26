@@ -1,0 +1,54 @@
+{
+  "name": "lin-lang",
+  "version": "2.0.0",
+  "description": "LIN — lingua ia nativa. Reescrita completa in-memory: lexer, parser, AST, multi-target emitters (js|ts|py|go|rust|c|java), verifier, RULEL, CLI.",
+  "type": "module",
+  "private": false,
+  "main": "src/compiler.mjs",
+  "bin": {
+    "lin": "./bin/lin.mjs",
+    "lia": "./bin/lia.mjs",
+    "ail": "./bin/ail.mjs"
+  },
+  "scripts": {
+    "test": "node test/run_all.mjs",
+    "emit": "node bin/lin.mjs emit",
+    "compile": "node bin/lin.mjs compile",
+    "check": "node bin/lin.mjs check",
+    "run": "node bin/lin.mjs run",
+    "hash": "node bin/lin.mjs hash",
+    "effects": "node bin/lin.mjs effects",
+    "verify": "node bin/lin.mjs verify",
+    "rulel-check": "node bin/lin.mjs rulel-check",
+    "clone-lin": "node bin/lin.mjs clone-lin",
+    "clone-lia": "node bin/lin.mjs clone-lin",
+    "improve": "node bin/lin.mjs improve",
+    "autonomy-status": "node bin/lin.mjs autonomy-status",
+    "ensure-toolchains": "node scripts/ensure_toolchains.mjs",
+    "example:safe": "node bin/lin.mjs compile examples/safe-compare.lia --target js -o examples/safe-compare.compiled.js"
+  },
+  "keywords": [
+    "lin",
+    "lia",
+    "ail",
+    "ai-native",
+    "ir",
+    "compiler",
+    "multi-emit"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kbelludoo/lin.git"
+  },
+  "homepage": "https://github.com/kbelludoo/lin",
+  "bugs": {
+    "url": "https://github.com/kbelludoo/lin/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}

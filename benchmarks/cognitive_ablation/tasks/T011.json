@@ -1,0 +1,43 @@
+{
+  "id": "T011",
+  "family": "code_transformation",
+  "difficulty": "medium",
+  "specification": "Deduplicação de array de objetos baseada em chave única \"id\". Entrada: [{id: 1, v: \"a\"}, {id: 1, v: \"b\"}, {id: 2, v: \"c\"}]. Saída: manter a primeira ocorrência.",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "globalState",
+    "mut"
+  ],
+  "test_cases": [
+    {
+      "input": [
+        {
+          "id": 1,
+          "v": "a"
+        },
+        {
+          "id": 1,
+          "v": "b"
+        },
+        {
+          "id": 2,
+          "v": "c"
+        }
+      ],
+      "expected": [
+        {
+          "id": 1,
+          "v": "a"
+        },
+        {
+          "id": 2,
+          "v": "c"
+        }
+      ]
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T011.mjs"
+  }
+}

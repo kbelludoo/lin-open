@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!applyOptions(object){;?(options.level!==undefined){assertValidLevel(options.level)};colorLevel=(((__c)=>{?(__c){return(stdoutColor.level)}return(0)})(stdoutColor));object[LEVEL]=(((__c)=>{?(__c){return(colorLevel)}return(options.level)})(options.level===undefined))}
+=ex{applyOptions}

@@ -1,0 +1,9 @@
+@DICEL:LIN_CANDIDATE:1.0.0
+^from_clone="clone-lin-underscore"
+^stage="IMPROVE_LIN_FROM_CLONE"
+^forbid_nucleus=true
+
+@HARVEST {
+  emit_peripheral{gap="template_literal" n=2 proposal="preserve_or_desugar_template_literals_in_applySourceSigils" nucleus=false}
+  positive_transfer{gap="null" n=23 proposal="keep_arrow_ASI_fixes; names=allKeys,chain,chunk,clone,compact,contains,create,each,every,filter,find,findKey,findWhere,first,flatten,functions,get,identity,initial,intersection,invert,isBoolean,alternateIsDataView" nucleus=false}
+}

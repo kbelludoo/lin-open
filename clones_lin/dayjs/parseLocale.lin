@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!parseLocale(preset,object,isLocal){;?(!preset){^L};?(typeof preset=='string'){presetLower=preset.toLowerCase();?(Ls[presetLower]){l=presetLower};?(object){Ls[presetLower]=object;l=presetLower};presetSplit=preset.split('-');?(!l&&presetSplit.length>1){^parseLocale(presetSplit[0])}}:{({name}=preset);Ls[name]=preset;l=name};?(!isLocal&&l){L=l};^l||(!isLocal&&L)}
+=ex{parseLocale}

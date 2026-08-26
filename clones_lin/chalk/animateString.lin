@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!animateString(string){;#(index=0;index<360*5;index++){updateLog(rainbow(string,index));delay(2)}}
+=ex{animateString}

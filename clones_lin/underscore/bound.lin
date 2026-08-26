@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!bound(){;position=0;length=boundArgs.length;args=Array(length);#(i=0;i<length;i++){args[i]=(((__c)=>{?(__c){return(arguments[position++])}return(boundArgs[i])})(boundArgs[i]==placeholder))};while (position<arguments.length) args.push(arguments[position++]);^executeBound(func,bound,this,this,args)}
+=ex{bound}

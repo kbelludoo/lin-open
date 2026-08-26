@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!mapObject(obj,iteratee,context){iteratee=cb(iteratee,context);_keys=keys(obj);length=_keys.length;results={};#(index=0;index<length;index++){currentKey=_keys[index];results[currentKey]=iteratee(obj[currentKey],currentKey,obj)};^results}
+=ex{mapObject}

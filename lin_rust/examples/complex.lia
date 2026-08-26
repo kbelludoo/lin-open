@@ -1,0 +1,9 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=test
+~G{?=if #=for ^=ret :else}
+
+!factorial(n){?(n <= 1){^return 1;} ^return n * factorial(n - 1);}
+
+!fibonacci(n){?(n <= 1){^return n;} ^return fibonacci(n-1) + fibonacci(n-2);}
+
+=ex{factorial,fibonacci}

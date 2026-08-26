@@ -1,0 +1,10 @@
+@DICEL:LIN_CANDIDATE:1.0.0
+^from_clone="clone-lin-is-number"
+^stage="LEARN_NEW_LANG"
+^forbid_nucleus=true
+
+@HARVEST {
+  emit_fail{target="go" fn="run" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_is-number_1xSzFX\go\run.go:6:4: syntax error: unexpected ., expected type
+" nucleus=false}
+  proposal{fix="emit_ts|emit_py|emit_go|emit_rust|emit_shared peripheral; retry; no one-file hardcode"}
+}

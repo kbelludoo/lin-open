@@ -1,0 +1,35 @@
+@DICEL:INTEL_CLONE_LIN:1.2.0
+^slug="ecc"
+^lang="LIN"
+^rule="semantic_hash_exact_like_P200"
+^no_soft_match=true
+^status="PASS"
+^done=true
+^published=true
+^suite_rate=1
+^suite_total=8
+^source="https://github.com/affaan-m/ECC.git"
+^clone_lin_url="https://github.com/kbelludoo/clone-lin-ecc"
+^clone_lin_local="C:/Users/k/Documents/lia/.clone_lin_publish/clone-lin-ecc"
+^temp_cleaned=true
+^pass=8 ^fail=0 ^skip=0
+^behavior_eq_required=1.0
+^publish_gate="suite_rate==1.0_JS"
+^multi="js:P8/S0/F0 ts:P8/S0/F0 py:P4/S0/F4 go:P0/S0/F8 rust:P0/S0/F8"
+^learn_lang="H_NEW_LANG_ecc_go_rust_py_mss6wgys"
+
+@MULTI_TARGET {
+  js:P8/S0/F0 ts:P8/S0/F0 py:P4/S0/F4 go:P0/S0/F8 rust:P0/S0/F8
+}
+
+@COMPARISON {
+  pass_names: ["reviewPrompt","verifyPrompt","isBlocking","normalize","usage","isAbsolutePath","validateTerminalName","validateCwd"]
+  fail_names: []
+  skip_names: []
+  learn: "none"
+  improve_lin: "positive_transfer:ok×8"
+}
+
+@NOTE_PT {
+  DONE 100% clone-lin-ecc: p=8 suite_rate=1.0 JS; multi=js:P8/S0/F0 ts:P8/S0/F0 py:P4/S0/F4 go:P0/S0/F8 rust:P0/S0/F8; improve=positive_transfer:ok×8
+}

@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!monthDiff(a,b){;?(a.date()<b.date()){^-monthDiff(b,a)};wholeMonthDiff=((b.year()-a.year())*12)+(b.month()-a.month());anchor=a.clone().add(wholeMonthDiff,C.M);c=b-anchor<0;anchor2=a.clone().add(wholeMonthDiff+((((__c)=>{?(__c){return(-1)}return(1)})(c))),C.M);^+(-(wholeMonthDiff+((b-anchor)/((((__c)=>{?(__c){return((anchor-anchor2))}return((anchor2-anchor))})(c)))))||0)}
+=ex{monthDiff}

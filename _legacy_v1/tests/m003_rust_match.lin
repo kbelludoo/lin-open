@@ -1,0 +1,7 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=m003_a_pattern_matching
+~G{?=if #=for ^=ret :else}
+
+!matchNumber(n){match(n){0=>{^100};1=>{^200};_=>{^999}}}
+
+=ex{matchNumber}

@@ -1,0 +1,35 @@
+@DICEL:INTEL_CLONE_LIN:1.2.0
+^slug="left-pad"
+^lang="LIN"
+^rule="semantic_hash_exact_like_P200"
+^no_soft_match=true
+^status="PASS"
+^done=true
+^published=true
+^suite_rate=1
+^suite_total=1
+^source="https://github.com/left-pad/left-pad.git"
+^clone_lin_url=""
+^clone_lin_local="C:/Users/k/Documents/lia/.clone_lin_publish/clone-lin-left-pad"
+^temp_cleaned=true
+^pass=1 ^fail=0 ^skip=0
+^behavior_eq_required=1.0
+^publish_gate="suite_rate==1.0_JS"
+^multi="js:P1/S0/F0 ts:P1/S0/F0 py:P1/S0/F0 go:P0/S0/F1 rust:P0/S0/F1"
+^learn_lang="H_NEW_LANG_left-pad_go_rust_mss6w793"
+
+@MULTI_TARGET {
+  js:P1/S0/F0 ts:P1/S0/F0 py:P1/S0/F0 go:P0/S0/F1 rust:P0/S0/F1
+}
+
+@COMPARISON {
+  pass_names: ["leftPad"]
+  fail_names: []
+  skip_names: []
+  learn: "none"
+  improve_lin: "positive_transfer:ok×1"
+}
+
+@NOTE_PT {
+  DONE 100% clone-lin-left-pad: p=1 suite_rate=1.0 JS; multi=js:P1/S0/F0 ts:P1/S0/F0 py:P1/S0/F0 go:P0/S0/F1 rust:P0/S0/F1; improve=positive_transfer:ok×1
+}

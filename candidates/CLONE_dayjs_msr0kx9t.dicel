@@ -1,0 +1,9 @@
+@DICEL:LIN_CANDIDATE:1.0.0
+^from_clone="clone-lin-dayjs"
+^stage="IMPROVE_LIN_FROM_CLONE"
+^forbid_nucleus=true
+
+@HARVEST {
+  emit_peripheral{gap="CLOSURE" n=2 proposal="preserve_free_var_bindings_when_extracting_named_fns" nucleus=false}
+  positive_transfer{gap="null" n=4 proposal="keep_arrow_ASI_fixes; names=padStart,padZoneStr,absFloor,isUndefined" nucleus=false}
+}

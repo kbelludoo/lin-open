@@ -1,0 +1,11 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=clr004_wrong_mutation
+~G{?=if #=for ^=ret :else}
+!moduleRef(){^'Transfer'}
+!target(){^'FX.quote'}
+!declaredEffects(){^'pure'}
+!caps(){^'pure'}
+!contract(){^'transfer.authenticated_write'}
+!semanticHash(){^'clr004-transfer-v1'}
+!mutation(amount,country){^'Storage.write({amount:amount,country:country})'}
+=ex{moduleRef,target,declaredEffects,caps,contract,semanticHash,mutation}

@@ -1,0 +1,99 @@
+{
+  "id": "V4_B1_PHASE1_EVALUATION",
+  "version": "1.0.0",
+  "repository": "axios@v1.14.0",
+  "spec": "REAL_AUTONOMOUS_ENGINEERING_V4_B1 rulel v2.0.0",
+
+  "flow_discovery_recall": {
+    "description": "Fraction of oracle data flows discovered in system model",
+    "formula": "|discovered_oracle_flows| / |oracle_flows|",
+    "oracle_flows": 7,
+    "oracle_flow_ids": [
+      "FLOW-001 config_to_http_request",
+      "FLOW-002 url_to_ssr",
+      "FLOW-003 header_to_wire",
+      "FLOW-004 response_to_json_parse",
+      "FLOW-005 formdata_to_object",
+      "FLOW-006 env_to_proxy",
+      "FLOW-007 xhr_to_progress"
+    ],
+    "discovered_in_agent_model": [
+      {
+        "oracle_id": "FLOW-001",
+        "agent_flows": ["FLOW-1 (config → http.request)", "FLOW-6 (config → http.request)", "FLOW-28 (config → http.request)"],
+        "mapped": true
+      },
+      {
+        "oracle_id": "FLOW-002",
+        "agent_flows": ["FLOW-2 (url → http.request)"],
+        "mapped": true
+      },
+      {
+        "oracle_id": "FLOW-003",
+        "agent_flows": ["FLOW-3 (header → header_output)"],
+        "mapped": true
+      },
+      {
+        "oracle_id": "FLOW-004",
+        "agent_flows": ["FLOW-5 (response → JSON.parse)", "FLOW-15 (response → JSON.parse)"],
+        "mapped": true
+      },
+      {
+        "oracle_id": "FLOW-005",
+        "agent_flows": ["FLOW-7 (FormData → object)", "FLOW-8 (FormData → object)"],
+        "mapped": true
+      },
+      {
+        "oracle_id": "FLOW-006",
+        "agent_flows": ["FLOW-4 (env → http.request)"],
+        "mapped": true
+      },
+      {
+        "oracle_id": "FLOW-007",
+        "agent_flows": ["FLOW-31 (xhr → progress)"],
+        "mapped": true
+      }
+    ],
+    "discovered_count": 7,
+    "missed_count": 0,
+    "recall": 1.00,
+    "grade": "A"
+  },
+
+  "model_quality": {
+    "total_sources": 15,
+    "total_sinks": 20,
+    "total_flows": 40,
+    "total_trust_boundaries": 8,
+    "oracle_coverage_in_flows": "7 of 40 flows (17.5%) directly map to oracle bugs",
+    "extra_flows": "33 flows beyond oracle — additional attack surface discovered",
+    "strengths": [
+      "Identified all 5 SSRF paths to http.request",
+      "Traced FormData → __proto__ path (prototype pollution via body)",
+      "Mapped XHR → WebSocket path (resource exhaustion)",
+      "Found error → eval path (ReDoS via stack trace)",
+      "Identified transformRequest data corruption path"
+    ],
+    "weaknesses": [
+      "FLOW-9/10/12/13: File descriptor exhaustion via fs.createReadStream — overly broad"
+    ]
+  },
+
+  "v4_b_comparison": {
+    "v4_b_recall": 0.58,
+    "v4_b1_recall": 1.00,
+    "improvement": "+72%",
+    "interpretation": "System model approach found all flows that V4-B missed"
+  },
+
+  "scenario_classification": {
+    "scenario": "A",
+    "description": "Good model (recall=1.0), but agent still needs to be tested on reasoning (Phase 2+3)",
+    "rationale": "Agent achieved perfect flow discovery recall. Phase 2 (probe execution) and Phase 3 (intervention decision) will measure whether the good model translates to accurate judgment."
+  },
+
+  "next_steps": [
+    "Phase 2: probe_execution_on_graph — execute probe on each flow",
+    "Phase 3: intervention_decision — classify TP/FP/FIX/NO_ACTION"
+  ]
+}

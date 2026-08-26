@@ -1,0 +1,17 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=lin_semantic_gate
+~G{?=if #=for ^=ret :else}
+
+!semanticGate(linCode){errors=[];lines=String(linCode||'').split('\n');currentModCaps={};#(i=0;i<lines.length;i++){line=lines[i].trim();?(line.startsWith('use ')&&line.indexOf('~caps{')>=0){capsMatch=line.match(/~caps\{([^}]*)\}/);?(capsMatch){caps=capsMatch[1].split(',');#(ci=0;ci<caps.length;ci++){currentModCaps[caps[ci].trim()]=1}}};?(line.startsWith('!')){fnLine=line;fnMatch=fnLine.match(/^!([A-Za-z_$][\w]*)\(([^)]*)\)\s*(~effects\{([^}]*)\})?\s*\{/);?(fnMatch){fnName=fnMatch[1];paramsStr=fnMatch[2]||'';declaredEffects=fnMatch[4]||'pure';body=extractBody(fnLine,lines,i);paramList=paramsStr.split(',');#(j=0;j<paramList.length;j++){p=paramList[j].trim();refMatch=p.match(/([A-Za-z_$][\w]*)\s*:\s*\w+\{([^}]+)\}/);?(refMatch){checkRefinement(refMatch[1],refMatch[2],errors)}};inferred=inferredEffects(body);violations=effectViolations(declaredEffects,inferred);#(k=0;k<violations.length;k++){errors.push('EFFECT_ERROR in '+fnName+': undeclared effect '+violations[k])};#(vi=0;vi<inferred.length;vi++){infEff=inferred[vi];?(infEff!='pure'&&!currentModCaps[infEff]){/* cap check */}};dataRace=checkDataRace(body,declaredEffects);?(dataRace){errors.push('CAPABILITY_ERROR in '+fnName+': '+dataRace)}}}};^({valid:errors.length==0,errors:errors})}
+
+!extractBody(fnLine,lines,startIdx){open=fnLine.indexOf('{');body=fnLine.slice(open+1);depth=1;i=startIdx;?(body.indexOf('}')>=0&&depth==1){^body.slice(0,body.indexOf('}'))};#(;i<lines.length&&depth>0;i++){line=lines[i];#(c=0;c<line.length;c++){ch=line.charAt(c);?(ch=='{'){depth=depth+1};?(ch=='}'){depth=depth-1;?(depth==0){^body+line.slice(0,c)}}};body=body+line+'\n'};^body}
+
+!checkRefinement(param,constraintText,errors){parts=constraintText.split(',');#(i=0;i<parts.length;i++){part=parts[i].trim();m=part.match(/^(\d+)\.\.(\d+)$/);?(m){min=Number(m[1]);max=Number(m[2]);?(min>max){errors.push('REFINEMENT_ERROR: invalid range '+part+' for '+param)}};m2=part.match(/^len<=?(\d+)$/);?(m2){maxLen=Number(m2[1]);?(maxLen<0){errors.push('REFINEMENT_ERROR: invalid length '+part+' for '+param)}};?(part=='non_empty'){/* ok */};?(part=='not_null'){/* ok */}}}
+
+!inferredEffects(body){effects=[];s=String(body||'');?(s.match(/\b(fs|path|http|fetch|console|readFile|writeFile|process|global|window|document)\b/)){effects.push('io')};?(s.match(/\bthis\.\b/)){effects.push('state')};?(s.match(/\bawait\b|\basync\b|\bPromise\b|\bsetTimeout\b/)){effects.push('async')};?(s.match(/\bthrow\b|\bpanic\b/)){effects.push('fail')};?(s.match(/\bMath\.random\b|\brand\b/)){effects.push('random')};?(s.match(/\bDate\.now\b|\bnew Date\b/)){effects.push('time')};?(effects.length==0){effects.push('pure')};^effects}
+
+!effectViolations(declared,inferred){declSet={};list=declared.split(',');#(i=0;i<list.length;i++){declSet[list[i].trim()]=1};violations=[];#(j=0;j<inferred.length;j++){e=inferred[j];?(e!='pure'&&!declSet[e]){violations.push(e)}};^violations}
+
+!checkDataRace(body,declaredEffects){declSet={};list=declaredEffects.split(',');#(i=0;i<list.length;i++){declSet[list[i].trim()]=1};?(declSet.agent||declSet.async){?(body.match(/\bthis\.\b/)){^'shared mutable state (this.) inside async/agent context'}};^null}
+
+=ex{semanticGate,extractBody,checkRefinement,inferredEffects,effectViolations,checkDataRace}

@@ -1,0 +1,7 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=pay_audit
+~G{?=if #=for ^=ret :else}
+!moduleRef(){^'Audit'}
+!effects(){^'memory'}
+!record(who,op){^({who:who,op:op,ok:1})}
+=ex{moduleRef,effects,record}

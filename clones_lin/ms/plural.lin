@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!plural(ms,msAbs,n,name){;isPlural=msAbs>=n*1.5;^((Math.round(ms/n))+" "+(name)+((((__c)=>{?(__c){return('s')};return('')})(isPlural))))}
+=ex{plural}

@@ -1,0 +1,9 @@
+@DICEL:LIN_CANDIDATE:1.0.0
+^from_clone="clone-lin-is-number"
+^stage="LEARN_NEW_LANG"
+^forbid_nucleus=true
+
+@HARVEST {
+  emit_fail{target="rust" fn="isNumberParseFloat" emit="ok" run="FAIL" reason="rustc" nucleus=false}
+  proposal{fix="emit_ts|emit_py|emit_go|emit_rust|emit_shared peripheral; retry; no one-file hardcode"}
+}

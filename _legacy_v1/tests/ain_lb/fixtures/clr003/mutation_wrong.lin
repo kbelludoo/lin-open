@@ -1,0 +1,11 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=clr003_wrong_mutation
+~G{?=if #=for ^=ret :else}
+!moduleRef(){^'Transfer'}
+!target(){^'Auth.verify'}
+!declaredEffects(){^'pure'}
+!caps(){^'pure'}
+!contract(){^'transfer.authenticated_write'}
+!semanticHash(){^'EXISTING_semantic_hash'}
+!mutation(record){^'Storage.write(record)'}
+=ex{moduleRef,target,declaredEffects,caps,contract,semanticHash,mutation}

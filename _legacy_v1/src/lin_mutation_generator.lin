@@ -1,0 +1,96 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=mutation_generator
+~G{?=if #=for ^=ret :else}
+
+!mutateFormatting(src){
+  s = String(src||'');
+  ^(s.replace(/\+/g,' + ').replace(/=/g,' = ').replace(/\n/g,'\n\n  '))
+}
+
+!mutateComment(src,seed){
+  s = String(src||'');
+  header = '/* Auto-generated comment ' + seed + ' */\n';
+  ^(header + s.replace(/\{/g,'{\n  // line comment\n'))
+}
+
+!mutateReorderExports(src){
+  s = String(src||'');
+  ?(!s.includes(',') || !s.includes('=ex{')){^s}
+  m = s.match(/=ex\{([^}]+)\}/);
+  ?(!m){^s}
+  list = m[1].split(',').map((x)=>x.trim()).reverse().join(',');
+  ^(s.replace(/=ex\{([^}]+)\}/,'=ex{'+list+'}'))
+}
+
+!mutateRenameLocal(src){
+  s = String(src||'');
+  ?(!s.includes('res=') && !s.includes('m=') && !s.includes('s=')){^s}
+  ^(s.replace(/\bres\b/g,'res_renamed').replace(/\bm\b/g,'m_renamed').replace(/\bs\b/g,'s_renamed').replace(/\bval\b/g,'val_renamed'))
+}
+
+!mutateAlterParameter(src){
+  s = String(src||'');
+  m = s.match(/!([A-Za-z0-9_]+)\(([^)]*)\)/);
+  ?(!m){^s}
+  name = m[1];
+  params = m[2];
+  extra = params ? params + ',_extra' : '_extra';
+  ^(s.replace(m[0],'!'+name+'('+extra+')'))
+}
+
+!mutateAlterType(src){
+  s = String(src||'');
+  m = s.match(/!([A-Za-z0-9_]+)\(([A-Za-z0-9_,]+)\)/);
+  ?(!m){^s}
+  name = m[1];
+  params = m[2];
+  typed = params.split(',').map((x)=>x+':string').join(',');
+  ^(s.replace(m[0],'!'+name+'('+typed+')'))
+}
+
+!mutateAlterEffect(src){
+  s = String(src||'');
+  m = s.match(/!([A-Za-z0-9_]+)\([^)]*\)\{/);
+  ?(!m){^s}
+  ^(s.replace(m[0],m[0]+'console.log("io_effect");'))
+}
+
+!mutateAlterRefinement(src){
+  s = String(src||'');
+  ?(!s.includes('/')){^s}
+  ^(s.replace(/\/2\)/,'/0)'))
+}
+
+!mutateAlterExportedSymbol(src){
+  s = String(src||'');
+  m = s.match(/\{[^}]*\^([a-zA-Z0-9_+*/\-()]+)/);
+  ?(!m){^s}
+  ^(s.replace(m[0],m[0]+'+99'))
+}
+
+!mutateAliasReexport(src){
+  s = String(src||'');
+  ?(!s.includes(' as ')){^s}
+  ^(s.replace(/add as sum/,'mul as sum').replace(/calcMean as avg/,'identity as avg'))
+}
+
+!mutateDependencyEdge(src,seed){
+  s = String(src||'');
+  ^(s + '\n// edge mutation ' + seed)
+}
+
+!mutateBodySemantics(src){
+  s = String(src||'');
+  ?(s.includes('+')){
+    ^(s.replace(/\+/,'-'))
+  }
+  ?(s.includes('*')){
+    ^(s.replace(/\*/,'+'))
+  }
+  ?(s.includes('-')){
+    ^(s.replace(/\-/,'+'))
+  }
+  ^s
+}
+
+=ex{mutateFormatting,mutateComment,mutateReorderExports,mutateRenameLocal,mutateAlterParameter,mutateAlterType,mutateAlterEffect,mutateAlterRefinement,mutateAlterExportedSymbol,mutateAliasReexport,mutateDependencyEdge,mutateBodySemantics}

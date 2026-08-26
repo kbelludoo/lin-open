@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!getMetaRangeBoundaries(meta,key){;ranges=meta.filter(~(item){^item.key === key && item.type === 'range'});^ranges.reduce(~(acc,item){; const { value } = item;;; if (value.length === 0) return acc;; const sorted = value.sort(~(a,b){^a - b});; let currentStart = sorted[0];;; for (let i = 0; i < sorted.length - 1; i++);; if (sorted[i] + 1 !== sorted[i + 1]) { acc.push({ start, end: sorted[i] });; currentStart = sorted[i + 1]; };; if (currentStart !== sorted[sorted.length - 1]); acc.push({ start, end: sorted[sorted.length - 1] });; return acc;},[])}
+=ex{getMetaRangeBoundaries}

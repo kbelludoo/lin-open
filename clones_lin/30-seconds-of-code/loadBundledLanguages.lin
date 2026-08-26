@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!loadBundledLanguages(grammars){;bundledLanguages=Object.keys(grammars).reduce(~(acc,lang){acc[lang] = ~(){^(`@shikijs/langs/${lang}`)};; return acc;},{});^bundledLanguages}
+=ex{loadBundledLanguages}

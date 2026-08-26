@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!deserializeTokens(str){^str.split(' ').reduce(~(acc,words){;; const [word, count = 1] = words.split(':');; acc.set(word, Number.parseInt(count));; return acc;},new Map())}
+=ex{deserializeTokens}

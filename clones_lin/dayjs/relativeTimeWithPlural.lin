@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!relativeTimeWithPlural(number,withoutSuffix,key){;format={ss: (((__c)=>{?(__c){return('секунда_секунди_секунд')}return('секунду_секунди_секунд')})(withoutSuffix)),mm: (((__c)=>{?(__c){return('хвилина_хвилини_хвилин')}return('хвилину_хвилини_хвилин')})(withoutSuffix)),hh: (((__c)=>{?(__c){return('година_години_годин')}return('годину_години_годин')})(withoutSuffix)),dd: 'день_дні_днів',MM: 'місяць_місяці_місяців',yy: 'рік_роки_років'};?(key=='m'){^(((__c)=>{?(__c){return('хвилина')}return('хвилину')})(withoutSuffix))}:(key=='h'){^(((__c)=>{?(__c){return('година')}return('годину')})(withoutSuffix))};^(String(number)+" "+String(plural(format[key],+number)))}
+=ex{relativeTimeWithPlural}

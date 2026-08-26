@@ -1,0 +1,54 @@
+{
+  "proposals": [
+    {
+      "proposal_id": "baseline",
+      "hypothesis": "retain the current algorithm as the measured baseline",
+      "affected_modules": ["Transfer"],
+      "inferred_effects": ["pure"],
+      "required_caps": [],
+      "architecture_delta": "none",
+      "constraints_preserved": true,
+      "proof_status": "metadata_verified"
+    },
+    {
+      "proposal_id": "cache_memory",
+      "hypothesis": "cache repeated transfer lookups in bounded process memory",
+      "affected_modules": ["Transfer"],
+      "inferred_effects": ["memory"],
+      "required_caps": ["memory"],
+      "architecture_delta": "none",
+      "constraints_preserved": true,
+      "proof_status": "metadata_verified"
+    },
+    {
+      "proposal_id": "index_algorithm",
+      "hypothesis": "replace repeated linear lookup with an in-memory index",
+      "affected_modules": ["Transfer", "CountryLimits"],
+      "inferred_effects": ["pure", "memory"],
+      "required_caps": ["memory", "cpu"],
+      "architecture_delta": "none",
+      "constraints_preserved": true,
+      "proof_status": "metadata_verified"
+    },
+    {
+      "proposal_id": "parallelism",
+      "hypothesis": "parallelize independent FX and country policy reads",
+      "affected_modules": ["Transfer", "FX", "CountryLimits"],
+      "inferred_effects": ["pure"],
+      "required_caps": ["cpu", "concurrency"],
+      "architecture_delta": "none",
+      "constraints_preserved": true,
+      "proof_status": "metadata_verified"
+    },
+    {
+      "proposal_id": "persistent_cache",
+      "hypothesis": "persist cache entries across process restarts",
+      "affected_modules": ["Transfer", "Storage"],
+      "inferred_effects": ["io"],
+      "required_caps": ["io", "storage"],
+      "architecture_delta": "storage_dependency",
+      "constraints_preserved": false,
+      "proof_status": "unproven"
+    }
+  ]
+}

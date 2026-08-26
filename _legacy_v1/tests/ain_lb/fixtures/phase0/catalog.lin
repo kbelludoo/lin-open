@@ -1,0 +1,15 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=pay_catalog
+~G{?=if #=for ^=ret :else}
+!mod0(){^'User'}
+!mod1(){^'Balance'}
+!mod2(){^'Transfer'}
+!mod3(){^'Audit'}
+!mod4(){^'Perms'}
+!mod5(){^'Logs'}
+!modCount(){^6}
+!modAt(i){?(i==0){^mod0()};?(i==1){^mod1()};?(i==2){^mod2()};?(i==3){^mod3()};?(i==4){^mod4()};?(i==5){^mod5()};^''}
+!approvalRule(){^'transfer_gt_10000_needs_approval'}
+!hashNucleus(){^'EXISTING_semantic_hash'}
+!redefineHash(){^0}
+=ex{mod0,mod1,mod2,mod3,mod4,mod5,modCount,modAt,approvalRule,hashNucleus,redefineHash}

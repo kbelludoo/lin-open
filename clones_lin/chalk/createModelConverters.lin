@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!createModelConverters(model,type){ansi=~(red,green,blue){^style.ansi(ansiStyles.rgbToAnsi(red, green, blue))};ansi256=~(red,green,blue){^style.ansi256(ansiStyles.rgbToAnsi256(red, green, blue))};ansi=~(hex){^style.ansi(ansiStyles.hexToAnsi(hex))};ansi256=~(hex){^style.ansi256(ansiStyles.hexToAnsi256(hex))};ansi=~(code){^style.ansi(ansiStyles.ansi256ToAnsi(code))};;style=ansiStyles[type];?(model=='rgb'){^[ansi,ansi,ansi256,style.ansi16m]};?(model=='hex'){^[ansi,ansi,ansi256,~(hex){^style.ansi16m(...ansiStyles.hexToRgb(hex))}]};^[ansi,ansi,style.ansi256,style.ansi256]}
+=ex{createModelConverters}

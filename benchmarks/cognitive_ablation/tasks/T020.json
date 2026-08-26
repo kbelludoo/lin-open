@@ -1,0 +1,28 @@
+{
+  "id": "T020",
+  "family": "debug_repair",
+  "difficulty": "medium",
+  "specification": "Cálculo de divisão segura com média. Entrada: array de números. Saída: média dos números ou 0 se o array estiver vazio.",
+  "allowed_effects": [],
+  "forbidden_effects": [
+    "globalState"
+  ],
+  "test_cases": [
+    {
+      "input": [
+        10,
+        20,
+        30
+      ],
+      "expected": 20
+    },
+    {
+      "input": [],
+      "expected": 0
+    }
+  ],
+  "oracle": {
+    "type": "deterministic_unit",
+    "entrypoint": "oracles/oracle_T020.mjs"
+  }
+}

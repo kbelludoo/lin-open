@@ -1,0 +1,16 @@
+@DICEL:LIN_CANDIDATE:1.0.0
+^from_clone="clone-lin-left-pad"
+^stage="LEARN_NEW_LANG"
+^forbid_nucleus=true
+
+@HARVEST {
+  emit_fail{target="py" fn="leftPad" emit="ok" run="FAIL" reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_left-pad_8a9Ou8\py\leftPad.py', line 36
+    :{break}
+    ^
+SyntaxErro" nucleus=false}
+  emit_fail{target="go" fn="leftPad" emit="ok" run="FAIL" reason="C:\Users\k\AppData\Local\Temp\lin_multi_left-pad_8a9Ou8\go\leftPad.go:27:3: syntax error: unexpected :, expected }
+C:\Us" nucleus=false}
+  emit_fail{target="rust" fn="leftPad" emit="ok" run="FAIL" reason="error: expected expression, found `:`
+  --> C:\Users\k\AppData\Local\Temp\lin_multi_left-pad_8a9Ou8\rust\leftPad.rs:29:9" nucleus=false}
+  proposal{fix="emit_ts|emit_py|emit_go|emit_rust|emit_shared peripheral; retry; no one-file hardcode"}
+}

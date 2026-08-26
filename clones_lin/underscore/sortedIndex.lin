@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!sortedIndex(array,obj,iteratee,context){iteratee=cb(iteratee,context,1);value=iteratee(obj);low=0;high=getLength(array);while (low<high){mid=Math.floor((low+high)/2);?(iteratee(array[mid])<value){low=mid+1};:{high=mid}};^low}
+=ex{sortedIndex}

@@ -1,0 +1,11 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=clr003_transfer
+~G{?=if #=for ^=ret :else}
+!moduleRef(){^'Transfer'}
+!dependencies(){^'Auth,Storage'}
+!declaredEffects(){^'io'}
+!caps(){^'io'}
+!contract(){^'transfer.authenticated_write'}
+!semanticHash(){^'EXISTING_semantic_hash'}
+!transfer(token,record){^({token:token,record:record})}
+=ex{moduleRef,dependencies,declaredEffects,caps,contract,semanticHash,transfer}

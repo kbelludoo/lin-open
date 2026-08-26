@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!object(list,values){;result={};#(i=0,length=getLength(list);i<length;i++){?(values){result[list[i]]=values[i]}:{result[list[i][0]]=list[i][1]}};^result}
+=ex{object}

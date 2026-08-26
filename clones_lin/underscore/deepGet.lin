@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!deepGet(obj,path){;length=path.length;#(i=0;i<length;i++){?(obj==null){^void 0};obj=obj[path[i]]};^(((__c)=>{?(__c){return(obj)}return(void 0)})(length))}
+=ex{deepGet}

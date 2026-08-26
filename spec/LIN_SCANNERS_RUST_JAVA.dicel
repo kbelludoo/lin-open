@@ -1,0 +1,35 @@
+@DICEL:LIN_SCANNERS_RUST_JAVA:0.1.0
+
+^lang="LIN"
+^status="DRAFT"
+^goal="real_scanners_and_emitters_for_rust_and_java_repos"
+
+@MOTIVATION {
+  priority: "Scanners rust/java"
+  blocker: "extractNativeFns for rust/java only handled single-return trivial fns"
+  result: "multi-emit now green for go and rust on safe-compare; scanners handle if/for/while/let"
+}
+
+@SCANNER_IMPROVEMENTS {
+  rust: "scripts/clone_lin_native.mjs extractRs now supports if/else, for i in a..b, let mut, return"
+  java: "scripts/clone_lin_native.mjs extractJava now supports if/else, for, while, return"
+  fallback: "regex-based; tree-sitter upgrade is future work"
+}
+
+@EMITTER_IMPROVEMENTS {
+  rust: "src/emit_rust.mjs infers String/i32/bool types, clones Strings on assignment, accepts &str params via impl ToString"
+  go: "src/emit_go.mjs infers int/string/bool locals, returns bool for comparisons, imports fmt for main"
+  shared: "src/emit_shared.mjs inferTypes() + assignOpLine type-aware clone for rust"
+}
+
+@RESULTS {
+  test_multi: "PASS for js, ts, py, go, rust on safe-compare.lia"
+  bootstrap: "BOOTSTRAP_PASS with all gates true"
+}
+
+@TODO {
+  T1: "extend scanners to handle Rust match / Java switch"
+  T2: "tree-sitter based scanners for rust/java (like lin-rewriter/scanner/go.py)"
+  T3: "real repo clone-lin on rust/java corpus"
+  T4: "C and Java emitters still stubs; improve next"
+}

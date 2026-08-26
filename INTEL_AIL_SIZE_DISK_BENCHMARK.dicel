@@ -1,0 +1,90 @@
+@DICEL:AIL_SIZE_DISK_BENCHMARK:1.0.0
+
+^rule="semantic_hash_exact_like_P200"
+^soft_match=false
+^same_content=true
+^no_padding=true
+^status="PARTIAL_PASS"
+^generated_at="2026-08-13T03:42:46.413Z"
+^verdict_pt="LOC TypeScript/src=453359 (~20.289MB disco). Roundtrip holdout exato TS: 183/500 (36.6%); lodash isolado: 246/400 (61.5%). Lodash node test/test baseline=PASS. Suite API publica toString→LIA: 1 pass / 14 fail (closures). Regra semantic_hash_exact_like_P200 ativa. Dicel L0 nao gerado neste bench."
+
+@CORPUS_TYPESCRIPT {
+  url: "https://github.com/microsoft/TypeScript"
+  path: "C:/Users/k/Documents/ail-bench/clone-400k/TypeScript/src"
+  files: 709
+  loc: 453359
+  chars: 21274572
+  tokens_est: 5318643
+  disk_bytes: 21275029
+  disk_mb: 20.289
+}
+
+@CORPUS_LODASH {
+  url: "https://github.com/lodash/lodash"
+  path: "C:/Users/k/Documents/ail-bench/clone-400k/lodash"
+  files: 19
+  loc: 19122
+  chars: 615921
+  tokens_est: 153981
+  disk_bytes: 615929
+  disk_mb: 0.587
+  has_real_tests: true
+  test_command: "node test/test"
+}
+
+@SIZE_AIL_ARTIFACTS {
+  ail_chars: 37187
+  ail_tokens_est: 9297
+  ail_disk_bytes: 37187
+  compiled_chars: 27654
+  compiled_disk_bytes: 27654
+  source_chars_of_pass_subset: 37187
+  ratio_ail_over_compiled_pass: 1.3447
+  ratio_disk_ail_over_disk_ts_tree: 0.001748
+  dicel_l0: "not_generated_in_this_bench"
+  artifacts_dir: "C:/Users/k/Documents/ail-bench/artifacts_size_real"
+}
+
+@ROUNDTRIP_HOLDOUT {
+  protocol: "source->AIL_V2->compile_JS->holdout_sha256"
+  fns_attempted: 500
+  fns_pass: 183
+  fns_fail: 29
+  fns_skip: 288
+  pass_rate: 0.366
+  behavior_eq_required: 1.0
+}
+
+@REAL_TESTS_LODASH {
+  baseline_command: "node test/test"
+  baseline_pass: true
+  ail_suite_pass: 1
+  ail_suite_fail: 14
+  ail_suite_skipped: 0
+  lodash_holdout_pass: 246
+  lodash_holdout_attempted: 400
+  lodash_holdout_rate: 0.615
+  note: "baseline=node test/test PASS on original monolith; public-API toString→LIA fails on free refs (toNumber/baseToNumber/isArray); isolated classic fn holdout on lodash.js is stronger (246/400)"
+  blocker: "full_monolith_AIL_rewrite_breaks_closures"
+}
+
+@HASH_SAMPLE {
+  { fn:"createLogger", original_hash:"05fb8ad9b37688d365f7acf9dbf21cd59708824986ecd053a81a4a637cb61927", compiled_hash:"05fb8ad9b37688d365f7acf9dbf21cd59708824986ecd053a81a4a637cb61927", eq:true }
+  { fn:"setCanWriteFlagAndWriteMessageIfNecessary", original_hash:"70d075fe62ba11d58a52ba682655a64d21bcbe61425cffb71e963a4b23c7ffaa", compiled_hash:"70d075fe62ba11d58a52ba682655a64d21bcbe61425cffb71e963a4b23c7ffaa", eq:true }
+  { fn:"getNonWindowsCacheLocation", original_hash:"fbf8e3715e2296616a60896c885bae10f5a86d2b36d3981c08ce930c83af76fc", compiled_hash:"fbf8e3715e2296616a60896c885bae10f5a86d2b36d3981c08ce930c83af76fc", eq:true }
+  { fn:"makeFileSystem", original_hash:"91ef48d0e7848db61bd92b4de424d562cf67737f98f7359b8a51ce56c54f2ae6", compiled_hash:"91ef48d0e7848db61bd92b4de424d562cf67737f98f7359b8a51ce56c54f2ae6", eq:true }
+  { fn:"moduleNameToString", original_hash:"05fb8ad9b37688d365f7acf9dbf21cd59708824986ecd053a81a4a637cb61927", compiled_hash:"05fb8ad9b37688d365f7acf9dbf21cd59708824986ecd053a81a4a637cb61927", eq:true }
+  { fn:"importTests", original_hash:"7353406481cf5ab19cae701a915ee6f4f0d38a8aa360fa2e41e966bf0a18984e", compiled_hash:"7353406481cf5ab19cae701a915ee6f4f0d38a8aa360fa2e41e966bf0a18984e", eq:true }
+  { fn:"startTestEnvironment", original_hash:"05fb8ad9b37688d365f7acf9dbf21cd59708824986ecd053a81a4a637cb61927", compiled_hash:"05fb8ad9b37688d365f7acf9dbf21cd59708824986ecd053a81a4a637cb61927", eq:true }
+  { fn:"foo", original_hash:"fdc7873e0a541e9c044464dabc80d03883e585aa969bc52ecbc9759d38b158c9", compiled_hash:"fdc7873e0a541e9c044464dabc80d03883e585aa969bc52ecbc9759d38b158c9", eq:true }
+  { fn:"bar", original_hash:"fdc7873e0a541e9c044464dabc80d03883e585aa969bc52ecbc9759d38b158c9", compiled_hash:"fdc7873e0a541e9c044464dabc80d03883e585aa969bc52ecbc9759d38b158c9", eq:true }
+  { fn:"bar2", original_hash:"fdc7873e0a541e9c044464dabc80d03883e585aa969bc52ecbc9759d38b158c9", compiled_hash:"fdc7873e0a541e9c044464dabc80d03883e585aa969bc52ecbc9759d38b158c9", eq:true }
+}
+
+@VERDICT {
+  semantic_hash_rule_in_place: true
+  loc_near_400k: true
+  measured_loc: 453359
+  real_tests_documented: true
+  full_monolith_ail_rewrite: false
+}

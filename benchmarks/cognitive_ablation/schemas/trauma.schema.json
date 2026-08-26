@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LinTraumaFeedback",
+  "type": "object",
+  "required": [
+    "trauma_id",
+    "candidate_hash",
+    "attempt",
+    "stage",
+    "violation_class",
+    "location",
+    "constraint_rule",
+    "invariant_broken",
+    "remedy_hint"
+  ],
+  "properties": {
+    "trauma_id": { "type": "string" },
+    "candidate_hash": { "type": "string" },
+    "attempt": { "type": "integer", "minimum": 1, "maximum": 3 },
+    "stage": {
+      "type": "string",
+      "enum": ["PARSE", "TYPECHECK", "EFFECT_CHECK", "BEHAVIOR_GATE", "RUNTIME_ERROR"]
+    },
+    "violation_class": { "type": "string" },
+    "location": { "type": "string" },
+    "constraint_rule": { "type": "string" },
+    "invariant_broken": { "type": "string" },
+    "remedy_hint": { "type": "string" }
+  }
+}

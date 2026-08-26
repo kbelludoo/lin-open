@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
+~G{?=if #=for ^=ret :else}
+!createPredicateIndexFinder(dir){;^function(array,predicate,context){predicate=cb(predicate,context);length=getLength(array);index=(((__c)=>{?(__c){return(0)}return(length-1)})(dir>0));#(;index>=0&&index<length;index+=dir){?(predicate(array[index],index,array)){^index}};^-1}}
+=ex{createPredicateIndexFinder}
