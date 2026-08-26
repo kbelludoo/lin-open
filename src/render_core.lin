@@ -1,0 +1,171 @@
+@LIN:L1c:0.2
+!renderExpr(expr){
+  ?(!expr || !expr.parts){ ^''; }
+  let out = '';
+  for (const part of expr.parts) {
+    ?(part.kind === 'raw'){ out += part.text; }
+    else out += renderNode(part.node);
+  }
+  ^out;
+}
+!renderNode(node){
+  switch (node.kind) {
+    case 'regex':
+      ^`/${node.rawPattern}/${node.flags || ''}`;
+    case 'closure':
+    case 'fnlit': {
+      const name = node.name ? ` ${node.name}` : '';
+      ?(node.body){
+        ^`function${name}(${node.params}){${renderBody(node.body)}}`;
+      }
+      ^`function${name}(${node.params}){return (${renderExpr(node.expr)});}`;
+    }
+    case 'arrow':
+      ^`(${node.params})=>{${renderBody(node.body)}}`;
+    case 'match':
+      ^renderMatchArms(renderExpr(node.target), node.arms);
+    default:
+      throw new Error(`LIN_RENDER_NODE: unknown ${node && node.kind}`);
+  }
+}
+!fnParamsText(fn){
+  const segs = [];
+  for (const p of fn.params || []) {
+    let seg = p.name;
+    ?(p.def != null && p.def !== ''){ seg += `=${p.def}`; }
+    segs.push(seg);
+  }
+  ^segs.join(',');
+}
+!renderBody(stmts){
+  let out = '';
+  for (const st of stmts) {
+    out += renderStmt(st);
+  }
+  if (out && !/[;}
+!renderStmt(st){
+  ?(!st){ ^''; }
+  switch (st.type) {
+    case 'function': {
+      const fn = st.fn;
+      ^`function ${fn.name}(${fnParamsText(fn)}){${renderBody(fn.body)}}`;
+    }
+    case 'var': {
+      const declStrs = (st.decls || []).map(d => `${d.id}${d.init ? ` = ${renderExpr(d.init)}` : ''}`).join(', ');
+      ^`${st.kind || 'var'} ${declStrs};`;
+    }
+    case 'labeled':
+      ^`${st.label}: ${renderStmt(st.body)}`;
+    case 'dowhile':
+      ^`do {${renderBody(st.body)}} while(${renderExpr(st.cond)});`;
+    case 'return':
+      ^`return ${renderExpr(st.expr)};`;
+    case 'throw':
+      ^`throw ${renderExpr(st.expr)};`;
+    case 'break':
+      ^st.label ? `break ${st.label};` : 'break;';
+    case 'continue':
+      ^st.label ? `continue ${st.label};` : 'continue;';
+    case 'expr': {
+      const text = renderExpr(st.expr).trim();
+      ?(!text){ ^''; }
+      ?(/^throw\b/.test(text)){ ^`${text}; }`;
+      ^`${text};`;
+    }
+    case 'assign':
+      ^`${st.idPath} ${st.op} ${renderExpr(st.rhs)};`;
+    case 'if':
+      ^renderIf(st);
+    case 'blockternary':
+      ^`(${renderExpr(st.cond)}?${renderBody(st.then)}:${renderBody(st.elseExpr)});`;
+    case 'for':
+      ^`for(${st.init};${renderExpr(st.cond)};${st.step}){${renderBody(st.body)}}`;
+    case 'forof':
+      ^`for(const ${st.left} of ${st.right}){${renderBody(st.body)}}`;
+    case 'forin':
+      ^`for(const ${st.left} in ${st.right}){${renderBody(st.body)}}`;
+    case 'while':
+      ^`while(${renderExpr(st.cond)}){${renderBody(st.body)}}`;
+    case 'switch': {
+      const disc = renderExpr(st.discriminant);
+      const caseStrs = (st.cases || []).map(c => {
+        const bodyStr = renderBody(c.consequent);
+        ?(c.type === 'default'){
+          ^`default:\n${bodyStr}`;
+        }
+        ^`case ${renderExpr(c.test)}:\n${bodyStr}`;
+      }).join('\n');
+      ^`switch (${disc}) {\n${caseStrs}\n}`;
+    }
+    case 'match': {
+      const target = renderExpr(st.target);
+      ^renderMatchArms(target, st.arms);
+    }
+    default:
+      throw new Error(`LIN_RENDER_STMT: unknown ${st.type}`);
+  }
+}
+!renderIf(st){
+  let out = `?(${renderExpr(st.cond)}){${renderBody(st.then)}}`;
+  for (const ei of st.elseIf || []) {
+    out += renderElseIf(ei);
+  }
+  ?(st.else){
+    out += Array.isArray(st.else)
+      ? `}:{${renderBody(st.else)}}`
+      : renderChainTail(st.else);
+  }
+  ^out;
+}
+!normalizeElse(els){
+  ?(!els){ ^[]; }
+  ?(Array.isArray(els)){ ^els; }
+  const out = [];
+  let ct = els;
+  let guard = 0;
+  while (ct && guard++ < 100) {
+    out.push({
+      type: 'if',
+      cond: ct.cond == null ? { parts: [{ kind: 'raw', text: 'true' }] } : ct.cond,
+      then: ct.body,
+      elseIf: [],
+      else: null,
+    });
+    ct = ct.chainTail;
+  }
+  ^out;
+}
+!renderElseIf(ei){
+  ^`else ?(${renderExpr(ei.cond)}){${renderBody(ei.body)}}`;
+}
+!matchArmCond(targetExpr,arm){
+  const pat = arm.pat;
+  const guard = arm.guard;
+  const withGuard = (c) => (guard ? `${c}&&(${guard})` : c);
+
+  ?(pat === '_'){
+    ^{ cond: guard ? `(${guard})` : 'true', binds: '' };
+  }
+  ?(pat.includes('|') && !pat.startsWith('(')) {
+    const subPats = pat.split('|').map((p) => p.trim()).filter(Boolean);
+    ^{ cond: withGuard(`(${subPats.map((p) => `${targetExpr}===${p}`).join('||')})`), binds: '' };
+  }
+  const enumMatch = pat.match(/^([A-Za-z_$][\w$]*)\(([^)]+)\)$/){ ; }
+  const tupleMatch = pat.match(/^\(([^)]+)\)$/);
+  const structDestruct = pat.match(/^(?:([A-Za-z_$][\w$]*)\s*)?\{([^}]+)\}
+!renderMatchArms(targetExpr,arms){
+  const parts = [];
+  let first = true;
+  for (const arm of arms) {
+    const { cond, binds } = matchArmCond(targetExpr, arm);
+    const bodyStr = renderBody(arm.body);
+    ?(first){
+      parts.push(`?(${cond}){${binds}${bodyStr}}`);
+      first = false;
+    }:{
+      parts.push(`:(${cond}){${binds}${bodyStr}}`);
+    }
+  }
+  ^parts.join('');
+}
+=ex{renderExpr, renderNode, fnParamsText, renderBody, renderStmt, renderIf, normalizeElse, renderElseIf, matchArmCond, renderMatchArms}

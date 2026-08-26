@@ -1,0 +1,29 @@
+@LIN:L1c:0.2
+!sha256(text){
+  ^createHash('sha256').update(String(text), 'utf8').digest('hex');
+}
+!verify(source,opts){
+  const report = {
+    ok: true,
+    gates: [],
+    startedAt: new Date().toISOString(),
+  };
+  const gate = (name, passed, detail) => {
+    report.gates.push({ gate: name, pass: !!passed, detail: detail || null });
+    ?(!passed){ report.ok = false; }
+  };
+
+  let prog = null;
+  
+    prog = parseProgram(source);
+    gate(GATES.PARSE, true, `${prog.fns.length} fns`);
+  
+    gate(GATES.PARSE, false, e.message);
+    report.finishedAt = new Date().toISOString();
+    ^report;
+  }
+!gate(name,passed,detail){
+    report.gates.push({ gate: name, pass: !!passed, detail: detail || null });
+    ?(!passed){ report.ok = false; }
+  }
+=ex{sha256, verify, gate}

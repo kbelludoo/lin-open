@@ -1,0 +1,43 @@
+@LIN:L1c:0.2
+!runInMemoryZig(linSource,opts){
+  const compiled = compile(linSource, { target: 'zig', stubJsRuntimeOnly: true });
+  let zigSource = compiled.code;
+
+  ?(!zigSource.includes('pub fn main()')){
+    const mainRunner = `
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    LIA_ALLOC = gpa.allocator();
+    const stdout = std.io.getStdOut().writer();
+    try stdout.print("ZIG_IN_MEMORY_OK: fns=${compiled.fns.join(',')}\\n", .{});
+}
+`;
+    zigSource += '\n' + mainRunner;
+  }
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lin-zig-vm-'));
+  const tmpFile = path.join(tmpDir, 'module.zig');
+
+  
+    fs.writeFileSync(tmpFile, zigSource, 'utf8');
+    const output = execFileSync(ZIG_BIN, ['run', tmpFile], {
+      encoding: 'utf8',
+      timeout: opts.timeoutMs || 10000
+    }).trim();
+
+    ^{
+      ok: true,
+      code: compiled.code,
+      output,
+      fns: compiled.fns
+    };
+  
+    ^{
+      ok: false,
+      code: compiled.code,
+      error: err.stderr || err.message,
+      fns: compiled.fns
+    };
+  }
+=ex{runInMemoryZig}

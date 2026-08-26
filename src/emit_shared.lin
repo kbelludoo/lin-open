@@ -1,0 +1,118 @@
+@LIN:L1c:0.2
+!snakeCase(name){
+  ^String(name)
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .replace(/-/g, '_')
+    .toLowerCase();
+}
+!safeEmitId(id){
+  let s = String(id || '');
+  ?(!s || s === '_' || s === '__'){ ^'_u'; }
+  s = s.replace(/\$/g, 'dollar').replace(/[^A-Za-z0-9_]/g, '_');
+  ?(!s || !/^[A-Za-z_]/.test(s)){ s = `id_${s || 'x'}`; }
+  ?(RESERVED_EMIT_ID.test(s)){ ^`${s}_`; }
+  ^s;
+}
+!bodyTextOf(fn){
+  ?(fn.__bodyText){ ^fn.__bodyText; }
+  const text = typeof fn.body === 'string' ? fn.body : coreRenderBody(fn.body || []);
+  ^text;
+}
+!prepareNativeFn(fn){
+  const cloned = JSON.parse(JSON.stringify(fn.body || []));
+  const aliases = new Map();
+  const isPlainId = (s) => /^[A-Za-z_$][\w$]*$/.test(s);
+  for (const st of cloned) {
+    ?(st.type === 'assign' && st.op === '=' && isPlainId(st.idPath)){
+      const parts = st.rhs?.parts || [];
+      ?(parts.length === 1 && parts[0].kind === 'raw'){
+        const m = parts[0].text.trim().match(/^String\(\s*([A-Za-z_$][\w$]*)\s*\)$/);
+        ?(m){
+          aliases.set(st.idPath, m[1]);
+          st.__drop = true;
+        }
+      }
+    }
+  }
+  let filtered = cloned;
+  ?(aliases.size){
+    filtered = [];
+    for (const st of cloned) {
+      ?(!st.__drop){ filtered.push(st); }
+    }
+  }
+  const sub = (expr) => {
+    ?(!expr?.parts){ ^null; }
+    for (const part of expr.parts) {
+      ?(part.kind === 'raw'){
+        part.text = part.text.replace(/[A-Za-z_$][\w$]*/g, (w) => aliases.get(w) || w);
+      }:{
+        sub(part.node?.target);
+        ?(part.node?.arms){
+          for (const arm of part.node.arms) walk(arm.body);
+        }
+      }
+    }
+  };
+  const walk = (stmts) => {
+    for (const st of stmts) {
+      ?(st.type === 'assign' && aliases.has(st.idPath)){
+        st.idPath = aliases.get(st.idPath);
+      }
+      ?(st.expr){ sub(st.expr); }
+      ?(st.rhs){ sub(st.rhs); }
+      ?(st.cond){ sub(st.cond); }
+      ?(st.target){ sub(st.target); }
+      ?(st.then){ walk(st.then); }
+      ?(st.else){ walk(st.else); }
+      ?(st.body){ walk(st.body); }
+      ?(st.elseIf){ for (const ei of st.elseIf) {
+        sub(ei.cond); }
+        walk(ei.body);
+      }
+      ?(st.arms){ for (const arm of st.arms) {
+        walk(arm.body); }
+      }
+    }
+  };
+  walk(filtered);
+  fn.__preparedBody = filtered;
+  fn.__bodyText = coreRenderBody(filtered);
+  fn.body = filtered;
+  ^fn;
+}
+!sub(expr){
+    ?(!expr?.parts){ ^null; }
+    for (const part of expr.parts) {
+      ?(part.kind === 'raw'){
+        part.text = part.text.replace(/[A-Za-z_$][\w$]*/g, (w) => aliases.get(w) || w);
+      }:{
+        sub(part.node?.target);
+        ?(part.node?.arms){
+          for (const arm of part.node.arms) walk(arm.body);
+        }
+      }
+    }
+  }
+!walk(stmts){
+    for (const st of stmts) {
+      ?(st.type === 'assign' && aliases.has(st.idPath)){
+        st.idPath = aliases.get(st.idPath);
+      }
+      ?(st.expr){ sub(st.expr); }
+      ?(st.rhs){ sub(st.rhs); }
+      ?(st.cond){ sub(st.cond); }
+      ?(st.target){ sub(st.target); }
+      ?(st.then){ walk(st.then); }
+      ?(st.else){ walk(st.else); }
+      ?(st.body){ walk(st.body); }
+      ?(st.elseIf){ for (const ei of st.elseIf) {
+        sub(ei.cond); }
+        walk(ei.body);
+      }
+      ?(st.arms){ for (const arm of st.arms) {
+        walk(arm.body); }
+      }
+    }
+  }
+=ex{snakeCase, safeEmitId, bodyTextOf, prepareNativeFn, sub, walk}

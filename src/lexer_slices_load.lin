@@ -1,0 +1,23 @@
+@LIN:L1c:0.2
+!lexerSlices(){
+  ?(loaded){ ^cached; }
+  loaded = true;
+  ?(process.env.LEXER_SLICES_OFF === '1'){
+    cached = null;
+    ^cached;
+  }
+  
+    const artifact = path.join(__dirname, 'lexer_slices.compiled.cjs');
+    ?(!fs.existsSync(artifact)){
+      cached = null;
+      ^cached;
+    }
+    const mod = require(artifact);
+    for (const k of ['identLenAt', 'wsRunAt', 'numLenAt']) {
+      ?(typeof mod[k] !== 'function'){ throw new Error(`slice ausente: ${k}`); }
+    }
+    cached = { identLenAt: mod.identLenAt, wsRunAt: mod.wsRunAt, numLenAt: mod.numLenAt };
+  
+    cached = null;
+  }
+=ex{lexerSlices}

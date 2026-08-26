@@ -1,0 +1,116 @@
+@LIN:L1c:0.2
+!createClient(parent){
+    this.parent = parent;
+    this.locals = new Map();
+    this.captures = new Map();
+    this.localIndex = 0;
+  }
+!bindLocal(name){
+    const idx = this.localIndex++;
+    this.locals.set(name, `$${idx}`);
+    ^`$${idx}`;
+  }
+!resolveIdentifier(name){
+    ?(this.locals.has(name)){
+      ^{ kind: 'LocalRef', ref: this.locals.get(name) };
+    }
+
+    ?(this.parent){
+      const parentResolved = this.parent.resolveIdentifier(name);
+      ?(parentResolved.kind === 'LocalRef' || parentResolved.kind === 'CaptureRef'){
+        ?(!this.captures.has(name)){
+          const capIdx = `$c${this.captures.size}`;
+          this.captures.set(name, {
+            capIdx,
+            outerRef: parentResolved.ref
+          });
+        }
+        ^{ kind: 'CaptureRef', ref: this.captures.get(name).capIdx, outerRef: this.captures.get(name).outerRef };
+      }
+      ^parentResolved;
+    }
+
+    ^{ kind: 'GlobalRef', name };
+  }
+!getCaptures(){
+    ^Array.from(this.captures.values()).map(c => ({ ref: c.capIdx, outerRef: c.outerRef }));
+  }
+!inferNodeEffect(astNode){
+  let effect = EFFECTS.PURE;
+
+  function scan(n) {
+    ?(!n || typeof n !== 'object'){ ^null; }
+
+    ?(n.type === 'CallExpression'){
+      const calleeName = extractCalleeFullName(n.callee);
+      ?(IO_SYMBOLS.has(calleeName)){
+        effect = EFFECTS.IO;
+        ^null;
+      }
+    }
+
+    ?(n.type === 'AssignmentExpression'){
+      ?(n.left.type === 'MemberExpression'){
+        ?(effect !== EFFECTS.IO){ effect = EFFECTS.MUTATE; }
+      }
+    }
+
+    ?(n.type === 'MemberExpression'){
+      ?(effect === EFFECTS.PURE){ effect = EFFECTS.READ; }
+    }
+
+    for (const k of Object.keys(n)) {
+      ?(k === 'type'){ continue; }
+      const child = n[k];
+      ?(Array.isArray(child)){
+        for (const item of child) ?(item && typeof item === 'object'){ scan(item); }
+      }:(child && typeof child === 'object'){
+        scan(child);
+      }
+    }
+  }
+
+  scan(astNode);
+  ^effect;
+}
+!scan(n){
+    ?(!n || typeof n !== 'object'){ ^null; }
+
+    ?(n.type === 'CallExpression'){
+      const calleeName = extractCalleeFullName(n.callee);
+      ?(IO_SYMBOLS.has(calleeName)){
+        effect = EFFECTS.IO;
+        ^null;
+      }
+    }
+
+    ?(n.type === 'AssignmentExpression'){
+      ?(n.left.type === 'MemberExpression'){
+        ?(effect !== EFFECTS.IO){ effect = EFFECTS.MUTATE; }
+      }
+    }
+
+    ?(n.type === 'MemberExpression'){
+      ?(effect === EFFECTS.PURE){ effect = EFFECTS.READ; }
+    }
+
+    for (const k of Object.keys(n)) {
+      ?(k === 'type'){ continue; }
+      const child = n[k];
+      ?(Array.isArray(child)){
+        for (const item of child) ?(item && typeof item === 'object'){ scan(item); }
+      }:(child && typeof child === 'object'){
+        scan(child);
+      }
+    }
+  }
+!extractCalleeFullName(node){
+  ?(!node){ ^''; }
+  ?(node.type === 'Identifier'){ ^node.name; }
+  ?(node.type === 'MemberExpression'){
+    const parent = extractCalleeFullName(node.object);
+    ^parent ? `${parent}.${node.property}` : node.property;
+  }
+  ^'';
+}
+=ex{createClient, bindLocal, resolveIdentifier, getCaptures, inferNodeEffect, scan, extractCalleeFullName}
