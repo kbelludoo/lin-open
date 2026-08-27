@@ -51,6 +51,37 @@ export function emitLinFromJs(jsSource, opts = {}) {
         continue;
       }
       if (!isNamedFn) {
+        const bareParam = toks[i + 3];
+        const bareArrow = toks[i + 4];
+        if (bareParam && bareParam.type === 'id' && bareArrow && bareArrow.value === '=>') {
+          const paramsRaw = bareParam.value;
+          let bodyOut;
+          let after;
+          if (toks[i + 5]?.value === '{') {
+            const cb = matchBracket(toks, i + 5);
+            bodyOut = sliceToks(toks, i + 6, cb);
+            after = cb + 1;
+          } else {
+            let e = i + 5;
+            let d2 = 0;
+            for (; e < toks.length; e++) {
+              const tk = toks[e];
+              if (tk.type === 'punct') {
+                if ('([{'.includes(tk.value)) d2++;
+                else if (')]}'.includes(tk.value)) {
+                  d2--;
+                  if (d2 < 0) break;
+                } else if (d2 === 0 && tk.value === ';') break;
+              } else if (tk.type === 'nl' && d2 === 0) break;
+            }
+            bodyOut = `return ${sliceToks(toks, i + 5, e)};`;
+            after = e;
+          }
+          fns.push({ name: nameTok.value, params: normalizeParams(paramsRaw), body: bodyOut });
+          i = after;
+          if (toks[i]?.value === ';') i++;
+          continue;
+        }
         const initStart = i + 3;
         let j = initStart;
         let depth = 0;
@@ -75,14 +106,18 @@ export function emitLinFromJs(jsSource, opts = {}) {
             const paramsRaw = sliceToks(toks, initStart + 1, closeParen).trim();
             let bodyOut;
             let after;
-            const bt = toks[closeParen + 1];
-            const arrowTok = toks[closeParen + 2];
-            if (bt && bt.value === '=' && arrowTok && arrowTok.value === '>' && toks[closeParen + 3]?.value === '{') {
-              const cb = matchBracket(toks, closeParen + 3);
-              bodyOut = sliceToks(toks, closeParen + 4, cb);
+            const arrowTok = toks[closeParen + 1];
+            const splitEq = toks[closeParen + 1];
+            const splitGt = toks[closeParen + 2];
+            const isArrowTok = arrowTok && arrowTok.value === '=>';
+            const isSplitArrow = splitEq && splitEq.value === '=' && splitGt && splitGt.value === '>';
+            const bodyStart = isArrowTok ? closeParen + 2 : (isSplitArrow ? closeParen + 3 : -1);
+            if (bodyStart >= 0 && toks[bodyStart]?.value === '{') {
+              const cb = matchBracket(toks, bodyStart);
+              bodyOut = sliceToks(toks, bodyStart + 1, cb);
               after = cb + 1;
-            } else if (bt && bt.value === '=' && arrowTok && arrowTok.value === '>') {
-              let e = closeParen + 3;
+            } else if (bodyStart >= 0) {
+              let e = bodyStart;
               let d2 = 0;
               for (; e < toks.length; e++) {
                 const tk = toks[e];
@@ -94,7 +129,7 @@ export function emitLinFromJs(jsSource, opts = {}) {
                   } else if (d2 === 0 && tk.value === ';') break;
                 } else if (tk.type === 'nl' && d2 === 0) break;
               }
-              bodyOut = `return ${sliceToks(toks, closeParen + 3, e)};`;
+              bodyOut = `return ${sliceToks(toks, bodyStart, e)};`;
               after = e;
             } else {
               throw new EmitJsUnsupportedError(`top-level ${t.value} ${nameTok.value} = ${initText.slice(0, 40)}`);
@@ -136,11 +171,7 @@ export function emitLinFromJs(jsSource, opts = {}) {
       continue;
     }
     if (t.type === 'id' && (t.value === 'export' || t.value === 'default')) {
-      if (toks[i + 1] && toks[i + 1].type === 'id' && toks[i + 1].value === 'function') {
-        i++;
-        continue;
-      }
-      if (toks[i + 1] && toks[i + 1].type === 'id' && toks[i + 1].value === 'default') {
+      if (toks[i + 1] && toks[i + 1].type === 'id' && ['function', 'default', 'const', 'let', 'var', 'async', 'class'].includes(toks[i + 1].value)) {
         i++;
         continue;
       }
@@ -662,6 +693,7 @@ function findArrowAfterParamsToks(toks, from, toExclusive) {
     if (tk.type === 'punct') {
       if ('([{'.includes(tk.value)) depth++;
       else if (')]}'.includes(tk.value)) depth--;
+      else if (depth === 0 && tk.value === '=>') return j;
       else if (depth === 0 && tk.value === '=' && toks[j + 1]?.value === '>') return j;
     }
   }

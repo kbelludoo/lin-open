@@ -1013,3 +1013,29 @@
     selection: "skip directly to next-ranked candidate"
   }
 }
+
+@CLONE_EMIT_LEARN {
+  honesty: OBSERVED
+  source: "2026-08-27 clone hash audit kbelludoo/*-lin"
+  @K_CLONE_001 {
+    fact: "emitLinFromJs .source lagged emit_from_js.lin: export/import/module.exports=function were skipped or threw, so disk .lin stayed lossy stubs"
+  }
+  @K_CLONE_002 {
+    fact: "PUNCT2 token => must be matched as a single punct in arrow detect; splitting into '=' and '>' drops every parenthesized const arrow (meow parser, camelcase helpers)"
+  }
+  @K_CLONE_003 {
+    fact: "skipStatement from export before const deletes export const arrows (meow utils); increment past export only"
+  }
+  @K_CLONE_004 {
+    fact: "inherits.js is a try/require shim; faithful emit is inherits_browser.js after entering if/else blocks"
+  }
+  @K_CLONE_005 {
+    fact: "lodash.js IIFE and commander index.js re-export/class surface do not emit as file-level functions; lib/*.js functions can emit; lossy stubs fail code-hash"
+  }
+  @K_CLONE_006 {
+    fact: "dillo/luakit/netsurf/surf .lin named like browser-use are not emits of C/Lua originals; emitLinFromJs does not apply; remove false .lin"
+  }
+  @K_CLONE_007 {
+    fact: "ms-lin original is TypeScript; do not pretend JS emit equals src/index.ts"
+  }
+}

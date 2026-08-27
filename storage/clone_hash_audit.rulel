@@ -1,0 +1,12 @@
+@RULEL:CLONE_HASH_AUDIT:1.0.0
+~META{ts="2026-08-27T05:30:00Z" method="sha256_16_of_trim_lin + emitLinFromJs(original_js)"}
+.learn{
+  E_ARROW_TOKEN: "lexer emits => as one punct; findArrowAfterParamsToks must match => not '=' then '>'"
+  E_EXPORT_CONST: "export const foo = ... must not skipStatement from export or the fn is dropped"
+  E_BARE_ARROW: "const f = x => body needs unparenthesized param path"
+  E_MODULE_EXPORTS_FN: "module.exports = function name must rewind to function token"
+  E_IF_WRAPPER: "inherits_browser wraps fns in if/else; enter { don't skip whole stmt"
+  E_LOSSY_STUB: "hand-written O(n) leftpad/lodash/commander stubs fail code-hash vs originals"
+  E_NON_JS: "C/Lua clones cannot use emitLinFromJs; pasted browser-use .lin is not a faithful emit"
+  E_TS: "ms-lin src/index.ts is TypeScript; JS emitter is not a type-stripper"
+}

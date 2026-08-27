@@ -44,6 +44,37 @@
         continue;
       }
       ?(!isNamedFn){
+        const bareParam = toks[i + 3];
+        const bareArrow = toks[i + 4];
+        ?(bareParam && bareParam.type === 'id' && bareArrow && bareArrow.value === '=>'){
+          const paramsRaw = bareParam.value;
+          let bodyOut;
+          let after;
+          ?(toks[i + 5]?.value === '{'){
+            const cb = matchBracket(toks, i + 5);
+            bodyOut = sliceToks(toks, i + 6, cb);
+            after = cb + 1;
+          }:{
+            let e = i + 5;
+            let d2 = 0;
+            for (; e < toks.length; e++) {
+              const tk = toks[e];
+              ?(tk.type === 'punct'){
+                ?('([{'.includes(tk.value)) d2++;
+                :(')]}'.includes(tk.value)){
+                  d2--;
+                  ?(d2 < 0){ break; }
+                }:(d2 === 0 && tk.value === ';'){ break; }
+              }:(tk.type === 'nl' && d2 === 0){ break; }
+            }
+            bodyOut = `^${sliceToks(toks, i + 5, e)};`;
+            after = e;
+          }
+          fns.push({ name: nameTok.value, params: normalizeParams(paramsRaw), body: bodyOut });
+          i = after;
+          ?(toks[i]?.value === ';'){ i++; }
+          continue;
+        }
         const initStart = i + 3;
         let j = initStart;
         let depth = 0;
@@ -51,7 +82,7 @@
           const tk = toks[j];
           ?(tk.type === 'punct'){
             ?('([{'.includes(tk.value)) depth++;
-            :('){ ]}'.includes(tk.value)){
+            :(')]}'.includes(tk.value)){
               depth--; }
               ?(depth === 0){
                 j++;
@@ -81,7 +112,7 @@
                 const tk = toks[e];
                 ?(tk.type === 'punct'){
                   ?('([{'.includes(tk.value)) d2++;
-                  :('){ ]}'.includes(tk.value)){
+                  :(')]}'.includes(tk.value)){
                     d2--; }
                     ?(d2 < 0){ break; }
                   }:(d2 === 0 && tk.value === ';'){ break; }
@@ -129,11 +160,7 @@
       continue;
     }
     ?(t.type === 'id' && (t.value === 'export' || t.value === 'default')){
-      ?(toks[i + 1] && toks[i + 1].type === 'id' && toks[i + 1].value === 'function'){
-        i++;
-        continue;
-      }
-      ?(toks[i + 1] && toks[i + 1].type === 'id' && toks[i + 1].value === 'default'){
+      ?(toks[i + 1] && toks[i + 1].type === 'id' && ['function', 'default', 'const', 'let', 'var', 'async', 'class'].includes(toks[i + 1].value)){
         i++;
         continue;
       }
