@@ -1,0 +1,94 @@
+@LIN:L1c:0.2
+!extractRulelContent(rulelText){
+  const marker = '.source{content="';
+  const start = rulelText.indexOf(marker);
+  ?(start < 0){ ^null; }
+  var i, ch, n, map, out;
+  i = start + marker.length;
+  out = '';
+  while(i < rulelText.length){
+    ch = rulelText.charAt(i);
+    ?(ch === '\\'){
+      n = rulelText.charAt(i + 1);
+      map = { n: '\n', r: '\r', t: '\t', '"': '"', '\\': '\\' };
+      ?(n in map){
+        out = out + map[n];
+        i = i + 2;
+        continue;
+      }
+      out = out + n;
+      i = i + 2;
+      continue;
+    }
+    ?(ch === '"'){ break; }
+    out = out + ch;
+    i = i + 1;
+  }
+  ^out;
+}
+!coreLinNames(){
+  ^['lexer_slices.lin', 'semantic_hash_core.lin', 'effects_core.lin', 'rulel_core.lin', 'vm_core.lin', 'verifier_core.lin', 'transpiler_to_lin_core.lin'];
+}
+!coreCjsNames(){
+  ^['lexer_slices.compiled.cjs', 'semantic_hash_core.compiled.cjs', 'effects_core.compiled.cjs', 'rulel_core.compiled.cjs', 'vm_core.compiled.cjs', 'verifier_core.compiled.cjs', 'transpiler_to_lin_core.compiled.cjs'];
+}
+!coreExportLists(){
+  ^[
+    'identLenAt,wsRunAt,numLenAt',
+    'escapeRe,canonicalize',
+    'firstUseIsRead,collectAssignedIds',
+    'splitTopEntries,parseValuePairs,parseRulel,validateComms',
+    'assertJsSyntaxCore,validateSandboxSpec',
+    'deepEq,findMissingExports',
+    'detectLanguage,extractBracedFunctions,transpileRustToLin,transpileGoToLin,transpileCToLin,transpileZigToLin'
+  ];
+}
+!selfHostCompilerGate(host){
+  var src, gen1, gen2, h1, h2;
+  src = host.readText('src/compiler.lin');
+  gen1 = host.compile(src, { target: 'js' }).code;
+  gen2 = host.compile(src, { target: 'js' }).code;
+  h1 = host.sha256(gen1);
+  h2 = host.sha256(gen2);
+  ^{
+    ok: h1 === h2,
+    gen1Hash: h1.slice(0, 16),
+    gen2Hash: h2.slice(0, 16),
+    note: 'compiler.lin deterministic emit (LIN compiles LIN idempotent)'
+  };
+}
+!runLinBootstrap(host){
+  var linNames, cjsNames, exportLists, i, src, result, code, out, compiled, gate, entry, hashReport;
+  linNames = coreLinNames();
+  cjsNames = coreCjsNames();
+  exportLists = coreExportLists();
+  compiled = [];
+  for(i = 0; i < linNames.length; i++){
+    src = host.readText('src/' + linNames[i]);
+    result = host.compile(src, { target: 'js' });
+    code = result.code + '\nmodule.exports={' + exportLists[i] + '};\n';
+    entry = { lin: linNames[i], cjs: cjsNames[i] };
+    ?(host.tryRegisterCore(cjsNames[i], code)){
+      entry.source = 'lin';
+      entry.bytes = code.length;
+      entry.hash = host.sha256(code).slice(0, 16);
+    }:{
+      entry.source = 'rulel_seed';
+    }
+    compiled.push(entry);
+  }
+  gate = selfHostCompilerGate(host);
+  hashReport = host.runHashGates();
+  ?(!hashReport.ok){
+    ^ { ok: false, error: 'hash gates failed', hash_gates: hashReport };
+  }
+  ^{
+    ok: true,
+    policy: 'LIN_compiles_LIN_in_memory',
+    repo_purity: 'only .lin + .rulel committed',
+    cores_compiled_from_lin: compiled,
+    compiler_self_host_gate: gate,
+    hash_gates: hashReport
+  };
+}
+=ex{extractRulelContent, coreLinNames, coreCjsNames, coreExportLists, selfHostCompilerGate, runLinBootstrap}

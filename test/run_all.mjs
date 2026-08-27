@@ -502,6 +502,19 @@ test('improve applies repairs and reports applied ids', async () => {
   assert.ok(!/^import/m.test(r.source));
 });
 
+console.log('T20 bootstrap hash gates');
+await testAsync('hash gates: core seeds, semantic hash, nucleus lock, compiler idempotent', async () => {
+  const { runAllHashGates } = await import('../scripts/hash_gates.mjs');
+  const { RUNTIME } = await import('../scripts/lin_runtime.mjs');
+  const report = await runAllHashGates(RUNTIME);
+  assert.equal(report.ok, true, JSON.stringify(report.gates.filter((g) => !g.ok)));
+  for (const g of report.gates) {
+    assert.equal(g.ok, true, `${g.gate}: ${JSON.stringify(g)}`);
+  }
+  const coreGate = report.gates.find((g) => g.gate === 'G_CORE_CODE_HASH');
+  assert.ok(coreGate.cores.every((c) => c.ok), JSON.stringify(coreGate.cores.filter((c) => !c.ok)));
+});
+
 console.log(`\n${passed} passed, ${failed} failed`);
 if (failed) {
   for (const [name, msg] of failures) console.log(`  FAILED ${name}: ${msg.slice(0, 200)}`);

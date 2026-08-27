@@ -8,6 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { runAllHashGates } from './hash_gates.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(ROOT, 'src');
@@ -263,6 +264,18 @@ export async function runLinBootstrap(opts = {}) {
     console.log(`[lin_bootstrap] compiler.lin self-host gate: ${gate.ok ? 'PASS' : 'SKIP'} ${gate.error || `${gate.gen1Hash} vs ${gate.gen2Hash}`}`);
   }
 
+  const hashGates = await runAllHashGates(RUNTIME);
+  if (!quiet) {
+    for (const g of hashGates.gates) {
+      const tag = g.ok ? 'PASS' : 'FAIL';
+      console.log(`[lin_bootstrap] hash gate ${g.gate}: ${tag}`);
+    }
+  }
+  if (!hashGates.ok) {
+    const failed = hashGates.gates.filter((g) => !g.ok).map((g) => g.gate);
+    throw new Error(`LIN bootstrap hash gates failed: ${failed.join(', ')}`);
+  }
+
   const manifest = {
     policy: 'LIN_compiles_LIN',
     src_purity: 'only .lin + .rulel in src/',
@@ -273,6 +286,7 @@ export async function runLinBootstrap(opts = {}) {
     cjs_seeds: cjsSeeds,
     cores_compiled_from_lin: cores,
     compiler_self_host_gate: gate,
+    hash_gates: hashGates,
     timestamp: new Date().toISOString(),
   };
   fs.writeFileSync(path.join(RUNTIME, '.bootstrap.manifest'), JSON.stringify(manifest, null, 2));

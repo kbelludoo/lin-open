@@ -1,0 +1,114 @@
+@LIN:L1c:0.2
+!seedRulelPath(cjsName){
+  ^'src/' + cjsName.replace('.compiled.cjs', '.compiled_cjs.rulel');
+}
+!verifySemanticHashGate(host){
+  var h1, h2, h3, ok;
+  h1 = host.semanticHash('a,b', 'a + b - 1');
+  h2 = host.semanticHash('x,y', 'x+y-1');
+  h3 = host.semanticHash('a,b', 'a - b + 1');
+  ok = (h1 === h2) && (h1 !== h3);
+  ^{
+    gate: 'G_SEMANTIC_HASH',
+    ok: ok,
+    h1: h1,
+    h2: h2,
+    h3: h3,
+    renameInvariant: h1 === h2,
+    divergence: h1 !== h3
+  };
+}
+!verifyNucleusLock(host){
+  var lockText, lock, verifierText, verifierSrc, got, expected, ok;
+  lockText = host.readText('nucleus.lock_json.rulel');
+  lock = host.parseJsonRulel(lockText);
+  verifierText = host.readText('src/verifier.rulel');
+  verifierSrc = host.extractRulel(verifierText);
+  got = host.sha256(verifierSrc);
+  expected = lock.verifier_sha256;
+  ok = got === expected;
+  ^{
+    gate: 'G_NUCLEUS_LOCK',
+    ok: ok,
+    expected: expected.slice(0, 16),
+    got: got.slice(0, 16)
+  };
+}
+!verifyCompilerEmitIdempotent(host){
+  var src, gen1, gen2, h1, h2;
+  src = host.readText('src/compiler.lin');
+  gen1 = host.compile(src, { target: 'js' }).code;
+  gen2 = host.compile(src, { target: 'js' }).code;
+  h1 = host.sha256(gen1);
+  h2 = host.sha256(gen2);
+  ^{
+    gate: 'G_COMPILER_EMIT_IDEMPOTENT',
+    ok: h1 === h2,
+    gen1Hash: h1.slice(0, 16),
+    gen2Hash: h2.slice(0, 16)
+  };
+}
+!verifyCoreSeedHash(host, linName, cjsName, exportList){
+  var seedText, seed, seedHash, src, code, compHash, probe;
+  seedText = host.readText(seedRulelPath(cjsName));
+  seed = host.extractRulel(seedText);
+  ?(!seed){
+    ^ { cjs: cjsName, ok: false, mode: 'missing_seed' };
+  }
+  seedHash = host.sha256(seed);
+  ?(host.canCompileLin('src/' + linName)){
+    src = host.readText('src/' + linName);
+    code = host.compile(src, { target: 'js' }).code + '\nmodule.exports={' + exportList + '};\n';
+    compHash = host.sha256(code);
+    ?(compHash === seedHash){
+      ^ { cjs: cjsName, ok: true, mode: 'byte_match', seedHash: seedHash.slice(0, 16), compiledHash: compHash.slice(0, 16) };
+    }
+    probe = host.coreBehaviorEq(code, seed, cjsName);
+    ?(probe){
+      ^ { cjs: cjsName, ok: true, mode: 'behavior_eq', seedHash: seedHash.slice(0, 16), compiledHash: compHash.slice(0, 16) };
+    }
+    ^ { cjs: cjsName, ok: false, mode: 'hash_and_behavior_mismatch', seedHash: seedHash.slice(0, 16), compiledHash: compHash.slice(0, 16) };
+  }
+  probe = host.probeSeed(cjsName, seed);
+  ?(probe){
+    ^ { cjs: cjsName, ok: true, mode: 'rulel_seed', seedHash: seedHash.slice(0, 16) };
+  }
+  ^ { cjs: cjsName, ok: false, mode: 'rulel_seed_invalid', seedHash: seedHash.slice(0, 16) };
+}
+!verifyAllCoreSeedHashes(host){
+  var linNames, cjsNames, exportLists, i, results, ok, entry;
+  linNames = ['lexer_slices.lin', 'semantic_hash_core.lin', 'effects_core.lin', 'rulel_core.lin', 'vm_core.lin', 'verifier_core.lin', 'transpiler_to_lin_core.lin'];
+  cjsNames = ['lexer_slices.compiled.cjs', 'semantic_hash_core.compiled.cjs', 'effects_core.compiled.cjs', 'rulel_core.compiled.cjs', 'vm_core.compiled.cjs', 'verifier_core.compiled.cjs', 'transpiler_to_lin_core.compiled.cjs'];
+  exportLists = [
+    'identLenAt,wsRunAt,numLenAt',
+    'escapeRe,canonicalize',
+    'firstUseIsRead,collectAssignedIds',
+    'splitTopEntries,parseValuePairs,parseRulel,validateComms',
+    'assertJsSyntaxCore,validateSandboxSpec',
+    'deepEq,findMissingExports',
+    'detectLanguage,extractBracedFunctions,transpileRustToLin,transpileGoToLin,transpileCToLin,transpileZigToLin'
+  ];
+  results = [];
+  ok = true;
+  for(i = 0; i < linNames.length; i++){
+    entry = verifyCoreSeedHash(host, linNames[i], cjsNames[i], exportLists[i]);
+    ?(!entry.ok){ ok = false; }
+    results.push(entry);
+  }
+  ^{ gate: 'G_CORE_CODE_HASH', ok: ok, cores: results };
+}
+!runAllHashGates(host){
+  var gates, ok, i;
+  gates = [
+    verifyAllCoreSeedHashes(host),
+    verifySemanticHashGate(host),
+    verifyNucleusLock(host),
+    verifyCompilerEmitIdempotent(host)
+  ];
+  ok = true;
+  for(i = 0; i < gates.length; i++){
+    ?(!gates[i].ok){ ok = false; }
+  }
+  ^{ ok: ok, gates: gates };
+}
+=ex{seedRulelPath, verifySemanticHashGate, verifyNucleusLock, verifyCompilerEmitIdempotent, verifyCoreSeedHash, verifyAllCoreSeedHashes, runAllHashGates}
