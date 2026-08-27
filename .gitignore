@@ -5,6 +5,12 @@ zig-out/
 .zig-cache/
 node_modules/
 
+# Host glue .mjs emitted from TRANSPOSED_SOURCE .rulel at bootstrap
+scripts/**/*.mjs
+bin/*.mjs
+test/**/*.mjs
+!test/fixtures/**
+
 # Host JSON emitted from *.rulel at bootstrap (repo is lin+rulel only)
 **/*.json
 !build/**/*.json
