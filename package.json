@@ -25,7 +25,9 @@
     "improve": "node bin/lin.mjs improve",
     "autonomy-status": "node bin/lin.mjs autonomy-status",
     "ensure-toolchains": "node scripts/ensure_toolchains.mjs",
-    "example:safe": "node bin/lin.mjs compile examples/safe-compare.lia --target js -o examples/safe-compare.compiled.js"
+    "example:safe": "node bin/lin.mjs compile examples/safe-compare.lia --target js -o examples/safe-compare.compiled.js",
+    "bootstrap": "node scripts/bootstrap_compiled_cores.mjs",
+    "pretest": "npm run bootstrap"
   },
   "keywords": [
     "lin",

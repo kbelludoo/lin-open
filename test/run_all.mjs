@@ -1,13 +1,16 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
-const CORPUS = '/home/k/Downloads/lin-master';
+// Portable corpus root (was hardcoded to a local absolute path).
+const CORPUS = root;
 const LEGACY_V1 = '_legacy_v1';
+const TMP_PREFIX = path.join(os.tmpdir(), 'lintest-');
 
 let passed = 0;
 let failed = 0;
@@ -191,7 +194,7 @@ const arithSrc = fs.readFileSync(path.join(__dirname, 'fixtures', 'arith.lia'), 
 test('py: python3 runs emitted module', async () => {
   const prog = parseProgram(arithSrc);
   const py = emitPy(prog);
-  const dir = fs.mkdtempSync('/tmp/opencode/lintest-py-');
+  const dir = fs.mkdtempSync(TMP_PREFIX + 'py-');
   fs.writeFileSync(path.join(dir, 'arith_lin.py'), py);
   const driver = [
     'import sys; sys.path.insert(0, ".")',
@@ -215,7 +218,7 @@ func main() {
   fmt.Println(max3(3, 9, 4))
 }
 `;
-  const dir = fs.mkdtempSync('/tmp/opencode/lintest-go-');
+  const dir = fs.mkdtempSync(TMP_PREFIX + 'go-');
   fs.writeFileSync(path.join(dir, 'main.go'), goCode);
   fs.writeFileSync(path.join(dir, 'go.mod'), 'module lintest\n\ngo 1.21\n');
   const out = execFileSync('go', ['run', 'main.go'], { cwd: dir, encoding: 'utf8', timeout: 60000 });
@@ -226,7 +229,7 @@ test('rust: rustc compiles + runs match fixture', () => {
   const mnProg = parseProgram(fs.readFileSync(path.join(__dirname, 'fixtures', 'match_num.lia'), 'utf8'));
   let rs = emitRust(mnProg);
   rs += '\nfn main() { println!("{}", match_number(0)); println!("{}", match_number(1)); println!("{}", match_number(99)); }\n';
-  const dir = fs.mkdtempSync('/tmp/opencode/lintest-rs-');
+  const dir = fs.mkdtempSync(TMP_PREFIX + 'rs-');
   fs.writeFileSync(path.join(dir, 'match_num.rs'), rs);
   execFileSync('rustc', ['-O', 'match_num.rs'], { cwd: dir, timeout: 90000 });
   const out = execFileSync(path.join(dir, 'match_num'), { encoding: 'utf8' });
@@ -237,7 +240,7 @@ test('rust: arith loop fact', () => {
   const prog = parseProgram(arithSrc);
   let rs = emitRust(prog);
   rs += '\nfn main() { println!("{}", add(2,3)); println!("{}", mul(4,5)); println!("{}", fact(5)); println!("{}", (is_even(10)==true) as i64); println!("{}", max3(3,9,4)); }\n';
-  const dir = fs.mkdtempSync('/tmp/opencode/lintest-rs2-');
+  const dir = fs.mkdtempSync(TMP_PREFIX + 'rs2-');
   fs.writeFileSync(path.join(dir, 'arith.rs'), rs);
   execFileSync('rustc', ['-O', 'arith.rs'], { cwd: dir, timeout: 90000 });
   const out = execFileSync(path.join(dir, 'arith'), { encoding: 'utf8' });
@@ -247,7 +250,7 @@ test('rust: arith loop fact', () => {
 test('c: gcc compiles + runs arith', () => {
   const prog = parseProgram(arithSrc);
   const cCode = emitC(prog) + `\nint main(){ printf("%lld\\n", add(2,3)); printf("%lld\\n", mul(4,5)); printf("%lld\\n", fact(5)); printf("%lld\\n", is_even(10)?1:0); printf("%lld\\n", max3(3,9,4)); return 0; }\n`;
-  const dir = fs.mkdtempSync('/tmp/opencode/lintest-c-');
+  const dir = fs.mkdtempSync(TMP_PREFIX + 'c-');
   fs.writeFileSync(path.join(dir, 'arith.c'), cCode);
   execFileSync('gcc', ['-O2', '-o', 'arith', 'arith.c', '-lm'], { cwd: dir, timeout: 60000 });
   const out = execFileSync(path.join(dir, 'arith'), { encoding: 'utf8' });
@@ -266,7 +269,7 @@ test('java: javac + java run arith', () => {
     '    System.out.println(max3(3,9,4));',
     '  }',
   ].join('\n'));
-  const dir = fs.mkdtempSync('/tmp/opencode/lintest-java-');
+  const dir = fs.mkdtempSync(TMP_PREFIX + 'java-');
   fs.writeFileSync(path.join(dir, 'LinProgram.java'), jCode);
   execFileSync('javac', ['LinProgram.java'], { cwd: dir, timeout: 90000 });
   const out = execFileSync('java', ['-cp', dir, 'LinProgram'], { encoding: 'utf8', timeout: 30000 });
@@ -396,7 +399,7 @@ test('all valid @LIN programs from original corpus compile', () => {
 console.log('T18 CLI end-to-end');
 await testAsync('bin/lin.mjs version|check|compile|run|hash|effects|rulel-check|verify|emit', async () => {
   const bin = path.join(root, 'bin', 'lin.mjs');
-  const tmp = fs.mkdtempSync('/tmp/opencode/lintest-cli-');
+  const tmp = fs.mkdtempSync(TMP_PREFIX + 'cli-');
   const linFile = path.join(tmp, 'prog.lin');
   fs.writeFileSync(linFile, arithSrc);
 
@@ -430,7 +433,8 @@ await testAsync('bin/lin.mjs version|check|compile|run|hash|effects|rulel-check|
   assert.ok(emitted.startsWith('@LIN:'));
 
   const targets = REAL_TARGETS;
-  assert.equal(targets.length, 7);
+  assert.equal(targets.length, 8);
+  assert.ok(targets.includes('zig'));
 });
 
 console.log('T19 self-host clone loop');
@@ -441,7 +445,7 @@ test('loop reaches suiteRate 1.0 on fixture queue', async () => {
     name: f.replace(/\.js$/, ''),
     source: fs.readFileSync(path.join(queueDir, f), 'utf8'),
   }));
-  const pubDir = fs.mkdtempSync('/tmp/opencode/lintest-pub-');
+  const pubDir = fs.mkdtempSync(TMP_PREFIX + 'pub-');
   const state = runCloneLoop({ queue, publishDir: pubDir });
   assert.equal(state.suiteRate, 1, JSON.stringify(state.partial));
   assert.equal(state.done.length, queue.length);
