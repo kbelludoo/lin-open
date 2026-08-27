@@ -321,6 +321,7 @@ export function emitLinFromJs(jsSource, opts = {}) {
       }
       let depth = 0;
       let sawFn = -1;
+      let sawArrow = -1;
       for (let n = i; n < toks.length; n++) {
         const tk = toks[n];
         if (tk.value === '(' || tk.value === '{') depth++;
@@ -330,10 +331,57 @@ export function emitLinFromJs(jsSource, opts = {}) {
         } else if (tk.value === 'function') {
           sawFn = n;
           break;
+        } else if (tk.value === '=>') {
+          sawArrow = n;
+          break;
         } else if (depth === 0 && tk.value === ';') break;
       }
       if (sawFn >= 0) {
         i = sawFn;
+        continue;
+      }
+      if (sawArrow >= 0) {
+        let p = sawArrow - 1;
+        while (p > i && toks[p].type === 'nl') p--;
+        let paramsRaw = '';
+        if (toks[p]?.value === ')') {
+          let d2 = 0;
+          let open = p;
+          for (let q = p; q >= i; q--) {
+            if (toks[q].value === ')') d2++;
+            else if (toks[q].value === '(') {
+              d2--;
+              if (d2 === 0) { open = q; break; }
+            }
+          }
+          paramsRaw = sliceToks(toks, open + 1, p).trim();
+        } else if (toks[p]?.type === 'id') {
+          paramsRaw = toks[p].value;
+        }
+        let bodyStart = sawArrow + 1;
+        while (bodyStart < toks.length && toks[bodyStart].type === 'nl') bodyStart++;
+        let bodyOut;
+        let after;
+        if (toks[bodyStart]?.value === '{') {
+          const cb = matchBracket(toks, bodyStart);
+          bodyOut = sliceToks(toks, bodyStart + 1, cb);
+          after = cb + 1;
+        } else {
+          let e = bodyStart;
+          let d3 = 0;
+          for (; e < toks.length; e++) {
+            const tk = toks[e];
+            if (tk.value === '(' || tk.value === '{') d3++;
+            else if (tk.value === ')' || tk.value === '}') {
+              d3--;
+              if (d3 < 0) break;
+            } else if (d3 === 0 && (tk.value === ';' || tk.value === ',')) break;
+          }
+          bodyOut = `^${sliceToks(toks, bodyStart, e)}`;
+          after = e;
+        }
+        fns.push({ name: `_anon${fns.length}`, params: normalizeParams(paramsRaw), body: bodyOut });
+        i = after;
         continue;
       }
       i = skipStatement(toks, i);
