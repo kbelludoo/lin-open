@@ -230,6 +230,50 @@ function installGo() {
   return { ok: hasGo(), tries: [{ ok: r.status === 0, cmd: 'apt-get install -y golang-go', detail: r.out }] };
 }
 
+function hasZig() {
+  return hasCmd('zig', ['version']);
+}
+
+function installZig() {
+  const ver = '0.13.0';
+  if (WIN) {
+    let r = wingetInstall('Zig.Zig');
+    whichEnvPath();
+    if (hasZig()) return { ok: true, tries: [r] };
+    r = chocoInstall('zig');
+    whichEnvPath();
+    return { ok: hasZig(), tries: [r] };
+  }
+  const tries = [];
+  const home = os.homedir();
+  const dest = path.join(home, '.local', 'opt', `zig-linux-x86_64-${ver}`);
+  const binLink = path.join(home, '.local', 'bin', 'zig');
+  const url = `https://ziglang.org/download/${ver}/zig-linux-x86_64-${ver}.tar.xz`;
+  fs.mkdirSync(path.join(home, '.local', 'bin'), { recursive: true });
+  fs.mkdirSync(path.join(home, '.local', 'opt'), { recursive: true });
+  if (!fs.existsSync(path.join(dest, 'zig'))) {
+    const tar = path.join(os.tmpdir(), `zig-${ver}.tar.xz`);
+    const dl = run('curl', ['-fsSL', url, '-o', tar], { timeout: 180_000 });
+    tries.push({ ok: dl.status === 0, cmd: `curl -fsSL ${url}`, detail: (dl.out || dl.error).slice(0, 200) });
+    if (dl.status === 0) {
+      const extr = run('tar', ['-xJf', tar, '-C', path.join(home, '.local', 'opt')], { timeout: 120_000 });
+      tries.push({ ok: extr.status === 0, cmd: `tar -xJf zig tarball → ${dest}`, detail: (extr.out || extr.error).slice(0, 200) });
+    }
+  }
+  try {
+    if (fs.existsSync(path.join(dest, 'zig'))) {
+      try { fs.unlinkSync(binLink); } catch { /* */ }
+      fs.symlinkSync(path.join(dest, 'zig'), binLink);
+      tries.push({ ok: true, cmd: `symlink ${binLink}`, detail: 'ok' });
+    }
+  } catch (e) {
+    tries.push({ ok: false, cmd: `symlink ${binLink}`, detail: String(e.message || e) });
+  }
+  whichEnvPath();
+  process.env.PATH = `${path.join(home, '.local', 'bin')}${path.delimiter}${process.env.PATH || ''}`;
+  return { ok: hasZig(), tries };
+}
+
 function installNode() {
   if (WIN) {
     let r = wingetInstall('OpenJS.NodeJS.LTS');
@@ -268,6 +312,7 @@ const CHECKERS = {
   rustc: hasRust,
   gcc: hasGcc,
   javac: hasJavac,
+  zig: hasZig,
 };
 
 const INSTALLERS = {
@@ -278,6 +323,7 @@ const INSTALLERS = {
   rustc: installRustup,
   gcc: installGcc,
   javac: installJavac,
+  zig: installZig,
 };
 
 /**
@@ -289,7 +335,7 @@ export function ensureToolchains(opts = {}) {
   const present = [];
   const installed = [];
   const failed = [];
-  for (const name of ['node', 'tsc', 'python', 'go', 'rustc', 'gcc', 'javac']) {
+  for (const name of ['node', 'tsc', 'python', 'go', 'rustc', 'gcc', 'javac', 'zig']) {
     if (CHECKERS[name]()) {
       present.push(name);
       continue;

@@ -1,35 +1,20 @@
-@RULEL:INTEL_CLONE_LIN:1.2.0
+@RULEL:INTEL_CLONE_LIN:1.3.0
 ^slug="dayjs"
 ^lang="LIN"
-^rule="semantic_hash_exact_like_P200"
-^no_soft_match=true
-^status="PASS"
-^done=true
-^published=true
-^suite_rate=1
-^suite_total=5
-^source="https://github.com/iamkun/dayjs.git"
-^clone_lin_url="https://github.com/kbelludoo/clone-lin-dayjs"
-^clone_lin_local="C:/Users/k/Documents/lia/.clone_lin_publish/clone-lin-dayjs"
-^temp_cleaned=true
-^pass=5 ^fail=0 ^skip=0
-^behavior_eq_required=1.0
+^status="PARTIAL_PASS_WITH_FAILS"
+^done=false
+^published=false
+^suite_rate=0.9667
+^suite_total=60
+^pass=58 ^fail=2 ^skip=0
 ^publish_gate="suite_rate==1.0_JS"
-^multi="js:P5/S0/F0 ts:P5/S0/F0 py:P1/S0/F4 go:P1/S0/F4 rust:P0/S0/F5"
-^learn_lang="H_NEW_LANG_dayjs_py_go_rust_mss6qby6"
-
-@MULTI_TARGET {
-  js:P5/S0/F0 ts:P5/S0/F0 py:P1/S0/F4 go:P1/S0/F4 rust:P0/S0/F5
-}
+^host="scripts/clone_lin_loop.mjs v2-compile-gate"
 
 @COMPARISON {
-  pass_names: ["padStart","padZoneStr","absFloor","prettyUnit","isUndefined"]
-  fail_names: []
-  skip_names: []
-  learn: "none"
-  improve_lin: "positive_transfer:ok×5"
+  pass_names: ["absFloor.lin","absolute.lin","addInput.lin","correctGrammarCase.lin","correctHours.lin","d.lin","dayjs.lin","dd.lin","dual.lin","getDateTimeFormat.lin","getLocalePart.lin","getNumberUnitFormat.lin","h.lin","hh.lin","isBigInt.lin","isDayjs.lin","isDuration.lin","isNegative.lin","isUndefined.lin","lastNumber.lin","m.lin","makeParser.lin","manipulateDuration.lin","meridiem.lin","meridiemMatch.lin","mm.lin","monthDiff.lin","months.lin","monthsShort.lin","mutation.lin","offsetFromString.lin","ordinal.lin","padStart.lin","padZoneStr.lin","parseDate.lin","parseFormattedInput.lin","parseLocale.lin","parseTwoDigitYear.lin","plural.lin","postformat.lin"]
+  fail_names: ["defaultExport.lin:LIN_JS_SYNTAX: Unexpected token 'case'","translate.lin:LIN_JS_SYNTAX: Unexpected token 'case'"]
 }
 
 @NOTE_PT {
-  DONE 100% clone-lin-dayjs: p=5 suite_rate=1.0; improve=positive_transfer:ok×5
+  PARTIAL clone-lin-dayjs: p=58 f=2 suite_rate=0.9667
 }

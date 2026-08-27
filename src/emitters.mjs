@@ -18,7 +18,11 @@ export function isJsRuntimeOnly(body) {
 
 export function stmtsText(fn) {
   if (fn.__bodyText) return fn.__bodyText;
-  return typeof fn.rawBody === 'string' ? fn.rawBody : jsBody(fn.body || []);
+  // Prefer AST→JS when rawBody still has LIN sigils (lossy clone corpus).
+  if (typeof fn.rawBody === 'string' && !/[?#]|:\s*[\{\(?]|^\s*\^|(?:^|[;{}])\s*\^/.test(fn.rawBody)) {
+    return fn.rawBody;
+  }
+  return jsBody(fn.body || []);
 }
 
 

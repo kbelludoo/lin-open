@@ -1,29 +1,20 @@
-@RULEL:INTEL_CLONE_LIN:1.1.0
+@RULEL:INTEL_CLONE_LIN:1.3.0
 ^slug="underscore"
 ^lang="LIN"
-^rule="semantic_hash_exact_like_P200"
-^no_soft_match=true
-^status="PASS"
-^done=true
-^published=true
-^suite_rate=1
-^suite_total=24
-^source="https://github.com/jashkenas/underscore.git"
-^clone_lin_url="https://github.com/kbelludoo/clone-lin-underscore"
-^clone_lin_local="C:/Users/k/Documents/lia/.clone_lin_publish/clone-lin-underscore"
-^temp_cleaned=true
-^pass=24 ^fail=0 ^skip=0
-^behavior_eq_required=1.0
-^publish_gate="suite_rate==1.0"
+^status="PARTIAL_PASS_WITH_FAILS"
+^done=false
+^published=false
+^suite_rate=0.9159
+^suite_total=107
+^pass=98 ^fail=9 ^skip=0
+^publish_gate="suite_rate==1.0_JS"
+^host="scripts/clone_lin_loop.mjs v2-compile-gate"
 
 @COMPARISON {
-  pass_names: ["after","allKeys","before","chain","chunk","clone","compact","compose","constant","contains","create","debounce","later","each","every","filter","find","findKey","findWhere","first","flatten","functions","get","has"]
-  fail_names: []
-  skip_names: []
-  learn: "none"
-  improve_lin: "positive_transfer:ok×24"
+  pass_names: ["_.lin","after.lin","allKeys.lin","alternateIsDataView.lin","baseCreate.lin","baseIteratee.lin","before.lin","cb.lin","chain.lin","chainResult.lin","chunk.lin","clone.lin","collectNonEnumProps.lin","compact.lin","constant.lin","contains.lin","create.lin","createAssigner.lin","createEscaper.lin","createPredicateIndexFinder.lin","createReduce.lin","createSizePropertyCheck.lin","ctor.lin","deepGet.lin","each.lin","emulatedSet.lin","escapeChar.lin","every.lin","executeBound.lin","find.lin","findKey.lin","findWhere.lin","first.lin","flatten.lin","functions.lin","get.lin","group.lin","has.lin","identity.lin","ie11fingerprint.lin"]
+  fail_names: ["bound.lin:LIN_PARSE:4:226: expected {, got args","compose.lin:LIN_PARSE:4:121: expected {, got result","createIndexFinder.lin:LIN_JS_SYNTAX: Unexpected token '?'","cycleTracker.lin:LIN_PARSE:4:540: expected {, got throw","debounce.lin:LIN_PARSE:4:185: expected {, got result","filter.lin:LIN_PARSE:4:143: expected {, got results","memoize.lin:LIN_PARSE:4:199: expected {, got cache","sortBy.lin:LIN_PARSE:4:293: expected {, got return","throttle.lin:LIN_PARSE:4:196: expected {, got context"]
 }
 
 @NOTE_PT {
-  DONE 100% clone-lin-underscore: p=24 suite_rate=1.0; improve=positive_transfer:ok×24
+  PARTIAL clone-lin-underscore: p=98 f=9 suite_rate=0.9159
 }

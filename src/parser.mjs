@@ -388,6 +388,32 @@ class Parser {
       while (this.atVal(';') || this.at('nl') || this.at('comment')) this.next();
       if (this.pos > endIdx || this.at('eof')) return stmts;
       if (this.at('punct', '}')) return stmts;
+      // Lossy clones often emit `?(cond){...};:{else}` — semicolon breaks if-chain.
+      // Attach orphan `: {...}` / `:(cond){...}` / `:?(...){...}` to previous if.
+      if (this.atVal(':') && stmts.length) {
+        const prev = stmts[stmts.length - 1];
+        if (prev && prev.type === 'if') {
+          const after = this.peek(1);
+          if (after && after.type === 'punct' && after.value === '{') {
+            this.next();
+            prev.else = this.parseBlock();
+            continue;
+          }
+          if (after && after.type === 'punct' && after.value === '(') {
+            const head = this.parseColonHead();
+            if (!prev.elseIf) prev.elseIf = [];
+            prev.elseIf.push({ cond: head.cond, body: head.body });
+            continue;
+          }
+          if (after && after.type === 'punct' && after.value === '?') {
+            this.next();
+            const head = this.parseIfHead('?');
+            if (!prev.elseIf) prev.elseIf = [];
+            prev.elseIf.push({ cond: head.cond, body: head.then });
+            continue;
+          }
+        }
+      }
       const st = this.parseStmt(endIdx);
       if (st) stmts.push(st);
     }
@@ -433,8 +459,25 @@ class Parser {
     }
     if (t.type === 'id' && (t.value === 'let' || t.value === 'var' || t.value === 'const')) {
       const kind = this.next().value;
+      // Destructuring: const { a = 1, b } = opts  /  let [x, y] = arr
+      if (this.atVal('{') || this.atVal('[')) {
+        const openCh = this.peek().value;
+        const closeCh = openCh === '{' ? '}' : ']';
+        const openIdx = this.pos;
+        const closeIdx = this.findMatching(openIdx, openCh, closeCh);
+        const pattern = this.src.slice(this.toks[openIdx].start, this.toks[closeIdx].end);
+        this.pos = closeIdx + 1;
+        while (this.at('nl') || this.at('comment')) this.next();
+        let init = null;
+        if (this.atVal('=')) {
+          this.next();
+          init = this.scanExpr();
+        }
+        return { type: 'var', kind, decls: [{ id: pattern, init, destructure: true }] };
+      }
       const decls = [];
       while (this.pos < this.toks.length && this.peek().value !== ';' && this.peek().value !== '}' && this.peek().type !== 'eof') {
+        if (this.peek().type !== 'id') break;
         const id = this.next().value;
         let init = null;
         if (this.peek().value === '=') {
@@ -568,6 +611,11 @@ class Parser {
     while (i < endIdxExclusive) {
       const t = this.toks[i];
       if (t.type === 'eof') break;
+      if (t.type === 'nl' || t.type === 'comment') {
+        if (depth === 0 && stops.has('nl')) break;
+        i++;
+        continue;
+      }
       if (t.type === 'regex') {
         flush(i);
         const lit = parseRegexLiteral(this.src.slice(t.start, t.end));
@@ -652,6 +700,15 @@ class Parser {
         continue;
       }
       if (t.type === 'id') {
+        if (
+          depth === 0 &&
+          (t.value === 'case' || t.value === 'default') &&
+          this.toks[i + 1] &&
+          this.toks[i + 1].type === 'punct' &&
+          this.toks[i + 1].value === ':'
+        ) {
+          break;
+        }
         if (t.value === 'function') {
           flush(i);
           this.pos = i;

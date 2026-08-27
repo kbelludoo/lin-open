@@ -1,29 +1,20 @@
-@RULEL:INTEL_CLONE_LIN:1.1.0
+@RULEL:INTEL_CLONE_LIN:1.3.0
 ^slug="chalk"
 ^lang="LIN"
-^rule="semantic_hash_exact_like_P200"
-^no_soft_match=true
 ^status="PASS"
 ^done=true
-^published=true
+^published=false
 ^suite_rate=1
-^suite_total=12
-^source="https://github.com/chalk/chalk.git"
-^clone_lin_url="https://github.com/kbelludoo/clone-lin-chalk"
-^clone_lin_local="C:/Users/k/Documents/lia/.clone_lin_publish/clone-lin-chalk"
-^temp_cleaned=true
-^pass=12 ^fail=0 ^skip=0
-^behavior_eq_required=1.0
-^publish_gate="suite_rate==1.0"
+^suite_total=16
+^pass=16 ^fail=0 ^skip=0
+^publish_gate="suite_rate==1.0_JS"
+^host="scripts/clone_lin_loop.mjs v2-compile-gate"
 
 @COMPARISON {
-  pass_names: ["createChalk","styleFunction","assertValidLevel","chalkFactory","createModelConverters","ansi","ansi256","createStyler","createBuilder","applyStyle","stringReplaceAll","stringEncaseCRLFWithFirstIndex"]
+  pass_names: ["animateString.lin","applyOptions.lin","applyStyle.lin","assertValidLevel.lin","chalkFactory.lin","constructor.lin","createBuilder.lin","createChalk.lin","createModelConverters.lin","createStyler.lin","get.lin","rainbow.lin","set.lin","stringEncaseCRLFWithFirstIndex.lin","stringReplaceAll.lin","type_only.lin"]
   fail_names: []
-  skip_names: []
-  learn: "none"
-  improve_lin: "positive_transfer:ok×12"
 }
 
 @NOTE_PT {
-  DONE 100% clone-lin-chalk: p=12 suite_rate=1.0; improve=positive_transfer:ok×12
+  DONE clone-lin-chalk: p=16 f=0 suite_rate=1
 }

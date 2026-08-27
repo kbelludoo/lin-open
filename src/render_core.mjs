@@ -2,10 +2,219 @@ export function renderExpr(expr) {
   if (!expr || !expr.parts) return '';
   let out = '';
   for (const part of expr.parts) {
-    if (part.kind === 'raw') out += part.text;
+    if (part.kind === 'raw') out += desugarLinSigils(part.text);
     else out += renderNode(part.node);
   }
   return out;
+}
+
+/**
+ * Lossy clone bodies keep LIN sigils (? if, : else, ^ return, # for) inside
+ * nested raw JS (IIFEs/arrows). Lower them before assertJsSyntax.
+ */
+export function desugarLinSigils(text) {
+  let s = String(text || '');
+  if (!/[?#^]|:\{|:\(/.test(s)) return s;
+  s = desugarSigilBlocks(s, '?', 'if');
+  s = desugarSigilBlocks(s, '#', 'for');
+  s = desugarColonElse(s);
+  s = desugarCaretReturns(s);
+  return s;
+}
+
+function findMatchingIn(s, openIdx, openCh, closeCh) {
+  let depth = 0;
+  let quote = null;
+  for (let i = openIdx; i < s.length; i++) {
+    const c = s[i];
+    if (quote) {
+      if (c === '\\') { i++; continue; }
+      if (c === quote) quote = null;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === '`') { quote = c; continue; }
+    if (c === openCh) depth++;
+    else if (c === closeCh) {
+      depth--;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+function desugarSigilBlocks(s, sigil, keyword) {
+  let out = '';
+  let i = 0;
+  let quote = null;
+  let inRegex = false;
+  const token = sigil + '(';
+  while (i < s.length) {
+    const c = s[i];
+    if (quote) {
+      out += c;
+      if (c === '\\') { out += s[++i] || ''; i++; continue; }
+      if (c === quote) quote = null;
+      i++;
+      continue;
+    }
+    if (inRegex) {
+      out += c;
+      if (c === '\\') { out += s[++i] || ''; i++; continue; }
+      if (c === '/') inRegex = false;
+      i++;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === '`') { quote = c; out += c; i++; continue; }
+    if (c === '/' && isRegexStart(s, i)) { inRegex = true; out += c; i++; continue; }
+    if (s.startsWith(token, i)) {
+      const prev = i > 0 ? s[i - 1] : '';
+      if (sigil === '?' && /[A-Za-z0-9_)$\].?]/.test(prev)) {
+        out += c;
+        i++;
+        continue;
+      }
+      if (sigil === '#' && /[A-Za-z0-9_)$\]]/.test(prev)) {
+        out += c;
+        i++;
+        continue;
+      }
+      const openParen = i + 1;
+      const closeParen = findMatchingIn(s, openParen, '(', ')');
+      if (closeParen < 0) { out += c; i++; continue; }
+      let j = closeParen + 1;
+      while (j < s.length && /\s/.test(s[j])) j++;
+      if (s[j] !== '{') { out += c; i++; continue; }
+      const closeBrace = findMatchingIn(s, j, '{', '}');
+      if (closeBrace < 0) { out += c; i++; continue; }
+      const head = s.slice(openParen + 1, closeParen);
+      const inner = desugarLinSigils(s.slice(j + 1, closeBrace));
+      out += `${keyword}(${head}){${inner}}`;
+      i = closeBrace + 1;
+      continue;
+    }
+    out += c;
+    i++;
+  }
+  return out;
+}
+
+function desugarColonElse(s) {
+  let out = '';
+  let i = 0;
+  let quote = null;
+  let inRegex = false;
+  while (i < s.length) {
+    const c = s[i];
+    if (quote) {
+      out += c;
+      if (c === '\\') { out += s[++i] || ''; i++; continue; }
+      if (c === quote) quote = null;
+      i++;
+      continue;
+    }
+    if (inRegex) {
+      out += c;
+      if (c === '\\') { out += s[++i] || ''; i++; continue; }
+      if (c === '/') inRegex = false;
+      i++;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === '`') { quote = c; out += c; i++; continue; }
+    if (c === '/' && isRegexStart(s, i)) { inRegex = true; out += c; i++; continue; }
+    if (c === ':') {
+      const prev = i > 0 ? s[i - 1] : '';
+      if (/[A-Za-z0-9_$?\]]/.test(prev) || s[i + 1] === ':' || s[i + 1] === '=') {
+        out += c;
+        i++;
+        continue;
+      }
+      let j = i + 1;
+      while (j < s.length && /\s/.test(s[j])) j++;
+      if (s[j] === '{') {
+        const closeBrace = findMatchingIn(s, j, '{', '}');
+        if (closeBrace >= 0) {
+          const inner = desugarLinSigils(s.slice(j + 1, closeBrace));
+          out += `else{${inner}}`;
+          i = closeBrace + 1;
+          continue;
+        }
+      }
+      if (s[j] === '(') {
+        const closeParen = findMatchingIn(s, j, '(', ')');
+        if (closeParen >= 0) {
+          let k = closeParen + 1;
+          while (k < s.length && /\s/.test(s[k])) k++;
+          if (s[k] === '{') {
+            const closeBrace = findMatchingIn(s, k, '{', '}');
+            if (closeBrace >= 0) {
+              const head = s.slice(j + 1, closeParen);
+              const inner = desugarLinSigils(s.slice(k + 1, closeBrace));
+              out += `else if(${head}){${inner}}`;
+              i = closeBrace + 1;
+              continue;
+            }
+          }
+        }
+      }
+      if (s[j] === '?') {
+        out += 'else ';
+        i = i + 1;
+        continue;
+      }
+    }
+    out += c;
+    i++;
+  }
+  return out;
+}
+
+function desugarCaretReturns(s) {
+  // Statement-level `^expr` → `return expr`. Never touch `/^regex/`, XOR, or strings.
+  let out = '';
+  let i = 0;
+  let quote = null;
+  let inRegex = false;
+  while (i < s.length) {
+    const c = s[i];
+    if (quote) {
+      out += c;
+      if (c === '\\') { out += s[++i] || ''; i++; continue; }
+      if (c === quote) quote = null;
+      i++;
+      continue;
+    }
+    if (inRegex) {
+      out += c;
+      if (c === '\\') { out += s[++i] || ''; i++; continue; }
+      if (c === '/') inRegex = false;
+      i++;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === '`') { quote = c; out += c; i++; continue; }
+    if (c === '/' && isRegexStart(s, i)) { inRegex = true; out += c; i++; continue; }
+    if (c === '^') {
+      let j = out.length - 1;
+      while (j >= 0 && /[ \t]/.test(out[j])) j--;
+      // Statement boundary only — never XOR after values/regex (`/re/^x`) or `)=>`.
+      const boundary = j < 0 || /[;{}\n]/.test(out[j]);
+      if (boundary) {
+        out += 'return ';
+        i++;
+        continue;
+      }
+    }
+    out += c;
+    i++;
+  }
+  return out;
+}
+
+function isRegexStart(s, i) {
+  // Heuristic: `/` starts a regex when previous non-space is an operator/boundary.
+  let j = i - 1;
+  while (j >= 0 && /[ \t]/.test(s[j])) j--;
+  if (j < 0) return true;
+  return /[([{};,=!~?:&|+\-*%^<>]/.test(s[j]) || /(?:^|[^A-Za-z0-9_$])(?:return|throw|case|in|of)\s*$/.test(s.slice(Math.max(0, j - 8), j + 1));
 }
 
 export function renderNode(node) {
@@ -56,7 +265,10 @@ export function renderStmt(st) {
       return `function ${fn.name}(${fnParamsText(fn)}){${renderBody(fn.body)}}`;
     }
     case 'var': {
-      const declStrs = (st.decls || []).map(d => `${d.id}${d.init ? ` = ${renderExpr(d.init)}` : ''}`).join(', ');
+      const declStrs = (st.decls || []).map((d) => {
+        if (d.destructure) return `${d.id}${d.init ? ` = ${renderExpr(d.init)}` : ''}`;
+        return `${d.id}${d.init ? ` = ${renderExpr(d.init)}` : ''}`;
+      }).join(', ');
       return `${st.kind || 'var'} ${declStrs};`;
     }
     case 'labeled':

@@ -4,7 +4,7 @@
 // ============================================================================
 
 const std = @import("std");
-const lin = @import("../src/lin_compiler.zig");
+const lin = @import("lin_compiler");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};

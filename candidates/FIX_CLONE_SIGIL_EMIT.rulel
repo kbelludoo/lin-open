@@ -1,0 +1,30 @@
+@RULEL:CANDIDATE_FIX:clone-sigil-emit:1.0.0
+^status="applied"
+^outside_nucleus=true
+^host="parser.mjs+render_core.mjs+emitters.mjs+scripts/clone_lin_loop.mjs+build.zig"
+
+@PROBLEM {
+  clones_lin/*.lin lossy sigil corpus failed JS emit:
+  Unexpected token '?' / ':' / ';' — 107 fails → 30 remains.
+  scripts/clone_lin_loop.mjs missing after v2 promotion (ERR_MODULE_NOT_FOUND).
+  zig CLI: import outside module path (no build.zig).
+}
+
+@FIX {
+  1. parser: orphan `;:{else}` attaches to previous if; scanExpr stops on nl; const/let destructuring.
+  2. render_core: desugarLinSigils(? → if, : → else, ^ → return) skipping strings/regex.
+  3. emitters.stmtsText: prefer AST when rawBody still has sigils.
+  4. scripts/clone_lin_loop.mjs: v2 compile-gate over clones_lin/.
+  5. build.zig + bin/lin.zig module import; ensure_toolchains installs zig 0.13.0.
+}
+
+@GATE {
+  npm_test=26/26
+  clone_js_ok=293 fail=30
+  full_pass_repos=chalk,dedent,is-number,left-pad,ms
+}
+
+@REMAINING {
+  underscore×9 30-seconds-of-code×18 nanoid×1 dayjs×2
+  mainly LIN_PARSE closure/arrow expected-{ and switch case leftovers.
+}
