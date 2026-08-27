@@ -21,4 +21,8 @@
   E_CHROME_GREEDY: "map lin names by longest existing dir prefix of underscore parts"
   E_CHROME_SKIP_PARTS: "do not skip failed path parts; reconstruct dirs by joining underscore groups that exist"
   E_CPP_QUALIFIED: "C extract must match ident( before { including Type::Method and std::vector<T> return types; linSafeIdent :: to _"
+  E_GTEST_ALLCAPS: "TEST() skipped as ALLCAPS and collapsed to one name; unique gtestLinName from params"
+  E_CPP_DEFAULTED: "Class::Ctor() = default has no brace; extractDefaultedCpp"
+  E_EMPTY_TU: "zero-fn .cc still hash originals via !src_<sha16>"
+  E_EMIT_DRIFT: "re-emit disk .lin from current emitLinFromJs; camelcase/nanoid/strip-json/lodash drifted"
 }

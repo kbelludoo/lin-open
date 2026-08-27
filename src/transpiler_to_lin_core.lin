@@ -144,17 +144,33 @@
   ^s
 }
 
+!extractDefaultedCpp(source){
+  fns = [];
+  re = /((?:[A-Za-z0-9_$]+::)+[~A-Za-z0-9_$]+)\s*\(([^)]*)\)[^{;]*=\s*default/g;
+  m = null;
+  while ((m = re.exec(source)) !== null) {
+    fns.push({ name: m[1], rawParams: m[2], body: "^0;" })
+  }
+  ^fns
+}
+
+!gtestLinName(kind, rawParams){
+  ^linSafeIdent(kind + "_" + String(rawParams || "").replace(/,/g, "_"))
+}
+
 !transpileCToLin(cSource){
   clean = cppStripPreprocessor(cSource).replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
   rawFns = extractBracedFunctions(clean, /((?:[A-Za-z0-9_$]+::)*[~A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);
+  rawFns = rawFns.concat(extractDefaultedCpp(clean));
   fns = [];
   seen = {};
+  gtest = ["TEST", "TEST_F", "TEST_P", "TYPED_TEST", "TYPED_TEST_P", "IN_PROC_BROWSER_TEST_F", "IN_PROC_BROWSER_TEST_P"];
   #(i = 0; i < rawFns.length; i++){
     rf = rawFns[i];
-    name = linSafeIdent(rf.name);
-    ?(["if", "while", "for", "switch", "catch", "try", "sizeof", "return", "new", "delete"].includes(rf.name) || seen[name]){ continue }
-    ?(/^[A-Z][A-Z0-9_]*$/.test(name) && name.indexOf("_") < 0){ continue }
-    ?(rf.rawParams.indexOf("(") >= 0){ continue }
+    ?(gtest.includes(rf.name)){ name = gtestLinName(rf.name, rf.rawParams) }
+    :{ name = linSafeIdent(rf.name) }
+    ?(["if", "while", "for", "switch", "catch", "try", "sizeof", "return", "new", "delete"].includes(rf.name)){ continue }
+    ?(seen[name]){ name = name + "_" + String(i) }
     ?(rf.rawParams.indexOf(";") >= 0){ continue }
     seen[name] = 1;
     params = rf.rawParams.split(",").map(function(p){
