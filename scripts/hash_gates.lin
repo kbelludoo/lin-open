@@ -97,13 +97,35 @@
   }
   ^{ gate: 'G_CORE_CODE_HASH', ok: ok, cores: results };
 }
+!verifyTranspileHashGate(host){
+  var jsSource, emitted, report, ok;
+  jsSource = [
+    'function add(a, b) { return a + b; }',
+    'function mul(a, b) { return a * b; }',
+    'module.exports = { add, mul };'
+  ].join('\n');
+  emitted = host.emitLinFromJs(jsSource);
+  report = host.verifyTranspile(emitted.lin, { skipHashVerify: false });
+  ?(host.ingestTranspileFeedback){
+    host.ingestTranspileFeedback(report);
+  }
+  ok = report.ok && report.semantic_hash_stable && report.code_hash_stable;
+  ^{
+    gate: 'G_TRANSPIL_HASH',
+    ok: ok,
+    semantic_hash_stable: report.semantic_hash_stable,
+    code_hash_stable: report.code_hash_stable,
+    code_hash: report.code_hash ? report.code_hash.slice(0, 16) : null
+  };
+}
 !runAllHashGates(host){
   var gates, ok, i;
   gates = [
     verifyAllCoreSeedHashes(host),
     verifySemanticHashGate(host),
     verifyNucleusLock(host),
-    verifyCompilerEmitIdempotent(host)
+    verifyCompilerEmitIdempotent(host),
+    verifyTranspileHashGate(host)
   ];
   ok = true;
   for(i = 0; i < gates.length; i++){
@@ -111,4 +133,4 @@
   }
   ^{ ok: ok, gates: gates };
 }
-=ex{seedRulelPath, verifySemanticHashGate, verifyNucleusLock, verifyCompilerEmitIdempotent, verifyCoreSeedHash, verifyAllCoreSeedHashes, runAllHashGates}
+=ex{seedRulelPath, verifySemanticHashGate, verifyNucleusLock, verifyCompilerEmitIdempotent, verifyCoreSeedHash, verifyAllCoreSeedHashes, verifyTranspileHashGate, runAllHashGates}

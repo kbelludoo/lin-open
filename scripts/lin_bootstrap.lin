@@ -57,15 +57,36 @@
     note: 'compiler.lin deterministic emit (LIN compiles LIN idempotent)'
   };
 }
+!verifyCoreLinTranspile(host, linName){
+  var src, report;
+  src = host.readText('src/' + linName);
+  report = host.verifyTranspile(src, { skipHashVerify: false });
+  ?(host.ingestTranspileFeedback){
+    host.ingestTranspileFeedback(report);
+  }
+  ^{
+    lin: linName,
+    ok: report.ok,
+    semantic_hash: report.semantic_hash,
+    code_hash: report.code_hash,
+    gate: report.gate
+  };
+}
 !runLinBootstrap(host){
-  var linNames, cjsNames, exportLists, i, src, result, code, out, compiled, gate, entry, hashReport;
+  var linNames, cjsNames, exportLists, i, src, result, code, out, compiled, gate, entry, hashReport, transpileChecks, tc;
   linNames = coreLinNames();
   cjsNames = coreCjsNames();
   exportLists = coreExportLists();
   compiled = [];
+  transpileChecks = [];
   for(i = 0; i < linNames.length; i++){
+    tc = verifyCoreLinTranspile(host, linNames[i]);
+    transpileChecks.push(tc);
+    ?(!tc.ok){
+      ^ { ok: false, error: 'core transpile hash failed: ' + linNames[i], transpile_checks: transpileChecks };
+    }
     src = host.readText('src/' + linNames[i]);
-    result = host.compile(src, { target: 'js' });
+    result = host.compile(src, { target: 'js', transpile_hints: host.transpileHints ? host.transpileHints() : [] });
     code = result.code + '\nmodule.exports={' + exportLists[i] + '};\n';
     entry = { lin: linNames[i], cjs: cjsNames[i] };
     ?(host.tryRegisterCore(cjsNames[i], code)){
@@ -87,8 +108,9 @@
     policy: 'LIN_compiles_LIN_in_memory',
     repo_purity: 'only .lin + .rulel committed',
     cores_compiled_from_lin: compiled,
+    transpile_checks: transpileChecks,
     compiler_self_host_gate: gate,
     hash_gates: hashReport
   };
 }
-=ex{extractRulelContent, coreLinNames, coreCjsNames, coreExportLists, selfHostCompilerGate, runLinBootstrap}
+=ex{extractRulelContent, coreLinNames, coreCjsNames, coreExportLists, selfHostCompilerGate, verifyCoreLinTranspile, runLinBootstrap}

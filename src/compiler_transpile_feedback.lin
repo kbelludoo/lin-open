@@ -1,0 +1,96 @@
+@LIN:L1c:0.2
+!emptyFeedback(){
+  ^{ patterns: [], manifests: [], lastUpdated: null };
+}
+!normalizeSignal(signal){
+  ^{
+    source_lang: String(signal.source_lang || signal.lang || 'unknown'),
+    semantic_hash: String(signal.semantic_hash || ''),
+    code_hash: String(signal.code_hash || ''),
+    ok: !!signal.ok,
+    gate: String(signal.gate || 'G_TRANSPIL_HASH'),
+    errors: signal.errors || []
+  };
+}
+!buildPatterns(manifests){
+  var patterns, i, m;
+  patterns = [];
+  for(i = 0; i < manifests.length; i++){
+    m = manifests[i];
+    ?(m.ok && m.semantic_hash){
+      patterns.push({
+        semantic_hash: m.semantic_hash,
+        code_hash: m.code_hash,
+        source_lang: m.source_lang
+      });
+    }
+  }
+  ^patterns;
+}
+!mergeFeedback(existing, incoming){
+  var merged, seen, i, sig;
+  merged = {
+    patterns: (existing.patterns || []).slice(),
+    manifests: (existing.manifests || []).slice(),
+    lastUpdated: incoming.lastUpdated || existing.lastUpdated
+  };
+  seen = {};
+  for(i = 0; i < merged.manifests.length; i++){
+    seen[merged.manifests[i].semantic_hash] = true;
+  }
+  for(i = 0; i < (incoming.manifests || []).length; i++){
+    sig = normalizeSignal(incoming.manifests[i]);
+    ?(!seen[sig.semantic_hash]){
+      merged.manifests.push(sig);
+      seen[sig.semantic_hash] = true;
+    }
+  }
+  merged.patterns = buildPatterns(merged.manifests);
+  ^merged;
+}
+!recordTranspileManifest(host, report){
+  var prev, incoming, merged;
+  incoming = {
+    lastUpdated: host.nowIso(),
+    manifests: [normalizeSignal(report)]
+  };
+  try {
+    prev = host.readFeedback('storage/transpile_feedback.rulel');
+  } catch(e){
+    prev = emptyFeedback();
+  }
+  merged = mergeFeedback(prev || emptyFeedback(), incoming);
+  host.writeFeedback('storage/transpile_feedback.rulel', merged);
+  ^merged;
+}
+!loadTranspilePatterns(host){
+  var data;
+  try {
+    data = host.readFeedback('storage/transpile_feedback.rulel');
+  } catch(e){
+    ^[];
+  }
+  ^buildPatterns(data.manifests || []);
+}
+!applyTranspileFeedbackToOpts(opts, host){
+  var out, hints;
+  out = opts || {};
+  ?(out.skipTranspileFeedback === true){ ^out; }
+  hints = loadTranspilePatterns(host);
+  ?(hints.length){
+    out.transpile_hints = hints;
+    out.__transpileFeedbackApplied = true;
+  }
+  ^out;
+}
+!ingestTranspileVerifyReport(host, verifyReport){
+  ?(!verifyReport){ ^emptyFeedback(); }
+  ^recordTranspileManifest(host, {
+    ok: verifyReport.ok,
+    semantic_hash: verifyReport.semantic_hash,
+    code_hash: verifyReport.code_hash,
+    gate: verifyReport.gate,
+    errors: verifyReport.errors || []
+  });
+}
+=ex{emptyFeedback, normalizeSignal, buildPatterns, mergeFeedback, recordTranspileManifest, loadTranspilePatterns, applyTranspileFeedbackToOpts, ingestTranspileVerifyReport}

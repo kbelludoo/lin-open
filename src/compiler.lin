@@ -1,5 +1,23 @@
 @LIN:L1c:0.2
+!applyTranspileFeedbackToOpts(opts){
+  var hints, out;
+  out = opts || {};
+  ?(out.skipTranspileFeedback === true){ ^out; }
+  hints = out.transpile_hints || globalThis.__LIN_TRANSPIL_HINTS__ || [];
+  ?(hints.length){
+    out.transpile_hints = hints;
+    out.__transpileFeedbackApplied = true;
+  }
+  ^out;
+}
+!recordTranspileHint(hint){
+  var list;
+  list = globalThis.__LIN_TRANSPIL_HINTS__ || [];
+  list.push(hint);
+  globalThis.__LIN_TRANSPIL_HINTS__ = list;
+}
 !compile(source,opts){
+  opts = applyTranspileFeedbackToOpts(opts || {});
   const target = String(opts.target || DEFAULT_EMIT_TARGET).toLowerCase();
   ?(!REAL_TARGETS.includes(target)){
     throw new Error(`LIN_EMIT_TARGET: unsupported ${target}; want ${REAL_TARGETS.join('|')} (default ${DEFAULT_EMIT_TARGET})`);
@@ -166,4 +184,4 @@
       ?(Array.isArray(st.arms)){ for (const arm of st.arms) walk(arm.body); }
     }
   }
-=ex{compile, finish, __liaRe, regex_test, regex_find, regex_replace, regex_split, validateRegexUsage, validateExports, wrapSandbox, compileToTargetFileShim, walk}
+=ex{applyTranspileFeedbackToOpts, recordTranspileHint, compile, finish, __liaRe, regex_test, regex_find, regex_replace, regex_split, validateRegexUsage, validateExports, wrapSandbox, compileToTargetFileShim, walk}

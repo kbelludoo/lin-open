@@ -1,0 +1,40 @@
+@LIN:L1c:0.2
+!bootstrapLinSources(){
+  ^['scripts/lin_bootstrap.lin', 'scripts/bootstrap_entry.lin', 'scripts/hash_gates.lin', 'src/transpile_hash_verify.lin'];
+}
+!verifyBootstrapTranspile(host){
+  var sources, i, rel, src, report, errors, ok;
+  sources = bootstrapLinSources();
+  errors = [];
+  ok = true;
+  for(i = 0; i < sources.length; i++){
+    rel = sources[i];
+    src = host.readText(rel);
+    report = host.verifyTranspile(src, { skipHashVerify: false });
+    ?(!report.ok){
+      ok = false;
+      errors.push(rel + ': ' + (report.error || (report.errors && report.errors.join('; ')) || 'verify failed'));
+    }
+    ?(host.ingestTranspileFeedback){
+      host.ingestTranspileFeedback(report);
+    }
+  }
+  ^{
+    ok: ok,
+    gate: 'G_BOOTSTRAP_TRANSPIL_HASH',
+    sources: sources.length,
+    errors: errors
+  };
+}
+!runBootstrapEntry(host){
+  var transpileGate, result;
+  transpileGate = verifyBootstrapTranspile(host);
+  ?(!transpileGate.ok){
+    ^ { ok: false, error: 'bootstrap transpile hash failed', transpile_gate: transpileGate };
+  }
+  result = host.runLinBootstrap();
+  result.transpile_gate = transpileGate;
+  result.entry = 'scripts/bootstrap_entry.lin';
+  ^result;
+}
+=ex{bootstrapLinSources, verifyBootstrapTranspile, runBootstrapEntry}
