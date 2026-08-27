@@ -11,5 +11,7 @@
   E_TS: "skip overload signatures ending in ; then emit implementation; skip leftover type ids"
   E_IIFE: "enter ;(function(){ as inner top-level; skip var=function IIFE assigns; skip leftover . ) ] punct"
   E_DESTRUCTURE: "normalizeParams must split commas at depth 0 and strip defaults only at depth 0"
-  E_INHERITS_SHIM: "inherits.js is try/require; hash original is inherits_browser.js"
+  E_MIN_NO_FN: "min js/ files that only assign methods/exports without function keyword fail emitLinFromJs"
+  E_LUA_END: "lua end/function depth walker can emit bodies whose compileLinToJs hash differs from in-memory string if trailing newline or nested end in strings"
+  E_C_GIANT: "duktape.c and similar giant C files can emit lin that compileLinToJs hashes unstably"
 }

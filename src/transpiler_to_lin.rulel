@@ -1,3 +1,383 @@
-@RULEL:TRANSPOSED_SOURCE:1.0
-~METADATA{original="src/transpiler_to_lin.mjs" lang="mjs"}
-.source{content="// LIN Universal Polyglot Transpiler (Dogfooding transpiler_to_lin_core.lin)\n// Spec: spec/LIN_IR_CROSS_BACKEND.rulel & spec/LIN_CORE_ARCH.rulel\n\nimport { createRequire } from 'node:module';\nimport { emitLinFromJs } from './emit_from_js.mjs';\n\nconst require = createRequire(import.meta.url);\nconst {\n  detectLanguage: linDetectLanguage,\n  transpileRustToLin: linTranspileRustToLin,\n  transpileGoToLin: linTranspileGoToLin,\n  transpileCToLin: linTranspileCToLin,\n  transpileZigToLin: linTranspileZigToLin,\n} = require('./transpiler_to_lin_core.compiled.cjs');\n\nimport { runSemanticClosurePipeline } from './semantic_closure_engine.mjs';\n\nexport const detectLanguage = linDetectLanguage;\nexport const transpileRustToLin = linTranspileRustToLin;\nexport const transpileGoToLin = linTranspileGoToLin;\nexport const transpileCToLin = linTranspileCToLin;\nexport const transpileZigToLin = linTranspileZigToLin;\n\nexport function transpileToLinWithManifest(sourceCode, opts = {}) {\n  const res = runSemanticClosurePipeline(sourceCode, opts);\n  return {\n    lin: res.program_lin,\n    program_lin: res.program_lin,\n    manifest: res.capability_manifest,\n    capability_manifest: res.capability_manifest,\n    coverage: res.coverage,\n    closure_size: res.closure_size\n  };\n}\n\nexport function transpileToLin(sourceCode, opts = {}) {\n  const lang = String(opts.lang || detectLanguage(sourceCode, opts.filename || '')).toLowerCase();\n\n  switch (lang) {\n    case 'js':\n    case 'javascript':\n    case 'ts':\n    case 'typescript':\n      return transpileJsTsToLin(sourceCode, opts);\n\n    case 'py':\n    case 'python':\n      return transpilePythonToLin(sourceCode, opts);\n\n    case 'rs':\n    case 'rust':\n      return transpileRustToLin(sourceCode);\n\n    case 'go':\n    case 'golang':\n      return transpileGoToLin(sourceCode);\n\n    case 'c':\n    case 'cpp':\n      return transpileCToLin(sourceCode);\n\n    case 'zig':\n      return transpileZigToLin(sourceCode);\n\n    default:\n      return transpileJsTsToLin(sourceCode, opts);\n  }\n}\n\nfunction transpilePythonToLin(pySource, opts = {}) {\n  const lines = pySource.split('\\n');\n  const fns = [];\n  let currentFn = null;\n  let fnBodyLines = [];\n\n  for (let line of lines) {\n    const trimmed = line.trim();\n    if (!trimmed || trimmed.startsWith('#')) continue;\n\n    const defMatch = line.match(/^def\\s+([A-Za-z0-9_$]+)\\s*\\(([^)]*)\\)\\s*:/);\n    if (defMatch) {\n      if (currentFn) {\n        fns.push({ name: currentFn.name, params: currentFn.params, body: processPythonBody(fnBodyLines) });\n      }\n      currentFn = { name: defMatch[1], params: defMatch[2].split(',').map(p => p.trim()).filter(Boolean).join(',') };\n      fnBodyLines = [];\n      continue;\n    }\n\n    if (currentFn) {\n      fnBodyLines.push(line);\n    }\n  }\n\n  if (currentFn) {\n    fns.push({ name: currentFn.name, params: currentFn.params, body: processPythonBody(fnBodyLines) });\n  }\n\n  const exportNames = fns.map(f => f.name);\n  const outLines = ['@LIN:L1c:0.2'];\n\n  for (const fn of fns) {\n    outLines.push(`!${fn.name}(${fn.params}){`);\n    outLines.push(fn.body);\n    outLines.push('}');\n  }\n\n  outLines.push(`=ex{${exportNames.join(', ')}}`);\n  return outLines.join('\\n');\n}\n\nfunction processPythonBody(lines) {\n  const out = [];\n  const indentStack = [0];\n\n  for (let l of lines) {\n    if (!l.trim() || l.trim().startsWith('#')) continue;\n    const indent = l.match(/^\\s*/)[0].length;\n    const isElseOrElif = /^(elif\\b|else\\s*:)/.test(l.trim());\n\n    if (!isElseOrElif) {\n      while (indentStack.length > 1 && indent < indentStack[indentStack.length - 1]) {\n        indentStack.pop();\n        out.push('  }');\n      }\n    }\n\n    let s = l.trim();\n    const isBlockHeader = s.endsWith(':');\n\n    s = s.replace(/^elif\\s+(.+):/, ':($1){');\n    s = s.replace(/^else\\s*:/, '}:{');\n    s = s.replace(/^if\\s+(.+):/, '?($1){');\n    s = s.replace(/^while\\s+(.+):/, ';while($1){');\n    s = s.replace(/^return\\s+(.+)$/, '^$1');\n    s = s.replace(/^return$/, '^null');\n    s = s.replace(/\\band\\b/g, '&&').replace(/\\bor\\b/g, '||').replace(/\\bnot\\b/g, '!');\n    s = s.replace(/\\bTrue\\b/g, 'true').replace(/\\bFalse\\b/g, 'false').replace(/\\bNone\\b/g, 'null');\n\n    if (isBlockHeader && !isElseOrElif) {\n      indentStack.push(indent + 4);\n    } else if (!s.endsWith('{') && !s.endsWith('}')) {\n      s += ';';\n    }\n    out.push('  ' + s);\n  }\n\n  while (indentStack.length > 1) {\n    indentStack.pop();\n    out.push('  }');\n  }\n\n  return out.join('\\n');\n}\n\nfunction wrapSingleLineControlStatements(code) {\n  let res = '';\n  let i = 0;\n  while (i < code.length) {\n    if (code.slice(i, i + 3) === 'if ' || code.slice(i, i + 3) === 'if(') {\n      const openParen = code.indexOf('(', i);\n      if (openParen >= 0) {\n        let depth = 1;\n        let k = openParen + 1;\n        while (k < code.length && depth > 0) {\n          if (code[k] === '(') depth++;\n          else if (code[k] === ')') depth--;\n          k++;\n        }\n        const cond = code.slice(openParen + 1, k - 1);\n        let nextNonWs = k;\n        while (nextNonWs < code.length && /\\s/.test(code[nextNonWs])) nextNonWs++;\n        if (code[nextNonWs] !== '{') {\n          let stmtEnd = code.indexOf(';', nextNonWs);\n          if (stmtEnd < 0) stmtEnd = code.indexOf('\\n', nextNonWs);\n          if (stmtEnd >= 0) {\n            const stmt = code.slice(nextNonWs, stmtEnd + 1).trim();\n            res += `if (${cond}) { ${stmt} }`;\n            i = stmtEnd + 1;\n            continue;\n          }\n        }\n      }\n    }\n    res += code[i];\n    i++;\n  }\n  return res;\n}\n\nfunction replaceIfWithLin(code) {\n  let res = '';\n  let i = 0;\n  while (i < code.length) {\n    if (code.slice(i, i + 3) === 'if ' || code.slice(i, i + 3) === 'if(') {\n      const openParen = code.indexOf('(', i);\n      if (openParen >= 0) {\n        let depth = 1;\n        let k = openParen + 1;\n        while (k < code.length && depth > 0) {\n          if (code[k] === '(') depth++;\n          else if (code[k] === ')') depth--;\n          k++;\n        }\n        const cond = code.slice(openParen + 1, k - 1);\n        let nextNonWs = k;\n        while (nextNonWs < code.length && /\\s/.test(code[nextNonWs])) nextNonWs++;\n        if (code[nextNonWs] === '{') {\n          res += `?(${cond}){`;\n          i = nextNonWs + 1;\n          continue;\n        }\n      }\n    }\n    res += code[i];\n    i++;\n  }\n  return res;\n}\n\nfunction transpileJsTsToLin(jsSource, opts = {}) {\n  let s = jsSource;\n  // Strip comments and imports\n  s = s.replace(/\\/\\*[\\s\\S]*?\\*\\//g, '');\n  s = s.replace(/^\\s*import\\s+[\\s\\S]*?from\\s+['\"][^'\"]+['\"];?/gm, '');\n  s = s.replace(/^\\s*import\\s+['\"][^'\"]+['\"];?/gm, '');\n\n  // Strip TypeScript interfaces and type aliases\n  s = s.replace(/^\\s*(?:export\\s+)?(?:type|interface)\\s+[A-Za-z0-9_$]+[\\s\\S]*?;\\s*$/gm, '');\n  s = s.replace(/^\\s*(?:export\\s+)?interface\\s+[A-Za-z0-9_$]+(?:\\s+extends\\s+[A-Za-z0-9_$]+)?\\s*\\{[\\s\\S]*?\\}\\s*$/gm, '');\n  s = s.replace(/\\)\\s*:\\s*[A-Za-z0-9_$<>[\\]|&]+\\s*\\{/g, ') {');\n  s = s.replace(/(?:let|const|var)\\s+([A-Za-z0-9_$]+)\\s*:\\s*[A-Za-z0-9_$<>[\\]|&]+\\s*=/g, '$1 =');\n\n  // Convert Class constructor and methods to standalone functions\n  s = s.replace(/(?:export\\s+)?class\\s+([A-Za-z0-9_$]+)\\s*\\{/g, '');\n  s = s.replace(/\\bconstructor\\s*\\(([^)]*)\\)\\s*\\{/g, 'function createClient($1) {');\n\n  // Safe try/catch unpacker\n  let tryPass = 0;\n  while (tryPass < 4 && /\\btry\\s*\\{/.test(s)) {\n    const prev = s;\n    s = s.replace(/\\btry\\s*\\{([^{}]*?)\\}\\s*catch\\s*(?:\\([^)]*\\))?\\s*\\{([^{}]*?)\\}/g, '$1');\n    if (s === prev) {\n      s = s.replace(/\\btry\\s*\\{/g, '').replace(/\\}\\s*catch\\s*(?:\\([^)]*\\))?\\s*\\{/g, '');\n      break;\n    }\n    tryPass++;\n  }\n\n  // Map enum accesses\n  s = s.replace(/\\bAgentStatus\\.IDLE\\b/g, '0');\n  s = s.replace(/\\bAgentStatus\\.RUNNING\\b/g, '1');\n  s = s.replace(/\\bAgentStatus\\.COMPLETED\\b/g, '2');\n  s = s.replace(/\\bAgentStatus\\.ERROR\\b/g, '3');\n\n  // Wrap unbraced single-line if/else statements\n  s = wrapSingleLineControlStatements(s);\n\n  // Extract functions\n  const fns = [];\n  const fnRe = /^\\s*(?:export\\s+)?(?:async\\s+)?(?:function\\s+)?([A-Za-z0-9_$]+)\\s*\\(([^)]*)\\)\\s*\\{/gm;\n  let m;\n  while ((m = fnRe.exec(s)) !== null) {\n    const fnName = m[1];\n    if (['if', 'while', 'for', 'switch', 'catch', 'constructor', 'Error', 'Object', 'Array', 'typeof', 'instanceof'].includes(fnName)) continue;\n    const rawParams = m[2];\n    const openBrace = m.index + m[0].length - 1;\n    let depth = 1;\n    let k = openBrace + 1;\n    while (k < s.length && depth > 0) {\n      if (s[k] === '{') depth++;\n      else if (s[k] === '}') depth--;\n      k++;\n    }\n    const body = s.slice(openBrace + 1, k - 1);\n    \n    // Transform JS body to LIN sigils\n    let linBody = body;\n    linBody = linBody.replace(/\\?\\?/g, '||');\n    linBody = linBody.replace(/\\}\\s*else\\s+if\\s*\\(([^)]+)\\)\\s*\\{/g, '}:($1){');\n    linBody = linBody.replace(/\\}\\s*else\\s*\\{/g, '}:{');\n    linBody = linBody.replace(/\\belse\\s+if\\s*\\(([^)]+)\\)\\s*\\{/g, ':($1){');\n    linBody = linBody.replace(/\\belse\\s*\\{/g, '}:{');\n    linBody = replaceIfWithLin(linBody);\n    linBody = linBody.replace(/\\breturn\\s+([^;]+);/g, '^$1;');\n    linBody = linBody.replace(/\\breturn;/g, '^null;');\n\n    const params = rawParams.split(',').map(p => p.trim().split(/\\s*[:=]/)[0]).filter(Boolean).join(',');\n    fns.push({ name: fnName, params, body: linBody });\n  }\n\n  // Also extract arrow functions\n  const arrowRe = /^\\s*(?:export\\s+)?(?:const|let|var)\\s+([A-Za-z0-9_$]+)\\s*=\\s*(?:async\\s+)?\\(([^)]*)\\)\\s*=>\\s*\\{/gm;\n  while ((m = arrowRe.exec(s)) !== null) {\n    const fnName = m[1];\n    const rawParams = m[2];\n    const openBrace = s.indexOf('{', m.index);\n    if (openBrace < 0) continue;\n    let depth = 1;\n    let k = openBrace + 1;\n    while (k < s.length && depth > 0) {\n      if (s[k] === '{') depth++;\n      else if (s[k] === '}') depth--;\n      k++;\n    }\n    const body = s.slice(openBrace + 1, k - 1);\n    let linBody = body;\n    linBody = linBody.replace(/\\?\\?/g, '||');\n    linBody = linBody.replace(/\\}\\s*else\\s+if\\s*\\(([^)]+)\\)\\s*\\{/g, '}:($1){');\n    linBody = linBody.replace(/\\}\\s*else\\s*\\{/g, '}:{');\n    linBody = linBody.replace(/\\belse\\s+if\\s*\\(([^)]+)\\)\\s*\\{/g, ':($1){');\n    linBody = linBody.replace(/\\belse\\s*\\{/g, '}:{');\n    linBody = replaceIfWithLin(linBody);\n    linBody = linBody.replace(/\\breturn\\s+([^;]+);/g, '^$1;');\n    linBody = linBody.replace(/\\breturn;/g, '^null;');\n\n    const params = rawParams.split(',').map(p => p.trim().split(/\\s*[:=]/)[0]).filter(Boolean).join(',');\n    fns.push({ name: fnName, params, body: linBody });\n  }\n\n  if (fns.length === 0) {\n    return `@LIN:L1c:0.2\\n=ex{}`;\n  }\n\n  const exportNames = fns.map(f => f.name);\n  const outLines = ['@LIN:L1c:0.2'];\n\n  for (const fn of fns) {\n    outLines.push(`!${fn.name}(${fn.params}){${fn.body}}`);\n  }\n\n  outLines.push(`=ex{${exportNames.join(', ')}}`);\n  return outLines.join('\\n');\n}\n"}
+@RULEL:BOOTSTRAP_TRANSPILER_TO_LIN:1.0.0
+~METADATA{original="./src/transpiler_to_lin.mjs" lang="mjs" role="bootstrap_reference"}
+.source{
+// LIN Universal Polyglot Transpiler (Dogfooding transpiler_to_lin_core.lin)
+// Spec: spec/LIN_IR_CROSS_BACKEND.rulel & spec/LIN_CORE_ARCH.rulel
+
+import { createRequire } from 'node:module';
+import { emitLinFromJs } from './emit_from_js.mjs';
+
+const require = createRequire(import.meta.url);
+const {
+  detectLanguage: linDetectLanguage,
+  transpileRustToLin: linTranspileRustToLin,
+  transpileGoToLin: linTranspileGoToLin,
+  transpileCToLin: linTranspileCToLin,
+  transpileZigToLin: linTranspileZigToLin,
+} = require('./transpiler_to_lin_core.compiled.cjs');
+
+import { runSemanticClosurePipeline } from './semantic_closure_engine.mjs';
+
+export const detectLanguage = linDetectLanguage;
+export const transpileRustToLin = linTranspileRustToLin;
+export const transpileGoToLin = linTranspileGoToLin;
+export const transpileCToLin = linTranspileCToLin;
+export const transpileZigToLin = linTranspileZigToLin;
+
+export function transpileToLinWithManifest(sourceCode, opts = {}) {
+  const res = runSemanticClosurePipeline(sourceCode, opts);
+  return {
+    lin: res.program_lin,
+    program_lin: res.program_lin,
+    manifest: res.capability_manifest,
+    capability_manifest: res.capability_manifest,
+    coverage: res.coverage,
+    closure_size: res.closure_size
+  };
+}
+
+export function transpileToLin(sourceCode, opts = {}) {
+  const lang = String(opts.lang || detectLanguage(sourceCode, opts.filename || '')).toLowerCase();
+
+  switch (lang) {
+    case 'js':
+    case 'javascript':
+    case 'ts':
+    case 'typescript':
+      return transpileJsTsToLin(sourceCode, opts);
+
+    case 'py':
+    case 'python':
+      return transpilePythonToLin(sourceCode, opts);
+
+    case 'rs':
+    case 'rust':
+      return transpileRustToLin(sourceCode);
+
+    case 'go':
+    case 'golang':
+      return transpileGoToLin(sourceCode);
+
+    case 'c':
+    case 'cpp':
+      return transpileCToLin(sourceCode);
+
+    case 'zig':
+      return transpileZigToLin(sourceCode);
+
+    case 'lua':
+      return transpileLuaToLin(sourceCode);
+
+    default:
+      return transpileJsTsToLin(sourceCode, opts);
+  }
+}
+
+function transpileLuaToLin(luaSource) {
+  const src = String(luaSource || '');
+  const fns = [];
+  const re = /(?:local\s+)?function\s+([A-Za-z_][\w.]*)\s*\(([^)]*)\)/g;
+  let m;
+  while ((m = re.exec(src)) !== null) {
+    const name = m[1].replace(/\./g, '_');
+    const params = m[2].split(',').map((p) => p.trim()).filter(Boolean).join(',');
+    let i = m.index + m[0].length;
+    let depth = 1;
+    while (i < src.length && depth > 0) {
+      const rest = src.slice(i);
+      const nextFn = rest.search(/\bfunction\b/);
+      const nextEnd = rest.search(/\bend\b/);
+      if (nextEnd < 0) break;
+      if (nextFn >= 0 && nextFn < nextEnd) {
+        depth++;
+        i += nextFn + 8;
+        continue;
+      }
+      depth--;
+      i += nextEnd + 3;
+    }
+    let body = src.slice(m.index + m[0].length, i - 3);
+    body = body.replace(/\breturn\b/g, '^');
+    body = body.replace(/\bif\s+/g, '?(').replace(/\sthen\b/g, '){');
+    body = body.replace(/\belseif\s+/g, '}:(').replace(/\belse\b/g, '}:{');
+    body = body.replace(/\bend\b/g, '}');
+    fns.push({ name, params, body });
+  }
+  if (!fns.length) {
+    return '@LIN:L1c:0.2\n=ex{}';
+  }
+  const lines = ['@LIN:L1c:0.2', '^schema_once ^lossy=true ^ops=lua'];
+  for (const fn of fns) {
+    lines.push(`!${fn.name}(${fn.params}){${fn.body}}`);
+  }
+  lines.push(`=ex{${fns.map((f) => f.name).join(',')}}`);
+  return lines.join('\n');
+}
+
+function transpilePythonToLin(pySource, opts = {}) {
+  const lines = pySource.split('\n');
+  const fns = [];
+  let currentFn = null;
+  let fnBodyLines = [];
+
+  for (let line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    const defMatch = line.match(/^def\s+([A-Za-z0-9_$]+)\s*\(([^)]*)\)\s*:/);
+    if (defMatch) {
+      if (currentFn) {
+        fns.push({ name: currentFn.name, params: currentFn.params, body: processPythonBody(fnBodyLines) });
+      }
+      currentFn = { name: defMatch[1], params: defMatch[2].split(',').map(p => p.trim()).filter(Boolean).join(',') };
+      fnBodyLines = [];
+      continue;
+    }
+
+    if (currentFn) {
+      fnBodyLines.push(line);
+    }
+  }
+
+  if (currentFn) {
+    fns.push({ name: currentFn.name, params: currentFn.params, body: processPythonBody(fnBodyLines) });
+  }
+
+  const exportNames = fns.map(f => f.name);
+  const outLines = ['@LIN:L1c:0.2'];
+
+  for (const fn of fns) {
+    outLines.push(`!${fn.name}(${fn.params}){`);
+    outLines.push(fn.body);
+    outLines.push('}');
+  }
+
+  outLines.push(`=ex{${exportNames.join(', ')}}`);
+  return outLines.join('\n');
+}
+
+function processPythonBody(lines) {
+  const out = [];
+  const indentStack = [0];
+
+  for (let l of lines) {
+    if (!l.trim() || l.trim().startsWith('#')) continue;
+    const indent = l.match(/^\s*/)[0].length;
+    const isElseOrElif = /^(elif\b|else\s*:)/.test(l.trim());
+
+    if (!isElseOrElif) {
+      while (indentStack.length > 1 && indent < indentStack[indentStack.length - 1]) {
+        indentStack.pop();
+        out.push('  }');
+      }
+    }
+
+    let s = l.trim();
+    const isBlockHeader = s.endsWith(':');
+
+    s = s.replace(/^elif\s+(.+):/, ':($1){');
+    s = s.replace(/^else\s*:/, '}:{');
+    s = s.replace(/^if\s+(.+):/, '?($1){');
+    s = s.replace(/^while\s+(.+):/, ';while($1){');
+    s = s.replace(/^return\s+(.+)$/, '^$1');
+    s = s.replace(/^return$/, '^null');
+    s = s.replace(/\band\b/g, '&&').replace(/\bor\b/g, '||').replace(/\bnot\b/g, '!');
+    s = s.replace(/\bTrue\b/g, 'true').replace(/\bFalse\b/g, 'false').replace(/\bNone\b/g, 'null');
+
+    if (isBlockHeader && !isElseOrElif) {
+      indentStack.push(indent + 4);
+    } else if (!s.endsWith('{') && !s.endsWith('}')) {
+      s += ';';
+    }
+    out.push('  ' + s);
+  }
+
+  while (indentStack.length > 1) {
+    indentStack.pop();
+    out.push('  }');
+  }
+
+  return out.join('\n');
+}
+
+function wrapSingleLineControlStatements(code) {
+  let res = '';
+  let i = 0;
+  while (i < code.length) {
+    if (code.slice(i, i + 3) === 'if ' || code.slice(i, i + 3) === 'if(') {
+      const openParen = code.indexOf('(', i);
+      if (openParen >= 0) {
+        let depth = 1;
+        let k = openParen + 1;
+        while (k < code.length && depth > 0) {
+          if (code[k] === '(') depth++;
+          else if (code[k] === ')') depth--;
+          k++;
+        }
+        const cond = code.slice(openParen + 1, k - 1);
+        let nextNonWs = k;
+        while (nextNonWs < code.length && /\s/.test(code[nextNonWs])) nextNonWs++;
+        if (code[nextNonWs] !== '{') {
+          let stmtEnd = code.indexOf(';', nextNonWs);
+          if (stmtEnd < 0) stmtEnd = code.indexOf('\n', nextNonWs);
+          if (stmtEnd >= 0) {
+            const stmt = code.slice(nextNonWs, stmtEnd + 1).trim();
+            res += `if (${cond}) { ${stmt} }`;
+            i = stmtEnd + 1;
+            continue;
+          }
+        }
+      }
+    }
+    res += code[i];
+    i++;
+  }
+  return res;
+}
+
+function replaceIfWithLin(code) {
+  let res = '';
+  let i = 0;
+  while (i < code.length) {
+    if (code.slice(i, i + 3) === 'if ' || code.slice(i, i + 3) === 'if(') {
+      const openParen = code.indexOf('(', i);
+      if (openParen >= 0) {
+        let depth = 1;
+        let k = openParen + 1;
+        while (k < code.length && depth > 0) {
+          if (code[k] === '(') depth++;
+          else if (code[k] === ')') depth--;
+          k++;
+        }
+        const cond = code.slice(openParen + 1, k - 1);
+        let nextNonWs = k;
+        while (nextNonWs < code.length && /\s/.test(code[nextNonWs])) nextNonWs++;
+        if (code[nextNonWs] === '{') {
+          res += `?(${cond}){`;
+          i = nextNonWs + 1;
+          continue;
+        }
+      }
+    }
+    res += code[i];
+    i++;
+  }
+  return res;
+}
+
+function transpileJsTsToLin(jsSource, opts = {}) {
+  let s = jsSource;
+  // Strip comments and imports
+  s = s.replace(/\/\*[\s\S]*?\*\//g, '');
+  s = s.replace(/^\s*import\s+[\s\S]*?from\s+['"][^'"]+['"];?/gm, '');
+  s = s.replace(/^\s*import\s+['"][^'"]+['"];?/gm, '');
+
+  // Strip TypeScript interfaces and type aliases
+  s = s.replace(/^\s*(?:export\s+)?(?:type|interface)\s+[A-Za-z0-9_$]+[\s\S]*?;\s*$/gm, '');
+  s = s.replace(/^\s*(?:export\s+)?interface\s+[A-Za-z0-9_$]+(?:\s+extends\s+[A-Za-z0-9_$]+)?\s*\{[\s\S]*?\}\s*$/gm, '');
+  s = s.replace(/\)\s*:\s*[A-Za-z0-9_$<>[\]|&]+\s*\{/g, ') {');
+  s = s.replace(/(?:let|const|var)\s+([A-Za-z0-9_$]+)\s*:\s*[A-Za-z0-9_$<>[\]|&]+\s*=/g, '$1 =');
+
+  // Convert Class constructor and methods to standalone functions
+  s = s.replace(/(?:export\s+)?class\s+([A-Za-z0-9_$]+)\s*\{/g, '');
+  s = s.replace(/\bconstructor\s*\(([^)]*)\)\s*\{/g, 'function createClient($1) {');
+
+  // Safe try/catch unpacker
+  let tryPass = 0;
+  while (tryPass < 4 && /\btry\s*\{/.test(s)) {
+    const prev = s;
+    s = s.replace(/\btry\s*\{([^{}]*?)\}\s*catch\s*(?:\([^)]*\))?\s*\{([^{}]*?)\}/g, '$1');
+    if (s === prev) {
+      s = s.replace(/\btry\s*\{/g, '').replace(/\}\s*catch\s*(?:\([^)]*\))?\s*\{/g, '');
+      break;
+    }
+    tryPass++;
+  }
+
+  // Map enum accesses
+  s = s.replace(/\bAgentStatus\.IDLE\b/g, '0');
+  s = s.replace(/\bAgentStatus\.RUNNING\b/g, '1');
+  s = s.replace(/\bAgentStatus\.COMPLETED\b/g, '2');
+  s = s.replace(/\bAgentStatus\.ERROR\b/g, '3');
+
+  // Wrap unbraced single-line if/else statements
+  s = wrapSingleLineControlStatements(s);
+
+  // Extract functions
+  const fns = [];
+  const fnRe = /^\s*(?:export\s+)?(?:async\s+)?(?:function\s+)?([A-Za-z0-9_$]+)\s*\(([^)]*)\)\s*\{/gm;
+  let m;
+  while ((m = fnRe.exec(s)) !== null) {
+    const fnName = m[1];
+    if (['if', 'while', 'for', 'switch', 'catch', 'constructor', 'Error', 'Object', 'Array', 'typeof', 'instanceof'].includes(fnName)) continue;
+    const rawParams = m[2];
+    const openBrace = m.index + m[0].length - 1;
+    let depth = 1;
+    let k = openBrace + 1;
+    while (k < s.length && depth > 0) {
+      if (s[k] === '{') depth++;
+      else if (s[k] === '}') depth--;
+      k++;
+    }
+    const body = s.slice(openBrace + 1, k - 1);
+    
+    // Transform JS body to LIN sigils
+    let linBody = body;
+    linBody = linBody.replace(/\?\?/g, '||');
+    linBody = linBody.replace(/\}\s*else\s+if\s*\(([^)]+)\)\s*\{/g, '}:($1){');
+    linBody = linBody.replace(/\}\s*else\s*\{/g, '}:{');
+    linBody = linBody.replace(/\belse\s+if\s*\(([^)]+)\)\s*\{/g, ':($1){');
+    linBody = linBody.replace(/\belse\s*\{/g, '}:{');
+    linBody = replaceIfWithLin(linBody);
+    linBody = linBody.replace(/\breturn\s+([^;]+);/g, '^$1;');
+    linBody = linBody.replace(/\breturn;/g, '^null;');
+
+    const params = rawParams.split(',').map(p => p.trim().split(/\s*[:=]/)[0]).filter(Boolean).join(',');
+    fns.push({ name: fnName, params, body: linBody });
+  }
+
+  // Also extract arrow functions
+  const arrowRe = /^\s*(?:export\s+)?(?:const|let|var)\s+([A-Za-z0-9_$]+)\s*=\s*(?:async\s+)?\(([^)]*)\)\s*=>\s*\{/gm;
+  while ((m = arrowRe.exec(s)) !== null) {
+    const fnName = m[1];
+    const rawParams = m[2];
+    const openBrace = s.indexOf('{', m.index);
+    if (openBrace < 0) continue;
+    let depth = 1;
+    let k = openBrace + 1;
+    while (k < s.length && depth > 0) {
+      if (s[k] === '{') depth++;
+      else if (s[k] === '}') depth--;
+      k++;
+    }
+    const body = s.slice(openBrace + 1, k - 1);
+    let linBody = body;
+    linBody = linBody.replace(/\?\?/g, '||');
+    linBody = linBody.replace(/\}\s*else\s+if\s*\(([^)]+)\)\s*\{/g, '}:($1){');
+    linBody = linBody.replace(/\}\s*else\s*\{/g, '}:{');
+    linBody = linBody.replace(/\belse\s+if\s*\(([^)]+)\)\s*\{/g, ':($1){');
+    linBody = linBody.replace(/\belse\s*\{/g, '}:{');
+    linBody = replaceIfWithLin(linBody);
+    linBody = linBody.replace(/\breturn\s+([^;]+);/g, '^$1;');
+    linBody = linBody.replace(/\breturn;/g, '^null;');
+
+    const params = rawParams.split(',').map(p => p.trim().split(/\s*[:=]/)[0]).filter(Boolean).join(',');
+    fns.push({ name: fnName, params, body: linBody });
+  }
+
+  if (fns.length === 0) {
+    return `@LIN:L1c:0.2\n=ex{}`;
+  }
+
+  const exportNames = fns.map(f => f.name);
+  const outLines = ['@LIN:L1c:0.2'];
+
+  for (const fn of fns) {
+    outLines.push(`!${fn.name}(${fn.params}){${fn.body}}`);
+  }
+
+  outLines.push(`=ex{${exportNames.join(', ')}}`);
+  return outLines.join('\n');
+}
+
+}
