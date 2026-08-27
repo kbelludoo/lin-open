@@ -1,3 +1,231 @@
-@RULEL:TRANSPOSED_SOURCE:1.0
-~METADATA{original="src/lexer.mjs" lang="mjs"}
-.source{content="export const PUNCT3 = ['>>>=', '===', '!==', '**=', '...', '<<=', '>>=', '>>>', '&&=', '||=', '??='];\nexport const PUNCT2 = ['==', '!=', '<=', '>=', '&&', '||', '++', '--', '+=', '-=', '*=', '/=', '%=', '&=', '|=', '^=', '**', '??', '?.', '=>', '->', '::', '<<', '>>'];\nexport const PUNCT1 = '+-*/%^<>=!&|~?:;,.()[]{}#@';\n\nimport { lexerSlices } from './lexer_slices_load.mjs';\n\nconst REGEX_PREV_OK = new Set([\n  ';', ',', '=', ':', '[', '!', '&', '|', '?', '{', '(', '+', '-', '*', '%', '<', '>', '^', '~',\n  '=>', '==', '!=', '<=', '>=', '&&', '||', '+=', '-=', '*=', '/=', '%=', '&=', '|=', '^=', '??', '?.',\n  'return', 'typeof', 'instanceof', 'in', 'of', 'new', 'delete', 'void', 'do', 'else', 'case', 'yield', 'await', 'match',\n]);\n\nexport class LinSyntaxError extends Error {\n  constructor(message, line, col) {\n    super(`LIN_LEX:${line}:${col}: ${message}`);\n    this.name = 'LinSyntaxError';\n    this.line = line;\n    this.col = col;\n  }\n}\n\nexport function tokenize(src) {\n  const s = String(src || '');\n  const toks = [];\n  let i = 0;\n  let line = 1;\n  let lineStart = 0;\n  const SL = lexerSlices();\n\n  function push(type, value, start, end) {\n    toks.push({ type, value, start, end, line, col: start - lineStart + 1 });\n  }\n\n  while (i < s.length) {\n    const c = s[i];\n    if (c === '\\n') {\n      push('nl', '\\n', i, i + 1);\n      i++;\n      line++;\n      lineStart = i;\n      continue;\n    }\n    if (c === ' ' || c === '\\t' || c === '\\r') {\n      if (SL) {\n        const run = SL.wsRunAt(s, i);\n        i += run > 0 ? run : 1;\n        continue;\n      }\n      i++;\n      continue;\n    }\n    if (c === '/' && s[i + 1] === '/') {\n      let j = s.indexOf('\\n', i);\n      if (j < 0) j = s.length;\n      push('comment', s.slice(i, j), i, j);\n      i = j;\n      continue;\n    }\n    if (c === '/' && s[i + 1] === '*') {\n      let j = s.indexOf('*/', i + 2);\n      j = j < 0 ? s.length : j + 2;\n      push('comment', s.slice(i, j), i, j);\n      for (let k = i; k < j; k++) {\n        if (s[k] === '\\n') {\n          line++;\n          lineStart = k + 1;\n        }\n      }\n      i = j;\n      continue;\n    }\n    if (c === '\"' || c === \"'\" || c === '`') {\n      const q = c;\n      const start = i;\n      i++;\n      let closed = false;\n      while (i < s.length) {\n        const ch = s[i];\n        if (ch === '\\\\') {\n          i += 2;\n          continue;\n        }\n        if (q === '`' && ch === '$' && s[i + 1] === '{') {\n          let depth = 1;\n          i += 2;\n          while (i < s.length && depth > 0) {\n            if (s[i] === '{') depth++;\n            else if (s[i] === '}') depth--;\n            else if (s[i] === '\\n') {\n              line++;\n              lineStart = i + 1;\n            } else if (s[i] === '\"' || s[i] === \"'\" || s[i] === '`') {\n              const innerQ = s[i];\n              i++;\n              while (i < s.length && s[i] !== innerQ) {\n                if (s[i] === '\\\\') i++;\n                i++;\n              }\n            }\n            i++;\n          }\n          continue;\n        }\n        if (ch === '\\n' && q !== '`') throw new LinSyntaxError('unterminated string', line, i - lineStart + 1);\n        if (ch === q) {\n          i++;\n          closed = true;\n          break;\n        }\n        if (ch === '\\n') {\n          line++;\n          lineStart = i + 1;\n        }\n        i++;\n      }\n      if (!closed && q !== '`') throw new LinSyntaxError('unterminated string', line, i - lineStart + 1);\n      push(q === '`' ? 'template' : 'str', s.slice(start, i), start, i);\n      continue;\n    }\n    if (c === '/') {\n      const prev = lastSignificant(toks);\n      const regexAllowed = !prev || (prev.type === 'punct' && REGEX_PREV_OK.has(prev.value)) ||\n        (prev.type === 'id' && REGEX_PREV_OK.has(prev.value));\n      if (regexAllowed) {\n        const start = i;\n        let j = i + 1;\n        let inClass = false;\n        let ok = false;\n        while (j < s.length) {\n          const ch = s[j];\n          if (ch === '\\\\') {\n            j += 2;\n            continue;\n          }\n          if (ch === '\\n') break;\n          if (ch === '[') inClass = true;\n          else if (ch === ']') inClass = false;\n          else if (ch === '/' && !inClass) {\n            j++;\n            while (j < s.length && /[gimsuyvd]/.test(s[j])) j++;\n            ok = true;\n            break;\n          }\n          j++;\n        }\n        if (ok) {\n          push('regex', s.slice(start, j), start, j);\n          i = j;\n          continue;\n        }\n      }\n    }\n    if (SL) {\n      const nl = SL.numLenAt(s, i);\n      if (nl > 0) {\n        const start = i;\n        i += nl;\n        push('num', s.slice(start, i), start, i);\n        continue;\n      }\n    } else if (/[0-9]/.test(c) || (c === '.' && /[0-9]/.test(s[i + 1] || ''))) {\n      const start = i;\n      if (c === '0' && /[xXbBoO]/.test(s[i + 1] || '')) {\n        i += 2;\n        while (i < s.length && /[0-9a-fA-F_]/.test(s[i])) i++;\n      } else {\n        while (i < s.length && /[0-9_]/.test(s[i])) i++;\n        if (s[i] === '.') {\n          i++;\n          while (i < s.length && /[0-9_]/.test(s[i])) i++;\n        }\n        if (/[eE]/.test(s[i] || '') && /[0-9+\\-]/.test(s[i + 1] || '')) {\n          i += 2;\n          while (i < s.length && /[0-9_]/.test(s[i])) i++;\n        }\n      }\n      if (s[i] === 'n') i++;\n      push('num', s.slice(start, i), start, i);\n      continue;\n    }\n    if (SL) {\n      const il = SL.identLenAt(s, i);\n      if (il > 0) {\n        const start = i;\n        i += il;\n        push('id', s.slice(start, i), start, i);\n        continue;\n      }\n    } else if (/[A-Za-z_$]/.test(c)) {\n      const start = i;\n      i++;\n      while (i < s.length && /[A-Za-z0-9_$]/.test(s[i])) i++;\n      push('id', s.slice(start, i), start, i);\n      continue;\n    }\n    const three = s.slice(i, i + 3);\n    if (PUNCT3.includes(three)) {\n      push('punct', three, i, i + 3);\n      i += 3;\n      continue;\n    }\n    const two = s.slice(i, i + 2);\n    if (PUNCT2.includes(two)) {\n      push('punct', two, i, i + 2);\n      i += 2;\n      continue;\n    }\n    if (PUNCT1.includes(c)) {\n      push('punct', c, i, i + 1);\n      i++;\n      continue;\n    }\n    throw new LinSyntaxError(`unexpected char ${JSON.stringify(c)}`, line, i - lineStart + 1);\n  }\n  push('eof', '', s.length, s.length);\n  return toks;\n}\n\nfunction lastSignificant(toks) {\n  for (let k = toks.length - 1; k >= 0; k--) {\n    const t = toks[k];\n    if (t.type === 'nl' || t.type === 'comment') continue;\n    return t;\n  }\n  return null;\n}\n"}
+@RULEL:BOOTSTRAP_LEXER:1.0.0
+~METADATA{original="./src/lexer.mjs" lang="mjs" role="bootstrap_reference"}
+.source{
+export const PUNCT3 = ['>>>=', '===', '!==', '**=', '...', '<<=', '>>=', '>>>', '&&=', '||=', '??='];
+export const PUNCT2 = ['==', '!=', '<=', '>=', '&&', '||', '++', '--', '+=', '-=', '*=', '/=', '%=', '&=', '|=', '^=', '**', '??', '?.', '=>', '->', '::', '<<', '>>'];
+export const PUNCT1 = '+-*/%^<>=!&|~?:;,.()[]{}#@';
+
+import { lexerSlices } from './lexer_slices_load.mjs';
+
+const REGEX_PREV_OK = new Set([
+  ';', ',', '=', ':', '[', '!', '&', '|', '?', '{', '(', '+', '-', '*', '%', '<', '>', '^', '~',
+  '=>', '==', '!=', '<=', '>=', '&&', '||', '+=', '-=', '*=', '/=', '%=', '&=', '|=', '^=', '??', '?.',
+  'return', 'typeof', 'instanceof', 'in', 'of', 'new', 'delete', 'void', 'do', 'else', 'case', 'yield', 'await', 'match',
+]);
+
+export class LinSyntaxError extends Error {
+  constructor(message, line, col) {
+    super(`LIN_LEX:${line}:${col}: ${message}`);
+    this.name = 'LinSyntaxError';
+    this.line = line;
+    this.col = col;
+  }
+}
+
+export function tokenize(src) {
+  const s = String(src || '');
+  const toks = [];
+  let i = 0;
+  let line = 1;
+  let lineStart = 0;
+  const SL = lexerSlices();
+
+  function push(type, value, start, end) {
+    toks.push({ type, value, start, end, line, col: start - lineStart + 1 });
+  }
+
+  while (i < s.length) {
+    const c = s[i];
+    if (c === '\n') {
+      push('nl', '\n', i, i + 1);
+      i++;
+      line++;
+      lineStart = i;
+      continue;
+    }
+    if (c === ' ' || c === '\t' || c === '\r' || c === '\u00a0' || c === '\u200b' || c === '\ufeff') {
+      if (SL) {
+        const run = SL.wsRunAt(s, i);
+        i += run > 0 ? run : 1;
+        continue;
+      }
+      i++;
+      continue;
+    }
+    if (c === '/' && s[i + 1] === '/') {
+      let j = s.indexOf('\n', i);
+      if (j < 0) j = s.length;
+      push('comment', s.slice(i, j), i, j);
+      i = j;
+      continue;
+    }
+    if (c === '/' && s[i + 1] === '*') {
+      let j = s.indexOf('*/', i + 2);
+      j = j < 0 ? s.length : j + 2;
+      push('comment', s.slice(i, j), i, j);
+      for (let k = i; k < j; k++) {
+        if (s[k] === '\n') {
+          line++;
+          lineStart = k + 1;
+        }
+      }
+      i = j;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === '`') {
+      const q = c;
+      const start = i;
+      i++;
+      let closed = false;
+      while (i < s.length) {
+        const ch = s[i];
+        if (ch === '\\') {
+          i += 2;
+          continue;
+        }
+        if (q === '`' && ch === '$' && s[i + 1] === '{') {
+          let depth = 1;
+          i += 2;
+          while (i < s.length && depth > 0) {
+            if (s[i] === '{') depth++;
+            else if (s[i] === '}') depth--;
+            else if (s[i] === '\n') {
+              line++;
+              lineStart = i + 1;
+            } else if (s[i] === '"' || s[i] === "'" || s[i] === '`') {
+              const innerQ = s[i];
+              i++;
+              while (i < s.length && s[i] !== innerQ) {
+                if (s[i] === '\\') i++;
+                i++;
+              }
+            }
+            i++;
+          }
+          continue;
+        }
+        if (ch === '\n' && q !== '`') throw new LinSyntaxError('unterminated string', line, i - lineStart + 1);
+        if (ch === q) {
+          i++;
+          closed = true;
+          break;
+        }
+        if (ch === '\n') {
+          line++;
+          lineStart = i + 1;
+        }
+        i++;
+      }
+      if (!closed && q !== '`') throw new LinSyntaxError('unterminated string', line, i - lineStart + 1);
+      push(q === '`' ? 'template' : 'str', s.slice(start, i), start, i);
+      continue;
+    }
+    if (c === '/') {
+      const prev = lastSignificant(toks);
+      const regexAllowed = !prev || (prev.type === 'punct' && REGEX_PREV_OK.has(prev.value)) ||
+        (prev.type === 'id' && REGEX_PREV_OK.has(prev.value));
+      if (regexAllowed) {
+        const start = i;
+        let j = i + 1;
+        let inClass = false;
+        let ok = false;
+        while (j < s.length) {
+          const ch = s[j];
+          if (ch === '\\') {
+            j += 2;
+            continue;
+          }
+          if (ch === '\n') break;
+          if (ch === '[') inClass = true;
+          else if (ch === ']') inClass = false;
+          else if (ch === '/' && !inClass) {
+            j++;
+            while (j < s.length && /[gimsuyvd]/.test(s[j])) j++;
+            ok = true;
+            break;
+          }
+          j++;
+        }
+        if (ok) {
+          push('regex', s.slice(start, j), start, j);
+          i = j;
+          continue;
+        }
+      }
+    }
+    if (SL) {
+      const nl = SL.numLenAt(s, i);
+      if (nl > 0) {
+        const start = i;
+        i += nl;
+        push('num', s.slice(start, i), start, i);
+        continue;
+      }
+    } else if (/[0-9]/.test(c) || (c === '.' && /[0-9]/.test(s[i + 1] || ''))) {
+      const start = i;
+      if (c === '0' && /[xXbBoO]/.test(s[i + 1] || '')) {
+        i += 2;
+        while (i < s.length && /[0-9a-fA-F_]/.test(s[i])) i++;
+      } else {
+        while (i < s.length && /[0-9_]/.test(s[i])) i++;
+        if (s[i] === '.') {
+          i++;
+          while (i < s.length && /[0-9_]/.test(s[i])) i++;
+        }
+        if (/[eE]/.test(s[i] || '') && /[0-9+\-]/.test(s[i + 1] || '')) {
+          i += 2;
+          while (i < s.length && /[0-9_]/.test(s[i])) i++;
+        }
+      }
+      if (s[i] === 'n') i++;
+      push('num', s.slice(start, i), start, i);
+      continue;
+    }
+    if (SL) {
+      const il = SL.identLenAt(s, i);
+      if (il > 0) {
+        const start = i;
+        i += il;
+        push('id', s.slice(start, i), start, i);
+        continue;
+      }
+    } else if (/[A-Za-z_$]/.test(c)) {
+      const start = i;
+      i++;
+      while (i < s.length && /[A-Za-z0-9_$]/.test(s[i])) i++;
+      push('id', s.slice(start, i), start, i);
+      continue;
+    }
+    const three = s.slice(i, i + 3);
+    if (PUNCT3.includes(three)) {
+      push('punct', three, i, i + 3);
+      i += 3;
+      continue;
+    }
+    const two = s.slice(i, i + 2);
+    if (PUNCT2.includes(two)) {
+      push('punct', two, i, i + 2);
+      i += 2;
+      continue;
+    }
+    if (PUNCT1.includes(c)) {
+      push('punct', c, i, i + 1);
+      i++;
+      continue;
+    }
+    throw new LinSyntaxError(`unexpected char ${JSON.stringify(c)}`, line, i - lineStart + 1);
+  }
+  push('eof', '', s.length, s.length);
+  return toks;
+}
+
+function lastSignificant(toks) {
+  for (let k = toks.length - 1; k >= 0; k--) {
+    const t = toks[k];
+    if (t.type === 'nl' || t.type === 'comment') continue;
+    return t;
+  }
+  return null;
+}
+
+}

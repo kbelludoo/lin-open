@@ -220,6 +220,11 @@ export function emitLinFromJs(jsSource, opts = {}) {
         i++;
         continue;
       }
+      if (t.value === 'class') {
+        while (i < toks.length && toks[i].value !== '{') i++;
+        if (toks[i]?.value === '{') i++;
+        continue;
+      }
       if (t.value === 'if' || t.value === 'else') {
         while (i < toks.length && toks[i].value !== '{') i++;
         if (toks[i]?.value === '{') i++;
@@ -238,9 +243,17 @@ export function emitLinFromJs(jsSource, opts = {}) {
       continue;
     }
     if (t.type === 'id' && (t.value === 'module' || t.value === 'exports')) {
-      if (t.value === 'module' && toks[i + 1]?.value === '.' && toks[i + 2]?.value === 'exports' && toks[i + 3]?.value === '=' && toks[i + 4]?.value === 'function') {
-        i = i + 4;
-        continue;
+      if (t.value === 'module' && toks[i + 1]?.value === '.' && toks[i + 2]?.value === 'exports' && toks[i + 3]?.value === '=') {
+        let n = i + 4;
+        while (n < toks.length && toks[n].type === 'nl') n++;
+        if (toks[n]?.value === 'function') {
+          i = n;
+          continue;
+        }
+        if (toks[n]?.value === '{') {
+          i = n + 1;
+          continue;
+        }
       }
       i = skipStatement(toks, i);
       continue;
@@ -282,6 +295,20 @@ export function emitLinFromJs(jsSource, opts = {}) {
       continue;
     }
     if (t.type === 'id') {
+      let n0 = i + 1;
+      while (n0 < toks.length && toks[n0].type === 'nl') n0++;
+      if (toks[n0]?.value === '(') {
+        const closeParenF = matchBracket(toks, n0);
+        const params = sliceToks(toks, n0 + 1, closeParenF).trim();
+        let openBrace = closeParenF + 1;
+        while (openBrace < toks.length && toks[openBrace].type === 'nl') openBrace++;
+        if (toks[openBrace]?.value === '{') {
+          const closeBrace = matchBracket(toks, openBrace);
+          fns.push({ name: t.value, params: normalizeParams(params), body: sliceToks(toks, openBrace + 1, closeBrace) });
+          i = closeBrace + 1;
+          continue;
+        }
+      }
       let k = i + 1;
       while (k < toks.length && (toks[k].type === 'nl' || toks[k].value === '.' || toks[k].type === 'id' || toks[k].value === '[' || toks[k].value === ']')) k++;
       if (toks[k]?.value === ':' || toks[k]?.value === '=') {

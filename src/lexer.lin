@@ -26,7 +26,7 @@
       lineStart = i;
       continue;
     }
-    ?(c === ' ' || c === '\t' || c === '\r'){
+    ?(c === ' ' || c === '\t' || c === '\r' || c === '\u00a0' || c === '\u200b' || c === '\ufeff'){
       ?(SL){
         const run = SL.wsRunAt(s, i);
         i += run > 0 ? run : 1;
