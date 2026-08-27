@@ -13,8 +13,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { compile } from '../src/compiler.mjs';
+import { ensureRuntime, runtimeUrl } from './lin_runtime.mjs';
 import { ensureToolchains } from './ensure_toolchains.mjs';
+
+await ensureRuntime();
+const { compile } = await import(runtimeUrl('compiler.mjs'));
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CLONES = path.join(ROOT, 'clones_lin');

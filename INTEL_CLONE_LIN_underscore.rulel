@@ -1,20 +1,20 @@
 @RULEL:INTEL_CLONE_LIN:1.3.0
 ^slug="underscore"
 ^lang="LIN"
-^status="PASS"
-^done=true
+^status="PARTIAL_PASS_WITH_FAILS"
+^done=false
 ^published=false
-^suite_rate=1
+^suite_rate=0.6636
 ^suite_total=107
-^pass=107 ^fail=0 ^skip=0
+^pass=71 ^fail=36 ^skip=0
 ^publish_gate="suite_rate==1.0_JS"
 ^host="scripts/clone_lin_loop.mjs v2-compile-gate"
 
 @COMPARISON {
-  pass_names: ["_.lin","after.lin","allKeys.lin","alternateIsDataView.lin","baseCreate.lin","baseIteratee.lin","before.lin","bound.lin","cb.lin","chain.lin","chainResult.lin","chunk.lin","clone.lin","collectNonEnumProps.lin","compact.lin","compose.lin","constant.lin","contains.lin","create.lin","createAssigner.lin","createEscaper.lin","createIndexFinder.lin","createPredicateIndexFinder.lin","createReduce.lin","createSizePropertyCheck.lin","ctor.lin","cycleTracker.lin","debounce.lin","deepGet.lin","each.lin","emulatedSet.lin","escapeChar.lin","every.lin","executeBound.lin","filter.lin","find.lin","findKey.lin","findWhere.lin","first.lin","flatten.lin"]
-  fail_names: []
+  pass_names: ["_.lin","after.lin","allKeys.lin","alternateIsDataView.lin","baseCreate.lin","baseIteratee.lin","before.lin","cb.lin","chain.lin","chunk.lin","collectNonEnumProps.lin","compact.lin","constant.lin","contains.lin","create.lin","createAssigner.lin","createReduce.lin","createSizePropertyCheck.lin","ctor.lin","each.lin","emulatedSet.lin","escapeChar.lin","executeBound.lin","findKey.lin","findWhere.lin","flatten.lin","functions.lin","has.lin","identity.lin","ie11fingerprint.lin","intersection.lin","invert.lin","isBoolean.lin","isElement.lin","isEmpty.lin","isEqual.lin","isFinite.lin","isMatch.lin","isNaN.lin","isNull.lin"]
+  fail_names: ["bound.lin:LIN_PARSE:4:226: expected {, got args","chainResult.lin:LIN_JS_SYNTAX: Unexpected token '?'","clone.lin:LIN_JS_SYNTAX: Unexpected token '?'","compose.lin:LIN_PARSE:4:121: expected {, got result","createEscaper.lin:LIN_JS_SYNTAX: Unexpected token '?'","createIndexFinder.lin:LIN_JS_SYNTAX: Unexpected token '?'","createPredicateIndexFinder.lin:LIN_JS_SYNTAX: Unexpected token '?'","cycleTracker.lin:LIN_PARSE:4:540: expected {, got throw","debounce.lin:LIN_PARSE:4:185: expected {, got result","deepGet.lin:LIN_JS_SYNTAX: Unexpected token '?'","every.lin:LIN_JS_SYNTAX: Unexpected token '?'","filter.lin:LIN_PARSE:4:143: expected {, got results","find.lin:LIN_JS_SYNTAX: Unexpected token '?'","first.lin:LIN_JS_SYNTAX: Unexpected token '?'","get.lin:LIN_JS_SYNTAX: Unexpected token '?'","group.lin:LIN_JS_SYNTAX: Unexpected token '?'","initial.lin:LIN_JS_SYNTAX: Unexpected token '?'","isTypedArray.lin:LIN_JS_SYNTAX: Unexpected token '?'","last.lin:LIN_JS_SYNTAX: Unexpected token '?'","map.lin:LIN_JS_SYNTAX: Unexpected token '?'","max.lin:LIN_JS_SYNTAX: Unexpected token '?'","memoize.lin:LIN_PARSE:4:199: expected {, got cache","min.lin:LIN_JS_SYNTAX: Unexpected token '?'","optimizeCb.lin:LIN_JS_SYNTAX: Unexpected token '?'","range.lin:LIN_JS_SYNTAX: Unexpected token '?'","rest.lin:LIN_JS_SYNTAX: Unexpected token '?'","restArguments.lin:LIN_JS_SYNTAX: Unexpected token '?'","result.lin:LIN_JS_SYNTAX: Unexpected token '?'","shallowProperty.lin:LIN_JS_SYNTAX: Unexpected token '?'","size.lin:LIN_JS_SYNTAX: Unexpected token '?'","some.lin:LIN_JS_SYNTAX: Unexpected token '?'","sortBy.lin:LIN_PARSE:4:293: expected {, got return","sortedIndex.lin:LIN_JS_SYNTAX: Unexpected token ':'","throttle.lin:LIN_PARSE:4:196: expected {, got context","uniq.lin:LIN_JS_SYNTAX: Unexpected token '?'","uniqueId.lin:LIN_JS_SYNTAX: Unexpected token '?'"]
 }
 
 @NOTE_PT {
-  DONE clone-lin-underscore: p=107 f=0 suite_rate=1
+  PARTIAL clone-lin-underscore: p=71 f=36 suite_rate=0.6636
 }

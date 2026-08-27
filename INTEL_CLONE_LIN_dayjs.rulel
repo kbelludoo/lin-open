@@ -1,20 +1,20 @@
 @RULEL:INTEL_CLONE_LIN:1.3.0
 ^slug="dayjs"
 ^lang="LIN"
-^status="PASS"
-^done=true
+^status="PARTIAL_PASS_WITH_FAILS"
+^done=false
 ^published=false
-^suite_rate=1
+^suite_rate=0.5167
 ^suite_total=60
-^pass=60 ^fail=0 ^skip=0
+^pass=31 ^fail=29 ^skip=0
 ^publish_gate="suite_rate==1.0_JS"
 ^host="scripts/clone_lin_loop.mjs v2-compile-gate"
 
 @COMPARISON {
-  pass_names: ["absFloor.lin","absolute.lin","addInput.lin","correctGrammarCase.lin","correctHours.lin","d.lin","dayjs.lin","dd.lin","defaultExport.lin","dual.lin","getDateTimeFormat.lin","getLocalePart.lin","getNumberUnitFormat.lin","h.lin","hh.lin","isBigInt.lin","isDayjs.lin","isDuration.lin","isNegative.lin","isUndefined.lin","lastNumber.lin","m.lin","makeParser.lin","manipulateDuration.lin","meridiem.lin","meridiemMatch.lin","mm.lin","monthDiff.lin","months.lin","monthsShort.lin","mutation.lin","offsetFromString.lin","ordinal.lin","padStart.lin","padZoneStr.lin","parseDate.lin","parseFormattedInput.lin","parseLocale.lin","parseTwoDigitYear.lin","plural.lin"]
-  fail_names: []
+  pass_names: ["absolute.lin","addInput.lin","correctHours.lin","dual.lin","getDateTimeFormat.lin","getNumberUnitFormat.lin","isBigInt.lin","isDayjs.lin","isDuration.lin","isNegative.lin","isUndefined.lin","lastNumber.lin","makeParser.lin","manipulateDuration.lin","meridiem.lin","months.lin","monthsShort.lin","mutation.lin","padStart.lin","parseDate.lin","parseLocale.lin","postformat.lin","preparse.lin","prettyUnit.lin","relativeTimeWithMutation.lin","softMutation.lin","t.lin","threeFour.lin","type_only.lin","u.lin","wrapper.lin"]
+  fail_names: ["absFloor.lin:LIN_JS_SYNTAX: Unexpected token '?'","correctGrammarCase.lin:LIN_JS_SYNTAX: Unexpected token '?'","d.lin:LIN_JS_SYNTAX: Unexpected token '?'","dayjs.lin:LIN_JS_SYNTAX: Unexpected token '?'","dd.lin:LIN_JS_SYNTAX: Unexpected token '?'","defaultExport.lin:LIN_JS_SYNTAX: Unexpected token 'case'","getLocalePart.lin:LIN_JS_SYNTAX: Unexpected token '?'","h.lin:LIN_JS_SYNTAX: Unexpected token '?'","hh.lin:LIN_JS_SYNTAX: Unexpected token '?'","m.lin:LIN_JS_SYNTAX: Unexpected token '?'","meridiemMatch.lin:LIN_JS_SYNTAX: Unexpected token '?'","mm.lin:LIN_JS_SYNTAX: Unexpected token '?'","monthDiff.lin:LIN_JS_SYNTAX: Unexpected token '?'","offsetFromString.lin:LIN_JS_SYNTAX: Unexpected token '?'","ordinal.lin:LIN_JS_SYNTAX: Unexpected token 'default'","padZoneStr.lin:LIN_JS_SYNTAX: Unexpected token '?'","parseFormattedInput.lin:LIN_JS_SYNTAX: Unexpected token '?'","parseTwoDigitYear.lin:LIN_JS_SYNTAX: Unexpected token '?'","plural.lin:LIN_JS_SYNTAX: Unexpected token '?'","relativeTimeFormatter.lin:LIN_JS_SYNTAX: Unexpected token '?'","relativeTimeWithPlural.lin:LIN_JS_SYNTAX: Unexpected token '?'","relativeTimeWithTense.lin:LIN_JS_SYNTAX: Unexpected token '?'","resolveTemplate.lin:LIN_JS_SYNTAX: Unexpected token '?'","roundNumber.lin:LIN_JS_SYNTAX: Unexpected token '?'","s.lin:LIN_JS_SYNTAX: Unexpected token '?'","specialMutationForYears.lin:LIN_JS_SYNTAX: Unexpected token 'default'","translate.lin:LIN_JS_SYNTAX: Unexpected token '?'","y.lin:LIN_JS_SYNTAX: Unexpected token '?'","yy.lin:LIN_JS_SYNTAX: Unexpected token '?'"]
 }
 
 @NOTE_PT {
-  DONE clone-lin-dayjs: p=60 f=0 suite_rate=1
+  PARTIAL clone-lin-dayjs: p=31 f=29 suite_rate=0.5167
 }

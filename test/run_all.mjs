@@ -40,16 +40,20 @@ async function testAsync(name, fn) {
   }
 }
 
-const { LIN_HEADER } = await import(path.join(root, 'src', 'parser.mjs'));
+import { ensureRuntime, runtimeUrl } from '../scripts/lin_runtime.mjs';
+
+await ensureRuntime();
+
+const { LIN_HEADER } = await import(runtimeUrl('parser.mjs'));
 void LIN_HEADER;
-const { parseProgram } = await import(path.join(root, 'src', 'parser.mjs'));
-const { compile, REAL_TARGETS } = await import(path.join(root, 'src', 'compiler.mjs'));
-const { runInMemory, assertJsSyntax } = await import(path.join(root, 'src', 'vm.mjs'));
-const { semanticHash } = await import(path.join(root, 'src', 'semantic_hash.mjs'));
-const { parseRulel, validateComms } = await import(path.join(root, 'src', 'rulel.mjs'));
-const { verify } = await import(path.join(root, 'src', 'verifier.mjs'));
-const { emitLinFromJs } = await import(path.join(root, 'src', 'emit_from_js.mjs'));
-const { emitTs, emitPy, emitGo, emitRust, emitC, emitJava } = await import(path.join(root, 'src', 'emitters.mjs'));
+const { parseProgram } = await import(runtimeUrl('parser.mjs'));
+const { compile, REAL_TARGETS } = await import(runtimeUrl('compiler.mjs'));
+const { runInMemory, assertJsSyntax } = await import(runtimeUrl('vm.mjs'));
+const { semanticHash } = await import(runtimeUrl('semantic_hash.mjs'));
+const { parseRulel, validateComms } = await import(runtimeUrl('rulel.mjs'));
+const { verify } = await import(runtimeUrl('verifier.mjs'));
+const { emitLinFromJs } = await import(runtimeUrl('emit_from_js.mjs'));
+const { emitTs, emitPy, emitGo, emitRust, emitC, emitJava } = await import(runtimeUrl('emitters.mjs'));
 
 function readCorpus(rel) {
   return fs.readFileSync(path.join(CORPUS, rel), 'utf8');
@@ -439,7 +443,7 @@ await testAsync('bin/lin.mjs version|check|compile|run|hash|effects|rulel-check|
 
 console.log('T19 self-host clone loop');
 test('loop reaches suiteRate 1.0 on fixture queue', async () => {
-  const { runCloneLoop } = await import(path.join(root, 'src', 'selfhost', 'loop.mjs'));
+  const { runCloneLoop } = await import(runtimeUrl('selfhost', 'loop.mjs'));
   const queueDir = path.join(__dirname, 'fixtures', 'queue');
   const queue = fs.readdirSync(queueDir).filter((f) => f.endsWith('.js')).map((f) => ({
     name: f.replace(/\.js$/, ''),
@@ -464,7 +468,7 @@ test('loop reaches suiteRate 1.0 on fixture queue', async () => {
 });
 
 test('improve applies repairs and reports applied ids', async () => {
-  const { improveSource } = await import(path.join(root, 'src', 'selfhost', 'loop.mjs'));
+  const { improveSource } = await import(runtimeUrl('selfhost', 'loop.mjs'));
   const messy = [
     "import x from 'y';",
     'export function add(a, b) {',

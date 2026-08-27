@@ -1,20 +1,20 @@
 @RULEL:INTEL_CLONE_LIN:1.3.0
 ^slug="is-number"
 ^lang="LIN"
-^status="PASS"
-^done=true
+^status="FAIL"
+^done=false
 ^published=false
-^suite_rate=1
+^suite_rate=0
 ^suite_total=1
-^pass=1 ^fail=0 ^skip=0
+^pass=0 ^fail=1 ^skip=0
 ^publish_gate="suite_rate==1.0_JS"
 ^host="scripts/clone_lin_loop.mjs v2-compile-gate"
 
 @COMPARISON {
-  pass_names: ["defaultExport.lin"]
-  fail_names: []
+  pass_names: []
+  fail_names: ["defaultExport.lin:LIN_JS_SYNTAX: Unexpected token '?'"]
 }
 
 @NOTE_PT {
-  DONE clone-lin-is-number: p=1 f=0 suite_rate=1
+  PARTIAL clone-lin-is-number: p=0 f=1 suite_rate=0
 }

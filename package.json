@@ -4,7 +4,7 @@
   "description": "LIN — lingua ia nativa. Reescrita completa in-memory: lexer, parser, AST, multi-target emitters (js|ts|py|go|rust|c|java), verifier, RULEL, CLI.",
   "type": "module",
   "private": false,
-  "main": "src/compiler.mjs",
+  "main": "build/runtime/compiler.mjs",
   "bin": {
     "lin": "./bin/lin.mjs",
     "lia": "./bin/lia.mjs",
@@ -26,7 +26,7 @@
     "autonomy-status": "node bin/lin.mjs autonomy-status",
     "ensure-toolchains": "node scripts/ensure_toolchains.mjs",
     "example:safe": "node bin/lin.mjs compile examples/safe-compare.lia --target js -o examples/safe-compare.compiled.js",
-    "bootstrap": "node scripts/bootstrap_compiled_cores.mjs",
+    "bootstrap": "node scripts/lin_bootstrap.mjs",
     "pretest": "npm run bootstrap"
   },
   "keywords": [

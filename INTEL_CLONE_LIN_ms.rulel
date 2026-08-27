@@ -1,20 +1,20 @@
 @RULEL:INTEL_CLONE_LIN:1.3.0
 ^slug="ms"
 ^lang="LIN"
-^status="PASS"
-^done=true
+^status="PARTIAL_PASS_WITH_FAILS"
+^done=false
 ^published=false
-^suite_rate=1
+^suite_rate=0.7143
 ^suite_total=7
-^pass=7 ^fail=0 ^skip=0
+^pass=5 ^fail=2 ^skip=0
 ^publish_gate="suite_rate==1.0_JS"
 ^host="scripts/clone_lin_loop.mjs v2-compile-gate"
 
 @COMPARISON {
-  pass_names: ["fmtLong.lin","fmtShort.lin","format.lin","ms.lin","parse.lin","parseStrict.lin","plural.lin"]
-  fail_names: []
+  pass_names: ["fmtLong.lin","fmtShort.lin","ms.lin","parse.lin","parseStrict.lin"]
+  fail_names: ["format.lin:LIN_JS_SYNTAX: Unexpected token '?'","plural.lin:LIN_JS_SYNTAX: Unexpected token '?'"]
 }
 
 @NOTE_PT {
-  DONE clone-lin-ms: p=7 f=0 suite_rate=1
+  PARTIAL clone-lin-ms: p=5 f=2 suite_rate=0.7143
 }

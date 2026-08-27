@@ -2,13 +2,17 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { compile, REAL_TARGETS, DEFAULT_EMIT_TARGET, LIN_VERSION } from '../src/compiler.mjs';
-import { parseProgram } from '../src/parser.mjs';
-import { programHashes } from '../src/semantic_hash.mjs';
-import { parseRulel, validateComms } from '../src/rulel.mjs';
-import { verify } from '../src/verifier.mjs';
-import { runInMemory } from '../src/vm.mjs';
-import { emitLinFromJs } from '../src/emit_from_js.mjs';
+import { ensureRuntime, runtimeUrl } from '../scripts/lin_runtime.mjs';
+
+await ensureRuntime();
+
+const { compile, REAL_TARGETS, DEFAULT_EMIT_TARGET, LIN_VERSION } = await import(runtimeUrl('compiler.mjs'));
+const { parseProgram } = await import(runtimeUrl('parser.mjs'));
+const { programHashes } = await import(runtimeUrl('semantic_hash.mjs'));
+const { parseRulel, validateComms } = await import(runtimeUrl('rulel.mjs'));
+const { verify } = await import(runtimeUrl('verifier.mjs'));
+const { runInMemory } = await import(runtimeUrl('vm.mjs'));
+const { emitLinFromJs } = await import(runtimeUrl('emit_from_js.mjs'));
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -172,7 +176,7 @@ if (cmd === 'verify') {
 }
 
 if (cmd === 'clone-lin' || cmd === 'clone_lin') {
-  const { runCloneLoop } = await import('../src/selfhost/loop.mjs');
+  const { runCloneLoop } = await import(runtimeUrl('selfhost', 'loop.mjs'));
   const st = takeFlag(rest, '--stop-file');
   const cy = takeFlag(st.args, '--cycles');
   const mf = takeFlag(cy.args, '--max-fns');
@@ -198,7 +202,7 @@ if (cmd === 'clone-lin' || cmd === 'clone_lin') {
 }
 
 if (cmd === 'improve' || cmd === 'evolve') {
-  const { improveSource } = await import('../src/selfhost/loop.mjs');
+  const { improveSource } = await import(runtimeUrl('selfhost', 'loop.mjs'));
   const file = rest[0];
   const text = readInput(file);
   const r = improveSource(text);
@@ -207,7 +211,7 @@ if (cmd === 'improve' || cmd === 'evolve') {
 }
 
 if (cmd === 'autonomy-status' || cmd === 'autonomy_status') {
-  const { autonomyStatus } = await import('../src/selfhost/loop.mjs');
+  const { autonomyStatus } = await import(runtimeUrl('selfhost', 'loop.mjs'));
   const sp = path.resolve(rest[0] || '.clone_state.json');
   console.log(JSON.stringify(autonomyStatus(sp), null, 2));
   process.exit(0);

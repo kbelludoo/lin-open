@@ -1,20 +1,20 @@
 @RULEL:INTEL_CLONE_LIN:1.3.0
 ^slug="nanoid"
 ^lang="LIN"
-^status="PASS"
-^done=true
+^status="PARTIAL_PASS_WITH_FAILS"
+^done=false
 ^published=false
-^suite_rate=1
+^suite_rate=0.875
 ^suite_total=8
-^pass=8 ^fail=0 ^skip=0
+^pass=7 ^fail=1 ^skip=0
 ^publish_gate="suite_rate==1.0_JS"
 ^host="scripts/clone_lin_loop.mjs v2-compile-gate"
 
 @COMPARISON {
-  pass_names: ["customAlphabet.lin","customRandom.lin","error.lin","fillRandom.lin","nanoid.lin","print.lin","random.lin","type_only.lin"]
-  fail_names: []
+  pass_names: ["customAlphabet.lin","error.lin","fillRandom.lin","nanoid.lin","print.lin","random.lin","type_only.lin"]
+  fail_names: ["customRandom.lin:LIN_PARSE:4:170: expected {, got return"]
 }
 
 @NOTE_PT {
-  DONE clone-lin-nanoid: p=8 f=0 suite_rate=1
+  PARTIAL clone-lin-nanoid: p=7 f=1 suite_rate=0.875
 }
