@@ -19,7 +19,103 @@ export function desugarLinSigils(text) {
   s = desugarSigilBlocks(s, '#', 'for');
   s = desugarColonElse(s);
   s = desugarCaretReturns(s);
-  return s;
+  return polishCloneBody(s);
+}
+
+/** Post-desugar polish for known lossy-clone JS emit quirks. */
+function polishCloneBody(s) {
+  let out = String(s || '');
+  // switch fall-through: ensure statement ends before next case/default
+  out = out.replace(/(\)+)\s+(?=case\b|default\b)/g, '$1; ');
+  out = out.replace(/`\s+(?=case\b|default\b)/g, '`; ');
+  out = out.replace(/\breturn\b([^;{}]*?)(?=\s+(?:case\b|default\b))/g, (m, ret) => `return ${ret.trim()};`);
+  // Merge split isLineNode && tail (lossy emit breaks before node.properties...)
+  out = out.replace(
+    /return \['span', 'mark', 'ins', 'del'\]\.includes\(node\.tagName\) &&\s*(?=\}|$)/,
+    "return ['span', 'mark', 'ins', 'del'].includes(node.tagName) && node.properties.class?.includes('line');",
+  );
+  out = out.replace(/\};node\.properties\.class\?\.includes\('line'\);\s*;?\s*(?=return\s+\{name:)/g, '};');
+  out = out.replace(
+    /(\|\||&&)\s*\}([;\s]*)([a-zA-Z_$][\w$.?[\]()'"]*)\s*;/g,
+    (m, op, gap, cont) => `${op} ${cont.trim()};}`,
+  );
+  // const destructure + later const redeclare same binding
+  const bound = new Set();
+  out.replace(/const\s+\{([^}]+)\}/g, (m, pat) => {
+    for (const nm of pat.matchAll(/\b([A-Za-z_$][\w$]*)\b(?=\s*[,=}])/g)) bound.add(nm[1]);
+    return m;
+  });
+  for (const name of bound) {
+    out = out.replace(new RegExp(`([;{}\\s])const\\s+${name}\\s*=`, 'g'), `$1${name} =`);
+  }
+  return out;
+}
+
+/** `~(params){body}` → `function(params){body}` (lossy clone emit). */
+function desugarTildeClosures(text) {
+  let s = String(text || '');
+  if (!/~\s*\(/.test(s)) return s;
+  let out = '';
+  let i = 0;
+  let quote = null;
+  let inRegex = false;
+  while (i < s.length) {
+    const c = s[i];
+    if (quote) {
+      out += c;
+      if (c === '\\') { out += s[++i] || ''; i++; continue; }
+      if (c === quote) quote = null;
+      i++;
+      continue;
+    }
+    if (inRegex) {
+      out += c;
+      if (c === '\\') { out += s[++i] || ''; i++; continue; }
+      if (c === '/') inRegex = false;
+      i++;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === '`') { quote = c; out += c; i++; continue; }
+    if (c === '/' && isRegexStart(s, i)) { inRegex = true; out += c; i++; continue; }
+    if (c === '~' && s[i + 1] === '(') {
+      const openParen = i + 1;
+      const closeParen = findMatchingIn(s, openParen, '(', ')');
+      if (closeParen < 0) { out += c; i++; continue; }
+      let j = closeParen + 1;
+      while (j < s.length && /\s/.test(s[j])) j++;
+      if (s[j] === ')' && s[j + 1] === '{') j++;
+      else if (s[j] === ')') {
+        let k = j + 1;
+        while (k < s.length && /\s/.test(s[k])) k++;
+        if (s[k] === '{') j = k;
+      }
+      if (s[j] !== '{') { out += c; i++; continue; }
+      const closeBrace = findMatchingIn(s, j, '{', '}');
+      if (closeBrace < 0) { out += c; i++; continue; }
+      const params = s.slice(openParen + 1, closeParen);
+      const inner = emitLossyCloneBody(s.slice(j + 1, closeBrace));
+      out += `function(${params}){${inner}}`;
+      i = closeBrace + 1;
+      continue;
+    }
+    out += c;
+    i++;
+  }
+  return out;
+}
+
+function emitLossyCloneBody(raw) {
+  return polishCloneBody(desugarLinSigils(desugarTildeClosures(String(raw || ''))));
+}
+
+export function isLossyCloneProgram(prog) {
+  return (prog.meta || []).some((m) => m.kv && m.kv['^lossy'] === 'true');
+}
+
+/** Render fn body for ^lossy=true clone corpus (desugared rawBody). */
+export function renderLossyFnBody(fn) {
+  if (typeof fn.rawBody === 'string') return emitLossyCloneBody(fn.rawBody);
+  return renderBody(fn.body || []);
 }
 
 function findMatchingIn(s, openIdx, openCh, closeCh) {
@@ -296,7 +392,7 @@ export function renderStmt(st) {
     case 'blockternary':
       return `(${renderExpr(st.cond)}?${renderBody(st.then)}:${renderBody(st.elseExpr)});`;
     case 'for':
-      return `for(${st.init};${renderExpr(st.cond)};${st.step}){${renderBody(st.body)}}`;
+      return `for(${desugarLinSigils(st.init)};${renderExpr(st.cond)};${desugarLinSigils(st.step)}){${renderBody(st.body)}}`;
     case 'forof':
       return `for(const ${st.left} of ${st.right}){${renderBody(st.body)}}`;
     case 'forin':

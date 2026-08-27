@@ -1,5 +1,17 @@
-import { renderBody, renderExpr, renderStmt, fnParamsText } from './render_core.mjs';
+import { renderBody, renderExpr, renderStmt, fnParamsText, isLossyCloneProgram, renderLossyFnBody } from './render_core.mjs';
 import { collectAssignedIds, firstUseIsRead, inferEffect } from './effects.mjs';
+import { assertJsSyntax } from './vm.mjs';
+
+function renderFnBodyJs(fn, lossyClone) {
+  const astBody = renderBody(fn.body);
+  if (!lossyClone) return astBody;
+  try {
+    assertJsSyntax(`function __lin_probe(${fnParamsText(fn)}){${astBody}}`);
+    return astBody;
+  } catch {
+    return renderLossyFnBody(fn);
+  }
+}
 
 export function renderProgramJs(prog, opts = {}) {
   const parts = [];
@@ -40,12 +52,13 @@ export function renderProgramJs(prog, opts = {}) {
   }
   const allFns = prog.fns;
   const effects = new Map();
+  const lossyClone = isLossyCloneProgram(prog);
   for (const fn of allFns) {
     effects.set(fn.name, inferEffect(fnTextStub(fn), allFns.map(fnTextStub)));
   }
   for (const fn of allFns) {
     fn.effect = effects.get(fn.name);
-    const bodyText = renderBody(fn.body);
+    const bodyText = renderFnBodyJs(fn, lossyClone);
     const params = new Set((fn.params || []).map((p) => p.name));
     const bareIds = collectBareStmtIds(bodyText);
     const cleaned = stripBareIdStmts(bodyText);

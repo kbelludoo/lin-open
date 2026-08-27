@@ -1,20 +1,20 @@
 @RULEL:INTEL_CLONE_LIN:1.3.0
 ^slug="30-seconds-of-code"
 ^lang="LIN"
-^status="PARTIAL_PASS_WITH_FAILS"
-^done=false
+^status="PASS"
+^done=true
 ^published=false
-^suite_rate=0.8462
+^suite_rate=1
 ^suite_total=117
-^pass=99 ^fail=18 ^skip=0
+^pass=117 ^fail=0 ^skip=0
 ^publish_gate="suite_rate==1.0_JS"
 ^host="scripts/clone_lin_loop.mjs v2-compile-gate"
 
 @COMPARISON {
-  pass_names: ["bindArrowEvents.lin","booleanToTypedSegment.lin","calculateScrollbarWidth.lin","cleanTokenPunctuation.lin","close.lin","collection.lin","createAttributes.lin","createEmptyStateHTML.lin","createMetadataExtractor.lin","createNotFoundStateHTML.lin","createResultHTML.lin","createResultsHTML.lin","delimitedToTypedSegment.lin","delimitersMatch.lin","deserializeTokens.lin","displayEmptyState.lin","displayNotFoundState.lin","displayResults.lin","embedCodepensFromLinks.lin","exportCollectionData.lin","exportCollectionSnippetData.lin","exportLanguageData.lin","exportSnippetData.lin","extractCollectionData.lin","extractData.lin","extractLanguageData.lin","focusNextResult.lin","focusPreviousResult.lin","frontmatterReader.lin","generateNgrams.lin","getHighlightForLine.lin","getKey.lin","getLabelDisplayAttribute.lin","getLanguageName.lin","getMetaByKey.lin","getMetaString.lin","getMode.lin","handleKeyDown.lin","handleKeyUp.lin","handleMouseMove.lin"]
-  fail_names: ["cleanUpSegments.lin:LIN_PARSE:4:86: expected {, got return","escapeBackslashes.lin:LIN_PARSE:4:196: expected {, got ;","extractCollectionSnippetData.lin:LIN_PARSE:4:275: expected {, got return","extractSnippetData.lin:LIN_JS_SYNTAX: Identifier 'language' has already been declared","getMetaRangeBoundaries.lin:LIN_PARSE:4:187: expected {, got return","getMetaRanges.lin:LIN_PARSE:4:232: expected {, got acc","linkInlineCode.lin:LIN_PARSE:4:243: expected {, got return","loadWebComponents.lin:LIN_PARSE:4:217: expected {, got return","prepare.lin:LIN_PARSE:4:159: closure body expected","searchForNgrams.lin:LIN_PARSE:4:487: expected {, got matches","searchForTerms.lin:LIN_PARSE:4:1222: expected {, got scores","toTypedSegments.lin:LIN_PARSE:4:103: expected {, got return","tokenize.lin:LIN_PARSE:4:264: expected {, got acc","transfomImagePaths.lin:LIN_PARSE:4:167: expected {, got return","transformAdmonitions.lin:LIN_PARSE:4:273: expected {, got return","transformHeadings.lin:LIN_PARSE:4:101: expected {, got return","transformerSectionFolding.lin:LIN_PARSE:4:189: expected {, got return","wrapTables.lin:LIN_PARSE:4:243: expected {, got return"]
+  pass_names: ["bindArrowEvents.lin","booleanToTypedSegment.lin","calculateScrollbarWidth.lin","cleanTokenPunctuation.lin","cleanUpSegments.lin","close.lin","collection.lin","createAttributes.lin","createEmptyStateHTML.lin","createMetadataExtractor.lin","createNotFoundStateHTML.lin","createResultHTML.lin","createResultsHTML.lin","delimitedToTypedSegment.lin","delimitersMatch.lin","deserializeTokens.lin","displayEmptyState.lin","displayNotFoundState.lin","displayResults.lin","embedCodepensFromLinks.lin","escapeBackslashes.lin","exportCollectionData.lin","exportCollectionSnippetData.lin","exportLanguageData.lin","exportSnippetData.lin","extractCollectionData.lin","extractCollectionSnippetData.lin","extractData.lin","extractLanguageData.lin","extractSnippetData.lin","focusNextResult.lin","focusPreviousResult.lin","frontmatterReader.lin","generateNgrams.lin","getHighlightForLine.lin","getKey.lin","getLabelDisplayAttribute.lin","getLanguageName.lin","getMetaByKey.lin","getMetaRangeBoundaries.lin"]
+  fail_names: []
 }
 
 @NOTE_PT {
-  PARTIAL clone-lin-30-seconds-of-code: p=99 f=18 suite_rate=0.8462
+  DONE clone-lin-30-seconds-of-code: p=117 f=0 suite_rate=1
 }
