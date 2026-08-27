@@ -128,7 +128,44 @@
       if (toks[i]?.value === ';') i++;
       continue;
     }
+    ?(t.type === 'id' && (t.value === 'export' || t.value === 'default')){
+      ?(toks[i + 1] && toks[i + 1].type === 'id' && toks[i + 1].value === 'function'){
+        i++;
+        continue;
+      }
+      ?(toks[i + 1] && toks[i + 1].type === 'id' && toks[i + 1].value === 'default'){
+        i++;
+        continue;
+      }
+      i = skipStatement(toks, i);
+      continue;
+    }
+    ?(t.type === 'id' && (t.value === 'import' || t.value === 'from' || t.value === 'try' || t.value === 'catch' || t.value === 'finally' || t.value === 'class' || t.value === 'async')){
+      ?(t.value === 'async' && toks[i + 1] && toks[i + 1].value === 'function'){
+        i++;
+        continue;
+      }
+      i = skipStatement(toks, i);
+      continue;
+    }
+    ?(t.type === 'comment'){
+      i++;
+      continue;
+    }
+    ?(t.type === 'punct' && t.value === '=>'){
+      i = skipStatement(toks, i);
+      continue;
+    }
     ?(t.type === 'id' && (t.value === 'module' || t.value === 'exports')){
+      let k = i;
+      ?(t.value === 'module' && toks[i + 1]?.value === '.' && toks[i + 2]?.value === 'exports' && toks[i + 3]?.value === '=' && toks[i + 4]?.value === 'function'){
+        i = i + 4;
+        continue;
+      }
+      i = skipStatement(toks, i);
+      continue;
+    }
+    ?(t.type === 'punct' && (t.value === '{' || t.value === '(' || t.value === '=' || t.value === '>' || t.value === '*')){
       i = skipStatement(toks, i);
       continue;
     }

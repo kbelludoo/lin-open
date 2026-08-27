@@ -1,3 +1,840 @@
-@RULEL:TRANSPOSED_SOURCE:1.0
-~METADATA{original="src/emit_from_js.mjs" lang="mjs"}
-.source{content="import { tokenize } from './lexer.mjs';\n\nexport class EmitJsUnsupportedError extends Error {\n  constructor(message) {\n    super(`LIN_EMIT_JS_UNSUPPORTED: ${message}`);\n    this.name = 'EmitJsUnsupportedError';\n  }\n}\n\nexport function emitLinFromJs(jsSource, opts = {}) {\n  const toks = tokenize(stripComments(jsSource));\n  const fns = [];\n  const topLevelVars = [];\n  const consts = {};\n  let i = 0;\n  while (i < toks.length && toks[i].type !== 'eof') {\n    const t = toks[i];\n    if (t.type === 'nl') {\n      i++;\n      continue;\n    }\n    if (t.type === 'id' && t.value === 'var' && toks[i + 1]?.value === '$K') {\n      i = parseConstObj(toks, i + 3, consts);\n      continue;\n    }\n    if (t.type === 'id' && t.value === 'function') {\n      const nameTok = toks[i + 1];\n      let k = i + 1;\n      if (toks[k]?.type === 'id') k++;\n      const openParenF = toks[k];\n      if (!nameTok || nameTok.type !== 'id' || !openParenF || openParenF.value !== '(') throw new EmitJsUnsupportedError('bad function decl');\n      const closeParenF = matchBracket(toks, k);\n      const params = sliceToks(toks, k + 1, closeParenF).trim();\n      const openBrace = closeParenF + 1;\n      if (!toks[openBrace] || toks[openBrace].value !== '{') throw new EmitJsUnsupportedError('fn missing body');\n      const closeBrace = matchBracket(toks, openBrace);\n      fns.push({ name: nameTok.value, params: normalizeParams(params), body: sliceToks(toks, openBrace + 1, closeBrace) });\n      i = closeBrace + 1;\n      if (toks[i]?.value === ';') i++;\n      continue;\n    }\n    if (t.type === 'id' && ['var', 'let', 'const'].includes(t.value)) {\n      const nameTok = toks[i + 1];\n      const isArrow = toks[i + 3]?.value === '(' ;\n      const isNamedFn = toks[i + 3]?.value === 'function';\n      if (!nameTok || nameTok.type !== 'id' || toks[i + 2]?.value !== '=' ) {\n        i = skipStatement(toks, i);\n        continue;\n      }\n      if (!isNamedFn) {\n        const initStart = i + 3;\n        let j = initStart;\n        let depth = 0;\n        for (; j < toks.length; j++) {\n          const tk = toks[j];\n          if (tk.type === 'punct') {\n            if ('([{'.includes(tk.value)) depth++;\n            else if (')]}'.includes(tk.value)) {\n              depth--;\n              if (depth === 0) {\n                j++;\n                break;\n              }\n            } else if (depth === 0 && tk.value === ';') break;\n          } else if (tk.type === 'nl' && depth === 0) break;\n        }\n        const initText = sliceToks(toks, initStart, j).trim();\n        if (/^\\(/.test(initText)) {\n          const arrowBodyIdx = findArrowAfterParamsToks(toks, initStart, j);\n          if (arrowBodyIdx >= 0) {\n            const closeParen = matchBracket(toks, initStart);\n            const paramsRaw = sliceToks(toks, initStart + 1, closeParen).trim();\n            let bodyOut;\n            let after;\n            const bt = toks[closeParen + 1];\n            const arrowTok = toks[closeParen + 2];\n            if (bt && bt.value === '=' && arrowTok && arrowTok.value === '>' && toks[closeParen + 3]?.value === '{') {\n              const cb = matchBracket(toks, closeParen + 3);\n              bodyOut = sliceToks(toks, closeParen + 4, cb);\n              after = cb + 1;\n            } else if (bt && bt.value === '=' && arrowTok && arrowTok.value === '>') {\n              let e = closeParen + 3;\n              let d2 = 0;\n              for (; e < toks.length; e++) {\n                const tk = toks[e];\n                if (tk.type === 'punct') {\n                  if ('([{'.includes(tk.value)) d2++;\n                  else if (')]}'.includes(tk.value)) {\n                    d2--;\n                    if (d2 < 0) break;\n                  } else if (d2 === 0 && tk.value === ';') break;\n                } else if (tk.type === 'nl' && d2 === 0) break;\n              }\n              bodyOut = `return ${sliceToks(toks, closeParen + 3, e)};`;\n              after = e;\n            } else {\n              throw new EmitJsUnsupportedError(`top-level ${t.value} ${nameTok.value} = ${initText.slice(0, 40)}`);\n            }\n            fns.push({ name: nameTok.value, params: normalizeParams(paramsRaw), body: bodyOut });\n            topLevelVars.length;\n            i = after;\n            if (toks[i]?.value === ';') i++;\n            continue;\n          }\n        }\n        if (/\\bfunction\\b/.test(initText)) {\n          throw new EmitJsUnsupportedError(`top-level ${t.value} ${nameTok.value} = ${initText.slice(0, 40)}`);\n        }\n        topLevelVars.push({ name: nameTok.value, init: initText });\n        i = j;\n        if (toks[i]?.value === ';') i++;\n        continue;\n      }\n      const openParen = toks[i + 4];\n      void isArrow;\n      const fnKwTok = toks[i + 3];\n      if (!fnKwTok || fnKwTok.value !== 'function') {\n        i = skipStatement(toks, i);\n        continue;\n      }\n      let k = i + 5;\n      if (toks[k]?.type === 'id') k++;\n      const openParenF = toks[k];\n      if (!openParenF || openParenF.value !== '(') throw new EmitJsUnsupportedError('fn missing params');\n      const closeParenF = matchBracket(toks, k);\n      const params = sliceToks(toks, k + 1, closeParenF).trim();\n      const openBrace = closeParenF + 1;\n      if (!toks[openBrace] || toks[openBrace].value !== '{') throw new EmitJsUnsupportedError('fn missing body');\n      const closeBrace = matchBracket(toks, openBrace);\n      fns.push({ name: nameTok.value, params: normalizeParams(params), body: sliceToks(toks, openBrace + 1, closeBrace) });\n      i = closeBrace + 1;\n      if (toks[i]?.value === ';') i++;\n      continue;\n    }\n    if (t.type === 'id' && (t.value === 'module' || t.value === 'exports')) {\n      i = skipStatement(toks, i);\n      continue;\n    }\n    if (t.type === 'punct' && t.value === ';') {\n      i++;\n      continue;\n    }\n    if (t.type === 'str' && /^['\"]use strict['\"]$/.test(t.value)) {\n      i++;\n      if (this && this.eat) {}\n      while (i < toks.length && toks[i].type === 'punct' && toks[i].value === ';') i++;\n      continue;\n    }\n    throw new EmitJsUnsupportedError(`top-level token ${JSON.stringify(t.value)}`);\n  }\n  if (!fns.length) throw new EmitJsUnsupportedError('no functions found');\n  void opts;\n  const lines = ['@LIN:L1c:0.2', '^schema_once ^lossy=true ^ops=emit_from_js', '~G{?=if #=for ^=ret :else}'];\n  for (const fn of fns) {\n    let __body = rewriteBody(fn.body);\n    if (topLevelVars.length) {\n      __body = topLevelVars.map((tv) => `${tv.name}=${tv.init};`).join('') + __body;\n    }\n    lines.push(`!${fn.name}(${fn.params}){${__body}}`);\n  }\n  lines.push(`=ex{${fns.map((f) => f.name).join(',')}}`);\n  return { lin: lines.join('\\n'), fns: fns.map((f) => f.name), consts, topLevelVars };\n}\n\nfunction stripComments(src) {\n  return String(src || '').replace(/\\/\\*[\\s\\S]*?\\*\\//g, '').replace(/^\\s*\\/\\/[^\\n]*$/gm, '');\n}\n\nfunction parseConstObj(toks, start, out) {\n  let depth = 1;\n  let i = start;\n  let key = null;\n  for (; i < toks.length && depth > 0; i++) {\n    const t = toks[i];\n    if (t.value === '{') depth++;\n    else if (t.value === '}') {\n      depth--;\n      continue;\n    }\n    if (depth === 0) break;\n    if (t.type === 'str' && toks[i + 1]?.value === ':') {\n      key = unquote(t.value);\n      i++;\n      continue;\n    }\n    if (key != null && t.value !== ',') {\n      out[key] = collectValueText(toks, i);\n      const nextI = skipValueToks(toks, i);\n      i = nextI - 1;\n      key = null;\n    }\n  }\n  return i;\n}\n\nfunction collectValueText(toks, i) {\n  let text = '';\n  let j = i;\n  while (j < toks.length && !['}', ','].includes(toks[j].value)) {\n    text += (text ? '' : '') + toks[j].value;\n    j++;\n    if (toks[j] && !['}', ',', ':'].includes(toks[j].value) && toks[j].type !== 'nl') continue;\n    break;\n  }\n  return text;\n}\n\nfunction skipValueToks(toks, i) {\n  let j = i;\n  while (j < toks.length && !['}', ','].includes(toks[j].value)) j++;\n  return j;\n}\n\nfunction unquote(s) {\n  return String(s).replace(/^[\"']|[\"']$/g, '');\n}\n\nfunction matchBracket(toks, openIdx) {\n  const openCh = toks[openIdx].value;\n  const pairs = { '(': ')', '[': ']', '{': '}' };\n  let depth = 0;\n  for (let i = openIdx; i < toks.length; i++) {\n    const t = toks[i];\n    if (t.type !== 'punct') continue;\n    if ('([{'.includes(t.value)) depth++;\n    else if (')]}'.includes(t.value)) {\n      depth--;\n      if (depth === 0 && t.value === pairs[openCh]) return i;\n    }\n  }\n  throw new EmitJsUnsupportedError(`unmatched ${openCh}`);\n}\n\nfunction sliceToks(toks, from, toExclusive) {\n  if (toExclusive <= from) return '';\n  const parts = [];\n  for (let i = from; i < toExclusive; i++) {\n    const t = toks[i];\n    if (t.type === 'nl') continue;\n    const prev = parts[parts.length - 1];\n    const needsSpace = prev && /[A-Za-z0-9_$)]$/.test(prev) && /^[A-Za-z0-9_$'\\\"`]/.test(t.value);\n    parts.push((needsSpace ? ' ' : '') + t.value);\n  }\n  return parts.join('').trim();\n}\n\nexport function normalizeParams(paramsRaw) {\n  return String(paramsRaw || '')\n    .split(',')\n    .map((p) => p.trim())\n    .filter(Boolean)\n    .map((p) => p.replace(/\\s*=\\s*[\\s\\S]+$/, ''))\n    .filter(Boolean)\n    .join(',');\n}\n\nexport function rewriteBody(body) {\n  const lowered = lowerSwitches(String(body));\n  const { masked, restore } = maskRegexLiterals(lowered);\n  let s = masked;\n  s = s.replace(/\\breturn\\s+(?=[A-Za-z_$0-9(\\[\\-+!'\"`{])/g, '\\u0001');\n  s = s.replace(/(^|[;{}])\\^/g, '$1\\u0001');\n  s = s.replace(/\\u0001/g, '^');\n  s = rewriteSigilBlocks(s, '?');\n  s = rewriteElseBlocks(s);\n  s = rewriteSigilBlocks(s, '#');\n  s = normalizeBracelessControl(s);\n  s = s.replace(/;\\s*\\^/g, ';^');\n  return restore(s.trim().replace(/;+$/, ''));\n}\n\nexport function lowerSwitches(src) {\n  let out = String(src || '');\n  let guard = 0;\n  for (;;) {\n    if (guard++ > 20) break;\n    const idx = findTopLevelSwitch(out);\n    if (idx < 0) break;\n    const conv = tryConvertSwitch(out, idx);\n    if (!conv) break;\n    out = conv;\n  }\n  return out;\n}\n\nfunction maskSwitchBlocks(src) {\n  const table = [];\n  let out = '';\n  let i = 0;\n  while (i < src.length) {\n    const m = /\\bswitch\\s*\\(/.exec(src.slice(i));\n    if (!m) {\n      out += src[i];\n      i++;\n      continue;\n    }\n    const openParen = i + src.slice(i).indexOf('(');\n    const closeParen = findMatchingIn(src, openParen, '(', ')');\n    if (closeParen < 0) {\n      out += src[i];\n      i++;\n      continue;\n    }\n    let j = closeParen + 1;\n    while (j < src.length && /\\\\s/.test(src[j])) j++;\n    if (src[j] !== '{') {\n      out += src[i];\n      i++;\n      continue;\n    }\n    const closeBrace = findMatchingIn(src, j, '{', '}');\n    if (closeBrace < 0) {\n      out += src[i];\n      i++;\n      continue;\n    }\n    table.push(src.slice(i, closeBrace + 1));\n    out += `\\u0004S${table.length - 1}\\u0004`;\n    i = closeBrace + 1;\n  }\n  return {\n    masked: out,\n    restore: (text) => text.replace(/\\u0004S(\\d+)\\u0004/g, (_, n) => table[Number(n)] ?? ''),\n  };\n}\n\nconst CTRL_OPEN = /(?:^|[;{}])\\s*(?:else\\s+)?(if|while|for)\\s*\\(/g;\nconst ELSE_OPEN = /(?:^|[;{}])\\s*else\\b(?!\\s*(?:\\{|if\\b))/g;\n\nfunction normalizeBracelessControl(s) {\n  for (let guard = 0; guard < 100; guard++) {\n    let changed = false;\n    const re = new RegExp(CTRL_OPEN.source, 'g');\n    let m;\n    while ((m = re.exec(s)) !== null) {\n      const openParen = m.index + m[0].length - 1;\n      const closeParen = findMatchingIn(s, openParen, '(', ')');\n      if (closeParen < 0) continue;\n      let j = closeParen + 1;\n      while (j < s.length && /\\s/.test(s[j])) j++;\n      if (s[j] === '{') continue;\n      const stmtEnd = findStmtEnd(s, j);\n      const wrapped = `${s.slice(0, j)}{${s.slice(j, stmtEnd)}}${s.slice(stmtEnd)}`;\n      s = wrapped;\n      changed = true;\n      break;\n    }\n    if (!changed) {\n      const re2 = new RegExp(ELSE_OPEN.source, 'g');\n      let m2;\n      while ((m2 = re2.exec(s)) !== null) {\n        let j = m2.index + m2[0].length;\n        while (j < s.length && /\\s/.test(s[j])) j++;\n        if (s[j] === '{' || s.slice(j, j + 3) === 'if ') continue;\n        const stmtEnd = findStmtEnd(s, j);\n        const wrapped = `${s.slice(0, j)}{${s.slice(j, stmtEnd)}}${s.slice(stmtEnd)}`;\n        s = wrapped;\n        changed = true;\n        break;\n      }\n    }\n    if (!changed) break;\n  }\n  return s;\n}\n\nconst REGEX_PREV_RE = /[=(:,;!?{[&|^~+\\-*%<>\\[]$/;\nfunction maskRegexLiterals(src) {\n  const table = [];\n  let out = '';\n  let i = 0;\n  while (i < src.length) {\n    const c = src[i];\n    if (c === '\"' || c === \"'\" || c === '`') {\n      const q = c;\n      out += c;\n      i++;\n      while (i < src.length) {\n        if (src[i] === '\\\\') {\n          out += src[i] + (src[i + 1] || '');\n          i += 2;\n          continue;\n        }\n        out += src[i];\n        if (src[i] === q) {\n          i++;\n          break;\n        }\n        i++;\n      }\n      continue;\n    }\n    if (c === '/' && src[i + 1] !== '/' && src[i + 1] !== '*') {\n      const before = out.replace(/\\s+$/, '');\n      const kwMatch = before.match(/([A-Za-z_$][\\w$]*)$/);\n      let isRegex;\n      if (kwMatch) {\n        isRegex = ['return', 'typeof', 'instanceof', 'in', 'of', 'new', 'delete', 'void', 'do', 'else', 'case', 'yield', 'await', 'match'].includes(kwMatch[1]);\n      } else {\n        isRegex = before.length === 0 || REGEX_PREV_RE.test(before);\n      }\n      if (isRegex) {\n        let j = i + 1;\n        let inClass = false;\n        let ok = false;\n        while (j < src.length) {\n          const ch = src[j];\n          if (ch === '\\\\') {\n            j += 2;\n            continue;\n          }\n          if (ch === '\\n') break;\n          if (ch === '[') inClass = true;\n          else if (ch === ']') inClass = false;\n          else if (ch === '/' && !inClass) {\n            j++;\n            while (j < src.length && /[gimsuyvd]/.test(src[j])) j++;\n            ok = true;\n            break;\n          }\n          j++;\n        }\n        if (ok) {\n          table.push(src.slice(i, j));\n          out += `\\u0003R${table.length - 1}\\u0003`;\n          i = j;\n          continue;\n        }\n      }\n    }\n    out += c;\n    i++;\n  }\n  return {\n    masked: out,\n    restore: (text) => text.replace(/\\u0003R(\\d+)\\u0003/g, (_, n) => table[Number(n)] ?? ''),\n  };\n}\n\nfunction findMatchingIn(s, openIdx, openCh, closeCh) {\n  let depth = 0;\n  let quote = null;\n  for (let i = openIdx; i < s.length; i++) {\n    const c = s[i];\n    if (quote) {\n      if (c === '\\\\') i++;\n      else if (c === quote) quote = null;\n      continue;\n    }\n    if (c === '\"' || c === \"'\" || c === '`') {\n      quote = c;\n      continue;\n    }\n    if (c === openCh) depth++;\n    else if (c === closeCh) {\n      depth--;\n      if (depth === 0) return i;\n    }\n  }\n  return -1;\n}\n\nfunction rewriteSigilBlocks(s, sigil) {\n  let out = '';\n  let i = 0;\n  const token = sigil + '(';\n  while (i < s.length) {\n    const idx = s.indexOf(token, i);\n    if (idx < 0) {\n      out += s.slice(i);\n      break;\n    }\n    const prevChar = idx > 0 ? s[idx - 1] : '';\n    if (sigil === '?' && /[A-Za-z0-9_)$\\]]/.test(prevChar)) {\n      out += s.slice(i, idx + 1);\n      i = idx + 1;\n      continue;\n    }\n    if (sigil === '#' && /[A-Za-z0-9_)$\\]]/.test(prevChar)) {\n      out += s.slice(i, idx + 1);\n      i = idx + 1;\n      continue;\n    }\n    const openParen = idx + 1;\n    const closeParen = findMatchingIn(s, openParen, '(', ')');\n    if (closeParen < 0) {\n      out += s.slice(i, idx + token.length);\n      i = idx + token.length;\n      continue;\n    }\n    let j = closeParen + 1;\n    while (j < s.length && /\\s/.test(s[j])) j++;\n    let inner;\n    let after;\n    if (s[j] === '{') {\n      const closeBrace = findMatchingIn(s, j, '{', '}');\n      if (closeBrace < 0) {\n        out += s.slice(i, idx + token.length);\n        i = idx + token.length;\n        continue;\n      }\n      inner = rewriteBody(s.slice(j + 1, closeBrace));\n      after = closeBrace + 1;\n    } else {\n      const stmtEnd = findStmtEnd(s, j);\n      inner = rewriteBody(s.slice(j, stmtEnd));\n      inner = inner.trim().replace(/;$/, '');\n      after = stmtEnd;\n    }\n    const head = s.slice(openParen + 1, closeParen);\n    out += s.slice(i, idx) + `${sigil}(${head}){${inner}}`;\n    i = after;\n  }\n  return out;\n}\n\nfunction findStmtEnd(s, from) {\n  let depth = 0;\n  let quote = null;\n  for (let i = from; i < s.length; i++) {\n    const c = s[i];\n    if (quote) {\n      if (c === '\\\\') i++;\n      else if (c === quote) quote = null;\n      continue;\n    }\n    if (c === '\"' || c === \"'\" || c === '`') {\n      quote = c;\n      continue;\n    }\n    if ('([{'.includes(c)) depth++;\n    else if (')]}'.includes(c)) depth--;\n    else if (depth === 0 && c === ';') return i + 1;\n    else if (depth === 0 && c === '}' ) return i;\n  }\n  return s.length;\n}\n\nfunction rewriteElseBlocks(s) {\n  let out = '';\n  let i = 0;\n  while (i < s.length) {\n    const idx = s.indexOf('else', i);\n    if (idx < 0) {\n      out += s.slice(i);\n      break;\n    }\n    const beforeOk = idx === 0 || /[^A-Za-z0-9_$]/.test(s[idx - 1]);\n    if (!beforeOk) {\n      out += s.slice(i, idx + 4);\n      i = idx + 4;\n      continue;\n    }\n    let j = idx + 4;\n    while (j < s.length && /\\s/.test(s[j])) j++;\n    if (s.slice(j, j + 2) === 'if' ) {\n      let k = j + 2;\n      while (k < s.length && /\\s/.test(s[k])) k++;\n      if (s[k] === '(') {\n        const closeParen = findMatchingIn(s, k, '(', ')');\n        if (closeParen >= 0) {\n          let m = closeParen + 1;\n          while (m < s.length && /\\s/.test(s[m])) m++;\n          if (s[m] === '{') {\n            const closeBrace = findMatchingIn(s, m, '{', '}');\n            if (closeBrace >= 0) {\n              const head = s.slice(k + 1, closeParen);\n              const inner = rewriteBody(s.slice(m + 1, closeBrace));\n              out += s.slice(i, idx) + `:( ${head} ){${inner}}`;\n              i = closeBrace + 1;\n              continue;\n            }\n          }\n        }\n      }\n    }\n    if (s[j] === '{') {\n      const closeBrace = findMatchingIn(s, j, '{', '}');\n      if (closeBrace >= 0) {\n        const inner = rewriteBody(s.slice(j + 1, closeBrace));\n        out += s.slice(i, idx) + `:{${inner}}`;\n        i = closeBrace + 1;\n        continue;\n      }\n    }\n    out += s.slice(i, idx + 4);\n    i = idx + 4;\n  }\n  return out;\n}\n\nfunction skipStatement(toks, from) {\n  let depth = 0;\n  let i = from;\n  for (; i < toks.length; i++) {\n    const t = toks[i];\n    if (t.type === 'punct') {\n      if ('([{'.includes(t.value)) depth++;\n      else if (')]}'.includes(t.value)) {\n        depth--;\n        if (depth <= 0 && [';', 'nl', 'eof'].includes(toks[i + 1]?.type) ) return i + 1;\n        if (depth < 0) return i + 1;\n      } else if (depth === 0 && t.value === ';') return i + 1;\n    }\n  }\n  return i;\n}\n\n\nfunction findArrowAfterParamsToks(toks, from, toExclusive) {\n  let depth = 0;\n  for (let j = from; j < Math.min(toExclusive + 2, toks.length); j++) {\n    const tk = toks[j];\n    if (tk.type === 'punct') {\n      if ('([{'.includes(tk.value)) depth++;\n      else if (')]}'.includes(tk.value)) depth--;\n      else if (depth === 0 && tk.value === '=' && toks[j + 1]?.value === '>') return j;\n    }\n  }\n  return -1;\n}\n\nfunction findTopLevelSwitch(s) {\n  const re = /\\bswitch\\s*\\(/g;\n  let m;\n  let depth = 0;\n  let i = 0;\n  while (i < s.length) {\n    const c = s[i];\n    if (c === '\"' || c === \"'\" || c === '`') {\n      const q = c;\n      i++;\n      while (i < s.length && s[i] !== q) {\n        if (s[i] === '\\\\') i++;\n        i++;\n      }\n      i++;\n      continue;\n    }\n    if (c === '{') depth++;\n    else if (c === '}') depth--;\n    else {\n      re.lastIndex = i;\n      const mm = re.exec(s);\n      if (mm && mm.index === i && depth === 0) return i;\n    }\n    i++;\n  }\n  void m;\n  return -1;\n}\n\nfunction tryConvertSwitch(s, idx) {\n  const openParen = s.indexOf('(', idx);\n  const closeParen = matchBracketChar(s, openParen);\n  if (closeParen < 0) return null;\n  const disc = s.slice(openParen + 1, closeParen).trim();\n  let j = closeParen + 1;\n  while (j < s.length && /\\s/.test(s[j])) j++;\n  if (s[j] !== '{') return null;\n  const closeBrace = matchBracketChar(s, j);\n  if (closeBrace < 0) return null;\n  const inner = s.slice(j + 1, closeBrace);\n\n  const arms = [];\n  let cur = { labels: [], body: [] };\n  let i = 0;\n  const n = inner.length;\n  while (i < n) {\n    while (i < n && /[\\s;]/.test(inner[i])) i++;\n    if (i >= n) break;\n    if (startsWithWord(inner, i, 'case')) {\n      i += 4;\n      while (i < n && /[\\s]/.test(inner[i])) i++;\n      const vStart = i;\n      let q = null;\n      for (; i < n; i++) {\n        const c = inner[i];\n        if (q) {\n          if (c === '\\\\') i++;\n          else if (c === q) q = null;\n          continue;\n        }\n        if (c === '\"' || c === \"'\") q = c;\n        else if (c === ':') break;\n      }\n      if (q || inner[i] !== ':') return null;\n      cur = { labels: [], body: [] };\n      arms.push(cur);\n      cur.labels.push(inner.slice(vStart, i).trim());\n      i++;\n      continue;\n    }\n    if (startsWithWord(inner, i, 'default')) {\n      i += 7;\n      while (i < n && inner[i] !== ':') i++;\n      i++;\n      cur = { labels: [], body: [], def: true };\n      arms.push(cur);\n      continue;\n    }\n    let stmtEnd = i;\n    let d2 = 0;\n    let q2 = null;\n    for (; stmtEnd < n; stmtEnd++) {\n      const c = inner[stmtEnd];\n      if (q2) {\n        if (c === '\\\\') stmtEnd++;\n        else if (c === q2) q2 = null;\n        continue;\n      }\n      if (c === '\"' || c === \"'\" || c === '`') {\n        q2 = c;\n        continue;\n      }\n      if ('([{'.includes(c)) d2++;\n      else if (')]}'.includes(c)) d2--;\n      else if (d2 === 0 && c === ';') {\n        stmtEnd++;\n        break;\n      }\n      if (d2 === 0) {\n        const rest = inner.slice(stmtEnd);\n        if (startsWithWord(rest, 0, 'case') || startsWithWord(rest, 0, 'default')) break;\n      }\n    }\n    let stmt = inner.slice(i, stmtEnd).trim();\n    stmt = stmt.replace(/^break\\s*;?\\s*$/, '').replace(/;\\s*break\\s*;?$/, ';');\n    if (stmt) cur.body.push(stmt);\n    i = stmtEnd;\n  }\n\n  if (!arms.length) return null;\n  for (const arm of arms) {\n    if (!arm.def && !arm.labels.length) return null;\n    const last = arm.body[arm.body.length - 1] || '';\n    if (arm.body.length && !/^(\\^|return|throw|break)/.test(last.trim()) && !/^\\^\\s/.test(last.trim())) {\n      if (!/^(return|\\^)/.test(arm.body.join(';').trim())) return null;\n    }\n  }\n  const hasDefault = arms.some((a) => a.def);\n  const parts = [];\n  let first = true;\n  for (const arm of arms) {\n    if (arm.def) continue;\n    const condExpr = arm.labels.map((l) => `${disc}===${l}`).join('||');\n    const bodyStr = arm.body.join(';');\n    const prefix = first ? '?(' : ':?(';\n    parts.push(`${prefix}${condExpr}){${bodyStr}}`);\n    first = false;\n  }\n  const defArm = arms.find((a) => a.def);\n  if (defArm && defArm.body.length) {\n    parts.push(`:{${defArm.body.join(';')}}`);\n  } else if (defArm) {\n    parts.push(':{break}');\n  }\n  if (!first) {\n    let chain = parts.join('');\n    if (!hasDefault) chain += '';\n    return s.slice(0, idx) + chain + s.slice(closeBrace + 1);\n  }\n  return s.slice(0, idx) + '/*switch_empty*/' + s.slice(closeBrace + 1);\n}\n\nfunction startsWithWord(text, i, word) {\n  if (!text.startsWith(word, i)) return false;\n  const before = i === 0 ? '' : text[i - 1];\n  const after = text[i + word.length];\n  if (/[\\w$]/.test(before)) return false;\n  if (/[\\w$]/.test(after || '')) return false;\n  return true;\n}\n\nfunction matchBracketChar(s, openIdx) {\n  if (openIdx < 0 || openIdx >= s.length) return -1;\n  const openCh = s[openIdx];\n  const pairs = { '(': ')', '[': ']', '{': '}' };\n  let depth = 0;\n  let quote = null;\n  for (let i = openIdx; i < s.length; i++) {\n    const c = s[i];\n    if (quote) {\n      if (c === '\\\\') i++;\n      else if (c === quote) quote = null;\n      continue;\n    }\n    if (c === '\"' || c === \"'\" || c === '`') {\n      quote = c;\n      continue;\n    }\n    if (c === openCh) depth++;\n    else if (c === pairs[openCh]) {\n      depth--;\n      if (depth === 0) return i;\n    }\n  }\n  return -1;\n}\n"}
+@RULEL:BOOTSTRAP_EMIT_FROM_JS:1.0.0
+~METADATA{original="./src/emit_from_js.mjs" lang="mjs" role="bootstrap_reference"}
+.source{
+import { tokenize } from './lexer.mjs';
+
+export class EmitJsUnsupportedError extends Error {
+  constructor(message) {
+    super(`LIN_EMIT_JS_UNSUPPORTED: ${message}`);
+    this.name = 'EmitJsUnsupportedError';
+  }
+}
+
+export function emitLinFromJs(jsSource, opts = {}) {
+  const toks = tokenize(stripComments(jsSource));
+  const fns = [];
+  const topLevelVars = [];
+  const consts = {};
+  let i = 0;
+  while (i < toks.length && toks[i].type !== 'eof') {
+    const t = toks[i];
+    if (t.type === 'nl') {
+      i++;
+      continue;
+    }
+    if (t.type === 'id' && t.value === 'var' && toks[i + 1]?.value === '$K') {
+      i = parseConstObj(toks, i + 3, consts);
+      continue;
+    }
+    if (t.type === 'id' && t.value === 'function') {
+      const nameTok = toks[i + 1];
+      let k = i + 1;
+      if (toks[k]?.type === 'id') k++;
+      const openParenF = toks[k];
+      if (!nameTok || nameTok.type !== 'id' || !openParenF || openParenF.value !== '(') throw new EmitJsUnsupportedError('bad function decl');
+      const closeParenF = matchBracket(toks, k);
+      const params = sliceToks(toks, k + 1, closeParenF).trim();
+      const openBrace = closeParenF + 1;
+      if (!toks[openBrace] || toks[openBrace].value !== '{') throw new EmitJsUnsupportedError('fn missing body');
+      const closeBrace = matchBracket(toks, openBrace);
+      fns.push({ name: nameTok.value, params: normalizeParams(params), body: sliceToks(toks, openBrace + 1, closeBrace) });
+      i = closeBrace + 1;
+      if (toks[i]?.value === ';') i++;
+      continue;
+    }
+    if (t.type === 'id' && ['var', 'let', 'const'].includes(t.value)) {
+      const nameTok = toks[i + 1];
+      const isArrow = toks[i + 3]?.value === '(' ;
+      const isNamedFn = toks[i + 3]?.value === 'function';
+      if (!nameTok || nameTok.type !== 'id' || toks[i + 2]?.value !== '=' ) {
+        i = skipStatement(toks, i);
+        continue;
+      }
+      if (!isNamedFn) {
+        const initStart = i + 3;
+        let j = initStart;
+        let depth = 0;
+        for (; j < toks.length; j++) {
+          const tk = toks[j];
+          if (tk.type === 'punct') {
+            if ('([{'.includes(tk.value)) depth++;
+            else if (')]}'.includes(tk.value)) {
+              depth--;
+              if (depth === 0) {
+                j++;
+                break;
+              }
+            } else if (depth === 0 && tk.value === ';') break;
+          } else if (tk.type === 'nl' && depth === 0) break;
+        }
+        const initText = sliceToks(toks, initStart, j).trim();
+        if (/^\(/.test(initText)) {
+          const arrowBodyIdx = findArrowAfterParamsToks(toks, initStart, j);
+          if (arrowBodyIdx >= 0) {
+            const closeParen = matchBracket(toks, initStart);
+            const paramsRaw = sliceToks(toks, initStart + 1, closeParen).trim();
+            let bodyOut;
+            let after;
+            const bt = toks[closeParen + 1];
+            const arrowTok = toks[closeParen + 2];
+            if (bt && bt.value === '=' && arrowTok && arrowTok.value === '>' && toks[closeParen + 3]?.value === '{') {
+              const cb = matchBracket(toks, closeParen + 3);
+              bodyOut = sliceToks(toks, closeParen + 4, cb);
+              after = cb + 1;
+            } else if (bt && bt.value === '=' && arrowTok && arrowTok.value === '>') {
+              let e = closeParen + 3;
+              let d2 = 0;
+              for (; e < toks.length; e++) {
+                const tk = toks[e];
+                if (tk.type === 'punct') {
+                  if ('([{'.includes(tk.value)) d2++;
+                  else if (')]}'.includes(tk.value)) {
+                    d2--;
+                    if (d2 < 0) break;
+                  } else if (d2 === 0 && tk.value === ';') break;
+                } else if (tk.type === 'nl' && d2 === 0) break;
+              }
+              bodyOut = `return ${sliceToks(toks, closeParen + 3, e)};`;
+              after = e;
+            } else {
+              throw new EmitJsUnsupportedError(`top-level ${t.value} ${nameTok.value} = ${initText.slice(0, 40)}`);
+            }
+            fns.push({ name: nameTok.value, params: normalizeParams(paramsRaw), body: bodyOut });
+            topLevelVars.length;
+            i = after;
+            if (toks[i]?.value === ';') i++;
+            continue;
+          }
+        }
+        if (/\bfunction\b/.test(initText)) {
+          throw new EmitJsUnsupportedError(`top-level ${t.value} ${nameTok.value} = ${initText.slice(0, 40)}`);
+        }
+        topLevelVars.push({ name: nameTok.value, init: initText });
+        i = j;
+        if (toks[i]?.value === ';') i++;
+        continue;
+      }
+      const openParen = toks[i + 4];
+      void isArrow;
+      const fnKwTok = toks[i + 3];
+      if (!fnKwTok || fnKwTok.value !== 'function') {
+        i = skipStatement(toks, i);
+        continue;
+      }
+      let k = i + 5;
+      if (toks[k]?.type === 'id') k++;
+      const openParenF = toks[k];
+      if (!openParenF || openParenF.value !== '(') throw new EmitJsUnsupportedError('fn missing params');
+      const closeParenF = matchBracket(toks, k);
+      const params = sliceToks(toks, k + 1, closeParenF).trim();
+      const openBrace = closeParenF + 1;
+      if (!toks[openBrace] || toks[openBrace].value !== '{') throw new EmitJsUnsupportedError('fn missing body');
+      const closeBrace = matchBracket(toks, openBrace);
+      fns.push({ name: nameTok.value, params: normalizeParams(params), body: sliceToks(toks, openBrace + 1, closeBrace) });
+      i = closeBrace + 1;
+      if (toks[i]?.value === ';') i++;
+      continue;
+    }
+    if (t.type === 'id' && (t.value === 'export' || t.value === 'default')) {
+      if (toks[i + 1] && toks[i + 1].type === 'id' && toks[i + 1].value === 'function') {
+        i++;
+        continue;
+      }
+      if (toks[i + 1] && toks[i + 1].type === 'id' && toks[i + 1].value === 'default') {
+        i++;
+        continue;
+      }
+      i = skipStatement(toks, i);
+      continue;
+    }
+    if (t.type === 'id' && (t.value === 'import' || t.value === 'from' || t.value === 'try' || t.value === 'catch' || t.value === 'finally' || t.value === 'class' || t.value === 'async')) {
+      if (t.value === 'async' && toks[i + 1] && toks[i + 1].value === 'function') {
+        i++;
+        continue;
+      }
+      i = skipStatement(toks, i);
+      continue;
+    }
+    if (t.type === 'comment') {
+      i++;
+      continue;
+    }
+    if (t.type === 'punct' && t.value === '=>') {
+      i = skipStatement(toks, i);
+      continue;
+    }
+    if (t.type === 'id' && (t.value === 'module' || t.value === 'exports')) {
+      if (t.value === 'module' && toks[i + 1]?.value === '.' && toks[i + 2]?.value === 'exports' && toks[i + 3]?.value === '=' && toks[i + 4]?.value === 'function') {
+        i = i + 4;
+        continue;
+      }
+      i = skipStatement(toks, i);
+      continue;
+    }
+    if (t.type === 'punct' && (t.value === '{' || t.value === '(' || t.value === '=' || t.value === '>' || t.value === '*')) {
+      i = skipStatement(toks, i);
+      continue;
+    }
+    if (t.type === 'punct' && t.value === ';') {
+      i++;
+      continue;
+    }
+    if (t.type === 'str' && /^['"]use strict['"]$/.test(t.value)) {
+      i++;
+      if (this && this.eat) {}
+      while (i < toks.length && toks[i].type === 'punct' && toks[i].value === ';') i++;
+      continue;
+    }
+    throw new EmitJsUnsupportedError(`top-level token ${JSON.stringify(t.value)}`);
+  }
+  if (!fns.length) throw new EmitJsUnsupportedError('no functions found');
+  void opts;
+  const lines = ['@LIN:L1c:0.2', '^schema_once ^lossy=true ^ops=emit_from_js', '~G{?=if #=for ^=ret :else}'];
+  for (const fn of fns) {
+    let __body = rewriteBody(fn.body);
+    if (topLevelVars.length) {
+      __body = topLevelVars.map((tv) => `${tv.name}=${tv.init};`).join('') + __body;
+    }
+    lines.push(`!${fn.name}(${fn.params}){${__body}}`);
+  }
+  lines.push(`=ex{${fns.map((f) => f.name).join(',')}}`);
+  return { lin: lines.join('\n'), fns: fns.map((f) => f.name), consts, topLevelVars };
+}
+
+function stripComments(src) {
+  return String(src || '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/[^\n]*$/gm, '');
+}
+
+function parseConstObj(toks, start, out) {
+  let depth = 1;
+  let i = start;
+  let key = null;
+  for (; i < toks.length && depth > 0; i++) {
+    const t = toks[i];
+    if (t.value === '{') depth++;
+    else if (t.value === '}') {
+      depth--;
+      continue;
+    }
+    if (depth === 0) break;
+    if (t.type === 'str' && toks[i + 1]?.value === ':') {
+      key = unquote(t.value);
+      i++;
+      continue;
+    }
+    if (key != null && t.value !== ',') {
+      out[key] = collectValueText(toks, i);
+      const nextI = skipValueToks(toks, i);
+      i = nextI - 1;
+      key = null;
+    }
+  }
+  return i;
+}
+
+function collectValueText(toks, i) {
+  let text = '';
+  let j = i;
+  while (j < toks.length && !['}', ','].includes(toks[j].value)) {
+    text += (text ? '' : '') + toks[j].value;
+    j++;
+    if (toks[j] && !['}', ',', ':'].includes(toks[j].value) && toks[j].type !== 'nl') continue;
+    break;
+  }
+  return text;
+}
+
+function skipValueToks(toks, i) {
+  let j = i;
+  while (j < toks.length && !['}', ','].includes(toks[j].value)) j++;
+  return j;
+}
+
+function unquote(s) {
+  return String(s).replace(/^["']|["']$/g, '');
+}
+
+function matchBracket(toks, openIdx) {
+  const openCh = toks[openIdx].value;
+  const pairs = { '(': ')', '[': ']', '{': '}' };
+  let depth = 0;
+  for (let i = openIdx; i < toks.length; i++) {
+    const t = toks[i];
+    if (t.type !== 'punct') continue;
+    if ('([{'.includes(t.value)) depth++;
+    else if (')]}'.includes(t.value)) {
+      depth--;
+      if (depth === 0 && t.value === pairs[openCh]) return i;
+    }
+  }
+  throw new EmitJsUnsupportedError(`unmatched ${openCh}`);
+}
+
+function sliceToks(toks, from, toExclusive) {
+  if (toExclusive <= from) return '';
+  const parts = [];
+  for (let i = from; i < toExclusive; i++) {
+    const t = toks[i];
+    if (t.type === 'nl') continue;
+    const prev = parts[parts.length - 1];
+    const needsSpace = prev && /[A-Za-z0-9_$)]$/.test(prev) && /^[A-Za-z0-9_$'\"`]/.test(t.value);
+    parts.push((needsSpace ? ' ' : '') + t.value);
+  }
+  return parts.join('').trim();
+}
+
+export function normalizeParams(paramsRaw) {
+  return String(paramsRaw || '')
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => p.replace(/\s*=\s*[\s\S]+$/, ''))
+    .filter(Boolean)
+    .join(',');
+}
+
+export function rewriteBody(body) {
+  const lowered = lowerSwitches(String(body));
+  const { masked, restore } = maskRegexLiterals(lowered);
+  let s = masked;
+  s = s.replace(/\breturn\s+(?=[A-Za-z_$0-9(\[\-+!'"`{])/g, '\u0001');
+  s = s.replace(/(^|[;{}])\^/g, '$1\u0001');
+  s = s.replace(/\u0001/g, '^');
+  s = rewriteSigilBlocks(s, '?');
+  s = rewriteElseBlocks(s);
+  s = rewriteSigilBlocks(s, '#');
+  s = normalizeBracelessControl(s);
+  s = s.replace(/;\s*\^/g, ';^');
+  return restore(s.trim().replace(/;+$/, ''));
+}
+
+export function lowerSwitches(src) {
+  let out = String(src || '');
+  let guard = 0;
+  for (;;) {
+    if (guard++ > 20) break;
+    const idx = findTopLevelSwitch(out);
+    if (idx < 0) break;
+    const conv = tryConvertSwitch(out, idx);
+    if (!conv) break;
+    out = conv;
+  }
+  return out;
+}
+
+function maskSwitchBlocks(src) {
+  const table = [];
+  let out = '';
+  let i = 0;
+  while (i < src.length) {
+    const m = /\bswitch\s*\(/.exec(src.slice(i));
+    if (!m) {
+      out += src[i];
+      i++;
+      continue;
+    }
+    const openParen = i + src.slice(i).indexOf('(');
+    const closeParen = findMatchingIn(src, openParen, '(', ')');
+    if (closeParen < 0) {
+      out += src[i];
+      i++;
+      continue;
+    }
+    let j = closeParen + 1;
+    while (j < src.length && /\\s/.test(src[j])) j++;
+    if (src[j] !== '{') {
+      out += src[i];
+      i++;
+      continue;
+    }
+    const closeBrace = findMatchingIn(src, j, '{', '}');
+    if (closeBrace < 0) {
+      out += src[i];
+      i++;
+      continue;
+    }
+    table.push(src.slice(i, closeBrace + 1));
+    out += `\u0004S${table.length - 1}\u0004`;
+    i = closeBrace + 1;
+  }
+  return {
+    masked: out,
+    restore: (text) => text.replace(/\u0004S(\d+)\u0004/g, (_, n) => table[Number(n)] ?? ''),
+  };
+}
+
+const CTRL_OPEN = /(?:^|[;{}])\s*(?:else\s+)?(if|while|for)\s*\(/g;
+const ELSE_OPEN = /(?:^|[;{}])\s*else\b(?!\s*(?:\{|if\b))/g;
+
+function normalizeBracelessControl(s) {
+  for (let guard = 0; guard < 100; guard++) {
+    let changed = false;
+    const re = new RegExp(CTRL_OPEN.source, 'g');
+    let m;
+    while ((m = re.exec(s)) !== null) {
+      const openParen = m.index + m[0].length - 1;
+      const closeParen = findMatchingIn(s, openParen, '(', ')');
+      if (closeParen < 0) continue;
+      let j = closeParen + 1;
+      while (j < s.length && /\s/.test(s[j])) j++;
+      if (s[j] === '{') continue;
+      const stmtEnd = findStmtEnd(s, j);
+      const wrapped = `${s.slice(0, j)}{${s.slice(j, stmtEnd)}}${s.slice(stmtEnd)}`;
+      s = wrapped;
+      changed = true;
+      break;
+    }
+    if (!changed) {
+      const re2 = new RegExp(ELSE_OPEN.source, 'g');
+      let m2;
+      while ((m2 = re2.exec(s)) !== null) {
+        let j = m2.index + m2[0].length;
+        while (j < s.length && /\s/.test(s[j])) j++;
+        if (s[j] === '{' || s.slice(j, j + 3) === 'if ') continue;
+        const stmtEnd = findStmtEnd(s, j);
+        const wrapped = `${s.slice(0, j)}{${s.slice(j, stmtEnd)}}${s.slice(stmtEnd)}`;
+        s = wrapped;
+        changed = true;
+        break;
+      }
+    }
+    if (!changed) break;
+  }
+  return s;
+}
+
+const REGEX_PREV_RE = /[=(:,;!?{[&|^~+\-*%<>\[]$/;
+function maskRegexLiterals(src) {
+  const table = [];
+  let out = '';
+  let i = 0;
+  while (i < src.length) {
+    const c = src[i];
+    if (c === '"' || c === "'" || c === '`') {
+      const q = c;
+      out += c;
+      i++;
+      while (i < src.length) {
+        if (src[i] === '\\') {
+          out += src[i] + (src[i + 1] || '');
+          i += 2;
+          continue;
+        }
+        out += src[i];
+        if (src[i] === q) {
+          i++;
+          break;
+        }
+        i++;
+      }
+      continue;
+    }
+    if (c === '/' && src[i + 1] !== '/' && src[i + 1] !== '*') {
+      const before = out.replace(/\s+$/, '');
+      const kwMatch = before.match(/([A-Za-z_$][\w$]*)$/);
+      let isRegex;
+      if (kwMatch) {
+        isRegex = ['return', 'typeof', 'instanceof', 'in', 'of', 'new', 'delete', 'void', 'do', 'else', 'case', 'yield', 'await', 'match'].includes(kwMatch[1]);
+      } else {
+        isRegex = before.length === 0 || REGEX_PREV_RE.test(before);
+      }
+      if (isRegex) {
+        let j = i + 1;
+        let inClass = false;
+        let ok = false;
+        while (j < src.length) {
+          const ch = src[j];
+          if (ch === '\\') {
+            j += 2;
+            continue;
+          }
+          if (ch === '\n') break;
+          if (ch === '[') inClass = true;
+          else if (ch === ']') inClass = false;
+          else if (ch === '/' && !inClass) {
+            j++;
+            while (j < src.length && /[gimsuyvd]/.test(src[j])) j++;
+            ok = true;
+            break;
+          }
+          j++;
+        }
+        if (ok) {
+          table.push(src.slice(i, j));
+          out += `\u0003R${table.length - 1}\u0003`;
+          i = j;
+          continue;
+        }
+      }
+    }
+    out += c;
+    i++;
+  }
+  return {
+    masked: out,
+    restore: (text) => text.replace(/\u0003R(\d+)\u0003/g, (_, n) => table[Number(n)] ?? ''),
+  };
+}
+
+function findMatchingIn(s, openIdx, openCh, closeCh) {
+  let depth = 0;
+  let quote = null;
+  for (let i = openIdx; i < s.length; i++) {
+    const c = s[i];
+    if (quote) {
+      if (c === '\\') i++;
+      else if (c === quote) quote = null;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === '`') {
+      quote = c;
+      continue;
+    }
+    if (c === openCh) depth++;
+    else if (c === closeCh) {
+      depth--;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+function rewriteSigilBlocks(s, sigil) {
+  let out = '';
+  let i = 0;
+  const token = sigil + '(';
+  while (i < s.length) {
+    const idx = s.indexOf(token, i);
+    if (idx < 0) {
+      out += s.slice(i);
+      break;
+    }
+    const prevChar = idx > 0 ? s[idx - 1] : '';
+    if (sigil === '?' && /[A-Za-z0-9_)$\]]/.test(prevChar)) {
+      out += s.slice(i, idx + 1);
+      i = idx + 1;
+      continue;
+    }
+    if (sigil === '#' && /[A-Za-z0-9_)$\]]/.test(prevChar)) {
+      out += s.slice(i, idx + 1);
+      i = idx + 1;
+      continue;
+    }
+    const openParen = idx + 1;
+    const closeParen = findMatchingIn(s, openParen, '(', ')');
+    if (closeParen < 0) {
+      out += s.slice(i, idx + token.length);
+      i = idx + token.length;
+      continue;
+    }
+    let j = closeParen + 1;
+    while (j < s.length && /\s/.test(s[j])) j++;
+    let inner;
+    let after;
+    if (s[j] === '{') {
+      const closeBrace = findMatchingIn(s, j, '{', '}');
+      if (closeBrace < 0) {
+        out += s.slice(i, idx + token.length);
+        i = idx + token.length;
+        continue;
+      }
+      inner = rewriteBody(s.slice(j + 1, closeBrace));
+      after = closeBrace + 1;
+    } else {
+      const stmtEnd = findStmtEnd(s, j);
+      inner = rewriteBody(s.slice(j, stmtEnd));
+      inner = inner.trim().replace(/;$/, '');
+      after = stmtEnd;
+    }
+    const head = s.slice(openParen + 1, closeParen);
+    out += s.slice(i, idx) + `${sigil}(${head}){${inner}}`;
+    i = after;
+  }
+  return out;
+}
+
+function findStmtEnd(s, from) {
+  let depth = 0;
+  let quote = null;
+  for (let i = from; i < s.length; i++) {
+    const c = s[i];
+    if (quote) {
+      if (c === '\\') i++;
+      else if (c === quote) quote = null;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === '`') {
+      quote = c;
+      continue;
+    }
+    if ('([{'.includes(c)) depth++;
+    else if (')]}'.includes(c)) depth--;
+    else if (depth === 0 && c === ';') return i + 1;
+    else if (depth === 0 && c === '}' ) return i;
+  }
+  return s.length;
+}
+
+function rewriteElseBlocks(s) {
+  let out = '';
+  let i = 0;
+  while (i < s.length) {
+    const idx = s.indexOf('else', i);
+    if (idx < 0) {
+      out += s.slice(i);
+      break;
+    }
+    const beforeOk = idx === 0 || /[^A-Za-z0-9_$]/.test(s[idx - 1]);
+    if (!beforeOk) {
+      out += s.slice(i, idx + 4);
+      i = idx + 4;
+      continue;
+    }
+    let j = idx + 4;
+    while (j < s.length && /\s/.test(s[j])) j++;
+    if (s.slice(j, j + 2) === 'if' ) {
+      let k = j + 2;
+      while (k < s.length && /\s/.test(s[k])) k++;
+      if (s[k] === '(') {
+        const closeParen = findMatchingIn(s, k, '(', ')');
+        if (closeParen >= 0) {
+          let m = closeParen + 1;
+          while (m < s.length && /\s/.test(s[m])) m++;
+          if (s[m] === '{') {
+            const closeBrace = findMatchingIn(s, m, '{', '}');
+            if (closeBrace >= 0) {
+              const head = s.slice(k + 1, closeParen);
+              const inner = rewriteBody(s.slice(m + 1, closeBrace));
+              out += s.slice(i, idx) + `:( ${head} ){${inner}}`;
+              i = closeBrace + 1;
+              continue;
+            }
+          }
+        }
+      }
+    }
+    if (s[j] === '{') {
+      const closeBrace = findMatchingIn(s, j, '{', '}');
+      if (closeBrace >= 0) {
+        const inner = rewriteBody(s.slice(j + 1, closeBrace));
+        out += s.slice(i, idx) + `:{${inner}}`;
+        i = closeBrace + 1;
+        continue;
+      }
+    }
+    out += s.slice(i, idx + 4);
+    i = idx + 4;
+  }
+  return out;
+}
+
+function skipStatement(toks, from) {
+  let depth = 0;
+  let i = from;
+  for (; i < toks.length; i++) {
+    const t = toks[i];
+    if (t.type === 'punct') {
+      if ('([{'.includes(t.value)) depth++;
+      else if (')]}'.includes(t.value)) {
+        depth--;
+        if (depth <= 0 && [';', 'nl', 'eof'].includes(toks[i + 1]?.type) ) return i + 1;
+        if (depth < 0) return i + 1;
+      } else if (depth === 0 && t.value === ';') return i + 1;
+    }
+  }
+  return i;
+}
+
+
+function findArrowAfterParamsToks(toks, from, toExclusive) {
+  let depth = 0;
+  for (let j = from; j < Math.min(toExclusive + 2, toks.length); j++) {
+    const tk = toks[j];
+    if (tk.type === 'punct') {
+      if ('([{'.includes(tk.value)) depth++;
+      else if (')]}'.includes(tk.value)) depth--;
+      else if (depth === 0 && tk.value === '=' && toks[j + 1]?.value === '>') return j;
+    }
+  }
+  return -1;
+}
+
+function findTopLevelSwitch(s) {
+  const re = /\bswitch\s*\(/g;
+  let m;
+  let depth = 0;
+  let i = 0;
+  while (i < s.length) {
+    const c = s[i];
+    if (c === '"' || c === "'" || c === '`') {
+      const q = c;
+      i++;
+      while (i < s.length && s[i] !== q) {
+        if (s[i] === '\\') i++;
+        i++;
+      }
+      i++;
+      continue;
+    }
+    if (c === '{') depth++;
+    else if (c === '}') depth--;
+    else {
+      re.lastIndex = i;
+      const mm = re.exec(s);
+      if (mm && mm.index === i && depth === 0) return i;
+    }
+    i++;
+  }
+  void m;
+  return -1;
+}
+
+function tryConvertSwitch(s, idx) {
+  const openParen = s.indexOf('(', idx);
+  const closeParen = matchBracketChar(s, openParen);
+  if (closeParen < 0) return null;
+  const disc = s.slice(openParen + 1, closeParen).trim();
+  let j = closeParen + 1;
+  while (j < s.length && /\s/.test(s[j])) j++;
+  if (s[j] !== '{') return null;
+  const closeBrace = matchBracketChar(s, j);
+  if (closeBrace < 0) return null;
+  const inner = s.slice(j + 1, closeBrace);
+
+  const arms = [];
+  let cur = { labels: [], body: [] };
+  let i = 0;
+  const n = inner.length;
+  while (i < n) {
+    while (i < n && /[\s;]/.test(inner[i])) i++;
+    if (i >= n) break;
+    if (startsWithWord(inner, i, 'case')) {
+      i += 4;
+      while (i < n && /[\s]/.test(inner[i])) i++;
+      const vStart = i;
+      let q = null;
+      for (; i < n; i++) {
+        const c = inner[i];
+        if (q) {
+          if (c === '\\') i++;
+          else if (c === q) q = null;
+          continue;
+        }
+        if (c === '"' || c === "'") q = c;
+        else if (c === ':') break;
+      }
+      if (q || inner[i] !== ':') return null;
+      cur = { labels: [], body: [] };
+      arms.push(cur);
+      cur.labels.push(inner.slice(vStart, i).trim());
+      i++;
+      continue;
+    }
+    if (startsWithWord(inner, i, 'default')) {
+      i += 7;
+      while (i < n && inner[i] !== ':') i++;
+      i++;
+      cur = { labels: [], body: [], def: true };
+      arms.push(cur);
+      continue;
+    }
+    let stmtEnd = i;
+    let d2 = 0;
+    let q2 = null;
+    for (; stmtEnd < n; stmtEnd++) {
+      const c = inner[stmtEnd];
+      if (q2) {
+        if (c === '\\') stmtEnd++;
+        else if (c === q2) q2 = null;
+        continue;
+      }
+      if (c === '"' || c === "'" || c === '`') {
+        q2 = c;
+        continue;
+      }
+      if ('([{'.includes(c)) d2++;
+      else if (')]}'.includes(c)) d2--;
+      else if (d2 === 0 && c === ';') {
+        stmtEnd++;
+        break;
+      }
+      if (d2 === 0) {
+        const rest = inner.slice(stmtEnd);
+        if (startsWithWord(rest, 0, 'case') || startsWithWord(rest, 0, 'default')) break;
+      }
+    }
+    let stmt = inner.slice(i, stmtEnd).trim();
+    stmt = stmt.replace(/^break\s*;?\s*$/, '').replace(/;\s*break\s*;?$/, ';');
+    if (stmt) cur.body.push(stmt);
+    i = stmtEnd;
+  }
+
+  if (!arms.length) return null;
+  for (const arm of arms) {
+    if (!arm.def && !arm.labels.length) return null;
+    const last = arm.body[arm.body.length - 1] || '';
+    if (arm.body.length && !/^(\^|return|throw|break)/.test(last.trim()) && !/^\^\s/.test(last.trim())) {
+      if (!/^(return|\^)/.test(arm.body.join(';').trim())) return null;
+    }
+  }
+  const hasDefault = arms.some((a) => a.def);
+  const parts = [];
+  let first = true;
+  for (const arm of arms) {
+    if (arm.def) continue;
+    const condExpr = arm.labels.map((l) => `${disc}===${l}`).join('||');
+    const bodyStr = arm.body.join(';');
+    const prefix = first ? '?(' : ':?(';
+    parts.push(`${prefix}${condExpr}){${bodyStr}}`);
+    first = false;
+  }
+  const defArm = arms.find((a) => a.def);
+  if (defArm && defArm.body.length) {
+    parts.push(`:{${defArm.body.join(';')}}`);
+  } else if (defArm) {
+    parts.push(':{break}');
+  }
+  if (!first) {
+    let chain = parts.join('');
+    if (!hasDefault) chain += '';
+    return s.slice(0, idx) + chain + s.slice(closeBrace + 1);
+  }
+  return s.slice(0, idx) + '/*switch_empty*/' + s.slice(closeBrace + 1);
+}
+
+function startsWithWord(text, i, word) {
+  if (!text.startsWith(word, i)) return false;
+  const before = i === 0 ? '' : text[i - 1];
+  const after = text[i + word.length];
+  if (/[\w$]/.test(before)) return false;
+  if (/[\w$]/.test(after || '')) return false;
+  return true;
+}
+
+function matchBracketChar(s, openIdx) {
+  if (openIdx < 0 || openIdx >= s.length) return -1;
+  const openCh = s[openIdx];
+  const pairs = { '(': ')', '[': ']', '{': '}' };
+  let depth = 0;
+  let quote = null;
+  for (let i = openIdx; i < s.length; i++) {
+    const c = s[i];
+    if (quote) {
+      if (c === '\\') i++;
+      else if (c === quote) quote = null;
+      continue;
+    }
+    if (c === '"' || c === "'" || c === '`') {
+      quote = c;
+      continue;
+    }
+    if (c === openCh) depth++;
+    else if (c === pairs[openCh]) {
+      depth--;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+}

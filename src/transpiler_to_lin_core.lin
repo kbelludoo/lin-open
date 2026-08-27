@@ -1,28 +1,208 @@
-@LIN:L1c:0.2
-!detectLanguage(code,filename){?(filename.endsWith(".py")){^"py";}else ?(filename.endsWith(".rs")){^"rs";}else ?(filename.endsWith(".go")){^"go";}else ?(filename.endsWith(".c") || filename.endsWith(".h")){^"c";}else ?(filename.endsWith(".zig")){^"zig";}else ?(filename.endsWith(".ts")){^"ts";}else ?(filename.endsWith(".js") || filename.endsWith(".mjs") || filename.endsWith(".cjs")){^"js";}?(code.indexOf("def ") >= 0){^"py";}else ?(code.indexOf("fn ") >= 0){^"rs";}else ?(code.indexOf("func ") >= 0){^"go";}else ?(code.indexOf("pub fn ") >= 0){^"zig";}^"js";}
-!extractBracedFunctions(source,fnHeaderRe){var fns,m,fnName,rawParams,openBrace,depth,k,body;fns = [];m = null;while((m = fnHeaderRe.exec(source)) !== null){fnName = m[1];rawParams = m[2];openBrace = source.indexOf("{", m.index);?(openBrace < 0){continue;}depth = 1;k = openBrace + 1;while(k < source.length && depth > 0){?(source.charAt(k) === "{"){depth++;}else ?(source.charAt(k) === "}"){depth--;}k++;}body = source.slice(openBrace + 1, k - 1);fns.push({ name: fnName, rawParams: rawParams, body: body });}^fns;}
-function transpileRustToLin(rustSource){var clean,rawFns,fns,rf,params,parts,body,exportNames,outLines,i,j;clean = rustSource.replace(/\/\/.*$/gm, "");rawFns = extractBracedFunctions(clean,/(?:pub\s+)?fn\s+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);fns = [];for(i = 0;i < rawFns.length;i++){rf = rawFns[i];params = rf.rawParams.split(",").map(function(p){parts = p.split(":");^parts[0].replace(/&(?:mut\s+)?/, "").trim();}).filter(Boolean).join(",");body = rf.body;body = body.replace(/\blet\s+mut\s+/g, "").replace(/\blet\s+/g, "");body = body.replace(/\}\s*else\s+if\s+([^{]+)\{/g, "}:($1){");body = body.replace(/\}\s*else\s*\{/g, "}:{");body = body.replace(/\belse\s+if\s+([^{]+)\{/g, ":($1){");body = body.replace(/\belse\s*\{/g, "}:{");body = body.replace(/\bif\s+([^{]+)\{/g, "?($1){");body = body.replace(/\bwhile\s+([^{]+)\{/g, ";while($1){");body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");body = body.replace(/([A-Za-z0-9_$]+)\.len\(\)/g, "$1.length");fns.push({ name: rf.name, params: params, body: body });}exportNames = fns.map(function(f){^f.name;});outLines = ["@LIN:L1c:0.2"];for(j = 0;j < fns.length;j++){fn = fns[j];outLines.push("!" + fn.name + "(" + fn.params + "){" + fn.body + "}");}outLines.push("=ex{" + exportNames.join(", ") + "}");^outLines.join("\n");}
-function transpileGoToLin(goSource){var clean,rawFns,fns,rf,params,body,exportNames,outLines,fn,i,j;clean = goSource.replace(/\/\/.*$/gm, "");rawFns = extractBracedFunctions(clean,/func\s+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);fns = [];for(i = 0;i < rawFns.length;i++){rf = rawFns[i];params = rf.rawParams.split(",").map(function(p){^p.trim().split(/\s+/)[0];}).filter(Boolean).join(",");body = rf.body;body = body.replace(/var\s+/g, "");body = body.replace(/:=\s*/g, "= ");body = body.replace(/\}\s*else\s+if\s+([^{]+)\{/g, "}:($1){");body = body.replace(/\}\s*else\s*\{/g, "}:{");body = body.replace(/\belse\s+if\s+([^{]+)\{/g, ":($1){");body = body.replace(/\belse\s*\{/g, "}:{");body = body.replace(/\bif\s+([^{]+)\{/g, "?($1){");body = body.replace(/\bfor\s+([^{]+)\{/g, ";while($1){");body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");fns.push({ name: rf.name, params: params, body: body });}exportNames = fns.map(function(f){^f.name;});outLines = ["@LIN:L1c:0.2"];for(j = 0;j < fns.length;j++){fn = fns[j];outLines.push("!" + fn.name + "(" + fn.params + "){" + fn.body + "}");}outLines.push("=ex{" + exportNames.join(", ") + "}");^outLines.join("\n");}
-function transpileCToLin(cSource){var clean,rawFns,fns,rf,params,parts,body,exportNames,outLines,fn,i,j;clean = cSource.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");rawFns = extractBracedFunctions(clean,/(?:[A-Za-z0-9_*]+\s+)+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);fns = [];for(i = 0;i < rawFns.length;i++){rf = rawFns[i];?(["if", "while", "for", "switch"].includes(rf.name)){continue;}params = rf.rawParams.split(",").map(function(p){parts = p.trim().split(/\s+/);^parts[parts.length - 1].replace(/^\*/, "");}).filter(Boolean).join(",");body = rf.body;body = body.replace(/\b(?:int|float|double|char|long|unsigned|void)\s+/g, "");body = body.replace(/\}\s*else\s+if\s*\(([^)]+)\)\s*\{/g, "}:($1){");body = body.replace(/\}\s*else\s*\{/g, "}:{");body = body.replace(/\belse\s+if\s*\(([^)]+)\)\s*\{/g, ":($1){");body = body.replace(/\belse\s*\{/g, "}:{");body = body.replace(/\bif\s*\(([^)]+)\)\s*\{/g, "?($1){");body = body.replace(/\bwhile\s*\(([^)]+)\)\s*\{/g, ";while($1){");body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");fns.push({ name: rf.name, params: params, body: body });}exportNames = fns.map(function(f){^f.name;});outLines = ["@LIN:L1c:0.2"];for(j = 0;j < fns.length;j++){fn = fns[j];outLines.push("!" + fn.name + "(" + fn.params + "){" + fn.body + "}");}outLines.push("=ex{" + exportNames.join(", ") + "}");^outLines.join("\n");}
-function transpileZigToLin(zigSource){var clean,rawFns,fns,rf,params,body,exportNames,outLines,i,j;clean = zigSource.replace(/\/\/.*$/gm, "");rawFns = extractBracedFunctions(clean,/(?:pub\s+)?fn\s+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);fns = [];for(i = 0;i < rawFns.length;i++){rf = rawFns[i];?(rf.name === "main"){continue;}params = rf.rawParams.split(",").map(function(p){^p.trim().split(":")[0].trim();}).filter(Boolean).join(",");body = rf.body;body = body.replace(/var\s+|const\s+/g, "");body = body.replace(/:\s*[^=;\n]+\s*=/g, "=");body = body.replace(/\}\s*else\s+if\s*\(([^)]+)\)\s*\{/g, "}:($1){");body = body.replace(/\}\s*else\s*\{/g, "}:{");body = body.replace(/\belse\s+if\s*\(([^)]+)\)\s*\{/g, ":($1){");body = body.replace(/\belse\s*\{/g, "}:{");body = body.replace(/\bif\s*\(([^)]+)\)\s*\{/g, "?($1){");body = body.replace(/\bwhile\s*\(([^)]+)\)\s*\{/g, ";while($1){");body = body.replace(/@rem\(([^,]+),\s*([^)]+)\)/g, "($1 % $2)");body = body.replace(/@divTrunc\(([^,]+),\s*([^)]+)\)/g, "($1 / $2)");body = body.replace(/\band\b/g, "&&").replace(/\bor\b/g, "||");body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");fns.push({ name: rf.name, params: params, body: body });}exportNames = fns.map(function(f){^f.name;});outLines = ["@LIN:L1c:0.2"];for(j = 0;j < fns.length;j++){fn = fns[j];outLines.push("!" + fn.name + "(" + fn.params + "){" + fn.body + "}");}outLines.push("=ex{" + exportNames.join(", ") + "}");^outLines.join("\n");}
-module.exports={detectLanguage,extractBracedFunctions,transpileRustToLin,transpileGoToLin,transpileCToLin,transpileZigToLin};
-module.exports={detectLanguage,extractBracedFunctions,transpileRustToLin,transpileGoToLin,transpileCToLin,transpileZigToLin};}
-!transpileRustToLin(rustSource){var clean,rawFns,fns,rf,params,parts,body,exportNames,outLines,i,j;clean = rustSource.replace(/\/\/.*$/gm, "");rawFns = extractBracedFunctions(clean,/(?:pub\s+)?fn\s+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);fns = [];for(i = 0;i < rawFns.length;i++){rf = rawFns[i];params = rf.rawParams.split(",").map(function(p){parts = p.split(":");^parts[0].replace(/&(?:mut\s+)?/, "").trim();}).filter(Boolean).join(",");body = rf.body;body = body.replace(/\blet\s+mut\s+/g, "").replace(/\blet\s+/g, "");body = body.replace(/\}\s*else\s+if\s+([^{]+)\{/g, "}:($1){");body = body.replace(/\}\s*else\s*\{/g, "}:{");body = body.replace(/\belse\s+if\s+([^{]+)\{/g, ":($1){");body = body.replace(/\belse\s*\{/g, "}:{");body = body.replace(/\bif\s+([^{]+)\{/g, "?($1){");body = body.replace(/\bwhile\s+([^{]+)\{/g, ";while($1){");body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");body = body.replace(/([A-Za-z0-9_$]+)\.len\(\)/g, "$1.length");fns.push({ name: rf.name, params: params, body: body });}exportNames = fns.map(function(f){^f.name;});outLines = ["@LIN:L1c:0.2"];for(j = 0;j < fns.length;j++){fn = fns[j];outLines.push("!" + fn.name + "(" + fn.params + "){" + fn.body + "}");}outLines.push("=ex{" + exportNames.join(", ") + "}");^outLines.join("\n");}
-function transpileGoToLin(goSource){var clean,rawFns,fns,rf,params,body,exportNames,outLines,fn,i,j;clean = goSource.replace(/\/\/.*$/gm, "");rawFns = extractBracedFunctions(clean,/func\s+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);fns = [];for(i = 0;i < rawFns.length;i++){rf = rawFns[i];params = rf.rawParams.split(",").map(function(p){^p.trim().split(/\s+/)[0];}).filter(Boolean).join(",");body = rf.body;body = body.replace(/var\s+/g, "");body = body.replace(/:=\s*/g, "= ");body = body.replace(/\}\s*else\s+if\s+([^{]+)\{/g, "}:($1){");body = body.replace(/\}\s*else\s*\{/g, "}:{");body = body.replace(/\belse\s+if\s+([^{]+)\{/g, ":($1){");body = body.replace(/\belse\s*\{/g, "}:{");body = body.replace(/\bif\s+([^{]+)\{/g, "?($1){");body = body.replace(/\bfor\s+([^{]+)\{/g, ";while($1){");body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");fns.push({ name: rf.name, params: params, body: body });}exportNames = fns.map(function(f){^f.name;});outLines = ["@LIN:L1c:0.2"];for(j = 0;j < fns.length;j++){fn = fns[j];outLines.push("!" + fn.name + "(" + fn.params + "){" + fn.body + "}");}outLines.push("=ex{" + exportNames.join(", ") + "}");^outLines.join("\n");}
-function transpileCToLin(cSource){var clean,rawFns,fns,rf,params,parts,body,exportNames,outLines,fn,i,j;clean = cSource.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");rawFns = extractBracedFunctions(clean,/(?:[A-Za-z0-9_*]+\s+)+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);fns = [];for(i = 0;i < rawFns.length;i++){rf = rawFns[i];?(["if", "while", "for", "switch"].includes(rf.name)){continue;}params = rf.rawParams.split(",").map(function(p){parts = p.trim().split(/\s+/);^parts[parts.length - 1].replace(/^\*/, "");}).filter(Boolean).join(",");body = rf.body;body = body.replace(/\b(?:int|float|double|char|long|unsigned|void)\s+/g, "");body = body.replace(/\}\s*else\s+if\s*\(([^)]+)\)\s*\{/g, "}:($1){");body = body.replace(/\}\s*else\s*\{/g, "}:{");body = body.replace(/\belse\s+if\s*\(([^)]+)\)\s*\{/g, ":($1){");body = body.replace(/\belse\s*\{/g, "}:{");body = body.replace(/\bif\s*\(([^)]+)\)\s*\{/g, "?($1){");body = body.replace(/\bwhile\s*\(([^)]+)\)\s*\{/g, ";while($1){");body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");fns.push({ name: rf.name, params: params, body: body });}exportNames = fns.map(function(f){^f.name;});outLines = ["@LIN:L1c:0.2"];for(j = 0;j < fns.length;j++){fn = fns[j];outLines.push("!" + fn.name + "(" + fn.params + "){" + fn.body + "}");}outLines.push("=ex{" + exportNames.join(", ") + "}");^outLines.join("\n");}
-function transpileZigToLin(zigSource){var clean,rawFns,fns,rf,params,body,exportNames,outLines,i,j;clean = zigSource.replace(/\/\/.*$/gm, "");rawFns = extractBracedFunctions(clean,/(?:pub\s+)?fn\s+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);fns = [];for(i = 0;i < rawFns.length;i++){rf = rawFns[i];?(rf.name === "main"){continue;}params = rf.rawParams.split(",").map(function(p){^p.trim().split(":")[0].trim();}).filter(Boolean).join(",");body = rf.body;body = body.replace(/var\s+|const\s+/g, "");body = body.replace(/:\s*[^=;\n]+\s*=/g, "=");body = body.replace(/\}\s*else\s+if\s*\(([^)]+)\)\s*\{/g, "}:($1){");body = body.replace(/\}\s*else\s*\{/g, "}:{");body = body.replace(/\belse\s+if\s*\(([^)]+)\)\s*\{/g, ":($1){");body = body.replace(/\belse\s*\{/g, "}:{");body = body.replace(/\bif\s*\(([^)]+)\)\s*\{/g, "?($1){");body = body.replace(/\bwhile\s*\(([^)]+)\)\s*\{/g, ";while($1){");body = body.replace(/@rem\(([^,]+),\s*([^)]+)\)/g, "($1 % $2)");body = body.replace(/@divTrunc\(([^,]+),\s*([^)]+)\)/g, "($1 / $2)");body = body.replace(/\band\b/g, "&&").replace(/\bor\b/g, "||");body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");fns.push({ name: rf.name, params: params, body: body });}exportNames = fns.map(function(f){^f.name;});outLines = ["@LIN:L1c:0.2"];for(j = 0;j < fns.length;j++){fn = fns[j];outLines.push("!" + fn.name + "(" + fn.params + "){" + fn.body + "}");}outLines.push("=ex{" + exportNames.join(", ") + "}");^outLines.join("\n");}
-module.exports={detectLanguage,extractBracedFunctions,transpileRustToLin,transpileGoToLin,transpileCToLin,transpileZigToLin};
-module.exports={detectLanguage,extractBracedFunctions,transpileRustToLin,transpileGoToLin,transpileCToLin,transpileZigToLin};}
-!transpileGoToLin(goSource){var clean,rawFns,fns,rf,params,body,exportNames,outLines,fn,i,j;clean = goSource.replace(/\/\/.*$/gm, "");rawFns = extractBracedFunctions(clean,/func\s+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);fns = [];for(i = 0;i < rawFns.length;i++){rf = rawFns[i];params = rf.rawParams.split(",").map(function(p){^p.trim().split(/\s+/)[0];}).filter(Boolean).join(",");body = rf.body;body = body.replace(/var\s+/g, "");body = body.replace(/:=\s*/g, "= ");body = body.replace(/\}\s*else\s+if\s+([^{]+)\{/g, "}:($1){");body = body.replace(/\}\s*else\s*\{/g, "}:{");body = body.replace(/\belse\s+if\s+([^{]+)\{/g, ":($1){");body = body.replace(/\belse\s*\{/g, "}:{");body = body.replace(/\bif\s+([^{]+)\{/g, "?($1){");body = body.replace(/\bfor\s+([^{]+)\{/g, ";while($1){");body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");fns.push({ name: rf.name, params: params, body: body });}exportNames = fns.map(function(f){^f.name;});outLines = ["@LIN:L1c:0.2"];for(j = 0;j < fns.length;j++){fn = fns[j];outLines.push("!" + fn.name + "(" + fn.params + "){" + fn.body + "}");}outLines.push("=ex{" + exportNames.join(", ") + "}");^outLines.join("\n");}
-function transpileCToLin(cSource){var clean,rawFns,fns,rf,params,parts,body,exportNames,outLines,fn,i,j;clean = cSource.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");rawFns = extractBracedFunctions(clean,/(?:[A-Za-z0-9_*]+\s+)+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);fns = [];for(i = 0;i < rawFns.length;i++){rf = rawFns[i];?(["if", "while", "for", "switch"].includes(rf.name)){continue;}params = rf.rawParams.split(",").map(function(p){parts = p.trim().split(/\s+/);^parts[parts.length - 1].replace(/^\*/, "");}).filter(Boolean).join(",");body = rf.body;body = body.replace(/\b(?:int|float|double|char|long|unsigned|void)\s+/g, "");body = body.replace(/\}\s*else\s+if\s*\(([^)]+)\)\s*\{/g, "}:($1){");body = body.replace(/\}\s*else\s*\{/g, "}:{");body = body.replace(/\belse\s+if\s*\(([^)]+)\)\s*\{/g, ":($1){");body = body.replace(/\belse\s*\{/g, "}:{");body = body.replace(/\bif\s*\(([^)]+)\)\s*\{/g, "?($1){");body = body.replace(/\bwhile\s*\(([^)]+)\)\s*\{/g, ";while($1){");body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");fns.push({ name: rf.name, params: params, body: body });}exportNames = fns.map(function(f){^f.name;});outLines = ["@LIN:L1c:0.2"];for(j = 0;j < fns.length;j++){fn = fns[j];outLines.push("!" + fn.name + "(" + fn.params + "){" + fn.body + "}");}outLines.push("=ex{" + exportNames.join(", ") + "}");^outLines.join("\n");}
-function transpileZigToLin(zigSource){var clean,rawFns,fns,rf,params,body,exportNames,outLines,i,j;clean = zigSource.replace(/\/\/.*$/gm, "");rawFns = extractBracedFunctions(clean,/(?:pub\s+)?fn\s+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);fns = [];for(i = 0;i < rawFns.length;i++){rf = rawFns[i];?(rf.name === "main"){continue;}params = rf.rawParams.split(",").map(function(p){^p.trim().split(":")[0].trim();}).filter(Boolean).join(",");body = rf.body;body = body.replace(/var\s+|const\s+/g, "");body = body.replace(/:\s*[^=;\n]+\s*=/g, "=");body = body.replace(/\}\s*else\s+if\s*\(([^)]+)\)\s*\{/g, "}:($1){");body = body.replace(/\}\s*else\s*\{/g, "}:{");body = body.replace(/\belse\s+if\s*\(([^)]+)\)\s*\{/g, ":($1){");body = body.replace(/\belse\s*\{/g, "}:{");body = body.replace(/\bif\s*\(([^)]+)\)\s*\{/g, "?($1){");body = body.replace(/\bwhile\s*\(([^)]+)\)\s*\{/g, ";while($1){");body = body.replace(/@rem\(([^,]+),\s*([^)]+)\)/g, "($1 % $2)");body = body.replace(/@divTrunc\(([^,]+),\s*([^)]+)\)/g, "($1 / $2)");body = body.replace(/\band\b/g, "&&").replace(/\bor\b/g, "||");body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");fns.push({ name: rf.name, params: params, body: body });}exportNames = fns.map(function(f){^f.name;});outLines = ["@LIN:L1c:0.2"];for(j = 0;j < fns.length;j++){fn = fns[j];outLines.push("!" + fn.name + "(" + fn.params + "){" + fn.body + "}");}outLines.push("=ex{" + exportNames.join(", ") + "}");^outLines.join("\n");}
-module.exports={detectLanguage,extractBracedFunctions,transpileRustToLin,transpileGoToLin,transpileCToLin,transpileZigToLin};
-module.exports={detectLanguage,extractBracedFunctions,transpileRustToLin,transpileGoToLin,transpileCToLin,transpileZigToLin};}
-!transpileCToLin(cSource){var clean,rawFns,fns,rf,params,parts,body,exportNames,outLines,fn,i,j;clean = cSource.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");rawFns = extractBracedFunctions(clean,/(?:[A-Za-z0-9_*]+\s+)+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);fns = [];for(i = 0;i < rawFns.length;i++){rf = rawFns[i];?(["if", "while", "for", "switch"].includes(rf.name)){continue;}params = rf.rawParams.split(",").map(function(p){parts = p.trim().split(/\s+/);^parts[parts.length - 1].replace(/^\*/, "");}).filter(Boolean).join(",");body = rf.body;body = body.replace(/\b(?:int|float|double|char|long|unsigned|void)\s+/g, "");body = body.replace(/\}\s*else\s+if\s*\(([^)]+)\)\s*\{/g, "}:($1){");body = body.replace(/\}\s*else\s*\{/g, "}:{");body = body.replace(/\belse\s+if\s*\(([^)]+)\)\s*\{/g, ":($1){");body = body.replace(/\belse\s*\{/g, "}:{");body = body.replace(/\bif\s*\(([^)]+)\)\s*\{/g, "?($1){");body = body.replace(/\bwhile\s*\(([^)]+)\)\s*\{/g, ";while($1){");body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");fns.push({ name: rf.name, params: params, body: body });}exportNames = fns.map(function(f){^f.name;});outLines = ["@LIN:L1c:0.2"];for(j = 0;j < fns.length;j++){fn = fns[j];outLines.push("!" + fn.name + "(" + fn.params + "){" + fn.body + "}");}outLines.push("=ex{" + exportNames.join(", ") + "}");^outLines.join("\n");}
-function transpileZigToLin(zigSource){var clean,rawFns,fns,rf,params,body,exportNames,outLines,i,j;clean = zigSource.replace(/\/\/.*$/gm, "");rawFns = extractBracedFunctions(clean,/(?:pub\s+)?fn\s+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);fns = [];for(i = 0;i < rawFns.length;i++){rf = rawFns[i];?(rf.name === "main"){continue;}params = rf.rawParams.split(",").map(function(p){^p.trim().split(":")[0].trim();}).filter(Boolean).join(",");body = rf.body;body = body.replace(/var\s+|const\s+/g, "");body = body.replace(/:\s*[^=;\n]+\s*=/g, "=");body = body.replace(/\}\s*else\s+if\s*\(([^)]+)\)\s*\{/g, "}:($1){");body = body.replace(/\}\s*else\s*\{/g, "}:{");body = body.replace(/\belse\s+if\s*\(([^)]+)\)\s*\{/g, ":($1){");body = body.replace(/\belse\s*\{/g, "}:{");body = body.replace(/\bif\s*\(([^)]+)\)\s*\{/g, "?($1){");body = body.replace(/\bwhile\s*\(([^)]+)\)\s*\{/g, ";while($1){");body = body.replace(/@rem\(([^,]+),\s*([^)]+)\)/g, "($1 % $2)");body = body.replace(/@divTrunc\(([^,]+),\s*([^)]+)\)/g, "($1 / $2)");body = body.replace(/\band\b/g, "&&").replace(/\bor\b/g, "||");body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");fns.push({ name: rf.name, params: params, body: body });}exportNames = fns.map(function(f){^f.name;});outLines = ["@LIN:L1c:0.2"];for(j = 0;j < fns.length;j++){fn = fns[j];outLines.push("!" + fn.name + "(" + fn.params + "){" + fn.body + "}");}outLines.push("=ex{" + exportNames.join(", ") + "}");^outLines.join("\n");}
-module.exports={detectLanguage,extractBracedFunctions,transpileRustToLin,transpileGoToLin,transpileCToLin,transpileZigToLin};
-module.exports={detectLanguage,extractBracedFunctions,transpileRustToLin,transpileGoToLin,transpileCToLin,transpileZigToLin};}
-!transpileZigToLin(zigSource){var clean,rawFns,fns,rf,params,body,exportNames,outLines,i,j;clean = zigSource.replace(/\/\/.*$/gm, "");rawFns = extractBracedFunctions(clean,/(?:pub\s+)?fn\s+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);fns = [];for(i = 0;i < rawFns.length;i++){rf = rawFns[i];?(rf.name === "main"){continue;}params = rf.rawParams.split(",").map(function(p){^p.trim().split(":")[0].trim();}).filter(Boolean).join(",");body = rf.body;body = body.replace(/var\s+|const\s+/g, "");body = body.replace(/:\s*[^=;\n]+\s*=/g, "=");body = body.replace(/\}\s*else\s+if\s*\(([^)]+)\)\s*\{/g, "}:($1){");body = body.replace(/\}\s*else\s*\{/g, "}:{");body = body.replace(/\belse\s+if\s*\(([^)]+)\)\s*\{/g, ":($1){");body = body.replace(/\belse\s*\{/g, "}:{");body = body.replace(/\bif\s*\(([^)]+)\)\s*\{/g, "?($1){");body = body.replace(/\bwhile\s*\(([^)]+)\)\s*\{/g, ";while($1){");body = body.replace(/@rem\(([^,]+),\s*([^)]+)\)/g, "($1 % $2)");body = body.replace(/@divTrunc\(([^,]+),\s*([^)]+)\)/g, "($1 / $2)");body = body.replace(/\band\b/g, "&&").replace(/\bor\b/g, "||");body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");fns.push({ name: rf.name, params: params, body: body });}exportNames = fns.map(function(f){^f.name;});outLines = ["@LIN:L1c:0.2"];for(j = 0;j < fns.length;j++){fn = fns[j];outLines.push("!" + fn.name + "(" + fn.params + "){" + fn.body + "}");}outLines.push("=ex{" + exportNames.join(", ") + "}");^outLines.join("\n");}
-module.exports={detectLanguage,extractBracedFunctions,transpileRustToLin,transpileGoToLin,transpileCToLin,transpileZigToLin};
-module.exports={detectLanguage,extractBracedFunctions,transpileRustToLin,transpileGoToLin,transpileCToLin,transpileZigToLin};}
+@LIN:transpiler_to_lin_core:1.0.0
+^schema_once ^lossy=true ^ops=transpiler_to_lin_core
+~G{?=if #=for ^=ret :else}
+
+!detectLanguage(code, filename){
+  ?(filename.endsWith(".py")){ ^"py" }
+  :(filename.endsWith(".rs")){ ^"rs" }
+  :(filename.endsWith(".go")){ ^"go" }
+  :(filename.endsWith(".c") || filename.endsWith(".h") || filename.endsWith(".cc") || filename.endsWith(".cpp") || filename.endsWith(".hpp") || filename.endsWith(".cxx")){ ^"c" }
+  :(filename.endsWith(".zig")){ ^"zig" }
+  :(filename.endsWith(".ts")){ ^"ts" }
+  :(filename.endsWith(".js") || filename.endsWith(".mjs") || filename.endsWith(".cjs")){ ^"js" }
+  
+  ?(code.indexOf("def ") >= 0){ ^"py" }
+  :(code.indexOf("fn ") >= 0){ ^"rs" }
+  :(code.indexOf("func ") >= 0){ ^"go" }
+  :(code.indexOf("pub fn ") >= 0){ ^"zig" }
+  ^"js"
+}
+
+!extractBracedFunctions(source, fnHeaderRe){
+  fns = [];
+  m = null;
+  while ((m = fnHeaderRe.exec(source)) !== null) {
+    fnName = m[1];
+    rawParams = m[2];
+    openBrace = source.indexOf("{", m.index);
+    ?(openBrace < 0){ continue }
+    depth = 1;
+    k = openBrace + 1;
+    while (k < source.length && depth > 0) {
+      ?(source.charAt(k) === "{"){ depth++ }
+      :(source.charAt(k) === "}"){ depth-- }
+      k++
+    }
+    body = source.slice(openBrace + 1, k - 1);
+    fns.push({ name: fnName, rawParams: rawParams, body: body })
+  }
+  ^fns
+}
+
+!transpileRustToLin(rustSource){
+  clean = rustSource.replace(/\/\/.*$/gm, "");
+  rawFns = extractBracedFunctions(clean, /(?:pub\s+)?fn\s+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);
+  fns = [];
+  #(i = 0; i < rawFns.length; i++){
+    rf = rawFns[i];
+    params = rf.rawParams.split(",").map(function(p){
+      parts = p.split(":");
+      ^parts[0].replace(/&(?:mut\s+)?/, "").trim()
+    }).filter(Boolean).join(",");
+    
+    body = rf.body;
+    body = body.replace(/\blet\s+mut\s+/g, "").replace(/\blet\s+/g, "");
+    body = body.replace(/\}\s*else\s+if\s+([^{]+)\{/g, "}:($1){");
+    body = body.replace(/\}\s*else\s*\{/g, "}:{");
+    body = body.replace(/\belse\s+if\s+([^{]+)\{/g, ":($1){");
+    body = body.replace(/\belse\s*\{/g, "}:{");
+    body = body.replace(/\bif\s+([^{]+)\{/g, "?($1){");
+    body = body.replace(/\bwhile\s+([^{]+)\{/g, ";while($1){");
+    body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");
+    body = body.replace(/([A-Za-z0-9_$]+)\.len\(\)/g, "$1.length");
+    fns.push({ name: rf.name, params: params, body: body })
+  }
+  exportNames = fns.map(function(f){ ^f.name });
+  outLines = ["@LIN:L1c:0.2"];
+  #(j = 0; j < fns.length; j++){
+    fn = fns[j];
+    outLines.push("!" + fn.name + "(" + fn.params + "){" + fn.body + "}")
+  }
+  outLines.push("=ex{" + exportNames.join(", ") + "}");
+  ^outLines.join("\n")
+}
+
+!transpileGoToLin(goSource){
+  clean = goSource.replace(/\/\/.*$/gm, "");
+  rawFns = extractBracedFunctions(clean, /func\s+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);
+  fns = [];
+  #(i = 0; i < rawFns.length; i++){
+    rf = rawFns[i];
+    params = rf.rawParams.split(",").map(function(p){
+      ^p.trim().split(/\s+/)[0]
+    }).filter(Boolean).join(",");
+    
+    body = rf.body;
+    body = body.replace(/var\s+/g, "");
+    body = body.replace(/:=\s*/g, "= ");
+    body = body.replace(/\}\s*else\s+if\s+([^{]+)\{/g, "}:($1){");
+    body = body.replace(/\}\s*else\s*\{/g, "}:{");
+    body = body.replace(/\belse\s+if\s+([^{]+)\{/g, ":($1){");
+    body = body.replace(/\belse\s*\{/g, "}:{");
+    body = body.replace(/\bif\s+([^{]+)\{/g, "?($1){");
+    body = body.replace(/\bfor\s+([^{]+)\{/g, ";while($1){");
+    body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");
+    fns.push({ name: rf.name, params: params, body: body })
+  }
+  exportNames = fns.map(function(f){ ^f.name });
+  outLines = ["@LIN:L1c:0.2"];
+  #(j = 0; j < fns.length; j++){
+    fn = fns[j];
+    outLines.push("!" + fn.name + "(" + fn.params + "){" + fn.body + "}")
+  }
+  outLines.push("=ex{" + exportNames.join(", ") + "}");
+  ^outLines.join("\n")
+}
+
+!cppStripPreprocessor(cSource){
+  joined = cSource.replace(/\\\r?\n/g, " ");
+  joined = joined.replace(/\[\[(?:[^\[\]]|\[[^\]]*\])*\]\]/g, " ");
+  joined = joined.replace(/([0-9a-fA-F])'([0-9a-fA-F])/g, "$1$2");
+  lines = joined.split("\n");
+  out = [];
+  #(k = 0; k < lines.length; k++){
+    line = lines[k];
+    t = line.trim();
+    ?(!t.startsWith("#")){ out.push(line); continue };
+    ?(t.startsWith("#if") || t.startsWith("#ifdef") || t.startsWith("#ifndef")){
+      out.push("?(CPP_TRUE){");
+      continue
+    };
+    ?(t.startsWith("#elif")){
+      out.push("}:{");
+      continue
+    };
+    ?(t.startsWith("#else")){
+      out.push("}:{");
+      continue
+    };
+    ?(t.startsWith("#endif")){ out.push("}"); continue };
+    ?(t.startsWith("#define")){ out.push("// cpp_define"); continue };
+    ?(t.startsWith("#include") || t.startsWith("#pragma") || t.startsWith("#undef") || t.startsWith("#import") || t.startsWith("#error") || t.startsWith("#warning")){ continue };
+  };
+  ^out.join("\n")
+}
+
+!transpileCToLin(cSource){
+  clean = cppStripPreprocessor(cSource).replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
+  rawFns = extractBracedFunctions(clean, /(?:[A-Za-z0-9_*]+\s+)+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);
+  fns = [];
+  #(i = 0; i < rawFns.length; i++){
+    rf = rawFns[i];
+    ?(["if", "while", "for", "switch"].includes(rf.name)){ continue }
+    ?(rf.name.indexOf(":") >= 0){ continue }
+    ?(/^[A-Z][A-Z0-9_]*$/.test(rf.name)){ continue }
+    ?(rf.rawParams.indexOf("(") >= 0){ continue }
+    params = rf.rawParams.split(",").map(function(p){
+      parts = p.trim().split(/\s+/);
+      ^parts[parts.length - 1].replace(/^\*/, "")
+    }).filter(Boolean).join(",");
+    
+    body = rf.body;
+    body = body.replace(/\b(?:int|float|double|char|long|unsigned|void)\s+/g, "");
+    body = body.replace(/\}\s*else\s+if\s*\(([^)]+)\)\s*\{/g, "}:($1){");
+    body = body.replace(/\}\s*else\s*\{/g, "}:{");
+    body = body.replace(/\belse\s+if\s*\(([^)]+)\)\s*\{/g, ":($1){");
+    body = body.replace(/\belse\s*\{/g, "}:{");
+    body = body.replace(/\bif\s*\(([^)]+)\)\s*\{/g, "?($1){");
+    body = body.replace(/\bwhile\s*\(([^)]+)\)\s*\{/g, ";while($1){");
+    body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");
+    fns.push({ name: rf.name, params: params, body: body })
+  }
+  exportNames = fns.map(function(f){ ^f.name });
+  outLines = ["@LIN:L1c:0.2"];
+  #(j = 0; j < fns.length; j++){
+    fn = fns[j];
+    outLines.push("!" + fn.name + "(" + fn.params + "){" + fn.body + "}")
+  }
+  outLines.push("=ex{" + exportNames.join(", ") + "}");
+  ^outLines.join("\n")
+}
+
+!transpileZigToLin(zigSource){
+  clean = zigSource.replace(/\/\/.*$/gm, "");
+  rawFns = extractBracedFunctions(clean, /(?:pub\s+)?fn\s+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);
+  fns = [];
+  #(i = 0; i < rawFns.length; i++){
+    rf = rawFns[i];
+    ?(rf.name === "main"){ continue }
+    params = rf.rawParams.split(",").map(function(p){
+      ^p.trim().split(":")[0].trim()
+    }).filter(Boolean).join(",");
+    
+    body = rf.body;
+    body = body.replace(/var\s+|const\s+/g, "");
+    body = body.replace(/:\s*[^=;\n]+\s*=/g, "=");
+    body = body.replace(/\}\s*else\s+if\s*\(([^)]+)\)\s*\{/g, "}:($1){");
+    body = body.replace(/\}\s*else\s*\{/g, "}:{");
+    body = body.replace(/\belse\s+if\s*\(([^)]+)\)\s*\{/g, ":($1){");
+    body = body.replace(/\belse\s*\{/g, "}:{");
+    body = body.replace(/\bif\s*\(([^)]+)\)\s*\{/g, "?($1){");
+    body = body.replace(/\bwhile\s*\(([^)]+)\)\s*\{/g, ";while($1){");
+    body = body.replace(/@rem\(([^,]+),\s*([^)]+)\)/g, "($1 % $2)");
+    body = body.replace(/@divTrunc\(([^,]+),\s*([^)]+)\)/g, "($1 / $2)");
+    body = body.replace(/\band\b/g, "&&").replace(/\bor\b/g, "||");
+    body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");
+    fns.push({ name: rf.name, params: params, body: body })
+  }
+  exportNames = fns.map(function(f){ ^f.name });
+  outLines = ["@LIN:L1c:0.2"];
+  #(j = 0; j < fns.length; j++){
+    fn = fns[j];
+    outLines.push("!" + fn.name + "(" + fn.params + "){" + fn.body + "}")
+  }
+  outLines.push("=ex{" + exportNames.join(", ") + "}");
+  ^outLines.join("\n")
+}
+
 =ex{detectLanguage, extractBracedFunctions, transpileRustToLin, transpileGoToLin, transpileCToLin, transpileZigToLin}
