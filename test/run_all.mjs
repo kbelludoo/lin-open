@@ -515,6 +515,37 @@ await testAsync('hash gates: core seeds, semantic hash, nucleus lock, compiler i
   assert.ok(coreGate.cores.every((c) => c.ok), JSON.stringify(coreGate.cores.filter((c) => !c.ok)));
 });
 
+console.log('T21 transpile hash verification');
+await testAsync('emit/transpile verify semantic + code hash', async () => {
+  const { verifyTranspileOutput, verifyTranspileOutputOrThrow } = await import(runtimeUrl('transpile_hash_verify.mjs'));
+  const { emitLinFromJs } = await import(runtimeUrl('emit_from_js.mjs'));
+  const { transpileToLin } = await import(runtimeUrl('transpiler_to_lin.mjs'));
+
+  const jsSource = [
+    'function add(a, b) { return a + b; }',
+    'function mul(a, b) { return a * b; }',
+    'module.exports = { add, mul };',
+  ].join('\n');
+
+  const emitted = emitLinFromJs(jsSource);
+  assert.ok(emitted.hash?.ok, JSON.stringify(emitted.hash));
+  assert.ok(emitted.hash.semantic_hash_stable);
+  assert.ok(emitted.hash.code_hash_stable);
+  assert.match(emitted.hash.code_hash, /^[0-9a-f]{64}$/);
+  assert.match(emitted.hash.semantic_hash, /^[0-9a-f]{16}$/);
+
+  const report = verifyTranspileOutput(emitted.lin);
+  assert.equal(report.ok, true, JSON.stringify(report));
+  verifyTranspileOutputOrThrow(emitted.lin);
+
+  const pyLin = transpileToLin('def greet(name):\n    return name\n', { filename: 'g.py' });
+  assert.ok(pyLin.startsWith('@LIN:'));
+  const pyReport = verifyTranspileOutput(pyLin);
+  assert.equal(pyReport.ok, true, JSON.stringify(pyReport));
+
+  assert.throws(() => verifyTranspileOutputOrThrow('@LIN:L1c:0.2\n!broken(){?(a){^1}\n=ex{broken}'), /LIN_TRANSPIL_HASH/);
+});
+
 console.log(`\n${passed} passed, ${failed} failed`);
 if (failed) {
   for (const [name, msg] of failures) console.log(`  FAILED ${name}: ${msg.slice(0, 200)}`);

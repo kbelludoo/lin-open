@@ -1,0 +1,59 @@
+@LIN:L1c:0.2
+!verifyTranspileOutput(linSource,opts){
+  var errors, prog, hashes1, hashes2, semanticOk, hashValues, semanticNonEmpty, codeHash1, codeHash2, codeOk, ok;
+  errors = [];
+  ?(opts && opts.skipHashVerify){
+    ^{ ok: true, gate: 'G_TRANSPIL_HASH', skipped: true };
+  }
+  try {
+    prog = parseProgram(linSource);
+  } catch (e) {
+    ^{ ok: false, gate: 'G_TRANSPIL_SEMANTIC_HASH', error: 'parse: ' + String(e.message || e) };
+  }
+  hashes1 = programHashes(prog);
+  hashes2 = programHashes(prog);
+  semanticOk = JSON.stringify(hashes1) === JSON.stringify(hashes2);
+  hashValues = Object.values(hashes1);
+  semanticNonEmpty = hashValues.length > 0 && hashValues.every(function(h){ return /^[0-9a-f]{16}$/.test(h); });
+  ?(!semanticOk){ errors.push('semantic hash unstable across re-computation'); }
+  ?(!semanticNonEmpty){ errors.push('semantic hash empty or invalid format'); }
+  try {
+    codeHash1 = sha256(compile(linSource, { target: 'js' }).code);
+    codeHash2 = sha256(compile(linSource, { target: 'js' }).code);
+  } catch (e) {
+    ^{
+      ok: false,
+      gate: 'G_TRANSPIL_CODE_HASH',
+      semantic_hashes: hashes1,
+      error: 'compile: ' + String(e.message || e)
+    };
+  }
+  codeOk = codeHash1 === codeHash2 && /^[0-9a-f]{64}$/.test(codeHash1);
+  ?(!codeOk){ errors.push('code hash unstable or invalid'); }
+  ok = semanticOk && semanticNonEmpty && codeOk;
+  ^{
+    ok: ok,
+    gate: ok ? 'G_TRANSPIL_HASH' : (errors[0] || 'G_TRANSPIL_HASH'),
+    semantic_hashes: hashes1,
+    semantic_hash: sha256(JSON.stringify(hashes1)).slice(0, 16),
+    code_hash: codeHash1,
+    code_hash_stable: codeOk,
+    semantic_hash_stable: semanticOk && semanticNonEmpty,
+    errors: ok ? [] : errors
+  };
+}
+!verifyTranspileOutputOrThrow(linSource,opts){
+  var report;
+  report = verifyTranspileOutput(linSource, opts);
+  ?(!report.ok){
+    throw new Error('LIN_TRANSPIL_HASH: ' + (report.error || (report.errors && report.errors.join('; ')) || 'verification failed'));
+  }
+  ^report;
+}
+!finalizeTranspileLin(lin,opts){
+  ?(!opts || !opts.skipHashVerify){
+    verifyTranspileOutputOrThrow(lin, opts);
+  }
+  ^lin;
+}
+=ex{verifyTranspileOutput, verifyTranspileOutputOrThrow, finalizeTranspileLin}
