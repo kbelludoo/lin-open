@@ -1,0 +1,3 @@
+@RULEL:TRANSPOSED_SOURCE:1.0
+~METADATA{original="benchmarks/cognitive_ablation/tasks/T024.json" ext=".json"}
+.source{content="{\n  \"id\": \"T024\",\n  \"family\": \"debug_repair\",\n  \"difficulty\": \"easy\",\n  \"specification\": \"Sanitizador de chaves de objeto removendo chaves com valores undefined. Entrada: objeto. Saída: novo objeto sem chaves cujo valor é undefined.\",\n  \"allowed_effects\": [],\n  \"forbidden_effects\": [\n    \"globalState\",\n    \"mut\"\n  ],\n  \"test_cases\": [\n    {\n      \"input\": {\n        \"a\": 1,\n        \"c\": \"ok\"\n      },\n      \"expected\": {\n        \"a\": 1,\n        \"c\": \"ok\"\n      }\n    }\n  ],\n  \"oracle\": {\n    \"type\": \"deterministic_unit\",\n    \"entrypoint\": \"oracles/oracle_T024.mjs\"\n  }\n}"}

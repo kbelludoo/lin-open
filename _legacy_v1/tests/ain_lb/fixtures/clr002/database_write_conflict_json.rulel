@@ -1,0 +1,3 @@
+@RULEL:TRANSPOSED_SOURCE:1.0
+~METADATA{original="_legacy_v1/tests/ain_lb/fixtures/clr002/database_write_conflict.json" ext=".json"}
+.source{content="{\n  \"fixture_id\": \"CLR-002-CONFLICT\",\n  \"kind\": \"declaration\",\n  \"intent\": \"persist_balance\",\n  \"target\": \"Ledger\",\n  \"operation\": \"database.write\",\n  \"allowed_effects\": [\"pure\"],\n  \"allowed_context\": [],\n  \"function\": {\n    \"name\": \"persistBalance\",\n    \"params\": \"balance\",\n    \"body\": \"return database.write('balances', balance);\"\n  },\n  \"proposed_change\": {\n    \"kind\": \"allowed_effect\",\n    \"from\": \"pure\",\n    \"to\": \"io\"\n  },\n  \"target_path\": \"tests/ain_lb/fixtures/clr002/database_write_conflict.json\"\n}\n"}

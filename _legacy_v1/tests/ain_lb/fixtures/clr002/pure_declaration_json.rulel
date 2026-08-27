@@ -1,0 +1,3 @@
+@RULEL:TRANSPOSED_SOURCE:1.0
+~METADATA{original="_legacy_v1/tests/ain_lb/fixtures/clr002/pure_declaration.json" ext=".json"}
+.source{content="{\n  \"fixture_id\": \"CLR-002-PURE\",\n  \"kind\": \"declaration\",\n  \"intent\": \"declare_pure_calculation\",\n  \"target\": \"Ledger\",\n  \"operation\": \"Ledger.calculate\",\n  \"allowed_effects\": [\"pure\"],\n  \"allowed_context\": [],\n  \"function\": {\n    \"name\": \"calculateBalance\",\n    \"params\": \"entries\",\n    \"body\": \"return entries.reduce((total, entry) => total + entry.amount, 0);\"\n  },\n  \"target_path\": \"tests/ain_lb/fixtures/clr002/pure_declaration.json\"\n}\n"}

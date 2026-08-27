@@ -348,6 +348,27 @@ test('compile+run leaves the filesystem untouched', () => {
   for (const [k, v] of before) assert.equal(after.get(k), v, `changed: ${k}`);
 });
 
+console.log('T14b repo purity (only .lin + .rulel committed; no .json)');
+test('no .json files tracked in git', () => {
+  const tracked = execFileSync('git', ['ls-files', '*.json'], { cwd: root, encoding: 'utf8' }).trim();
+  const files = tracked ? tracked.split('\n').filter(Boolean) : [];
+  assert.deepEqual(files, [], `tracked .json: ${files.slice(0, 5).join(', ')}`);
+});
+
+test('src/ contains only .lin and .rulel', () => {
+  const srcDir = path.join(root, 'src');
+  const bad = [];
+  function walk(d) {
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (!e.name.endsWith('.lin') && !e.name.endsWith('.rulel')) bad.push(path.relative(root, p));
+    }
+  }
+  walk(srcDir);
+  assert.deepEqual(bad, [], `foreign files in src/: ${bad.join(', ')}`);
+});
+
 console.log('T15 RULEL');
 test('RULEL parse + COMMS validation', () => {
   const rulelText = '@RULEL:COMMS_PROTOCOL:1.4.0\n~R{.m=meta .r=rule}\n.m{repo=x name=y}\n.r{R20=comms-9router R1=a}\n.f{no_evil}\n.a{code=.lin}\n.c{nucleus=v!h!g}\n.s{state=ok}\n.p{cli=bin/lin.mjs}\n';

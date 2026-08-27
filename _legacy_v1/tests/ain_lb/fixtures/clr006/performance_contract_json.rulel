@@ -1,0 +1,3 @@
+@RULEL:TRANSPOSED_SOURCE:1.0
+~METADATA{original="_legacy_v1/tests/ain_lb/fixtures/clr006/performance_contract.json" ext=".json"}
+.source{content="{\n  \"intent\": \"system is becoming slow; improve performance while preserving contract\",\n  \"artifacts_reference\": \"../clr004/wipe/context_artifacts.json\",\n  \"graph_reference\": \"../clr004/repo\",\n  \"constraints\": {\n    \"preserved_contracts\": true,\n    \"allowed_effects\": [\"pure\", \"memory\"],\n    \"allowed_caps\": [\"memory\", \"cpu\"],\n    \"forbidden_effects\": [\"io\"],\n    \"forbidden_caps\": [\"io\", \"storage\"],\n    \"architecture_approval\": false,\n    \"concurrency_approval\": false\n  }\n}\n"}

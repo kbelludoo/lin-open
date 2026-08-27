@@ -1,0 +1,3 @@
+@RULEL:TRANSPOSED_SOURCE:1.0
+~METADATA{original="_legacy_v1/tests/ain_lb/fixtures/wipe/deny_write_no_io.json" ext=".json"}
+.source{content="{\n  \"intent\": \"add_international_payments\",\n  \"target\": \"Transfer\",\n  \"constraints\": [\n    \"fx_rate_required\",\n    \"country_limits\",\n    \"transfer_gt_10000_needs_approval\"\n  ],\n  \"allowed_effects\": [\"memory\"],\n  \"ops\": [\"Storage.write\"]\n}\n"}

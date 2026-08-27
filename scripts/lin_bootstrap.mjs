@@ -77,6 +77,82 @@ function walkRulelFiles(dir, acc = []) {
   return acc;
 }
 
+function escapeRulelSource(text) {
+  return text
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t');
+}
+
+export function jsonToTransposedRulel(relJsonPath, jsonText) {
+  const rel = relJsonPath.replace(/\\/g, '/');
+  return `@RULEL:TRANSPOSED_SOURCE:1.0\n~METADATA{original="${rel}" ext=".json"}\n.source{content="${escapeRulelSource(jsonText)}"}\n`;
+}
+
+function findJsonMirrorRulel(relJsonPath) {
+  const rel = relJsonPath.replace(/\\/g, '/');
+  const dir = path.dirname(rel);
+  const base = path.basename(rel, '.json');
+  const candidates = [
+    path.join(ROOT, rel.replace(/\.json$/, '_json.rulel')),
+    path.join(ROOT, dir === '.' ? `${base.replace(/\./g, '_')}.rulel` : path.join(dir, `${base.replace(/\./g, '_')}.rulel`)),
+    path.join(ROOT, dir === '.' ? `${base}_json.rulel` : path.join(dir, `${base}_json.rulel`)),
+  ];
+  for (const c of candidates) {
+    if (!fs.existsSync(c)) continue;
+    const text = fs.readFileSync(c, 'utf8');
+    if (text.includes('TRANSPOSED_SOURCE') && text.includes(`original="${rel}"`)) return c;
+  }
+  for (const rulelPath of walkRulelFiles(ROOT)) {
+    const text = fs.readFileSync(rulelPath, 'utf8');
+    if (!text.includes('TRANSPOSED_SOURCE')) continue;
+    const m = text.match(/original="([^"]+)"/);
+    if (m && m[1] === rel) return rulelPath;
+  }
+  return null;
+}
+
+export function ensureJsonMirrors() {
+  const created = [];
+  const skipDirs = new Set(['node_modules', 'build', '.git']);
+  function walkJson(dir) {
+    for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (skipDirs.has(ent.name)) continue;
+      const full = path.join(dir, ent.name);
+      if (ent.isDirectory()) walkJson(full);
+      else if (ent.name.endsWith('.json')) {
+        const rel = path.relative(ROOT, full).replace(/\\/g, '/');
+        if (findJsonMirrorRulel(rel)) continue;
+        const mirrorPath = path.join(path.dirname(full), `${path.basename(rel, '.json')}_json.rulel`);
+        const jsonText = fs.readFileSync(full, 'utf8');
+        fs.writeFileSync(mirrorPath, jsonToTransposedRulel(rel, jsonText), 'utf8');
+        created.push(path.relative(ROOT, mirrorPath).replace(/\\/g, '/'));
+      }
+    }
+  }
+  walkJson(ROOT);
+  return created;
+}
+
+function emitRepoJsonFromRulel() {
+  const emitted = [];
+  for (const rulelPath of walkRulelFiles(ROOT)) {
+    const text = fs.readFileSync(rulelPath, 'utf8');
+    if (!text.includes('TRANSPOSED_SOURCE')) continue;
+    const m = text.match(/original="([^"]+)"/);
+    if (!m || !m[1].endsWith('.json')) continue;
+    const content = extractRulelContent(text);
+    if (!content) continue;
+    const outPath = path.join(ROOT, m[1]);
+    fs.mkdirSync(path.dirname(outPath), { recursive: true });
+    fs.writeFileSync(outPath, content, 'utf8');
+    emitted.push(m[1]);
+  }
+  return emitted;
+}
+
 function extractTransposedRulels() {
   let count = 0;
   for (const rulelPath of walkRulelFiles(SRC)) {
@@ -157,6 +233,16 @@ export async function runLinBootstrap(opts = {}) {
   fs.mkdirSync(RUNTIME, { recursive: true });
   fs.mkdirSync(SELFHOST_RT, { recursive: true });
 
+  const mirrorsCreated = ensureJsonMirrors();
+  if (!quiet && mirrorsCreated.length) {
+    console.log(`[lin_bootstrap] created JSON mirrors: ${mirrorsCreated.length} new .rulel files`);
+  }
+
+  const jsonEmitted = emitRepoJsonFromRulel();
+  if (!quiet && jsonEmitted.length) {
+    console.log(`[lin_bootstrap] emitted host JSON from .rulel: ${jsonEmitted.join(', ')}`);
+  }
+
   const extracted = extractTransposedRulels();
   const cjsSeeds = extractCompiledCjsRulels();
   if (!quiet) {
@@ -180,14 +266,16 @@ export async function runLinBootstrap(opts = {}) {
   const manifest = {
     policy: 'LIN_compiles_LIN',
     src_purity: 'only .lin + .rulel in src/',
+    json_purity: 'only .rulel in repo; host .json emitted at bootstrap',
     runtime: 'build/runtime/',
+    json_emitted: jsonEmitted,
     extracted_rulel: extracted,
     cjs_seeds: cjsSeeds,
     cores_compiled_from_lin: cores,
     compiler_self_host_gate: gate,
     timestamp: new Date().toISOString(),
   };
-  fs.writeFileSync(path.join(RUNTIME, '.bootstrap.json'), JSON.stringify(manifest, null, 2));
+  fs.writeFileSync(path.join(RUNTIME, '.bootstrap.manifest'), JSON.stringify(manifest, null, 2));
   return manifest;
 }
 
