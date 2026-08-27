@@ -369,6 +369,73 @@ test('src/ contains only .lin and .rulel', () => {
   assert.deepEqual(bad, [], `foreign files in src/: ${bad.join(', ')}`);
 });
 
+/** Phase-2 host-glue scope: scripts/, bin/, test/ — every .mjs must have a synced TRANSPOSED_SOURCE .rulel mirror. */
+const HOST_GLUE_DIRS = ['scripts', 'bin', 'test'];
+const HOST_GLUE_FIXTURE_EXCLUDE = /^test\/fixtures\//;
+
+function findMjsMirrorRulel(relMjsPath) {
+  const rel = relMjsPath.replace(/\\/g, '/');
+  const dir = path.dirname(rel);
+  const base = path.basename(rel, '.mjs');
+  const candidates = [
+    path.join(root, dir, `${base}.rulel`),
+    path.join(root, rel.replace(/\.mjs$/, '.rulel')),
+  ];
+  for (const c of candidates) {
+    if (!fs.existsSync(c)) continue;
+    const text = fs.readFileSync(c, 'utf8');
+    if (text.includes('TRANSPOSED_SOURCE') && text.includes(`original="${rel}"`)) return c;
+  }
+  return null;
+}
+
+test('host glue dirs: every .mjs has TRANSPOSED_SOURCE .rulel mirror', () => {
+  const missing = [];
+  for (const dirName of HOST_GLUE_DIRS) {
+    const dir = path.join(root, dirName);
+    if (!fs.existsSync(dir)) continue;
+    function walk(d) {
+      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        const p = path.join(d, e.name);
+        if (e.isDirectory()) walk(p);
+        else if (e.name.endsWith('.mjs')) {
+          const rel = path.relative(root, p).replace(/\\/g, '/');
+          if (HOST_GLUE_FIXTURE_EXCLUDE.test(rel)) continue;
+          if (!findMjsMirrorRulel(rel)) missing.push(rel);
+        }
+      }
+    }
+    walk(dir);
+  }
+  assert.deepEqual(missing, [], `missing .rulel mirror for: ${missing.join(', ')}`);
+});
+
+test('host glue dirs: .rulel mirrors synced with .mjs', async () => {
+  const { extractRulelContent } = await import('../scripts/lin_bootstrap.mjs');
+  const drift = [];
+  for (const dirName of HOST_GLUE_DIRS) {
+    const dir = path.join(root, dirName);
+    if (!fs.existsSync(dir)) continue;
+    function walk(d) {
+      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        const p = path.join(d, e.name);
+        if (e.isDirectory()) walk(p);
+        else if (e.name.endsWith('.mjs')) {
+          const rel = path.relative(root, p).replace(/\\/g, '/');
+          if (HOST_GLUE_FIXTURE_EXCLUDE.test(rel)) continue;
+          const mirror = findMjsMirrorRulel(rel);
+          if (!mirror) return;
+          const mjsText = fs.readFileSync(p, 'utf8');
+          const rulelText = extractRulelContent(fs.readFileSync(mirror, 'utf8'));
+          if (mjsText !== rulelText) drift.push(rel);
+        }
+      }
+    }
+    walk(dir);
+  }
+  assert.deepEqual(drift, [], `rulel mirror drift: ${drift.join(', ')}`);
+});
+
 console.log('T15 RULEL');
 test('RULEL parse + COMMS validation', () => {
   const rulelText = '@RULEL:COMMS_PROTOCOL:1.4.0\n~R{.m=meta .r=rule}\n.m{repo=x name=y}\n.r{R20=comms-9router R1=a}\n.f{no_evil}\n.a{code=.lin}\n.c{nucleus=v!h!g}\n.s{state=ok}\n.p{cli=bin/lin.mjs}\n';
@@ -503,7 +570,7 @@ test('improve applies repairs and reports applied ids', async () => {
 });
 
 console.log('T20 bootstrap hash gates');
-await testAsync('hash gates: core seeds, semantic hash, nucleus lock, compiler idempotent', async () => {
+await testAsync('hash gates: core seeds, semantic hash, nucleus lock, compiler idempotent, transpile hash', async () => {
   const { runAllHashGates } = await import('../scripts/hash_gates.mjs');
   const { RUNTIME } = await import('../scripts/lin_runtime.mjs');
   const report = await runAllHashGates(RUNTIME);
@@ -513,6 +580,9 @@ await testAsync('hash gates: core seeds, semantic hash, nucleus lock, compiler i
   }
   const coreGate = report.gates.find((g) => g.gate === 'G_CORE_CODE_HASH');
   assert.ok(coreGate.cores.every((c) => c.ok), JSON.stringify(coreGate.cores.filter((c) => !c.ok)));
+  const transpilGate = report.gates.find((g) => g.gate === 'G_TRANSPIL_HASH');
+  assert.ok(transpilGate, 'G_TRANSPIL_HASH gate missing from bootstrap suite');
+  assert.equal(transpilGate.ok, true, JSON.stringify(transpilGate));
 });
 
 console.log('T21 transpile hash verification');

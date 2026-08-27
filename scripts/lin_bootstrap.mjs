@@ -92,6 +92,14 @@ export function jsonToTransposedRulel(relJsonPath, jsonText) {
   return `@RULEL:TRANSPOSED_SOURCE:1.0\n~METADATA{original="${rel}" ext=".json"}\n.source{content="${escapeRulelSource(jsonText)}"}\n`;
 }
 
+export function mjsToTransposedRulel(relMjsPath, mjsText) {
+  const rel = relMjsPath.replace(/\\/g, '/');
+  return `@RULEL:TRANSPOSED_SOURCE:1.0\n~METADATA{original="${rel}" lang="mjs"}\n.source{content="${escapeRulelSource(mjsText)}"}\n`;
+}
+
+/** Host-glue dirs whose .mjs is emitted from TRANSPOSED_SOURCE .rulel at bootstrap (not src/). */
+const HOST_GLUE_DIRS = ['scripts', 'bin', 'test'];
+
 function findJsonMirrorRulel(relJsonPath) {
   const rel = relJsonPath.replace(/\\/g, '/');
   const dir = path.dirname(rel);
@@ -154,25 +162,52 @@ function emitRepoJsonFromRulel() {
   return emitted;
 }
 
-function extractTransposedRulels() {
-  let count = 0;
-  for (const rulelPath of walkRulelFiles(SRC)) {
-    const name = path.relative(SRC, rulelPath);
-    const text = fs.readFileSync(rulelPath, 'utf8');
-    if (!text.includes('TRANSPOSED_SOURCE') && !text.includes('.source{content=')) continue;
-    const content = extractRulelContent(text);
-    if (!content) continue;
-    const original = rulelOriginalPath(text, path.basename(rulelPath));
-    if (!original) continue;
-    const rel = original.replace(/^src\//, '');
+function emitTransposedToPath(originalRel, content) {
+  if (originalRel.startsWith('src/')) {
+    const rel = originalRel.replace(/^src\//, '');
     const out = rel.startsWith('selfhost/')
       ? path.join(SELFHOST_RT, path.basename(rel))
       : path.join(RUNTIME, rel);
     fs.mkdirSync(path.dirname(out), { recursive: true });
     fs.writeFileSync(out, content, 'utf8');
-    count += 1;
+    return originalRel;
   }
-  return count;
+  const outPath = path.join(ROOT, originalRel);
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
+  fs.writeFileSync(outPath, content, 'utf8');
+  return originalRel;
+}
+
+function extractTransposedRulels() {
+  const emitted = [];
+  for (const rulelPath of walkRulelFiles(SRC)) {
+    const text = fs.readFileSync(rulelPath, 'utf8');
+    if (!text.includes('TRANSPOSED_SOURCE') && !text.includes('.source{content=')) continue;
+    const content = extractRulelContent(text);
+    if (!content) continue;
+    const original = rulelOriginalPath(text, path.basename(rulelPath));
+    if (!original || !original.startsWith('src/')) continue;
+    emitted.push(emitTransposedToPath(original, content));
+  }
+  return emitted;
+}
+
+function emitHostGlueFromRulel() {
+  const emitted = [];
+  for (const dirName of HOST_GLUE_DIRS) {
+    const dir = path.join(ROOT, dirName);
+    if (!fs.existsSync(dir)) continue;
+    for (const rulelPath of walkRulelFiles(dir)) {
+      const text = fs.readFileSync(rulelPath, 'utf8');
+      if (!text.includes('TRANSPOSED_SOURCE')) continue;
+      const m = text.match(/original="([^"]+)"/);
+      if (!m || !m[1].endsWith('.mjs')) continue;
+      const content = extractRulelContent(text);
+      if (!content) continue;
+      emitted.push(emitTransposedToPath(m[1], content));
+    }
+  }
+  return emitted;
 }
 
 function extractCompiledCjsRulels() {
@@ -244,10 +279,14 @@ export async function runLinBootstrap(opts = {}) {
     console.log(`[lin_bootstrap] emitted host JSON from .rulel: ${jsonEmitted.join(', ')}`);
   }
 
+  const hostGlueEmitted = emitHostGlueFromRulel();
   const extracted = extractTransposedRulels();
   const cjsSeeds = extractCompiledCjsRulels();
   if (!quiet) {
-    console.log(`[lin_bootstrap] extracted ${extracted} TRANSPOSED_SOURCE rulel → build/runtime/`);
+    if (hostGlueEmitted.length) {
+      console.log(`[lin_bootstrap] emitted host glue from .rulel: ${hostGlueEmitted.join(', ')}`);
+    }
+    console.log(`[lin_bootstrap] extracted ${extracted.length} src TRANSPOSED_SOURCE rulel → build/runtime/`);
     console.log(`[lin_bootstrap] seeded ${cjsSeeds} compiled_cjs.rulel mirrors`);
   }
 
@@ -279,9 +318,11 @@ export async function runLinBootstrap(opts = {}) {
   const manifest = {
     policy: 'LIN_compiles_LIN',
     src_purity: 'only .lin + .rulel in src/',
+    host_glue_purity: 'scripts/bin/test .mjs emitted from TRANSPOSED_SOURCE .rulel at bootstrap',
     json_purity: 'only .rulel in repo; host .json emitted at bootstrap',
     runtime: 'build/runtime/',
     json_emitted: jsonEmitted,
+    host_glue_emitted: hostGlueEmitted,
     extracted_rulel: extracted,
     cjs_seeds: cjsSeeds,
     cores_compiled_from_lin: cores,

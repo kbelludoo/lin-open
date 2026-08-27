@@ -19,6 +19,7 @@ export const GATES = {
   SEMANTIC_HASH: 'G_SEMANTIC_HASH',
   NUCLEUS_LOCK: 'G_NUCLEUS_LOCK',
   COMPILER_EMIT_IDEMPOTENT: 'G_COMPILER_EMIT_IDEMPOTENT',
+  TRANSPIL_HASH: 'G_TRANSPIL_HASH',
 };
 
 const CORES = [
@@ -234,6 +235,32 @@ export function verifyCompilerEmitIdempotent(compileFn) {
   }
 }
 
+export async function verifyTranspileHashGate(runtimeDir) {
+  try {
+    const verifyUrl = pathToFileURL(path.join(runtimeDir, 'transpile_hash_verify.mjs')).href;
+    const emitUrl = pathToFileURL(path.join(runtimeDir, 'emit_from_js.mjs')).href;
+    const { verifyTranspileOutput, G_TRANSPIL_HASH } = await import(verifyUrl);
+    const { emitLinFromJs } = await import(emitUrl);
+    const jsSource = [
+      'function add(a, b) { return a + b; }',
+      'function mul(a, b) { return a * b; }',
+      'module.exports = { add, mul };',
+    ].join('\n');
+    const emitted = emitLinFromJs(jsSource);
+    const report = verifyTranspileOutput(emitted.lin);
+    const ok = report.ok && report.gate === G_TRANSPIL_HASH && report.semantic_hash_stable && report.code_hash_stable;
+    return {
+      gate: GATES.TRANSPIL_HASH,
+      ok,
+      semantic_hash_stable: report.semantic_hash_stable,
+      code_hash_stable: report.code_hash_stable,
+      code_hash: report.code_hash?.slice(0, 16),
+    };
+  } catch (e) {
+    return { gate: GATES.TRANSPIL_HASH, ok: false, error: String(e.message || e).slice(0, 200) };
+  }
+}
+
 export async function runAllHashGates(runtimeDir) {
   const compilerUrl = pathToFileURL(path.join(runtimeDir, 'compiler.mjs')).href;
   const semanticUrl = pathToFileURL(path.join(runtimeDir, 'semantic_hash.mjs')).href;
@@ -245,6 +272,7 @@ export async function runAllHashGates(runtimeDir) {
     verifySemanticHashGate(semanticHash),
     verifyNucleusLock(),
     verifyCompilerEmitIdempotent(compile),
+    await verifyTranspileHashGate(runtimeDir),
   ];
   const ok = gates.every((g) => g.ok);
   return { ok, gates, checkedAt: new Date().toISOString() };
