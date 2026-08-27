@@ -26,6 +26,8 @@
     rawParams = m[2];
     openBrace = source.indexOf("{", m.index);
     ?(openBrace < 0){ continue }
+    between = source.slice(m.index + m[0].length, openBrace);
+    ?(between.indexOf(";") >= 0 || between.length > 160){ continue }
     depth = 1;
     k = openBrace + 1;
     while (k < source.length && depth > 0) {
@@ -133,19 +135,31 @@
   ^out.join("\n")
 }
 
+!linSafeIdent(name){
+  s = String(name || "");
+  s = s.replace(/~/g, "dtor_");
+  s = s.replace(/::/g, "_");
+  s = s.replace(/[^A-Za-z0-9_$]/g, "_");
+  ?(s.length === 0 || /^[0-9]/.test(s)){ ^("_" + s) }
+  ^s
+}
+
 !transpileCToLin(cSource){
   clean = cppStripPreprocessor(cSource).replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
-  rawFns = extractBracedFunctions(clean, /(?:[A-Za-z0-9_*]+\s+)+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);
+  rawFns = extractBracedFunctions(clean, /((?:[A-Za-z0-9_$]+::)*[~A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);
   fns = [];
+  seen = {};
   #(i = 0; i < rawFns.length; i++){
     rf = rawFns[i];
-    ?(["if", "while", "for", "switch"].includes(rf.name)){ continue }
-    ?(rf.name.indexOf(":") >= 0){ continue }
-    ?(/^[A-Z][A-Z0-9_]*$/.test(rf.name)){ continue }
+    name = linSafeIdent(rf.name);
+    ?(["if", "while", "for", "switch", "catch", "try", "sizeof", "return", "new", "delete"].includes(rf.name) || seen[name]){ continue }
+    ?(/^[A-Z][A-Z0-9_]*$/.test(name) && name.indexOf("_") < 0){ continue }
     ?(rf.rawParams.indexOf("(") >= 0){ continue }
+    ?(rf.rawParams.indexOf(";") >= 0){ continue }
+    seen[name] = 1;
     params = rf.rawParams.split(",").map(function(p){
       parts = p.trim().split(/\s+/);
-      ^parts[parts.length - 1].replace(/^\*/, "")
+      ^linSafeIdent(parts[parts.length - 1].replace(/^\*/, "").replace(/[&\[\]]/g, ""))
     }).filter(Boolean).join(",");
     
     body = rf.body;
@@ -157,7 +171,7 @@
     body = body.replace(/\bif\s*\(([^)]+)\)\s*\{/g, "?($1){");
     body = body.replace(/\bwhile\s*\(([^)]+)\)\s*\{/g, ";while($1){");
     body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");
-    fns.push({ name: rf.name, params: params, body: body })
+    fns.push({ name: name, params: params, body: body })
   }
   exportNames = fns.map(function(f){ ^f.name });
   outLines = ["@LIN:L1c:0.2"];

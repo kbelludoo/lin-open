@@ -18,5 +18,7 @@
   E_CLASS_METHOD: "class Foo { add(){} } requires enter class brace and id( as method"
   E_CHROME_STUB: "chrome_full_lin *.cc.lin were empty_module stubs; map name by split_ prefix dirs to chromium tree then transpileCToLin"
   E_MODULE_EXPORTS_OBJ: "module.exports = { initialize: function } must enter { not skipStatement"
-}
   E_CHROME_GREEDY: "map lin names by longest existing dir prefix of underscore parts"
+  E_CHROME_SKIP_PARTS: "do not skip failed path parts; reconstruct dirs by joining underscore groups that exist"
+  E_CPP_QUALIFIED: "C extract must match ident( before { including Type::Method and std::vector<T> return types; linSafeIdent :: to _"
+}
