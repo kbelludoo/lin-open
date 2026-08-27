@@ -1,20 +1,20 @@
 @RULEL:INTEL_CLONE_LIN:1.3.0
 ^slug="dedent"
 ^lang="LIN"
-^status="PARTIAL_PASS_WITH_FAILS"
-^done=false
+^status="PASS"
+^done=true
 ^published=false
-^suite_rate=0.8333
+^suite_rate=1
 ^suite_total=6
-^pass=5 ^fail=1 ^skip=0
+^pass=6 ^fail=0 ^skip=0
 ^publish_gate="suite_rate==1.0_JS"
 ^host="scripts/clone_lin_loop.mjs v2-compile-gate"
 
 @COMPARISON {
-  pass_names: ["alignValue.lin","asFunction.lin","asTag.lin","prevalMacros.lin","type_only.lin"]
-  fail_names: ["createDedent.lin:LIN_JS_SYNTAX: Unexpected token ';'"]
+  pass_names: ["alignValue.lin","asFunction.lin","asTag.lin","createDedent.lin","prevalMacros.lin","type_only.lin"]
+  fail_names: []
 }
 
 @NOTE_PT {
-  PARTIAL clone-lin-dedent: p=5 f=1 suite_rate=0.8333
+  DONE clone-lin-dedent: p=6 f=0 suite_rate=1
 }
