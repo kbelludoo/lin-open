@@ -147,9 +147,14 @@ export function emitLinFromJs(jsSource, opts = {}) {
       i = skipStatement(toks, i);
       continue;
     }
-    if (t.type === 'id' && (t.value === 'import' || t.value === 'from' || t.value === 'try' || t.value === 'catch' || t.value === 'finally' || t.value === 'class' || t.value === 'async')) {
+    if (t.type === 'id' && (t.value === 'import' || t.value === 'from' || t.value === 'try' || t.value === 'catch' || t.value === 'finally' || t.value === 'class' || t.value === 'async' || t.value === 'if' || t.value === 'else')) {
       if (t.value === 'async' && toks[i + 1] && toks[i + 1].value === 'function') {
         i++;
+        continue;
+      }
+      if (t.value === 'if' || t.value === 'else') {
+        while (i < toks.length && toks[i].value !== '{') i++;
+        if (toks[i]?.value === '{') i++;
         continue;
       }
       i = skipStatement(toks, i);
@@ -169,6 +174,10 @@ export function emitLinFromJs(jsSource, opts = {}) {
         continue;
       }
       i = skipStatement(toks, i);
+      continue;
+    }
+    if (t.type === 'punct' && t.value === '}') {
+      i++;
       continue;
     }
     if (t.type === 'punct' && (t.value === '{' || t.value === '(' || t.value === '=' || t.value === '>' || t.value === '*')) {
