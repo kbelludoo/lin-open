@@ -750,15 +750,28 @@ function transpileJsTsToLin(jsSource, opts = {}) {
     i=m.index + m[0].length;
     depth=1;
     while (i < src.length && depth > 0) {
-      rest=src.slice(i);
-      nextFn=rest.search(/\bfunction\b/);
-      nextEnd=rest.search(/\bend\b/);
-      ?(nextEnd < 0){ break };
-      ?(nextFn >= 0 && nextFn < nextEnd){ depth=depth+1; i=i+nextFn+8; continue };
-      depth=depth-1;
-      i=i+nextEnd+3;
+      c=src.charAt(i);
+      ?(c==='"' || c==="'"){
+        q=c; i=i+1;
+        while (i < src.length && src.charAt(i)!==q) {
+          ?(src.charAt(i)==='\\'){ i=i+1 };
+          i=i+1;
+        };
+        i=i+1;
+        continue;
+      };
+      w=src.slice(i).match(/^[A-Za-z_]\w*/);
+      ?(w){
+        ?(w[0]==='function'){ depth=depth+1 }
+        :(w[0]==='end'){ depth=depth-1 };
+        i=i+w[0].length;
+        continue;
+      };
+      i=i+1;
     };
     body=src.slice(m.index + m[0].length, i - 3);
+    body=body.replace(/\breturn\b/g, '^');
+    fns.push({ name: name, params: params, body: body });
     body=body.replace(/\breturn\b/g, '^');
     fns.push({ name: name, params: params, body: body });
   };

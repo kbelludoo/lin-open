@@ -84,17 +84,36 @@ function transpileLuaToLin(luaSource) {
     let i = m.index + m[0].length;
     let depth = 1;
     while (i < src.length && depth > 0) {
-      const rest = src.slice(i);
-      const nextFn = rest.search(/\bfunction\b/);
-      const nextEnd = rest.search(/\bend\b/);
-      if (nextEnd < 0) break;
-      if (nextFn >= 0 && nextFn < nextEnd) {
-        depth++;
-        i += nextFn + 8;
+      const c = src[i];
+      if (c === '"' || c === "'") {
+        const q = c;
+        i++;
+        while (i < src.length && src[i] !== q) {
+          if (src[i] === '\\') i++;
+          i++;
+        }
+        i++;
         continue;
       }
-      depth--;
-      i += nextEnd + 3;
+      if (c === '-' && src[i + 1] === '-') {
+        if (src[i + 2] === '[') {
+          const close = src.indexOf(']]', i + 3);
+          i = close < 0 ? src.length : close + 2;
+          continue;
+        }
+        while (i < src.length && src[i] !== '\n') i++;
+        continue;
+      }
+      if (/\w/.test(c)) {
+        const w = src.slice(i).match(/^[A-Za-z_]\w*/);
+        if (w) {
+          if (w[0] === 'function') depth++;
+          else if (w[0] === 'end') depth--;
+          i += w[0].length;
+          continue;
+        }
+      }
+      i++;
     }
     let body = src.slice(m.index + m[0].length, i - 3);
     body = body.replace(/\breturn\b/g, '^');

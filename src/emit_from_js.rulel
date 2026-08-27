@@ -27,11 +27,19 @@ export function emitLinFromJs(jsSource, opts = {}) {
       continue;
     }
     if (t.type === 'id' && t.value === 'function') {
-      const nameTok = toks[i + 1];
+      let nameTok = toks[i + 1];
       let k = i + 1;
-      if (toks[k]?.type === 'id') k++;
+      let fname;
+      if (toks[k]?.type === 'id') {
+        fname = toks[k].value;
+        k++;
+      } else if (toks[k]?.value === '(') {
+        fname = `_anon${fns.length}`;
+      } else {
+        throw new EmitJsUnsupportedError('bad function decl');
+      }
       const openParenF = toks[k];
-      if (!nameTok || nameTok.type !== 'id' || !openParenF || openParenF.value !== '(') throw new EmitJsUnsupportedError('bad function decl');
+      if (!openParenF || openParenF.value !== '(') throw new EmitJsUnsupportedError('bad function decl');
       const closeParenF = matchBracket(toks, k);
       const params = sliceToks(toks, k + 1, closeParenF).trim();
       let openBrace = closeParenF + 1;
@@ -42,7 +50,7 @@ export function emitLinFromJs(jsSource, opts = {}) {
       }
       if (!toks[openBrace] || toks[openBrace].value !== '{') throw new EmitJsUnsupportedError('fn missing body');
       const closeBrace = matchBracket(toks, openBrace);
-      fns.push({ name: nameTok.value, params: normalizeParams(params), body: sliceToks(toks, openBrace + 1, closeBrace) });
+      fns.push({ name: fname, params: normalizeParams(params), body: sliceToks(toks, openBrace + 1, closeBrace) });
       i = closeBrace + 1;
       if (toks[i]?.value === ';') i++;
       continue;
@@ -150,6 +158,14 @@ export function emitLinFromJs(jsSource, opts = {}) {
           }
         }
         if (/\bfunction\b/.test(initText)) {
+          let eq = i + 2;
+          while (eq < toks.length && toks[eq].value !== '=' && toks[eq].value !== '{') eq++;
+          let brace = eq;
+          while (brace < toks.length && toks[brace].value !== '{') brace++;
+          if (toks[brace]?.value === '{') {
+            i = brace + 1;
+            continue;
+          }
           i = skipStatement(toks, i);
           continue;
         }
@@ -188,6 +204,18 @@ export function emitLinFromJs(jsSource, opts = {}) {
       continue;
     }
     if (t.type === 'id' && (t.value === 'import' || t.value === 'from' || t.value === 'try' || t.value === 'catch' || t.value === 'finally' || t.value === 'class' || t.value === 'async' || t.value === 'if' || t.value === 'else')) {
+      let n = i + 1;
+      while (n < toks.length && toks[n].type === 'nl') n++;
+      if (toks[n]?.value === ':' || toks[n]?.value === '=') {
+        if (toks[n + 1]?.value === 'function' || (toks[n + 1]?.type === 'nl')) {
+          let m = n + 1;
+          while (m < toks.length && toks[m].type === 'nl') m++;
+          if (toks[m]?.value === 'function') {
+            i = m;
+            continue;
+          }
+        }
+      } else {
       if (t.value === 'async' && toks[i + 1] && toks[i + 1].value === 'function') {
         i++;
         continue;
@@ -199,6 +227,7 @@ export function emitLinFromJs(jsSource, opts = {}) {
       }
       i = skipStatement(toks, i);
       continue;
+      }
     }
     if (t.type === 'comment') {
       i++;
@@ -253,10 +282,38 @@ export function emitLinFromJs(jsSource, opts = {}) {
       continue;
     }
     if (t.type === 'id') {
+      let k = i + 1;
+      while (k < toks.length && (toks[k].type === 'nl' || toks[k].value === '.' || toks[k].type === 'id' || toks[k].value === '[' || toks[k].value === ']')) k++;
+      if (toks[k]?.value === ':' || toks[k]?.value === '=') {
+        let n = k + 1;
+        while (n < toks.length && toks[n].type === 'nl') n++;
+        if (toks[n]?.value === 'function') {
+          i = n;
+          continue;
+        }
+      }
+      let depth = 0;
+      let sawFn = -1;
+      for (let n = i; n < toks.length; n++) {
+        const tk = toks[n];
+        if (tk.value === '(' || tk.value === '{') depth++;
+        else if (tk.value === ')' || tk.value === '}') {
+          depth--;
+          if (depth < 0) break;
+        } else if (tk.value === 'function') {
+          sawFn = n;
+          break;
+        } else if (depth === 0 && tk.value === ';') break;
+      }
+      if (sawFn >= 0) {
+        i = sawFn;
+        continue;
+      }
       i = skipStatement(toks, i);
+      if (i <= k && i === i) i = Math.max(i, k) + 1;
       continue;
     }
-    throw new EmitJsUnsupportedError(`top-level token ${JSON.stringify(t.value)}`);
+    i++;
   }
   if (!fns.length) throw new EmitJsUnsupportedError('no functions found');
   void opts;

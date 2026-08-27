@@ -13,5 +13,6 @@
   E_DESTRUCTURE: "normalizeParams must split commas at depth 0 and strip defaults only at depth 0"
   E_MIN_NO_FN: "min js/ files that only assign methods/exports without function keyword fail emitLinFromJs"
   E_LUA_END: "lua end/function depth walker can emit bodies whose compileLinToJs hash differs from in-memory string if trailing newline or nested end in strings"
-  E_C_GIANT: "duktape.c and similar giant C files can emit lin that compileLinToJs hashes unstably"
+  E_OBJ_KEY_IMPORT: "object key import: function was eaten by import skipStatement"
+  E_ANON_FN: "anonymous function ( and member = function must be collected or min js/ reports no functions"
 }
