@@ -1,0 +1,3 @@
+@RULEL:TRANSPOSED_SOURCE:1.0
+~METADATA{original="kernel/linker.ld" ext=".ld"}
+.source{content="ENTRY(_start)\n\nSECTIONS {\n    . = 1M;\n\n    .text BLOCK(4K) : ALIGN(4K) {\n        *(.multiboot)\n        *(.text)\n    }\n\n    .rodata BLOCK(4K) : ALIGN(4K) {\n        *(.rodata)\n    }\n\n    .data BLOCK(4K) : ALIGN(4K) {\n        *(.data)\n    }\n\n    .bss BLOCK(4K) : ALIGN(4K) {\n        *(COMMON)\n        *(.bss)\n        *(.stack)\n    }\n}\n"}
