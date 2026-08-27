@@ -34,7 +34,12 @@ export function emitLinFromJs(jsSource, opts = {}) {
       if (!nameTok || nameTok.type !== 'id' || !openParenF || openParenF.value !== '(') throw new EmitJsUnsupportedError('bad function decl');
       const closeParenF = matchBracket(toks, k);
       const params = sliceToks(toks, k + 1, closeParenF).trim();
-      const openBrace = closeParenF + 1;
+      let openBrace = closeParenF + 1;
+      while (openBrace < toks.length && toks[openBrace].value !== '{' && toks[openBrace].value !== ';') openBrace++;
+      if (toks[openBrace]?.value === ';') {
+        i = openBrace + 1;
+        continue;
+      }
       if (!toks[openBrace] || toks[openBrace].value !== '{') throw new EmitJsUnsupportedError('fn missing body');
       const closeBrace = matchBracket(toks, openBrace);
       fns.push({ name: nameTok.value, params: normalizeParams(params), body: sliceToks(toks, openBrace + 1, closeBrace) });
@@ -106,12 +111,15 @@ export function emitLinFromJs(jsSource, opts = {}) {
             const paramsRaw = sliceToks(toks, initStart + 1, closeParen).trim();
             let bodyOut;
             let after;
-            const arrowTok = toks[closeParen + 1];
-            const splitEq = toks[closeParen + 1];
-            const splitGt = toks[closeParen + 2];
+            let pArrow = closeParen + 1;
+            while (toks[pArrow]?.type === 'nl') pArrow++;
+            const arrowTok = toks[pArrow];
+            const splitEq = toks[pArrow];
+            const splitGt = toks[pArrow + 1];
             const isArrowTok = arrowTok && arrowTok.value === '=>';
             const isSplitArrow = splitEq && splitEq.value === '=' && splitGt && splitGt.value === '>';
-            const bodyStart = isArrowTok ? closeParen + 2 : (isSplitArrow ? closeParen + 3 : -1);
+            let bodyStart = isArrowTok ? pArrow + 1 : (isSplitArrow ? pArrow + 2 : -1);
+            while (bodyStart >= 0 && toks[bodyStart]?.type === 'nl') bodyStart++;
             if (bodyStart >= 0 && toks[bodyStart]?.value === '{') {
               const cb = matchBracket(toks, bodyStart);
               bodyOut = sliceToks(toks, bodyStart + 1, cb);
@@ -142,7 +150,8 @@ export function emitLinFromJs(jsSource, opts = {}) {
           }
         }
         if (/\bfunction\b/.test(initText)) {
-          throw new EmitJsUnsupportedError(`top-level ${t.value} ${nameTok.value} = ${initText.slice(0, 40)}`);
+          i = skipStatement(toks, i);
+          continue;
         }
         topLevelVars.push({ name: nameTok.value, init: initText });
         i = j;
@@ -211,11 +220,25 @@ export function emitLinFromJs(jsSource, opts = {}) {
       i++;
       continue;
     }
-    if (t.type === 'punct' && (t.value === '{' || t.value === '(' || t.value === '=' || t.value === '>' || t.value === '*')) {
+    if (t.type === 'punct' && t.value === '(') {
+      let k = i + 1;
+      while (k < toks.length && toks[k].type === 'nl') k++;
+      if (toks[k]?.value === 'function') {
+        while (k < toks.length && toks[k].value !== '{') k++;
+        if (toks[k]?.value === '{') { i = k + 1; continue; }
+      }
       i = skipStatement(toks, i);
       continue;
     }
-    if (t.type === 'punct' && t.value === ';') {
+    if (t.type === 'punct' && (t.value === '.' || t.value === ')' || t.value === ']')) {
+      i++;
+      continue;
+    }
+    if (t.type === 'punct' && (t.value === '{' || t.value === '=' || t.value === '>' || t.value === '*')) {
+      i = skipStatement(toks, i);
+      continue;
+    }
+    if (t.type === 'punct') {
       i++;
       continue;
     }
@@ -223,6 +246,14 @@ export function emitLinFromJs(jsSource, opts = {}) {
       i++;
       if (this && this.eat) {}
       while (i < toks.length && toks[i].type === 'punct' && toks[i].value === ';') i++;
+      continue;
+    }
+    if (t.type === 'str') {
+      i++;
+      continue;
+    }
+    if (t.type === 'id') {
+      i = skipStatement(toks, i);
       continue;
     }
     throw new EmitJsUnsupportedError(`top-level token ${JSON.stringify(t.value)}`);
@@ -324,11 +355,46 @@ function sliceToks(toks, from, toExclusive) {
 }
 
 export function normalizeParams(paramsRaw) {
-  return String(paramsRaw || '')
-    .split(',')
+  const s = String(paramsRaw || '');
+  const parts = [];
+  let cur = '';
+  let d = 0;
+  for (const ch of s) {
+    if ('{[('.includes(ch)) d++;
+    else if (']})'.includes(ch)) d--;
+    if (ch === ',' && d === 0) {
+      parts.push(cur);
+      cur = '';
+    } else cur += ch;
+  }
+  if (cur) parts.push(cur);
+  return parts
     .map((p) => p.trim())
     .filter(Boolean)
-    .map((p) => p.replace(/\s*=\s*[\s\S]+$/, ''))
+    .map((p) => {
+      let depth = 0;
+      let lastEq = -1;
+      for (let i = 0; i < p.length; i++) {
+        const ch = p[i];
+        if ('{[('.includes(ch)) depth++;
+        else if (']})'.includes(ch)) depth--;
+        else if (ch === '=' && depth === 0) lastEq = i;
+      }
+      if (lastEq >= 0) p = p.slice(0, lastEq).trim();
+      const dm = p.match(/^\{([^}]*)\}$/);
+      if (dm) {
+        return dm[1]
+          .split(',')
+          .map((x) => {
+            const eq = x.indexOf('=');
+            const core = (eq >= 0 ? x.slice(0, eq) : x).trim();
+            return core.split(':')[0].trim();
+          })
+          .filter(Boolean)
+          .join(',');
+      }
+      return p.replace(/:[^,]+$/, '').replace(/\?$/, '').trim();
+    })
     .filter(Boolean)
     .join(',');
 }

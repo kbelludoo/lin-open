@@ -27,7 +27,9 @@
       if (!nameTok || nameTok.type !== 'id' || !openParenF || openParenF.value !== '(') throw new EmitJsUnsupportedError('bad function decl');
       const closeParenF = matchBracket(toks, k);
       const params = sliceToks(toks, k + 1, closeParenF).trim();
-      const openBrace = closeParenF + 1;
+      let openBrace = closeParenF + 1;
+      while (openBrace < toks.length && toks[openBrace].value !== '{' && toks[openBrace].value !== ';'){ openBrace++; }
+      ?(toks[openBrace]?.value === ';'){ i = openBrace + 1; continue; }
       ?(!toks[openBrace] || toks[openBrace].value !== '{'){ throw new EmitJsUnsupportedError('fn missing body'); }
       const closeBrace = matchBracket(toks, openBrace);
       fns.push({ name: nameTok.value, params: normalizeParams(params), body: sliceToks(toks, openBrace + 1, closeBrace) });
@@ -131,7 +133,8 @@
           }
         }
         ?(/\bfunction\b/.test(initText)){
-          throw new EmitJsUnsupportedError(`top-level ${t.value} ${nameTok.value} = ${initText.slice(0, 40)}`);
+          i = skipStatement(toks, i);
+          continue;
         }
         topLevelVars.push({ name: nameTok.value, init: initText });
         i = j;
@@ -201,7 +204,21 @@
       i++;
       continue;
     }
-    ?(t.type === 'punct' && (t.value === '{' || t.value === '(' || t.value === '=' || t.value === '>' || t.value === '*')){
+    ?(t.type === 'punct' && t.value === '('){
+      let k = i + 1;
+      while (k < toks.length && toks[k].type === 'nl') k++;
+      ?(toks[k]?.value === 'function'){
+        while (k < toks.length && toks[k].value !== '{') k++;
+        ?(toks[k]?.value === '{'){ i = k + 1; continue; }
+      }
+      i = skipStatement(toks, i);
+      continue;
+    }
+    ?(t.type === 'punct' && (t.value === '.' || t.value === ')' || t.value === ']')){
+      i++;
+      continue;
+    }
+    ?(t.type === 'punct' && (t.value === '{' || t.value === '=' || t.value === '>' || t.value === '*')){
       i = skipStatement(toks, i);
       continue;
     }
@@ -213,6 +230,10 @@
       i++;
       ?(this && this.eat){}
       while (i < toks.length && toks[i].type === 'punct' && toks[i].value === ';') i++;
+      continue;
+    }
+    ?(t.type === 'id'){
+      i = skipStatement(toks, i);
       continue;
     }
     throw new EmitJsUnsupportedError(`top-level token ${JSON.stringify(t.value)}`);
@@ -345,13 +366,26 @@ function skipValueToks(toks, i) {
   ^parts.join('').trim();
 }
 !normalizeParams(paramsRaw){
-  ^String(paramsRaw || '')
-    .split(',')
-    .map((p) => p.trim())
-    .filter(Boolean)
-    .map((p) => p.replace(/\s*=\s*[\s\S]+$/, ''))
-    .filter(Boolean)
-    .join(',');
+  s=String(paramsRaw || '');
+  parts=[];
+  cur='';
+  d=0;
+  #(ci=0;ci<s.length;ci++){
+    ch=s.charAt(ci);
+    ?('{[('.includes(ch)){ d=d+1 }
+    :(']})'.includes(ch)){ d=d-1 };
+    ?(ch===',' && d===0){ parts.push(cur); cur='' }
+    :{ cur=cur+ch };
+  };
+  ?(cur){ parts.push(cur) };
+  ^parts.map(~(p){
+    q=p.trim().replace(/\s*=\s*[\s\S]+$/, '').trim();
+    dm=q.match(/^\{([^}]*)\}$/);
+    ?(dm){
+      ^dm[1].split(',').map(~(x){ ^x.trim().replace(/\s*=[\s\S]+$/, '').split(':')[0].trim() }).filter(Boolean).join(',')
+    };
+    ^q.replace(/:[^,]+$/, '').replace(/\?$/, '').trim()
+  }).filter(Boolean).join(',');
 }
 !rewriteBody(body){
   const lowered = lowerSwitches(String(body));
