@@ -13,6 +13,20 @@ test/**/*.mjs
 tests/**/*.mjs
 benchmarks/**/*.mjs
 
+# Legacy v1 archive: TRANSPOSED_SOURCE .rulel mirrors only (exclusion zone, not bootstrap emit)
+_legacy_v1/**/*.mjs
+_legacy_v1/**/*.js
+_legacy_v1/**/*.ts
+_legacy_v1/**/*.cjs
+_legacy_v1/**/*.lia
+
+# POLYGLOT / emitted host sources (canonical = *.rulel)
+**/*.py
+!build/**
+
+# In-memory bootstrap seed (canonical = bootstrap_seed.rulel)
+bootstrap_seed.mjs
+
 # Host JSON emitted from *.rulel at bootstrap (repo is lin+rulel only)
 **/*.json
 !build/**/*.json

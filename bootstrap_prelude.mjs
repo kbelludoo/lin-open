@@ -10,6 +10,8 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
 /** Phase-4: tests/ + benchmarks/ .mjs emitted from TRANSPOSED_SOURCE .rulel at bootstrap. */
 const HOST_GLUE_DIRS = ['scripts', 'bin', 'test', 'tests', 'benchmarks'];
+/** Phase-5: _legacy_v1/ is a legacy exclusion zone (mirrors archived; not bootstrap-emitted). */
+export const LEGACY_EXCLUSION_DIRS = ['_legacy_v1'];
 
 function extractRulelContent(rulelText) {
   const marker = '.source{content="';
