@@ -8,7 +8,8 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
-const HOST_GLUE_DIRS = ['scripts', 'bin', 'test'];
+/** Phase-4: tests/ + benchmarks/ .mjs emitted from TRANSPOSED_SOURCE .rulel at bootstrap. */
+const HOST_GLUE_DIRS = ['scripts', 'bin', 'test', 'tests', 'benchmarks'];
 
 function extractRulelContent(rulelText) {
   const marker = '.source{content="';
