@@ -12,6 +12,27 @@ test/**/*.mjs
 !test/fixtures/**
 tests/**/*.mjs
 benchmarks/**/*.mjs
+benchmarks/**/*.cjs
+benchmarks/**/*.ts
+benchmarks/**/*.js
+
+# Phase-6: artifacts/ emit outputs (canonical = *.rulel + *.lin)
+artifacts/**/*.js
+artifacts/**/*.cjs
+artifacts/**/*.lia
+
+# Phase-6: examples/ + lin_rust/ LIA corpus + multi-emit outputs (canonical = *.lin + *.rulel)
+examples/**/*.lia
+examples/**/*.js
+examples/**/*.ts
+examples/**/*.cjs
+lin_rust/**/*.lia
+lin_rust/**/*.js
+lin_rust/**/*.ts
+
+# Phase-6: test/fixtures LIA + queue JS (canonical = *.lin + *_js.rulel / ~LANG .rulel)
+test/fixtures/**/*.lia
+test/fixtures/queue/**/*.js
 
 # Legacy v1 archive: TRANSPOSED_SOURCE .rulel mirrors only (exclusion zone, not bootstrap emit)
 _legacy_v1/**/*.mjs
