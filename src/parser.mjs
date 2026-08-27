@@ -382,6 +382,19 @@ class Parser {
     return stmts;
   }
 
+  /** Braced block or single statement (lossy clones emit JS-style if/while bodies). */
+  parseStmtOrBlock(endIdx) {
+    while (this.at('nl') || this.at('comment')) this.next();
+    if (this.at('punct', '{')) return this.parseBlock();
+    if (this.atVal(';')) {
+      this.next();
+      return [];
+    }
+    const st = this.parseStmt(endIdx);
+    if (!st) throw new LinParseError('statement expected', this.peek());
+    return [st];
+  }
+
   parseStmts(endIdx) {
     const stmts = [];
     for (;;) {
@@ -521,7 +534,7 @@ class Parser {
       const closeP = this.findMatching(this.pos - 1, '(', ')');
       const cond = this.exprFromSpan(this.pos, closeP);
       this.pos = closeP + 1;
-      const body = this.parseBlock();
+      const body = this.parseStmtOrBlock();
       return { type: 'while', cond, body };
     }
     if (t.type === 'id' && t.value === 'switch' && this.peek(1).type === 'punct' && this.peek(1).value === '(') {
@@ -775,8 +788,19 @@ class Parser {
     let j = closeP + 1;
     while (j < this.toks.length && (this.toks[j].type === 'nl' || this.toks[j].type === 'comment')) j++;
     if (this.toks[j] && this.toks[j].type === 'punct' && this.toks[j].value === '{') {
+      this.pos = j;
       const body = this.parseBlock();
       return { kind: 'closure', params: stripTypeAnn(params), body, tok: tilde };
+    }
+    // Lossy emit: .map( ~()){ body } — outer call ')' appears before closure block.
+    if (this.toks[j] && this.toks[j].type === 'punct' && this.toks[j].value === ')') {
+      let k = j + 1;
+      while (k < this.toks.length && (this.toks[k].type === 'nl' || this.toks[k].type === 'comment')) k++;
+      if (this.toks[k] && this.toks[k].type === 'punct' && this.toks[k].value === '{') {
+        this.pos = k;
+        const body = this.parseBlock();
+        return { kind: 'closure', params: stripTypeAnn(params), body, tok: tilde };
+      }
     }
     if (this.toks[j] && this.toks[j].type === 'punct' && this.toks[j].value === '=>') {
       this.pos = j + 1;
@@ -880,7 +904,7 @@ class Parser {
     const closeP = this.findMatching(this.pos - 1, '(', ')');
     const cond = this.exprFromSpan(this.pos, closeP);
     this.pos = closeP + 1;
-    const then = this.parseBlock();
+    const then = this.parseStmtOrBlock();
     return { cond, then };
   }
 
@@ -904,13 +928,13 @@ class Parser {
     if (headText.includes(' of ') && !headText.includes(';')) {
       const [left, right] = headText.split(/\s+of\s+/);
       this.pos = closeP + 1;
-      const body = this.parseBlock();
+      const body = this.parseStmtOrBlock();
       return { type: 'forof', left: left.replace(/^(?:const|let|var)\s+/, ''), right, body };
     }
     if (headText.includes(' in ') && !headText.includes(';')) {
       const [left, right] = headText.split(/\s+in\s+/);
       this.pos = closeP + 1;
-      const body = this.parseBlock();
+      const body = this.parseStmtOrBlock();
       return { type: 'forin', left: left.replace(/^(?:const|let|var)\s+/, ''), right, body };
     }
     const headGroups = splitTopLevelIdx(this.toks, this.pos, closeP, ';');
@@ -924,7 +948,7 @@ class Parser {
       const cond = g.length
         ? { parts: [{ kind: 'raw', text: segText(g) }] }
         : { parts: [] };
-      const body = this.parseBlock();
+      const body = this.parseStmtOrBlock();
       return { type: 'while', cond, body };
     }
     const init = segText(headGroups[0]);
@@ -933,7 +957,7 @@ class Parser {
       ? { parts: [{ kind: 'raw', text: segText(cg) }] }
       : { parts: [] };
     const step = segText(headGroups[2]);
-    const body = this.parseBlock();
+    const body = this.parseStmtOrBlock();
     return { type: 'for', init, cond, step, body };
   }
 
