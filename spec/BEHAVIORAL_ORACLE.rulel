@@ -1,0 +1,42 @@
+@RULEL:BEHAVIORAL_ORACLE:1.0.0
+
+^lang="LIN"
+^status="ACTIVE"
+^goal="catch_behavioral_drift_that_semantic_hash_cannot_see"
+
+@PROBLEM {
+  statement: "A LIN rewrite can pass every existing gate (G_PARSE, G_EXPORTS, G_HASH_STABLE, G_JS_SYNTAX, G_NUCLEUS_INTACT) while behaving DIFFERENTLY from the original at runtime. semantic_hash is rename-invariant canonicalization of SOURCE STRUCTURE — it proves 'this looks like the same shape of code', not 'this computes the same outputs'. A single dropped guard clause (e.g. an early-return condition) changes runtime behavior but can leave the canonicalized structure looking equivalent enough to pass."
+  concrete_example: "test/fixtures/token_guard.trap.lin drops the `expected.length === 0 ||` guard from a constant-time token comparison (test/fixtures/token_guard.lin). Plain `lin verify` on the trap file returns ok:true — G_HASH_STABLE and friends are blind to it. `lin verify --behavior test/fixtures/token_guard.cases.rulel` on the SAME trap file returns ok:false with G_BEHAVIOR reporting `matchesToken([\"\",\"\"]) = true want false` — an auth-bypass-class bug (empty token matches empty expected) caught in one line. See test/run_all.mjs T23 for the full reproduction as a permanent regression test."
+}
+
+@SOLUTION_SURFACE {
+  G_BEHAVIOR_gate: "src/verifier.lin (host runtime: build/runtime/verifier.mjs) already runs an in-memory G_BEHAVIOR gate: it compiles the candidate .lin, runs it via vm.mjs's runInMemory with zero disk I/O, calls each exported fn named in the case list with its args, and deepEq-compares the result against `want`. First mismatch aborts the gate with a message of the shape `fn(args) = got want expected`."
+  cli: "`lin verify <file.lin> --behavior <cases-file>` (bin/lin.mjs) loads the cases file and passes it as `opts.behavior` to verify(). Exit code is 0 iff every gate (including G_BEHAVIOR) passes."
+  two_case_file_formats: "BOTH are accepted by extension. .rulel is canonical for anything tracked inside lin-master (repo purity: only .lin/.rulel tracked). .json is accepted only as an interop fallback for external tooling that is not itself bound by lin-master's purity rule (e.g. a downstream project's own CI)."
+  diff_behavior_tool: "`lin diff-behavior <original.js> <rewrite.lin> (--cases cases.rulel | --mock mock.mjs)` (scripts/diff_behavior.mjs) solves a DIFFERENT, complementary problem: it compares the LIN rewrite against the LIVE ORIGINAL implementation, not against hand-authored want values. --mock loads a plain .mjs module exporting `async function cases()` that can construct LIVE objects with real methods (a mock `request` whose `.headers.get(...)` is a real closure) — args like that cannot survive a JSON/RULEL text file (neither format can encode a function), so --mock keeps both the original call and the rewrite call in the SAME process against the SAME live instances. If a case omits `want`, it is computed by calling the ORIGINAL live ('golden-from-original' mode) instead of being hand-typed, which is how you bootstrap a full case suite from an existing implementation before you've written a single assertion by hand."
+  when_to_use_which: "Use `verify --behavior` (cases.rulel) for cases with plain JSON-serializable args/want — this is the form to commit into a repo as a regression test (see T23). Use `diff-behavior --mock` when the function under test takes live objects (requests, DB handles, anything with methods) or when you want the original implementation itself to be the oracle instead of hand-typed expectations (see T24)."
+}
+
+@RULEL_CASES_FORMAT {
+  header: "@RULEL:BEHAVIOR_CASES:1.0"
+  entry_shape: ".case{fn=<bareIdentifier> args=\"<JSON array, RULEL-quoted with \\\" for embedded quotes>\" want=<bare JSON literal OR RULEL-quoted JSON text> label=\"<optional free text>\"}"
+  grammar_reuse: "Built as the smallest extension of src/rulel_core.lin's EXISTING tuple/value grammar rather than a new serialization format: splitTopEntries (quote+depth aware tokenizing) and parseValuePairs (key=value regex) are reused unchanged. Only new addition is extractCaseBlocks — a brace-depth+quote-aware scanner for repeated `.case{...}` blocks, since parseRulel's original blockRe only supports a single non-nested-brace block per single-letter key and .case bodies routinely contain literal `{`/`}` inside their JSON-encoded args/want (e.g. `{\"headers\":{}}`)."
+  decode_rule: "args/want: if RULEL-quoted (wrapped in matching \" or ', with \\\" for embedded quotes), strip the RULEL-level quoting then JSON.parse the result — this is how arrays/objects/strings survive. If NOT quoted (bare token like `false`, `120`, `null`), JSON.parse the bare token directly — this is the ergonomic path for scalars. label: same unquote step but WITHOUT the JSON.parse — it is a plain string, not a JSON payload."
+  worked_example: "test/fixtures/token_guard.cases.rulel — 4 cases covering the match/no-match/wrong-length/empty-vs-empty branches of test/fixtures/token_guard.lin."
+  core_functions: "src/rulel_core.lin exports unquoteRulelToken, decodeBehaviorValue, extractCaseBlocks, parseBehaviorCasesRulel (compiled self-hosted via the LIN-compiles-LIN CORES pipeline in scripts/lin_bootstrap.mjs, re-exported by src/rulel.mjs, consumed by bin/lin.mjs and scripts/diff_behavior.mjs)."
+}
+
+@KNOWN_CAVEAT {
+  single_export_modules: "compile(src,{target:'js'}) emits `module.exports = fn` (the bare function) when a .lin file has exactly ONE `=ex{...}` entry, vs `module.exports = {fn, ...}` (an object) for 2+. A BEHAVIOR_CASES file's {fn,args,want} lookup (`mod[c.fn]`) assumes the object shape. Practical implication: give any .lin fixture you intend to behavior-test at least 2 exports (test/fixtures/token_guard.lin does), or special-case the single-function unwrap the way scripts/diff_behavior.mjs's resolveExport already does. This is a real quirk of the emitter, not a bug in the oracle — left as-is rather than changed, to avoid destabilizing other callers (e.g. `lin run`) that rely on the current single-export shape."
+}
+
+@REGRESSION_COVERAGE {
+  file: "test/run_all.mjs"
+  t23: "T23 behavioral oracle — parses test/fixtures/token_guard.cases.rulel, proves the GOOD fixture passes both plain verify and verify --behavior, proves the TRAP fixture passes plain verify but FAILS verify --behavior with a message naming the exact case, and proves the same end-to-end through the actual `lin verify` CLI subprocess (not just the library call)."
+  t24: "T24 diff-behavior — proves diffBehavior() catches the same trap using LIVE mock request objects (a real `.headers.get()` closure) instead of hand-typed JSON cases, including golden-from-original 'want' computation."
+}
+
+@SEE_ALSO {
+  cross_backend: "spec/E8_E9_CROSS_BACKEND_EQUIVALENCE.rulel — generalizes this oracle from 'one target vs hand-typed want' to 'all 8 REAL_TARGETS vs each other and vs want'."
+  repo_purity: "spec/LIN_REPO_PURITY_COLD_START.rulel — why case files tracked inside lin-master must be .rulel, not .json."
+}

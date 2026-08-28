@@ -1,0 +1,35 @@
+@RULEL:E8_E9_CROSS_BACKEND_EQUIVALENCE:1.0.0
+
+^lang="LIN"
+^status="PARTIAL_ACTIVE_see_IMPLEMENTATION_STATUS"
+^goal="one_lin_source_must_behave_identically_across_all_8_REAL_TARGETS_not_just_compile_on_each"
+
+@RELATION_TO_EXISTING_E8_E9 {
+  note: "benchmarks/run_e8_e9_ir_equivalence.rulel (Protocol E8/E9, GATE_E11) already verifies a DIFFERENT thing: that a hand-written LIN-IR v0.1 JSON payload evaluates to the same result_hash on two independently hand-written NATIVE runners (Rust 1.97.1, Nim 2.2.0), using a numeric oracle. It never touches the LIN compiler's own emitters."
+  this_spec: "E8_E9_CROSS_BACKEND_EQUIVALENCE is the compiler-facing sibling: it asks whether compile(src, {target}) for target in REAL_TARGETS produces programs that all satisfy the SAME {fn,args,want} behavior cases as the JS/TS in-memory reference — i.e. the behavioral oracle (spec/BEHAVIORAL_ORACLE.rulel, `lin verify --behavior`) generalized across backends instead of across an original-vs-rewrite pair."
+  why_both_exist: "The old E8/E9 protocol is a narrow, deeply-instrumented cryptographic-provenance benchmark for two specific native runners on one workload spec. This spec is the general-purpose, growing regression surface for the compiler's 8 REAL_TARGETS using the same case files developers already write for verify --behavior."
+}
+
+@PROTOCOL {
+  input: "a .lin source file S (2+ exports, so `module.exports={...}` is object-shaped — see IMPLEMENTATION_STATUS caveat) plus a BEHAVIOR_CASES .rulel file (spec/BEHAVIORAL_ORACLE.rulel format: .case{fn=... args=\"...\" want=...})"
+  step1: "compile(S, {target: t}) for every t in REAL_TARGETS = [js, ts, py, go, rust, c, java, zig]"
+  step2: "for each case {fn,args,want}: execute compile(S,{target:t})'s emitted fn(...args) under target t's runtime and record got_t"
+  step3_js_ts: "js: runInMemory (vm.mjs) — zero disk I/O, always available, the reference target. ts: type-stripped then run under node (see T18 CLI test 'ts: emitted TypeScript parses under node type-strip')."
+  step3_native: "go/rust/c/zig: written to a temp dir, compiled with the native toolchain (scripts/native_backend_bench.mjs already does compile+run for these 4; ensure_toolchains.mjs auto-installs missing toolchains per R_TC), executed as a subprocess with args passed as CLI/stdin JSON, stdout parsed back to JSON for got_t."
+  step3_py_java: "py: executed via `python3 -c` harness calling the emitted fn. java: emitted class compiled with javac and invoked via a small generated main() that JSON-prints the call result. Both follow the same args-in/JSON-out convention as native targets."
+  step4_gate: "GATE_E8E9 = true iff, for every case, deepEq(got_t, want) holds for every t that is REACHABLE in the current environment (toolchain installed), AND deepEq(got_t1, got_t2) holds pairwise for all reachable t1,t2 (cross-target equivalence, not just each-vs-want, to catch a target-specific miscompile that happens to coincidentally match `want` by luck)."
+  unreachable_targets: "a target whose toolchain is not installed and could not be auto-installed by ensure_toolchains.mjs is recorded as SKIPPED, not FAILED — GATE_E8E9 is evaluated over the reachable subset and the report lists which targets were skipped and why, so the gate cannot be silently weakened without it being visible in the evidence record."
+}
+
+@IMPLEMENTATION_STATUS {
+  js: "DONE — lin verify --behavior IS this protocol restricted to target=js (see spec/BEHAVIORAL_ORACLE.rulel). Every BEHAVIOR_CASES .rulel file is already, today, a valid input to this broader protocol's js leg."
+  ts: "DONE at the 'parses and type-strips cleanly' level (T18); executing ts cases end-to-end against BEHAVIOR_CASES is a straightforward extension of the js runner (strip types, runInMemory) — not yet wired as a CLI command."
+  native_go_rust_c_zig: "PARTIAL — scripts/native_backend_bench.mjs proves compile+link+execute round-trips for these 4 targets on representative LIN programs today, but is not yet wired to consume a BEHAVIOR_CASES .rulel file and report per-case got/want; it currently benchmarks throughput on fixed synthetic workloads, not arbitrary {fn,args,want} tuples."
+  py_java: "NOT YET WIRED — py/java emitters exist (emitters.lin) and are exercised by T17 corpus sweep for compile-only correctness, but no args-in/JSON-out execution harness exists yet for either."
+  known_caveat: "single-export .lin modules compile to `module.exports = fn` (bare function) rather than `module.exports = {fn}` (see bin/lin.mjs diff-behavior work, 2026-08-27) — a case file must target a module with 2+ exports, or the js/ts execution leg needs a small unwrap (`typeof mod === 'function' ? mod : mod[c.fn]`, already implemented in scripts/diff_behavior.mjs's resolveExport) to stay target-agnostic."
+  next_step_to_full_automation: "extend scripts/diff_behavior.mjs's `compile` call-site to loop `target in REAL_TARGETS`, write each non-js/ts target's emitted source to a fresh temp dir, shell out via ensure_toolchains.mjs-guaranteed compilers, and fold the per-target results into one report keyed by target — this reuses 100% of the existing case-loading (.rulel/.json) and deepEq comparison logic already proven by T23/T24 in test/run_all.mjs."
+}
+
+@GATE_E8E9_EVIDENCE_SCHEMA {
+  note: "when the native+py+java execution legs above are wired, evidence should follow the same shape as artifacts/evidence_e8_e9.rulel (environment_lock, provenance_manifest with per-target compiler versions + binary hashes, per-case per-target got/want table, summary.gate_status) so tooling that already parses E8/E9-style evidence keeps working."
+}
