@@ -1,0 +1,11 @@
+@RULEL:TRANSPOSED_SOURCE:1.0
+~METADATA{original="src/translation_feedback.mjs" lang="mjs" append_only=true nucleus_immutable=true}
+.m{kind=feedback_ledger append_only=true}
+.r{observation_to_hypothesis_to_candidate_to_gates}
+.f{erase_record nucleus_mutation silent_promotion}
+.a{compiler_diagnostics transpiler_discoveries golden_cases backend_results}
+.g{compile semantic_hash ir_hash code_hash behavior regression}
+.c{PROMOTED requires all gates PASS}
+.s{OBSERVED CANDIDATE PROMOTED REJECTED ROLLED_BACK}
+.p{nucleus_immutable runtime_selection source_evolution_explicit}
+.source{content="@LIN:L1c:0.2\n!feedbackHash(value){\n  ^createHash('sha256').update(JSON.stringify(value), 'utf8').digest('hex');\n}\n!appendFeedback(ledger,record){\n  var next=(ledger||[]).slice();\n  var item=Object.assign({},record);\n  item.sequence=next.length+1;\n  item.record_hash=feedbackHash(item);\n  next.push(item);\n  ^next;\n}\n!recordTranspileFailure(ledger,source,report){\n  ^appendFeedback(ledger,{observation:{kind:'transpile_failure',source_hash:feedbackHash(source),report:report||{}},status:'REJECTED'});\n}\n!recordCompilerFeedback(ledger,diagnostic){\n  ^appendFeedback(ledger,{observation:{kind:'compiler_diagnostic',diagnostic:diagnostic||{}},status:'OBSERVED'});\n}\n!promoteVerifiedPattern(ledger,candidate,gates){\n  var required=['coverage','semantic_hash','ir_hash','code_hash','behavior'];\n  var errors=[];\n  ?(candidate&&candidate.nucleus_change){errors.push('nucleus mutation forbidden');}\n  for(var i=0;i<required.length;i++){\n    var g=gates&&gates[required[i]];\n    ?(!(g===true||g==='PASS'||(g&&(g.ok===true||g.pass===true||g.status==='PASS')))){errors.push('gate '+required[i]+' is not PASS');}\n  }\n  var record={observation:{kind:'pattern_promotion_attempt'},candidate:candidate||{},gates:gates||{},status:errors.length?'REJECTED':'PROMOTED'};\n  var next=appendFeedback(ledger,record);\n  ^{ok:errors.length===0,errors:errors,ledger:next,record:record};\n}\n=ex{feedbackHash,appendFeedback,recordTranspileFailure,recordCompilerFeedback,promoteVerifiedPattern}"}

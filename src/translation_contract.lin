@@ -1,0 +1,71 @@
+@LIN:L1c:0.2
+!translationRequiredGates(){
+  ^['coverage', 'semantic_hash', 'ir_hash', 'code_hash', 'behavior'];
+}
+!translationHash(text){
+  ^createHash('sha256').update(String(text), 'utf8').digest('hex');
+}
+!translationGate(report,name){
+  var gates, gate;
+  gates = report && report.gates || {};
+  gate = gates[name];
+  ?(gate === true || gate === 'PASS'){ ^'PASS'; }
+  ?(gate && (gate.status === 'PASS' || gate.ok === true || gate.pass === true)){ ^'PASS'; }
+  ^'REJECT';
+}
+!validateTranslationCoverage(report){
+  var missing, unknown, dropped, coverage;
+  missing = [];
+  unknown = report && (report.unknown || report.unknown_constructs || []);
+  dropped = report && (report.dropped || report.dropped_constructs || []);
+  coverage = report && (report.coverage !== undefined ? report.coverage : report.source_coverage);
+  ?(!report){ ^{ ok:false, gate:'coverage', errors:['coverage report missing'] }; }
+  ?(coverage === undefined || Number(coverage) < 1){ missing.push('coverage < 1'); }
+  ?(unknown.length){ missing.push('unknown constructs: ' + unknown.join(', ')); }
+  ?(dropped.length){ missing.push('dropped constructs: ' + dropped.join(', ')); }
+  ?(report.stubbed || report.null_substitutions || report.zero_substitutions || report.empty_functions){
+    missing.push('silent-loss substitution detected');
+  }
+  ^{ ok: missing.length === 0, gate:'coverage', errors:missing };
+}
+!enforceTranslationGates(report){
+  var required, failures, i, name, coverage;
+  required = translationRequiredGates();
+  failures = [];
+  coverage = validateTranslationCoverage(report);
+  ?(!coverage.ok){ failures = failures.concat(coverage.errors); }
+  for(i = 0; i < required.length; i++){
+    name = required[i];
+    ?(translationGate(report,name) !== 'PASS'){ failures.push('gate ' + name + ' is not PASS'); }
+  }
+  ^{ ok: failures.length === 0, gate: failures.length ? 'translation_contract' : 'translation_contract', errors:failures };
+}
+!classifyTranslationLifecycle(report){
+  ?(!report){ ^'REJECT'; }
+  ?(report.lifecycle === 'REJECT' || report.status === 'REJECT'){ ^'REJECT'; }
+  ?(report.optimized && enforceTranslationGates(report).ok){ ^'OPTIMIZE'; }
+  ?(enforceTranslationGates(report).ok){ ^'ACCEPT'; }
+  ^'REJECT';
+}
+!createTranslationManifest(original,lin,ir,behavior,report){
+  var sourceHash, linHash, irHash, behaviorHash, gates, coverage;
+  sourceHash = translationHash(original);
+  linHash = translationHash(lin);
+  irHash = translationHash(ir || lin);
+  behaviorHash = translationHash(JSON.stringify(behavior || {}));
+  gates = report && report.gates || {};
+  coverage = validateTranslationCoverage(report || {});
+  ^{
+    contract:'LIN_TRANSLATION_CONTRACT:1.0',
+    lifecycle:classifyTranslationLifecycle(report),
+    source_hash:sourceHash,
+    lin_source_hash:linHash,
+    ir_hash:irHash,
+    code_hash:report && (report.code_hash || null),
+    behavior_hash:behaviorHash,
+    coverage:coverage,
+    gates:gates,
+    preserved_dimensions:['types','effects','control_flow','errors','memory','ffi','concurrency']
+  };
+}
+=ex{translationRequiredGates, translationHash, translationGate, validateTranslationCoverage, enforceTranslationGates, classifyTranslationLifecycle, createTranslationManifest}

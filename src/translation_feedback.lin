@@ -1,0 +1,85 @@
+@LIN:L1c:0.2
+!feedbackHash(value){
+  ^createHash('sha256').update(JSON.stringify(value), 'utf8').digest('hex');
+}
+!newFeedbackRecord(observation,hypothesis,candidate,gates,status){
+  var record;
+  record = {
+    sequence:0,
+    timestamp:new Date().toISOString(),
+    observation:observation || {},
+    hypothesis:hypothesis || {},
+    candidate:candidate || {},
+    gates:gates || {},
+    status:status || 'OBSERVED'
+  };
+  record.record_hash = feedbackHash(record);
+  ^record;
+}
+!appendFeedback(ledger,record){
+  var next, item;
+  next = (ledger || []).slice();
+  item = Object.assign({}, record);
+  item.sequence = next.length + 1;
+  item.record_hash = feedbackHash(item);
+  next.push(item);
+  ^next;
+}
+!recordTranspileFailure(ledger,source,report){
+  ^appendFeedback(ledger, newFeedbackRecord(
+    {kind:'transpile_failure', source_hash:feedbackHash(source), report:report || {}},
+    {action:'inspect_diagnostic_and_preserve_construct'},
+    {},
+    report && report.gates || {},
+    'REJECTED'
+  ));
+}
+!recordCompilerFeedback(ledger,diagnostic){
+  ^appendFeedback(ledger, newFeedbackRecord(
+    {kind:'compiler_diagnostic', diagnostic:diagnostic || {}},
+    {action:'derive_lowering_candidate'},
+    {},
+    diagnostic && diagnostic.gates || {},
+    'OBSERVED'
+  ));
+}
+!promoteVerifiedPattern(ledger,candidate,gates){
+  var required, failures, i, gate, next, record;
+  required = ['coverage','semantic_hash','ir_hash','code_hash','behavior'];
+  failures = [];
+  ?(candidate && candidate.nucleus_change){ failures.push('nucleus mutation forbidden'); }
+  for(i=0;i<required.length;i++){
+    gate = gates && gates[required[i]];
+    ?(!(gate === true || gate === 'PASS' || (gate && (gate.ok === true || gate.pass === true || gate.status === 'PASS')))){
+      failures.push('gate ' + required[i] + ' is not PASS');
+    }
+  }
+  record = newFeedbackRecord(
+    {kind:'pattern_promotion_attempt'},
+    {action:'promote_only_after_all_gates'},
+    candidate || {},
+    gates || {},
+    failures.length ? 'REJECTED' : 'PROMOTED'
+  );
+  next = appendFeedback(ledger,record);
+  ^{ok:failures.length === 0, errors:failures, ledger:next, record:record};
+}
+!rollbackFeedback(ledger,sequence,reason){
+  ^appendFeedback(ledger,newFeedbackRecord(
+    {kind:'rollback', sequence:sequence, reason:reason || 'gate failure'},
+    {action:'retain_failure_for_learning'},
+    {},
+    {},
+    'ROLLED_BACK'
+  ));
+}
+!feedbackToRulel(ledger){
+  var lines, i, item;
+  lines = ['@RULEL:LIN_TRANSLATION_FEEDBACK:1.0', '~METADATA{append_only=true nucleus_immutable=true}'];
+  for(i=0;i<(ledger || []).length;i++){
+    item = ledger[i];
+    lines.push('.record{sequence=' + item.sequence + ' status="' + item.status + '" hash="' + item.record_hash + '" kind="' + item.observation.kind + '"}');
+  }
+  ^lines.join('\n');
+}
+=ex{feedbackHash, newFeedbackRecord, appendFeedback, recordTranspileFailure, recordCompilerFeedback, promoteVerifiedPattern, rollbackFeedback, feedbackToRulel}

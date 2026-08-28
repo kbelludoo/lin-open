@@ -1,0 +1,19 @@
+@RULEL:LIN_TRANSLATION_CONTRACT:1.0
+~R{.m=meta .r=rule .f=forbid .a=allow .g=gate .c=contract .s=stage .p=preserve}
+~METADATA{kind="executable_contract" owner="lin_transpiler" fail_closed=true}
+.m{kind=translation_contract owner=lin_transpiler fail_closed=true}
+.r{required_gates=coverage_semantic_hash_ir_hash_code_hash_behavior}
+.f{drop stub null_substitute zero_substitute empty_function unknown_construct nucleus_mutation}
+.a{ledger=append_only candidate_patches=explicit runtime_selection=true}
+.g{all_required_gates=PASS coverage=1.0 behavior=PASS}
+.c{observation_hypothesis_candidate_gates_status_record_hash}
+.s{SOURCE_INVENTORY COVERAGE LOWER IR_HASH BEHAVIOR OPTIMIZE BACKEND ACCEPT REJECT}
+.p{types effects control_flow errors memory ffi concurrency}
+.required_gates{coverage="PASS" semantic_hash="PASS" ir_hash="PASS" code_hash="PASS" behavior="PASS"}
+.preserved_dimensions{types=true effects=true control_flow=true errors=true memory=true ffi=true concurrency=true}
+.forbidden{drop=true stub=true null_substitute=true zero_substitute=true empty_function=true unknown_construct=true}
+.lifecycle{stages="SOURCE_INVENTORY,COVERAGE,LOWER,IR_HASH,BEHAVIOR,OPTIMIZE,BACKEND,ACCEPT" terminal="ACCEPT|REJECT"}
+.golden{origin="original_source" hand_written_wants=false live_mocks="in_memory" serializable_cases="rulel"}
+.feedback{direction="bidirectional" ledger="append-only" schema="observation,hypothesis,candidate,gates,status,record_hash" compiler_inputs="diagnostics,parser_ir_coverage,type_effects,backend_failures,behavior_mismatches" transpiler_inputs="constructs,lowerings,unsupported,golden_cases,backend_performance" promotion="candidate only after compile+semantic_hash+ir_hash+code_hash+behavior+regression" rollback="append rejected record; never erase observation"}
+.safety{self_modifying=false nucleus_mutation=false runtime_adaptation="ledger_and_selection_only" source_evolution="explicit_candidate_patch"}
+.rule{success="all required gates PASS and no unknown or dropped construct"; failure="missing coverage, missing gate, non-PASS gate, or mismatch"}

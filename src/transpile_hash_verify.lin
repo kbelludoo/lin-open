@@ -1,8 +1,8 @@
 @LIN:L1c:0.2
 !verifyTranspileOutput(linSource,opts){
-  var errors, prog, hashes1, hashes2, semanticOk, hashValues, semanticNonEmpty, codeHash1, codeHash2, codeOk, ok;
+  var errors, prog, hashes1, hashes2, semanticOk, hashValues, semanticNonEmpty, codeHash1, codeHash2, codeOk, ok, contract;
   errors = [];
-  ?(opts && opts.skipHashVerify){
+  ?(opts && opts.skipHashVerify && !(opts.contract_report)){
     ^{ ok: true, gate: 'G_TRANSPIL_HASH', skipped: true };
   }
   try {
@@ -31,6 +31,11 @@
   codeOk = codeHash1 === codeHash2 && /^[0-9a-f]{64}$/.test(codeHash1);
   ?(!codeOk){ errors.push('code hash unstable or invalid'); }
   ok = semanticOk && semanticNonEmpty && codeOk;
+  ?(opts && opts.contract_report){
+    contract = enforceTranslationContract(opts.contract_report);
+    ?(!contract.ok){ errors = errors.concat(contract.errors); }
+    ok = ok && contract.ok;
+  }
   ^{
     ok: ok,
     gate: ok ? 'G_TRANSPIL_HASH' : (errors[0] || 'G_TRANSPIL_HASH'),
@@ -39,8 +44,39 @@
     code_hash: codeHash1,
     code_hash_stable: codeOk,
     semantic_hash_stable: semanticOk && semanticNonEmpty,
-    errors: ok ? [] : errors
+    errors: ok ? [] : errors,
+    contract: opts && opts.contract_report ? enforceTranslationContract(opts.contract_report) : null
   };
+}
+!validateTranslationCoverage(report){
+  var errors, unknown, dropped, coverage;
+  errors = [];
+  ?(!report){ ^{ok:false, errors:['coverage report missing']}; }
+  unknown = report.unknown || report.unknown_constructs || [];
+  dropped = report.dropped || report.dropped_constructs || [];
+  coverage = report.coverage !== undefined ? Number(report.coverage) : -1;
+  ?(coverage < 1){ errors.push('coverage < 1'); }
+  ?(unknown.length){ errors.push('unknown constructs: ' + unknown.join(', ')); }
+  ?(dropped.length){ errors.push('dropped constructs: ' + dropped.join(', ')); }
+  ?(report.stubbed || report.null_substitutions || report.zero_substitutions || report.empty_functions){
+    errors.push('silent-loss substitution detected');
+  }
+  ^{ok:errors.length === 0, errors:errors};
+}
+!enforceTranslationContract(report){
+  var required, errors, coverage, i, name, gate;
+  required = ['coverage','semantic_hash','ir_hash','code_hash','behavior'];
+  errors = [];
+  coverage = validateTranslationCoverage(report);
+  ?(!coverage.ok){ errors = errors.concat(coverage.errors); }
+  for(i=0;i<required.length;i++){
+    name = required[i];
+    gate = report && report.gates ? report.gates[name] : null;
+    ?(!(gate === true || gate === 'PASS' || (gate && (gate.status === 'PASS' || gate.ok === true || gate.pass === true)))){
+      errors.push('gate ' + name + ' is not PASS');
+    }
+  }
+  ^{ok:errors.length === 0, gate:'G_TRANSLATION_CONTRACT', errors:errors};
 }
 !verifyTranspileOutputOrThrow(linSource,opts){
   var report;
@@ -56,4 +92,4 @@
   }
   ^lin;
 }
-=ex{verifyTranspileOutput, verifyTranspileOutputOrThrow, finalizeTranspileLin}
+=ex{verifyTranspileOutput, verifyTranspileOutputOrThrow, finalizeTranspileLin, validateTranslationCoverage, enforceTranslationContract, sha256}
