@@ -457,7 +457,7 @@
     lines.push(`\tvar ${safeEmitId(l)} ${lt}`);
   }
   lines.push(goStmts(fn.body, 1));
-  lines.push('}
+  lines.push('}');
 !collectLocalsGo(st,locals,params){
   const add = (id) => {
     ?(!params.includes(id) && !['return', 'if', 'for', 'else'].includes(id)){ locals.add(id); }
@@ -1057,7 +1057,7 @@
   }
   lines.push('  public static void main(String[] args) {');
   lines.push('  }');
-  lines.push('}
+  lines.push('}');
 !javaType(t){
   ?(t === '@str'){ ^'String'; }
   ?(t === '@bool'){ ^'boolean'; }

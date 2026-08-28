@@ -1,0 +1,6 @@
+@RULEL:BEHAVIOR_CASES:1.0
+~METADATA{subject="token_guard.lin" note="constant-time token compare; empty-vs-empty must never match (auth bypass class bug)"}
+.case{fn=matchesToken args="[\"\",\"\"]" want=false label="empty expected vs empty offered must never match"}
+.case{fn=matchesToken args="[\"secret\",\"secret\"]" want=true label="equal tokens match"}
+.case{fn=matchesToken args="[\"secret\",\"wrong!!\"]" want=false label="same length, different content"}
+.case{fn=matchesToken args="[\"secret\",\"short\"]" want=false label="different length"}

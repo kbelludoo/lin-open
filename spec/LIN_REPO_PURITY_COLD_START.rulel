@@ -1,0 +1,45 @@
+@RULEL:LIN_REPO_PURITY_COLD_START:1.0.0
+
+^lang="LIN"
+^status="ACTIVE"
+^goal="zero_tracked_non_lin_rulel_files_with_a_reproducible_clean_clone_bootstrap"
+
+@PARADOX {
+  statement: "git cannot execute a .lin or .rulel file directly. Something outside git's tracked-file constraint must be the very first thing a human/CI runs after `git clone` to kick off bootstrap (materializing package.json + bootstrap_cold_start.mjs from their TRANSPOSED_SOURCE .rulel mirrors, then invoking node)."
+  prior_attempt: "An earlier revision removed the last tracked host-exception file (bootstrap_prelude.mjs) claiming a fully rulel-only cold start. Verified against a truly clean checkout, that left the repo non-bootstrappable: no package.json, no bootstrap_cold_start.mjs, and no tracked way to create them. A tracked bootstrap.sh (POSIX sh + awk) was reintroduced as the sole host exception to fix that."
+  final_ask: "Zero exceptions, including bootstrap.sh itself. Solve this WITHOUT writing compiler logic in a new host language, and without abandoning LIN-compiles-LIN self-hosting."
+}
+
+@SOLUTION {
+  choice: "(a) Move bootstrap.sh's content into a .rulel TRANSPOSED_SOURCE mirror (bootstrap_sh.rulel) and untrack the .sh entirely. A human/CI regenerates bootstrap.sh locally (gitignored, NEVER tracked) from bootstrap_sh.rulel via the one-liner documented below, then runs it."
+  why_this_one: "It keeps git ls-files at exactly .lin + .rulel (verifiable, zero exceptions) while still giving a genuinely clean clone a deterministic, reproducible path to a running bootstrap. The one-liner is not a tracked artifact -- it is documentation (prose in a tracked .rulel file), same category as a README documenting a `curl | sh` command. It does not touch the LIN nucleus and does not introduce any hand-written compiler/runtime logic in a new host language: the one-liner only performs the same generic TRANSPOSED_SOURCE unescape that bootstrap.sh always did, now inlined as a single awk invocation."
+  rejected_b: "No pre-built/tracked native binary exists in this repo as a checked-in artifact (bin/lin_native etc. are gitignored build outputs, not committed) -- so there is nothing else to point CI/humans at as an alternative entrypoint."
+  invariant: "The LIN compiler itself stays self-hosted in .lin (compiler.lin/emitters.lin, see LIN_CORE_ARCH.rulel R0=WRITE=LIN). This one-liner performs zero language/compiler logic -- it is pure byte-shuffling (unescape a JSON-ish string) to materialize the pre-existing bootstrap_cold_start.mjs + package.json, exactly like bootstrap.sh always did. Node itself is not eliminated by this change (see LIN_CORE_ARCH.rulel R_BOOT=js_compiler_is_bootstrap) -- only the LAST tracked non-.lin/.rulel file is."
+}
+
+@COLD_START_PROCEDURE {
+  step0: "git clone <repo-url> && cd <repo>"
+  step1: "Regenerate the gitignored bootstrap.sh from the tracked bootstrap_sh.rulel mirror by running the ONE-LINE command below verbatim in a POSIX shell (no Node/Python needed for this step):"
+  step2: "./bootstrap.sh"
+  step3: "node test/run_all.mjs   (equivalently: npm test)"
+  expected: "52 passed, 0 failed (as of Phase 10; grows over time -- see test/run_all.rulel Phase 10 repo purity test for the exact zero-exception assertion)."
+  step2_effect: "bootstrap.sh (now materialized, gitignored, never tracked) seeds package.json + bootstrap_cold_start.mjs from their own .rulel mirrors, then execs `node bootstrap_cold_start.mjs`, which emits ALL remaining host glue (.mjs under scripts/bin/test/tests/benchmarks, docs, JSON, etc.) from TRANSPOSED_SOURCE .rulel mirrors and runs scripts/lin_bootstrap.mjs (hash gates: G_CORE_CODE_HASH, G_SEMANTIC_HASH, G_NUCLEUS_LOCK, G_COMPILER_EMIT_IDEMPOTENT, G_TRANSPIL_HASH)."
+  verification_command: "git ls-files | grep -vE '\\.(lin|rulel)$'  -- MUST print nothing (exit code 1 / empty output)."
+}
+
+@ONE_LINER_STEP1_VERBATIM
+awk 'BEGIN{c=0;o=""}{l=$0;if(!c){i=index(l,".source{content=\"");if(!i)next;l=substr(l,i+length(".source{content=\""));c=1}n=length(l);j=1;while(j<=n){ch=substr(l,j,1);if(ch=="\\"){nx=substr(l,j+1,1);if(nx=="n")o=o"\n";else if(nx=="t")o=o"\t";else if(nx=="r")o=o"\r";else if(nx=="\"")o=o"\"";else if(nx=="\\")o=o"\\";else o=o nx;j+=2}else if(ch=="\""){printf "%s",o;exit}else{o=o ch;j+=1}}}' bootstrap_sh.rulel > bootstrap.sh && chmod +x bootstrap.sh
+@END_ONE_LINER
+
+@GITIGNORE_ENTRY {
+  path: ".gitignore"
+  rule: "/bootstrap.sh is gitignored unconditionally (no negation exception). It is a build artifact regenerated on demand from bootstrap_sh.rulel, exactly like every other host-glue .mjs file emitted at bootstrap time."
+}
+
+@VERIFIED {
+  V1: "Round-trip fidelity: extracting bootstrap_sh.rulel's payload with the extraction logic reproduces bootstrap.sh byte-for-byte."
+  V2: "Ran the one-liner above verbatim in a shell after deleting bootstrap.sh from disk; it regenerated a working, executable bootstrap.sh."
+  V3: "Ran the regenerated ./bootstrap.sh end-to-end: all 5 hash gates PASS, 7/7 self-hosted cores round-trip LIN-compiles-LIN."
+  V4: "Ran node test/run_all.mjs after bootstrap: full suite passes, including the zero-exception purity assertion and a dedicated bootstrap_sh.rulel mirror-integrity test."
+  V5: "Cloned the pushed branch to a fresh /tmp directory (not the working copy) and repeated V1-V4 there to confirm this is reproducible from a genuinely clean checkout, not just an artifact of the existing working directory."
+}

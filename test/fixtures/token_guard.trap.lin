@@ -1,0 +1,6 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!matchesToken(expected,offered){if(offered.length!==expected.length) {^false;}let difference=0;for(let index=0;index<offered.length;index+=1){difference|=offered.charCodeAt(index)^expected.charCodeAt(index);}^difference===0}
+!hasManagedAgentToken(request,expected){^matchesToken(expected,request.headers.get("x-openbot-agent-token")?.trim()??"")}
+=ex{matchesToken,hasManagedAgentToken}

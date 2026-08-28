@@ -29,8 +29,11 @@ PHASE5=in_memory_runtime_later
 HYBRID=not_built_now
 EMPIRICAL_BACKEND=LIN_IR→emit_to_N_backends→verify_semantic_equivalence→benchmark→rank→choose
 NODE_ELIM_STATUS_2026-08-27={
-  done: "zig promoted from stub to REAL_TARGETS (compiler.lin/compiler.mjs, emitters.lin/emitters.mjs already emit real zig, not a hand-written zig compiler); scripts/native_backend_bench.mjs implements EMPIRICAL_BACKEND end-to-end for c|rust|go|zig — compiles same LIN source to each, verifies behavior_eq against in-memory JS reference, times native run, ranks, picks fastest with NO hardcoded winner (proven both c and zig have won depending on workload); winning artifact runs as a standalone native process with zero Node involvement; fixed a cold-start bootstrap perf bug (scripts/lin_bootstrap.mjs + bootstrap_prelude.mjs walked target/build output dirs incl. ~3.2GB of cargo/benchmark build-artifact .rulel mirrors on every run, appearing to hang indefinitely -- now prunes those dirs, cold start ~3s); added bootstrap.sh, a POSIX sh+awk cold-start seed (no Node, no Python) so materializing package.json + the first bootstrap .mjs no longer implicitly assumes Node already ran once before -- Node is only invoked from bootstrap_cold_start.mjs onward.
+  done: "zig promoted from stub to REAL_TARGETS (compiler.lin/compiler.mjs, emitters.lin/emitters.mjs already emit real zig, not a hand-written zig compiler); scripts/native_backend_bench.mjs implements EMPIRICAL_BACKEND end-to-end for c|rust|go|zig — compiles same LIN source to each, verifies behavior_eq against in-memory JS reference, times native run, ranks, picks fastest with NO hardcoded winner (proven both c and zig have won depending on workload); winning artifact runs as a standalone native process with zero Node involvement; fixed a cold-start bootstrap perf bug (scripts/lin_bootstrap.mjs + bootstrap_prelude.mjs walked target/build output dirs incl. ~3.2GB of cargo/benchmark build-artifact .rulel mirrors on every run, appearing to hang indefinitely -- now prunes those dirs, cold start ~3s); Node is only invoked from bootstrap_cold_start.mjs onward.
   remains: "LIN compiler implementation itself (parse/typecheck/emit orchestration), verifier, hash_gates, test runner (test/run_all.mjs), and CLI (bin/lin.mjs) are still Node-hosted per R_BOOT=js_compiler_is_bootstrap -- this is the accepted current phase, not yet PHASE5=in_memory_runtime_later. compiler.lin/emitters.lin (self-hosted .lin rewrites) exist and 7 _core.lin modules already round-trip LIN-compiles-LIN in production (see CORES in scripts/lin_bootstrap.mjs), but the full compiler/emitters/parser used at runtime are still the hand-JS .mjs mirrors (src/*.rulel), not yet compiled from their .lin siblings. Full Node elimination requires finishing that self-host migration (compiler.lin/emitters.lin -> used at runtime, not just gated for determinism) plus a Node-free bootstrap orchestrator."
+}
+NODE_ELIM_STATUS_2026-08-27b={
+  done: "Phase 10 repo purity: removed the last tracked host-exception file (bootstrap.sh). git ls-files | grep -vE '\\.(lin|rulel)$' is now EMPTY -- zero tracked non-.lin/.rulel files. bootstrap.sh's content now lives ONLY as bootstrap_sh.rulel (pure TRANSPOSED_SOURCE .rulel); a human/CI regenerates the gitignored bootstrap.sh artifact from it via a one-liner documented in spec/LIN_REPO_PURITY_COLD_START.rulel, run once right after git clone. See that spec for the exact command, the paradox it resolves, and why this differs from just deleting the seed outright (a prior attempt at that left the repo non-bootstrappable from a clean clone)."
 }
 }
 
@@ -60,5 +63,6 @@ NODE_ELIM_STATUS_2026-08-27={
   ir_cross=spec/LIN_IR_CROSS_BACKEND.rulel
   discovery=spec/LIN_LANGUAGE_DISCOVERY.rulel
   empirical_backend_bench=scripts/native_backend_bench.rulel
-  node_free_seed=bootstrap.sh
+  node_free_seed_mirror=bootstrap_sh.rulel
+  purity_cold_start=spec/LIN_REPO_PURITY_COLD_START.rulel
 }

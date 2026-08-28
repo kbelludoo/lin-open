@@ -30,4 +30,65 @@
     header: parsed.header,
     rid: ridVal
   };}
-=ex{splitTopEntries, parseValuePairs, parseRulel, validateComms}
+!unquoteRulelToken(raw){
+  var trimmed,q;
+  trimmed = String(raw || "").trim();
+  q = trimmed.charAt(0);
+  ?((q === "\"" || q === "'") && trimmed.length >= 2 && trimmed.charAt(trimmed.length - 1) === q){
+    ^trimmed.slice(1, trimmed.length - 1).replace(/\\"/g, "\"");
+  }
+  ^trimmed;
+}
+!decodeBehaviorValue(raw){
+  ^JSON.parse(unquoteRulelToken(raw));
+}
+!extractCaseBlocks(text){
+  var s,out,i,n,depth,quote,c,contentStart,j;
+  s = String(text || "");
+  out = [];
+  i = 0;
+  n = s.length;
+  while(i < n){
+    ?(s.slice(i, i + 6) === ".case{"){
+      contentStart = i + 6;
+      depth = 1;
+      quote = null;
+      j = contentStart;
+      while(j < n && depth > 0){
+        c = s.charAt(j);
+        ?(quote){
+          ?(c === "\\" && j + 1 < n){ j++; }
+          :(c === quote){ quote = null; }
+        }:?(c === "\"" || c === "'"){
+          quote = c;
+        }:?(c === "{"){
+          depth++;
+        }:?(c === "}"){
+          depth--;
+        }
+        j++;
+      }
+      out.push(s.slice(contentStart, j - 1));
+      i = j;
+    }:{
+      i++;
+    }
+  }
+  ^out;
+}
+!parseBehaviorCasesRulel(text){
+  var blocks,cases,k,body,pairs,item;
+  blocks = extractCaseBlocks(text);
+  cases = [];
+  for(k = 0;k < blocks.length;k++){
+    body = blocks[k];
+    pairs = parseValuePairs(body);
+    item = { fn: pairs.fn, args: [] };
+    ?(pairs.args !== undefined){ item.args = decodeBehaviorValue(pairs.args); }
+    ?(pairs.want !== undefined){ item.want = decodeBehaviorValue(pairs.want); }
+    ?(pairs.label !== undefined){ item.label = unquoteRulelToken(pairs.label); }
+    cases.push(item);
+  }
+  ^cases;
+}
+=ex{splitTopEntries, parseValuePairs, parseRulel, validateComms, unquoteRulelToken, decodeBehaviorValue, extractCaseBlocks, parseBehaviorCasesRulel}
