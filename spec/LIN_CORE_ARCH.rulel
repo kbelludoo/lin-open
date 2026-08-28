@@ -28,11 +28,15 @@ PHASE4=emitter_interface
 PHASE5=in_memory_runtime_later
 HYBRID=not_built_now
 EMPIRICAL_BACKEND=LIN_IR→emit_to_N_backends→verify_semantic_equivalence→benchmark→rank→choose
+NODE_ELIM_STATUS_2026-08-27={
+  done: "zig promoted from stub to REAL_TARGETS (compiler.lin/compiler.mjs, emitters.lin/emitters.mjs already emit real zig, not a hand-written zig compiler); scripts/native_backend_bench.mjs implements EMPIRICAL_BACKEND end-to-end for c|rust|go|zig — compiles same LIN source to each, verifies behavior_eq against in-memory JS reference, times native run, ranks, picks fastest with NO hardcoded winner (proven both c and zig have won depending on workload); winning artifact runs as a standalone native process with zero Node involvement; fixed a cold-start bootstrap perf bug (scripts/lin_bootstrap.mjs + bootstrap_prelude.mjs walked target/build output dirs incl. ~3.2GB of cargo/benchmark build-artifact .rulel mirrors on every run, appearing to hang indefinitely -- now prunes those dirs, cold start ~3s); added bootstrap.sh, a POSIX sh+awk cold-start seed (no Node, no Python) so materializing package.json + the first bootstrap .mjs no longer implicitly assumes Node already ran once before -- Node is only invoked from bootstrap_cold_start.mjs onward.
+  remains: "LIN compiler implementation itself (parse/typecheck/emit orchestration), verifier, hash_gates, test runner (test/run_all.mjs), and CLI (bin/lin.mjs) are still Node-hosted per R_BOOT=js_compiler_is_bootstrap -- this is the accepted current phase, not yet PHASE5=in_memory_runtime_later. compiler.lin/emitters.lin (self-hosted .lin rewrites) exist and 7 _core.lin modules already round-trip LIN-compiles-LIN in production (see CORES in scripts/lin_bootstrap.mjs), but the full compiler/emitters/parser used at runtime are still the hand-JS .mjs mirrors (src/*.rulel), not yet compiled from their .lin siblings. Full Node elimination requires finishing that self-host migration (compiler.lin/emitters.lin -> used at runtime, not just gated for determinism) plus a Node-free bootstrap orchestrator."
+}
 }
 
-.f{hand_Rust_compiler parallel_rust_clone_of_emitter.mjs|verifier.mjs migrate_everything_at_once redefine_verifier|semantic_hash|behavior_eq_gate|LIN_gate C_as_in_memory_host C_as_runtime_winner Go_as_nucleus abandon_JS_bootstrap_before_phase_gates Dicel_as_working_surface build_ocaml_core_now build_haskell_core_now build_zig_core_now build_cpp_core_now stub_ocaml|haskell|zig_as_PASS assume_backend_superiority_without_benchmark choose_backend_before_semantic_verification}
+.f{hand_Rust_compiler parallel_rust_clone_of_emitter.mjs|verifier.mjs migrate_everything_at_once redefine_verifier|semantic_hash|behavior_eq_gate|LIN_gate C_as_in_memory_host C_as_runtime_winner Go_as_nucleus abandon_JS_bootstrap_before_phase_gates Dicel_as_working_surface build_ocaml_core_now build_haskell_core_now build_zig_core_now build_cpp_core_now stub_ocaml|haskell_as_PASS assume_backend_superiority_without_benchmark choose_backend_before_semantic_verification}
 
-.a{core=rust cli=ts bootstrap=js gateway=go unsafe_target=c emit_gate=ts!js!py!go!rust!c!java stub_emit=cs!lua!elixir!crystal!kotlin!hcl!julia!scala!haskell!prolog!zig!nim!asm!ocaml rank1=rust rank2=ocaml_compiler_ast_semantics_only rank3=zig_light_vm haskell=types_proofs_effects_not_prod_runtime cpp=industrial_not_the_pick}
+.a{core=rust cli=ts bootstrap=js gateway=go unsafe_target=c emit_gate=ts!js!py!go!rust!c!java!zig stub_emit=cs!lua!elixir!crystal!kotlin!hcl!julia!scala!haskell!prolog!nim!asm!ocaml rank1=rust rank2=ocaml_compiler_ast_semantics_only rank3=zig_light_vm haskell=types_proofs_effects_not_prod_runtime cpp=industrial_not_the_pick note_2026-08-27=zig_promoted_stub_to_REAL_see_src_compiler.rulel_REAL_TARGETS_and_scripts_native_backend_bench.mjs}
 
 .s{pick_today=CANDIDATE_NOT_PROVEN reason=no_empirical_benchmark_for_kernel_workload rust=strong_candidate_safety_perf_memory_concurrency ocaml=strong_candidate_pattern_match_types zig=strong_candidate_comptime_lightweight haskell=strong_candidate_types_proofs cpp=industrial_candidate_native_performance ts=proven_for_string_workloads multi_backend=may_be_better_than_single_winner}
 
@@ -55,4 +59,6 @@ EMPIRICAL_BACKEND=LIN_IR→emit_to_N_backends→verify_semantic_equivalence→be
   self_optimize=spec/LIN_SELF_OPTIMIZE.rulel
   ir_cross=spec/LIN_IR_CROSS_BACKEND.rulel
   discovery=spec/LIN_LANGUAGE_DISCOVERY.rulel
+  empirical_backend_bench=scripts/native_backend_bench.rulel
+  node_free_seed=bootstrap.sh
 }
