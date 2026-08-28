@@ -1,0 +1,5 @@
+@RULEL:LIN_LLVM_PC_LANGUAGE:1.0
+~META{goal="LIN as semantic translator leveraging existing ecosystems" target="x86-64 Haswell LLVM backend first"}
+.layers{L1="LIN compiler implementation stays in .lin and self-compiles" L2="LIN source to real LLVM IR to llc/clang native code" L3="C Zig Rust Lua Crystal Nim OCaml and other ecosystem targets provide libraries ABI and toolchains" L4="semantic hash code hash behavior_eq and LLVM gates remain mandatory"}
+.proof{current="deterministic u64 add/xor/mul/rotate kernel; 32 vectors; exact LIN VM equality" gates="G_LLVM_IR_VALID G_LLVM_BEHAVIOR_EQ G_LLVM_CODE_DIFF"}
+.limits{honest="LLVM is a translation backend, not a full native runtime or OS" reason="interoperability with existing libraries ABIs and toolchains" next="broader source coverage and ecosystem integration" excluded="new OS/runtime layers and RandomX JIT comparison"}

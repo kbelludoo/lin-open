@@ -1,7 +1,7 @@
 @LIN:L1c:0.2
-!createClient(message){
-    super(`LIN_EMIT_UNSUPPORTED: ${message}`);
-    this.name = 'EmitUnsupportedError';
+!EmitUnsupportedError(message){
+    const err = { message: `LIN_EMIT_UNSUPPORTED: ${message}`, name: 'EmitUnsupportedError' };
+    ^err;
   }
 !isJsRuntimeOnly(body){
   ^JS_RUNTIME_ONLY.test(String(body || ''));
@@ -180,10 +180,10 @@
       case 'assign':
         break;
       case 'if': {
-        out.push(`${pad}?(st.cond){ }:`); }
+        out.push(`${pad}if ${pyCond(st.cond)}:`);
         pushBlock(out, pyStmts(st.then, indent + 1, prog), pad);
         for (const ei of st.elseIf || []) {
-          out.push(`${pad}el?(ei.cond){ }:`); }
+          out.push(`${pad}elif ${pyCond(ei.cond)}:`);
           pushBlock(out, pyStmts(collectChainBodies(ei), indent + 1, prog), pad);
         }
         ?(st.else){
@@ -193,10 +193,37 @@
         break;
       }
       case 'blockternary': {
-        out.push(`${pad}${pyLhs('_lt')} = (${pyBody(st.then)} ?(st.cond){ } else ${pyBody(st.elseExpr)})`.replace('_lt = ', '_lt = ')); }
+        out.push(`${pad}${pyLhs('_lt')} = (${pyBody(st.then)} if ${pyCond(st.cond)} else ${pyBody(st.elseExpr)})`.replace('_lt = ', '_lt = '));
         out.push(`${pad}pass`);
         break;
       }
+      case 'for': {
+        const initM = st.init.match(/^([A-Za-z_$][\w$]*)\s*=\s*([\s\S]+)$/);
+        ?(initM){ out.push(`${pad}${safeEmitId(initM[1])} = ${pyExpr(initM[2])}`); }
+        out.push(`${pad}while ${pyCond(st.cond)}:`);
+        const inner = pyStmts(st.body, indent + 1, prog);
+        const stepM = st.step.match(/^([A-Za-z_$][\w$]*)\s*(\+\+|--)$/);
+        ?(stepM){
+          inner.push(`${'    '.repeat(indent + 1)}${safeEmitId(stepM[1])} ${stepM[2] === '++' ? '+' : '-'}= 1`);
+        }:(st.step.trim()){
+          inner.push(`${'    '.repeat(indent + 1)}${pyExpr(st.step)}`);
+        }
+        pushBlock(out, inner, pad);
+        break;
+      }
+      case 'while':
+        out.push(`${pad}while ${pyCond(st.cond)}:`);
+        pushBlock(out, pyStmts(st.body, indent + 1, prog), pad);
+        break;
+      case 'match':
+        pyMatch(out, st, indent, prog);
+        break;
+      default:
+        throw new EmitUnsupportedError(`py stmt ${st.type}`);
+    }
+  }
+  ^out;
+}
 !collectChainBodies(ei){
   ^ei.body;
 }
@@ -286,6 +313,8 @@
     const expr = 'f"' + body.replace(/\$\{([^}]*)\}/g, (_, e) => '{' + e.trim() + '}').replace(/"/g, '\\"') + '"';
     s = s.slice(0, start) + expr + s.slice(end + 1);
   }
+  ^s;
+}
 !pyExpr(text){
   let s = String(text);
   s = templatesToFStrings(s);
@@ -328,7 +357,7 @@
 }
 !replaceTernariesPy(s){
   let guard = 0;
-  for (;;) {
+  while (true) {
     if (guard++ > 50) break;
     const t = findTopTernary(s);
     if (!t) break;
@@ -377,7 +406,7 @@
 }
 !pyArmCond(target,pat,guard){
   if (pat === '_') ^guard ? `(${guard})` : 'True';
-  const enumMatch = pat.match(/^([A-Za-z_$][\w$]*)\(([^)]+)\)$/) { ; }
+  const enumMatch = pat.match(/^([A-Za-z_$][\w$]*)\(([^)]+)\)$/);
   const tupleMatch = pat.match(/^\(([^)]+)\)$/);
   let base;
   ?(enumMatch){
@@ -568,9 +597,7 @@
   ^base;
 }
 !goExprRaw(expr){
-  ^expr && expr.parts
-    ? expr.parts.map((p) => (p.kind === 'raw' ? p.text : goInline(p.node))).join(' ')
-    : String(expr || '');
+  ^expr && expr.parts ? expr.parts.map((p) => (p.kind === 'raw' ? p.text : goInline(p.node))).join(' ') : String(expr || '');
 }
 !goInline(node){
   throw inlineErr('go', node);
@@ -791,7 +818,7 @@
 }
 !rustArmCond(target,pat,guard){
   if (pat === '_') ^guard ? guard : 'true';
-  const enumMatch = pat.match(/^([A-Za-z_$][\w$]*)\(([^)]+)\)$/) { ; }
+  const enumMatch = pat.match(/^([A-Za-z_$][\w$]*)\(([^)]+)\)$/);
   let base;
   ?(enumMatch){
     const tag = enumMatch[1];
@@ -804,9 +831,7 @@
   ^base;
 }
 !rustRaw(expr){
-  ^expr && expr.parts
-    ? expr.parts.map((p) => (p.kind === 'raw' ? p.text : rustInline(p.node))).join(' ')
-    : String(expr || '');
+  ^expr && expr.parts ? expr.parts.map((p) => (p.kind === 'raw' ? p.text : rustInline(p.node))).join(' ') : String(expr || '');
 }
 !rustInline(node){
   throw inlineErr('rust', node);
@@ -861,7 +886,8 @@
 }
 !splitTopC(raw){
   const out = [];
-  let d = 0, cur = '';
+  let d = 0;
+  let cur = '';
   for (const ch of String(raw)) {
     ?(ch === '[' || ch === '(') d++;
     else if (ch === ']' || ch === ')'){ d--; }
@@ -937,10 +963,10 @@
         ?(!posset || !posset.size){ continue; }
         const args2 = splitTopC(mm5[2]);
         for (const pos of posset) {
-          ?(pos < args2.length){
-            const aid = args2[pos].trim();
-            ?(/^[A-Za-z_$][\w$]*$/.test(aid) && !paramNames.includes(aid)){ arrLocals.set(aid, 64); }
-          }
+          ?(!(pos < args2.length)){ continue; }
+          const aid = args2[pos].trim();
+          const aidOk = /^[A-Za-z_$][\w$]*$/.test(aid);
+          ?(aidOk && !paramNames.includes(aid)){ arrLocals.set(aid, 64); }
         }
       }
     }
@@ -977,11 +1003,9 @@
         break;
       case 'assign': {
         const rhsT = String(st.rhs && st.rhs.parts ? cRaw(st.rhs) : st.rhs || '').trim();
-        ?(st.op === '=' && /^\[[\s\S]*\]$/.test(rhsT) && /^[A-Za-z_$][\w$]*$/.test(st.idPath)){
-          const els = splitTopC(rhsT.slice(1, -1));
-          els.forEach((el, ix3) => out.push(`${pad}${lhsC(st.idPath)}[${ix3}] = ${stripDeclKw(cExpr(el))};`));
-          break;
-        }
+        const aLit = st.op === '=' && /^\[[\s\S]*\]$/.test(rhsT) && /^[A-Za-z_$][\w$]*$/.test(st.idPath);
+        ?(aLit){ splitTopC(rhsT.slice(1, -1)).forEach((el, ix3) => out.push(`${pad}${lhsC(st.idPath)}[${ix3}] = ${stripDeclKw(cExpr(el))};`)); }
+        ?(aLit){ break; }
         out.push(`${pad}${lhsC(st.idPath)} ${cOp(st.op)} ${stripDeclKw(cExpr(cRaw(st.rhs)))};`);
         break;
       }
@@ -1029,9 +1053,7 @@
   ^op;
 }
 !cRaw(expr){
-  ^expr && expr.parts
-    ? expr.parts.map((p) => (p.kind === 'raw' ? p.text : cInline(p.node))).join(' ')
-    : String(expr || '');
+  ^expr && expr.parts ? expr.parts.map((p) => (p.kind === 'raw' ? p.text : cInline(p.node))).join(' ') : String(expr || '');
 }
 !cInline(node){
   throw inlineErr('c', node);
@@ -1058,6 +1080,7 @@
   lines.push('  public static void main(String[] args) {');
   lines.push('  }');
   lines.push('}');
+}
 !javaType(t){
   ?(t === '@str'){ ^'String'; }
   ?(t === '@bool'){ ^'boolean'; }
@@ -1180,9 +1203,7 @@
   ^base;
 }
 !javaRaw(expr){
-  ^expr && expr.parts
-    ? expr.parts.map((p) => (p.kind === 'raw' ? p.text : javaInline(p.node))).join(' ')
-    : String(expr || '');
+  ^expr && expr.parts ? expr.parts.map((p) => (p.kind === 'raw' ? p.text : javaInline(p.node))).join(' ') : String(expr || '');
 }
 !javaInline(node){
   throw inlineErr('java', node);
@@ -1277,8 +1298,9 @@
   for (const l of locals) {
     let t = 'i64';
     const reAssign = new RegExp(`\\b${l}\\b\\s*=\\s*([^;\\n]+)`, 'm').exec(bodyRaw);
-    if (reAssign && /"|_lia_cat\(|String\(/.test(reAssign[1])) t = '[]const u8';
-    else ?(reAssign && /^(true|false)\b/.test(reAssign[1].trim())){ t = 'bool'; }
+    const arrLike = reAssign && /"|_lia_cat\(|String\(/.test(reAssign[1]);
+    ?(arrLike){ t = '[]const u8'; }
+    ?(reAssign && !arrLike && /^(true|false)\b/.test(reAssign[1].trim())){ t = 'bool'; }
     ?(t === '[]const u8' || t === ''){} 
     const sid = safeEmitId(l);
     ?(t === '[]const u8'){ ctx.stringIds.add(l); }
@@ -1331,11 +1353,11 @@
       case 'for': {
         const initM = st.init.match(/^([A-Za-z_$][\w$]*)\s*=\s*([\s\S]+)$/);
         const stepM = st.step.match(/^([A-Za-z_$][\w$]*)\s*(\+\+|--)$/);
-        ?(initM){ out.push(`${pad}var ${safeEmitId(initM[1])}: i64 = ${zigExpr(initM[2], ctx)}; }`);
+        ?(initM){ out.push(`${pad}var ${safeEmitId(initM[1])}: i64 = ${zigExpr(initM[2], ctx)};`); }
         const cont = stepM ? ` : (${safeEmitId(stepM[1])} ${stepM[2] === '++' ? '+=' : '-='} 1)` : '';
         out.push(`${pad}while (${zigCond(st.cond, ctx)})${cont} {`);
         out.push(zigStmts(st.body, depth + 1, ctx));
-        ?(!stepM && st.step.trim()){ out.push(`${pad}    ${zigExpr(st.step, ctx)}; }`);
+        ?(!stepM && st.step.trim()){ out.push(`${pad}    ${zigExpr(st.step, ctx)};`); }
         out.push(`${pad}}`);
         break;
       }
@@ -1374,9 +1396,7 @@
   ^s;
 }
 !zigRaw(expr){
-  ^expr && expr.parts
-    ? expr.parts.map((p) => (p.kind === 'raw' ? p.text : zigInline(p.node))).join(' ')
-    : String(expr || '');
+  ^expr && expr.parts ? expr.parts.map((p) => (p.kind === 'raw' ? p.text : zigInline(p.node))).join(' ') : String(expr || '');
 }
 !zigInline(node){
   throw new EmitUnsupportedError(`zig inline ${node.kind}`);
@@ -1440,6 +1460,65 @@
   } while (s !== prevCat);
   ^s;
 }
+!llvmId(id){
+  let s = safeEmitId(id);
+  ?(s === 'main'){ ^'lin_main'; }
+  ^s;
+}
+!llvmOperand(text,params){
+  const s = String(text || '').trim();
+  ?(/^[0-9]+$/.test(s)){ ^`i64 ${s}`; }
+  ?(params.includes(s)){ ^`i64 %${llvmId(s)}`; }
+  throw new EmitUnsupportedError(`llvm: operand ${s}`);
+}
+!llvmKernelExpr(text,params){
+  let s = String(text || '').trim().replace(/^\^/, '').replace(/;$/, '').trim();
+  const rot = /^rotl64\s*\(\s*([A-Za-z_$][\w$]*)\s*,\s*([A-Za-z_$][\w$]*|[0-9]+)\s*\)$/.exec(s);
+  ?(rot){
+    const v = llvmOperand(rot[1], params);
+    const shift = llvmOperand(rot[2], params);
+    ^`call i64 @llvm.fshl.i64(${v}, ${v}, ${shift})`;
+  }
+  const bin = /^([A-Za-z_$][\w$]*|[0-9]+)\s*([+*^])\s*([A-Za-z_$][\w$]*|[0-9]+)$/.exec(s);
+  ?(!bin){ throw new EmitUnsupportedError(`llvm: kernel expression ${s}`); }
+  const a = llvmOperand(bin[1], params);
+  const b = llvmOperand(bin[3], params);
+  const op = bin[2] === '+' ? 'add' : (bin[2] === '*' ? 'mul' : 'xor');
+  ^`${op} ${a}, ${b.replace(/^i64 /, '')}`;
+}
+!emitLLVMFn(lines,fn){
+  const params = (fn.params || []).map((p) => p.name);
+  const first = fn.body && fn.body[0];
+  const rm = first && first.type === 'return' && first.expr && first.expr.parts && first.expr.parts[0];
+  ?(!rm || rm.kind !== 'raw'){ throw new EmitUnsupportedError(`llvm: ${fn.name} requires one return expression`); }
+  lines.push(`define i64 @${llvmId(fn.name)}(${params.map((p) => `i64 %${llvmId(p)}`).join(', ')}) {`);
+  lines.push('entry:');
+  lines.push(`  %result = ${llvmKernelExpr(rm.text, params)}`);
+  lines.push('  ret i64 %result');
+  lines.push('}');
+  lines.push('');
+}
+!emitLLVM(prog,opts){
+  const lines = ['; LIN LLVM kernel emitter: deterministic i64 semantics', 'target triple = "x86_64-pc-linux-gnu"', 'declare i64 @llvm.fshl.i64(i64, i64, i64)', ''];
+  for (const fn of prog.fns) emitLLVMFn(lines, fn);
+  const entry = opts && opts.llvmEntry;
+  ?(entry){
+    const fn = prog.fns.find((f) => f.name === entry);
+    ?(!fn){ throw new EmitUnsupportedError(`llvm: unknown entry ${entry}`); }
+    const args = Array.isArray(opts.llvmArgs) ? opts.llvmArgs : [];
+    ?(args.length !== fn.params.length){ throw new EmitUnsupportedError(`llvm: entry ${entry} expects ${fn.params.length} args`); }
+    ?(opts.llvmPrint){ lines.splice(3, 0, '@.fmt = private unnamed_addr constant [5 x i8] c"%llx\\00"', 'declare i32 @printf(ptr, ...)', ''); }
+    lines.push('define i32 @main() {');
+    lines.push('entry:');
+    lines.push(`  %result = call i64 @${llvmId(entry)}(${args.map((x) => `i64 ${BigInt(x).toString()}`).join(', ')})`);
+    ?(opts.llvmPrint){ lines.push('  %fmtptr = getelementptr [5 x i8], ptr @.fmt, i64 0, i64 0'); lines.push('  %printed = call i32 (ptr, ...) @printf(ptr %fmtptr, i64 %result)'); }
+    lines.push('  %low = trunc i64 %result to i32');
+    lines.push('  ret i32 %low');
+    lines.push('}');
+    lines.push('');
+  }
+  ^lines.join('\n');
+}
 !add(id){
     ?(!params.includes(id) && !['return', 'if', 'for', 'else'].includes(id)){ locals.add(id); }
   }
@@ -1452,5 +1531,6 @@
       if (Array.isArray(st.elseIf)) for (const ei of st.elseIf) walkAssignsRust(ei.body, reassigned);
     }
   }
+=ex{llvmId, llvmOperand, llvmKernelExpr, emitLLVMFn, emitLLVM}
 !reg(id,len){ ?(!params.includes(id)){ map.set(id, len); } }
-=ex{createClient, isJsRuntimeOnly, stmtsText, inlineStrAliases, stripDeclKw, strParamNames, retIsBool, paramList, normType, defaultFor, emitTs, mapTsType, moduleObjTs, emitPy, emitPyFn, pyStmts, collectChainBodies, pushBlock, stripThrow, pyCond, pyStmtRhs, pyStmtTail, pyBody, pyLhs, pyAssignOp, pyExprRaw, nodeToJs, jsBodyNodeInline, templatesToFStrings, pyExpr, replaceNot, replaceTernariesPy, findTopTernary, pyMatch, pyArmCond, emitGo, goType, zeroFor, emitGoFn, collectLocalsGo, goIndent, goStmts, goArmCond, goExprRaw, goInline, goExpr, emitRust, rustType, rustZero, emitRustFn, snakeCaseRust, inferRustParamType, rustIndent, rustStmts, rustCompound, emitRustMatch, rustArmCond, rustRaw, rustInline, rustExpr, emitC, cType, cZero, splitTopC, lhsC, collectArrLocals, emitCFn, cIndent, cStmts, cOp, cRaw, cInline, cExpr, emitJava, javaType, javaZero, emitJavaFn, javaIndent, javaStmts, javaArmCond, javaRaw, javaInline, javaExpr, emitZig, zigType, zigZero, retIsStringy, emitZigFn, zigIndent, zigStmts, zigArmCond, zigCond, zigRaw, zigInline, inlineErr, isStrLit, zigEqFold, zigExpr, add, walkAssignsRust, reg}
+=ex{EmitUnsupportedError, isJsRuntimeOnly, stmtsText, inlineStrAliases, stripDeclKw, strParamNames, retIsBool, paramList, normType, defaultFor, emitTs, mapTsType, moduleObjTs, emitPy, emitPyFn, pyStmts, collectChainBodies, pushBlock, stripThrow, pyCond, pyStmtRhs, pyStmtTail, pyBody, pyLhs, pyAssignOp, pyExprRaw, nodeToJs, jsBodyNodeInline, templatesToFStrings, pyExpr, replaceNot, replaceTernariesPy, findTopTernary, pyMatch, pyArmCond, emitGo, goType, zeroFor, emitGoFn, collectLocalsGo, goIndent, goStmts, goArmCond, goExprRaw, goInline, goExpr, emitRust, rustType, rustZero, emitRustFn, snakeCaseRust, inferRustParamType, rustIndent, rustStmts, rustCompound, emitRustMatch, rustArmCond, rustRaw, rustInline, rustExpr, emitC, cType, cZero, splitTopC, lhsC, collectArrLocals, emitCFn, cIndent, cStmts, cOp, cRaw, cInline, cExpr, emitJava, javaType, javaZero, emitJavaFn, javaIndent, javaStmts, javaArmCond, javaRaw, javaInline, javaExpr, emitZig, zigType, zigZero, retIsStringy, emitZigFn, zigIndent, zigStmts, zigArmCond, zigCond, zigRaw, zigInline, inlineErr, isStrLit, zigEqFold, zigExpr, add, walkAssignsRust, reg}

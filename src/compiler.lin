@@ -54,6 +54,7 @@
       case 'c': ^finish(prog, emitC(prog, opts), target);
       case 'java': ^finish(prog, emitJava(prog, opts), target);
       case 'zig': ^finish(prog, emitZig(prog, opts), target);
+      case 'llvm': ^finish(prog, emitLLVM(prog, opts), target);
       default: throw new Error(`LIN_EMIT_TARGET: ${target}`);
     }
   

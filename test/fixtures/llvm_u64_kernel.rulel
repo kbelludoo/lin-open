@@ -1,0 +1,6 @@
+@RULEL:LIN_LLVM_KERNEL:1.0
+~METADATA{source="test/fixtures/llvm_u64_kernel.lin" subset="u64:add,xor,mul,rotate" target="x86-64-haswell"}
+.gate{G_LLVM_IR_VALID="llc accepts emitted LLVM IR" G_LLVM_BEHAVIOR_EQ="native results equal LIN VM bit-exactly" G_LLVM_CODE_DIFF="normalized disassembly comparison recorded"}
+.vectors{count=32 overflow="unsigned i64 wrap" rotate_edges="0,1,63"}
+.architecture{goal="LIN semantic translator leveraging existing ecosystems" layers="LIN self-host compiler -> LLVM IR -> x86-64 Haswell native" interoperability="C Zig Rust Lua Crystal Nim OCaml libraries ABI toolchains"}
+.limits{claim="LLVM is one translation backend, not a full native runtime or OS" future="broader source coverage and ecosystem integration" excluded="new OS/runtime layers and RandomX JIT comparison"}
