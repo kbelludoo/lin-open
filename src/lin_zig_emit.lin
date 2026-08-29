@@ -191,6 +191,15 @@
   ?(starts_lit(a, 0, "chs") == 1){ ^1 };
   ?(starts_lit(a, 0, "js_p") == 1){ ^1 };
   ?(starts_lit(a, 0, "zig_params") == 1){ ^1 };
+  ?(starts_lit(a, 0, "regions") == 1){ ^1 };
+  ?(starts_lit(a, 0, "chunk") == 1){ ^1 };
+  ?(starts_lit(a, 0, "head") == 1){ ^1 };
+  ?(starts_lit(a, 0, "rgs_") == 1){ ^1 };
+  ?(starts_lit(a, 0, "q()") == 1){ ^1 };
+  ?(starts_lit(a, 0, "csv_") == 1){ ^1 };
+  ?(starts_lit(a, 0, "read_") == 1){ ^1 };
+  ?(starts_lit(a, 0, "curfn") == 1){ ^1 };
+  ?(starts_lit(a, 0, "v") == 1 && a.length == 1){ ^1 };
   ^0;
 }
 
@@ -382,6 +391,7 @@
   ?(starts_lit(id, 0, "js_params") == 1 || starts_lit(id, 0, "rewrite_") == 1 || starts_lit(id, 0, "lin_") == 1){ ^"[]const u8" };
   ?(starts_lit(id, 0, "andor") == 1 || starts_lit(id, 0, "kw_space") == 1 || starts_lit(id, 0, "zig_") == 1){ ^"[]const u8" };
   ?(starts_lit(id, 0, "emit_") == 1 || starts_lit(id, 0, "param_") == 1 || starts_lit(id, 0, "fn_ret") == 1){ ^"[]const u8" };
+  ?(starts_lit(id, 0, "rgs_") == 1){ ^"[]const u8" };
   ^"i64";
 }
 

@@ -1,0 +1,35 @@
+@LIN:L1c:0.2
+@REGIONS_SHAPES{purpose=one_region_per_verdict_state}
+
+!rs_readonly(s: string, k: int): int {
+  n = s.length;
+  i = k;
+  while (i < n) {
+    i = i + 1;
+  };
+  ^i;
+}
+
+!rs_reduction(s: string): int {
+  n = s.length;
+  i = 0;
+  sum = 0;
+  while (i < n) {
+    sum = sum + s.charCodeAt(i);
+    i = i + 1;
+  };
+  ^sum;
+}
+
+!rs_with_call(s: string): int {
+  n = s.length;
+  i = 0;
+  t = 0;
+  while (i < n) {
+    t = rs_readonly(s, i);
+    i = i + 1;
+  };
+  ^t;
+}
+
+=ex{rs_readonly, rs_reduction, rs_with_call}

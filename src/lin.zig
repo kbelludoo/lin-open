@@ -776,6 +776,15 @@ pub fn atom_is_str(a: []const u8) i64 {
   if (starts_lit(a, 0, "chs") == 1) { return 1 ;}
   if (starts_lit(a, 0, "js_p") == 1) { return 1 ;}
   if (starts_lit(a, 0, "zig_params") == 1) { return 1 ;}
+  if (starts_lit(a, 0, "regions") == 1) { return 1 ;}
+  if (starts_lit(a, 0, "chunk") == 1) { return 1 ;}
+  if (starts_lit(a, 0, "head") == 1) { return 1 ;}
+  if (starts_lit(a, 0, "rgs_") == 1) { return 1 ;}
+  if (starts_lit(a, 0, "q()") == 1) { return 1 ;}
+  if (starts_lit(a, 0, "csv_") == 1) { return 1 ;}
+  if (starts_lit(a, 0, "read_") == 1) { return 1 ;}
+  if (starts_lit(a, 0, "curfn") == 1) { return 1 ;}
+  if (starts_lit(a, 0, "v") == 1  and  @as(i64, @intCast(a.len)) == 1) { return 1 ;}
   return 0;
 
 }
@@ -1016,6 +1025,7 @@ pub fn rhs_kind(body: []const u8, eq_pos: i64) []const u8 {
   if (starts_lit(id, 0, "js_params") == 1  or  starts_lit(id, 0, "rewrite_") == 1  or  starts_lit(id, 0, "lin_") == 1) { return "[]const u8" ;}
   if (starts_lit(id, 0, "andor") == 1  or  starts_lit(id, 0, "kw_space") == 1  or  starts_lit(id, 0, "zig_") == 1) { return "[]const u8" ;}
   if (starts_lit(id, 0, "emit_") == 1  or  starts_lit(id, 0, "param_") == 1  or  starts_lit(id, 0, "fn_ret") == 1) { return "[]const u8" ;}
+  if (starts_lit(id, 0, "rgs_") == 1) { return "[]const u8" ;}
   return "i64";
 
 }
@@ -1414,6 +1424,502 @@ pub fn rewrite_match(s: []const u8) []const u8 {
     out = _lia_cat(out ,  chs);
     i = i + 1;
   }
+  return out;
+
+}
+
+pub fn rgs_ch(c: i64) []const u8 {
+ return _lia_from_code(c) ;
+}
+
+pub fn rg_digit(x: i64, p: i64) i64 {
+    var d: i64 = 0;
+    var y: i64 = 0;
+
+  d = 0;
+  y = x;
+  while (y >= p) { y = y - p; d = d + 1 ;}
+  return d;
+
+}
+
+pub fn rg_rem(x: i64, p: i64) i64 {
+    var y: i64 = 0;
+
+  y = x;
+  while (y >= p) { y = y - p ;}
+  return y;
+
+}
+
+pub fn rgs_num(v: i64) []const u8 {
+    var out: []const u8 = "";
+    var x: i64 = 0;
+    var started: i64 = 0;
+    var d: i64 = 0;
+    var p: i64 = 0;
+
+  if (v <= 0) { return "0" ;}
+  out = "";
+  x = v;
+  started = 0;
+  d = 0;
+  p = 10000;
+  while (p >= 1) {
+    d = rg_digit(x, p);
+    x = rg_rem(x, p);
+    if (d > 0  or  started == 1  or  p == 1) {
+      out = _lia_cat(out ,  rgs_ch(48 + d));
+      started = 1;
+    }
+    if (p == 10000) { p = 1000 ;}
+     else if (p == 1000) { p = 100 ;}
+     else if (p == 100) { p = 10 ;}
+     else if (p == 10) { p = 1 ;}
+     else { p = 0 ;}
+  }
+  return out;
+
+}
+
+pub fn rg_count_lit(hay: []const u8, needle: []const u8) i64 {
+    var n: i64 = 0;
+    var i: i64 = 0;
+    var cnt: i64 = 0;
+
+  n = @as(i64, @intCast(hay.len));
+  i = 0;
+  cnt = 0;
+  while (i < n) {
+    if (starts_lit(hay, i, needle) == 1) { cnt = cnt + 1 ;}
+    i = i + 1;
+  }
+  return cnt;
+
+}
+
+pub fn rg_is_kw(id: []const u8) i64 {
+
+  if (in_csv("while,break,continue,if,else,for,true,false,return,match,String,fromCharCode", id) == 1) { return 1 ;}
+  return 0;
+
+}
+
+pub fn rgs_csv_add(csv: []const u8, id: []const u8) []const u8 {
+    var out: []const u8 = "";
+
+  out = "";
+  if (@as(i64, @intCast(id.len)) == 0) { out = _lia_cat(out ,  csv); return out ;}
+  if (in_csv(csv, id) == 1) { out = _lia_cat(out ,  csv); return out ;}
+  if (@as(i64, @intCast(csv.len)) == 0) { out = _lia_cat(out ,  id); return out ;}
+  out = _lia_cat(out ,  csv);
+  out = _lia_cat(out ,  ",");
+  out = _lia_cat(out ,  id);
+  return out;
+
+}
+
+pub fn rg_csv_end(csv: []const u8, k: i64) i64 {
+    var n: i64 = 0;
+    var p: i64 = 0;
+
+  n = @as(i64, @intCast(csv.len));
+  p = k;
+  while (p < n  and  _lia_char_code_at(csv, p) != 44) { p = p + 1 ;}
+  return p;
+
+}
+
+pub fn rgs_csv_merge(a: []const u8, b: []const u8) []const u8 {
+    var out: []const u8 = "";
+    var n: i64 = 0;
+    var k: i64 = 0;
+    var e: i64 = 0;
+    var id: []const u8 = "";
+
+  out = "";
+  out = _lia_cat(out ,  a);
+  n = @as(i64, @intCast(b.len));
+  k = 0;
+  e = 0;
+  id = "";
+  while (k < n) {
+    e = rg_csv_end(b, k);
+    id = slice2(b, k, e);
+    out = rgs_csv_add(out, id);
+    k = e + 1;
+  }
+  return out;
+
+}
+
+pub fn rgs_csv_minus(csv: []const u8, rm: []const u8) []const u8 {
+    var out: []const u8 = "";
+    var n: i64 = 0;
+    var k: i64 = 0;
+    var e: i64 = 0;
+    var id: []const u8 = "";
+
+  out = "";
+  n = @as(i64, @intCast(csv.len));
+  k = 0;
+  e = 0;
+  id = "";
+  while (k < n) {
+    e = rg_csv_end(csv, k);
+    id = slice2(csv, k, e);
+    if (in_csv(rm, id) == 0) { out = rgs_csv_add(out, id) ;}
+    k = e + 1;
+  }
+  return out;
+
+}
+
+pub fn rgs_csv_inter(a: []const u8, b: []const u8) []const u8 {
+    var out: []const u8 = "";
+    var n: i64 = 0;
+    var k: i64 = 0;
+    var e: i64 = 0;
+    var id: []const u8 = "";
+
+  out = "";
+  n = @as(i64, @intCast(a.len));
+  k = 0;
+  e = 0;
+  id = "";
+  while (k < n) {
+    e = rg_csv_end(a, k);
+    id = slice2(a, k, e);
+    if (in_csv(b, id) == 1) { out = rgs_csv_add(out, id) ;}
+    k = e + 1;
+  }
+  return out;
+
+}
+
+pub fn rg_is_assign(body: []const u8, p: i64) i64 {
+    var n: i64 = 0;
+    var c: i64 = 0;
+
+  n = @as(i64, @intCast(body.len));
+  if (p >= n) { return 0 ;}
+  c = _lia_char_code_at(body, p);
+  if (c == 61) {
+    if (p + 1 < n  and  _lia_char_code_at(body, p + 1) == 61) { return 0 ;}
+    return 1;
+  }
+  if (c == 43  or  c == 45  or  c == 42) {
+    if (p + 1 < n  and  _lia_char_code_at(body, p + 1) == 61) { return 1 ;}
+  }
+  return 0;
+
+}
+
+pub fn rg_is_compound(body: []const u8, p: i64) i64 {
+    var n: i64 = 0;
+    var c: i64 = 0;
+
+  n = @as(i64, @intCast(body.len));
+  if (p >= n) { return 0 ;}
+  c = _lia_char_code_at(body, p);
+  if (c == 43  or  c == 45  or  c == 42) {
+    if (p + 1 < n  and  _lia_char_code_at(body, p + 1) == 61) { return 1 ;}
+  }
+  return 0;
+
+}
+
+pub fn rgs_scan(body: []const u8, mode: i64) []const u8 {
+    var out: []const u8 = "";
+    var n: i64 = 0;
+    var i: i64 = 0;
+    var c: i64 = 0;
+    var id: []const u8 = "";
+    var p: i64 = 0;
+    var member: i64 = 0;
+
+  out = "";
+  n = @as(i64, @intCast(body.len));
+  i = 0;
+  c = 0;
+  id = "";
+  p = 0;
+  member = 0;
+  while (i < n) {
+    c = _lia_char_code_at(body, i);
+    if (c == 34) {
+      i = i + 1;
+      while (i < n  and  _lia_char_code_at(body, i) != 34) { i = i + 1 ;}
+      i = i + 1;
+      continue;
+    }
+    if (c == 47  and  i + 1 < n  and  _lia_char_code_at(body, i + 1) == 47) {
+      while (i < n  and  _lia_char_code_at(body, i) != 10) { i = i + 1 ;}
+      continue;
+    }
+    if (is_ident_start(c) == true) {
+      id = read_ident(body, i);
+      member = 0;
+      if (i > 0  and  _lia_char_code_at(body, i - 1) == 46) { member = 1 ;}
+      p = skip_ws(body, i + @as(i64, @intCast(id.len)));
+      if (member == 0  and  rg_is_kw(id) == 0) {
+        if (mode == 3  and  p < n  and  _lia_char_code_at(body, p) == 40) { out = rgs_csv_add(out, id) ;}
+        if (mode == 2  and  rg_is_assign(body, p) == 1) { out = rgs_csv_add(out, id) ;}
+        if (mode == 1  and  rg_is_compound(body, p) == 1) { out = rgs_csv_add(out, id) ;}
+        if (mode == 1  and  rg_is_assign(body, p) == 0) {
+          if (p >= n  or  _lia_char_code_at(body, p) != 40) { out = rgs_csv_add(out, id) ;}
+        }
+      }
+      i = i + @as(i64, @intCast(id.len));
+      continue;
+    }
+    i = i + 1;
+  }
+  return out;
+
+}
+
+pub fn rgs_induction(body: []const u8) []const u8 {
+    var out: []const u8 = "";
+    var n: i64 = 0;
+    var i: i64 = 0;
+    var c: i64 = 0;
+    var id: []const u8 = "";
+    var id2: []const u8 = "";
+    var p: i64 = 0;
+
+  out = "";
+  n = @as(i64, @intCast(body.len));
+  i = 0;
+  c = 0;
+  id = "";
+  id2 = "";
+  p = 0;
+  while (i < n) {
+    c = _lia_char_code_at(body, i);
+    if (c == 34) {
+      i = i + 1;
+      while (i < n  and  _lia_char_code_at(body, i) != 34) { i = i + 1 ;}
+      i = i + 1;
+      continue;
+    }
+    if (is_ident_start(c) == true) {
+      id = read_ident(body, i);
+      p = skip_ws(body, i + @as(i64, @intCast(id.len)));
+      if (p + 1 < n  and  _lia_char_code_at(body, p) == 43  and  _lia_char_code_at(body, p + 1) == 43) {
+        out = rgs_csv_add(out, id);
+      }
+      if (p < n  and  _lia_char_code_at(body, p) == 61) {
+        if (p + 1 >= n  or  _lia_char_code_at(body, p + 1) != 61) {
+          p = skip_ws(body, p + 1);
+          id2 = read_ident(body, p);
+          if (@as(i64, @intCast(id2.len)) > 0  and  in_csv(id, id2) == 1) {
+            p = skip_ws(body, p + @as(i64, @intCast(id2.len)));
+            if (p < n  and  (_lia_char_code_at(body, p) == 43  or  _lia_char_code_at(body, p) == 45)) {
+              p = skip_ws(body, p + 1);
+              if (p < n  and  _lia_char_code_at(body, p) >= 48  and  _lia_char_code_at(body, p) <= 57) {
+                out = rgs_csv_add(out, id);
+              }
+            }
+          }
+        }
+      }
+      i = i + @as(i64, @intCast(id.len));
+      continue;
+    }
+    i = i + 1;
+  }
+  return out;
+
+}
+
+pub fn rgs_verdict(head: []const u8, body: []const u8) []const u8 {
+    var calls: []const u8 = "";
+    var ind: []const u8 = "";
+    var w: []const u8 = "";
+    var r: []const u8 = "";
+    var carried: []const u8 = "";
+
+  calls = rgs_scan(body, 3);
+  if (@as(i64, @intCast(calls.len)) > 0) { return "UNKNOWN" ;}
+  ind = rgs_csv_merge(rgs_induction(head), rgs_induction(body));
+  w = rgs_csv_minus(rgs_scan(body, 2), ind);
+  if (@as(i64, @intCast(w.len)) == 0) { return "PROVED" ;}
+  r = rgs_csv_minus(rgs_scan(body, 1), ind);
+  carried = rgs_csv_inter(w, r);
+  if (@as(i64, @intCast(carried.len)) > 0) { return "FALSE" ;}
+  return "UNKNOWN";
+
+}
+
+pub fn rgs_reason(head: []const u8, body: []const u8) []const u8 {
+    var calls: []const u8 = "";
+    var ind: []const u8 = "";
+    var w: []const u8 = "";
+    var r: []const u8 = "";
+    var carried: []const u8 = "";
+
+  calls = rgs_scan(body, 3);
+  if (@as(i64, @intCast(calls.len)) > 0) { return "calls_with_unproven_effects" ;}
+  ind = rgs_csv_merge(rgs_induction(head), rgs_induction(body));
+  w = rgs_csv_minus(rgs_scan(body, 2), ind);
+  if (@as(i64, @intCast(w.len)) == 0) { return "read_only_region_no_write_conflict" ;}
+  r = rgs_csv_minus(rgs_scan(body, 1), ind);
+  carried = rgs_csv_inter(w, r);
+  if (@as(i64, @intCast(carried.len)) > 0) { return "loop_carried_dependency" ;}
+  return "writes_to_unproven_locations";
+
+}
+
+pub fn rgs_emit(rid: i64, fname: []const u8, kind: []const u8, head: []const u8, body: []const u8) []const u8 {
+    var ind: []const u8 = "";
+    var out: []const u8 = "";
+
+  ind = rgs_csv_merge(rgs_induction(head), rgs_induction(body));
+  out = "  .R";
+  out = _lia_cat(out ,  rgs_num(rid));
+  out = _lia_cat(out ,  "{ fn=");
+  out = _lia_cat(out ,  fname);
+  out = _lia_cat(out ,  " kind=");
+  out = _lia_cat(out ,  kind);
+  out = _lia_cat(out ,  " induction=");
+  out = _lia_cat(out ,  q());
+  out = _lia_cat(out ,  ind);
+  out = _lia_cat(out ,  q());
+  out = _lia_cat(out ,  " reads=");
+  out = _lia_cat(out ,  q());
+  out = _lia_cat(out ,  rgs_csv_minus(rgs_scan(body, 1), ind));
+  out = _lia_cat(out ,  q());
+  out = _lia_cat(out ,  " writes=");
+  out = _lia_cat(out ,  q());
+  out = _lia_cat(out ,  rgs_csv_minus(rgs_scan(body, 2), ind));
+  out = _lia_cat(out ,  q());
+  out = _lia_cat(out ,  " calls=");
+  out = _lia_cat(out ,  q());
+  out = _lia_cat(out ,  rgs_scan(body, 3));
+  out = _lia_cat(out ,  q());
+  out = _lia_cat(out ,  " parallel_safe=");
+  out = _lia_cat(out ,  rgs_verdict(head, body));
+  out = _lia_cat(out ,  " reason=");
+  out = _lia_cat(out ,  rgs_reason(head, body));
+  out = _lia_cat(out ,  " }");
+  out = _lia_cat(out ,  rgs_ch(10));
+  return out;
+
+}
+
+pub fn rgs_body(src: []const u8) []const u8 {
+    var out: []const u8 = "";
+    var body: []const u8 = "";
+    var head: []const u8 = "";
+    var curfn: []const u8 = "";
+    var n: i64 = 0;
+    var i: i64 = 0;
+    var c: i64 = 0;
+    var rid: i64 = 0;
+    var cl: i64 = 0;
+    var b: i64 = 0;
+    var cb: i64 = 0;
+    var p: i64 = 0;
+
+  out = "";
+  body = "";
+  head = "";
+  curfn = "";
+  n = @as(i64, @intCast(src.len));
+  i = 0;
+  c = 0;
+  rid = 0;
+  cl = 0;
+  b = 0;
+  cb = 0;
+  p = 0;
+  while (i < n) {
+    c = _lia_char_code_at(src, i);
+    if (c == 34) {
+      i = i + 1;
+      while (i < n  and  _lia_char_code_at(src, i) != 34) { i = i + 1 ;}
+      i = i + 1;
+      continue;
+    }
+    if (c == 47  and  i + 1 < n  and  _lia_char_code_at(src, i + 1) == 47) {
+      while (i < n  and  _lia_char_code_at(src, i) != 10) { i = i + 1 ;}
+      continue;
+    }
+    if (c == 33) {
+      curfn = read_ident(src, i + 1);
+      i = i + 1;
+      continue;
+    }
+    if (c == 35  and  i + 1 < n  and  _lia_char_code_at(src, i + 1) == 40) {
+      cl = match_paren(src, i + 1);
+      if (cl > i + 1) {
+        b = find_brace(src, cl + 1);
+        if (b >= 0) {
+          cb = match_brace(src, b);
+          if (cb > b) {
+            head = slice2(src, i + 2, cl);
+            body = slice2(src, b + 1, cb);
+            rid = rid + 1;
+            out = _lia_cat(out ,  rgs_emit(rid, curfn, "for", head, body));
+            i = b + 1;
+            continue;
+          }
+        }
+      }
+    }
+    if (starts_lit(src, i, "while") == 1) {
+      p = skip_ws(src, i + 5);
+      if (p < n  and  _lia_char_code_at(src, p) == 40) {
+        cl = match_paren(src, p);
+        if (cl > p) {
+          b = find_brace(src, cl + 1);
+          if (b >= 0) {
+            cb = match_brace(src, b);
+            if (cb > b) {
+              head = slice2(src, p + 1, cl);
+              body = slice2(src, b + 1, cb);
+              rid = rid + 1;
+              out = _lia_cat(out ,  rgs_emit(rid, curfn, "while", head, body));
+              i = b + 1;
+              continue;
+            }
+          }
+        }
+      }
+    }
+    i = i + 1;
+  }
+  return out;
+
+}
+
+pub fn rgs_regions(src: []const u8) []const u8 {
+    var out: []const u8 = "";
+    var body: []const u8 = "";
+
+  out = "";
+  body = "";
+  body = _lia_cat(body ,  rgs_body(src));
+  out = _lia_cat(out ,  "@RULEL:LIN_REGIONS:1.0.0");
+  out = _lia_cat(out ,  rgs_ch(10));
+  out = _lia_cat(out ,  ".policy{ states=PROVED|FALSE|UNKNOWN default=UNKNOWN fail_closed=true }");
+  out = _lia_cat(out ,  rgs_ch(10));
+  out = _lia_cat(out ,  ".regions{");
+  out = _lia_cat(out ,  rgs_ch(10));
+  out = _lia_cat(out ,  body);
+  out = _lia_cat(out ,  "}");
+  out = _lia_cat(out ,  rgs_ch(10));
+  out = _lia_cat(out ,  ".summary{ total=");
+  out = _lia_cat(out ,  rgs_num(rg_count_lit(body, "parallel_safe=")));
+  out = _lia_cat(out ,  " proved=");
+  out = _lia_cat(out ,  rgs_num(rg_count_lit(body, "parallel_safe=PROVED")));
+  out = _lia_cat(out ,  " dependent=");
+  out = _lia_cat(out ,  rgs_num(rg_count_lit(body, "parallel_safe=FALSE")));
+  out = _lia_cat(out ,  " unknown=");
+  out = _lia_cat(out ,  rgs_num(rg_count_lit(body, "parallel_safe=UNKNOWN")));
+  out = _lia_cat(out ,  " }");
+  out = _lia_cat(out ,  rgs_ch(10));
   return out;
 
 }
@@ -2184,9 +2690,9 @@ pub fn pick_target(src: []const u8, explicit: []const u8) []const u8 {
 }
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
-    LIA_ALLOC = gpa.allocator();
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    LIA_ALLOC = arena.allocator();
     const stdout = std.io.getStdOut().writer();
     const stderr = std.io.getStdErr().writer();
     const args = try std.process.argsAlloc(LIA_ALLOC);
@@ -2207,7 +2713,9 @@ pub fn main() !void {
         defer LIA_ALLOC.free(em);
         const mt = try std.fs.cwd().readFileAlloc(LIA_ALLOC, "src/lin_zig_match.lin", 10 * 1024 * 1024);
         defer LIA_ALLOC.free(mt);
-        const src = try std.mem.concat(LIA_ALLOC, u8, &.{ boot, "\n", em, "\n", mt });
+        const rg = try std.fs.cwd().readFileAlloc(LIA_ALLOC, "src/lin_regions.lin", 10 * 1024 * 1024);
+        defer LIA_ALLOC.free(rg);
+        const src = try std.mem.concat(LIA_ALLOC, u8, &.{ boot, "\n", em, "\n", mt, "\n", rg });
         defer LIA_ALLOC.free(src);
         const fns = lin_to_zig(src);
         const host = try std.fs.cwd().readFileAlloc(LIA_ALLOC, "src/lin.zig", 10 * 1024 * 1024);
@@ -2344,6 +2852,14 @@ pub fn main() !void {
             std.process.exit(1);
         }
         try stdout.print("{s}", .{lin_check_rulel(src)});
+        return;
+    }
+    if (argEq(cmd, "regions")) {
+        if (lin_syntax_valid(src) == 0) {
+            try stderr.print("LIN_PARSE\n", .{});
+            std.process.exit(1);
+        }
+        try stdout.print("{s}", .{rgs_regions(src)});
         return;
     }
     if (argEq(cmd, "compile")) {

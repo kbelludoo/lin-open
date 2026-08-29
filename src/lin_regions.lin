@@ -1,0 +1,387 @@
+@LIN:L1c:0.2
+@LIN_REGIONS{version=1 purpose=semantic_region_extraction_and_dependency_analysis emits=RULEL}
+
+!rgs_ch(c: int): string { ^String.fromCharCode(c) }
+
+!rg_digit(x: int, p: int): int {
+  d = 0;
+  y = x;
+  while (y >= p) { y = y - p; d = d + 1 };
+  ^d;
+}
+
+!rg_rem(x: int, p: int): int {
+  y = x;
+  while (y >= p) { y = y - p };
+  ^y;
+}
+
+!rgs_num(v: int): string {
+  ?(v <= 0){ ^"0" };
+  out = "";
+  x = v;
+  started = 0;
+  d = 0;
+  p = 10000;
+  while (p >= 1) {
+    d = rg_digit(x, p);
+    x = rg_rem(x, p);
+    ?(d > 0 || started == 1 || p == 1){
+      out = out + rgs_ch(48 + d);
+      started = 1;
+    };
+    ?(p == 10000){ p = 1000 }
+    : (p == 1000){ p = 100 }
+    : (p == 100){ p = 10 }
+    : (p == 10){ p = 1 }
+    : { p = 0 };
+  };
+  ^out;
+}
+
+!rg_count_lit(hay: string, needle: string): int {
+  n = hay.length;
+  i = 0;
+  cnt = 0;
+  while (i < n) {
+    ?(starts_lit(hay, i, needle) == 1){ cnt = cnt + 1 };
+    i = i + 1;
+  };
+  ^cnt;
+}
+
+!rg_is_kw(id: string): int {
+  ?(in_csv("while,break,continue,if,else,for,true,false,return,match,String,fromCharCode", id) == 1){ ^1 };
+  ^0;
+}
+
+!rgs_csv_add(csv: string, id: string): string {
+  out = "";
+  ?(id.length == 0){ out = out + csv; ^out };
+  ?(in_csv(csv, id) == 1){ out = out + csv; ^out };
+  ?(csv.length == 0){ out = out + id; ^out };
+  out = out + csv;
+  out = out + ",";
+  out = out + id;
+  ^out;
+}
+
+!rg_csv_end(csv: string, k: int): int {
+  n = csv.length;
+  p = k;
+  while (p < n && csv.charCodeAt(p) != 44){ p = p + 1 };
+  ^p;
+}
+
+!rgs_csv_merge(a: string, b: string): string {
+  out = "";
+  out = out + a;
+  n = b.length;
+  k = 0;
+  e = 0;
+  id = "";
+  while (k < n) {
+    e = rg_csv_end(b, k);
+    id = slice2(b, k, e);
+    out = rgs_csv_add(out, id);
+    k = e + 1;
+  };
+  ^out;
+}
+
+!rgs_csv_minus(csv: string, rm: string): string {
+  out = "";
+  n = csv.length;
+  k = 0;
+  e = 0;
+  id = "";
+  while (k < n) {
+    e = rg_csv_end(csv, k);
+    id = slice2(csv, k, e);
+    ?(in_csv(rm, id) == 0){ out = rgs_csv_add(out, id) };
+    k = e + 1;
+  };
+  ^out;
+}
+
+!rgs_csv_inter(a: string, b: string): string {
+  out = "";
+  n = a.length;
+  k = 0;
+  e = 0;
+  id = "";
+  while (k < n) {
+    e = rg_csv_end(a, k);
+    id = slice2(a, k, e);
+    ?(in_csv(b, id) == 1){ out = rgs_csv_add(out, id) };
+    k = e + 1;
+  };
+  ^out;
+}
+
+!rg_is_assign(body: string, p: int): int {
+  n = body.length;
+  ?(p >= n){ ^0 };
+  c = body.charCodeAt(p);
+  ?(c == 61){
+    ?(p + 1 < n && body.charCodeAt(p + 1) == 61){ ^0 };
+    ^1;
+  };
+  ?(c == 43 || c == 45 || c == 42){
+    ?(p + 1 < n && body.charCodeAt(p + 1) == 61){ ^1 };
+  };
+  ^0;
+}
+
+!rg_is_compound(body: string, p: int): int {
+  n = body.length;
+  ?(p >= n){ ^0 };
+  c = body.charCodeAt(p);
+  ?(c == 43 || c == 45 || c == 42){
+    ?(p + 1 < n && body.charCodeAt(p + 1) == 61){ ^1 };
+  };
+  ^0;
+}
+
+!rgs_scan(body: string, mode: int): string {
+  out = "";
+  n = body.length;
+  i = 0;
+  c = 0;
+  id = "";
+  p = 0;
+  member = 0;
+  while (i < n) {
+    c = body.charCodeAt(i);
+    ?(c == 34){
+      i = i + 1;
+      while (i < n && body.charCodeAt(i) != 34){ i = i + 1 };
+      i = i + 1;
+      continue;
+    };
+    ?(c == 47 && i + 1 < n && body.charCodeAt(i + 1) == 47){
+      while (i < n && body.charCodeAt(i) != 10){ i = i + 1 };
+      continue;
+    };
+    ?(is_ident_start(c) == true){
+      id = read_ident(body, i);
+      member = 0;
+      ?(i > 0 && body.charCodeAt(i - 1) == 46){ member = 1 };
+      p = skip_ws(body, i + id.length);
+      ?(member == 0 && rg_is_kw(id) == 0){
+        ?(mode == 3 && p < n && body.charCodeAt(p) == 40){ out = rgs_csv_add(out, id) };
+        ?(mode == 2 && rg_is_assign(body, p) == 1){ out = rgs_csv_add(out, id) };
+        ?(mode == 1 && rg_is_compound(body, p) == 1){ out = rgs_csv_add(out, id) };
+        ?(mode == 1 && rg_is_assign(body, p) == 0){
+          ?(p >= n || body.charCodeAt(p) != 40){ out = rgs_csv_add(out, id) };
+        };
+      };
+      i = i + id.length;
+      continue;
+    };
+    i = i + 1;
+  };
+  ^out;
+}
+
+!rgs_induction(body: string): string {
+  out = "";
+  n = body.length;
+  i = 0;
+  c = 0;
+  id = "";
+  id2 = "";
+  p = 0;
+  while (i < n) {
+    c = body.charCodeAt(i);
+    ?(c == 34){
+      i = i + 1;
+      while (i < n && body.charCodeAt(i) != 34){ i = i + 1 };
+      i = i + 1;
+      continue;
+    };
+    ?(is_ident_start(c) == true){
+      id = read_ident(body, i);
+      p = skip_ws(body, i + id.length);
+      ?(p + 1 < n && body.charCodeAt(p) == 43 && body.charCodeAt(p + 1) == 43){
+        out = rgs_csv_add(out, id);
+      };
+      ?(p < n && body.charCodeAt(p) == 61){
+        ?(p + 1 >= n || body.charCodeAt(p + 1) != 61){
+          p = skip_ws(body, p + 1);
+          id2 = read_ident(body, p);
+          ?(id2.length > 0 && in_csv(id, id2) == 1){
+            p = skip_ws(body, p + id2.length);
+            ?(p < n && (body.charCodeAt(p) == 43 || body.charCodeAt(p) == 45)){
+              p = skip_ws(body, p + 1);
+              ?(p < n && body.charCodeAt(p) >= 48 && body.charCodeAt(p) <= 57){
+                out = rgs_csv_add(out, id);
+              };
+            };
+          };
+        };
+      };
+      i = i + id.length;
+      continue;
+    };
+    i = i + 1;
+  };
+  ^out;
+}
+
+!rgs_verdict(head: string, body: string): string {
+  calls = rgs_scan(body, 3);
+  ?(calls.length > 0){ ^"UNKNOWN" };
+  ind = rgs_csv_merge(rgs_induction(head), rgs_induction(body));
+  w = rgs_csv_minus(rgs_scan(body, 2), ind);
+  ?(w.length == 0){ ^"PROVED" };
+  r = rgs_csv_minus(rgs_scan(body, 1), ind);
+  carried = rgs_csv_inter(w, r);
+  ?(carried.length > 0){ ^"FALSE" };
+  ^"UNKNOWN";
+}
+
+!rgs_reason(head: string, body: string): string {
+  calls = rgs_scan(body, 3);
+  ?(calls.length > 0){ ^"calls_with_unproven_effects" };
+  ind = rgs_csv_merge(rgs_induction(head), rgs_induction(body));
+  w = rgs_csv_minus(rgs_scan(body, 2), ind);
+  ?(w.length == 0){ ^"read_only_region_no_write_conflict" };
+  r = rgs_csv_minus(rgs_scan(body, 1), ind);
+  carried = rgs_csv_inter(w, r);
+  ?(carried.length > 0){ ^"loop_carried_dependency" };
+  ^"writes_to_unproven_locations";
+}
+
+!rgs_emit(rid: int, fname: string, kind: string, head: string, body: string): string {
+  ind = rgs_csv_merge(rgs_induction(head), rgs_induction(body));
+  out = "  .R";
+  out = out + rgs_num(rid);
+  out = out + "{ fn=";
+  out = out + fname;
+  out = out + " kind=";
+  out = out + kind;
+  out = out + " induction=";
+  out = out + q();
+  out = out + ind;
+  out = out + q();
+  out = out + " reads=";
+  out = out + q();
+  out = out + rgs_csv_minus(rgs_scan(body, 1), ind);
+  out = out + q();
+  out = out + " writes=";
+  out = out + q();
+  out = out + rgs_csv_minus(rgs_scan(body, 2), ind);
+  out = out + q();
+  out = out + " calls=";
+  out = out + q();
+  out = out + rgs_scan(body, 3);
+  out = out + q();
+  out = out + " parallel_safe=";
+  out = out + rgs_verdict(head, body);
+  out = out + " reason=";
+  out = out + rgs_reason(head, body);
+  out = out + " }";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+!rgs_body(src: string): string {
+  out = "";
+  body = "";
+  head = "";
+  curfn = "";
+  n = src.length;
+  i = 0;
+  c = 0;
+  rid = 0;
+  cl = 0;
+  b = 0;
+  cb = 0;
+  p = 0;
+  while (i < n) {
+    c = src.charCodeAt(i);
+    ?(c == 34){
+      i = i + 1;
+      while (i < n && src.charCodeAt(i) != 34){ i = i + 1 };
+      i = i + 1;
+      continue;
+    };
+    ?(c == 47 && i + 1 < n && src.charCodeAt(i + 1) == 47){
+      while (i < n && src.charCodeAt(i) != 10){ i = i + 1 };
+      continue;
+    };
+    ?(c == 33){
+      curfn = read_ident(src, i + 1);
+      i = i + 1;
+      continue;
+    };
+    ?(c == 35 && i + 1 < n && src.charCodeAt(i + 1) == 40){
+      cl = match_paren(src, i + 1);
+      ?(cl > i + 1){
+        b = find_brace(src, cl + 1);
+        ?(b >= 0){
+          cb = match_brace(src, b);
+          ?(cb > b){
+            head = slice2(src, i + 2, cl);
+            body = slice2(src, b + 1, cb);
+            rid = rid + 1;
+            out = out + rgs_emit(rid, curfn, "for", head, body);
+            i = b + 1;
+            continue;
+          };
+        };
+      };
+    };
+    ?(starts_lit(src, i, "while") == 1){
+      p = skip_ws(src, i + 5);
+      ?(p < n && src.charCodeAt(p) == 40){
+        cl = match_paren(src, p);
+        ?(cl > p){
+          b = find_brace(src, cl + 1);
+          ?(b >= 0){
+            cb = match_brace(src, b);
+            ?(cb > b){
+              head = slice2(src, p + 1, cl);
+              body = slice2(src, b + 1, cb);
+              rid = rid + 1;
+              out = out + rgs_emit(rid, curfn, "while", head, body);
+              i = b + 1;
+              continue;
+            };
+          };
+        };
+      };
+    };
+    i = i + 1;
+  };
+  ^out;
+}
+
+!rgs_regions(src: string): string {
+  out = "";
+  body = "";
+  body = body + rgs_body(src);
+  out = out + "@RULEL:LIN_REGIONS:1.0.0";
+  out = out + rgs_ch(10);
+  out = out + ".policy{ states=PROVED|FALSE|UNKNOWN default=UNKNOWN fail_closed=true }";
+  out = out + rgs_ch(10);
+  out = out + ".regions{";
+  out = out + rgs_ch(10);
+  out = out + body;
+  out = out + "}";
+  out = out + rgs_ch(10);
+  out = out + ".summary{ total=";
+  out = out + rgs_num(rg_count_lit(body, "parallel_safe="));
+  out = out + " proved=";
+  out = out + rgs_num(rg_count_lit(body, "parallel_safe=PROVED"));
+  out = out + " dependent=";
+  out = out + rgs_num(rg_count_lit(body, "parallel_safe=FALSE"));
+  out = out + " unknown=";
+  out = out + rgs_num(rg_count_lit(body, "parallel_safe=UNKNOWN"));
+  out = out + " }";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+=ex{rgs_num, rgs_scan, rgs_induction, rgs_verdict, rgs_reason, rgs_body, rgs_regions}

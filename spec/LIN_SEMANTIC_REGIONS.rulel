@@ -1,0 +1,68 @@
+@RULEL:LIN_SEMANTIC_REGIONS:1.0.0
+~R{.m=meta .d=design .s=state .r=rule .g=gate .f=forbid .o=open .p=path}
+~META{ts="2026-08-29T03:20:00Z" status=IMPLEMENTED stage=first_gate_of_region_pipeline}
+
+.m{
+  purpose="extract semantic regions from LIN source and classify parallel safety"
+  authority="LIN is the semantic authority; analysis produces proof, execution would only produce evidence"
+  substrate="RULEL is the IR carrier; no JSON anywhere"
+  written_in=LIN compiled_by=zig_stage0 host=src/lin.zig source=src/lin_regions.lin
+  invoke="lin regions <file.lin>" emits="@RULEL:LIN_REGIONS:1.0.0"
+}
+
+.d{
+  P0=analysis_yields_proof_not_measurement
+  P1=execution_confirms_implementation_never_establishes_safety
+  P2=benchmark_may_only_teach_the_cost_model
+  P3=absence_of_proof_is_UNKNOWN_never_PROVED
+}
+
+.s{
+  PROVED="no write conflict is possible between iterations"
+  FALSE="a loop-carried dependency was found"
+  UNKNOWN="safety could not be established; this is the default and the fail-closed answer"
+}
+
+.r{
+  R_REGION=every_loop_is_a_region;for_and_while;nested_loops_each_get_their_own_region
+  R_INDUCTION=variable_written_only_as_v_eq_v_plus_int_or_v_plus_plus;excluded_from_dependency_check_because_parallelization_would_replace_it
+  R_ORDER=calls_first_then_write_set_then_carried_dependency
+  R_CALLS=any_call_with_unproven_effects_forces_UNKNOWN
+  R_READONLY=empty_write_set_after_removing_induction_implies_PROVED
+  R_CARRIED=nonempty_intersection_of_write_set_and_read_set_implies_FALSE
+  R_ELSE=UNKNOWN
+}
+
+.g{
+  fixpoint="rebuild is idempotent with src/lin_regions.lin in the source list"
+  fixpoint_sha256_prefix="10a68b003904ddfdd714eae66ab8858c"
+  suite="16 test files, 63 assertions, 3 fail-closed, zero failures, zig only"
+  baseline="results/regions/REGIONS_SHAPES_EXPECTED.rulel from test/fixtures/regions_shapes.lin"
+  shapes="one region per verdict state: PROVED, FALSE, UNKNOWN"
+}
+
+.f{
+  claim_PROVED_without_analysis
+  derive_safety_from_equal_CPU_and_GPU_output
+  treat_a_past_measurement_as_a_rule
+  emit_JSON
+}
+
+.o{
+  no_aggregates="the compilable LIN dialect has no arrays, records or maps; zig_ty maps string and bool and sends everything else to i64. Indexed writes like y[i] cannot appear in valid LIN yet, so the PROVED case for indexed parallel writes is defined but unreachable"
+  effect_summaries="calls always force UNKNOWN because per-function effect summaries do not exist yet; adding them is what would unlock most real regions"
+  no_string_equality="== on strings emits invalid Zig; comparisons go through in_csv or starts_lit"
+  no_integer_division="/ on i64 emits Zig / which the compiler rejects; rgs_num uses repeated subtraction instead"
+  no_string_escapes="a literal cannot contain backslash-quote; q() is used to emit a quote"
+  concat_typing_is_name_based="atom_is_str recognises string operands by a hardcoded whitelist of names (out, id, body, chs, src, params, names) and rhs_kind by a hardcoded list of name prefixes. Accumulators must therefore be named out, and string-returning functions carry the rgs_ prefix. Replacing both heuristics with the declared signatures the type checker already parses is the highest-value compiler fix"
+  call_arg_literals="rewrite_plus fails to classify a call whose arguments contain a string literal, so its result must be bound to a variable before concatenation"
+  float_policy="no floating point policy exists; a bit-exact differential oracle would fail closed on almost every real numeric kernel"
+}
+
+.p{
+  source=src/lin_regions.lin
+  host=src/lin.zig
+  fixture=test/fixtures/regions_shapes.lin
+  baseline=results/regions/REGIONS_SHAPES_EXPECTED.rulel
+  stage0_proof=results/self_host/ZIG_STAGE0_FIXPOINT.rulel
+}
