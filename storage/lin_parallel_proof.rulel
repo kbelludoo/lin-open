@@ -1,0 +1,16 @@
+@RULEL:LIN_PARALLEL_PROOF:1.0
+~METADATA{gate="LIN-PARALLEL-001" kernel="candidates/lin_pure_001.lin" label="FORMALLY_PROVED"}
+.analysis{
+  read_independence="FORMALLY_PROVED: each y[i] reads only x[i]"
+  write_independence="FORMALLY_PROVED: each work item writes only y[i]"
+  loop_carried_dependency="FORMALLY_PROVED: no loop-carried state; pureKernel is scalar"
+  order_independence="FORMALLY_PROVED: uint64 multiplication is deterministic and per-element"
+  effects="FORMALLY_PROVED: Pure; no I/O, exceptions, aliases, shared mutable state"
+  parallel_safe="FORMALLY_PROVED"
+}
+.evidence{
+  source_sha256="b7dfd5e6ea73410b8f271ce534cc64b556297596306f0a5c7b07e0f1cf6e3665"
+  cpu_gpu_mismatches=0
+  empirical_label="EXHAUSTIVELY_VALIDATED"
+  performance_label="MEASURED"
+}
