@@ -1,0 +1,48 @@
+@RULEL:LIN_LLVM_ZIG_PROOF:1.0
+~METADATA{
+  commit="47fb722abb0a515ecb00e1ef8cbf41550893a802"
+  llvm_backend_commit="d647f9b089cfab6c84ee5a139303b862e34cb1ca"
+  target="x86-64-haswell"
+  backend="zig cc"
+}
+.pipeline{
+  source="test/fixtures/llvm_u64_kernel.lin"
+  semantic_stage="LIN compiler written in LIN; compiler.lin self-host gate"
+  ir_stage="real LLVM IR emitted by emitLLVM"
+  native_stage="Zig toolchain invokes LLVM native compilation"
+  execution="temporary native ELF; no Node involvement after compilation"
+}
+.commands{
+  bootstrap="documented awk extraction from bootstrap_sh.rulel; ./bootstrap.sh"
+  native="zig cc -O2 -mcpu=haswell kernel.ll -o kernel"
+  ir_validation="llc -O0 -filetype=obj -mcpu=haswell kernel.ll -o base.o"
+  optimized_validation="llc -O2 -filetype=obj -mcpu=haswell kernel.ll -o opt.o"
+}
+.bootstrap_gates{
+  self_host="PASS: compiler.lin 90516c24b7895abb == 90516c24b7895abb"
+  core_code_hash="PASS"
+  semantic_hash="PASS: h1=498c2ab2ecbe71cb h2=498c2ab2ecbe71cb h3=9d31a210e9dc772a"
+  nucleus_lock="PASS: expected=46d1e6a6376d04f5 got=46d1e6a6376d04f5"
+  compiler_emit_idempotent="PASS"
+  transpile_hash="PASS: semantic_hash_stable=true code_hash_stable=true code_hash=e5acdf39005ab30f"
+}
+.results{
+  vectors=32
+  bit_exact="PASS: Zig-native output equals reference LIN VM output"
+  llvm_ir="PASS: llc accepts emitted IR for x86-64 Haswell"
+  native_execution="PASS: Zig-compiled executable ran successfully"
+  normalized_machine_hash_baseline="aec7c4a9206e805623d67c84ebacc6c552d3ebc33df6f04c7c54cb4814e7761a"
+  normalized_machine_hash_haswell="98304159665237ce16ab87e17acdbdabbb42cde798eb302b6be71660b7625721"
+  normalized_machine_code_diff="PASS"
+}
+.purity{
+  tracked_files=2624
+  tracked_non_lin_rulel=0
+  tracked_json=0
+  nucleus="unchanged; immutable lock gate passed"
+}
+.reproducibility{
+  in_memory="LIN AST/module and emitted LLVM IR are constructed in process"
+  temporary_files="kernel.ll, base.o, opt.o, and executable are temporary proof artifacts"
+  tracked_artifacts="this .rulel evidence only; no generated host or native artifact tracked"
+}
