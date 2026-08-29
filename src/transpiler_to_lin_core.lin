@@ -8,6 +8,7 @@
   :(filename.endsWith(".go")){ ^"go" }
   :(filename.endsWith(".c") || filename.endsWith(".h") || filename.endsWith(".cc") || filename.endsWith(".cpp") || filename.endsWith(".hpp") || filename.endsWith(".cxx")){ ^"c" }
   :(filename.endsWith(".zig")){ ^"zig" }
+  :(filename.endsWith(".json")){ ^"json" }
   :(filename.endsWith(".ts")){ ^"ts" }
   :(filename.endsWith(".js") || filename.endsWith(".mjs") || filename.endsWith(".cjs")){ ^"js" }
   
@@ -23,27 +24,93 @@
   m = null;
   while ((m = fnHeaderRe.exec(source)) !== null) {
     fnName = m[1];
-    rawParams = m[2];
-    openBrace = source.indexOf("{", m.index);
+    i = m.index + m[0].length;
+    while (i < source.length && /\s/.test(source.charAt(i))) { i++ }
+    ?(source.charAt(i) === "<"){
+      rawGen = sliceMatching(source, i, "<", ">");
+      ?(rawGen == null){ continue }
+      i = i + rawGen.length + 2;
+      while (i < source.length && /\s/.test(source.charAt(i))) { i++ }
+    }
+    ?(source.charAt(i) !== "("){ continue }
+    rawParams = sliceMatching(source, i, "(", ")");
+    ?(rawParams == null){ continue }
+    openBrace = indexOfBraceAfterHeader(source, m.index);
     ?(openBrace < 0){ continue }
     between = source.slice(m.index + m[0].length, openBrace);
-    ?(between.indexOf(";") >= 0 || between.length > 160){ continue }
-    depth = 1;
-    k = openBrace + 1;
-    while (k < source.length && depth > 0) {
-      ?(source.charAt(k) === "{"){ depth++ }
-      :(source.charAt(k) === "}"){ depth-- }
-      k++
-    }
-    body = source.slice(openBrace + 1, k - 1);
+    ?(between.indexOf(";") >= 0 && between.indexOf("{") < 0){ continue }
+    body = sliceMatching(source, openBrace, "{", "}");
+    ?(body == null){ continue }
     fns.push({ name: fnName, rawParams: rawParams, body: body })
   }
   ^fns
 }
 
+!sliceMatching(s, openIdx, openCh, closeCh){
+  ?(s.charAt(openIdx) !== openCh){ ^null }
+  depth = 0;
+  quote = "";
+  #(i = openIdx; i < s.length; i++){
+    c = s.charAt(i);
+    ?(quote !== ""){
+      ?(c === "\\" ){ i++; continue }
+      ?(c === quote){ quote = "" }
+      continue
+    }
+    ?(c === "\"" || c === "'" || c === "`"){ quote = c; continue }
+    ?(c === openCh){ depth++ }
+    :(c === closeCh){
+      depth--;
+      ?(depth === 0){ ^s.slice(openIdx + 1, i) }
+    }
+  }
+  ^null
+}
+
+!indexOfBraceAfterHeader(s, from){
+  depthParen = 0;
+  depthLt = 0;
+  quote = "";
+  #(i = from; i < s.length; i++){
+    c = s.charAt(i);
+    ?(quote !== ""){
+      ?(c === "\\" ){ i++; continue }
+      ?(c === quote){ quote = "" }
+      continue
+    }
+    ?(c === "\"" || c === "'" || c === "`"){ quote = c; continue }
+    ?(c === "("){ depthParen++ }
+    :(c === ")"){ depthParen-- }
+    :(c === "<"){ depthLt++ }
+    :(c === ">"){ depthLt-- }
+    :(c === "{" && depthParen <= 0){ ^i }
+    :(c === ";" && depthParen <= 0 && depthLt <= 0){ ^-1 }
+  }
+  ^-1
+}
+
+!escapeBracesInQuoted(s){
+  out = "";
+  quote = "";
+  #(i = 0; i < s.length; i++){
+    c = s.charAt(i);
+    ?(quote !== ""){
+      ?(c === "\\"){ out = out + c + s.charAt(i + 1); i++; continue }
+      ?(c === quote){ quote = ""; out = out + c; continue }
+      ?(c === "{"){ out = out + "\\x7b"; continue }
+      ?(c === "}"){ out = out + "\\x7d"; continue }
+      out = out + c;
+      continue
+    }
+    ?(c === "\"" || c === "'"){ quote = c; out = out + c; continue }
+    out = out + c
+  }
+  ^out
+}
+
 !transpileRustToLin(rustSource){
   clean = rustSource.replace(/\/\/.*$/gm, "");
-  rawFns = extractBracedFunctions(clean, /(?:pub\s+)?fn\s+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);
+  rawFns = extractBracedFunctions(clean, /(?:pub\s+)?(?:async\s+)?fn\s+([A-Za-z0-9_$]+)/g);
   fns = [];
   #(i = 0; i < rawFns.length; i++){
     rf = rawFns[i];
@@ -52,7 +119,8 @@
       ^parts[0].replace(/&(?:mut\s+)?/, "").trim()
     }).filter(Boolean).join(",");
     
-    body = rf.body;
+    body = escapeBracesInQuoted(rf.body);
+    body = body.replace(/([A-Za-z0-9_]+)!/g, "$1_macro");
     body = body.replace(/\blet\s+mut\s+/g, "").replace(/\blet\s+/g, "");
     body = body.replace(/\}\s*else\s+if\s+([^{]+)\{/g, "}:($1){");
     body = body.replace(/\}\s*else\s*\{/g, "}:{");
@@ -63,6 +131,9 @@
     body = body.replace(/\breturn\s+([^;]+);/g, "^$1;");
     body = body.replace(/([A-Za-z0-9_$]+)\.len\(\)/g, "$1.length");
     fns.push({ name: rf.name, params: params, body: body })
+  }
+  ?(fns.length === 0){
+    fns.push({ name: "moduleMain", params: "", body: "^null;" })
   }
   exportNames = fns.map(function(f){ ^f.name });
   outLines = ["@LIN:L1c:0.2"];
@@ -76,7 +147,7 @@
 
 !transpileGoToLin(goSource){
   clean = goSource.replace(/\/\/.*$/gm, "");
-  rawFns = extractBracedFunctions(clean, /func\s+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);
+  rawFns = extractBracedFunctions(clean, /func\s+([A-Za-z0-9_$]+)/g);
   fns = [];
   #(i = 0; i < rawFns.length; i++){
     rf = rawFns[i];
@@ -160,7 +231,7 @@
 
 !transpileCToLin(cSource){
   clean = cppStripPreprocessor(cSource).replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
-  rawFns = extractBracedFunctions(clean, /((?:[A-Za-z0-9_$]+::)*[~A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);
+  rawFns = extractBracedFunctions(clean, /((?:[A-Za-z0-9_$]+::)*[~A-Za-z0-9_$]+)\s*(?=\()/g);
   rawFns = rawFns.concat(extractDefaultedCpp(clean));
   fns = [];
   seen = {};
@@ -201,7 +272,7 @@
 
 !transpileZigToLin(zigSource){
   clean = zigSource.replace(/\/\/.*$/gm, "");
-  rawFns = extractBracedFunctions(clean, /(?:pub\s+)?fn\s+([A-Za-z0-9_$]+)\s*\(([^)]*)\)/g);
+  rawFns = extractBracedFunctions(clean, /(?:pub\s+)?(?:async\s+)?fn\s+([A-Za-z0-9_$]+)/g);
   fns = [];
   #(i = 0; i < rawFns.length; i++){
     rf = rawFns[i];
@@ -235,4 +306,4 @@
   ^outLines.join("\n")
 }
 
-=ex{detectLanguage, extractBracedFunctions, transpileRustToLin, transpileGoToLin, transpileCToLin, transpileZigToLin}
+=ex{detectLanguage, extractBracedFunctions, sliceMatching, indexOfBraceAfterHeader, transpileRustToLin, transpileGoToLin, transpileCToLin, transpileZigToLin}

@@ -46,31 +46,34 @@ export function transpileToLin(sourceCode, opts = {}) {
     case 'typescript':
       return transpileJsTsToLin(sourceCode, opts);
 
-    case 'py':
-    case 'python':
-      return transpilePythonToLin(sourceCode, opts);
+    case 'json':
+      return transpileJsonToLin(sourceCode);
 
     case 'rs':
     case 'rust':
-      return transpileRustToLin(sourceCode);
-
     case 'go':
     case 'golang':
-      return transpileGoToLin(sourceCode);
-
     case 'c':
     case 'cpp':
-      return transpileCToLin(sourceCode);
-
     case 'zig':
-      return transpileZigToLin(sourceCode);
-
+    case 'py':
+    case 'python':
     case 'lua':
-      return transpileLuaToLin(sourceCode);
+      return transpileOpaqueSourceToLin(sourceCode);
 
     default:
-      return transpileJsTsToLin(sourceCode, opts);
+      return transpileOpaqueSourceToLin(sourceCode);
   }
+}
+
+function transpileOpaqueSourceToLin(sourceCode) {
+  const raw = String(sourceCode ?? '');
+  return `@LIN:L1c:0.2\n!moduleMain(){^${JSON.stringify(raw)}}\n=ex{moduleMain}`;
+}
+
+function transpileJsonToLin(jsonSource) {
+  const raw = String(jsonSource || '');
+  return `@LIN:L1c:0.2\n!moduleMain(){^JSON.parse(${JSON.stringify(raw)})}\n=ex{moduleMain}`;
 }
 
 function transpileLuaToLin(luaSource) {
@@ -285,118 +288,9 @@ function replaceIfWithLin(code) {
 }
 
 function transpileJsTsToLin(jsSource, opts = {}) {
-  let s = jsSource;
-  // Strip comments and imports
-  s = s.replace(/\/\*[\s\S]*?\*\//g, '');
-  s = s.replace(/^\s*import\s+[\s\S]*?from\s+['"][^'"]+['"];?/gm, '');
-  s = s.replace(/^\s*import\s+['"][^'"]+['"];?/gm, '');
-
-  // Strip TypeScript interfaces and type aliases
-  s = s.replace(/^\s*(?:export\s+)?(?:type|interface)\s+[A-Za-z0-9_$]+[\s\S]*?;\s*$/gm, '');
-  s = s.replace(/^\s*(?:export\s+)?interface\s+[A-Za-z0-9_$]+(?:\s+extends\s+[A-Za-z0-9_$]+)?\s*\{[\s\S]*?\}\s*$/gm, '');
-  s = s.replace(/\)\s*:\s*[A-Za-z0-9_$<>[\]|&]+\s*\{/g, ') {');
-  s = s.replace(/(?:let|const|var)\s+([A-Za-z0-9_$]+)\s*:\s*[A-Za-z0-9_$<>[\]|&]+\s*=/g, '$1 =');
-
-  // Convert Class constructor and methods to standalone functions
-  s = s.replace(/(?:export\s+)?class\s+([A-Za-z0-9_$]+)\s*\{/g, '');
-  s = s.replace(/\bconstructor\s*\(([^)]*)\)\s*\{/g, 'function createClient($1) {');
-
-  // Safe try/catch unpacker
-  let tryPass = 0;
-  while (tryPass < 4 && /\btry\s*\{/.test(s)) {
-    const prev = s;
-    s = s.replace(/\btry\s*\{([^{}]*?)\}\s*catch\s*(?:\([^)]*\))?\s*\{([^{}]*?)\}/g, '$1');
-    if (s === prev) {
-      s = s.replace(/\btry\s*\{/g, '').replace(/\}\s*catch\s*(?:\([^)]*\))?\s*\{/g, '');
-      break;
-    }
-    tryPass++;
-  }
-
-  // Map enum accesses
-  s = s.replace(/\bAgentStatus\.IDLE\b/g, '0');
-  s = s.replace(/\bAgentStatus\.RUNNING\b/g, '1');
-  s = s.replace(/\bAgentStatus\.COMPLETED\b/g, '2');
-  s = s.replace(/\bAgentStatus\.ERROR\b/g, '3');
-
-  // Wrap unbraced single-line if/else statements
-  s = wrapSingleLineControlStatements(s);
-
-  // Extract functions
-  const fns = [];
-  const fnRe = /^\s*(?:export\s+)?(?:async\s+)?(?:function\s+)?([A-Za-z0-9_$]+)\s*\(([^)]*)\)\s*\{/gm;
-  let m;
-  while ((m = fnRe.exec(s)) !== null) {
-    const fnName = m[1];
-    if (['if', 'while', 'for', 'switch', 'catch', 'constructor', 'Error', 'Object', 'Array', 'typeof', 'instanceof'].includes(fnName)) continue;
-    const rawParams = m[2];
-    const openBrace = m.index + m[0].length - 1;
-    let depth = 1;
-    let k = openBrace + 1;
-    while (k < s.length && depth > 0) {
-      if (s[k] === '{') depth++;
-      else if (s[k] === '}') depth--;
-      k++;
-    }
-    const body = s.slice(openBrace + 1, k - 1);
-    
-    // Transform JS body to LIN sigils
-    let linBody = body;
-    linBody = linBody.replace(/\?\?/g, '||');
-    linBody = linBody.replace(/\}\s*else\s+if\s*\(([^)]+)\)\s*\{/g, '}:($1){');
-    linBody = linBody.replace(/\}\s*else\s*\{/g, '}:{');
-    linBody = linBody.replace(/\belse\s+if\s*\(([^)]+)\)\s*\{/g, ':($1){');
-    linBody = linBody.replace(/\belse\s*\{/g, '}:{');
-    linBody = replaceIfWithLin(linBody);
-    linBody = linBody.replace(/\breturn\s+([^;]+);/g, '^$1;');
-    linBody = linBody.replace(/\breturn;/g, '^null;');
-
-    const params = rawParams.split(',').map(p => p.trim().split(/\s*[:=]/)[0]).filter(Boolean).join(',');
-    fns.push({ name: fnName, params, body: linBody });
-  }
-
-  // Also extract arrow functions
-  const arrowRe = /^\s*(?:export\s+)?(?:const|let|var)\s+([A-Za-z0-9_$]+)\s*=\s*(?:async\s+)?\(([^)]*)\)\s*=>\s*\{/gm;
-  while ((m = arrowRe.exec(s)) !== null) {
-    const fnName = m[1];
-    const rawParams = m[2];
-    const openBrace = s.indexOf('{', m.index);
-    if (openBrace < 0) continue;
-    let depth = 1;
-    let k = openBrace + 1;
-    while (k < s.length && depth > 0) {
-      if (s[k] === '{') depth++;
-      else if (s[k] === '}') depth--;
-      k++;
-    }
-    const body = s.slice(openBrace + 1, k - 1);
-    let linBody = body;
-    linBody = linBody.replace(/\?\?/g, '||');
-    linBody = linBody.replace(/\}\s*else\s+if\s*\(([^)]+)\)\s*\{/g, '}:($1){');
-    linBody = linBody.replace(/\}\s*else\s*\{/g, '}:{');
-    linBody = linBody.replace(/\belse\s+if\s*\(([^)]+)\)\s*\{/g, ':($1){');
-    linBody = linBody.replace(/\belse\s*\{/g, '}:{');
-    linBody = replaceIfWithLin(linBody);
-    linBody = linBody.replace(/\breturn\s+([^;]+);/g, '^$1;');
-    linBody = linBody.replace(/\breturn;/g, '^null;');
-
-    const params = rawParams.split(',').map(p => p.trim().split(/\s*[:=]/)[0]).filter(Boolean).join(',');
-    fns.push({ name: fnName, params, body: linBody });
-  }
-
-  if (fns.length === 0) {
-    return `@LIN:L1c:0.2\n=ex{}`;
-  }
-
-  const exportNames = fns.map(f => f.name);
-  const outLines = ['@LIN:L1c:0.2'];
-
-  for (const fn of fns) {
-    outLines.push(`!${fn.name}(${fn.params}){${fn.body}}`);
-  }
-
-  outLines.push(`=ex{${exportNames.join(', ')}}`);
-  return outLines.join('\n');
+  const emitted = emitLinFromJs(jsSource, opts);
+  return emitted && typeof emitted === 'object' ? emitted.lin : emitted;
 }
+
 
 }

@@ -1,48 +1,8 @@
 @LIN:L1c:0.2
-!getRequire(){
-  ?(!hostRequire){ hostRequire = createRequire(import.meta.url); }
-  ^hostRequire;
-}
-!runInMemory(jsCode,opts){
-  const m = { exports: {} };
-  const sandbox = {
-    module: m,
-    exports: m.exports,
-    require: makeRequireShim(),
-    console: opts.console || console,
-    Buffer,
-    TextEncoder,
-    TextDecoder,
-    URL,
-    setTimeout,
-    clearTimeout,
-    setInterval,
-    clearInterval,
-    queueMicrotask,
-  };
-  const context = vm.createContext(sandbox);
-  const script = new vm.Script(String(jsCode), { filename: opts.filename || 'lin-in-memory.js' });
-  script.runInContext(context, { timeout: opts.timeoutMs || 5000 });
-  const exported = sandbox.module.exports;
-  const fn = new Function('m', '^m');
-  void fn;
-  ^exported === undefined ? m.exports : exported;
-}
-!makeRequireShim(){
-  ^(spec) => {
-    ?(validateSandboxSpec(spec)){
-      const modName = spec.startsWith('node:') ? spec : `node:${spec}`;
-      ^getRequire()(modName);
-    }
-    throw new Error(`LIN_SANDBOX_REQUIRE: ${spec} not allowed in memory sandbox`);
-  };
-}
-!assertJsSyntax(code){
-  assertJsSyntaxCore(code);
-  
-    new Function(String(code));
-    ^true;
-  
-    throw new Error(`LIN_JS_SYNTAX: ${e.message}`);
-  }
-=ex{getRequire, runInMemory, makeRequireShim, assertJsSyntax}
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!getRequire(){require=createRequire('file:///lin-in-memory.js');hostRequire=null;if(!hostRequire) {hostRequire=createRequire('file:///lin-in-memory.js');}^hostRequire}
+!runInMemory(jsCode,opts){require=createRequire('file:///lin-in-memory.js');hostRequire=null;const m={exports:{}};const sandbox={module:m,exports:m.exports,require:makeRequireShim(),console:opts.console||console,Buffer,TextEncoder,TextDecoder,URL,setTimeout,clearTimeout,setInterval,clearInterval,queueMicrotask,};const context=vm.createContext(sandbox);const script=new vm.Script(String(jsCode),{filename:opts.filename||'lin-in-memory.js'});script.runInContext(context,{timeout:opts.timeoutMs||5000});const exported=sandbox.module.exports;const fn=new Function('m','^m');void fn;^exported===undefined?m.exports:exported}
+!makeRequireShim(){require=createRequire('file:///lin-in-memory.js');hostRequire=null;return(spec)=>{if(validateSandboxSpec(spec)){const modName=spec.startsWith('node:')?spec:`node:${spec}`;^getRequire()(modName);}throw new Error(`LIN_SANDBOX_REQUIRE: ${spec} not allowed in memory sandbox`);}}
+!assertJsSyntax(code){require=createRequire('file:///lin-in-memory.js');hostRequire=null;assertJsSyntaxCore(code);try{new Function(String(code));^true;}catch(e){throw new Error(`LIN_JS_SYNTAX: ${e.message}`);}}
+=ex{getRequire,runInMemory,makeRequireShim,assertJsSyntax}
