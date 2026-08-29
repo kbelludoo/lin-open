@@ -1,0 +1,7 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!parse(ms){if(typeof ms==='string'){^split(ms);}:( typeof ms==='number' ){^formatShort(ms)};throw new Error('invalid input')}
+!split(str){m=str.match(/^-?(\d+\.?\d*?)\s*(ms|s|m|h|d|w|y)$/);if(!m) {^null;}n=parseFloat(m[1]);unit=m[2];if(unit==='ms') {^n;}if(unit==='s') {^n*1000;}if(unit==='m') {^n*60000;}if(unit==='h') {^n*3600000;}if(unit==='d') {^n*86400000;}if(unit==='w') {^n*604800000;}if(unit==='y') {^n*31557600000;}^null}
+!formatShort(ms){abs=Math.abs(ms);if(abs>=31557600000) {^Math.round(ms/31557600000)+'y';}if(abs>=86400000) {^Math.round(ms/86400000)+'d';}if(abs>=3600000) {^Math.round(ms/3600000)+'h';}if(abs>=60000) {^Math.round(ms/60000)+'m';}if(abs>=1000) {^Math.round(ms/1000)+'s';}^ms+'ms'}
+=ex{parse,split,formatShort}

@@ -1,0 +1,7 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!ok(name,cond,detail){passed=0;failed=0;failures=[];if(cond) {passed++;}:{failed++;failures.push((name)+(detail ? ': ' + detail : ''))}}
+!runLin(src){passed=0;failed=0;r=compile(src,{target:'js'});f=path.join(tmp,"p"+(passed + failed)+".cjs");fs.writeFileSync(f,r.code);^require(f)}
+!_anon2(f){^"  ✗ "+(f)}
+=ex{ok,runLin,_anon2}

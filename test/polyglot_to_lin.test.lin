@@ -1,0 +1,44 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!getFn(mod,name){pyCode=`
+def fib(n):
+    if n <= 1:
+        return n
+    return fib(n - 1) + fib(n - 2)
+
+def is_positive(x):
+    if x > 0:
+        return True
+    else:
+        return False
+`;linFromPy=transpileToLin(pyCode,{filename:'algo.py'});jsModPy=runInMemory(compile(linFromPy,{target:'js'}).code);fibFn=getFn(jsModPy,'fib');isPosFn=getFn(jsModPy,'is_positive');rustCode=`
+pub fn mul_add(a: i64, b: i64, c: i64) -> i64 {
+    let mut res = a * b;
+    res = res + c;
+    return res;
+}
+`;linFromRust=transpileToLin(rustCode,{filename:'math.rs'});jsModRs=runInMemory(compile(linFromRust,{target:'js'}).code);mulAddFn=getFn(jsModRs,'mul_add');goCode=`
+func clamp(val int, min int, max int) int {
+    if val < min {
+        return min;
+    } else if val > max {
+        return max;
+    }
+    return val;
+}
+`;linFromGo=transpileToLin(goCode,{filename:'util.go'});jsModGo=runInMemory(compile(linFromGo,{target:'js'}).code);clampFn=getFn(jsModGo,'clamp');cCode=`
+int gcd(int a, int b) {
+    while (b != 0) {
+        int t = b;
+        b = a % b;
+        a = t;
+    }
+    return a;
+}
+`;linFromC=transpileToLin(cCode,{filename:'math.c'});jsModC=runInMemory(compile(linFromC,{target:'js'}).code);gcdFn=getFn(jsModC,'gcd');zigCode=`
+pub fn square_sum(a: i64, b: i64) i64 {
+    return (a * a) + (b * b);
+}
+`;linFromZig=transpileToLin(zigCode,{filename:'geo.zig'});jsModZig=runInMemory(compile(linFromZig,{target:'js'}).code);squareSumFn=getFn(jsModZig,'square_sum');jsModPipeline=runInMemory(compile(linFromPipeline,{target:'js'}).code);pipelineFn=getFn(jsModPipeline,'processItems');if(typeof mod==='function') {^mod;}^mod[name]||mod[name.replace(/_([a-z])/g,(_,c)=>c.toUpperCase())]}
+=ex{getFn}

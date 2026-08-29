@@ -1,0 +1,16 @@
+@RULEL:TRANSPOSED_06_INVARIANT_VIOLATION_FAIL_LIN:1.0.0
+~METADATA{original="./benchmarks/LIN_SIGIL_004/build/06_invariant_violation_fail.lin.mjs" lang="mjs"}
+.source{
+// Auto-generated from LIN IR with Contract & Effect System
+
+export function corruptPush(self: any, item: any) {
+  const __exec = () => {
+        self.size = self.capacity + 5;
+    return self.size
+  };
+  const result = __exec();
+  return result;
+}
+
+
+}

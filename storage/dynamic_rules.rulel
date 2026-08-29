@@ -1,0 +1,24 @@
+@RULEL:DYNAMIC_RULES:1.0
+~ACTIVE_RULES{count=2 certified_only=true}
+
+.rule{
+  pattern: "INLINE_TERNARY",
+  rule_id: "RULE_TERNARY_R17_CANONICAL_LAZY",
+  version: 1,
+  transformation: "desugar_inline_ternary_to_lazy_if_else",
+  proof_hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  oracle_cases: 1000,
+  metamorphic_cases: 500,
+  status: "CERTIFIED"
+}
+
+.rule{
+  pattern: "NULL_COALESCING",
+  rule_id: "RULE_COALESCE_R20_PROMOTED_FALLBACK",
+  version: 1,
+  transformation: "desugar_null_coalescing_to_lazy_absence_fallback",
+  proof_hash: "8a1e2f9d3b4c5061728394a5b6c7d8e9f0a1b2c3d4e5f60718293a4b5c6d7e8f",
+  oracle_cases: 2000,
+  metamorphic_cases: 1000,
+  status: "PROMOTED"
+}

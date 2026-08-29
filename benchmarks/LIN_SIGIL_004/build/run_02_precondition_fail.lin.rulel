@@ -1,0 +1,19 @@
+@RULEL:TRANSPOSED_RUN_02_PRECONDITION_FAIL_LIN:1.0.0
+~METADATA{original="./benchmarks/LIN_SIGIL_004/build/run_02_precondition_fail.lin.mjs" lang="mjs"}
+.source{
+
+          import { divide } from './02_precondition_fail.lin.mjs';
+          try {
+            const args = {"a":10,"b":0};
+            let res;
+            if (args.self) {
+              res = divide(args.self, args.item);
+            } else {
+              res = divide(args.a, args.b);
+            }
+            console.log(JSON.stringify({ status: 'ACCEPTED', reason: 'OK', res }));
+          } catch(err) {
+            console.log(JSON.stringify({ status: 'REJECTED', reason: err.message }));
+          }
+        
+}

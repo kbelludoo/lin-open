@@ -1,0 +1,3 @@
+@LIN:L1c:0.2
+!moduleMain(){^"[package]\nname = \"lin-benchmarks\"\nversion = \"0.1.0\"\nedition = \"2021\"\n\n[[bin]]\nname = \"01_parsing\"\npath = \"src/01_parsing.rs\"\n\n[[bin]]\nname = \"03_hashcons\"\npath = \"src/03_hashcons.rs\"\n\n[[bin]]\nname = \"04_content_hash\"\npath = \"src/04_content_hash.rs\"\n\n[[bin]]\nname = \"04_content_hash_v2\"\npath = \"src/04_content_hash_v2.rs\"\n\n[dependencies]\nserde = { version = \"1.0\", features = [\"derive\"] }\nserde_json = \"1.0\"\nhashbrown = \"0.14\"\nonce_cell = \"1.19\"\nsha2 = \"0.10\"\nregex = \"1\"\nhex = \"0.4\"\n\n[profile.release]\nopt-level = 3\nlto = true\ncodegen-units = 1\n"}
+=ex{moduleMain}

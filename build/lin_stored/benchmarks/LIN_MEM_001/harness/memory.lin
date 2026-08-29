@@ -1,0 +1,6 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!getProcessMemory(){mem=process.memoryUsage();procRss=0;try{statm=fs.readFileSync("/proc/self/statm","utf-8").trim().split(/\s+/);pageSize=4096;procRss=parseInt(statm[1],10)*pageSize;}catch(e){procRss=mem.rss;};return{rssBytes:procRss,heapUsedBytes:mem.heapUsed,heapTotalBytes:mem.heapTotal,externalBytes:mem.external,arrayBuffersBytes:mem.arrayBuffers||0}}
+!measureMemoryDelta(fn){if(global.gc){global.gc();};before=getProcessMemory();res=fn();if(global.gc){global.gc();};after=getProcessMemory();return{result:res,deltaRssBytes:Math.max(0,after.rssBytes-before.rssBytes),deltaHeapBytes:Math.max(0,after.heapUsedBytes-before.heapUsedBytes),before,after}}
+=ex{getProcessMemory,measureMemoryDelta}

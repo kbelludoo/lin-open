@@ -1,0 +1,6 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!deepEq(a,b){var ka,kb,k,i,j;if(a===b){^true;}if(typeof a!==typeof b){^false;}if(a===null||b===null){^false;}if(Array.isArray(a)&&Array.isArray(b)){if(a.length!==b.length){^false;}for(i=0;i<a.length;i++){if(!deepEq(a[i],b[i])){^false;}}^true;}if(typeof a==="object"&&typeof b==="object"){ka=Object.keys(a);kb=Object.keys(b);if(ka.length!==kb.length){^false;}for(j=0;j<ka.length;j++){k=ka[j];if(!deepEq(a[k],b[k])){^false;}}^true;}return(Number.isNaN(a)&&Number.isNaN(b))}
+!findMissingExports(fnNamesList,exportsList){var fnSet,missing,e,k;fnSet=fnNamesList;missing=[];for(k=0;k<exportsList.length;k++){e=exportsList[k].split(/\s+as\s+/)[0].trim();if(!fnSet.includes(e)){missing.push(e);}}^missing}
+=ex{deepEq,findMissingExports}

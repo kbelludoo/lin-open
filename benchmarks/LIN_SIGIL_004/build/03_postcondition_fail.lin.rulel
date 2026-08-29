@@ -1,0 +1,25 @@
+@RULEL:TRANSPOSED_03_POSTCONDITION_FAIL_LIN:1.0.0
+~METADATA{original="./benchmarks/LIN_SIGIL_004/build/03_postcondition_fail.lin.mjs" lang="mjs"}
+.source{
+// Auto-generated from LIN IR with Contract & Effect System
+
+export function divide(a: any, b: any) {
+  if (!(b != 0)) throw new Error("PRECONDITION_VIOLATED");
+  const __exec = () => {
+      return (a + b)
+  };
+  const result = __exec();
+  if (!(result * b == a)) throw new Error("POSTCONDITION_VIOLATED");
+  return result;
+}
+
+export function main() {
+  const __exec = () => {
+      return divide(10, 2)
+  };
+  const result = __exec();
+  return result;
+}
+
+
+}

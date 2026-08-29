@@ -1,0 +1,8 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!constructor(substrate){this.substrate=substrate}
+!verifyEffectIsolation(patchCode,callerEffect){if(callerEffect==='Pure'){const ioPatterns=[/\bconsole\.(log|warn|error)\b/,/\bfs\.(readFileSync|writeFileSync|readFile|writeFile)\b/,/\bprocess\.(exit|env)\b/,/\bfetch\s*\(/,/\bhttp\.(request|get)\b/];for(const pat of ioPatterns){if(pat.test(patchCode)){return{valid:false,reason:'EFFECT_LEAK: Pure function attempted IO side-effect'};}}}return{valid:true}}
+!evalASTInvariant(astExpr,state){if(!astExpr) {^true;}const evalNode=(node,env)=>{if(node.type==='Literal') {^node.value;}if(node.type==='Identifier'){const parts=node.name.split('.');let val=env;for(const p of parts){if(val&&typeof val==='object') {val=val[p];}:{^null}}^val;}if(node.type==='BinaryOp'){const l=evalNode(node.left,env);const r=evalNode(node.right,env);if(node.op==='>=') {^l>=r;}if(node.op==='<=') {^l<=r;}if(node.op==='>') {^l>r;}if(node.op==='<') {^l<r;}if(node.op==='==') {^l==r;}if(node.op==='===') {^l===r;}if(node.op==='!=') {^l!=r;}if(node.op==='&&') {^Boolean(l&&r);}if(node.op==='||') {^Boolean(l||r);}}^true;};^evalNode(astExpr,{self:state})}
+!verifyInvariants(invariants,state){for(const inv of invariants){if(inv.ast){const pass=this.evalASTInvariant(inv.ast,state);if(!pass){return{valid:false,reason:"INVARIANT_VIOLATED: "+(inv.expr)};}}}return{valid:true}}
+=ex{constructor,verifyEffectIsolation,evalASTInvariant,verifyInvariants}

@@ -1,0 +1,65 @@
+@LIN:L1c:0.2
+@LIN_TRI_STATE{version=1.0 purpose=three_state_hypothesis_engine_with_explicit_uncertainty}
+
+!init_tri_state() -> string {
+  // Retorna estado inicial: P(A)=0.33, P(B)=0.33, P(C)=0.34
+  ^"prob_a=33|prob_b=33|prob_c=34|entropy=high";
+}
+
+!update_belief(prob_a: int, prob_b: int, prob_c: int, evidence_a: int, evidence_b: int) -> string {
+  // Atualiza probabilidades com base na evidência de testes passados/falhos
+  // evidence: +1 (pass), -1 (fail), 0 (neutral)
+  new_a = prob_a;
+  new_b = prob_b;
+  new_c = prob_c;
+
+  ?(evidence_a > 0){
+    new_a = new_a + 25;
+    ?(new_b >= 15){ new_b = new_b - 15 };
+    ?(new_c >= 10){ new_c = new_c - 10 };
+  };
+  ?(evidence_a < 0){
+    ?(new_a >= 25){ new_a = new_a - 25 } : { new_a = 0 };
+    new_c = new_c + 15;
+  };
+
+  ?(evidence_b > 0){
+    new_b = new_b + 25;
+    ?(new_a >= 15){ new_a = new_a - 15 };
+    ?(new_c >= 10){ new_c = new_c - 10 };
+  };
+  ?(evidence_b < 0){
+    ?(new_b >= 25){ new_b = new_b - 25 } : { new_b = 0 };
+    new_c = new_c + 15;
+  };
+
+  // Normalização para soma 100
+  total = new_a + new_b + new_c;
+  ?(total == 0){
+    new_a = 0; new_b = 0; new_c = 100;
+  };
+
+  out = "";
+  out = out + "prob_a=";
+  out = out + (new_a);
+  out = out + "|prob_b=";
+  out = out + (new_b);
+  out = out + "|prob_c=";
+  out = out + (new_c);
+  ^out;
+}
+
+!decide_action(prob_a: int, prob_b: int, prob_c: int, confidence_threshold: int) -> string {
+  ?(prob_a >= confidence_threshold){
+    ^"PROMOTE_RULE_A";
+  };
+  ?(prob_b >= confidence_threshold){
+    ^"PROMOTE_RULE_B";
+  };
+  ?(prob_c >= 50){
+    ^"TRIGGER_DEEP_PARALLEL_EXPLORATION";
+  };
+  ^"GATHER_MORE_EVIDENCE";
+}
+
+=ex{init_tri_state, update_belief, decide_action}

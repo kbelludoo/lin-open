@@ -1,0 +1,12 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!langLabel(lang){LANGUAGES=['py','ts','rust','lin'];SHARED=`
+Generate ONLY the source code for this system in ${'__LANG__'}. No prose, no markdown fences, no explanation.
+Place it in a single file so it can be syntax-checked by the toolchain.
+`;return{py:'Python',ts:'TypeScript',rust:'Rust'}[lang]}
+!langComment(lang){LANGUAGES=['py','ts','rust','lin'];SHARED=`
+Generate ONLY the source code for this system in ${'__LANG__'}. No prose, no markdown fences, no explanation.
+Place it in a single file so it can be syntax-checked by the toolchain.
+`;return{py:'#',ts:'//',rust:'//'}[lang]}
+=ex{langLabel,langComment}

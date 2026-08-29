@@ -1,0 +1,17 @@
+@RULEL:TRANSPOSED_CASE_02:1.0.0
+~METADATA{original="./benchmarks/LIN_SIGIL_004/build/case_02.mjs" lang="mjs"}
+.source{
+// Auto-generated JavaScript/TypeScript from LIN IR
+
+export function divide(a, b) {
+  if (!(b != 0)) throw new Error("PRECONDITION_VIOLATED");
+  const __exec = () => {
+      return (Math.floor(a / b))
+  };
+  const result = __exec();
+  if (!(result * b == a)) throw new Error("POSTCONDITION_VIOLATED");
+  return result;
+}
+
+
+}

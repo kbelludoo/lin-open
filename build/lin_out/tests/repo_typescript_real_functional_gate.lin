@@ -1,0 +1,7 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!_anon0(f){scannerPath=path.join(tsRepoRoot,'src/ast/scanner.ts');enumsDir=path.join(tsRepoRoot,'src/enums');libraries={};conformanceDir=path.resolve('clones_lin/TypeScript/tsc/testdata/tests/cases/conformance/scanner');totalTokens=0;passedVectors=0;failedVectors=0;latencies=[];^f.endsWith('.enum.ts')}
+!getAllTestFiles(dir){scannerPath=path.join(tsRepoRoot,'src/ast/scanner.ts');enumsDir=path.join(tsRepoRoot,'src/enums');libraries={};conformanceDir=path.resolve('clones_lin/TypeScript/tsc/testdata/tests/cases/conformance/scanner');totalTokens=0;passedVectors=0;failedVectors=0;latencies=[];let results=[];if(!fs.existsSync(dir)) {^results;}const list=fs.readdirSync(dir);for(const file of list){const fullPath=path.join(dir,file);const stat=fs.statSync(fullPath);if(stat&&stat.isDirectory()) {results=results.concat(getAllTestFiles(fullPath));}:( file.endsWith('.ts')||file.endsWith('.js') ){results.push(fullPath)}}^results}
+!_anon2(a,b){scannerPath=path.join(tsRepoRoot,'src/ast/scanner.ts');enumsDir=path.join(tsRepoRoot,'src/enums');libraries={};conformanceDir=path.resolve('clones_lin/TypeScript/tsc/testdata/tests/cases/conformance/scanner');totalTokens=0;passedVectors=0;failedVectors=0;latencies=[];^a-b}
+=ex{_anon0,getAllTestFiles,_anon2}

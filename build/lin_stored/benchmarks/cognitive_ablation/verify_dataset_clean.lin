@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!executeLinCandidate(code){clean=code.replace(/@LIN:[^\n]+\n/g,'').replace(/=ex\{[^\}]+\}/g,'').trim();clean=clean.replace(/!([a-zA-Z0-9_]+)\(([^)]*)\)\{/g,'function $1($2){').replace(/\$([a-zA-Z0-9_]+)\s*=/g,'$1 =').replace(/\?\(([^)]+)\)\{/g,'if ($1) {').replace(/\:\(([^)]+)\)\{/g,'} :( $1 ){').replace(/\:\{/g,'} else {').replace(/\#\(([^;]*);([^;]*);([^)]*)\)\{/g,'for ($1; $2; $3) {').replace(/\^([^\n;\}]+)/g,'^$1');fn=new Function('input',"\n    "+(clean)+"\n;^solve(input);\n  ");^fn}
+=ex{executeLinCandidate}

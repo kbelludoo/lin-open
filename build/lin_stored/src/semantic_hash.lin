@@ -1,0 +1,6 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!semanticHash(params,body){canonicalize=linCanonicalize;canonical=canonicalize(params,body);^createHash('sha256').update(canonical,'utf8').digest('hex').slice(0,16)}
+!programHashes(prog){out={};for(fn of prog.fns){paramsText=Array.isArray(fn.params)?fn.params.map((p)=>(p.type?(p.name)+":"+(p.type):p.name)).join(','):String(fn.paramsRaw||fn.params||'');out[fn.name]=semanticHash(paramsText,fn.rawBody??fn.body);};^out}
+=ex{semanticHash,programHashes}

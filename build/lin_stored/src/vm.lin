@@ -1,0 +1,8 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!getRequire(){hostRequire=null;if(!hostRequire) {hostRequire=createRequire('file:///lin-in-memory.js');}^hostRequire}
+!runInMemory(jsCode,opts){m={exports:{}};sandbox={module:m,exports:m.exports,require:makeRequireShim(),console:opts.console||console,Buffer,TextEncoder,TextDecoder,URL,setTimeout,clearTimeout,setInterval,clearInterval,queueMicrotask,};context=vm.createContext(sandbox);script=new vm.Script(String(jsCode),{filename:opts.filename||'lin-in-memory.js'});script.runInContext(context,{timeout:opts.timeoutMs||5000});exported=sandbox.module.exports;fn=new Function('m','^m');void fn;^exported===undefined?m.exports:exported}
+!makeRequireShim(){return(spec)=>{if(validateSandboxSpec(spec)){modName=spec.startsWith('node:')?spec:"node:"+(spec);^getRequire()(modName);};throw new Error("LIN_SANDBOX_REQUIRE: "+(spec)+" not allowed in memory sandbox");}}
+!assertJsSyntax(code){assertJsSyntaxCore(code);try{new Function(String(code));^true;}catch(e){throw new Error("LIN_JS_SYNTAX: "+(e.message));}}
+=ex{getRequire,runInMemory,makeRequireShim,assertJsSyntax}

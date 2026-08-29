@@ -1,0 +1,3 @@
+@RULEL:TRANSPOSED_SOURCE:1.0
+~METADATA{original="benchmarks/LIN_SIGIL_005/build/prog_022.mjs" lang="mjs"}
+.source{content="// Auto-generated Generic TypeScript from LIN IR\n\nexport function abs_diff_22(a, b) {\n  if (!(true)) throw new Error(\"PRECONDITION_VIOLATED\");\n  const __old = (typeof self !== 'undefined' && self) ? JSON.parse(JSON.stringify(self)) : {};\n  const __exec = () => {\n    return (Math.abs(a - b))\n  };\n  const result = __exec();\n  if (!(result >= 0)) throw new Error(\"POSTCONDITION_VIOLATED\");\n  return result;\n}\n\n"}

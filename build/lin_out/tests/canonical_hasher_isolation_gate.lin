@@ -1,0 +1,218 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!moduleMain(){equivPassed=0;equivFailed=0;nonEquivPassed=0;nonEquivFailed=0;equivalentPairs=[];varSets=[['a','b','c'],['x','y','z'],['u','v','w'],['p1','p2','p3'],['first','second','third'],['foo','bar','baz'],['val1','val2','val3'],['m','n','k'],['alpha','beta','gamma'],['left','right','temp']];nonEquivalentPairs=[];litPairs=[['"10"','10'],['"true"','true'],['null','false'],['null','0'],['false','0'],['""','0'],['"undefined"','null'],['1','true'],['"0"','0'],['-0','0'],['100','"100"'],['false','""'],['null','undefined'],['true','"1"'],['10','10.5']];opPairs=[['<','<='],['>','>='],['===','!=='],['==','!='],['+','-'],['*','/'],['&&','||'],['&','|'],['<<','>>'],['>>>','>>'],['<','>'],['<=','>='],['+','*'],['-','%'],['^','&']];hostFns=['Math.floor','Math.ceil','Math.abs','Math.round','Date.now'];/**
+ * LIN Canonical Hasher Isolation Gate (100 Equivalent vs 100 Non-Equivalent Pairs)
+ * Spec: spec/LIN_SEMANTIC_MERKLE_DAG.rulel
+ */
+
+
+console.log('================================================================================');
+console.log('   LIN CANONICAL HASHER ISOLATION GATE: 100 EQUIV VS 100 NON-EQUIV PAIRS        ');
+console.log('================================================================================\n');
+
+let equivPassed = 0;
+let equivFailed = 0;
+let nonEquivPassed = 0;
+let nonEquivFailed = 0;
+
+
+
+
+console.log('▶ [PHASE 1: 100 EQUIVALENT PAIRS VERIFICATION]');
+
+const equivalentPairs = [];
+
+
+const varSets = [
+  ['a', 'b', 'c'], ['x', 'y', 'z'], ['u', 'v', 'w'], ['p1', 'p2', 'p3'],
+  ['first', 'second', 'third'], ['foo', 'bar', 'baz'], ['val1', 'val2', 'val3'],
+  ['m', 'n', 'k'], ['alpha', 'beta', 'gamma'], ['left', 'right', 'temp']
+];
+
+for (let i = 0; i < 20; i++) {
+  const [p1, p2, p3] = varSets[i % varSets.length];
+  const [q1, q2, q3] = varSets[(i + 3) % varSets.length];
+  equivalentPairs.push({
+    category: 'Alpha-Renaming',
+    left: "function fnA_"+(i)+"("+(p1)+", "+(p2)+") { let "+(p3)+" = "+(p1)+" * "+(p2)+";^"+(p3)+" + 10; }",
+    right: "function fnB_"+(i)+"("+(q1)+", "+(q2)+") { let "+(q3)+" = "+(q1)+" * "+(q2)+";^"+(q3)+" + 10; }"
+  });
+}
+
+
+for (let i = 0; i < 20; i++) {
+  const op = ['+', '-', '*', '%'][i % 4];
+  equivalentPairs.push({
+    category: 'Function vs Arrow',
+    left: "function calc_"+(i)+"(x, y) { ^(x "+(op)+" y) + "+(i)+"; }",
+    right: "const calc_"+(i)+" = (a, b) => (a "+(op)+" b) + "+(i)+";"
+  });
+}
+
+
+for (let i = 0; i < 20; i++) {
+  equivalentPairs.push({
+    category: 'Syntax Formatting & Parens',
+    left: "function clean_"+(i)+"(x) { if (x > "+(i)+") { ^true; } :{^false} }",
+    right: "function clean_"+(i)+"(val) { /* comment */ if (((val > "+(i)+"))) ^true; :{^false} }"
+  });
+}
+
+
+for (let i = 0; i < 20; i++) {
+  equivalentPairs.push({
+    category: 'Closure & Capture Isolation',
+    left: "function outerA_"+(i)+"(base) { const inner = (x) => x + base + "+(i)+";^inner(10); }",
+    right: "function outerB_"+(i)+"(root) { const sub = (delta) => delta + root + "+(i)+";^sub(10); }"
+  });
+}
+
+
+for (let i = 0; i < 20; i++) {
+  equivalentPairs.push({
+    category: 'Declaration & Destructuring Equivalence',
+    left: "function destA_"+(i)+"(pair) { let [a, b] = pair;^(a * "+(i)+") + b; }",
+    right: "function destB_"+(i)+"(tuple) { const [x, y] = tuple;^(x * "+(i)+") + y; }"
+  });
+}
+
+assert.equal(equivalentPairs.length, 100, 'Must have exactly 100 equivalent test pairs');
+
+for (let i = 0; i < equivalentPairs.length; i++) {
+  const { category, left, right } = equivalentPairs[i];
+  const hL = hashJsFunctionSource(left).hash;
+  const hR = hashJsFunctionSource(right).hash;
+
+  if (hL === hR) {
+    equivPassed++;
+  } :{equivFailed++;
+    console.log("  ❌ Equiv Pair #"+(i + 1)+" ["+(category)+"] MISMATCH:");
+    console.log("     Left:  "+(hL)+" -> "+(left));
+    console.log("     Right: "+(hR)+" -> "+(right))}
+}
+
+console.log("  -> Equivalent Pairs Result: "+(equivPassed)+"/100 PASSED\\n");
+
+
+
+
+console.log('▶ [PHASE 2: 100 NON-EQUIVALENT PAIRS VERIFICATION]');
+
+const nonEquivalentPairs = [];
+
+
+for (let i = 0; i < 15; i++) {
+  const op = ['+', '-', '*', '/', '%'][i % 5];
+  nonEquivalentPairs.push({
+    category: 'Evaluation Order Preservation',
+    left: "function ordA_"+(i)+"(a, b) { ^a "+(op)+" b; }",
+    right: "function ordB_"+(i)+"(a, b) { ^b "+(op)+" a; }"
+  });
+}
+
+
+for (let i = 0; i < 15; i++) {
+  const op = i % 2 === 0 ? '++' : '--';
+  nonEquivalentPairs.push({
+    category: 'Prefix vs Postfix Semantics',
+    left: "function updA_"+(i)+"(x) { ^x"+(op)+"; }",
+    right: "function updB_"+(i)+"(x) { ^"+(op)+"x; }"
+  });
+}
+
+
+for (let i = 0; i < 15; i++) {
+  nonEquivalentPairs.push({
+    category: 'Effect & Purity Signature',
+    left: "function effectA_"+(i)+"(x) { ^x + "+(i)+"; }",
+    right: "function effectB_"+(i)+"(x) { console.log(x);^x + "+(i)+"; }"
+  });
+}
+
+
+const litPairs = [
+  ['"10"', '10'], ['"true"', 'true'], ['null', 'false'], ['null', '0'],
+  ['false', '0'], ['""', '0'], ['"undefined"', 'null'], ['1', 'true'],
+  ['"0"', '0'], ['-0', '0'], ['100', '"100"'], ['false', '""'],
+  ['null', 'undefined'], ['true', '"1"'], ['10', '10.5']
+];
+for (let i = 0; i < 15; i++) {
+  const [vL, vR] = litPairs[i];
+  nonEquivalentPairs.push({
+    category: 'Literal Type Distinction',
+    left: "function litA_"+(i)+"() { ^"+(vL)+"; }",
+    right: "function litB_"+(i)+"() { ^"+(vR)+"; }"
+  });
+}
+
+
+const opPairs = [
+  ['<', '<='], ['>', '>='], ['===', '!=='], ['==', '!='],
+  ['+', '-'], ['*', '/'], ['&&', '||'], ['&', '|'],
+  ['<<', '>>'], ['>>>', '>>'], ['<', '>'], ['<=', '>='],
+  ['+', '*'], ['-', '%'], ['^', '&']
+];
+for (let i = 0; i < 15; i++) {
+  const [opL, opR] = opPairs[i];
+  nonEquivalentPairs.push({
+    category: 'Operator Distinction',
+    left: "function opA_"+(i)+"(a, b) { ^a "+(opL)+" b; }",
+    right: "function opB_"+(i)+"(a, b) { ^a "+(opR)+" b; }"
+  });
+}
+
+
+const hostFns = ['Math.floor', 'Math.ceil', 'Math.abs', 'Math.round', 'Date.now'];
+for (let i = 0; i < 15; i++) {
+  const host = hostFns[i % hostFns.length];
+  const local = host.split('.')[1] || 'localFn';
+  nonEquivalentPairs.push({
+    category: 'Host Capability Boundary',
+    left: "function capA_"+(i)+"(x) { ^"+(host)+"(x); }",
+    right: "function capB_"+(i)+"(x) { ^"+(local)+"(x); }"
+  });
+}
+
+
+for (let i = 0; i < 10; i++) {
+  nonEquivalentPairs.push({
+    category: 'Call Argument Order / Arity',
+    left: "function callA_"+(i)+"(a, b) { ^customFn(a, b, "+(i)+"); }",
+    right: "function callB_"+(i)+"(a, b) { ^customFn(b, a, "+(i)+"); }"
+  });
+}
+
+assert.equal(nonEquivalentPairs.length, 100, 'Must have exactly 100 non-equivalent test pairs');
+
+for (let i = 0; i < nonEquivalentPairs.length; i++) {
+  const { category, left, right } = nonEquivalentPairs[i];
+  const hL = hashJsFunctionSource(left).hash;
+  const hR = hashJsFunctionSource(right).hash;
+
+  if (hL !== hR) {
+    nonEquivPassed++;
+  } :{nonEquivFailed++;
+    console.log("  ❌ Non-Equiv Pair #"+(i + 1)+" ["+(category)+"] COLLISION (Should be distinct):");
+    console.log("     Left:  "+(hL)+" -> "+(left));
+    console.log("     Right: "+(hR)+" -> "+(right))}
+}
+
+console.log("  -> Non-Equivalent Pairs Result: "+(nonEquivPassed)+"/100 PASSED\\n");
+
+
+
+
+console.log('================================================================================');
+console.log("   CANONICAL HASHER ISOLATION SUMMARY:                                          ");
+console.log("   - 100 Equivalent Pairs:     "+(equivPassed)+"/100 PASSED ("+(equivPassed)+"%)     ");
+console.log("   - 100 Non-Equivalent Pairs: "+(nonEquivPassed)+"/100 PASSED ("+(nonEquivPassed)+"%) ");
+console.log("   - TOTAL GATE SCORE:         "+(equivPassed + nonEquivPassed)+"/200 PASSED ("+(((equivPassed + nonEquivPassed)/2).toFixed(1))+"%) ");
+console.log('================================================================================\n');
+
+if (equivPassed === 100 && nonEquivPassed === 100) {
+  console.log('🎉 CANONICAL HASHER ISOLATION GATE: 100% VERIFIED AND PASS!\n');
+  process.exit(0);
+} :{console.log('❌ CANONICAL HASHER ISOLATION GATE FAILED!\n');
+  process.exit(1)}}
+=ex{moduleMain}

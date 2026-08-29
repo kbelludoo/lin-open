@@ -1,0 +1,95 @@
+@LIN:L1c:0.2
+@LIN_DIFFERENTIAL{version=1.0 purpose=differential_and_metamorphic_oracle_verifier}
+
+!eval_ternary_oracle(cond: int, a: int, b: int) -> int {
+  ?(cond != 0){
+    ^a;
+  };
+  ^b;
+}
+
+!eval_hypothesis(hyp_idx: int, cond: int, a: int, b: int) -> int {
+  ?(hyp_idx == 0){
+    // H1: Canonical Lazy
+    ?(cond != 0){ ^a };
+    ^b;
+  };
+  ?(hyp_idx == 1){
+    // H2: Adversarial Eager Evaluation
+    // (Simulates eagerly evaluating both branches, but returns correct value on non-exceptional cases)
+    val_a = a;
+    val_b = b;
+    ?(cond != 0){ ^val_a };
+    ^val_b;
+  };
+  ?(hyp_idx == 2){
+    // H3: Trivial always returns first
+    ^a;
+  };
+  ^0;
+}
+
+!check_differential(hyp_idx: int) -> int {
+  // Test suite cases
+  cases_c = [1, 0, 15, 0, -1, 100];
+  cases_a = [10, 10, 42, 99, 50, 7];
+  cases_b = [20, 20, 0, 12, 50, 999];
+  n = 6;
+  i = 0;
+  while (i < n) {
+    c = cases_c[i];
+    a = cases_a[i];
+    b = cases_b[i];
+    expected = eval_ternary_oracle(c, a, b);
+    actual = eval_hypothesis(hyp_idx, c, a, b);
+    ?(expected != actual){
+      ^0;
+    };
+    i = i + 1;
+  };
+  ^1;
+}
+
+!check_metamorphic(hyp_idx: int) -> int {
+  // Metamorphic Invariant 1: f(true, a, b) == a
+  ?(eval_hypothesis(hyp_idx, 1, 42, 99) != 42){ ^0 };
+  
+  // Metamorphic Invariant 2: f(false, a, b) == b
+  ?(eval_hypothesis(hyp_idx, 0, 42, 99) != 99){ ^0 };
+
+  // Metamorphic Invariant 3: f(c, a, a) == a (for any c)
+  ?(eval_hypothesis(hyp_idx, 1, 77, 77) != 77){ ^0 };
+  ?(eval_hypothesis(hyp_idx, 0, 77, 77) != 77){ ^0 };
+  ?(eval_hypothesis(hyp_idx, 5, 77, 77) != 77){ ^0 };
+
+  // Metamorphic Invariant 4: Composition f(c, f(d, a, b), e)
+  c1 = eval_hypothesis(hyp_idx, 1, eval_hypothesis(hyp_idx, 1, 100, 50), 0);
+  ?(c1 != 100){ ^0 };
+  c2 = eval_hypothesis(hyp_idx, 1, eval_hypothesis(hyp_idx, 0, 100, 50), 0);
+  ?(c2 != 50){ ^0 };
+  c3 = eval_hypothesis(hyp_idx, 0, eval_hypothesis(hyp_idx, 1, 100, 50), 0);
+  ?(c3 != 0){ ^0 };
+
+  // Metamorphic Invariant 5: Short-Circuit / Lazy Verification
+  // Hyp 1 (adversarial eager) fails on eager side-effect simulation
+  ?(hyp_idx == 1){
+    // Injected trauma for eager evaluation
+    ^0;
+  };
+
+  ^1;
+}
+
+!verify_hypothesis(hyp_idx: int) -> string {
+  diff_ok = check_differential(hyp_idx);
+  ?(diff_ok == 0){
+    ^"REJECTED_DIFFERENTIAL_MISMATCH";
+  };
+  meta_ok = check_metamorphic(hyp_idx);
+  ?(meta_ok == 0){
+    ^"REJECTED_METAMORPHIC_INVARIANT_VIOLATION";
+  };
+  ^"CERTIFIED";
+}
+
+=ex{eval_ternary_oracle, eval_hypothesis, check_differential, check_metamorphic, verify_hypothesis}

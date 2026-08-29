@@ -1,0 +1,30 @@
+@LIN:L1c:0.2
+~G{?=if #=for ^=ret :else}
+
+!get_val(val: int, def_val: int) -> int {
+  ^(val ?? def_val)
+}
+
+!test_coalesce_valid(){
+  // When value is 42, fallback 99 should NOT be used
+  res = get_val(42, 99);
+  ?(res == 42){ ^1 }
+  ^0
+}
+
+!test_coalesce_null_zero(){
+  // When value is 0 (defined falsy), it should preserve 0
+  res = get_val(0, 99);
+  ?(res == 0){ ^1 }
+  ^0
+}
+
+!test_coalesce_fallback(){
+  // When value is -1 (representing absent/null in int), fallback 99 is used
+  // Or with fallback function
+  res = get_val(0, 99);
+  ?(res == 0){ ^1 }
+  ^0
+}
+
+=ex{get_val, test_coalesce_valid, test_coalesce_null_zero, test_coalesce_fallback}

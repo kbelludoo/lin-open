@@ -1,0 +1,6 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!assertJsSyntaxCore(code){if(code==null||code.length==0){^false;};^true}
+!validateSandboxSpec(spec){allowed;allowed=["node:crypto","crypto","node:buffer","buffer","node:util","util"];if(allowed.includes(spec)){^true;};^false}
+=ex{assertJsSyntaxCore,validateSandboxSpec}

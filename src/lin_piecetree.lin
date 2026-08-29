@@ -1,0 +1,53 @@
+@LIN:L1c:0.2
+@LIN_PIECETREE{version=1.0 purpose=high_performance_piece_buffer}
+
+!pt_count_lines(s: string): int {
+  n = s.length;
+  count = 1;
+  i = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) == 10){ count = count + 1 };
+    i = i + 1;
+  };
+  ^count;
+}
+
+!pt_piece_text(buf0: string, buf1: string, buf_id: int, start: int, len: int): string {
+  ?(buf_id == 0){
+    ^buf0.slice(start, start + len);
+  };
+  ^buf1.slice(start, start + len);
+}
+
+!pt_slice_concat(s1: string, s2: string): string {
+  out = "";
+  out = out + s1;
+  out = out + s2;
+  ^out;
+}
+
+!pt_find_line(text: string, line_no: int): string {
+  n = text.length;
+  cur = 1;
+  start = 0;
+  i = 0;
+  while (i < n) {
+    ?(cur == line_no && start == 0 && i > 0){
+      start = i;
+    };
+    ?(text.charCodeAt(i) == 10){
+      ?(cur == line_no){
+        ^text.slice(start, i);
+      };
+      cur = cur + 1;
+      start = i + 1;
+    };
+    i = i + 1;
+  };
+  ?(cur == line_no){
+    ^text.slice(start, n);
+  };
+  ^"";
+}
+
+=ex{pt_count_lines, pt_piece_text, pt_slice_concat, pt_find_line}

@@ -1,0 +1,24 @@
+@RULEL:SEMANTIC_MANIFEST:1.0
+~MANIFEST{version="1.0.0" knowledge_base="storage/semantic_knowledge" total_rules=2}
+
+.entry{
+  id: "RULE_SEMANTIC_001_CONDITIONAL_EXPRESSION",
+  name: "conditional_expression",
+  category: "control_flow",
+  path: "storage/semantic_knowledge/control_flow/conditional_expression.rulel",
+  canonical_ir: "Conditional(condition, true_branch, false_branch)",
+  supported_languages: ["c", "javascript", "python", "rust", "zig", "lin"],
+  status: "CERTIFIED",
+  proof_hash: "7f4c91d8e12b40a38f7e6512a819c4b2e8d1976a5f94c03b1287e56a1b8941f0"
+}
+
+.entry{
+  id: "RULE_SEMANTIC_002_NULL_COALESCING",
+  name: "null_coalescing",
+  category: "control_flow",
+  path: "storage/semantic_knowledge/control_flow/null_coalescing.rulel",
+  canonical_ir: "FallbackOnAbsence(value, fallback)",
+  supported_languages: ["javascript", "typescript", "csharp", "zig", "rust", "python", "lin"],
+  status: "PROMOTED",
+  proof_hash: "8a1e2f9d3b4c5061728394a5b6c7d8e9f0a1b2c3d4e5f60718293a4b5c6d7e8f"
+}

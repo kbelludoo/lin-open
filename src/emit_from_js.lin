@@ -3,8 +3,20 @@
     super(`LIN_EMIT_JS_UNSUPPORTED: ${message}`);
     this.name = 'EmitJsUnsupportedError';
   }
+!preprocessJsForEmit(src){
+  var s;
+  s = String(src || '');
+  s = s.replace(/\bimport\.meta\.url\b/g, "'file:///lin-in-memory.js'");
+  s = s.replace(/\bimport\.meta\b/g, "({url:'file:///lin-in-memory.js'})");
+  s = s.replace(/^\s*import\s+[\s\S]*?from\s+['"][^'"]+['"]\s*;?\s*$/gm, '');
+  s = s.replace(/^\s*import\s+['"][^'"]+['"]\s*;?\s*$/gm, '');
+  s = s.replace(/^\s*export\s+default\s+/gm, '');
+  s = s.replace(/^\s*export\s+\{[^}]*\}\s*;?\s*$/gm, '');
+  s = s.replace(/^\s*export\s+/gm, '');
+  ^s;
+}
 !emitLinFromJs(jsSource,opts){
-  const toks = tokenize(stripComments(jsSource));
+  const toks = tokenize(stripComments(preprocessJsForEmit(jsSource)));
   const fns = [];
   const topLevelVars = [];
   const consts = {};
@@ -238,15 +250,25 @@
     }
     throw new EmitJsUnsupportedError(`top-level token ${JSON.stringify(t.value)}`);
   }
-  if (!fns.length) throw new EmitJsUnsupportedError('no functions found');
+  ?( !fns.length ){
+    fns.push({ name: 'moduleMain', params: '', body: preprocessJsForEmit(String(jsSource || '')).replace(/^#!.*\n/, '') });
+  };
   void opts;
-  const lines = ['@LIN:L1c:0.2', '^schema_once ^lossy=true ^ops=emit_from_js', '~G{?=?(const fn of fns){
+  const lines = ['@LIN:L1c:0.2', '^schema_once ^lossy=true ^ops=emit_from_js', '~G{?=if #=for ^=ret :else}'];
+  for (const fn of fns) {
     let __body = rewriteBody(fn.body);
     ?(topLevelVars.length){
-      __body = topLevelVars.map((tv) => `${tv.name}=${tv.init};`).join('') + __body;
-    }
+      const safe = topLevelVars.filter((tv) => {
+        const init = String(tv.init || '').trim();
+        ?( !init || /\b(?:require|import|readFile|JSON\.parse|console|process|spawn)\b/.test(init) ){ ^false; };
+        ^ /^(?:['"`]|true|false|null|-?\d)/.test(init);
+      });
+      ?(safe.length){
+        __body = safe.map((tv) => `${tv.name}=${tv.init};`).join('') + __body;
+      };
+    };
     lines.push(`!${fn.name}(${fn.params}){${__body}}`);
-  }
+  };
   lines.push(`=ex{${fns.map((f) => f.name).join(',')}}`);
   ^{ lin: lines.join('\n'), fns: fns.map((f) => f.name), consts, topLevelVars };
 }
@@ -388,7 +410,9 @@ function skipValueToks(toks, i) {
   }).filter(Boolean).join(',');
 }
 !rewriteBody(body){
-  const lowered = lowerSwitches(String(body));
+  var lowered;
+  lowered = preprocessJsForEmit(String(body));
+  lowered = lowerSwitches(lowered);
   const { masked, restore } = maskRegexLiterals(lowered);
   let s = masked;
   s = s.replace(/\breturn\s+(?=[A-Za-z_$0-9(\[\-+!'"`{])/g, '\u0001');

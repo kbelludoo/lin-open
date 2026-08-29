@@ -1,0 +1,8 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!splitTopEntries(s){out,cur,depth,quote,c,i;out=[];cur="";depth=0;quote=null;for(i=0;i<s.length;i++){c=s.charAt(i);if(quote){cur=cur+c;if(c==="\\"&&i+1<s.length){i++;cur=cur+s.charAt(i);}:( c===quote ){quote=null};continue;};if(c==="\""||c==="'"){quote=c;cur=cur+c;continue;};if(c==="("||c==="{"||c==="["){depth++;}:( c===")"||c==="}"||c==="]" ){depth--};if(c===" "&&depth===0){if(cur.trim()){out.push(cur.trim());};cur="";continue;};cur=cur+c;};if(cur.trim()){out.push(cur.trim());};^out}
+!parseValuePairs(body){entries,obj,e,m,k;entries=splitTopEntries(body);obj={};for(k=0;k<entries.length;k++){e=entries[k];m=e.match(/^([A-Za-z_][\w_-]*)=(.+)$/);if(m){obj[m[1]]=m[2];}:{obj[e]=true}};^obj}
+!parseRulel(text){s,out,hm,sigilRe,m,parsedSig,blockRe;s=String(text||"").trim();out={header:null,sigils:{},blocks:{}};hm=s.match(/^@RULEL:([^:\s]+):([^\s]+)/);if(hm){out.header={id:hm[1],semver:hm[2]};};sigilRe=/~R\{([\s\S]*?)\}/g;m=null;while((m=sigilRe.exec(s))!==null){parsedSig=parseValuePairs(m[1]);Object.assign(out.sigils,parsedSig);};blockRe=/\.([a-z])\{([^{}]*)\}/g;while((m=blockRe.exec(s))!==null){out.blocks[m[1]]=parseValuePairs(m[2]);};^out}
+!validateComms(parsed){required,missing,ridVal;required=["m","r","f","a","c","s","p"];missing=required.filter(function(k){return(!parsed.blocks[k]);});ridVal=(parsed.blocks.r&&(parsed.blocks.r.R20||parsed.blocks.r.rid))||null;return{ok:missing.length===0,missing:missing,header:parsed.header,rid:ridVal}}
+=ex{splitTopEntries,parseValuePairs,parseRulel,validateComms}

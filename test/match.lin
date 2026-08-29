@@ -1,0 +1,13 @@
+@LIN:L1c:0.2
+~G{?=if #=for ^=ret :else}
+
+!matchNumber(n: int)->int { match(n){0=>{^100}1=>{^200}_=>{^999}} }
+!grade(s: int)->int { match(s){90=>{^4}80=>{^3}_=>{^0}} }
+!test_m0(){ ?(matchNumber(0) == 100){ ^1 } ^0 }
+!test_m1(){ ?(matchNumber(1) == 200){ ^1 } ^0 }
+!test_mw(){ ?(matchNumber(99) == 999){ ^1 } ^0 }
+!test_g4(){ ?(grade(90) == 4){ ^1 } ^0 }
+!test_g3(){ ?(grade(80) == 3){ ^1 } ^0 }
+!test_g0(){ ?(grade(10) == 0){ ^1 } ^0 }
+
+=ex{matchNumber,grade,test_m0,test_m1,test_mw,test_g4,test_g3,test_g0}

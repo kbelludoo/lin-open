@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!constructor(fnName,effect,violations){Error.call(this,"[CAPABILITY_VIOLATION] Function '"+(fnName)+"' declared as *("+(effect)+") violated effect boundaries: "+(violations.map(v => v.detail).join('; ')));this.name='CompileCapabilityError';this.fnName=fnName;this.effect=effect;this.violations=violations}
+=ex{constructor}

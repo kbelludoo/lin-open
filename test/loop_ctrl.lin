@@ -1,0 +1,32 @@
+@LIN:L1c:0.2
+~G{?=if #=for ^=ret :else}
+
+!isEven(n: int)->int {
+  x = n;
+  ?(x < 0){ x = 0 - x };
+  while (x > 1){ x = x - 2 };
+  ?(x == 0){ ^1 };
+  ^0;
+}
+!count_odd(n: int)->int {
+  i = 0;
+  c = 0;
+  while (i < n) {
+    i = i + 1;
+    ?(isEven(i) == 1){ continue };
+    c = c + 1;
+  };
+  ^c;
+}
+!until3(n: int)->int {
+  i = 0;
+  while (i < n) {
+    i = i + 1;
+    ?(i == 3){ break };
+  };
+  ^i;
+}
+!test_odd(){ ?(count_odd(10) == 5){ ^1 } ^0 }
+!test_brk(){ ?(until3(10) == 3){ ^1 } ^0 }
+
+=ex{isEven,count_odd,until3,test_odd,test_brk}

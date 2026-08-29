@@ -1,0 +1,13 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!ok(name,cond,detail){passed=0;failed=0;failures=[];if(cond) {passed++;}:{failed++;failures.push((name)+(detail ? ': ' + detail : ''))}}
+!refIdentLen(s,i){if(!/^[A-Za-z_$]/.test(s[i]||'')) {^0;}j=i+1;while(j<s.length&&/[A-Za-z0-9_$]/.test(s[j])) {j++;}^j-i}
+!refWsRun(s,i){j=i;while(j<s.length&&(s[j]===' '||s[j]==='\t'||s[j]==='\r')) {j++;}^j-i}
+!refNumLen(s,i){c=s[i];nxt=s[i+1]||'';if(!(/[0-9]/.test(c)||(c==='.'&&/[0-9]/.test(nxt)))) {^0;}j=i;if(c==='0'&&/[xXbBoO]/.test(s[j+1]||'')){j+=2;while(j<s.length&&/[0-9a-fA-F_]/.test(s[j])) {j++;}}:{while(j<s.length&&/[0-9_]/.test(s[j])) {j++;};if(s[j]==='.'){j++;while(j<s.length&&/[0-9_]/.test(s[j])) {j++;}};if(/[eE]/.test(s[j]||'')&&/[0-9+\-]/.test(s[j+1]||'')){j+=2;while(j<s.length&&/[0-9_]/.test(s[j])) {j++;}}};if(s[j]==='n') {j++;}^j-i}
+!lcg(seed){st=seed>>>0;return()=>((st=(st*1664525+1013904223)>>>0)/2**32)}
+!buildProbes(count){CHUNKS=['abc','_x9','$q','123','007','0x1f','0X_9','0b1011','0o77','12.5','.5','1e10','1e+','1e','42n','0x','e9','+','-','.','__','nn'];rnd=lcg(20260824);probes=[];for(k=0;k<count;k++){s='';parts=1+Math.floor(rnd()*6);for(p=0;p<parts;p++){if(rnd()<0.5){ch=CHUNKS[Math.floor(rnd()*CHUNKS.length)];s+=ch;if(rnd()<0.4) {s+=CHARS[Math.floor(rnd()*CHARS.length)];}}:{n=1+Math.floor(rnd()*8);for(q=0;q<n;q++) {s+=CHARS[Math.floor(rnd()*CHARS.length)];}}};probes.push(s);};^probes}
+!tokenizeOn(src){root=path.resolve(path.dirname('file:///lin-in-memory.js'.replace('file://','')),'..');__d0=require(path.join(root,'src','lexer.mjs'));tokenize=__d0.tokenize;^tokenize(src)}
+!tokenizeOff(src){root=path.resolve(path.dirname('file:///lin-in-memory.js'.replace('file://','')),'..');delete require.cache[require.resolve(path.join(root,'src','lexer.mjs'))];delete require.cache[require.resolve(path.join(root,'src','lexer_slices_load.mjs'))];process.env.LEXER_SLICES_OFF='1';try{__d195=require(path.join(root,'src','lexer.mjs'));tokenize=__d195.tokenize;^tokenize(src);}finally{delete process.env.LEXER_SLICES_OFF;delete require.cache[require.resolve(path.join(root,'src','lexer.mjs'))];delete require.cache[require.resolve(path.join(root,'src','lexer_slices_load.mjs'))];}}
+!_anon8(f){^"  ✗ "+(f)}
+=ex{ok,refIdentLen,refWsRun,refNumLen,lcg,buildProbes,tokenizeOn,tokenizeOff,_anon8}

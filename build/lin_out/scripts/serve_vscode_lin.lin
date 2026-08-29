@@ -1,0 +1,7 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!_anon0(chunk){ROOT=path.resolve(__dirname,'..');VSCODE_LIN_DIR=path.join(ROOT,'clones_lin','vscode_lin');fPath=path.join(VSCODE_LIN_DIR,rel);body='';PORT=3333;body+=chunk}
+!_anon1(){ROOT=path.resolve(__dirname,'..');VSCODE_LIN_DIR=path.join(ROOT,'clones_lin','vscode_lin');fPath=path.join(VSCODE_LIN_DIR,rel);body='';PORT=3333;try{const payload=JSON.parse(body);currentPieceTree=ptMod.createPieceTree(payload.content||'');const hash=Buffer.from(payload.content||'').toString('base64').slice(0,12);res.writeHead(200,{'Content-Type':'application/json'});res.end(JSON.stringify({lines:currentPieceTree.getLineCount(),length:currentPieceTree.getLength(),hash}));}catch(err){res.writeHead(500,{'Content-Type':'application/json'});res.end(JSON.stringify({error:err.message}));}}
+!_anon2(){ROOT=path.resolve(__dirname,'..');VSCODE_LIN_DIR=path.join(ROOT,'clones_lin','vscode_lin');fPath=path.join(VSCODE_LIN_DIR,rel);body='';PORT=3333;console.log("================================================================================");console.log("   VS CODE (AUTHENTIC MONACO WORKBENCH IN LIN) RUNNING LIVE!                    ");console.log("   URL: http://127.0.0.1:"+(PORT)+"                                                ");console.log("   Powered by: Microsoft Monaco Editor Engine + Pure LIN PieceTree Runtime      ");console.log("================================================================================")}
+=ex{_anon0,_anon1,_anon2}

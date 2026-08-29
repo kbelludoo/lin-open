@@ -1,0 +1,8 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!usage(){opts={};sp=path.resolve(rest[0]||'.clone_state.json');console.error("lin <command> [args] — LIN v"+(LIN_VERSION)+" (in-memory rewrite)\n\nCommands:\n  check <file.lin>                    parse + list fns/exports/consts\n  compile <file.lin> [--target t] [-o out]\n       targets: "+(REAL_TARGETS.join('|'))+" (default "+(DEFAULT_EMIT_TARGET)+")\n  run <file.lin> [jsonArgs...]        compile + execute exports in memory\n  hash <file.lin>                     semantic hashes per fn\n  effects <file.lin>                  effect inference per fn\n  emit <file.js> [-o out.lin]         JS subset → LIN source\n  to-lin <file> [-o out.lin]          Polyglot (Py/Rust/Go/C/Zig/JS) → LIN\n  rulel-check <file.rulel>            RULEL parse + COMMS validation\n  verify <file.lin> [--behavior cases.json]\n                                      full gate report\n  version");process.exit(2)}
+!readInput(file){opts={};sp=path.resolve(rest[0]||'.clone_state.json');if(!file) {usage();}const resolved=path.resolve(file);^fs.readFileSync(resolved,'utf8')}
+!_anon2(f){opts={};sp=path.resolve(rest[0]||'.clone_state.json');^f.name}
+!_anon3(a){opts={};sp=path.resolve(rest[0]||'.clone_state.json');^a!=='--stub-js-runtime-only'}
+=ex{usage,readInput,_anon2,_anon3}

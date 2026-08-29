@@ -1,0 +1,3 @@
+@RULEL:TRANSPOSED_SOURCE:1.0
+~METADATA{original="benchmarks/LIN_SIGIL_005/build/run_prog_015.mjs" lang="mjs"}
+.source{content="\n        import { multiply_exact_15 } from './prog_015.mjs';\n        try {\n          const args = {\"x\":-5,\"y\":3};\n          const res = multiply_exact_15(...Object.values(args));\n          console.log(JSON.stringify({ status: 'ACCEPTED', reason: 'OK', res }));\n        } catch(err) {\n          console.log(JSON.stringify({ status: 'REJECTED', reason: err.message, res: null }));\n        }\n      "}

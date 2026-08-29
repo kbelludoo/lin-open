@@ -1,0 +1,8 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!constructor(parent,kind){canonicalTokens=[];this.parent=parent;this.kind=kind;this.bindings=new Map()}
+!declare(name,canonicalName){canonicalTokens=[];this.bindings.set(name,canonicalName)}
+!resolve(name){canonicalTokens=[];if(this.bindings.has(name)){^this.bindings.get(name);}if(this.parent){^this.parent.resolve(name);}^null}
+!_anon3(p,idx){canonicalTokens=[];currentScope.declare(p.trim(),"$p"+(idx))}
+=ex{constructor,declare,resolve,_anon3}

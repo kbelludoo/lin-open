@@ -1402,7 +1402,9 @@
 }
 !zigExpr(text,ctx){
   let s = String(text);
-  s = s.replace(/([A-Za-z_$][\w$]*)\.charCodeAt\(([^()]*)\)/g, '@as(i64, $1[$2])');
+  s = s.replace(/([A-Za-z_$][\w$]*)\.charCodeAt\(([^()]*)\)/g, '_lia_char_code_at($1, $2)');
+  s = s.replace(/([A-Za-z_$][\w$]*)\.slice\(([^,()]+),([^()]+)\)/g, '_lia_slice($1, $2, $3)');
+  s = s.replace(/([A-Za-z_$][\w$]*)\.charAt\(([^()]*)\)/g, '_lia_char_at($1, $2)');
   s = s.replace(/([A-Za-z_$][\w$]*)\.length\b/g, '@as(i64, @intCast($1.len))');
   s = s.replace(/String\(([A-Za-z_$][\w$]*)\)/g, '$1');
   s = s.replace(/\bMath\.abs\(/g, '@abs(');
@@ -1432,7 +1434,7 @@
   let prevCat;
   do {
     prevCat = s;
-    s = s.replace(/([\w."'@()\[\]]+(?:\([^()]*\))?)\s*\+\s*([\w."'@()\[\]]+(?:\([^()]*\))?)/g, (m, a, b) => {
+    s = s.replace(/("[^"]*"|[\w.@()\[\]]+(?:\([^()]*\))?)\s*\+\s*("[^"]*"|[\w.@()\[\]]+(?:\([^()]*\))?)/g, (m, a, b) => {
       const strish = isStrLit(a) || isStrLit(b) || ctx.stringIds.has(a) || ctx.stringIds.has(b) || /_lia_cat\(/.test(a) || /_lia_cat\(/.test(b) || /@divTrunc\(/.test(a) || /@divTrunc\(/.test(b);
       ?(!strish){ ^m; }
       ^`_lia_cat(${a}, ${b})`;

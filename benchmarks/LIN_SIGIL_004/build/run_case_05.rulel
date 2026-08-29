@@ -1,0 +1,19 @@
+@RULEL:TRANSPOSED_RUN_CASE_05:1.0.0
+~METADATA{original="./benchmarks/LIN_SIGIL_004/build/run_case_05.mjs" lang="mjs"}
+.source{
+
+          import { push } from './case_05.mjs';
+          try {
+            const args = {"self":{"size":0,"capacity":5,"items":[]},"item":42};
+            let res;
+            if (args.self) {
+              res = push(args.self, args.item);
+            } else {
+              res = push(args.a, args.b);
+            }
+            console.log(JSON.stringify({ status: 'ACCEPTED', reason: 'OK', res }));
+          } catch(err) {
+            console.log(JSON.stringify({ status: 'REJECTED', reason: err.message }));
+          }
+        
+}

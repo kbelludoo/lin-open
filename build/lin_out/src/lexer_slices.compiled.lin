@@ -1,0 +1,7 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!identLenAt(s,i){var m;m=/^[A-Za-z_$][A-Za-z0-9_$]*/.exec(s.slice(i));if(!m){^0;}return(m[0].length)}
+!wsRunAt(s,i){var m;m=/^[ \t\r]+/.exec(s.slice(i));if(!m){^0;}return(m[0].length)}
+!numLenAt(s,i){var c,nxt,m;c=s.charAt(i);nxt=s.charAt(i+1);if(!(/[0-9]/.test(c))&&!(c=='.'&&/[0-9]/.test(nxt))){^0;}m=/^(?:0[xXbBoO][0-9a-fA-F_]*|(?:[0-9][0-9_]*)?(?:\.[0-9_]*)?(?:[eE][0-9+\-][0-9_]*)?)n?/.exec(s.slice(i));if(!m){^0;}if(m[0].length==0){^0;}return(m[0].length)}
+=ex{identLenAt,wsRunAt,numLenAt}

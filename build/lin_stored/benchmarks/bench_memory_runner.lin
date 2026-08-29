@@ -1,0 +1,27 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!moduleMain(){/**
+ * Benchmark & Demonstration of LIN In-Memory Execution.
+ */
+
+
+linSample = "\n@v=1\n!fn add(a, b) ^ a + b\n!fn pad(str, len, ch=\" \") {\n;$pad= ch || \" \"\n;$res= \"\" + str\n  # (; res.length < len; ) res = pad + res\n  ^ res\n}\n";
+
+console.log('=== TESTANDO LIN EXECUÇÃO IN-MEMORY (ZERO DISK I/O) ===\n');
+
+res = runLinInMemory(linSample);
+
+console.log('Código compilado em memória:');
+console.log(res.compiledCode);
+console.log('\n--- Métricas de Execução ---');
+console.log("Tempo de Compilação + Carga: "+(res.latencyMs)+" ms");
+console.log("Footprint do Código: "+(res.memoryFootprintBytes)+" bytes");
+
+if (res.exports.add) {
+  console.log('\n--- Invocando Funções do LIN Carregadas na Memória ---');
+  console.log("add(10, 25) = "+(res.exports.add(10, 25)));
+  console.log("pad(\"42\", 6, \"0\") = \""+(res.exports.pad("42", 6, "0"))+"\"");
+};
+console.log('\n======================================================')}
+=ex{moduleMain}

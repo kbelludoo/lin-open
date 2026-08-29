@@ -1,0 +1,10 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!constructor(parent,isFunction,depth){this.parent=parent;this.isFunction=isFunction;this.depth=depth;this.bindings=new Map();this.localCounter=0}
+!declareParam(name,index){canonical="$p"+(this.depth)+"_"+(index);this.bindings.set(name,canonical);^canonical}
+!declareBlockLocal(name){canonical="$loc_"+(this.depth)+"_"+(this.localCounter++);this.bindings.set(name,canonical);^canonical}
+!declareFunctionVar(name){if(this.isFunction||!this.parent){canonical="$var_"+(this.depth)+"_"+(this.localCounter++);this.bindings.set(name,canonical);^canonical;};^this.parent.declareFunctionVar(name)}
+!resolve(name){if(this.bindings.has(name)){^this.bindings.get(name);};if(this.parent){^this.parent.resolve(name);};^null}
+!_anon5(stmt){^this.canonicalizeNode(stmt,env)}
+=ex{constructor,declareParam,declareBlockLocal,declareFunctionVar,resolve,_anon5}

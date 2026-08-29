@@ -1,0 +1,11 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!constructor(fnName,effect,violations){Error.call(this,"[CAPABILITY_VIOLATION] Function '"+(fnName)+"' *(Pure) violated effect boundaries: "+(violations.map(v => v.detail).join('; ')));this.name='CompileCapabilityError';this.fnName=fnName;this.effect=effect;this.violations=violations}
+!constructor(){this.internTable=new Map();this.symbolIndex=new Map();this.telemetry={totalInternRequests:0,rejectedByCapabilityFuzzer:0,uniqueCanonicalNodes:0,structuralAlphaHits:0}}
+!reset(){this.internTable.clear();this.symbolIndex.clear();this.telemetry={totalInternRequests:0,rejectedByCapabilityFuzzer:0,uniqueCanonicalNodes:0,structuralAlphaHits:0}}
+!internNode(moduleName,fnNode){this.telemetry.totalInternRequests++;audit=AstCapabilityFuzzer.auditFunction(fnNode);if(!audit.valid){this.telemetry.rejectedByCapabilityFuzzer++;throw new CompileCapabilityError(fnNode.name,fnNode.effect||'Pure',audit.violations);};fnSource="function "+(fnNode.name)+"("+((fnNode.params || []).join(', '))+") { "+(fnNode.body)+" }";alphaHash=TrueAstAlphaCanonicalizer.computeCanonicalHash(fnSource);canonicalNode=this.internTable.get(alphaHash);if(!canonicalNode){canonicalNode={alphaHash,primaryName:fnNode.name,params:fnNode.params||[],effect:fnNode.effect||'Pure',contracts:fnNode.contracts||[],body:fnNode.body,compiledFn:null};this.internTable.set(alphaHash,canonicalNode);this.telemetry.uniqueCanonicalNodes++;}:{this.telemetry.structuralAlphaHits++};symbolKey=(moduleName)+":"+(fnNode.name);this.symbolIndex.set(symbolKey,alphaHash);^canonicalNode}
+!resolveSymbol(moduleName,symbolName){symbolKey=(moduleName)+":"+(symbolName);hash=this.symbolIndex.get(symbolKey);if(!hash) {^null;}^this.internTable.get(hash)||null}
+!executeCanonicalNode(canonicalNode,...args){if(!canonicalNode) {throw new Error("Null canonical node execution");}if(!canonicalNode.compiledFn){canonicalNode.compiledFn=new Function(...canonicalNode.params,canonicalNode.body);};^canonicalNode.compiledFn(...args)}
+!resolveAndExecute(moduleName,symbolName,...args){node=this.resolveSymbol(moduleName,symbolName);if(!node) {throw new Error("Symbol '"+(moduleName)+":"+(symbolName)+"' not found");}^this.executeCanonicalNode(node,...args)}
+=ex{constructor,constructor,reset,internNode,resolveSymbol,executeCanonicalNode,resolveAndExecute}

@@ -1,0 +1,102 @@
+@LIN:L1c:0.2
+@LIN_CRYPTO{version=1.0 purpose=bit_exact_crypto_and_hashing}
+
+!mask32(x: int) -> int {
+  ^x & 4294967295
+}
+
+!shr32(x: int, n: int) -> int {
+  ^(_lia_shr(x & 4294967295, n))
+}
+
+!shl32(x: int, n: int) -> int {
+  ^(_lia_shl(x & 4294967295, n)) & 4294967295
+}
+
+!rotl32(x: int, n: int) -> int {
+  u = x & 4294967295;
+  ^(_lia_shl(u, n) | _lia_shr(u, 32 - n)) & 4294967295
+}
+
+!rotr32(x: int, n: int) -> int {
+  u = x & 4294967295;
+  ^(_lia_shr(u, n) | _lia_shl(u, 32 - n)) & 4294967295
+}
+
+!ch32(x: int, y: int, z: int) -> int {
+  ^((x & y) ^ ((~x) & z)) & 4294967295
+}
+
+!maj32(x: int, y: int, z: int) -> int {
+  ^((x & y) ^ (x & z) ^ (y & z)) & 4294967295
+}
+
+!sigma0_32(x: int) -> int {
+  ^(rotr32(x, 2) ^ rotr32(x, 13) ^ rotr32(x, 22)) & 4294967295
+}
+
+!sigma1_32(x: int) -> int {
+  ^(rotr32(x, 6) ^ rotr32(x, 11) ^ rotr32(x, 25)) & 4294967295
+}
+
+!gamma0_32(x: int) -> int {
+  ^(rotr32(x, 7) ^ rotr32(x, 18) ^ shr32(x, 3)) & 4294967295
+}
+
+!gamma1_32(x: int) -> int {
+  ^(rotr32(x, 17) ^ rotr32(x, 19) ^ shr32(x, 10)) & 4294967295
+}
+
+!murmur3_32(key: string, seed: int) -> int {
+  h1 = seed & 4294967295;
+  c1 = 3432918353;
+  c2 = 461845907;
+  n = key.length;
+  i = 0;
+  while (i + 3 < n) {
+    k1 = key.charCodeAt(i) | _lia_shl(key.charCodeAt(i + 1), 8) | _lia_shl(key.charCodeAt(i + 2), 16) | _lia_shl(key.charCodeAt(i + 3), 24);
+    k1 = (k1 * c1) & 4294967295;
+    k1 = rotl32(k1, 15);
+    k1 = (k1 * c2) & 4294967295;
+
+    h1 = (h1 ^ k1);
+    h1 = rotl32(h1, 13);
+    h1 = ((h1 * 5) + 3864292196) & 4294967295;
+    i = i + 4;
+  };
+
+  rem = n - i;
+  k2 = 0;
+  ?(rem == 3){
+    k2 = _lia_shl(key.charCodeAt(i + 2), 16) | _lia_shl(key.charCodeAt(i + 1), 8) | key.charCodeAt(i);
+    k2 = (k2 * c1) & 4294967295;
+    k2 = rotl32(k2, 15);
+    k2 = (k2 * c2) & 4294967295;
+    h1 = h1 ^ k2;
+  }
+  : (rem == 2){
+    k2 = _lia_shl(key.charCodeAt(i + 1), 8) | key.charCodeAt(i);
+    k2 = (k2 * c1) & 4294967295;
+    k2 = rotl32(k2, 15);
+    k2 = (k2 * c2) & 4294967295;
+    h1 = h1 ^ k2;
+  }
+  : (rem == 1){
+    k2 = key.charCodeAt(i);
+    k2 = (k2 * c1) & 4294967295;
+    k2 = rotl32(k2, 15);
+    k2 = (k2 * c2) & 4294967295;
+    h1 = h1 ^ k2;
+  };
+
+  h1 = (h1 ^ n) & 4294967295;
+  h1 = (h1 ^ _lia_shr(h1, 16)) & 4294967295;
+  h1 = (h1 * 2246822507) & 4294967295;
+  h1 = (h1 ^ _lia_shr(h1, 13)) & 4294967295;
+  h1 = (h1 * 3266489909) & 4294967295;
+  h1 = (h1 ^ _lia_shr(h1, 16)) & 4294967295;
+
+  ^h1;
+}
+
+=ex{mask32, shr32, shl32, rotl32, rotr32, ch32, maj32, sigma0_32, sigma1_32, gamma0_32, gamma1_32, murmur3_32}

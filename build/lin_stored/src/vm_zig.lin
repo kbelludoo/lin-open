@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!runInMemoryZig(linSource,opts){compiled=compile(linSource,{target:'zig',stubJsRuntimeOnly:true});zigSource=compiled.code;if(!zigSource.includes('pub fn main()')){mainRunner="\npub fn main() !void {\n;gpa= std.heap.GeneralPurposeAllocator(.{}){};\n    defer;_= gpa.deinit();\n;LIA_ALLOC= gpa.allocator();\n;stdout= std.io.getStdOut().writer();\n;try stdout.print(\"ZIG_IN_MEMORY_OK: fns="+(compiled.fns.join(','))+"\\\\n\", .{});\n}\n";zigSource+='\n'+mainRunner;};tmpDir=fs.mkdtempSync(path.join(os.tmpdir(),'lin-zig-vm-'));tmpFile=path.join(tmpDir,'module.zig');try{fs.writeFileSync(tmpFile,zigSource,'utf8');output=execFileSync(ZIG_BIN,['run',tmpFile],{encoding:'utf8',timeout:opts.timeoutMs||10000}).trim();return{ok:true,code:compiled.code,output,fns:compiled.fns};}catch(err){return{ok:false,code:compiled.code,error:err.stderr||err.message,fns:compiled.fns};}finally{try{fs.rmSync(tmpDir,{recursive:true,force:true});}catch(e){}}}
+=ex{runInMemoryZig}

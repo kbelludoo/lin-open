@@ -1,0 +1,102 @@
+@LIN:L1c:0.2
+@LIN_RULE_ENGINE{version=1.0 purpose=dynamic_rule_loader_and_ast_preprocessor}
+
+!find_matching_close(s: string, open_idx: int) -> int {
+  n = s.length;
+  depth = 0;
+  i = open_idx;
+  while (i < n) {
+    c = s.charCodeAt(i);
+    ?(c == 40){ depth = depth + 1 };
+    ?(c == 41){
+      depth = depth - 1;
+      ?(depth == 0){ ^i };
+    };
+    i = i + 1;
+  };
+  ^-1;
+}
+
+!desugar_ternary_expr(expr: string) -> string {
+  // Checks if expr contains inline ' ? ' and ' : '
+  n = expr.length;
+  q_idx = -1;
+  c_idx = -1;
+  depth = 0;
+  i = 0;
+  while (i < n) {
+    c = expr.charCodeAt(i);
+    ?(c == 40){ depth = depth + 1 };
+    ?(c == 41){ depth = depth - 1 };
+    ?(depth == 0){
+      ?(c == 63 && i > 0 && i + 1 < n && expr.charCodeAt(i + 1) == 32){
+        ?(q_idx == -1){ q_idx = i };
+      };
+      ?(c == 58 && i > 0 && i + 1 < n && expr.charCodeAt(i + 1) == 32){
+        ?(c_idx == -1 && q_idx != -1){ c_idx = i };
+      };
+    };
+    i = i + 1;
+  };
+
+  ?(q_idx != -1 && c_idx != -1 && q_idx < c_idx){
+    cond = expr.slice(0, q_idx);
+    val_a = expr.slice(q_idx + 1, c_idx);
+    val_b = expr.slice(c_idx + 1, n);
+    // Recursively desugar inner branches if nested
+    inner_a = desugar_ternary_expr(val_a);
+    inner_b = desugar_ternary_expr(val_b);
+    out = "";
+    out = out + "(if (";
+    out = out + cond;
+    out = out + " != 0) ";
+    out = out + inner_a;
+    out = out + " else ";
+    out = out + inner_b;
+    out = out + ")";
+    ^out;
+  };
+
+  ^expr;
+}
+
+!apply_dynamic_rules(src: string, is_rule_active: int) -> string {
+  ?(is_rule_active == 0){
+    ^src;
+  };
+
+  n = src.length;
+  out = "";
+  i = 0;
+  while (i < n) {
+    c = src.charCodeAt(i);
+    ?(c == 40){
+      // Check if parentheses contain a ternary expression
+      close_idx = find_matching_close(src, i);
+      ?(close_idx != -1){
+        inside = src.slice(i + 1, close_idx);
+        // Check if inside has ' ? '
+        has_ternary = 0;
+        k = 0;
+        while (k + 2 < inside.length) {
+          ?(inside.charCodeAt(k) == 32 && inside.charCodeAt(k + 1) == 63 && inside.charCodeAt(k + 2) == 32){
+            has_ternary = 1;
+          };
+          k = k + 1;
+        };
+        ?(has_ternary == 1){
+          desugared = desugar_ternary_expr(inside);
+          out = out + desugared;
+          i = close_idx + 1;
+          continue;
+        };
+      };
+    };
+    chs = src.slice(i, i + 1);
+    out = out + chs;
+    i = i + 1;
+  };
+  ^out;
+}
+
+=ex{find_matching_close, desugar_ternary_expr, apply_dynamic_rules}

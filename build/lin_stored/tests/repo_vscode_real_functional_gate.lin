@@ -1,0 +1,5 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!check(cond,name){passedVectors=0;totalVectors=0;totalVectors++;if(!cond){console.error("  ❌ FAIL: "+(name));throw new Error("Assertion failed: "+(name));};passedVectors++}
+=ex{check}

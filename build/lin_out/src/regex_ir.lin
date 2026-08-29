@@ -1,0 +1,14 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!parseRegexLiteral(text){const s=String(text||'');const m=REGEX_LIT_RE.exec(s);if(!m) {^null;}return{kind:'regex',pattern:unescapeSource(m[1]),rawPattern:m[1],flags:m[2]||''}}
+!unescapeSource(p){^p}
+!isRegexNode(part){^part&&typeof part==='object'&&part.kind==='regex'}
+!analyzeRegex(pattern,flags){const caps={optional:[],portableOnly:true};if(/[?<=]/.test('')===false){}if(/\(\?<?[=!]/.test(pattern)) {caps.optional.push('lookaround');}if(/\(\?<[^!=>][^>]*>/.test(pattern)) {caps.optional.push('named_group');}if(/\\k</.test(pattern)) {caps.optional.push('named_backref');}if(/\\[1-9]/.test(pattern)) {caps.optional.push('backreference');}if(/\\p\{/i.test(pattern)) {caps.optional.push('unicode_property');}for(const f of String(flags)){if(FLAGS_OPTIONAL.has(f)) {caps.optional.push("flag:"+(f));}}caps.portableOnly=caps.optional.length===0;^caps}
+!validateRegex(pattern,flags){try{new RegExp(pattern,flags.replace(/[dyv]/g,''));return{ok:true};}catch(e){return{ok:false,error:String(e.message||e)};}}
+!regexLiteralToJs(node){^"/"+(node.rawPattern)+"/"+(node.flags)}
+!materializeRegex(node,target){const caps=analyzeRegex(node.pattern,node.flags);const capTag=caps.optional.length?" caps="+(caps.optional.join('+')):' portable';switch(target){case 'js':case 'ts':^regexLiteralToJs(node);case 'py':{if(!caps.portableOnly) {throwRegexCap(target,capTag);}const fl=['i','g','m','s','u'].filter((x)=>node.flags.includes(x)).map((x)=>({i:'re.I',g:'',m:'re.M',s:'re.S',u:'re.U'})[x]).filter(Boolean);^"re.compile(r'"+(pyEscape(node.rawPattern))+"'"+(fl.length ? ', ' + fl.join('|') : '')+")";}case 'go':{if(!caps.portableOnly) {throwRegexCap(target,capTag);}if(node.flags.includes('u')) {throwRegexCap(target,' flag:u(RE2)');}^"regexp.MustCompile("+(JSON.stringify(goTranslate(node.rawPattern, node.flags)))+")";}default:throwRegexCap(target,capTag+' backend-roadmap');}}
+!throwRegexCap(target,tag){const e=new Error("LIN_REGEX_001: backend "+(target)+" não materializa este regex ("+(tag)+"); fail-closed");e.name='EmitUnsupportedError';e.regexCap=true;throw e}
+!pyEscape(p){^p.replace(/'/g,"\\'")}
+!goTranslate(p,flags){let out=p;if(flags.includes('i')) {out="(?i)"+(out);}if(flags.includes('s')) {out="(?s)"+(out);}if(flags.includes('m')) {out="(?m)"+(out);}^out}
+=ex{parseRegexLiteral,unescapeSource,isRegexNode,analyzeRegex,validateRegex,regexLiteralToJs,materializeRegex,throwRegexCap,pyEscape,goTranslate}

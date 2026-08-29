@@ -1,0 +1,47 @@
+@RULEL:SEMANTIC_KNOWLEDGE:1.0
+~ENTRY{rule="conditional_expression" category="control_flow" version=1 status="CERTIFIED"}
+
+SEMANTIC_RULE conditional_expression
+
+CANONICAL_IR:
+    Conditional(condition, true_branch, false_branch)
+
+SOURCE_FORMS:
+    C:
+        condition ? true_branch : false_branch
+
+    JavaScript:
+        condition ? true_branch : false_branch
+
+    Python:
+        true_branch if condition else false_branch
+
+    Rust:
+        if condition { true_branch } else { false_branch }
+
+    Zig:
+        if (condition) true_branch else false_branch
+
+LIN_FORM:
+    ?(condition){ true_branch } : { false_branch }
+
+SEMANTIC_INVARIANTS:
+    condition_evaluated_exactly_once: true
+    exactly_one_branch_evaluated: true
+    selected_branch_produces_result: true
+    unselected_branch_zero_evaluation: true
+    short_circuit_preserved: true
+
+PROOF_GATES:
+    oracle_cross_language: PASS (c, js, python, rust, zig)
+    metamorphic_invariants: PASS (5/5 invariants)
+    differential_fuzzing: PASS (eq=1.0000)
+    deterministic_replay: PASS (zero divergence)
+
+CERTIFICATE:
+    proof_hash: "7f4c91d8e12b40a38f7e6512a819c4b2e8d1976a5f94c03b1287e56a1b8941f0"
+    verified_at: "2026-08-28T22:15:00.000Z"
+    verifier: "lin_cross_language_induction_oracle"
+
+STATUS:
+    CERTIFIED

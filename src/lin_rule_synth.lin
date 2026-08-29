@@ -1,0 +1,44 @@
+@LIN:L1c:0.2
+@LIN_RULE_SYNTH{version=1.0 purpose=synthesize_ast_rewrite_hypotheses}
+
+!synth_hypothesis_count(pattern_kind: string) -> int {
+  ?(pattern_kind == "INLINE_TERNARY"){
+    ^3;
+  };
+  ^0;
+}
+
+!synth_hypothesis_name(pattern_kind: string, idx: int) -> string {
+  ?(idx == 0){ ^"H1_CANONICAL_LAZY_IF_ELSE" };
+  ?(idx == 1){ ^"H2_ADVERSARIAL_EAGER_EVAL" };
+  ?(idx == 2){ ^"H3_TRIVIAL_FIRST_BRANCH" };
+  ^"H_UNKNOWN";
+}
+
+!synth_hypothesis_rule_id(pattern_kind: string, idx: int) -> string {
+  ?(idx == 0){ ^"RULE_TERNARY_R17_CANONICAL_LAZY" };
+  ?(idx == 1){ ^"RULE_TERNARY_R18_EAGER_REJECT" };
+  ?(idx == 2){ ^"RULE_TERNARY_R19_TRIVIAL_REJECT" };
+  ^"RULE_UNKNOWN";
+}
+
+!apply_hypothesis(src: string, hyp_idx: int) -> string {
+  n = src.length;
+  out = "";
+  i = 0;
+  while (i < n) {
+    ?(src.charCodeAt(i) == 63 && i > 0 && i + 1 < n && src.charCodeAt(i + 1) == 32){
+      // Found potential inline ternary ' ? '
+      ?(hyp_idx == 0){
+        // H1: Canonical Lazy (if cond a else b)
+        // Transform around ternary
+      };
+    };
+    chs = src.slice(i, i + 1);
+    out = out + chs;
+    i = i + 1;
+  };
+  ^out;
+}
+
+=ex{synth_hypothesis_count, synth_hypothesis_name, synth_hypothesis_rule_id, apply_hypothesis}

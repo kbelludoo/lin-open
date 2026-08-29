@@ -1,0 +1,16 @@
+@LIN:L1c:0.2
+~G{?=if #=for ^=ret :else}
+
+!add(a:int,b:int)->int{^a+b}
+!mul(a:int,b:int)->int{^a*b}
+!fact(n:int)->int{x=1;i=2;while(i<=n){x=x*i;i=i+1;}^x}
+!isEven(n:int)->int{x=n;?(x<0){x=0-x;}while(x>1){x=x-2;}?(x==0){^1}^0}
+!max3(a:int,b:int,c:int)->int{?(a>=b&&a>=c){^a}:?(b>=c){^b}:{^c}}
+!test_add(){?(add(2,3)==5){^1}^0}
+!test_mul(){?(mul(4,5)==20){^1}^0}
+!test_fact(){?(fact(5)==120){^1}^0}
+!test_even(){?(isEven(10)==1){^1}^0}
+!test_odd(){?(isEven(7)==0){^1}^0}
+!test_max(){?(max3(3,9,4)==9){^1}^0}
+
+=ex{add,mul,fact,isEven,max3,test_add,test_mul,test_fact,test_even,test_odd,test_max}

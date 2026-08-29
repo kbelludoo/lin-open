@@ -1,0 +1,8 @@
+@LIN:L1c:0.2
+!compute(x: int) -> int {
+  ^x + 1
+}
+!caller() -> int {
+  ^compute("not_an_int")
+}
+=ex{compute, caller}

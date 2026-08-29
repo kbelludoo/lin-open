@@ -1,26 +1,22 @@
-@LIN:lin_cli:2.1.0
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
 ~G{?=if #=for ^=ret :else}
+!usage(){i=argv.indexOf(name);text=readInput(rest[0]);prog=parseProgram(text);argv=rest;outT=takeFlag(argv,'-o');tgt=takeFlag(argv,'--target');stubFlag=argv.includes('--stub-js-runtime-only');target=String(tgt.value||DEFAULT_EMIT_TARGET);file=argv[0];text=readInput(file);file=rest[0];text=readInput(file);text=readInput(rest[0]);prog=parseProgram(text);text=readInput(rest[0]);r=compile(text,{target:'js'});out=Object.fromEntries(r.program.fns.map((f)=>[f.name,f.effect]));argv=rest;outT=takeFlag(argv,'-o');file=argv[0];js=fs.readFileSync(path.resolve(file),'utf8');r=emitLinFromJs(js);argv=rest;outT=takeFlag(argv,'-o');file=argv[0];raw=fs.readFileSync(path.resolve(file),'utf8');linCode=transpileToLin(raw,{filename:file});text=readInput(rest[0]);parsed=parseRulel(text);validation=validateComms(parsed);bt=takeFlag(rest,'--behavior');file=bt.args[0];text=readInput(file);opts={};st=takeFlag(rest,'--stop-file');cy=takeFlag(st.args,'--cycles');mf=takeFlag(cy.args,'--max-fns');pd=takeFlag(mf.args,'--publish-dir');sourceDir=pd.args[0];state=runCloneLoop({queue,cycles:cy.value?Number(cy.value):0,stopFile:st.value?path.resolve(st.value):null,maxFns:mf.value?Number(mf.value):0,publishDir:pd.value?path.resolve(pd.value):null,dryPublish:!pd.value,});file=rest[0];text=readInput(file);r=improveSource(text);sp=path.resolve(rest[0]||'.clone_state.json');console.error(`lin <command> [args] — LIN v${LIN_VERSION} (in-memory rewrite)
 
-// ============================================================================
-// PURE LIN CLI RUNNER (Pure LIN in Memory)
-// Spec: spec/LIN_CORE_ARCH.rulel
-// ============================================================================
-
-!main(args){
-  ?(!args || args.length === 0){
-    ^{ message: "lin-lang 2.1.0 (Self-Hosted Pure LIN Engine)" };
-  };
-  cmd = args[0];
-  ?(cmd === "version"){
-    ^{ version: "2.1.0-pure-lin" };
-  }
-  : (cmd === "check"){
-    ^{ status: "checked", valid: true };
-  }
-  : (cmd === "compile"){
-    ^{ status: "compiled", target: "self_host" };
-  };
-  ^{ status: "unknown_command", cmd: cmd };
-}
-
-=ex{main}
+Commands:
+  check <file.lin>                    parse + list fns/exports/consts
+  compile <file.lin> [--target t] [-o out]
+       targets: ${REAL_TARGETS.join('|')} (default ${DEFAULT_EMIT_TARGET})
+  run <file.lin> [jsonArgs...]        compile + execute exports in memory
+  hash <file.lin>                     semantic hashes per fn
+  effects <file.lin>                  effect inference per fn
+  emit <file.js> [-o out.lin]         JS subset → LIN source
+  to-lin <file> [-o out.lin]          Polyglot (Py/Rust/Go/C/Zig/JS) → LIN
+  rulel-check <file.rulel>            RULEL parse + COMMS validation
+  verify <file.lin> [--behavior cases.json]
+                                      full gate report
+  version`);process.exit(2)}
+!readInput(file){i=argv.indexOf(name);text=readInput(rest[0]);prog=parseProgram(text);argv=rest;outT=takeFlag(argv,'-o');tgt=takeFlag(argv,'--target');stubFlag=argv.includes('--stub-js-runtime-only');target=String(tgt.value||DEFAULT_EMIT_TARGET);file=argv[0];text=readInput(file);file=rest[0];text=readInput(file);text=readInput(rest[0]);prog=parseProgram(text);text=readInput(rest[0]);r=compile(text,{target:'js'});out=Object.fromEntries(r.program.fns.map((f)=>[f.name,f.effect]));argv=rest;outT=takeFlag(argv,'-o');file=argv[0];js=fs.readFileSync(path.resolve(file),'utf8');r=emitLinFromJs(js);argv=rest;outT=takeFlag(argv,'-o');file=argv[0];raw=fs.readFileSync(path.resolve(file),'utf8');linCode=transpileToLin(raw,{filename:file});text=readInput(rest[0]);parsed=parseRulel(text);validation=validateComms(parsed);bt=takeFlag(rest,'--behavior');file=bt.args[0];text=readInput(file);opts={};st=takeFlag(rest,'--stop-file');cy=takeFlag(st.args,'--cycles');mf=takeFlag(cy.args,'--max-fns');pd=takeFlag(mf.args,'--publish-dir');sourceDir=pd.args[0];state=runCloneLoop({queue,cycles:cy.value?Number(cy.value):0,stopFile:st.value?path.resolve(st.value):null,maxFns:mf.value?Number(mf.value):0,publishDir:pd.value?path.resolve(pd.value):null,dryPublish:!pd.value,});file=rest[0];text=readInput(file);r=improveSource(text);sp=path.resolve(rest[0]||'.clone_state.json');if(!file) {usage();}const resolved=path.resolve(file);^fs.readFileSync(resolved,'utf8')}
+!_anon2(f){i=argv.indexOf(name);text=readInput(rest[0]);prog=parseProgram(text);argv=rest;outT=takeFlag(argv,'-o');tgt=takeFlag(argv,'--target');stubFlag=argv.includes('--stub-js-runtime-only');target=String(tgt.value||DEFAULT_EMIT_TARGET);file=argv[0];text=readInput(file);file=rest[0];text=readInput(file);text=readInput(rest[0]);prog=parseProgram(text);text=readInput(rest[0]);r=compile(text,{target:'js'});out=Object.fromEntries(r.program.fns.map((f)=>[f.name,f.effect]));argv=rest;outT=takeFlag(argv,'-o');file=argv[0];js=fs.readFileSync(path.resolve(file),'utf8');r=emitLinFromJs(js);argv=rest;outT=takeFlag(argv,'-o');file=argv[0];raw=fs.readFileSync(path.resolve(file),'utf8');linCode=transpileToLin(raw,{filename:file});text=readInput(rest[0]);parsed=parseRulel(text);validation=validateComms(parsed);bt=takeFlag(rest,'--behavior');file=bt.args[0];text=readInput(file);opts={};st=takeFlag(rest,'--stop-file');cy=takeFlag(st.args,'--cycles');mf=takeFlag(cy.args,'--max-fns');pd=takeFlag(mf.args,'--publish-dir');sourceDir=pd.args[0];state=runCloneLoop({queue,cycles:cy.value?Number(cy.value):0,stopFile:st.value?path.resolve(st.value):null,maxFns:mf.value?Number(mf.value):0,publishDir:pd.value?path.resolve(pd.value):null,dryPublish:!pd.value,});file=rest[0];text=readInput(file);r=improveSource(text);sp=path.resolve(rest[0]||'.clone_state.json');^f.name}
+!_anon3(a){i=argv.indexOf(name);text=readInput(rest[0]);prog=parseProgram(text);argv=rest;outT=takeFlag(argv,'-o');tgt=takeFlag(argv,'--target');stubFlag=argv.includes('--stub-js-runtime-only');target=String(tgt.value||DEFAULT_EMIT_TARGET);file=argv[0];text=readInput(file);file=rest[0];text=readInput(file);text=readInput(rest[0]);prog=parseProgram(text);text=readInput(rest[0]);r=compile(text,{target:'js'});out=Object.fromEntries(r.program.fns.map((f)=>[f.name,f.effect]));argv=rest;outT=takeFlag(argv,'-o');file=argv[0];js=fs.readFileSync(path.resolve(file),'utf8');r=emitLinFromJs(js);argv=rest;outT=takeFlag(argv,'-o');file=argv[0];raw=fs.readFileSync(path.resolve(file),'utf8');linCode=transpileToLin(raw,{filename:file});text=readInput(rest[0]);parsed=parseRulel(text);validation=validateComms(parsed);bt=takeFlag(rest,'--behavior');file=bt.args[0];text=readInput(file);opts={};st=takeFlag(rest,'--stop-file');cy=takeFlag(st.args,'--cycles');mf=takeFlag(cy.args,'--max-fns');pd=takeFlag(mf.args,'--publish-dir');sourceDir=pd.args[0];state=runCloneLoop({queue,cycles:cy.value?Number(cy.value):0,stopFile:st.value?path.resolve(st.value):null,maxFns:mf.value?Number(mf.value):0,publishDir:pd.value?path.resolve(pd.value):null,dryPublish:!pd.value,});file=rest[0];text=readInput(file);r=improveSource(text);sp=path.resolve(rest[0]||'.clone_state.json');^a!=='--stub-js-runtime-only'}
+=ex{usage,readInput,_anon2,_anon3}

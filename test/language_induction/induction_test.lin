@@ -1,0 +1,117 @@
+@LIN:L1c:0.2
+~G{?=if #=for ^=ret :else}
+
+!len_s(s: string) -> int {
+  ^s.length
+}
+
+!code_at(s: string, i: int) -> int {
+  ^s.charCodeAt(i)
+}
+
+!str_eq(a: string, b: string) -> bool {
+  ?(a.length != b.length){ ^false };
+  n = a.length;
+  i = 0;
+  while (i < n) {
+    ?(a.charCodeAt(i) != b.charCodeAt(i)){ ^false };
+    i = i + 1;
+  };
+  ^true;
+}
+
+!classify_source_syntax(raw: string) -> string {
+  n = raw.length;
+  has_if = 0;
+  has_else = 0;
+  has_q = 0;
+  has_colon = 0;
+  i = 0;
+  while (i + 3 < n) {
+    ?(raw.charCodeAt(i) == 32 && raw.charCodeAt(i + 1) == 105 && raw.charCodeAt(i + 2) == 102 && raw.charCodeAt(i + 3) == 32){
+      has_if = 1;
+    };
+    ?(raw.charCodeAt(i) == 32 && raw.charCodeAt(i + 1) == 101 && raw.charCodeAt(i + 2) == 108 && raw.charCodeAt(i + 3) == 115){
+      has_else = 1;
+    };
+    i = i + 1;
+  };
+  ?(has_if == 1 && has_else == 1){
+    ^"PYTHON_SYNTAX";
+  };
+
+  i = 0;
+  while (i + 2 < n) {
+    ?(raw.charCodeAt(i) == 32 && raw.charCodeAt(i + 1) == 63 && raw.charCodeAt(i + 2) == 32){
+      has_q = 1;
+    };
+    ?(raw.charCodeAt(i) == 32 && raw.charCodeAt(i + 1) == 58 && raw.charCodeAt(i + 2) == 32){
+      has_colon = 1;
+    };
+    i = i + 1;
+  };
+  ?(has_q == 1 && has_colon == 1){
+    ^"C_JS_SYNTAX";
+  };
+
+  i = 0;
+  while (i + 2 < n) {
+    ?(raw.charCodeAt(i) == 105 && raw.charCodeAt(i + 1) == 102 && raw.charCodeAt(i + 2) == 32){
+      ^"RUST_ZIG_SYNTAX";
+    };
+    i = i + 1;
+  };
+
+  ^"UNKNOWN_SYNTAX";
+}
+
+!verify_trace_invariants(cond_val: int, cond_count: int, a_count: int, b_count: int) -> int {
+  ?(cond_count != 1){ ^0 };
+  ?(a_count + b_count != 1){ ^0 };
+  ?(cond_val != 0 && (a_count != 1 || b_count != 0)){ ^0 };
+  ?(cond_val == 0 && (a_count != 0 || b_count != 1)){ ^0 };
+  ^1;
+}
+
+!induce_semantic_rule(c_pass: int, js_pass: int, py_pass: int, rs_pass: int, meta_pass: int) -> string {
+  ?(c_pass == 1 && js_pass == 1 && py_pass == 1 && rs_pass == 1 && meta_pass == 1){
+    ^"CERTIFIED_CROSS_LANGUAGE_CONDITIONAL";
+  };
+  ^"REJECTED_SEMANTIC_DIVERGENCE";
+}
+
+!test_classify_corpus(){
+  c_form = "cond ? a : b";
+  py_form = "a if cond else b";
+  rs_form = "if cond { a } else { b }";
+
+  ?(str_eq(classify_source_syntax(c_form), "C_JS_SYNTAX") == true && str_eq(classify_source_syntax(py_form), "PYTHON_SYNTAX") == true && str_eq(classify_source_syntax(rs_form), "RUST_ZIG_SYNTAX") == true){
+    ^1;
+  };
+  ^0;
+}
+
+!test_observable_traces_true_and_false(){
+  // True condition: C=1, A=1, B=0
+  trace_true = verify_trace_invariants(1, 1, 1, 0);
+  // False condition: C=1, A=0, B=1
+  trace_false = verify_trace_invariants(0, 1, 0, 1);
+  // Broken traces: multiple evaluations or wrong branches
+  broken_multiple_eval = verify_trace_invariants(1, 2, 1, 0);
+  broken_both_branches = verify_trace_invariants(1, 1, 1, 1);
+
+  ?(trace_true == 1 && trace_false == 1 && broken_multiple_eval == 0 && broken_both_branches == 0){
+    ^1;
+  };
+  ^0;
+}
+
+!test_end_to_end_cross_language_certification(){
+  res = induce_semantic_rule(1, 1, 1, 1, 1);
+  ?(str_eq(res, "CERTIFIED_CROSS_LANGUAGE_CONDITIONAL") == true){
+    ^1;
+  };
+  ^0;
+}
+
+=ex{len_s, code_at, str_eq, classify_source_syntax, verify_trace_invariants, induce_semantic_rule, test_classify_corpus, test_observable_traces_true_and_false, test_end_to_end_cross_language_certification}

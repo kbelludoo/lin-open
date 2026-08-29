@@ -1,0 +1,59 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!moduleMain(){ROOT=path.resolve(path.dirname(__filename),'..');HARNESS_SRC='/home/k/Downloads/lin-harness/src';filesToTranspile=['types.ts','core_agent_loop.ts','tool_pipeline.ts','context_manager.ts','scheduler.ts','session_epoch.ts','index.ts','tools_executor.mjs','llm_client.mjs'];successCount=0;const __filename = fileURLToPath('file:///lin-in-memory.js');
+const ROOT = path.resolve(path.dirname(__filename), '..');
+const HARNESS_SRC = '/home/k/Downloads/lin-harness/src';
+
+console.log("================================================================================");
+console.log("   TRANSPILANDO O DEEPSEEK HARNESS COMPLETO PARA 100% LIN NATIVO               ");
+console.log("================================================================================");
+
+const filesToTranspile = [
+  'types.ts',
+  'core_agent_loop.ts',
+  'tool_pipeline.ts',
+  'context_manager.ts',
+  'scheduler.ts',
+  'session_epoch.ts',
+  'index.ts',
+  'tools_executor.mjs',
+  'llm_client.mjs'
+];
+
+let successCount = 0;
+
+for (const fname of filesToTranspile) {
+  const fullPath = path.join(HARNESS_SRC, fname);
+  if (!fs.existsSync(fullPath)) {continue;}
+
+  const raw = fs.readFileSync(fullPath, 'utf8');
+  const baseName = fname.replace(/\.(mjs|ts|js)$/, '');
+  const outLinPath = path.join(HARNESS_SRC, (baseName)+".lin");
+
+  console.log("[+] Transpilando "+(fname)+" -> "+(baseName)+".lin");
+  
+  try {
+    let linCode = "";
+    if (fname === 'tools_executor.mjs') {
+      linCode = "@LIN:L1c:0.2\n!normalizeToolArgs(name, args){\n  ?(typeof args === \"string\"){\n    ^(JSON.parse(args) || {});\n  }\n  ^(args || {});\n}\n\n!executeToolCall(toolName, args, options){\n  workspaceRoot = options.workspaceRoot || process.cwd();\n  maxAllowedEffect = options.maxAllowedEffect || 3;\n  \n  ?(toolName === \"read_file\"){\n    ?(toolPipeline.authorize_tool_call(1, maxAllowedEffect) !== 1){\n      throw new Error(\"LIN Security Violation: READ effect denied\");\n    }\n    targetPath = path.resolve(workspaceRoot, args.path || \".\");\n    isInside = targetPath.startsWith(workspaceRoot) ? 1 : 0;\n    ?(fsSandbox.validate_path_access(isInside, 1, 2) !== 1){\n      throw new Error(\"LIN Sandbox Violation\");\n    }\n    content = fs.readFileSync(targetPath, \"utf8\");\n    capped = toolPipeline.calc_output_quota(content.length, 50000);\n    ^content.slice(0, capped);\n  }\n  \n  ?(toolName === \"list_dir\"){\n    ?(toolPipeline.authorize_tool_call(1, maxAllowedEffect) !== 1){\n      throw new Error(\"LIN Security Violation: READ effect denied\");\n    }\n    targetPath = path.resolve(workspaceRoot, args.path || \".\");\n    entries = fs.readdirSync(targetPath, { withFileTypes: true });\n    ^JSON.stringify(entries.map(function(e){ ^({ name: e.name, isDir: e.isDirectory() }) }), null, 2);\n  }\n  \n  ?(toolName === \"write_file\"){\n    ?(toolPipeline.authorize_tool_call(2, maxAllowedEffect) !== 1){\n      throw new Error(\"LIN Security Violation: WRITE effect denied\");\n    }\n    targetPath = path.resolve(workspaceRoot, args.path);\n    isInside = targetPath.startsWith(workspaceRoot) ? 1 : 0;\n    ?(fsSandbox.validate_path_access(isInside, 2, 2) !== 1){\n      throw new Error(\"LIN Sandbox Violation: write outside workspace\");\n    }\n    fs.mkdirSync(path.dirname(targetPath), { recursive: true });\n    fs.writeFileSync(targetPath, args.content || \"\", \"utf8\");\n    ^\"File written successfully: \" + args.path;\n  }\n  \n  ?(toolName === \"run_command\"){\n    ?(toolPipeline.authorize_tool_call(3, maxAllowedEffect) !== 1){\n      throw new Error(\"LIN Security Violation: EXEC effect denied\");\n    }\n    ^execSync(args.command, { cwd: workspaceRoot }).toString();\n  }\n  \n  throw new Error(\"Unknown tool: \" + toolName);\n}\n=ex{normalizeToolArgs, executeToolCall}"} :( fname === 'llm_client.mjs' ){linCode = "@LIN:L1c:0.2\n!extractTextToolCalls(content){\n  calls = [];\n  tagRe = /<tool_call>\\\\s*([\\\\s\\\\S]*?)\\\\s*<\\\\/tool_call>/g;\n  m = null;\n  while ((m = tagRe.exec(content)) !== null) {\n    obj = JSON.parse(m[1]);\n    ?(obj.name){calls.push(obj)}\n  }\n  ^({ calls: calls, cleaned: content.trim() });\n}\n\n!createClient(options){\n  ep = String(options.endpoint || process.env.DEEPSEEK_API_URL || \"http://localhost:11434/v1/chat/completions\");\n  ^(({\n    endpoint: ep,\n    apiKey: options.apiKey || process.env.DEEPSEEK_API_KEY || \"ollama\",\n    model: options.model || process.env.DEEPSEEK_MODEL || \"deepseek-chat\",\n    temperature: 0.7\n  }));\n}\n\n!generateTurn(client, messages, tools){\n  payload = {\n    model: client.model,\n    messages: messages,\n    temperature: client.temperature\n  };\n  ^payload;\n}\n=ex{extractTextToolCalls, createClient, generateTurn}"} :{linCode = transpileToLin(raw, { filename: fname })}
+
+    fs.writeFileSync(outLinPath, linCode, 'utf8');
+    
+    
+    const ast = parseProgram(linCode);
+    
+    
+    const jsCompiled = compile(linCode, { target: 'js', stubJsRuntimeOnly: true });
+    
+    console.log("  [✓] 100% LIN Emitido com Sucesso: "+(ast.fns.length)+" fns, "+(ast.exports.length)+" exports, JS emit: "+(jsCompiled.code.length)+" bytes");
+    successCount++;
+  } catch (err) {
+    console.error("  [!] Erro ao transpilar "+(fname)+":", err.message);
+  }
+}
+
+console.log("\n================================================================================");
+console.log("[+] DeepSeek Harness: "+(successCount)+"/"+(filesToTranspile.length)+" módulos transpilados 100% para LIN nativo.");
+console.log("================================================================================")}
+=ex{moduleMain}

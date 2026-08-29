@@ -856,6 +856,14 @@
       const body = this.parseBlock();
       ^{ type: 'while', cond, body };
     }
+    ?(headGroups.length < 3){
+      const g = headGroups[0] || [];
+      const cond = g.length
+        ? { parts: [{ kind: 'raw', text: segText(g) }] }
+        : { parts: [] };
+      const body = this.parseBlock();
+      ^{ type: 'while', cond, body };
+    }
     const init = segText(headGroups[0]);
     const cg = headGroups[1];
     const cond = cg.length
@@ -1802,6 +1810,14 @@ export function parseLin(src) {
       const body = this.parseBlock();
       ^{ type: 'while', cond, body };
     }
+    ?(headGroups.length < 3){
+      const g = headGroups[0] || [];
+      const cond = g.length
+        ? { parts: [{ kind: 'raw', text: segText(g) }] }
+        : { parts: [] };
+      const body = this.parseBlock();
+      ^{ type: 'while', cond, body };
+    }
     const init = segText(headGroups[0]);
     const cg = headGroups[1];
     const cond = cg.length
@@ -2711,6 +2727,14 @@ export function parseLin(src) {
       const body = this.parseBlock();
       ^{ type: 'while', cond, body };
     }
+    ?(headGroups.length < 3){
+      const g = headGroups[0] || [];
+      const cond = g.length
+        ? { parts: [{ kind: 'raw', text: segText(g) }] }
+        : { parts: [] };
+      const body = this.parseBlock();
+      ^{ type: 'while', cond, body };
+    }
     const init = segText(headGroups[0]);
     const cg = headGroups[1];
     const cond = cg.length
@@ -3584,6 +3608,14 @@ export function parseLin(src) {
       const body = this.parseBlock();
       ^{ type: 'while', cond, body };
     }
+    ?(headGroups.length < 3){
+      const g = headGroups[0] || [];
+      const cond = g.length
+        ? { parts: [{ kind: 'raw', text: segText(g) }] }
+        : { parts: [] };
+      const body = this.parseBlock();
+      ^{ type: 'while', cond, body };
+    }
     const init = segText(headGroups[0]);
     const cg = headGroups[1];
     const cond = cg.length
@@ -4386,6 +4418,14 @@ export function parseLin(src) {
       const body = this.parseBlock();
       ^{ type: 'while', cond, body };
     }
+    ?(headGroups.length < 3){
+      const g = headGroups[0] || [];
+      const cond = g.length
+        ? { parts: [{ kind: 'raw', text: segText(g) }] }
+        : { parts: [] };
+      const body = this.parseBlock();
+      ^{ type: 'while', cond, body };
+    }
     const init = segText(headGroups[0]);
     const cg = headGroups[1];
     const cond = cg.length
@@ -4848,6 +4888,14 @@ export function parseLin(src) {
       const body = this.parseBlock();
       ^{ type: 'while', cond, body };
     }
+    ?(headGroups.length < 3){
+      const g = headGroups[0] || [];
+      const cond = g.length
+        ? { parts: [{ kind: 'raw', text: segText(g) }] }
+        : { parts: [] };
+      const body = this.parseBlock();
+      ^{ type: 'while', cond, body };
+    }
     const init = segText(headGroups[0]);
     const cg = headGroups[1];
     const cond = cg.length
@@ -5288,6 +5336,14 @@ export function parseLin(src) {
       const body = this.parseBlock();
       ^{ type: 'while', cond, body };
     }
+    ?(headGroups.length < 3){
+      const g = headGroups[0] || [];
+      const cond = g.length
+        ? { parts: [{ kind: 'raw', text: segText(g) }] }
+        : { parts: [] };
+      const body = this.parseBlock();
+      ^{ type: 'while', cond, body };
+    }
     const init = segText(headGroups[0]);
     const cg = headGroups[1];
     const cond = cg.length
@@ -5513,6 +5569,14 @@ export function stripTypeAnn(params) {
     };
     ?(headGroups.length === 3 && headGroups[0].length === 0 && headGroups[2].length === 0){
       const g = headGroups[1];
+      const cond = g.length
+        ? { parts: [{ kind: 'raw', text: segText(g) }] }
+        : { parts: [] };
+      const body = this.parseBlock();
+      ^{ type: 'while', cond, body };
+    }
+    ?(headGroups.length < 3){
+      const g = headGroups[0] || [];
       const cond = g.length
         ? { parts: [{ kind: 'raw', text: segText(g) }] }
         : { parts: [] };

@@ -1,0 +1,21 @@
+@RULEL:TRANSPOSED_CASE_05:1.0.0
+~METADATA{original="./benchmarks/LIN_SIGIL_004/build/case_05.mjs" lang="mjs"}
+.source{
+// Auto-generated JavaScript/TypeScript from LIN IR
+
+export function push(self, item) {
+  if (!(self.size < self.capacity)) throw new Error("PRECONDITION_VIOLATED");
+  const old_size = self ? self.size : 0;
+  const __exec = () => {
+        self.items.push(item);
+    self.size = self.size + 1;
+    return self.size
+  };
+  const result = __exec();
+  if (self && !(self.size >= 0 && self.size <= self.capacity)) throw new Error("INVARIANT_VIOLATED");
+  if (!(self.size == old_size + 1)) throw new Error("POSTCONDITION_VIOLATED");
+  return result;
+}
+
+
+}

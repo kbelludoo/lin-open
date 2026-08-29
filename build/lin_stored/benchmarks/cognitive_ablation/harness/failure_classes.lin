@@ -1,0 +1,7 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!classifyFailure(modelError,modelTimeout,rawOutput,candidateCode,verifierPassed,oracleExecuted,oraclePassed){if(modelTimeout) {^FailureClass.TIMEOUT;}if(modelError) {^FailureClass.MODEL_FAILURE;}if(!rawOutput||!rawOutput.trim()) {^FailureClass.MODEL_FAILURE;}if(!candidateCode||!candidateCode.trim()) {^FailureClass.MODEL_FAILURE;}if(!verifierPassed) {^FailureClass.INVALID_LIN;}if(!oraclePassed) {^FailureClass.ORACLE_FAILURE;}^FailureClass.PASS}
+!countByClass(results){counts={};for(key of Object.values(FailureClass)){counts[key]=0;};for(r of results){cls=r.failure_class||'MODEL_FAILURE';counts[cls]=(counts[cls]||0)+1;};^counts}
+!deriveRates(counts,totalTasks){N=totalTasks||1;return{compile_pass_rate:(counts.PASS+counts.ORACLE_FAILURE)/N,oracle_pass_rate:counts.PASS/N,invalid_lin_rate:counts.INVALID_LIN/N,model_failure_rate:counts.MODEL_FAILURE/N,timeout_rate:counts.TIMEOUT/N,}}
+=ex{classifyFailure,countByClass,deriveRates}

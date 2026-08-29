@@ -1,0 +1,10 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!moduleMain(){splitTopEntries=linSplitTopEntries;parseValuePairs=linParseValuePairs;parseRulel=linParseRulel;validateComms=linValidateComms;require = createRequire('file:///lin-in-memory.js');
+__d61=require('./rulel_core.compiled.cjs');linSplitTopEntries=__d61.splitTopEntries;linParseValuePairs=__d61.parseValuePairs;linParseRulel=__d61.parseRulel;linValidateComms=__d61.validateComms;
+splitTopEntries = linSplitTopEntries;
+parseValuePairs = linParseValuePairs;
+parseRulel = linParseRulel;
+validateComms = linValidateComms}
+=ex{moduleMain}

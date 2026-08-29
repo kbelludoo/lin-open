@@ -1,0 +1,389 @@
+@LIN:L1c:0.2
+@LIN_ZIG_BOOTSTRAP{version=1.1 purpose=zig_native_compiler_host}
+
+!slice2(s: string, a: int, b: int): string { ^s.slice(a, b) }
+
+!skip_ws(s: string, i: int): int {
+  n = s.length;
+  p = i;
+  while (p < n) {
+    c = s.charCodeAt(p);
+    ?(c == 32 || c == 9 || c == 10 || c == 13){ p = p + 1 }
+    : (c == 47 && p + 1 < n && s.charCodeAt(p + 1) == 47){
+      p = p + 2;
+      while (p < n && s.charCodeAt(p) != 10){ p = p + 1 };
+    }
+    : { ^p };
+  };
+  ^p;
+}
+
+!is_ident_start(c: int): bool {
+  ?((c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c == 95 || c == 36){ ^true };
+  ^false;
+}
+
+!is_ident(c: int): bool {
+  ?((c >= 65 && c <= 90) || (c >= 97 && c <= 122) || (c >= 48 && c <= 57) || c == 95 || c == 36){ ^true };
+  ^false;
+}
+
+!read_ident(s: string, i: int): string {
+  n = s.length;
+  ?(i >= n){ ^"" };
+  ?(is_ident_start(s.charCodeAt(i)) == false){ ^"" };
+  j = i + 1;
+  while (j < n && is_ident(s.charCodeAt(j))){ j = j + 1 };
+  ^slice2(s, i, j);
+}
+
+!match_brace(s: string, open_idx: int): int {
+  n = s.length;
+  depth = 0;
+  p = open_idx;
+  while (p < n) {
+    c = s.charCodeAt(p);
+    ?(c == 34){
+      p = p + 1;
+      while (p < n && s.charCodeAt(p) != 34){ p = p + 1 };
+      ?(p < n){ p = p + 1 };
+      continue;
+    };
+    ?(c == 123){ depth = depth + 1 }
+    : (c == 125){
+      depth = depth - 1;
+      ?(depth == 0){ ^p };
+    };
+    p = p + 1;
+  };
+  ^(-1);
+}
+
+!find_brace(s: string, i: int): int {
+  n = s.length;
+  p = i;
+  while (p < n) {
+    ?(s.charCodeAt(p) == 123){ ^p };
+    p = p + 1;
+  };
+  ^(-1);
+}
+
+!js_params(params: string): string {
+  out = "";
+  k = 0;
+  pn = params.length;
+  seen = 0;
+  id = "";
+  while (k < pn) {
+    k = skip_ws(params, k);
+    ?(k >= pn){ break };
+    id = read_ident(params, k);
+    ?(id.length > 0){
+      ?(seen == 1){ out = out + "," };
+      out = out + id;
+      seen = 1;
+      k = k + id.length;
+    }
+    : { k = k + 1 };
+    while (k < pn && params.charCodeAt(k) != 44){ k = k + 1 };
+    ?(k < pn && params.charCodeAt(k) == 44){ k = k + 1 };
+  };
+  ^out;
+}
+
+!rewrite_body(body: string): string {
+  out = "";
+  chs = "";
+  i = 0;
+  d = 0;
+  j = 0;
+  n = body.length;
+  while (i < n) {
+    c = body.charCodeAt(i);
+    ?(c == 34){
+      chs = body.charAt(i);
+      out = out + chs;
+      i = i + 1;
+      while (i < n && body.charCodeAt(i) != 34){
+        chs = body.charAt(i);
+        out = out + chs;
+        i = i + 1;
+      };
+      ?(i < n){ chs = body.charAt(i); out = out + chs; i = i + 1 };
+      continue;
+    };
+    ?(c == 94){
+      p = i - 1;
+      while (p >= 0) {
+        ?(body.charCodeAt(p) == 32 || body.charCodeAt(p) == 9 || body.charCodeAt(p) == 10 || body.charCodeAt(p) == 13){
+          p = p - 1;
+          continue;
+        };
+        ls = p;
+        while (ls >= 0 && body.charCodeAt(ls) != 10){ ls = ls - 1 };
+        hc = 0;
+        ck = ls + 1;
+        while (ck < p) {
+          ?(body.charCodeAt(ck) == 47 && body.charCodeAt(ck + 1) == 47){ hc = 1; break };
+          ck = ck + 1;
+        };
+        ?(hc == 1){
+          p = ls;
+          continue;
+        };
+        break;
+      };
+      is_ret = 0;
+      ?(p < 0 || body.charCodeAt(p) == 59 || body.charCodeAt(p) == 123 || body.charCodeAt(p) == 125){ is_ret = 1 };
+      ?(is_ret == 1){
+        out = out + "return ";
+        i = i + 1;
+        while (i < n) {
+          d = body.charCodeAt(i);
+          ?(d == 125){ out = out + ";"; break };
+          ?(d == 123){ break };
+          chs = body.charAt(i);
+          out = out + chs;
+          i = i + 1;
+        };
+        ?(i >= n){ out = out + ";" };
+      } : {
+        out = out + " ^ ";
+        i = i + 1;
+      };
+    }
+    : (c == 35 && i + 1 < n && body.charCodeAt(i + 1) == 40){
+      out = out + "for";
+      i = i + 1;
+    }
+    : (c == 58){
+      j = skip_ws(body, i + 1);
+      ?(j < n){
+        d = body.charCodeAt(j);
+        ?(d == 63 || d == 123){ out = out + " else "; i = j; continue };
+        ?(d == 40){ out = out + " else if "; i = j; continue };
+      };
+      out = out + ":";
+      i = i + 1;
+    }
+    : (c == 63 && i + 1 < n && body.charCodeAt(i + 1) == 40){
+      out = out + "if ";
+      i = i + 1;
+    }
+    : {
+      chs = body.charAt(i);
+      out = out + chs;
+      i = i + 1;
+    };
+  };
+  ^out;
+}
+
+!each_fn(src: string, i: int): int {
+  n = src.length;
+  name = read_ident(src, i + 1);
+  ?(name.length == 0){ ^i + 1 };
+  p = skip_ws(src, i + 1 + name.length);
+  ?(p >= n || src.charCodeAt(p) != 40){ ^i + 1 };
+  close_p = p + 1;
+  while (close_p < n && src.charCodeAt(close_p) != 41){ close_p = close_p + 1 };
+  b = find_brace(src, close_p + 1);
+  ?(b < 0){ ^i + 1 };
+  close_b = match_brace(src, b);
+  ?(close_b < 0){ ^i + 1 };
+  ^close_b + 1;
+}
+
+!lin_check(src: string): string {
+  out = "";
+  name = "";
+  n = src.length;
+  i = 0;
+  first = 1;
+  while (i < n) {
+    i = skip_ws(src, i);
+    ?(i >= n){ ^out };
+    ?(src.charCodeAt(i) == 33 && (i + 1 >= n || src.charCodeAt(i + 1) != 61)){
+      name = read_ident(src, i + 1);
+      ?(name.length > 0){
+        ?(first == 0){ out = out + "," };
+        out = out + name;
+        first = 0;
+        i = each_fn(src, i);
+        continue;
+      };
+    };
+    i = i + 1;
+  };
+  ^out;
+}
+
+!lin_valid(src: string): int {
+  names = "";
+  n = src.length;
+  i = 0;
+  depth = 0;
+  c = 0;
+  while (i < n) {
+    c = src.charCodeAt(i);
+    ?(c == 34){
+      i = i + 1;
+      while (i < n && src.charCodeAt(i) != 34){ i = i + 1 };
+      ?(i < n){ i = i + 1 };
+      continue;
+    };
+    ?(c == 123){ depth = depth + 1 };
+    ?(c == 125){
+      depth = depth - 1;
+      ?(depth < 0){ ^0 };
+    };
+    i = i + 1;
+  };
+  ?(depth != 0){ ^0 };
+  names = lin_check(src);
+  ?(names.length == 0){ ^0 };
+  ^1;
+}
+
+!q(): string { ^String.fromCharCode(34) }
+
+!csv_json_arr(csv: string): string {
+  out = "[";
+  k = 0;
+  n = csv.length;
+  first = 1;
+  id = "";
+  while (k < n) {
+    id = read_ident(csv, k);
+    ?(id.length > 0){
+      ?(first == 0){ out = out + "," };
+      out = out + q();
+      out = out + id;
+      out = out + q();
+      first = 0;
+      k = k + id.length;
+    }
+    : { k = k + 1 };
+  };
+  out = out + "]";
+  ^out;
+}
+
+!read_header(src: string): string {
+  n = src.length;
+  i = 0;
+  while (i < n) {
+    ?(src.charCodeAt(i) == 64){
+      j = i;
+      while (j < n && src.charCodeAt(j) != 10){ j = j + 1 };
+      ^slice2(src, i, j);
+    };
+    i = i + 1;
+  };
+  ^"@LIN:L1c:0.2";
+}
+
+!read_exports(src: string): string {
+  n = src.length;
+  i = 0;
+  while (i < n) {
+    ?(src.charCodeAt(i) == 61 && i + 3 < n && src.charCodeAt(i + 1) == 101 && src.charCodeAt(i + 2) == 120 && src.charCodeAt(i + 3) == 123){
+      j = i + 4;
+      while (j < n && src.charCodeAt(j) != 125){ j = j + 1 };
+      ^slice2(src, i + 4, j);
+    };
+    i = i + 1;
+  };
+  ^"";
+}
+
+!lin_check_json(src: string): string {
+  names = "";
+  ex = "";
+  h = "";
+  names = lin_check(src);
+  ex = read_exports(src);
+  h = read_header(src);
+  out = "{";
+  out = out + q();
+  out = out + "header";
+  out = out + q();
+  out = out + ":";
+  out = out + q();
+  out = out + h;
+  out = out + q();
+  out = out + ",";
+  out = out + q();
+  out = out + "fns";
+  out = out + q();
+  out = out + ":";
+  out = out + csv_json_arr(names);
+  out = out + ",";
+  out = out + q();
+  out = out + "exports";
+  out = out + q();
+  out = out + ":";
+  out = out + csv_json_arr(ex);
+  out = out + "}";
+  ^out;
+}
+
+!andor(s: string): string {
+  out = "";
+  chs = "";
+  i = 0;
+  n = s.length;
+  while (i < n) {
+    ?(s.charCodeAt(i) == 34){
+      out = out + q();
+      i = i + 1;
+      while (i < n && s.charCodeAt(i) != 34){
+        chs = s.charAt(i);
+        out = out + chs;
+        i = i + 1;
+      };
+      ?(i < n){ out = out + q(); i = i + 1 };
+      continue;
+    };
+    ?(s.charCodeAt(i) == 38 && i + 1 < n && s.charCodeAt(i + 1) == 38){
+      out = out + " and ";
+      i = i + 2;
+    }
+    : (s.charCodeAt(i) == 124 && i + 1 < n && s.charCodeAt(i + 1) == 124){
+      out = out + " or ";
+      i = i + 2;
+    }
+    : {
+      chs = s.charAt(i);
+      out = out + chs;
+      i = i + 1;
+    };
+  };
+  ^out;
+}
+
+!in_csv(csv: string, id: string): int {
+  k = 0;
+  n = csv.length;
+  t = "";
+  while (k < n) {
+    t = read_ident(csv, k);
+    ?(t.length > 0){
+      ?(t.length == id.length){
+        m = 0;
+        same = 1;
+        while (m < id.length) {
+          ?(t.charCodeAt(m) != id.charCodeAt(m)){ same = 0 };
+          m = m + 1;
+        };
+        ?(same == 1){ ^1 };
+      };
+      k = k + t.length;
+    }
+    : { k = k + 1 };
+  };
+  ^0;
+}
+
+=ex{skip_ws, lin_check, lin_check_json, rewrite_body, read_header, read_exports, q, in_csv, andor}

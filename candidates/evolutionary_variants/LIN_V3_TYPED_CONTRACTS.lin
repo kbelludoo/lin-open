@@ -1,4 +1,4 @@
-@m{name=crypto_service version="3.0"}
+@m{name=crypto_service;version="3.0"}
 ~dep{hash=std_hash}
 %pre{typeof data === "string"}
 %post{ret !== undefined && typeof ret === "number"}
@@ -6,7 +6,7 @@
 *effect[pure]
 !fn computeHash(data: string, seed: number = 0): number {
   ?if (!data) ^ret 0
-  let h = seed
+;h= seed
   #for (c in data) { h = ((h << 5) - h) + c; h |= 0 }
   ^ret h
 }

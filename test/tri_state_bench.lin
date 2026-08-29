@@ -1,0 +1,71 @@
+@LIN:L1c:0.2
+~G{?=if #=for ^=ret :else}
+
+!len_s(s: string) -> int {
+  ^s.length
+}
+
+!code_at(s: string, i: int) -> int {
+  ^s.charCodeAt(i)
+}
+
+!str_eq(a: string, b: string) -> bool {
+  ?(a.length != b.length){ ^false };
+  n = a.length;
+  i = 0;
+  while (i < n) {
+    ?(a.charCodeAt(i) != b.charCodeAt(i)){ ^false };
+    i = i + 1;
+  };
+  ^true;
+}
+
+!decide_action(prob_a: int, prob_b: int, prob_c: int, confidence_threshold: int) -> string {
+  ?(prob_a >= confidence_threshold){
+    ^"PROMOTE_RULE_A";
+  };
+  ?(prob_b >= confidence_threshold){
+    ^"PROMOTE_RULE_B";
+  };
+  ?(prob_c >= 50){
+    ^"TRIGGER_DEEP_PARALLEL_EXPLORATION";
+  };
+  ^"GATHER_MORE_EVIDENCE";
+}
+
+!estimate_throughput(batch_size: int, is_gpu: int) -> int {
+  ?(is_gpu == 1){
+    ?(batch_size < 500){
+      ^10
+    };
+    ^15000
+  };
+  ^1000
+}
+
+!test_initial_decision(){
+  ?(str_eq(decide_action(33, 33, 34, 80), "GATHER_MORE_EVIDENCE") == true){ ^1 }
+  ^0
+}
+
+!test_promote_on_high_confidence(){
+  ?(str_eq(decide_action(85, 10, 5, 80), "PROMOTE_RULE_A") == true){ ^1 }
+  ^0
+}
+
+!test_deep_exploration_trigger(){
+  ?(str_eq(decide_action(15, 20, 65, 80), "TRIGGER_DEEP_PARALLEL_EXPLORATION") == true){ ^1 }
+  ^0
+}
+
+!test_scaling_cost_model(){
+  small_cpu = estimate_throughput(100, 0);
+  small_gpu = estimate_throughput(100, 1);
+  large_cpu = estimate_throughput(50000, 0);
+  large_gpu = estimate_throughput(50000, 1);
+
+  ?(small_cpu > small_gpu && large_gpu > large_cpu){ ^1 }
+  ^0
+}
+
+=ex{len_s, code_at, str_eq, decide_action, estimate_throughput, test_initial_decision, test_promote_on_high_confidence, test_deep_exploration_trigger, test_scaling_cost_model}

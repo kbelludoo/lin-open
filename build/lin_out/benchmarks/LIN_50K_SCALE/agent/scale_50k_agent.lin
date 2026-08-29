@@ -1,0 +1,8 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!constructor(routerUrl,apiKey,primaryModel,secondaryModel,ollamaUrl,ollamaModel){ROOT=path.resolve(path.dirname(__filename),'..');this.routerUrl=routerUrl;this.apiKey=apiKey;this.primaryModel=primaryModel;this.secondaryModel=secondaryModel;this.ollamaUrl=ollamaUrl;this.ollamaModel=ollamaModel;this.substrate=new LIN50kSubstrate()}
+!extractFileAndPatch(llmResponse,defaultFile){ROOT=path.resolve(path.dirname(__filename),'..');let targetFile=defaultFile;const match=llmResponse.match(/```(?:javascript|js|lin)?\s*([\s\S]*?)```/i);let code=match?match[1].trim():null;if(code){code=code.replace(/^FILE:[^\n]*\n+/i,'').trim();}return{targetFile,code}}
+!runTests(repoDir){ROOT=path.resolve(path.dirname(__filename),'..');try{const out=execSync("node "+(path.join(repoDir, 'tests/test_runner.js')),{encoding:'utf8',timeout:5000});return{passed:out.includes('Overall: PASS'),output:out};}catch(err){return{passed:false,output:err.stdout||err.message};}}
+!findTargetFromError(testErrorOutput){ROOT=path.resolve(path.dirname(__filename),'..');for(const[sym,node] of  this.substrate.symbolIndex.entries()){if(testErrorOutput.includes(sym)){return{symbol:sym,module:node.module};}}return{symbol:'m000_math_algebra_fn_0',module:'src/mod_000_math_algebra.js'}}
+=ex{constructor,extractFileAndPatch,runTests,findTargetFromError}

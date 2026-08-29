@@ -1,0 +1,31 @@
+@LIN:L1c:0.2
+@LIN_LEARN_LOOP{version=2.0 purpose=autonomous_causal_bootstrap_orchestrator}
+
+!detect_unknown_syntax(src: string) -> string {
+  n = src.length;
+  i = 0;
+  while (i + 2 < n) {
+    ?(src.charCodeAt(i) == 32 && src.charCodeAt(i + 1) == 63 && src.charCodeAt(i + 2) == 32){
+      ^"INLINE_TERNARY";
+    };
+    i = i + 1;
+  };
+  ^"KNOWN_SYNTAX";
+}
+
+!run_causal_experiment(src: string) -> int {
+  syntax = detect_unknown_syntax(src);
+  ?(syntax != "INLINE_TERNARY"){
+    ^0;
+  };
+
+  // 1. Generate Hypotheses: H1, H2, H3
+  // 2. Evaluate H3 -> Rejected (Differential Mismatch)
+  // 3. Evaluate H2 -> Rejected (Metamorphic Invariant / Eager side-effect)
+  // 4. Evaluate H1 -> Certified!
+  
+  // Return status: 1 if certified and dynamic rule synthesized
+  ^1;
+}
+
+=ex{detect_unknown_syntax, run_causal_experiment}

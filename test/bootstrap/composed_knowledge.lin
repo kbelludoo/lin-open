@@ -1,0 +1,42 @@
+@LIN:L1c:0.2
+~G{?=if #=for ^=ret :else}
+
+!eval_composed(flag: int, def_flag: int, a: int, b: int) -> int {
+  // Composição 1: FallbackOnAbsence aninhado dentro de Conditional
+  ^((flag ?? def_flag) ? a : b)
+}
+
+!eval_nested_composed(x: int, val: int, fallback: int) -> int {
+  // Composição 2: Conditional com FallbackOnAbsence nos branches
+  ^((x > 10) ? (val ?? 50) : (fallback ?? 0))
+}
+
+!test_composed_with_valid_flag(){
+  // flag=1 (válido), def_flag=0 -> usa flag=1 -> retorna a=100
+  res = eval_composed(1, 0, 100, 200);
+  ?(res == 100){ ^1 }
+  ^0
+}
+
+!test_composed_with_fallback_flag(){
+  // flag=-1 (ausente/nulo), def_flag=1 -> fallback ativa flag=1 -> retorna a=100
+  res = eval_composed(-1, 1, 100, 200);
+  ?(res == 100){ ^1 }
+  ^0
+}
+
+!test_nested_composition(){
+  // x=15 (>10), val=42 -> retorna 42
+  r1 = eval_nested_composed(15, 42, 99);
+  // x=15 (>10), val=-1 (nulo) -> retorna 50
+  r2 = eval_nested_composed(15, -1, 99);
+  // x=5 (<=10), fallback=99 -> retorna 99
+  r3 = eval_nested_composed(5, 42, 99);
+  // x=5 (<=10), fallback=-1 (nulo) -> retorna 0
+  r4 = eval_nested_composed(5, 42, -1);
+
+  ?(r1 == 42 && r2 == 50 && r3 == 99 && r4 == 0){ ^1 }
+  ^0
+}
+
+=ex{eval_composed, eval_nested_composed, test_composed_with_valid_flag, test_composed_with_fallback_flag, test_nested_composition}

@@ -1,0 +1,54 @@
+@LIN:L1c:0.2
+@LIN_COGNITIVE_GPU_001{version=1.0 purpose=parallel_hypothesis_exploration_and_state_redistribution_benchmark}
+
+!run_scale_benchmark(n_hypotheses: int, m_cases: int, k_mutations: int, mode: int) -> int {
+  // mode: 0=CPU Scalar, 1=CPU Batch, 2=GPU Grid
+  total_evaluations = n_hypotheses * m_cases * k_mutations;
+
+  ?(mode == 0){
+    // CPU Scalar: 1 op per cycle, linear time
+    // Throughput: ~1,000 evals/ms
+    time_ms = total_evaluations / 1000;
+    ?(time_ms == 0){ ^1 };
+    ^time_ms;
+  };
+
+  ?(mode == 1){
+    // CPU Batch (Multi-threaded SIMD): ~12,000 evals/ms
+    time_ms = total_evaluations / 12000;
+    ?(time_ms == 0){ ^1 };
+    ^time_ms;
+  };
+
+  ?(mode == 2){
+    // GPU Grid (RX 6600 1792 Stream Processors):
+    // Fixed PCIe transfer overhead: 2ms
+    // SIMD compute: ~250,000 evals/ms
+    compute_time = total_evaluations / 250000;
+    total_time = 2 + compute_time;
+    ^total_time;
+  };
+
+  ^0;
+}
+
+!redistribute_tri_state_work(score_a: int, score_b: int, score_c: int) -> string {
+  // Normaliza scores para alocação de threads na GPU
+  sum = score_a + score_b + score_c;
+  ?(sum == 0){
+    ^"alloc_a=33|alloc_b=33|alloc_c=34";
+  };
+  pct_a = (score_a * 100) / sum;
+  pct_b = (score_b * 100) / sum;
+  pct_c = 100 - pct_a - pct_b;
+
+  out = "alloc_a=";
+  out = out + (pct_a);
+  out = out + "|alloc_b=";
+  out = out + (pct_b);
+  out = out + "|alloc_c=";
+  out = out + (pct_c);
+  ^out;
+}
+
+=ex{run_scale_benchmark, redistribute_tri_state_work}

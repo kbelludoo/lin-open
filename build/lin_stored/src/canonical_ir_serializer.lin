@@ -1,0 +1,12 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!_anon0(p){^scope.bindLocal(p)}
+!_anon1(stmt){^this.serializeNode(stmt,scope)}
+!constructor(parent){this.parent=parent;this.locals=new Map();this.captures=new Map();this.localIndex=0}
+!bindLocal(name){idx=this.localIndex++;this.locals.set(name,"$"+(idx));^"$"+(idx)}
+!resolveIdentifier(name){if(this.locals.has(name)){return{kind:'LocalRef',ref:this.locals.get(name)};};if(this.parent){parentResolved=this.parent.resolveIdentifier(name);if(parentResolved.kind==='LocalRef'||parentResolved.kind==='CaptureRef'){if(!this.captures.has(name)){capIdx="$c"+(this.captures.size);this.captures.set(name,{capIdx,outerRef:parentResolved.ref});};return{kind:'CaptureRef',ref:this.captures.get(name).capIdx,outerRef:this.captures.get(name).outerRef};};^parentResolved;};return{kind:'GlobalRef',name}}
+!getCaptures(){^Array.from(this.captures.values()).map(c=>({ref:c.capIdx,outerRef:c.outerRef}))}
+!inferNodeEffect(astNode){EFFECTS={PURE:'Pure',READ:'Read',MUTATE:'Mutate',IO:'IO'};effect=EFFECTS.PURE;function scan(n){if(!n||typeof n!=='object') {return;}if(n.type==='CallExpression'){calleeName=extractCalleeFullName(n.callee);if(IO_SYMBOLS.has(calleeName)){effect=EFFECTS.IO;return;}};if(n.type==='AssignmentExpression'){if(n.left.type==='MemberExpression'){if(effect!==EFFECTS.IO) {effect=EFFECTS.MUTATE;}}};if(n.type==='MemberExpression'){if(effect===EFFECTS.PURE) {effect=EFFECTS.READ;}};for(k of Object.keys(n)){if(k==='type') {continue;}child=n[k];if(Array.isArray(child)){for(item of child) {if(item&&typeof item==='object') {scan(item);}}}:( child&&typeof child==='object' ){scan(child)}}};scan(astNode);^effect}
+!extractCalleeFullName(node){if(!node) {^'';}if(node.type==='Identifier') {^node.name;}if(node.type==='MemberExpression'){parent=extractCalleeFullName(node.object);^parent?(parent)+"."+(node.property):node.property;};^''}
+=ex{_anon0,_anon1,constructor,bindLocal,resolveIdentifier,getCaptures,inferNodeEffect,extractCalleeFullName}

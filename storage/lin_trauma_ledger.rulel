@@ -1,0 +1,9 @@
+@LEDGER:LIN_TRAUMA:1.0
+~SUMMARY{rejected_rules=2 total_violations=2}
+
+.trauma{pattern="INLINE_TERNARY" rule_id="RULE_TERNARY_R19_TRIVIAL_REJECT" reason="REJECTED_DIFFERENTIAL_MISMATCH" failed_case="eval_hypothesis(2, 0, 10, 20) returned 10, expected 20" ts="2026-08-28T22:00:00.000Z"}
+.trauma{pattern="INLINE_TERNARY" rule_id="RULE_TERNARY_R18_EAGER_REJECT" reason="REJECTED_METAMORPHIC_INVARIANT_VIOLATION" failed_case="Eager side-effect evaluation violation on false branch" ts="2026-08-28T22:00:00.000Z"}
+.trauma{pattern="NULL_COALESCING" rule_id="RULE_COALESCE_H1_EAGER_REJECT" reason="REJECTED_LAZY_EVALUATION_VIOLATION" failed_case="Fallback count incremented when value was defined (not null)" ts="2026-08-28T22:25:00.000Z"}
+.trauma{pattern="NULL_COALESCING" rule_id="RULE_COALESCE_H2_TRUTHY_REJECT" reason="REJECTED_FALSY_VALUE_COLLAPSE" failed_case="Falsy value 0 incorrectly replaced by fallback 99" ts="2026-08-28T22:25:00.000Z"}
+.trauma{pattern="NULL_COALESCING" rule_id="RULE_COALESCE_H3_IDENTITY_REJECT" reason="REJECTED_NULL_CASE_VIOLATION" failed_case="Null value was returned directly without fallback" ts="2026-08-28T22:25:00.000Z"}
+

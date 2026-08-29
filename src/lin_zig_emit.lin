@@ -1,0 +1,522 @@
+@LIN:L1c:0.2
+@LIN_ZIG_EMIT{version=1.1}
+
+!match_paren(s: string, open: int): int {
+  n = s.length;
+  depth = 0;
+  p = open;
+  while (p < n) {
+    c = s.charCodeAt(p);
+    ?(c == 34){
+      p = p + 1;
+      while (p < n && s.charCodeAt(p) != 34){ p = p + 1 };
+      ?(p < n){ p = p + 1 };
+      continue;
+    };
+    ?(c == 40){ depth = depth + 1 }
+    : (c == 41){
+      depth = depth - 1;
+      ?(depth == 0){ ^p };
+    };
+    p = p + 1;
+  };
+  ^(-1);
+}
+
+!starts_lit(s: string, i: int, lit: string): int {
+  n = s.length;
+  ln = lit.length;
+  k = 0;
+  while (k < ln) {
+    ?(i + k >= n){ ^0 };
+    ?(s.charCodeAt(i + k) != lit.charCodeAt(k)){ ^0 };
+    k = k + 1;
+  };
+  ^1;
+}
+
+!kw_space(s: string): string {
+  out = "";
+  chs = "";
+  i = 0;
+  n = s.length;
+  t = 0;
+  prev = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) == 34){
+      out = out + q();
+      i = i + 1;
+      while (i < n && s.charCodeAt(i) != 34){
+        chs = s.charAt(i);
+        out = out + chs;
+        i = i + 1;
+      };
+      ?(i < n){ out = out + q(); i = i + 1 };
+      continue;
+    };
+    ?(starts_lit(s, i, "while(") == 1){ out = out + "while ("; i = i + 6; continue };
+    ?(starts_lit(s, i, "if(") == 1){ out = out + "if ("; i = i + 3; continue };
+    ?(i + 1 < n && s.charCodeAt(i) == 41 && s.charCodeAt(i + 1) == 123){ out = out + ") {"; i = i + 2; continue };
+    ?(i + 1 < n && s.charCodeAt(i) == 125 && s.charCodeAt(i + 1) == 59){ out = out + "}"; i = i + 2; continue };
+    ?(s.charCodeAt(i) == 59){
+      t = out.length;
+      while (t > 0) {
+        prev = out.charCodeAt(t - 1);
+        ?(prev == 32 || prev == 9 || prev == 10 || prev == 13){ t = t - 1 }
+        : { break };
+      };
+      ?(t > 0){
+        prev = out.charCodeAt(t - 1);
+        ?(prev == 59 || prev == 125){ i = i + 1; continue };
+      };
+      out = out + ";";
+      i = i + 1;
+      continue;
+    };
+    chs = s.charAt(i);
+    out = out + chs;
+    i = i + 1;
+  };
+  ^out;
+}
+
+!rewrite_js_methods(s: string): string {
+  out = "";
+  chs = "";
+  i = 0;
+  n = s.length;
+  k = 0;
+  open = 0;
+  cl = 0;
+  id = "";
+  while (i < n) {
+    ?(s.charCodeAt(i) == 34){
+      out = out + q();
+      i = i + 1;
+      while (i < n && s.charCodeAt(i) != 34){
+        chs = s.charAt(i);
+        out = out + chs;
+        i = i + 1;
+      };
+      ?(i < n){ out = out + q(); i = i + 1 };
+      continue;
+    };
+    ?(starts_lit(s, i, "String.fromCharCode(") == 1){
+      open = i + 19;
+      cl = match_paren(s, open);
+      ?(cl > open){
+        out = out + "_lia_from_code(";
+        out = out + slice2(s, open + 1, cl);
+        out = out + ")";
+        i = cl + 1;
+        continue;
+      };
+    };
+    id = read_ident(s, i);
+    ?(id.length > 0){
+      k = i + id.length;
+      ?(k < n && s.charCodeAt(k) == 46){
+        ?(starts_lit(s, k + 1, "charCodeAt(") == 1){
+          open = k + 11;
+          cl = match_paren(s, open);
+          ?(cl > open){
+            out = out + "_lia_char_code_at(";
+            out = out + id;
+            out = out + ", ";
+            out = out + slice2(s, open + 1, cl);
+            out = out + ")";
+            i = cl + 1;
+            continue;
+          };
+        };
+        ?(starts_lit(s, k + 1, "charAt(") == 1){
+          open = k + 7;
+          cl = match_paren(s, open);
+          ?(cl > open){
+            out = out + "_lia_char_at(";
+            out = out + id;
+            out = out + ", ";
+            out = out + slice2(s, open + 1, cl);
+            out = out + ")";
+            i = cl + 1;
+            continue;
+          };
+        };
+        ?(starts_lit(s, k + 1, "slice(") == 1){
+          open = k + 6;
+          cl = match_paren(s, open);
+          ?(cl > open){
+            out = out + "_lia_slice(";
+            out = out + id;
+            out = out + ", ";
+            out = out + slice2(s, open + 1, cl);
+            out = out + ")";
+            i = cl + 1;
+            continue;
+          };
+        };
+        ?(starts_lit(s, k + 1, "length") == 1){
+          out = out + "@as(i64, @intCast(";
+          out = out + id;
+          out = out + ".len))";
+          i = k + 7;
+          continue;
+        };
+      };
+      out = out + id;
+      i = i + id.length;
+      continue;
+    };
+    chs = s.charAt(i);
+    out = out + chs;
+    i = i + 1;
+  };
+  ^out;
+}
+
+!atom_is_str(a: string): int {
+  ?(a.length == 0){ ^0 };
+  c = a.charCodeAt(0);
+  ?(c == 32 || c == 9){ ^atom_is_str(slice2(a, 1, a.length)) };
+  ?(c == 34){ ^1 };
+  ?(starts_lit(a, 0, "_lia_") == 1){ ^1 };
+  ?(starts_lit(a, 0, "slice2") == 1){ ^1 };
+  ?(starts_lit(a, 0, "read_ident") == 1){ ^1 };
+  ?(starts_lit(a, 0, "out") == 1 && (a.length == 3 || a.charCodeAt(3) < 48 || a.charCodeAt(3) > 122)){ ^1 };
+  ?(starts_lit(a, 0, "id") == 1 && a.length == 2){ ^1 };
+  ?(starts_lit(a, 0, "src") == 1 && a.length == 3){ ^1 };
+  ?(starts_lit(a, 0, "body") == 1){ ^1 };
+  ?(starts_lit(a, 0, "params") == 1){ ^1 };
+  ?(starts_lit(a, 0, "names") == 1){ ^1 };
+  ?(starts_lit(a, 0, "chs") == 1){ ^1 };
+  ?(starts_lit(a, 0, "js_p") == 1){ ^1 };
+  ?(starts_lit(a, 0, "zig_params") == 1){ ^1 };
+  ^0;
+}
+
+!atom_is_num(a: string): int {
+  ?(a.length == 0){ ^0 };
+  c = a.charCodeAt(0);
+  ?(c == 32 || c == 9){ ^atom_is_num(slice2(a, 1, a.length)) };
+  ?(c >= 48 && c <= 57){ ^1 };
+  ?(c == 45){ ^1 };
+  ?(starts_lit(a, 0, "@as") == 1){ ^1 };
+  ?(starts_lit(a, 0, "_lia_char_code") == 1){ ^1 };
+  ^0;
+}
+
+!rewrite_plus(s: string): string {
+  out = "";
+  chs = "";
+  i = 0;
+  n = s.length;
+  L = 0;
+  R = 0;
+  left = "";
+  right = "";
+  cut = 0;
+  take = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) == 34){
+      out = out + q();
+      i = i + 1;
+      while (i < n && s.charCodeAt(i) != 34){
+        chs = s.charAt(i);
+        out = out + chs;
+        i = i + 1;
+      };
+      ?(i < n){ out = out + q(); i = i + 1 };
+      continue;
+    };
+    ?(s.charCodeAt(i) == 43){
+      L = i;
+      while (L > 0) {
+        c = s.charCodeAt(L - 1);
+        ?(c == 32 || c == 9){ L = L - 1 }
+        : { break };
+      };
+      while (L > 0 && is_ident(s.charCodeAt(L - 1))){ L = L - 1 };
+      R = skip_ws(s, i + 1);
+      ?(R < n && s.charCodeAt(R) == 34){
+        R = R + 1;
+        while (R < n && s.charCodeAt(R) != 34){ R = R + 1 };
+        ?(R < n){ R = R + 1 };
+      }
+      : {
+        id = read_ident(s, R);
+        ?(id.length > 0){
+          R = R + id.length;
+          ?(R < n && s.charCodeAt(R) == 40){
+            cl = match_paren(s, R);
+            ?(cl > R){ R = cl + 1 };
+          };
+        }
+        : { R = R + 1 };
+      };
+      left = slice2(s, L, i);
+      right = slice2(s, i + 1, R);
+      ?(atom_is_str(left) == 1 || atom_is_str(right) == 1){
+        ?(atom_is_num(left) == 0 || atom_is_num(right) == 0){
+          take = i - L;
+          cut = out.length - take;
+          ?(cut < 0){ cut = 0 };
+          out = slice2(out, 0, cut);
+          out = out + "_lia_cat(";
+          out = out + left;
+          out = out + ", ";
+          out = out + right;
+          out = out + ")";
+          i = R;
+          continue;
+        };
+      };
+    };
+    chs = s.charAt(i);
+    out = out + chs;
+    i = i + 1;
+  };
+  ^out;
+}
+
+!rewrite_semi(s: string): string {
+  out = "";
+  chs = "";
+  i = 0;
+  n = s.length;
+  t = 0;
+  prev = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) == 34){
+      out = out + q();
+      i = i + 1;
+      while (i < n && s.charCodeAt(i) != 34){
+        chs = s.charAt(i);
+        out = out + chs;
+        i = i + 1;
+      };
+      ?(i < n){ out = out + q(); i = i + 1 };
+      continue;
+    };
+    ?(s.charCodeAt(i) == 125){
+      t = out.length;
+      while (t > 0) {
+        prev = out.charCodeAt(t - 1);
+        ?(prev == 32 || prev == 9 || prev == 10 || prev == 13){ t = t - 1 }
+        : { break };
+      };
+      ?(t > 0){
+        prev = out.charCodeAt(t - 1);
+        ?(prev != 59 && prev != 123 && prev != 125){ out = out + ";" };
+      };
+      out = out + "}";
+      i = i + 1;
+    }
+    : {
+      chs = s.charAt(i);
+      out = out + chs;
+      i = i + 1;
+    };
+  };
+  ^out;
+}
+
+!zig_ty(t: string): string {
+  ?(t.length == 6 && starts_lit(t, 0, "string") == 1){ ^"[]const u8" };
+  ?(t.length == 3 && starts_lit(t, 0, "str") == 1){ ^"[]const u8" };
+  ?(t.length == 4 && starts_lit(t, 0, "bool") == 1){ ^"bool" };
+  ^"i64";
+}
+
+!skip_type(params: string, k0: int): int {
+  k = skip_ws(params, k0);
+  pn = params.length;
+  ?(k < pn && params.charCodeAt(k) == 58){
+    k = skip_ws(params, k + 1);
+    t = read_ident(params, k);
+    ?(t.length > 0){ k = k + t.length };
+  };
+  ^k;
+}
+
+!param_zig_type(params: string, after_id: int): string {
+  k = skip_ws(params, after_id);
+  pn = params.length;
+  ?(k < pn && params.charCodeAt(k) == 58){
+    k = skip_ws(params, k + 1);
+    t = read_ident(params, k);
+    ?(t.length > 0){ ^zig_ty(t) };
+  };
+  ^"i64";
+}
+
+!fn_ret_type(src: string, after_paren: int, brace: int): string {
+  k = skip_ws(src, after_paren);
+  ?(k < brace && src.charCodeAt(k) == 45 && k + 1 < brace && src.charCodeAt(k + 1) == 62){
+    k = skip_ws(src, k + 2);
+    t = read_ident(src, k);
+    ?(t.length > 0){ ^zig_ty(t) };
+  };
+  ?(k < brace && src.charCodeAt(k) == 58){
+    k = skip_ws(src, k + 1);
+    t = read_ident(src, k);
+    ?(t.length > 0){ ^zig_ty(t) };
+  };
+  ^"i64";
+}
+
+!rhs_kind(body: string, eq_pos: int): string {
+  n = body.length;
+  k = skip_ws(body, eq_pos + 1);
+  ?(k >= n){ ^"i64" };
+  ?(body.charCodeAt(k) == 34){ ^"[]const u8" };
+  id = read_ident(body, k);
+  ?(id.length == 0){ ^"i64" };
+  ?(starts_lit(id, 0, "true") == 1 || starts_lit(id, 0, "false") == 1){ ^"bool" };
+  k2 = skip_ws(body, k + id.length);
+  ?(k2 < n && body.charCodeAt(k2) == 46){
+    fld = read_ident(body, k2 + 1);
+    ?(starts_lit(fld, 0, "length") == 1 || starts_lit(fld, 0, "charCodeAt") == 1){ ^"i64" };
+    ^"[]const u8";
+  };
+  ?(starts_lit(id, 0, "read_ident") == 1 || starts_lit(id, 0, "slice2") == 1 || starts_lit(id, 0, "q") == 1){ ^"[]const u8" };
+  ?(starts_lit(id, 0, "js_params") == 1 || starts_lit(id, 0, "rewrite_") == 1 || starts_lit(id, 0, "lin_") == 1){ ^"[]const u8" };
+  ?(starts_lit(id, 0, "andor") == 1 || starts_lit(id, 0, "kw_space") == 1 || starts_lit(id, 0, "zig_") == 1){ ^"[]const u8" };
+  ?(starts_lit(id, 0, "emit_") == 1 || starts_lit(id, 0, "param_") == 1 || starts_lit(id, 0, "fn_ret") == 1){ ^"[]const u8" };
+  ^"i64";
+}
+
+!zig_decls(body: string, params: string): string {
+  out = "";
+  seen = "";
+  i = 0;
+  n = body.length;
+  id = "";
+  ty = "";
+  while (i < n) {
+    ?(body.charCodeAt(i) == 34){
+      i = i + 1;
+      while (i < n && body.charCodeAt(i) != 34){ i = i + 1 };
+      ?(i < n){ i = i + 1 };
+      continue;
+    };
+    id = read_ident(body, i);
+    ?(id.length > 0){
+      ?(id.length == 1 && id.charCodeAt(0) == 95){ i = i + 1; continue };
+      j = skip_ws(body, i + id.length);
+      ?(j < n && starts_lit(body, j, "=>") == 1){ i = i + id.length; continue };
+      ?(j < n && body.charCodeAt(j) == 61 && (j + 1 >= n || body.charCodeAt(j + 1) != 61)){
+        ?(in_csv(params, id) == 0 && in_csv(seen, id) == 0){
+          ty = rhs_kind(body, j);
+          out = out + "    var ";
+          out = out + id;
+          out = out + ": ";
+          out = out + ty;
+          ?(starts_lit(ty, 0, "[]const u8") == 1){
+            out = out + " = ";
+            out = out + q();
+            out = out + q();
+            out = out + ";\n";
+          }
+          : (starts_lit(ty, 0, "bool") == 1){ out = out + " = false;\n" }
+          : { out = out + " = 0;\n" };
+          ?(seen.length == 0){ seen = id }
+          : { seen = seen + ","; seen = seen + id };
+        };
+      };
+      i = i + id.length;
+    }
+    : { i = i + 1 };
+  };
+  ^out;
+}
+
+!zig_pipe(body: string): string {
+  ^kw_space(andor(rewrite_semi(rewrite_plus(rewrite_js_methods(rewrite_body(rewrite_cfor(rewrite_match(body))))))));
+}
+
+!emit_fns(src: string, lang: int): string {
+  out = "";
+  name = "";
+  params = "";
+  body = "";
+  js_p = "";
+  zig_params = "";
+  id = "";
+  n = src.length;
+  i = 0;
+  ?(lang == 0){ out = "/* generated by lin-rewrite 2.0.0 */\n" }
+  : { out = "// generated by LIN Zig bootstrap\n" };
+  while (i < n) {
+    i = skip_ws(src, i);
+    ?(i >= n){ ^out };
+    ?(src.charCodeAt(i) == 33 && (i + 1 >= n || src.charCodeAt(i + 1) != 61)){
+      name = read_ident(src, i + 1);
+      ?(name.length > 0){
+        p = skip_ws(src, i + 1 + name.length);
+        ?(p < n && src.charCodeAt(p) == 40){
+          close_p = p + 1;
+          while (close_p < n && src.charCodeAt(close_p) != 41){ close_p = close_p + 1 };
+          params = slice2(src, p + 1, close_p);
+          b = find_brace(src, close_p + 1);
+          ?(b >= 0){
+            close_b = match_brace(src, b);
+            ?(close_b > b){
+              body = slice2(src, b + 1, close_b);
+              js_p = js_params(params);
+              ?(lang == 0){
+                out = out + "function ";
+                out = out + name;
+                out = out + "(";
+                out = out + js_p;
+                out = out + "){";
+                out = out + rewrite_body(body);
+                out = out + "}\n";
+              }
+              : {
+                zig_params = "";
+                k = 0;
+                pn = params.length;
+                seen = 0;
+                while (k < pn) {
+                  k = skip_ws(params, k);
+                  ?(k >= pn){ break };
+                  id = read_ident(params, k);
+                  ?(id.length > 0){
+                    ?(seen == 1){ zig_params = zig_params + ", " };
+                    zig_params = zig_params + id;
+                    zig_params = zig_params + ": ";
+                    zig_params = zig_params + param_zig_type(params, k + id.length);
+                    seen = 1;
+                    k = skip_type(params, k + id.length);
+                  }
+                  : { k = k + 1 };
+                  while (k < pn && params.charCodeAt(k) != 44){ k = k + 1 };
+                  ?(k < pn && params.charCodeAt(k) == 44){ k = k + 1 };
+                };
+                out = out + "pub fn ";
+                out = out + name;
+                out = out + "(";
+                out = out + zig_params;
+                out = out + ") ";
+                out = out + fn_ret_type(src, close_p + 1, b);
+                out = out + " {\n";
+                out = out + zig_decls(body, js_p);
+                out = out + zig_pipe(body);
+                out = out + "\n}\n\n";
+              };
+              i = close_b + 1;
+              continue;
+            };
+          };
+        };
+      };
+    };
+    i = i + 1;
+  };
+  ^out;
+}
+
+!lin_to_js(src: string): string { ^emit_fns(src, 0) }
+!lin_to_zig(src: string): string { ^emit_fns(src, 1) }
+
+=ex{match_paren, kw_space, rewrite_js_methods, rewrite_plus, rewrite_semi, zig_decls, emit_fns, lin_to_js, lin_to_zig, zig_pipe}

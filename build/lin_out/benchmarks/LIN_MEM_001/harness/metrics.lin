@@ -1,0 +1,6 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=true ^ops=emit_from_js
+~G{?=if #=for ^=ret :else}
+!computePercentiles(latenciesNs){if(latenciesNs.length===0){return{p50:0,p90:0,p95:0,p99:0,min:0,max:0,avg:0};}const sorted=[...latenciesNs].sort((a,b)=>a-b);const n=sorted.length;const p50=sorted[Math.floor(n*0.50)];const p90=sorted[Math.floor(n*0.90)];const p95=sorted[Math.floor(n*0.95)];const p99=sorted[Math.floor(n*0.99)];const min=sorted[0];const max=sorted[n-1];const sum=sorted.reduce((acc,v)=>acc+v,0);const avg=sum/n;return{p50_us:p50/1000,p90_us:p90/1000,p95_us:p95/1000,p99_us:p99/1000,min_us:min/1000,max_us:max/1000,avg_us:avg/1000}}
+!computeDensityMetrics(totalEntities,totalRelations,memoryBytes){return{totalEntities,totalRelations,memoryBytes,bytesPerEntity:totalEntities>0?(memoryBytes/totalEntities):0,bytesPerRelation:totalRelations>0?(memoryBytes/totalRelations):0}}
+=ex{computePercentiles,computeDensityMetrics}
