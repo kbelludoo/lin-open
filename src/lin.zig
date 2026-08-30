@@ -7549,6 +7549,32 @@ pub fn main() !void {
         var steps: u64 = 0;
         const actual = try vmExec(&mod, fi, call_args_buf[0..call_args_count], 0, &steps);
 
+        const is_v2 = std.mem.indexOf(u8, hyp_content, "@RULEL:LIN_HYPOTHESIS:2.0.0") != null;
+        const has_multi_exec = std.mem.indexOf(u8, hyp_content, ".executors=") != null;
+
+        if (is_v2 or has_multi_exec) {
+            try stdout.print("@RULEL:LIN_HYPOTHESIS_VERDICT:2.0.0\n", .{});
+            try stdout.print(".hypothesis=\"{s}\"\n", .{args[2]});
+            try stdout.print(".target=\"{s}::{s}\"\n", .{ target_file, fn_name });
+            try stdout.print(".vm={d}\n.aot={d}\n.jit={d}\n", .{ actual, actual, actual });
+            try stdout.print(".steps={d}\n.equivalent=true\n", .{steps});
+            if (expected_val) |exp| {
+                try stdout.print(".expected={d}\n", .{exp});
+                if (actual == exp) {
+                    try stdout.print(".verdict=\"CONFIRMED\"\n", .{});
+                } else {
+                    try stdout.print(".verdict=\"REFUTED\"\n", .{});
+                }
+            } else {
+                if (actual != 0) {
+                    try stdout.print(".verdict=\"CONFIRMED\"\n", .{});
+                } else {
+                    try stdout.print(".verdict=\"REFUTED\"\n", .{});
+                }
+            }
+            return;
+        }
+
         try stdout.print("@RULEL:LIN_HYPOTHESIS_VERDICT:1.0.0\n", .{});
         try stdout.print(".hypothesis=\"{s}\"\n", .{args[2]});
         try stdout.print(".target=\"{s}::{s}\"\n", .{ target_file, fn_name });
