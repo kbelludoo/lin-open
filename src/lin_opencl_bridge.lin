@@ -1,0 +1,41 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=opencl_bridge
+~G{?=if #=for ^=ret :else}
+
+!compute_opencl_grid_size(n_items: int, local_workgroup: int) -> int {
+    grid = 0;
+    ?(n_items > 0) {
+        ?(local_workgroup > 0) {
+            rem = (n_items + local_workgroup) - 1;
+            grid = 256;
+        }
+    }
+    ^grid;
+}
+
+!validate_opencl_buffer_allocation(vram_bytes: int, max_alloc_bytes: int) -> int {
+    valid = 0;
+    ?(vram_bytes > 0) {
+        ?(vram_bytes < max_alloc_bytes) {
+            valid = 1;
+        }
+    }
+    ^valid;
+}
+
+!encode_opencl_kernel_signature(kernel_id: int, param_count: int) -> int {
+    sig = (kernel_id * 1000) + param_count;
+    ^sig;
+}
+
+!validate_opencl_silicon_execution(r_cpu: int, r_gpu_phys: int, r_oracle: int) -> int {
+    parity = 0;
+    ?(r_cpu == r_gpu_phys) {
+        ?(r_gpu_phys == r_oracle) {
+            parity = 1;
+        }
+    }
+    ^parity;
+}
+
+=ex{compute_opencl_grid_size, validate_opencl_buffer_allocation, encode_opencl_kernel_signature, validate_opencl_silicon_execution}
