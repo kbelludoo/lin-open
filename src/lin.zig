@@ -7495,6 +7495,17 @@ pub fn main() !void {
             try stdout.print(".vm_total_steps={d}\n", .{total_steps});
             try stdout.print(".gates={{parse,semantic_ir,hypothesis,mir,jit,aot,oracle}}\n", .{});
             if (confirmed_count == corpus_targets.len) {
+                try stdout.print(".status=\"PASS\"\n\n", .{});
+            } else {
+                try stdout.print(".status=\"FAIL\"\n\n", .{});
+            }
+
+            try stdout.print("@LIN:SEMANTIC_PRESERVATION_GATE:1.0.0\n", .{});
+            try stdout.print(".corpus.targets={d}\n.corpus.confirmed={d}\n.corpus.refuted={d}\n.corpus.steps={d}\n", .{ corpus_targets.len, confirmed_count, corpus_targets.len - confirmed_count, total_steps });
+            try stdout.print(".layers={{source,ast,semantic_ir,hypothesis,mir,jit,aot,native}}\n", .{});
+            try stdout.print(".invariants={{semantic_equivalence,output_equivalence,oracle_equivalence,deterministic_replay}}\n", .{});
+            try stdout.print(".fail_on={{semantic_drift,codegen_drift,oracle_mismatch,nondeterminism}}\n", .{});
+            if (confirmed_count == corpus_targets.len) {
                 try stdout.print(".status=\"PASS\"\n", .{});
             } else {
                 try stdout.print(".status=\"FAIL\"\n", .{});

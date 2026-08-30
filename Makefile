@@ -1,4 +1,4 @@
-.PHONY: all build test bench bench-linux repro clean
+.PHONY: all build test bench bench-linux repro integrity clean
 
 all: build test bench
 
@@ -8,6 +8,9 @@ build:
 
 test: build
 	./bin/lin_native test
+
+integrity: build
+	./bin/lin_native integrity
 
 bench:
 	zig run -O ReleaseFast benchmark_harness.zig
