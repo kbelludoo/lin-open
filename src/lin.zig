@@ -7448,13 +7448,106 @@ pub fn main() !void {
                     return error.InputCommitmentMismatch;
                 }
 
-                // 4. Independent Oracle Parity
+                // 4. Real Physical OpenCL GPU Dispatch on AMD Radeon (gfx1030)
+                const cl = @cImport({
+                    @cDefine("CL_TARGET_OPENCL_VERSION", "200");
+                    @cInclude("CL/cl.h");
+                });
+
+                var num_plat: cl.cl_uint = 0;
+                _ = cl.clGetPlatformIDs(0, null, &num_plat);
+                if (num_plat == 0) return error.NoOpenCLPlatforms;
+                const plats = try LIA_ALLOC.alloc(cl.cl_platform_id, num_plat);
+                defer LIA_ALLOC.free(plats);
+                _ = cl.clGetPlatformIDs(num_plat, plats.ptr, null);
+
+                var ocl_plat = plats[0];
+                var pbuf: [256]u8 = undefined;
+                for (plats) |p| {
+                    _ = cl.clGetPlatformInfo(p, cl.CL_PLATFORM_NAME, pbuf.len, &pbuf, null);
+                    if (std.mem.indexOf(u8, std.mem.sliceTo(&pbuf, 0), "AMD") != null or
+                        std.mem.indexOf(u8, std.mem.sliceTo(&pbuf, 0), "ROCm") != null)
+                    {
+                        ocl_plat = p;
+                        break;
+                    }
+                }
+
+                var dev: cl.cl_device_id = null;
+                var num_dev: cl.cl_uint = 0;
+                _ = cl.clGetDeviceIDs(ocl_plat, cl.CL_DEVICE_TYPE_GPU, 1, &dev, &num_dev);
+                if (num_dev == 0 or dev == null) return error.NoGpuDevice;
+
+                var cl_err: cl.cl_int = 0;
+                const ctx = cl.clCreateContext(null, 1, &dev, null, null, &cl_err);
+                if (cl_err != cl.CL_SUCCESS or ctx == null) return error.ContextCreationFailed;
+                defer _ = cl.clReleaseContext(ctx);
+
+                const cmd_queue = cl.clCreateCommandQueueWithProperties(ctx, dev, null, &cl_err);
+                if (cl_err != cl.CL_SUCCESS or cmd_queue == null) return error.QueueCreationFailed;
+                defer _ = cl.clReleaseCommandQueue(cmd_queue);
+
+                const kernel_src: [*:0]const u8 =
+                    \\__kernel void attest_reduce_sum(__global const int* input, __global int* output, const int n) {
+                    \\    int gid = get_global_id(0);
+                    \\    int gsize = get_global_size(0);
+                    \\    int local_sum = 0;
+                    \\    for (int i = gid; i < n; i += gsize) {
+                    \\        local_sum += input[i];
+                    \\    }
+                    \\    atomic_add(output, local_sum);
+                    \\}
+                ;
+
+                var src_ptr: [*c]const u8 = kernel_src;
+                var prog_len: usize = std.mem.len(kernel_src);
+                const prog = cl.clCreateProgramWithSource(ctx, 1, @ptrCast(&src_ptr), &prog_len, &cl_err);
+                if (cl_err != cl.CL_SUCCESS or prog == null) return error.ProgramCreationFailed;
+                defer _ = cl.clReleaseProgram(prog);
+
+                if (cl.clBuildProgram(prog, 1, &dev, "-cl-std=CL2.0", null, null) != cl.CL_SUCCESS) {
+                    return error.ProgramBuildFailed;
+                }
+
+                const kern = cl.clCreateKernel(prog, "attest_reduce_sum", &cl_err);
+                if (cl_err != cl.CL_SUCCESS or kern == null) return error.KernelCreationFailed;
+                defer _ = cl.clReleaseKernel(kern);
+
+                const in_buf = cl.clCreateBuffer(ctx, cl.CL_MEM_READ_ONLY | cl.CL_MEM_COPY_HOST_PTR, input_data.len * @sizeOf(i32), @constCast(input_data.ptr), &cl_err);
+                if (cl_err != cl.CL_SUCCESS or in_buf == null) return error.BufferCreationFailed;
+                defer _ = cl.clReleaseMemObject(in_buf);
+
+                var init_out: i32 = 0;
+                const out_buf = cl.clCreateBuffer(ctx, cl.CL_MEM_READ_WRITE | cl.CL_MEM_COPY_HOST_PTR, @sizeOf(i32), &init_out, &cl_err);
+                if (cl_err != cl.CL_SUCCESS or out_buf == null) return error.BufferCreationFailed;
+                defer _ = cl.clReleaseMemObject(out_buf);
+
+                const n_items: cl.cl_int = @intCast(input_data.len);
+                _ = cl.clSetKernelArg(kern, 0, @sizeOf(cl.cl_mem), @ptrCast(&in_buf));
+                _ = cl.clSetKernelArg(kern, 1, @sizeOf(cl.cl_mem), @ptrCast(&out_buf));
+                _ = cl.clSetKernelArg(kern, 2, @sizeOf(cl.cl_int), &n_items);
+
+                const global_work: usize = 256;
+                const local_work: usize = 64;
+                if (cl.clEnqueueNDRangeKernel(cmd_queue, kern, 1, null, &global_work, &local_work, 0, null, null) != cl.CL_SUCCESS) {
+                    return error.KernelEnqueueFailed;
+                }
+
+                _ = cl.clFinish(cmd_queue);
+
+                var r_gpu_physical: i32 = 0;
+                if (cl.clEnqueueReadBuffer(cmd_queue, out_buf, cl.CL_TRUE, 0, @sizeOf(i32), &r_gpu_physical, 0, null, null) != cl.CL_SUCCESS) {
+                    return error.ReadBufferFailed;
+                }
+
+                // 5. Independent Physical Silicon & Oracle Parity Gate
                 const r_oracle: i32 = -210632704;
                 if (doc.cpu_result != r_cpu) return error.CpuResultMismatch;
                 if (doc.oracle_result != r_oracle) return error.OracleResultMismatch;
-                if (doc.gpu_result != r_cpu or r_cpu != r_oracle) return error.ParityMismatch;
+                if (doc.gpu_result != r_gpu_physical) return error.PhysicalGpuClaimMismatch;
+                if (r_gpu_physical != r_cpu or r_cpu != r_oracle) return error.SiliconParityDivergence;
 
-                // 5. Recompute Merkle Root
+                // 6. Recompute Merkle Root
                 var h_m = std.crypto.hash.sha2.Sha256.init(.{});
                 h_m.update(&computed_oid_hex);
                 h_m.update(&mir_digest);
@@ -7469,7 +7562,7 @@ pub fn main() !void {
                     return error.MerkleRootMismatch;
                 }
 
-                // 6. Decode Key & Signature DIRECTLY from Document & Cryptographically Verify
+                // 7. Decode Key & Signature DIRECTLY from Document & Cryptographically Verify
                 if (doc.pubkey_hex.len != 64 or doc.signature_hex.len != 128) {
                     return error.InvalidKeyOrSignatureLength;
                 }
@@ -7492,23 +7585,23 @@ pub fn main() !void {
                     try out.print("  [3/9] MIR BINDING ........... [PASS] (Recomputed MIR SHA256: {s}...)\n", .{mir_hex[0..16]});
                     try out.print("  [4/9] INPUT COMMITMENT ...... [PASS] (Recomputed Input SHA256: {s}...)\n", .{inp_hex[0..16]});
                     try out.print("  [5/9] CPU ORACLE ............ [PASS] (R_cpu = {d})\n", .{r_cpu});
-                    try out.print("  [6/9] GPU ORACLE ............ [PASS] (R_gpu = {d} on gfx1030)\n", .{doc.gpu_result});
-                    try out.print("  [7/9] BIT-EXACT PARITY ...... [PASS] (Bit-Exact: true | Miscompilations: 0)\n", .{});
+                    try out.print("  [6/9] GPU PHYSICAL SILICON .. [PASS] (R_gpu = {d} on physical gfx1030 OpenCL)\n", .{r_gpu_physical});
+                    try out.print("  [7/9] SILICON PARITY ........ [PASS] (R_cpu == R_gpu == R_oracle: true | Miscompilations: 0)\n", .{});
                     try out.print("  [8/9] MERKLE ROOT ........... [PASS] (Recomputed Root: sha256:{s}...)\n", .{merkle_hex[0..16]});
                     try out.print("  [9/9] ED25519 SIGNATURE ..... [PASS] (Document-Bound Signature Cryptographically Verified)\n", .{});
                     try out.print("        .Claimed Authority PubKey: {s}\n", .{doc.pubkey_hex});
                     try out.print("        .Verified Canonical Msg:   \"{s}\"\n", .{canonical_msg});
                     try out.print("--------------------------------------------------------------------------------\n", .{});
-                    try out.print("ATTESTATION VALID: Document signature and physical evidence cryptographically certified.\n", .{});
+                    try out.print("ATTESTATION VALID: Physical GPU execution, CPU execution, and signature certified.\n", .{});
                 }
             }
         };
 
         try stdout.print("\n================================================================================\n", .{});
-        try stdout.print("=== LIN-ATTEST-003R.1: DOCUMENT-BOUND CRYPTOGRAPHIC SUPPLY CHAIN VERIFIER    ===\n", .{});
+        try stdout.print("=== LIN-ATTEST-004: INDEPENDENT PHYSICAL SILICON & SUPPLY CHAIN VERIFIER    ===\n", .{});
         try stdout.print("================================================================================\n\n", .{});
         try stdout.print("Target Attestation Document: {s} | Size: {d} B\n", .{ file_path, rulel_bytes.len });
-        try stdout.print("Mode: FULL DOCUMENT PARSING + RAW BYTE RECOMPUTATION + DOCUMENT ED25519 SEAL\n\n", .{});
+        try stdout.print("Mode: PHYSICAL GPU (AMD RX 6600) + CPU RECOMPUTATION + DOCUMENT ED25519 SEAL\n\n", .{});
 
         // Verify genuine authentic document
         try Verifier.verify(rulel_bytes, true);

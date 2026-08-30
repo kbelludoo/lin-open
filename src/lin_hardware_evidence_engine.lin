@@ -1,0 +1,31 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=hardware_evidence_engine
+~G{?=if #=for ^=ret :else}
+
+!verify_physical_device_binding(target_device_id: int, detected_device_id: int) -> int {
+    valid = 0;
+    ?(target_device_id == detected_device_id) {
+        valid = 1;
+    }
+    ^valid;
+}
+
+!evaluate_tripartite_physical_parity(r_cpu: int, r_gpu_physical: int, r_oracle: int) -> int {
+    exact = 0;
+    ?(r_cpu == r_gpu_physical) {
+        ?(r_gpu_physical == r_oracle) {
+            exact = 1;
+        }
+    }
+    ^exact;
+}
+
+!verify_hardware_timer_coherence(elapsed_micros: int) -> int {
+    coherent = 0;
+    ?(elapsed_micros > 0) {
+        coherent = 1;
+    }
+    ^coherent;
+}
+
+=ex{verify_physical_device_binding, evaluate_tripartite_physical_parity, verify_hardware_timer_coherence}

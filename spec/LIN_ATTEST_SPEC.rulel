@@ -1,10 +1,16 @@
-@RULEL:LIN_ATTEST_SPEC:1.5.0
-~R{.s=schema .c=compliance .p=provenance .d=determinism .k=cryptography .a=adversarial}
+@RULEL:LIN_ATTEST_SPEC:1.6.0
+~R{.s=schema .c=compliance .p=provenance .d=determinism .h=hardware .k=cryptography .a=adversarial}
 .s{
-  architecture="ZERO_TRUST_TRIPARTITE_SEALED"
-  type="DETERMINISTIC_SUPPLY_CHAIN_ATTESTATION_v0.3"
-  format="JSON-LD"
+  architecture="ZERO_TRUST_PHYSICAL_SILICON_BOUND"
+  type="DETERMINISTIC_SUPPLY_CHAIN_ATTESTATION_v0.4"
+  format="RULEL"
   merkle_type="AUTHENTIC_PAIRWISE_BINARY_HIERARCHICAL"
+}
+.h{
+  execution_mode="PHYSICAL_SILICON_DISPATCH"
+  target_device="gfx1030"
+  runtime="AMD_ROCM_OPENCL_2.0"
+  verification_requirement="R_GPU_PHYSICAL_MUST_BE_DISPATCHED_AND_READ_FROM_VRAM"
 }
 .k{
   signature_algorithm="Ed25519"
@@ -15,27 +21,27 @@
 }
 .c{
   standards=["EU_CYBER_RESILIENCE_ACT_PROFILE", "NIST_SP_800_218_SSDF_PROFILE", "SLSA_LEVEL_4_INTEGRITY_PROFILE"]
-  guarantee="CRYPTOGRAPHICALLY_SEALED_NON_DIVERGENT_ZERO_TRUST"
+  guarantee="PHYSICAL_SILICON_EXACT_ORACLE_PARITY"
 }
 .p{
   chain=["repo_url", "commit_sha", "tree_sha", "source_blob_oid", "function_symbol", "input_commitment", "mir_dag", "gpu_kernel", "cpu_result", "gpu_result", "oracle_result", "merkle_root", "ed25519_signature"]
 }
 .d{
-  rule="R_CPU(x) == R_GPU(x) == R_ORACLE(x)"
+  rule="R_CPU(x) == R_GPU_PHYSICAL(x) == R_ORACLE(x)"
   precision="BIT_EXACT"
 }
 .a{
   vectors=[
-    "SOURCE_MUTATION",
-    "BLOB_OID_MUTATION",
-    "MIR_MUTATION",
-    "CPU_RESULT_MUTATION",
-    "GPU_RESULT_MUTATION",
-    "ORACLE_MUTATION",
-    "MERKLE_MUTATION",
-    "KEY_SUBSTITUTION",
-    "SIGNATURE_FORGERY",
-    "SINGLE_BIT_PAYLOAD_MUTATION"
+    "MUT_SOURCE_DOC",
+    "MUT_MIR_DOC",
+    "MUT_INPUT_DOC",
+    "MUT_CPU_RESULT_DOC",
+    "MUT_GPU_RESULT_DOC",
+    "MUT_ORACLE_RESULT_DOC",
+    "MUT_MERKLE_ROOT_DOC",
+    "MUT_PUBKEY_SUBST_DOC",
+    "MUT_SIGNATURE_FORGERY",
+    "MUT_TARGET_DEVICE_DOC"
   ]
-  policy="ALL_FORGERIES_MUST_BE_REJECTED"
+  policy="ALL_MUTATIONS_MUST_BE_REJECTED"
 }
