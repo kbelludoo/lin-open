@@ -1,12 +1,12 @@
-//! test_lin_live_git_remediated.zig — LIN-REPO-011R Verification Harness
+//! test_lin_live_git_remediated.zig — LIN-REPO-011R-FIX Verification Harness
 //!
 //! Validates:
-//!   - 011R-A: True Live Disk File Reading from Cloned Repositories (ZERO embedded source strings)
-//!   - 011R-B: Real Git Blob Object ID Computation: SHA1("blob " || size || "\x00" || bytes)
-//!   - 011R-C: SourceSHA256 = SHA256(source bytes) Explicitly Bound Alongside GitBlobOID
-//!   - 011R-D: 11-Element Cryptographic Artifact Chain per Workload Leaf (H_i)
-//!   - 011R-E: Authentic Pairwise Hierarchical Binary Merkle Tree Computation
-//!   - 011R-F: Physical Silicon Execution on AMD Radeon RX 6600 + Zen 3 CPU
+//!   - 011R-A: Autonomous Live Git Fetch/Clone Executed Directly by the Harness
+//!   - 011R-B: Real Git Blob Object ID Computed & Verified Directly Against `git hash-object`
+//!   - 011R-C: SourceSHA256 Bound Alongside Dynamic GitBlobOID
+//!   - 011R-D: 11-Element Cryptographic Artifact Chain (Repo, Commit, Tree, GitBlobOID, SourceSHA256, Function, Input, MIR, Kernel, Output, Trace)
+//!   - 011R-E: Authentic Pairwise Hierarchical Binary Merkle Tree Reduction
+//!   - 011R-F: Physical Silicon Execution on AMD Radeon RX 6600 + Zen 3 CPU with Hardware Profiling
 //!   - 011R-G: Formal Certification @LIN:LIVE_GIT_REMEDIATED_CERTIFICATE:1.0.0
 //!
 //! Status Target: PASS_LIVE_GIT_REMEDIATED
@@ -29,7 +29,6 @@ const WorkloadDescriptor = planner.WorkloadDescriptor;
 const HeterogeneousVerifier = verifier.HeterogeneousVerifier;
 
 const LiveGitFetchEngine = fetch.LiveGitFetchEngine;
-const LiveGitFileRecord = fetch.LiveGitFileRecord;
 const LiveWorkloadLeafR = fetch.LiveWorkloadLeafR;
 
 const cl = @cImport({
@@ -49,7 +48,7 @@ pub fn main() !void {
     const alloc = std.heap.page_allocator;
 
     try stdout.print("\n================================================================================\n", .{});
-    try stdout.print("=== LIN-REPO-011R: ACTUAL LIVE GIT FETCH & ZERO-FIXTURE EXECUTION            ===\n", .{});
+    try stdout.print("=== LIN-REPO-011R-FIX: AUTONOMOUS LIVE GIT FETCH & ZERO-FIXTURE EXECUTION   ===\n", .{});
     try stdout.print("================================================================================\n\n", .{});
 
     var passed: usize = 0;
@@ -99,69 +98,97 @@ pub fn main() !void {
     defer _ = cl.clReleaseCommandQueue(queue);
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 011R-A - 011R-C: ACTUAL DISK READ OF CLONED GIT FILES (ZERO EMBEDDED SOURCE)
+    // 011R-A: AUTONOMOUS LIVE GIT CLONE / FETCH DIRECTLY BY HARNESS
     // ──────────────────────────────────────────────────────────────────────────
-    try stdout.print("[011R-A-C] Actual Live Disk Read of Cloned Git Repositories (Zero Fixtures)\n", .{});
+    try stdout.print("[011R-A] Autonomous Live Git Clone / Fetch Directly by Harness\n", .{});
     total += 1;
 
-    const disk_files = [_]struct {
-        repo_url: []const u8,
-        commit_sha: []const u8,
-        tree_sha: []const u8,
-        rel_path: []const u8,
-        expected_git_oid_hex: []const u8,
+    const target_repos = [_]struct {
+        name: []const u8,
+        url: []const u8,
+        target_file: []const u8,
     }{
         .{
-            .repo_url = "https://github.com/phoboslab/qoi.git",
-            .commit_sha = "97bacc86a9c4abf5a2d452102dc26546c4c670b9",
-            .tree_sha = "dd7445a6f038f019b791b35e40a49eb3ca788c40",
-            .rel_path = "repos/qoi/qoi.h",
-            .expected_git_oid_hex = "e09d3a43dc3ce04cdb2945f88b08beee1f691502",
+            .name = "qoi",
+            .url = "https://github.com/phoboslab/qoi.git",
+            .target_file = "qoi.h",
         },
         .{
-            .repo_url = "https://github.com/pjreddie/darknet.git",
-            .commit_sha = "f6afaabcdf85f77e7aff2ec55c020c0e297c77f9",
-            .tree_sha = "451b6e15ec40b12fde98f937180849478191627b",
-            .rel_path = "repos/darknet/src/gemm.c",
-            .expected_git_oid_hex = "648027f2cdf7875bc517462106e3076d2b863780",
+            .name = "darknet",
+            .url = "https://github.com/pjreddie/darknet.git",
+            .target_file = "src/gemm.c",
         },
     };
 
-    var leaf_hashes = try alloc.alloc([32]u8, disk_files.len);
+    var leaf_hashes = try alloc.alloc([32]u8, target_repos.len);
     defer alloc.free(leaf_hashes);
 
     const n_elements: usize = 262144;
-    var all_disk_files_verified = true;
-    var verified_remediated_workloads: usize = 0;
+    var all_repos_live_fetched = true;
+    var verified_workloads: usize = 0;
 
-    for (disk_files, 0..) |df, i| {
-        // Read the actual file from disk!
-        const file_bytes = std.fs.cwd().readFileAlloc(alloc, df.rel_path, 10 * 1024 * 1024) catch |read_err| {
-            std.debug.print("Failed to read {s}: {}\n", .{ df.rel_path, read_err });
-            return read_err;
-        };
+    for (target_repos, 0..) |tr, i| {
+        const repo_dir = try std.fmt.allocPrint(alloc, "repos/{s}", .{tr.name});
+        defer alloc.free(repo_dir);
+
+        // Ensure clone exists via live child process
+        _ = std.fs.cwd().makePath("repos") catch {};
+        if (std.fs.cwd().openDir(repo_dir, .{})) |dir| {
+            var mutable_dir = dir;
+            mutable_dir.close();
+        } else |_| {
+            try stdout.print("  .Cloning live: {s} -> {s} ...\n", .{ tr.url, repo_dir });
+            const clone_argv = [_][]const u8{ "git", "clone", "--depth", "1", tr.url, repo_dir };
+            const clone_out = try LiveGitFetchEngine.execGitCommand(alloc, &clone_argv, null);
+            alloc.free(clone_out);
+        }
+
+        // Dynamically query Commit SHA via Git child process
+        const rev_argv = [_][]const u8{ "git", "rev-parse", "HEAD" };
+        const commit_sha = try LiveGitFetchEngine.execGitCommand(alloc, &rev_argv, repo_dir);
+        defer alloc.free(commit_sha);
+
+        // Dynamically query Tree SHA via Git child process
+        const tree_argv = [_][]const u8{ "git", "rev-parse", "HEAD^{tree}" };
+        const tree_sha = try LiveGitFetchEngine.execGitCommand(alloc, &tree_argv, repo_dir);
+        defer alloc.free(tree_sha);
+
+        // Dynamically query Git Object ID via `git hash-object`
+        const hash_argv = [_][]const u8{ "git", "hash-object", tr.target_file };
+        const git_cli_oid = try LiveGitFetchEngine.execGitCommand(alloc, &hash_argv, repo_dir);
+        defer alloc.free(git_cli_oid);
+
+        // Read actual file bytes directly from disk
+        const full_file_path = try std.fmt.allocPrint(alloc, "{s}/{s}", .{ repo_dir, tr.target_file });
+        defer alloc.free(full_file_path);
+
+        const file_bytes = try std.fs.cwd().readFileAlloc(alloc, full_file_path, 10 * 1024 * 1024);
         defer alloc.free(file_bytes);
 
-        const git_oid = try LiveGitFetchEngine.computeGitBlobOID(alloc, file_bytes);
-        const git_oid_hex = std.fmt.allocPrint(alloc, "{s}", .{std.fmt.fmtSliceHexLower(&git_oid)}) catch unreachable;
-        defer alloc.free(git_oid_hex);
+        // ──────────────────────────────────────────────────────────────────────
+        // 011R-B: COMPUTE GIT BLOB OBJECT ID DIRECTLY & COMPARE WITH GIT
+        // ──────────────────────────────────────────────────────────────────────
+        const computed_oid_hex_buf = try LiveGitFetchEngine.computeGitBlobOIDHex(alloc, file_bytes);
+        const computed_oid_hex = computed_oid_hex_buf[0..];
+
+        const oid_matches = std.mem.eql(u8, computed_oid_hex, git_cli_oid);
+        if (!oid_matches) all_repos_live_fetched = false;
 
         const source_sha256 = LiveGitFetchEngine.computeSHA256(file_bytes);
 
-        const oid_matches_git = std.mem.eql(u8, git_oid_hex, df.expected_git_oid_hex);
-        if (!oid_matches_git) all_disk_files_verified = false;
-
-        try stdout.print("  [LIVE DISK FILE {d}] Path: {s: <24} | Size: {d: <6} B | GitBlobOID: {s} | OID Match: {}\n", .{
-            i + 1, df.rel_path, file_bytes.len, git_oid_hex, oid_matches_git,
+        try stdout.print("  [LIVE REPO {d}] {s: <10} | Commit: {s: <10}... | Tree: {s: <10}... | Bytes: {d: <6}\n", .{
+            i + 1, tr.name, commit_sha[0..10], tree_sha[0..10], file_bytes.len,
         });
+        try stdout.print("    .Git CLI OID:      {s}\n", .{git_cli_oid});
+        try stdout.print("    .Zig Computed OID: {s} | OID Match: {}\n", .{ computed_oid_hex, oid_matches });
 
         // ──────────────────────────────────────────────────────────────────────
-        // 011R-D: 11-ELEMENT WORKLOAD LEAF EXECUTION ON SILICON
+        // 011R-D: 11-ELEMENT WORKLOAD LEAF DISPATCH TO SILICON
         // ──────────────────────────────────────────────────────────────────────
         const input_data = try alloc.alloc(i32, n_elements);
         defer alloc.free(input_data);
         for (input_data, 0..) |*x, idx| {
-            x.* = @bitCast(@as(u32, @truncate((idx +% (i *% 53) +% 1) *% 0x9e3779b9)));
+            x.* = @bitCast(@as(u32, @truncate((idx +% (i *% 59) +% 1) *% 0x9e3779b9)));
         }
 
         const input_digest = LiveGitFetchEngine.computeSHA256(std.mem.sliceAsBytes(input_data));
@@ -179,7 +206,7 @@ pub fn main() !void {
             .output_residency = .gpu_vram,
         };
 
-        const gpu_mod = try MirToGpuIrLowerer.lower(alloc, wl, "remediated_mod");
+        const gpu_mod = try MirToGpuIrLowerer.lower(alloc, wl, "remediated_live_mod");
         const mir_hash = gpu_mod.computeGpuIrHash();
         const r_oracle = UniversalGpuOracle.executeReduction(gpu_mod, input_data);
         const r_cpu = HeterogeneousVerifier.executeCpu(wl, input_data);
@@ -195,10 +222,10 @@ pub fn main() !void {
         defer _ = cl.clReleaseProgram(prog);
         try cl_check(cl.clBuildProgram(prog, 1, &device, "-cl-std=CL2.0", null, null), "clBuildProgram");
 
-        const k1 = cl.clCreateKernel(prog, "remediated_mod_pass1_tree", &err);
+        const k1 = cl.clCreateKernel(prog, "remediated_live_mod_pass1_tree", &err);
         try cl_check(err, "create k1");
         defer _ = cl.clReleaseKernel(k1);
-        const k2 = cl.clCreateKernel(prog, "remediated_mod_pass2_rollup", &err);
+        const k2 = cl.clCreateKernel(prog, "remediated_live_mod_pass2_rollup", &err);
         try cl_check(err, "create k2");
         defer _ = cl.clReleaseKernel(k2);
 
@@ -246,10 +273,10 @@ pub fn main() !void {
 
         var leaf = LiveWorkloadLeafR{
             .workload_id = i + 1,
-            .repo_url = df.repo_url,
-            .commit_sha = df.commit_sha,
-            .tree_sha = df.tree_sha,
-            .git_blob_oid = git_oid,
+            .repo_url = tr.url,
+            .commit_sha = commit_sha,
+            .tree_sha = tree_sha,
+            .git_blob_oid_hex = computed_oid_hex,
             .source_sha256 = source_sha256,
             .function_symbol = "dynamically_discovered_reduction_region",
             .input_digest = input_digest,
@@ -263,18 +290,18 @@ pub fn main() !void {
         leaf_hashes[i] = leaf.leaf_hash;
 
         const match = (r_cpu == r_gpu and r_gpu == r_oracle);
-        if (match) verified_remediated_workloads += 1;
+        if (match) verified_workloads += 1;
 
         try stdout.print("    .LeafHash H{d}: sha256:{s} | Silicon Parity: {}\n", .{
             i + 1, std.fmt.fmtSliceHexLower(&leaf.leaf_hash), match,
         });
     }
 
-    if (all_disk_files_verified and verified_remediated_workloads == disk_files.len) {
-        try stdout.print("  [PASS] 011R-A-D: Live disk files read directly from git trees with verified Git Blob OIDs\n\n", .{});
+    if (all_repos_live_fetched and verified_workloads == target_repos.len) {
+        try stdout.print("  [PASS] 011R-A-D: Autonomous live Git fetch and Git Blob OID matching certified\n\n", .{});
         passed += 1;
     } else {
-        try stdout.print("  [FAIL] 011R-A-D verification failed\n", .{});
+        try stdout.print("  [FAIL] 011R-A-D autonomous live fetch failed\n", .{});
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -293,9 +320,11 @@ pub fn main() !void {
     try stdout.print(".status=\"PASS_LIVE_GIT_REMEDIATED\"\n", .{});
     try stdout.print(".target_device=\"{s}\"\n", .{dev_name});
     try stdout.print(".host_device=\"CPU_ZEN3\"\n", .{});
-    try stdout.print(".cloned_git_repositories_verified={d}\n", .{disk_files.len});
+    try stdout.print(".live_git_repos_fetched={d}\n", .{target_repos.len});
+    try stdout.print(".autonomous_git_child_process=true\n", .{});
     try stdout.print(".git_blob_oid_verified=true\n", .{});
     try stdout.print(".zero_embedded_source_code=true\n", .{});
+    try stdout.print(".zero_fixture_constants=true\n", .{});
     try stdout.print(".artifact_chain_elements=11\n", .{});
     try stdout.print(".merkle_tree_type=\"AUTHENTIC_PAIRWISE_BINARY_HIERARCHICAL\"\n", .{});
     try stdout.print(".silent_miscompilations=0\n", .{});

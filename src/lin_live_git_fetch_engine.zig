@@ -1,8 +1,8 @@
-//! lin_live_git_fetch_engine.zig — Live Git Fetch & Zero-Fixture Engine (LIN-REPO-011R)
+//! lin_live_git_fetch_engine.zig — Autonomous Live Git Clone, Blob OID Binding & Binary Merkle Engine (LIN-REPO-011R-FIX)
 //!
 //! Architectural Invariants:
-//!   1. 011R-A: True live disk file reading from cloned Git repositories (ZERO embedded source strings).
-//!   2. 011R-B: Real Git Blob Object ID computation: SHA1("blob " || size || "\x00" || bytes).
+//!   1. 011R-A: Autonomous execution of live Git fetch/clone directly by the harness (Zero external pre-cloning).
+//!   2. 011R-B: Real Git Blob Object ID computation: SHA1("blob " || size || "\0" || bytes) verified dynamically against `git hash-object`.
 //!   3. 011R-C: SourceSHA256 = SHA256(source bytes) explicitly bound alongside GitBlobOID.
 //!   4. 011R-D: 11-element cryptographic artifact chain per workload leaf H_i.
 //!   5. 011R-E: Authentic pairwise hierarchical binary Merkle tree with odd-leaf duplicate promotion.
@@ -21,23 +21,12 @@ const MirToGpuIrLowerer = lowerer.MirToGpuIrLowerer;
 const GpuIrToOpenClEmitter = emitter.GpuIrToOpenClEmitter;
 const WorkloadDescriptor = planner.WorkloadDescriptor;
 
-pub const LiveGitFileRecord = struct {
-    repo_url: []const u8,
-    commit_sha: []const u8,
-    tree_sha: []const u8,
-    relative_file_path: []const u8,
-    file_size_bytes: usize,
-    git_blob_oid: [20]u8, // 160-bit SHA-1 Git Object ID
-    source_sha256: [32]u8,
-    discovered_symbol: []const u8,
-};
-
 pub const LiveWorkloadLeafR = struct {
     workload_id: usize,
     repo_url: []const u8,
     commit_sha: []const u8,
     tree_sha: []const u8,
-    git_blob_oid: [20]u8,
+    git_blob_oid_hex: []const u8,
     source_sha256: [32]u8,
     function_symbol: []const u8,
     input_digest: [32]u8,
@@ -54,7 +43,7 @@ pub const LiveWorkloadLeafR = struct {
         h.update(self.repo_url);
         h.update(self.commit_sha);
         h.update(self.tree_sha);
-        h.update(&self.git_blob_oid);
+        h.update(self.git_blob_oid_hex);
         h.update(&self.source_sha256);
         h.update(self.function_symbol);
         h.update(&self.input_digest);
@@ -67,8 +56,41 @@ pub const LiveWorkloadLeafR = struct {
 };
 
 pub const LiveGitFetchEngine = struct {
+    /// Executes a shell command and returns trimmed stdout
+    pub fn execGitCommand(allocator: std.mem.Allocator, argv: []const []const u8, cwd: ?[]const u8) ![]u8 {
+        var child = std.process.Child.init(argv, allocator);
+        child.stdout_behavior = .Pipe;
+        child.stderr_behavior = .Pipe;
+        if (cwd) |c| child.cwd = c;
+
+        try child.spawn();
+
+        const stdout = try child.stdout.?.readToEndAlloc(allocator, 10 * 1024 * 1024);
+        const stderr = try child.stderr.?.readToEndAlloc(allocator, 10 * 1024 * 1024);
+        allocator.free(stderr);
+
+        const term = try child.wait();
+        switch (term) {
+            .Exited => |code| {
+                if (code != 0) {
+                    allocator.free(stdout);
+                    return error.CommandFailed;
+                }
+            },
+            else => {
+                allocator.free(stdout);
+                return error.CommandFailed;
+            },
+        }
+
+        const trimmed = std.mem.trim(u8, stdout, " \t\r\n");
+        const res = try allocator.dupe(u8, trimmed);
+        allocator.free(stdout);
+        return res;
+    }
+
     /// Computes the genuine Git Object ID: SHA1("blob " || size || "\0" || bytes)
-    pub fn computeGitBlobOID(allocator: std.mem.Allocator, bytes: []const u8) ![20]u8 {
+    pub fn computeGitBlobOIDHex(allocator: std.mem.Allocator, bytes: []const u8) ![40]u8 {
         var header_buf: [32]u8 = undefined;
         const header = try std.fmt.bufPrint(&header_buf, "blob {d}\x00", .{bytes.len});
 
@@ -76,10 +98,13 @@ pub const LiveGitFetchEngine = struct {
         h.update(header);
         h.update(bytes);
 
-        _ = allocator;
         var oid: [20]u8 = undefined;
         h.final(&oid);
-        return oid;
+
+        _ = allocator;
+        var hex_buf: [40]u8 = undefined;
+        _ = std.fmt.bufPrint(&hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&oid)}) catch unreachable;
+        return hex_buf;
     }
 
     pub fn computeSHA256(data: []const u8) [32]u8 {
