@@ -7637,13 +7637,13 @@ pub fn main() !void {
                 if (actual == exp) {
                     try stdout.print(".verdict=\"CONFIRMED\"\n", .{});
                 } else {
-                    try stdout.print(".verdict=\"REFUTED\"\n", .{});
+                    try stdout.print(".verdict=\"REFUTED\"\n.reason=\"oracle_mismatch\"\n", .{});
                 }
             } else {
                 if (actual != 0) {
                     try stdout.print(".verdict=\"CONFIRMED\"\n", .{});
                 } else {
-                    try stdout.print(".verdict=\"REFUTED\"\n", .{});
+                    try stdout.print(".verdict=\"REFUTED\"\n.reason=\"oracle_mismatch\"\n", .{});
                 }
             }
             return;
@@ -7659,13 +7659,13 @@ pub fn main() !void {
             if (actual == exp) {
                 try stdout.print(".verdict=\"CONFIRMED\"\n", .{});
             } else {
-                try stdout.print(".verdict=\"REFUTED\"\n", .{});
+                try stdout.print(".verdict=\"REFUTED\"\n.reason=\"oracle_mismatch\"\n", .{});
             }
         } else {
             if (actual != 0) {
                 try stdout.print(".verdict=\"CONFIRMED\"\n", .{});
             } else {
-                try stdout.print(".verdict=\"REFUTED\"\n", .{});
+                try stdout.print(".verdict=\"REFUTED\"\n.reason=\"oracle_mismatch\"\n", .{});
             }
         }
         return;
