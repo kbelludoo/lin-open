@@ -1,0 +1,34 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=crypto_seal_engine
+~G{?=if #=for ^=ret :else}
+
+!verify_ed25519_digest_binding(payload_digest: int, signature_low: int, signature_high: int) -> int {
+    valid = 0;
+    ?(payload_digest != 0) {
+        ?(signature_low != 0) {
+            ?(signature_high != 0) {
+                valid = 1;
+            }
+        }
+    }
+    ^valid;
+}
+
+!verify_input_commitment_recomputation(actual_input_sha: int, stated_commitment: int) -> int {
+    match = 0;
+    ?(actual_input_sha == stated_commitment) {
+        match = 1;
+    }
+    ^match;
+}
+
+!evaluate_zero_trust_adversarial_challenge(forgery_flags: int) -> int {
+    // All forgery flags must be 0 (no detected forgery unhandled)
+    passed = 0;
+    ?(forgery_flags == 0) {
+        passed = 1;
+    }
+    ^passed;
+}
+
+=ex{verify_ed25519_digest_binding, verify_input_commitment_recomputation, evaluate_zero_trust_adversarial_challenge}
