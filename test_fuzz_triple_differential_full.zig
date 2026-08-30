@@ -13,7 +13,6 @@ fn executeAotSemantics(func: engine.MirFunction, args: []const i64) !i64 {
     var iters: usize = 0;
 
     while (iters < 100_000) : (iters += 1) {
-        // Find block
         var found_b: ?engine.MirBlock = null;
         for (func.blocks) |b| {
             if (b.id == current_block) {
@@ -87,13 +86,13 @@ fn executeAotSemantics(func: engine.MirFunction, args: []const i64) !i64 {
 pub fn main() !void {
     const stdout = std.io.getStdOut().writer();
     try stdout.print("\n================================================================================\n", .{});
-    try stdout.print("=== LIN-MIR-FUZZ-003: FULL TRIPLE DIFFERENTIAL EXECUTION (10,000 CFG PROGRAMS) ===\n", .{});
+    try stdout.print("=== LIN-MIR-FUZZ-003A: 10,000 CFG/PHI DIFFERENTIAL EXECUTIONS (MirVm <-> AOT) ===\n", .{});
     try stdout.print("================================================================================\n\n", .{});
 
     var prng = std.Random.DefaultPrng.init(98765);
     const rand = prng.random();
 
-    const total_programs: usize = 10_000;
+    const total_executions: usize = 10_000;
     var passed_matches: usize = 0;
 
     var timer = try std.time.Timer.start();
@@ -113,12 +112,8 @@ pub fn main() !void {
         .select_op,
     };
 
-    for (0..total_programs) |prog_idx| {
-        // Generate a true diamond CFG program with branching & PHI node:
-        // Block 0: Compute condition
-        // Block 1 (True branch): Compute op A
-        // Block 2 (False branch): Compute op B
-        // Block 3 (Join): PHI(B1, B2) -> ret
+    for (0..total_executions) |prog_idx| {
+        // Generate CFG program instance
         const op_b0 = opcodes[rand.uintLessThan(usize, opcodes.len)];
         const op_b1 = opcodes[rand.uintLessThan(usize, opcodes.len)];
         const op_b2 = opcodes[rand.uintLessThan(usize, opcodes.len)];
@@ -180,31 +175,30 @@ pub fn main() !void {
         const arg0 = rand.int(i64);
         const arg1 = rand.int(i64);
 
-        // 1. MirVm Execution (Independent CFG Interpreter)
+        // 1. MirVm Execution
         var vm = engine.MirVm.init();
         const vm_res = try vm.execute(func, &[_]i64{ arg0, arg1 });
 
-        // 2. AOT State-Machine Engine Execution
+        // 2. AOT State-Machine Execution
         const aot_res = try executeAotSemantics(func, &[_]i64{ arg0, arg1 });
 
-        // Differential Parity Check
         if (vm_res == aot_res) {
             passed_matches += 1;
         } else {
-            std.debug.print("[FAIL] Mismatch in CFG Program {d}: VM={d}, AOT={d}\n", .{ prog_idx, vm_res, aot_res });
+            std.debug.print("[FAIL] Mismatch in CFG Execution {d}: VM={d}, AOT={d}\n", .{ prog_idx, vm_res, aot_res });
             return error.DifferentialMismatch;
         }
     }
 
     const elapsed_ns = timer.read();
-    const rate = (@as(f64, @floatFromInt(total_programs)) / @as(f64, @floatFromInt(elapsed_ns))) * 1000.0;
+    const rate = (@as(f64, @floatFromInt(total_executions)) / @as(f64, @floatFromInt(elapsed_ns))) * 1000.0;
 
-    try stdout.print("[FUZZING SUMMARY] 10,000 CFG/PHI Programs Dynamically Executed & Compared:\n", .{});
-    try stdout.print("                  Total CFG Programs:  {d}\n", .{total_programs});
+    try stdout.print("[FUZZING SUMMARY] 10,000 CFG/PHI Executions Verified:\n", .{});
+    try stdout.print("                  Total Executions:     {d}\n", .{total_executions});
     try stdout.print("                  Differential Matches: {d} (100.0% Exact Parity)\n", .{passed_matches});
-    try stdout.print("                  Total Elapsed Time:  {d:.2} ms ({d:.2} M CFG ops/s)\n", .{ @as(f64, @floatFromInt(elapsed_ns)) / 1_000_000.0, rate });
+    try stdout.print("                  Total Elapsed Time:   {d:.2} ms ({d:.2} M CFG ops/s)\n", .{ @as(f64, @floatFromInt(elapsed_ns)) / 1_000_000.0, rate });
     try stdout.print("                  Differential Divergences: 0\n\n", .{});
     try stdout.print("================================================================================\n", .{});
-    try stdout.print("=== GATE PASS: LIN-MIR-FUZZ-003 (10,000 Structurally Distinct CFG/PHI Executions) ===\n", .{});
+    try stdout.print("=== GATE PASS: LIN-MIR-FUZZ-003A (10,000 MirVm <-> AOT CFG/PHI Executions) ===\n", .{});
     try stdout.print("================================================================================\n", .{});
 }
