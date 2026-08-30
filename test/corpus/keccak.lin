@@ -8,21 +8,19 @@
 }
 
 !keccak_theta_c(a0: int, a1: int, a2: int, a3: int, a4: int): int {
-  ^a0 ^ a1 ^ a2 ^ a3 ^ a4;
+  c = a0 ^ a1 ^ a2 ^ a3 ^ a4;
+  ^c;
 }
 
 !keccak_theta_d(c_prev: int, c_next: int): int {
-  ^c_prev ^ rotl64(c_next, 1);
+  d = c_prev ^ rotl64(c_next, 1);
+  ^d;
 }
 
 !test_keccak_vector(): int {
-  // Test with sample lanes: 1, 2, 4, 8, 16
-  // c = 1 ^ 2 ^ 4 ^ 8 ^ 16 = 31
   c = keccak_theta_c(1, 2, 4, 8, 16);
   ?(c != 31){ ^0 };
 
-  // d = c_prev ^ rotl64(c_next, 1)
-  // c_prev = 31, c_next = 1 -> rotl64(1, 1) = 2 -> d = 31 ^ 2 = 29
   d = keccak_theta_d(31, 1);
   ?(d != 29){ ^0 };
   ^1;
