@@ -1,0 +1,37 @@
+@RULEL:LIN_VERIFIABLE_SPEC:1.0.0
+~R{.s=scope .f=formats .c=canonicalization .v=verdict}
+
+.s{
+  spec_name="LIN Sovereign External Verifiable Computation Specification"
+  version="1.0.0"
+  status="FROZEN_STABLE"
+  governance="AIRGAP_THIRD_PARTY_INTEROPERABILITY"
+  target_profiles=["SLSA_L4_ALIGNED", "NIST_SP_800_218_ALIGNED", "EU_CRA_TECHNICAL_EVIDENCE_ALIGNED"]
+}
+
+.f{
+  bundle_format="STANDALONE_DETERMINISTIC_AUDIT_PACKAGE"
+  serialization="RULEL_L1c_DETERMINISTIC_BYTE_ENCODING"
+  hash_primitive="SHA-256 (FIPS 180-4) + Domain Separation"
+  signature_scheme="Ed25519 (RFC 8032)"
+  tree_construction="Balanced Pairwise Binary Merkle Tree"
+  temporal_model="Monotonic State Progression Accumulator S_t"
+  notarization_model="Multi-Party Sovereign Witness Quorum M-of-N"
+  succession_model="Cryptographically Linked Roster Transition Proof T_t"
+}
+
+.c{
+  domain_separation_leaf="leaf:<type>:<fields>"
+  domain_separation_node="node:<left_hash>:<right_hash>"
+  domain_separation_epoch="lin:epoch:v1:<epoch>:<prev_root>:<attestations>:<revocations>"
+  domain_separation_sth="transparency:sth:v1:<log_id>:<size>:<epoch>:<state_root>:<prev_sth>:<timestamp>"
+  domain_separation_roster="lin:roster-transition:v1:<epoch>:<r0_hash>:<r1_hash>:<policy>:<proof>"
+  failure_policy="STRICT_FAIL_CLOSED_ON_ANY_DIVERGENCE"
+  producer_decoupling="VERIFIER_MUST_NEVER_INVOKE_PRODUCER_COMPILER_OR_PLANNER"
+}
+
+.v{
+  level_1_structural="lin verify <bundle.rulel>"
+  level_2_execution="lin verify --execution <bundle.rulel>"
+  level_3_complete="lin verify-all <bundle.rulel> --trust-anchor <key.hex> --report <report.rulel>"
+}

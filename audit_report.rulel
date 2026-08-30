@@ -1,0 +1,34 @@
+@RULEL:LIN_AUDIT_REPORT:1.0.0
+~R{.s=subject .e=evidence .v=verdict .p=proof}
+.s{
+  audit_id="urn:lin:audit:2026-08-30:001"
+  bundle_file="bundle_attestation.rulel"
+  bundle_digest="sha256:b9d1b80b517f69d15d038ad3afa9342a79b0155d35b508d7de2de0b0f13f7c41"
+  trust_anchor="cdfee9f8cdd5a6bd19238941cdca618a1bbb17ba60c04e3e32c74d5ebdc6bafd"
+  verifier_schema="LIN_SOVEREIGN_EXTERNAL_VERIFIER_v1.0"
+  audit_timestamp="2026-08-30T14:08:00Z"
+}
+.e{
+  execution_evidence="VERIFIED"
+  hardware_identity="VERIFIED"
+  mir_integrity="VERIFIED"
+  merkle_supply_chain="VERIFIED"
+  temporal_provenance="VERIFIED"
+  external_checkpoint="VERIFIED"
+  roster_succession="VERIFIED"
+  anti_rollback="VERIFIED"
+  anti_equivocation="VERIFIED"
+  quorum_policy="VERIFIED"
+}
+.v{
+  common_mode_divergence=0
+  verification_errors=0
+  final_verdict="PASS"
+  verifier_spec_version="LIN-VERIFY/1.0"
+}
+.p{
+  independence_certified=true
+  producer_compiler_invoked=false
+  producer_planner_invoked=false
+  zero_trust_reproduced=true
+}
