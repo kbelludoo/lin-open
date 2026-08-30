@@ -1,16 +1,16 @@
-@RULEL:LIN_ATTEST_SPEC:1.7.0
+@RULEL:LIN_ATTEST_SPEC:1.8.0
 ~R{.s=schema .c=compliance .p=provenance .d=determinism .h=hardware .k=cryptography .a=adversarial}
 .s{
   architecture="ZERO_TRUST_PHYSICAL_SILICON_BOUND"
-  type="DETERMINISTIC_SUPPLY_CHAIN_ATTESTATION_v0.5"
+  type="DETERMINISTIC_SUPPLY_CHAIN_ATTESTATION_v0.6"
   format="RULEL"
-  merkle_type="TRUE_BINARY_HIERARCHICAL_MERKLE_TREE"
+  merkle_type="8_LEAF_BALANCED_DOMAIN_SEPARATED_BINARY_MERKLE_TREE"
 }
 .h{
   execution_mode="PHYSICAL_SILICON_DISPATCH"
   target_device="gfx1030"
   runtime="AMD_ROCM_OPENCL_2.0"
-  fingerprint_policy="STRICT_VENDOR_NAME_DRIVER_COMPUTE_UNITS_BINDING"
+  identity_policy="STRICT_EXACT_DEVICE_NAME_AND_FINGERPRINT"
 }
 .k{
   signature_algorithm="Ed25519"
@@ -24,14 +24,24 @@
   guarantee="PHYSICAL_SILICON_EXACT_ORACLE_PARITY"
 }
 .p{
-  tree_structure=[
+  leaves=[
     "L0: leaf:source:GitBlobOID",
     "L1: leaf:mir:MirSemanticHash",
     "L2: leaf:kernel:LoweringHash",
     "L3: leaf:input:InputCommitment",
+    "L4: leaf:hardware:HardwareFingerprint",
+    "L5: leaf:exec:cpu:CpuResult",
+    "L6: leaf:exec:gpu:GpuResult",
+    "L7: leaf:policy:StandardsProfile"
+  ]
+  tree_nodes=[
     "H01: node:L0:L1",
     "H23: node:L2:L3",
-    "Root: node:H01:H23"
+    "H45: node:L4:L5",
+    "H67: node:L6:L7",
+    "H0123: node:H01:H23",
+    "H4567: node:H45:H67",
+    "Root: node:H0123:H4567"
   ]
 }
 .d{
@@ -48,7 +58,7 @@
     "MUT_GPU_RESULT_DOC",
     "MUT_ORACLE_RESULT_DOC",
     "MUT_MERKLE_ROOT_DOC",
-    "MUT_PUBKEY_SUBST_DOC",
+    "MUT_HARDWARE_FP_DOC",
     "MUT_TARGET_DEVICE_DOC"
   ]
   policy="ALL_MUTATIONS_MUST_BE_REJECTED"

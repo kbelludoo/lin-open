@@ -1,4 +1,4 @@
-@RULEL:LIN_ATTEST:1.7.0
+@RULEL:LIN_ATTEST:1.8.0
 ~R{.s=schema .c=claim .e=evidence .v=verification .p=proof}
 .s{
   id="urn:lin:attestation:2026-08-30:004"
@@ -23,21 +23,22 @@
   kernel_hash="sha256:428ee42e0d5745f6f91053f06646f402f662d4cce0e34e0a1435c0589d4b5e22"
   kernel_symbol="kernel_arithmetic"
   input_commitment="sha256:e0b249383ec6bb63adfd42a94a17b64c3116e8c08c894b98ff58286001886122"
-  merkle_root="sha256:509c941afa418813149063aeb2ccd598d76e4912f41e7e84ace0ff10cae8e9d0"
+  merkle_root="sha256:dc29dbc345bcff7e3ceaf5fd27d117c5343a26bc431f4ef8a9ff76c36b556b46"
 }
 .v{
   recomputed_source_binding=true
   recomputed_mir_coherence=true
   recomputed_kernel_lowering=true
   recomputed_input_commitment=true
-  recomputed_binary_merkle_root=true
+  recomputed_hardware_fingerprint=true
+  recomputed_8leaf_merkle_root=true
   reproduced_oracle_execution=true
   zero_trust_adversarial_passed=true
   attestation_status="SEALED_CRYPTOGRAPHICALLY"
 }
 .p{
   type="Ed25519Signature2020"
-  created="2026-08-30T11:52:00Z"
+  created="2026-08-30T11:55:00Z"
   pubkey_hex="cdfee9f8cdd5a6bd19238941cdca618a1bbb17ba60c04e3e32c74d5ebdc6bafd"
-  signature_hex="041c4e74add739cf15603876bd2316f7e3be2d4d67801fe01116269e7185e88ba4c3428d5c33a16afa8167f9235e8fb9ac6079ab480ed8b13cae5c27c0d1b000"
+  signature_hex="fdfa8e5bb89fe5ec19b66b6d92e11535fa97b1805957ae73b91ed67a54e43dd0061d60761961772aca19743c2ca6576126b25240dbfcd8282be868d1eae6d70b"
 }

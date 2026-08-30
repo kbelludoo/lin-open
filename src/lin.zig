@@ -7485,10 +7485,7 @@ pub fn main() !void {
         var cu_count: cl.cl_uint = 0;
         _ = cl.clGetDeviceInfo(dev, cl.CL_DEVICE_MAX_COMPUTE_UNITS, @sizeOf(cl.cl_uint), &cu_count, null);
 
-        const is_device_match = (std.mem.eql(u8, actual_device_name, target_device) or
-            (std.mem.eql(u8, target_device, "gfx1030") and std.mem.indexOf(u8, actual_device_name, "gfx1030") != null) or
-            (std.mem.eql(u8, target_device, "gfx1030") and (std.mem.indexOf(u8, actual_device_name, "RX 6600") != null or std.mem.indexOf(u8, actual_device_name, "Radeon") != null)));
-
+        const is_device_match = std.mem.eql(u8, actual_device_name, target_device);
         if (!is_device_match) {
             try stderr.print("attest-issue: Target device mismatch! Requested '{s}', actual hardware is '{s}' by '{s}'\n", .{ target_device, actual_device_name, actual_vendor });
             return error.TargetDeviceMismatch;
@@ -7579,7 +7576,7 @@ pub fn main() !void {
         try stdout.print("  GPU Silicon Execution ..... R_gpu = {d} on {s} [PASS]\n", .{ r_gpu_physical, target_device });
         try stdout.print("  Bit-Exact Silicon Parity .. R_cpu == R_gpu == R_oracle [BIT-EXACT MATCH]\n", .{});
 
-        // 5. True Binary Hierarchical Merkle Tree Computation
+        // 5. 8-Leaf Balanced Domain-Separated Binary Merkle Tree Computation
         // L0: leaf:source:
         var h_l0 = std.crypto.hash.sha2.Sha256.init(.{});
         h_l0.update("leaf:source:");
@@ -7608,7 +7605,38 @@ pub fn main() !void {
         var l3: [32]u8 = undefined;
         h_l3.final(&l3);
 
-        // Internal Node H01
+        // L4: leaf:hardware:
+        var h_l4 = std.crypto.hash.sha2.Sha256.init(.{});
+        h_l4.update("leaf:hardware:");
+        h_l4.update(&fp_hex);
+        var l4: [32]u8 = undefined;
+        h_l4.final(&l4);
+
+        // L5: leaf:exec:cpu:
+        var h_l5 = std.crypto.hash.sha2.Sha256.init(.{});
+        h_l5.update("leaf:exec:cpu:");
+        var cpu_res_buf: [16]u8 = undefined;
+        const cpu_res_str = try std.fmt.bufPrint(&cpu_res_buf, "{d}", .{r_cpu});
+        h_l5.update(cpu_res_str);
+        var l5: [32]u8 = undefined;
+        h_l5.final(&l5);
+
+        // L6: leaf:exec:gpu:
+        var h_l6 = std.crypto.hash.sha2.Sha256.init(.{});
+        h_l6.update("leaf:exec:gpu:");
+        var gpu_res_buf: [16]u8 = undefined;
+        const gpu_res_str = try std.fmt.bufPrint(&gpu_res_buf, "{d}", .{r_gpu_physical});
+        h_l6.update(gpu_res_str);
+        var l6: [32]u8 = undefined;
+        h_l6.final(&l6);
+
+        // L7: leaf:policy:
+        var h_l7 = std.crypto.hash.sha2.Sha256.init(.{});
+        h_l7.update("leaf:policy:EU_CRA_NIST_SP_800_218_SLSA_L4");
+        var l7: [32]u8 = undefined;
+        h_l7.final(&l7);
+
+        // Internal Level 1 Nodes
         var h_01 = std.crypto.hash.sha2.Sha256.init(.{});
         h_01.update("node:");
         h_01.update(&l0);
@@ -7616,7 +7644,6 @@ pub fn main() !void {
         var node_01: [32]u8 = undefined;
         h_01.final(&node_01);
 
-        // Internal Node H23
         var h_23 = std.crypto.hash.sha2.Sha256.init(.{});
         h_23.update("node:");
         h_23.update(&l2);
@@ -7624,21 +7651,55 @@ pub fn main() !void {
         var node_23: [32]u8 = undefined;
         h_23.final(&node_23);
 
+        var h_45 = std.crypto.hash.sha2.Sha256.init(.{});
+        h_45.update("node:");
+        h_45.update(&l4);
+        h_45.update(&l5);
+        var node_45: [32]u8 = undefined;
+        h_45.final(&node_45);
+
+        var h_67 = std.crypto.hash.sha2.Sha256.init(.{});
+        h_67.update("node:");
+        h_67.update(&l6);
+        h_67.update(&l7);
+        var node_67: [32]u8 = undefined;
+        h_67.final(&node_67);
+
+        // Internal Level 2 Nodes
+        var h_0123 = std.crypto.hash.sha2.Sha256.init(.{});
+        h_0123.update("node:");
+        h_0123.update(&node_01);
+        h_0123.update(&node_23);
+        var node_0123: [32]u8 = undefined;
+        h_0123.final(&node_0123);
+
+        var h_4567 = std.crypto.hash.sha2.Sha256.init(.{});
+        h_4567.update("node:");
+        h_4567.update(&node_45);
+        h_4567.update(&node_67);
+        var node_4567: [32]u8 = undefined;
+        h_4567.final(&node_4567);
+
         // Root Node
         var h_root = std.crypto.hash.sha2.Sha256.init(.{});
         h_root.update("node:");
-        h_root.update(&node_01);
-        h_root.update(&node_23);
+        h_root.update(&node_0123);
+        h_root.update(&node_4567);
         var merkle_digest: [32]u8 = undefined;
         h_root.final(&merkle_digest);
         var merkle_hex: [64]u8 = undefined;
         _ = try std.fmt.bufPrint(&merkle_hex, "{s}", .{std.fmt.fmtSliceHexLower(&merkle_digest)});
-        try stdout.print("CRYPTOGRAPHIC PROVENANCE (BINARY MERKLE TREE):\n", .{});
+
+        try stdout.print("CRYPTOGRAPHIC PROVENANCE (8-LEAF BINARY MERKLE TREE):\n", .{});
         try stdout.print("  Leaf L0 (Source) .......... sha256:{s}...\n", .{std.fmt.fmtSliceHexLower(l0[0..8])});
         try stdout.print("  Leaf L1 (MIR) ............. sha256:{s}...\n", .{std.fmt.fmtSliceHexLower(l1[0..8])});
         try stdout.print("  Leaf L2 (Kernel) .......... sha256:{s}...\n", .{std.fmt.fmtSliceHexLower(l2[0..8])});
         try stdout.print("  Leaf L3 (Input) ........... sha256:{s}...\n", .{std.fmt.fmtSliceHexLower(l3[0..8])});
-        try stdout.print("  True Binary Merkle Root ... sha256:{s} [PASS]\n", .{merkle_hex});
+        try stdout.print("  Leaf L4 (Hardware FP) ..... sha256:{s}...\n", .{std.fmt.fmtSliceHexLower(l4[0..8])});
+        try stdout.print("  Leaf L5 (CPU Exec) ........ sha256:{s}...\n", .{std.fmt.fmtSliceHexLower(l5[0..8])});
+        try stdout.print("  Leaf L6 (GPU Exec) ........ sha256:{s}...\n", .{std.fmt.fmtSliceHexLower(l6[0..8])});
+        try stdout.print("  Leaf L7 (Policy) .......... sha256:{s}...\n", .{std.fmt.fmtSliceHexLower(l7[0..8])});
+        try stdout.print("  8-Leaf Merkle Tree Root ... sha256:{s} [PASS]\n", .{merkle_hex});
 
         // 6. External Authority Key Handling
         var authority_seed: [32]u8 = undefined;
@@ -7679,7 +7740,7 @@ pub fn main() !void {
 
         // 7. Emit Canonical RULEL Attestation Document
         const rulel_doc = try std.fmt.allocPrint(LIA_ALLOC,
-            \\@RULEL:LIN_ATTEST:1.7.0
+            \\@RULEL:LIN_ATTEST:1.8.0
             \\~R{{.s=schema .c=claim .e=evidence .v=verification .p=proof}}
             \\.s{{
             \\  id="urn:lin:attestation:2026-08-30:004"
@@ -7711,14 +7772,15 @@ pub fn main() !void {
             \\  recomputed_mir_coherence=true
             \\  recomputed_kernel_lowering=true
             \\  recomputed_input_commitment=true
-            \\  recomputed_binary_merkle_root=true
+            \\  recomputed_hardware_fingerprint=true
+            \\  recomputed_8leaf_merkle_root=true
             \\  reproduced_oracle_execution=true
             \\  zero_trust_adversarial_passed=true
             \\  attestation_status="SEALED_CRYPTOGRAPHICALLY"
             \\}}
             \\.p{{
             \\  type="Ed25519Signature2020"
-            \\  created="2026-08-30T11:52:00Z"
+            \\  created="2026-08-30T11:55:00Z"
             \\  pubkey_hex="{s}"
             \\  signature_hex="{s}"
             \\}}
@@ -7945,7 +8007,7 @@ pub fn main() !void {
                     return error.InputCommitmentMismatch;
                 }
 
-                // 4. Physical AMD GPU Discovery & Hardware Identity Verification
+                // 4. Physical AMD GPU Discovery & Strict Hardware Identity Verification
                 const cl = @cImport({
                     @cDefine("CL_TARGET_OPENCL_VERSION", "200");
                     @cInclude("CL/cl.h");
@@ -7990,10 +8052,7 @@ pub fn main() !void {
                 var cu_count: cl.cl_uint = 0;
                 _ = cl.clGetDeviceInfo(dev, cl.CL_DEVICE_MAX_COMPUTE_UNITS, @sizeOf(cl.cl_uint), &cu_count, null);
 
-                const is_device_match = (std.mem.eql(u8, actual_device_name, doc.target_device) or
-                    (std.mem.eql(u8, doc.target_device, "gfx1030") and std.mem.indexOf(u8, actual_device_name, "gfx1030") != null) or
-                    (std.mem.eql(u8, doc.target_device, "gfx1030") and (std.mem.indexOf(u8, actual_device_name, "RX 6600") != null or std.mem.indexOf(u8, actual_device_name, "Radeon") != null)));
-
+                const is_device_match = std.mem.eql(u8, actual_device_name, doc.target_device);
                 if (!is_device_match) {
                     return error.TargetDeviceMismatch;
                 }
@@ -8081,7 +8140,7 @@ pub fn main() !void {
                 if (doc.gpu_result != r_gpu_physical) return error.PhysicalGpuClaimMismatch;
                 if (r_gpu_physical != r_cpu) return error.SiliconParityDivergence;
 
-                // 6. True Binary Hierarchical Merkle Tree Reconstruction
+                // 6. 8-Leaf Balanced Domain-Separated Binary Merkle Tree Reconstruction
                 // L0: leaf:source:
                 var h_l0 = std.crypto.hash.sha2.Sha256.init(.{});
                 h_l0.update("leaf:source:");
@@ -8110,7 +8169,38 @@ pub fn main() !void {
                 var l3: [32]u8 = undefined;
                 h_l3.final(&l3);
 
-                // Internal Node H01
+                // L4: leaf:hardware:
+                var h_l4 = std.crypto.hash.sha2.Sha256.init(.{});
+                h_l4.update("leaf:hardware:");
+                h_l4.update(&fp_hex);
+                var l4: [32]u8 = undefined;
+                h_l4.final(&l4);
+
+                // L5: leaf:exec:cpu:
+                var h_l5 = std.crypto.hash.sha2.Sha256.init(.{});
+                h_l5.update("leaf:exec:cpu:");
+                var cpu_res_buf: [16]u8 = undefined;
+                const cpu_res_str = try std.fmt.bufPrint(&cpu_res_buf, "{d}", .{r_cpu});
+                h_l5.update(cpu_res_str);
+                var l5: [32]u8 = undefined;
+                h_l5.final(&l5);
+
+                // L6: leaf:exec:gpu:
+                var h_l6 = std.crypto.hash.sha2.Sha256.init(.{});
+                h_l6.update("leaf:exec:gpu:");
+                var gpu_res_buf: [16]u8 = undefined;
+                const gpu_res_str = try std.fmt.bufPrint(&gpu_res_buf, "{d}", .{r_gpu_physical});
+                h_l6.update(gpu_res_str);
+                var l6: [32]u8 = undefined;
+                h_l6.final(&l6);
+
+                // L7: leaf:policy:
+                var h_l7 = std.crypto.hash.sha2.Sha256.init(.{});
+                h_l7.update("leaf:policy:EU_CRA_NIST_SP_800_218_SLSA_L4");
+                var l7: [32]u8 = undefined;
+                h_l7.final(&l7);
+
+                // Internal Level 1 Nodes
                 var h_01 = std.crypto.hash.sha2.Sha256.init(.{});
                 h_01.update("node:");
                 h_01.update(&l0);
@@ -8118,7 +8208,6 @@ pub fn main() !void {
                 var node_01: [32]u8 = undefined;
                 h_01.final(&node_01);
 
-                // Internal Node H23
                 var h_23 = std.crypto.hash.sha2.Sha256.init(.{});
                 h_23.update("node:");
                 h_23.update(&l2);
@@ -8126,11 +8215,40 @@ pub fn main() !void {
                 var node_23: [32]u8 = undefined;
                 h_23.final(&node_23);
 
+                var h_45 = std.crypto.hash.sha2.Sha256.init(.{});
+                h_45.update("node:");
+                h_45.update(&l4);
+                h_45.update(&l5);
+                var node_45: [32]u8 = undefined;
+                h_45.final(&node_45);
+
+                var h_67 = std.crypto.hash.sha2.Sha256.init(.{});
+                h_67.update("node:");
+                h_67.update(&l6);
+                h_67.update(&l7);
+                var node_67: [32]u8 = undefined;
+                h_67.final(&node_67);
+
+                // Internal Level 2 Nodes
+                var h_0123 = std.crypto.hash.sha2.Sha256.init(.{});
+                h_0123.update("node:");
+                h_0123.update(&node_01);
+                h_0123.update(&node_23);
+                var node_0123: [32]u8 = undefined;
+                h_0123.final(&node_0123);
+
+                var h_4567 = std.crypto.hash.sha2.Sha256.init(.{});
+                h_4567.update("node:");
+                h_4567.update(&node_45);
+                h_4567.update(&node_67);
+                var node_4567: [32]u8 = undefined;
+                h_4567.final(&node_4567);
+
                 // Root Node
                 var h_root = std.crypto.hash.sha2.Sha256.init(.{});
                 h_root.update("node:");
-                h_root.update(&node_01);
-                h_root.update(&node_23);
+                h_root.update(&node_0123);
+                h_root.update(&node_4567);
                 var merkle_digest: [32]u8 = undefined;
                 h_root.final(&merkle_digest);
                 var merkle_hex: [64]u8 = undefined;
@@ -8166,22 +8284,22 @@ pub fn main() !void {
                     try out.print("  [5/9] CPU ORACLE ............ [PASS] (R_cpu = {d})\n", .{r_cpu});
                     try out.print("  [6/9] GPU PHYSICAL SILICON .. [PASS] (R_gpu = {d} on {s} [{s}])\n", .{ r_gpu_physical, actual_device_name, actual_vendor });
                     try out.print("  [7/9] SILICON PARITY ........ [PASS] (R_cpu == R_gpu == R_oracle: true | Miscompilations: 0)\n", .{});
-                    try out.print("  [8/9] BINARY MERKLE TREE .... [PASS] (Recomputed True Binary Root: sha256:{s}...)\n", .{merkle_hex[0..16]});
+                    try out.print("  [8/9] 8-LEAF MERKLE TREE .... [PASS] (Recomputed 8-Leaf Root: sha256:{s}...)\n", .{merkle_hex[0..16]});
                     try out.print("  [9/9] ED25519 SIGNATURE ..... [PASS] (Document-Bound Signature Cryptographically Verified)\n", .{});
                     try out.print("        .Claimed Authority PubKey: {s}\n", .{doc.pubkey_hex});
                     try out.print("        .Silicon Hardware FP:      sha256:{s}...\n", .{fp_hex[0..16]});
                     try out.print("        .Verified Canonical Msg:   \"{s}\"\n", .{canonical_msg});
                     try out.print("--------------------------------------------------------------------------------\n", .{});
-                    try out.print("ATTESTATION VALID: True binary Merkle tree, hardware identity, and signature certified.\n", .{});
+                    try out.print("ATTESTATION VALID: Strict hardware identity, 8-leaf Merkle tree, and signature certified.\n", .{});
                 }
             }
         };
 
         try stdout.print("\n================================================================================\n", .{});
-        try stdout.print("=== LIN-ATTEST-004R.1: STRONG HARDWARE IDENTITY & TRUE BINARY MERKLE VERIFIER===\n", .{});
+        try stdout.print("=== LIN-ATTEST-004R.2: STRICT HARDWARE IDENTITY & 8-LEAF MERKLE VERIFIER     ===\n", .{});
         try stdout.print("================================================================================\n\n", .{});
         try stdout.print("Target Attestation Document: {s} | Size: {d} B\n", .{ file_path, rulel_bytes.len });
-        try stdout.print("Mode: REAL LIN COMPILATION + STRICT HARDWARE FINGERPRINT + BINARY MERKLE + ED25519\n\n", .{});
+        try stdout.print("Mode: REAL LIN COMPILATION + STRICT HARDWARE MATCH + 8-LEAF BINARY MERKLE + ED25519\n\n", .{});
 
         // Verify genuine authentic document
         try Verifier.verify(rulel_bytes, true);
@@ -8202,7 +8320,7 @@ pub fn main() !void {
                 .{ .name = "MUT_CPU_RESULT_DOC", .find = "cpu_result=-630063104", .rep = "cpu_result=-630063105" },
                 .{ .name = "MUT_GPU_RESULT_DOC", .find = "gpu_result=-630063104", .rep = "gpu_result=-630063105" },
                 .{ .name = "MUT_ORACLE_RESULT_DOC", .find = "oracle_result=-630063104", .rep = "oracle_result=-630063105" },
-                .{ .name = "MUT_MERKLE_ROOT_DOC", .find = "merkle_root=\"sha256:cd91", .rep = "merkle_root=\"sha256:dd91" },
+                .{ .name = "MUT_MERKLE_ROOT_DOC", .find = "merkle_root=\"sha256:dc29", .rep = "merkle_root=\"sha256:ec29" },
                 .{ .name = "MUT_HARDWARE_FP_DOC", .find = "hardware_fingerprint=\"sha256:", .rep = "hardware_fingerprint=\"sha256:0000" },
                 .{ .name = "MUT_TARGET_DEVICE_DOC", .find = "target_device=\"gfx1030\"", .rep = "target_device=\"non_existent_gpu_9999\"" },
             };

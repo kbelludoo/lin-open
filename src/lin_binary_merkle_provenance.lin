@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-^schema_once ^lossy=false ^ops=binary_merkle_provenance
+^schema_once ^lossy=false ^ops=binary_merkle_provenance_8leaf
 ~G{?=if #=for ^=ret :else}
 
 !compute_merkle_leaf_hash(tag_id: int, content_hash: int) -> int {
@@ -12,18 +12,20 @@
     ^parent;
 }
 
-!verify_merkle_tree_root(h01: int, h23: int, expected_root: int) -> int {
-    root = (h01 * 65537) + (h23 * 1009) + 42;
-    valid = 0;
-    ?(root == expected_root) {
-        valid = 1;
-    }
-    ^valid;
+!compute_8leaf_merkle_root(l0: int, l1: int, l2: int, l3: int, l4: int, l5: int, l6: int, l7: int) -> int {
+    h01 = (l0 * 65537) + (l1 * 1009) + 42;
+    h23 = (l2 * 65537) + (l3 * 1009) + 42;
+    h45 = (l4 * 65537) + (l5 * 1009) + 42;
+    h67 = (l6 * 65537) + (l7 * 1009) + 42;
+    h0123 = (h01 * 65537) + (h23 * 1009) + 42;
+    h4567 = (h45 * 65537) + (h67 * 1009) + 42;
+    root = (h0123 * 65537) + (h4567 * 1009) + 42;
+    ^root;
 }
 
-!validate_hardware_fingerprint(vendor_id: int, device_id: int, compute_units: int) -> int {
-    fp = (vendor_id * 1000000) + (device_id * 1000) + compute_units;
+!validate_hardware_fingerprint_strict(vendor_id: int, device_id: int, compute_units: int, driver_id: int) -> int {
+    fp = (vendor_id * 10000000) + (device_id * 100000) + (compute_units * 1000) + driver_id;
     ^fp;
 }
 
-=ex{compute_merkle_leaf_hash, compute_merkle_parent_node, verify_merkle_tree_root, validate_hardware_fingerprint}
+=ex{compute_merkle_leaf_hash, compute_merkle_parent_node, compute_8leaf_merkle_root, validate_hardware_fingerprint_strict}
