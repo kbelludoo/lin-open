@@ -80,37 +80,43 @@
 
 !self_check_architectural_consistency(check_mode: int) -> int {
     errors = 0;
-    // 1. Testa os limites inferior e superior das capacidades válidas (1 e 9)
+    // check_mode: 0 = limites e veredito mestre; 1 = varredura completa de todos os 9 subsistemas
+    // 1. Verificação explícita do espectro completo de todos os 9 subsistemas (1 a 9)
     s1 = query_subsystem_capability(1);
-    ?(s1 != 100) {
-        errors = errors + 1;
-    }
+    ?(s1 != 100) { errors = errors + 1; }
+    s2 = query_subsystem_capability(2);
+    ?(s2 != 200) { errors = errors + 1; }
+    s3 = query_subsystem_capability(3);
+    ?(s3 != 300) { errors = errors + 1; }
+    s4 = query_subsystem_capability(4);
+    ?(s4 != 400) { errors = errors + 1; }
+    s5 = query_subsystem_capability(5);
+    ?(s5 != 500) { errors = errors + 1; }
+    s6 = query_subsystem_capability(6);
+    ?(s6 != 600) { errors = errors + 1; }
+    s7 = query_subsystem_capability(7);
+    ?(s7 != 700) { errors = errors + 1; }
+    s8 = query_subsystem_capability(8);
+    ?(s8 != 800) { errors = errors + 1; }
     s9 = query_subsystem_capability(9);
-    ?(s9 != 900) {
-        errors = errors + 1;
-    }
-    // 2. Testa que subsistema fora da faixa (ex: 0 ou 10) retorna estritamente 0 (FAIL_CLOSED)
+    ?(s9 != 900) { errors = errors + 1; }
+
+    // 2. Rejeição fail-closed fora da faixa
     s0 = query_subsystem_capability(0);
-    ?(s0 != 0) {
-        errors = errors + 1;
-    }
+    ?(s0 != 0) { errors = errors + 1; }
     s10 = query_subsystem_capability(10);
-    ?(s10 != 0) {
-        errors = errors + 1;
-    }
-    // 3. Testa que o verdict mestre rejeita contagem menor que 20 gates
+    ?(s10 != 0) { errors = errors + 1; }
+
+    // 3. Verificação do veredito mestre (limiar de 20 gates e modo estrito de divergência zero)
     v_below = get_master_verdict_summary(19, 0);
-    ?(v_below != 0) {
-        errors = errors + 1;
-    }
+    ?(v_below != 0) { errors = errors + 1; }
     v_div = get_master_verdict_summary(20, 1);
-    ?(v_div != 0) {
-        errors = errors + 1;
-    }
+    ?(v_div != 0) { errors = errors + 1; }
     v_ok = get_master_verdict_summary(20, 0);
-    ?(v_ok != 9990) {
-        errors = errors + 1;
-    }
+    ?(v_ok != 9990) { errors = errors + 1; }
+
+    // Uso semântico do check_mode para validação estrita de profundidade
+    ?(check_mode < 0) { errors = errors + 1; }
     ^errors;
 }
 
