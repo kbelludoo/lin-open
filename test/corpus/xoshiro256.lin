@@ -1,0 +1,47 @@
+@LIN:L1c:0.2
+@CORPUS{origin="vigna/xoshiro" algorithm="xoshiro256starstar" scope="state_transition_and_output"}
+
+!rotl64(x: int, k: int): int {
+  w = x;
+  s = k & 63;
+  ^(_lia_shl(w, s)) | (_lia_ushr(w, 64 - s));
+}
+
+!xoshiro256ss_result(s1: int): int {
+  res = (rotl64(s1 * 5, 7) * 9);
+  ^res;
+}
+
+!xoshiro256ss_step(s0: int, s1: int, s2: int, s3: int, sel: int): int {
+  t = _lia_shl(s1, 17);
+  ns2 = s2 ^ s0;
+  ns3 = s3 ^ s1;
+  ns1 = s1 ^ ns2;
+  ns0 = s0 ^ ns3;
+  ns2 = ns2 ^ t;
+  ns3 = rotl64(ns3, 45);
+
+  ?(sel == 0){ ^ns0 };
+  ?(sel == 1){ ^ns1 };
+  ?(sel == 2){ ^ns2 };
+  ^ns3;
+}
+
+!test_xoshiro256_vector(): int {
+  // Test seed: s0 = 1, s1 = 2, s2 = 3, s3 = 4
+  // Expected result = rotl64(2 * 5, 7) * 9 = rotl64(10, 7) * 9 = 1280 * 9 = 11520
+  r = xoshiro256ss_result(2);
+  ?(r != 11520){ ^0 };
+
+  ns0 = xoshiro256ss_step(1, 2, 3, 4, 0);
+  ns1 = xoshiro256ss_step(1, 2, 3, 4, 1);
+  ns2 = xoshiro256ss_step(1, 2, 3, 4, 2);
+  ns3 = xoshiro256ss_step(1, 2, 3, 4, 3);
+
+  // s0^s3 = 1^6 = 7
+  // s1^s2 = 2^2 = 0
+  ?(ns0 != 7 || ns1 != 0){ ^0 };
+  ^1;
+}
+
+=ex{rotl64, xoshiro256ss_result, xoshiro256ss_step, test_xoshiro256_vector}

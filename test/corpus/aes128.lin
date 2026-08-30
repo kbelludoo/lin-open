@@ -1,0 +1,35 @@
+@LIN:L1c:0.2
+@CORPUS{origin="kokke/tiny-AES-c" algorithm="AES-128" scope="rotword_and_rcon_schedule"}
+
+!aes_rotword(w: int): int {
+  word = w & 4294967295;
+  // Rotate 32-bit word left by 8 bits
+  ^(_lia_shl(word, 8) | _lia_ushr(word, 24)) & 4294967295;
+}
+
+!aes_rcon(i: int): int {
+  ?(i == 1){ ^16777216 };   // 0x01000000
+  ?(i == 2){ ^33554432 };   // 0x02000000
+  ?(i == 3){ ^67108864 };   // 0x04000000
+  ?(i == 4){ ^134217728 };  // 0x08000000
+  ?(i == 5){ ^268435456 };  // 0x10000000
+  ?(i == 6){ ^536870912 };  // 0x20000000
+  ?(i == 7){ ^1073741824 }; // 0x40000000
+  ?(i == 8){ ^2147483648 }; // 0x80000000
+  ?(i == 9){ ^452984832 };  // 0x1B000000
+  ^905969664;               // 0x36000000
+}
+
+!test_aes_vector(): int {
+  // Test RotWord(0x09cf4f3c) = 0xcf4f3c09 (3478076425)
+  // 0x09cf4f3c = 164581180
+  rot = aes_rotword(164581180);
+  ?(rot != 3478076425){ ^0 };
+
+  // Test Rcon[1] = 0x01000000 (16777216)
+  rc = aes_rcon(1);
+  ?(rc != 16777216){ ^0 };
+  ^1;
+}
+
+=ex{aes_rotword, aes_rcon, test_aes_vector}
