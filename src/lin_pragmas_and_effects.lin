@@ -1,0 +1,42 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=pragmas_effects_v100
+~G{?=if #=for ^=ret :else}
+
+// ============================================================================
+// LIN PRAGMAS, FUNCTION EFFECTS & IDEMPOTENT FORMATTING ENGINE
+// Incorpora lições de Nim (pragmas/effects) e V (idempotência de formatter/mutabilidade)
+// ============================================================================
+
+!verify_function_effects(is_pure: int, is_deterministic: int, has_side_effects: int) -> int {
+    effect_status = 0;
+    // Função pura e determinística sem efeitos colaterais -> Aprovada para paridade bit-exact
+    ?(is_pure == 1) {
+        ?(is_deterministic == 1) {
+            ?(has_side_effects == 0) {
+                effect_status = 1;
+            }
+        }
+    }
+    ^effect_status;
+}
+
+!eval_gate_pragma_filter(fn_gate_id: int, target_gate_filter: int) -> int {
+    match = 0;
+    ?(fn_gate_id == target_gate_filter) {
+        match = 1;
+    }
+    ?(target_gate_filter == 0) { // 0 = wildcard (executar todos os gates)
+        match = 1;
+    }
+    ^match;
+}
+
+!verify_formatter_idempotence(pass1_hash: int, pass2_hash: int) -> int {
+    idempotent = 0;
+    ?(pass1_hash == pass2_hash) {
+        idempotent = 1; // fmt(fmt(source)) == fmt(source) -> Hash canônico invariante
+    }
+    ^idempotent;
+}
+
+=ex{verify_function_effects, eval_gate_pragma_filter, verify_formatter_idempotence}
