@@ -1,5 +1,5 @@
-@RULEL:LIN_ATTEST_SPEC:2.0.0
-~R{.s=schema .c=compliance .p=provenance .d=determinism .h=hardware .k=cryptography .l=ledger .a=adversarial}
+@RULEL:LIN_ATTEST_SPEC:2.1.0
+~R{.s=schema .c=compliance .p=provenance .d=determinism .h=hardware .k=cryptography .l=ledger .r=reporting .a=adversarial}
 .s{
   architecture="ZERO_TRUST_PHYSICAL_SILICON_BOUND"
   type="DETERMINISTIC_SUPPLY_CHAIN_UNIFIED_LEDGER_v1.0"
@@ -17,6 +17,15 @@
   aggregation_rule="BALANCED_BINARY_LEDGER_TREE"
   domain_separation="ledger:entry:idx:symbol:kernel_merkle_root"
   signature_cardinality="N_KERNELS_TO_1_SEAL"
+  permutation_invariance_rule="STRICT_ORDER_BOUND_E_i_SERIALIZATION"
+}
+.r{
+  report_types=["EXECUTIVE_COMPLIANCE_SUMMARY", "AUDIT_EVIDENCE_MATRIX", "CYCLONEDX_SPDX_SBOM"]
+  supported_regulations=[
+    "EU_CYBER_RESILIENCE_ACT_ARTICLE_10",
+    "NIST_SP_800_218_SSDF_v1.1",
+    "SLSA_LEVEL_4_BUILD_INTEGRITY"
+  ]
 }
 .k{
   signature_algorithm="Ed25519"
@@ -51,15 +60,16 @@
 .a{
   vectors=[
     "MUT_SOURCE_DOC",
-    "MUT_MIR_DOC",
-    "MUT_KERNEL_DOC",
+    "MUT_KERNEL_0_MIR",
+    "MUT_KERNEL_1_NAME",
+    "MUT_KERNEL_2_CPU_RES",
+    "MUT_KERNEL_3_GPU_RES",
     "MUT_INPUT_DOC",
-    "MUT_CPU_RESULT_DOC",
-    "MUT_GPU_RESULT_DOC",
-    "MUT_ORACLE_RESULT_DOC",
     "MUT_LEDGER_ROOT_DOC",
     "MUT_HARDWARE_FP_DOC",
-    "MUT_TARGET_ARCH_DOC"
+    "MUT_TARGET_ARCH_DOC",
+    "MUT_KERNEL_COUNT_DOC",
+    "MUT_KERNEL_PERMUTATION_SWAP"
   ]
   policy="ALL_MUTATIONS_MUST_BE_REJECTED"
 }

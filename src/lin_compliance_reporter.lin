@@ -1,0 +1,31 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=compliance_reporter_v210
+~G{?=if #=for ^=ret :else}
+
+!compute_compliance_score(provenance_ok: int, parity_ok: int, hardware_ok: int, signature_ok: int) -> int {
+    score = (provenance_ok * 25) + (parity_ok * 35) + (hardware_ok * 20) + (signature_ok * 20);
+    ^score;
+}
+
+!evaluate_regulatory_profile(score: int, standard_id: int) -> int {
+    passed = 0;
+    ?(score >= 100) {
+        passed = 1;
+    }
+    result = (standard_id * 1000) + passed;
+    ^result;
+}
+
+!format_audit_status_code(rejections: int, miscompilations: int, total_kernels: int) -> int {
+    status = 0;
+    ?(rejections == 0) {
+        ?(miscompilations == 0) {
+            ?(total_kernels > 0) {
+                status = 100;
+            }
+        }
+    }
+    ^status;
+}
+
+=ex{compute_compliance_score, evaluate_regulatory_profile, format_audit_status_code}
