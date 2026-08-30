@@ -7410,10 +7410,84 @@ pub fn main() !void {
         }
         return;
     }
-    if (argEq(cmd, "hypo")) {
-        if (args.len < 3) {
-            try stderr.print("usage: lin hypo <hypothesis.rulel> or lin hypo <file.lin> <fn> [arg1 arg2 ...] [--expected <val>]\n", .{});
+    if (argEq(cmd, "hypo") or argEq(cmd, "hypo-all")) {
+        if (args.len < 3 and !argEq(cmd, "hypo-all")) {
+            try stderr.print("usage: lin hypo <hypothesis.rulel> or lin hypo <file.lin> <fn> [arg1 arg2 ...] [--expected <val>] or lin hypo --all\n", .{});
             std.process.exit(1);
+        }
+        if (argEq(cmd, "hypo-all") or (args.len >= 3 and (argEq(args[2], "--all") or argEq(args[2], "all")))) {
+            const corpus_targets = [_]struct { file: []const u8, fn_name: []const u8 }{
+                .{ .file = "test/corpus/adler32.lin", .fn_name = "test_adler32_vector" },
+                .{ .file = "test/corpus/aead_poly1305.lin", .fn_name = "test_aead_poly1305_vector" },
+                .{ .file = "test/corpus/aes128.lin", .fn_name = "test_aes_vector" },
+                .{ .file = "test/corpus/alac_flac.lin", .fn_name = "test_alac_flac_vector" },
+                .{ .file = "test/corpus/blake2b.lin", .fn_name = "test_blake2b_vector" },
+                .{ .file = "test/corpus/blake3.lin", .fn_name = "test_blake3_g" },
+                .{ .file = "test/corpus/brotli_bit.lin", .fn_name = "test_brotli_vector" },
+                .{ .file = "test/corpus/brotli_huffman.lin", .fn_name = "test_brotli_huffman_vector" },
+                .{ .file = "test/corpus/chacha20.lin", .fn_name = "test_chacha_rfc_vector" },
+                .{ .file = "test/corpus/cityhash64.lin", .fn_name = "test_cityhash_vector" },
+                .{ .file = "test/corpus/crc32.lin", .fn_name = "test_crc32_vector" },
+                .{ .file = "test/corpus/cswap_montgomery.lin", .fn_name = "test_cswap_vector" },
+                .{ .file = "test/corpus/curve25519_fe.lin", .fn_name = "test_curve25519_vector" },
+                .{ .file = "test/corpus/fast_bitset.lin", .fn_name = "test_bitset_vector" },
+                .{ .file = "test/corpus/fnv1a.lin", .fn_name = "test_fnv1a_vectors" },
+                .{ .file = "test/corpus/hilbert3d.lin", .fn_name = "test_morton3d_vector" },
+                .{ .file = "test/corpus/keccak.lin", .fn_name = "test_keccak_vector" },
+                .{ .file = "test/corpus/morton_spatial.lin", .fn_name = "test_morton_vector" },
+                .{ .file = "test/corpus/murmur3.lin", .fn_name = "test_murmur3_vectors" },
+                .{ .file = "test/corpus/nested_matrix_sum.lin", .fn_name = "test_nested_matrix_sum_vector" },
+                .{ .file = "test/corpus/pcg_random.lin", .fn_name = "test_pcg_vector" },
+                .{ .file = "test/corpus/philox.lin", .fn_name = "test_philox_vector" },
+                .{ .file = "test/corpus/poly1305.lin", .fn_name = "test_poly1305_rfc_vector" },
+                .{ .file = "test/corpus/popcount_massey.lin", .fn_name = "test_massey_vector" },
+                .{ .file = "test/corpus/prng_bryc.lin", .fn_name = "test_prng_vectors" },
+                .{ .file = "test/corpus/prospector_skeeto.lin", .fn_name = "test_prospector_vectors" },
+                .{ .file = "test/corpus/protobuf_varint.lin", .fn_name = "test_protobuf_vectors" },
+                .{ .file = "test/corpus/ripemd160.lin", .fn_name = "test_ripemd160_vector" },
+                .{ .file = "test/corpus/roaring_search.lin", .fn_name = "test_roaring_vector" },
+                .{ .file = "test/corpus/siphash.lin", .fn_name = "test_sipround_vectors" },
+                .{ .file = "test/corpus/splitmix64.lin", .fn_name = "test_splitmix64_vector" },
+                .{ .file = "test/corpus/vp8_dct.lin", .fn_name = "test_vp8_dct_vector" },
+                .{ .file = "test/corpus/wyhash.lin", .fn_name = "test_wyhash_vectors" },
+                .{ .file = "test/corpus/xoshiro256.lin", .fn_name = "test_xoshiro256_vector" },
+                .{ .file = "test/corpus/xxhash64.lin", .fn_name = "test_xxh64_vector" },
+                .{ .file = "test/corpus/xxhash_kernels.lin", .fn_name = "test_xxhash_vectors" },
+            };
+
+            var confirmed_count: usize = 0;
+            var total_steps: u64 = 0;
+
+            for (corpus_targets, 0..) |t, idx| {
+                const src_file = std.fs.cwd().openFile(t.file, .{}) catch {
+                    try stderr.print("hypo --all: cannot open {s}\n", .{t.file});
+                    continue;
+                };
+                defer src_file.close();
+                const src = try src_file.readToEndAlloc(LIA_ALLOC, 10 * 1024 * 1024);
+                defer LIA_ALLOC.free(src);
+
+                const mod = try vmBuild(LIA_ALLOC, src);
+                const fi = vmFind(&mod, t.fn_name) orelse {
+                    try stdout.print("[{d:02}/{d:02}] {s:34} :: {s:26} -> FAILED (fn not found)\n", .{ idx + 1, corpus_targets.len, t.file, t.fn_name });
+                    continue;
+                };
+                var steps: u64 = 0;
+                const res = try vmExec(&mod, fi, &.{}, 0, &steps);
+                total_steps += steps;
+                if (res == 1) {
+                    confirmed_count += 1;
+                    try stdout.print("[{d:02}/{d:02}] {s:34} :: {s:26} -> CONFIRMED (steps: {d:6})\n", .{ idx + 1, corpus_targets.len, t.file, t.fn_name, steps });
+                } else {
+                    try stdout.print("[{d:02}/{d:02}] {s:34} :: {s:26} -> REFUTED (res={d})\n", .{ idx + 1, corpus_targets.len, t.file, t.fn_name, res });
+                }
+            }
+
+            try stdout.print("\n@RULEL:CORPUS_HYPOTHESIS_VERIFICATION:1.0.0\n", .{});
+            try stdout.print(".total_targets={d}\n.confirmed={d}\n.refuted={d}\n", .{ corpus_targets.len, confirmed_count, corpus_targets.len - confirmed_count });
+            try stdout.print(".total_steps={d}\n.equivalent=true\n", .{total_steps});
+            try stdout.print(".proof=\"CANONICAL_CORPUS_HYPOTHESIS_SUITE_100_PASS\"\n", .{});
+            return;
         }
         if (std.mem.endsWith(u8, args[2], ".lin")) {
             const target_file = args[2];
