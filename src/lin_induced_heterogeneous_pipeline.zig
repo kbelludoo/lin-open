@@ -1,10 +1,10 @@
-//! lin_induced_heterogeneous_pipeline.zig — End-to-End Induced Heterogeneous Pipeline (LIN-LANG-007)
+//! lin_induced_heterogeneous_pipeline.zig — Explicit Heterogeneous Pipeline & Zero-Bounce VRAM Residency (LIN-LANG-007)
 //!
 //! Architectural Invariants:
-//!   1. Takes synthesized Canonical MIR DAG from unknown/alien source.
-//!   2. Decomposes into 4-stage execution graph with residency tracking.
-//!   3. Automatically partitions: Stage 1 (CPU), Stage 2 (GPU), Stage 3 (GPU VRAM reuse), Stage 4 (CPU).
-//!   4. Contract: R_hybrid ==_C R_Oracle. Emits unified cryptographic provenance root.
+//!   1. 007A-D: CEGIS Induction -> Canonical MIR DAG -> Stage Graph with explicit ResidencyGraph.
+//!   2. 007E: Optimal Partitioning (S1: CPU_ZEN3, S2: GPU_GFX1030, S3: GPU_GFX1030, S4: CPU_ZEN3).
+//!   3. 007F-G: Zero PCIe Bounce: S2 output VRAM buffer passed directly as S3 input VRAM buffer (Transfer_{S2->S3} = 0).
+//!   4. 007H-J: Parity R_Hybrid ==_C R_Oracle bit-exact, and single unified provenance root comparing planned vs actual.
 
 const std = @import("std");
 const ir = @import("lin_gpu_ir.zig");
@@ -24,21 +24,26 @@ const ExecutionPlanner = planner.ExecutionPlanner;
 const HeterogeneousVerifier = verifier.HeterogeneousVerifier;
 
 pub const PipelineStageKind = enum {
-    stage1_scalar_filter, // CPU SIMD: irregular pre-process
-    stage2_vector_map_reduce, // GPU OpenCL: N=1M parallel reduction
-    stage3_spatial_stencil, // GPU OpenCL: VRAM-resident stencil rollup
-    stage4_final_scalar_calibration, // CPU: final scalar post-process
+    stage1_scalar_filter, // CPU SIMD
+    stage2_vector_map_reduce, // GPU OpenCL (VRAM out)
+    stage3_spatial_stencil, // GPU OpenCL (VRAM in -> Host out)
+    stage4_final_scalar_calibration, // CPU Scalar
 };
 
-pub const PipelineStageDescriptor = struct {
+pub const PipelineStageExecutionRecord = struct {
     stage_id: usize,
     kind: PipelineStageKind,
-    workload: WorkloadDescriptor,
-    decision: planner.ExecutionDecision,
+    planned_device: []const u8,
+    actual_device: []const u8,
+    planned_residency_in: []const u8,
+    actual_residency_in: []const u8,
+    planned_residency_out: []const u8,
+    actual_residency_out: []const u8,
+    transfer_bytes: usize,
 };
 
 pub const InducedHeterogeneousPipeline = struct {
-    pub fn planStages(n_elements: usize) [4]PipelineStageDescriptor {
+    pub fn planStages(n_elements: usize) [4]planner.ExecutionDecision {
         const cost_model = CostModel{};
 
         const wl1 = WorkloadDescriptor{
@@ -46,7 +51,7 @@ pub const InducedHeterogeneousPipeline = struct {
             .elem_type = .i32,
             .accum_type = .i32,
             .reduction_op = .sum,
-            .total_elements = 64, // Small irregular batch
+            .total_elements = 64,
             .layout = .{ .data_bytes = 64 * @sizeOf(i32) },
             .dependencies = .{},
             .input_residency = .host_ram,
@@ -92,28 +97,31 @@ pub const InducedHeterogeneousPipeline = struct {
             .output_residency = .host_ram,
         };
 
-        const d1 = ExecutionPlanner.plan(wl1, cost_model, true);
-        const d2 = ExecutionPlanner.plan(wl2, cost_model, true);
-        const d3 = ExecutionPlanner.plan(wl3, cost_model, true);
-        const d4 = ExecutionPlanner.plan(wl4, cost_model, true);
-
-        return [_]PipelineStageDescriptor{
-            .{ .stage_id = 1, .kind = .stage1_scalar_filter, .workload = wl1, .decision = d1 },
-            .{ .stage_id = 2, .kind = .stage2_vector_map_reduce, .workload = wl2, .decision = d2 },
-            .{ .stage_id = 3, .kind = .stage3_spatial_stencil, .workload = wl3, .decision = d3 },
-            .{ .stage_id = 4, .kind = .stage4_final_scalar_calibration, .workload = wl4, .decision = d4 },
+        return [_]planner.ExecutionDecision{
+            ExecutionPlanner.plan(wl1, cost_model, true),
+            ExecutionPlanner.plan(wl2, cost_model, true),
+            ExecutionPlanner.plan(wl3, cost_model, true),
+            ExecutionPlanner.plan(wl4, cost_model, true),
         };
     }
 
-    pub fn computeUnifiedPipelineProvenanceRoot(
-        h_stages: [4][32]u8,
+    pub fn computePipelineProvenanceRoot(
+        records: []const PipelineStageExecutionRecord,
+        s2_s3_bounce_bytes: usize,
         final_result: i32,
     ) [32]u8 {
         var h = std.crypto.hash.sha2.Sha256.init(.{});
-        h.update("LIN-LANG-007-INDUCED-HETEROGENEOUS-PIPELINE-V1");
-        for (h_stages) |hs| {
-            h.update(&hs);
+        h.update("LIN-LANG-007-STRICT-PIPELINE-V1");
+        for (records) |r| {
+            h.update(r.planned_device);
+            h.update(r.actual_device);
+            h.update(r.planned_residency_in);
+            h.update(r.actual_residency_in);
+            h.update(r.planned_residency_out);
+            h.update(r.actual_residency_out);
+            h.update(std.mem.asBytes(&r.transfer_bytes));
         }
+        h.update(std.mem.asBytes(&s2_s3_bounce_bytes));
         h.update(std.mem.asBytes(&final_result));
         var root: [32]u8 = undefined;
         h.final(&root);
