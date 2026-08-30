@@ -1,0 +1,25 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=attestation_issuer
+~G{?=if #=for ^=ret :else}
+
+!validate_issuance_preconditions(r_cpu: int, r_gpu_physical: int, r_oracle: int) -> int {
+    ready = 0;
+    ?(r_cpu == r_gpu_physical) {
+        ?(r_gpu_physical == r_oracle) {
+            ready = 1;
+        }
+    }
+    ^ready;
+}
+
+!format_attestation_urn_tag(year: int, month: int, day: int) -> int {
+    tag = (year * 10000) + (month * 100) + day;
+    ^tag;
+}
+
+!compute_evidence_merkle_leaf(node_type: int, hash_digest: int) -> int {
+    leaf = (node_type * 65537) + (hash_digest * 31) + 7919;
+    ^leaf;
+}
+
+=ex{validate_issuance_preconditions, format_attestation_urn_tag, compute_evidence_merkle_leaf}
