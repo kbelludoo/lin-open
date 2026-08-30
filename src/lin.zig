@@ -9743,7 +9743,7 @@ pub fn main() !void {
             \\| :--- | :---: | :--- | :--- |
             \\| **EU Cyber Resilience Act (EU CRA — Reg. 2024/2847, Art. 10)** | **PASS** | Strict hardware-bound provenance, tamper-evident cryptographic seal, hermetic lineage | Technical Control Evidence verified; legal compliance requires organizational assessment |
             \\| **NIST SP 800-218 (SSDF v1.1 — PW.6.1, PW.6.2, PO.3.2)** | **PASS** | Hermetic compiler DAG verification, zero miscompilation physical parity | Mapped technical controls verified; full organizational conformance audited separately |
-            \\| **SLSA (Supply-chain Levels for Software Artifacts)** | **PASS** | Bit-exact reproducible compilation, non-forgeable two-level Merkle ledger | Technical provenance properties verified (L4 technical equivalence) |
+            \\| **SLSA (Supply-chain Levels for Software Artifacts)** | **PASS** | Authenticated provenance, tamper-evident Merkle aggregation, cryptographic signing, bit-exact reproducibility | Technical control mapping verified; Official SLSA level: NOT CLAIMED |
             \\
             \\---
             \\
