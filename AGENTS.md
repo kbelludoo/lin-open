@@ -1,10 +1,4 @@
-# LIN INVIOLABLE AGENT RULES
-
-## Absolute 100% Invariant Rule
-1. **ALWAYS WRITE IN LIN (`.lin`) OR RULEL (`.rulel`)**:
-   - ALL new logic, analysis, discovery engines, transpiladores, Merkle trees, compatibility matrices, and test specifications MUST be authored strictly in `.lin` or `.rulel`.
-2. **ZERO NEW ZIG FILES**:
-   - NEVER create new `.zig` files.
-   - The Stage 0 Compiler in Zig (`src/lin.zig`) is FROZEN strictly as the minimal low-level bootstrap runtime (memory allocation, AMD ROCm OpenCL driver FFI, process execution).
-3. **SELF-HOSTING DOGFOODING**:
-   - Everything high-level belongs to the LIN language itself.
+@RULEL:AGENTS:1.4.0
+.r{R0=ALWAYS_WRITE_IN_LIN(.lin)_OR_RULEL(.rulel);R1=ZERO_NEW_ZIG_FILES;R2=STAGE0_ZIG_FROZEN_AS_MINIMAL_BOOTSTRAP_ONLY;R3=SELF_HOSTING_DOGFOODING}
+.f{NEW_ZIG_FILES hand_TS hand_JS}
+.a{code=.lin rules=.rulel Stage0_Zig=minimal_rocm_opencl_runtime_only}

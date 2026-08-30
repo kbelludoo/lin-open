@@ -1,7 +1,4 @@
-# Antigravity Workspace Customization Rule
-
-## 100% Inviolable Rule
-1. **ALWAYS WRITE IN LIN (`.lin`) OR RULEL (`.rulel`)**:
-   - Every single new algorithm, parser pass, transpiler, verification suite, and Merkle tree must be written in `.lin` or `.rulel`.
-2. **ZERO NEW ZIG FILES**:
-   - Never create new `.zig` files. Zig is strictly Stage 0 bootstrap.
+@RULEL:AGENTS_RULE:1.4.0
+.r{R0=ALWAYS_WRITE_IN_LIN(.lin)_OR_RULEL(.rulel);R1=ZERO_NEW_ZIG_FILES;R2=STAGE0_ZIG_FROZEN_AS_MINIMAL_BOOTSTRAP_ONLY}
+.f{NEW_ZIG_FILES}
+.a{code=.lin rules=.rulel}

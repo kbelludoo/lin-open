@@ -1,8 +1,4 @@
-# GEMINI & ANTIGRAVITY INVIOLABLE RULES
-
-## Absolute Invariant
-1. **ALWAYS WRITE IN LIN (`.lin`) OR RULEL (`.rulel`)**:
-   - ALL new logic, analysis, algorithms, discovery engines, and verification matrices MUST be written in `.lin` or `.rulel`.
-2. **ZERO NEW ZIG FILES**:
-   - NEVER create new `.zig` files.
-   - The Stage 0 Compiler in Zig (`src/lin.zig`) is frozen strictly as the minimal low-level bootstrap runtime.
+@RULEL:GEMINI:1.4.0
+.r{R0=ALWAYS_WRITE_IN_LIN(.lin)_OR_RULEL(.rulel);R1=ZERO_NEW_ZIG_FILES;R2=STAGE0_ZIG_FROZEN_AS_MINIMAL_BOOTSTRAP_ONLY}
+.f{NEW_ZIG_FILES}
+.a{code=.lin rules=.rulel Stage0_Zig=minimal_rocm_opencl_runtime_only}

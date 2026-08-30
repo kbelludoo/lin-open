@@ -1,6 +1,4 @@
-# CURSOR RULES: 100% INVIOLABLE
-
-- ALWAYS write all new logic, code, algorithms, tests, and engines in LIN (.lin) or RULEL (.rulel).
-- NEVER create new .zig files.
-- The Zig Stage 0 Compiler is strictly frozen as the minimal bootstrap runtime.
-- Self-hosting and dogfooding are mandatory: use LIN for LIN.
+@RULEL:CURSOR:1.4.0
+.r{R0=ALWAYS_WRITE_IN_LIN(.lin)_OR_RULEL(.rulel);R1=ZERO_NEW_ZIG_FILES;R2=STAGE0_ZIG_FROZEN_AS_MINIMAL_BOOTSTRAP_ONLY}
+.f{NEW_ZIG_FILES}
+.a{code=.lin rules=.rulel}
