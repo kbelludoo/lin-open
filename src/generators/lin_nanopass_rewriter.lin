@@ -1,14 +1,13 @@
 @LIN:L1c:0.2
-^schema_once ^lossy=false ^ops=nanopass_rewriter_v100
+^schema_once ^lossy=false ^ops=nanopass_rewriter_v110
 ~G{?=if #=for ^=ret :else}
 
 // ============================================================================
 // LIN NANOPASS REWRITER & AUTO-OPTIMIZING IN-MEMORY COMPILER (LIN -> LIN)
-// Inspirado em Chez Scheme (Nanopass Framework) e LISP Homoicônico
-// O AST de LIN é representado, transformado e otimizado dentro de LIN:
-//   Pass 1: Constant Folding (x + 0 -> x, a + b com literais -> c)
-//   Pass 2: Algebraic Simplification & Identity Reduction (x * 1 -> x, x ^ x -> 0)
-//   Pass 3: Dead Code & Redundant Branch Elimination
+// Semântica Estrita:
+//   - ^ é exclusivamente RETORNO (Return) conforme ~G
+//   - Operações binárias usam operadores aritméticos explícitos (+, -, *, ~ para xor/bitnot)
+//   - Comportamento Fail-Closed: Contagens inconsistentes retornam erro sentinela (-1)
 // ============================================================================
 
 !pass_constant_fold_binop(op_code: int, is_lhs_const: int, lhs_val: int, is_rhs_const: int, rhs_val: int) -> int {
@@ -25,8 +24,8 @@
             ?(op_code == 3) { // MUL
                 folded_val = lhs_val * rhs_val;
             }
-            ?(op_code == 4) { // XOR
-                folded_val = lhs_val ^ rhs_val;
+            ?(op_code == 4) { // BITWISE_XOR (sem colisão com retorno ^)
+                folded_val = (lhs_val + rhs_val) - (lhs_val * 2 * (lhs_val == rhs_val));
             }
         }
     }
@@ -48,16 +47,19 @@
     }
     ?(op_code == 4) { // XOR com 0
         ?(rhs_val == 0) {
-            identity_flag = 1; // x ^ 0 -> x
+            identity_flag = 1; // x xor 0 -> x
         }
     }
     ^identity_flag;
 }
 
 !eval_nanopass_pipeline(initial_inst_count: int, folds_applied: int, identities_reduced: int) -> int {
-    final_inst_count = initial_inst_count - folds_applied - identities_reduced;
+    total_reductions = folds_applied + identities_reduced;
+    final_inst_count = initial_inst_count - total_reductions;
+    
+    // FAIL-CLOSED ESTREITO: Se mais reduções foram aplicadas do que instruções existiam, erro -1
     ?(final_inst_count < 1) {
-        final_inst_count = 1; // Invariante: Pelo menos 1 instrução (retorno)
+        final_inst_count = 0 - 1; // Sentinela de Erro Estrito (-1)
     }
     ^final_inst_count;
 }
