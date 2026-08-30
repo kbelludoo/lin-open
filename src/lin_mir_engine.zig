@@ -234,7 +234,7 @@ pub const MirJitEmitter = struct {
         //
         // Opcodes:
         // 48 39 f7          cmp %rsi, %rdi
-        // 7c 08             jl  .less (offset +8)
+        // 7c 07             jl  .less (next IP = 5, target = 12, disp = 12 - 5 = 7)
         // 48 89 f8          mov %rdi, %rax
         // 48 29 f0          sub %rsi, %rax
         // c3                ret
@@ -249,7 +249,7 @@ pub const MirJitEmitter = struct {
         page[2] = 0xf7; // cmp %rsi, %rdi
 
         page[3] = 0x7c;
-        page[4] = 0x08; // jl +8
+        page[4] = 0x07; // jl +7 (dest = 5 + 7 = 12)
 
         page[5] = 0x48;
         page[6] = 0x89;
@@ -261,7 +261,7 @@ pub const MirJitEmitter = struct {
 
         page[11] = 0xc3; // ret
 
-        // .less offset (index 12)
+        // .less offset (index 12: 5 + 7 = 12)
         page[12] = 0x48;
         page[13] = 0x89;
         page[14] = 0xf0; // mov %rsi, %rax
