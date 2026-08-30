@@ -146,6 +146,7 @@ pub fn main() !void {
         "src/lin_blind_generalization.lin",
         "src/lin_binary_merkle_provenance.lin",
         "src/lin_compatibility_matrix.lin",
+        "src/lin_c_expr_parser.lin",
     };
 
     var total_lin_bytes: usize = 0;
@@ -161,7 +162,7 @@ pub fn main() !void {
     try stdout.print("  .Total Self-Hosted LIN Source Code: {d} Bytes across {d} Modules\n", .{
         total_lin_bytes, lin_module_files.len,
     });
-    try stdout.print("  [PASS] Phase 2: All 9 core self-hosted LIN modules loaded and validated\n\n", .{});
+    try stdout.print("  [PASS] Phase 2: All {d} core self-hosted LIN modules loaded and validated\n\n", .{lin_module_files.len});
     passed += 1;
 
     // ──────────────────────────────────────────────────────────────────────────
