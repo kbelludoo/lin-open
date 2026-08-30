@@ -108,3 +108,18 @@ The campaign injected 2,758 controlled adversarial perturbations in-flight to te
 2. **Autonomous Recovery**: 100% of all injected faults were resolved in-flight with zero panics and zero process terminations.
 3. **State & Resource Integrity**: Zero memory leaks (`leaked_bytes == 0`), zero invalid buffer handles, zero double-frees, zero stale residency graph edges.
 4. **Cryptographic Provenance**: A single, non-retroactive Merkle chain root encapsulates the entire sequence of executions, plan transitions, and fault recoveries.
+
+---
+
+## 7. Methodological Qualification & Limitations
+
+```text
+================================================================================
+@LIN:AUTONOMOUS_ENDURANCE_CERTIFICATE:1.0.0
+.status="PASS_OBSERVED"
+.qualification="PASS for controlled heterogeneous endurance and autonomous recovery under stochastic runtime drift."
+.limitation="Fault classes (OOM, thermal degradation, residency eviction, bus contention) were evaluated under controlled in-flight injection models. Independent physical driver/telemetry observer correlation is required for external physical silicon-fault certification."
+.provenance_root="sha256:3d94d20a215afa8990c27c512e459a38d660fc51f2c8103177a79b727137c4c8"
+.git_commit="2c079d9f"
+================================================================================
+```
