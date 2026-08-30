@@ -1,0 +1,56 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=protocol_evolution_v350
+~G{?=if #=for ^=ret :else}
+
+// ============================================================================
+// LIN-VERIFY-004: PROTOCOL EVOLUTION & 4-STATE VERIFICATION MACHINE
+// Status Codes:
+//   1: PASS (understood and validated)
+//   2: UNSUPPORTED (unsupported future version/capability, never silent PASS)
+//   3: INCOMPATIBLE (explicit capability/constraint clash)
+//   4: FAIL_CLOSED (known structure corrupted or invalid)
+// ============================================================================
+
+!evaluate_version_state(ver_verifier: int, ver_artifact: int, is_corrupted: int) -> int {
+    state = 0;
+    ?(is_corrupted == 1) {
+        state = 4; // FAIL_CLOSED
+    }
+    ?(is_corrupted == 0) {
+        ?(ver_verifier >= ver_artifact) {
+            state = 1; // PASS
+        }
+        ?(ver_verifier < ver_artifact) {
+            state = 2; // UNSUPPORTED
+        }
+    }
+    ^state;
+}
+
+!evaluate_extension_criticality(is_critical: int, is_known: int) -> int {
+    decision = 0;
+    ?(is_known == 1) {
+        decision = 1; // PASS
+    }
+    ?(is_known == 0) {
+        ?(is_critical == 1) {
+            decision = 3; // INCOMPATIBLE / UNSUPPORTED
+        }
+        ?(is_critical == 0) {
+            decision = 1; // PASS (Non-critical annotation ignored safely)
+        }
+    }
+    ^decision;
+}
+
+!verify_crypto_transition_link(old_root_valid: int, transition_proof_valid: int) -> int {
+    valid = 0;
+    ?(old_root_valid == 1) {
+        ?(transition_proof_valid == 1) {
+            valid = 1;
+        }
+    }
+    ^valid;
+}
+
+=ex{evaluate_version_state, evaluate_extension_criticality, verify_crypto_transition_link}

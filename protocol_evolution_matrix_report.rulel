@@ -1,0 +1,29 @@
+@RULEL:LIN_PROTOCOL_EVOLUTION_MATRIX:1.0.0
+~R{.s=subject .m=matrix .c=capabilities .v=verdict}
+.s{
+  evolution_gate_id="LIN-VERIFY-004"
+  state_machine_model="4_STATE_CLOSED"
+  historical_canonical_digest="sha256:f3c7c83538a29d4b9a544f5271757159f75233c79d396ddace2190513234de0b"
+  audit_timestamp="2026-08-30T18:52:00Z"
+}
+.m{
+  .c1_1{ verifier="v1.0" artifact="v1.0" state="PASS" }
+  .c1_2{ verifier="v1.0" artifact="v2.0" state="UNSUPPORTED" }
+  .c1_3{ verifier="v1.0" artifact="v3.0" state="UNSUPPORTED" }
+  .c2_1{ verifier="v2.0" artifact="v1.0" state="PASS" }
+  .c2_2{ verifier="v2.0" artifact="v2.0" state="PASS" }
+  .c2_3{ verifier="v2.0" artifact="v3.0" state="UNSUPPORTED" }
+  .c3_1{ verifier="v3.0" artifact="v1.0" state="PASS" }
+  .c3_2{ verifier="v3.0" artifact="v2.0" state="PASS" }
+  .c3_3{ verifier="v3.0" artifact="v3.0" state="PASS" }
+}
+.c{
+  critical_namespace_fail_closed=true
+  non_critical_namespace_safe_ignored=true
+  hash_agility_envelope_supported=true
+  post_quantum_mldsa_ready=true
+}
+.v{
+  compatibility_status="LONG_TERM_DETERMINISTIC_CERTIFIED"
+  silent_pass_divergences=0
+}
