@@ -102,7 +102,7 @@ pub fn main() !void {
     try stdout.print("[010A-D] 5-Stage Cascading Fault Progression\n", .{});
     for (plans, plan_tags) |p, tag| {
         try stdout.print("  [{s: <11}] Backend: {s: <8} | Chunk: {d: <4} | N*: {d: <6} | In: {s: <9} | Out: {s} | Policy: {s}\n", .{
-            tag, p.backend, p.chunk_size, p.crossover_n_star,
+            tag, @tagName(p.backend), p.chunk_size, p.crossover_n_star,
             p.input_residency, p.output_residency, p.transfer_policy,
         });
     }
@@ -144,7 +144,7 @@ pub fn main() !void {
         const certified = (after.plan_version == before.plan_version + 1) and decision_changed and delta_any;
         if (!certified) all_certified = false;
         if (same_backend and certified) intra_backend += 1;
-        try stdout.print("  [T{i}] {s}\n", .{ i, trans_names[i] });
+        try stdout.print("  [T{d}] {s}\n", .{ i, trans_names[i] });
         try stdout.print("       plan_version: {d} -> {d}\n", .{ before.plan_version, after.plan_version });
         try stdout.print("       backend:      {s} -> {s}\n", .{ @tagName(before.backend), @tagName(after.backend) });
         try stdout.print("       chunk:        {d} -> {d}\n", .{ before.chunk_size, after.chunk_size });
