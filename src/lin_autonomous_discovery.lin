@@ -1,0 +1,31 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=autonomous_discovery
+~G{?=if #=for ^=ret :else}
+
+!classify_entity_state(is_parallelizable, has_pointer_aliasing, is_pure, is_recursive) {
+    state = 0; // DISCOVERED
+    ?(is_recursive > 0) {
+        state = 4; // UNSAFE
+    } : {
+        ?(has_pointer_aliasing > 0) {
+            state = 3; // REJECTED
+        } : {
+            ?(is_parallelizable > 0) {
+                state = 2; // SUPPORTED
+            } : {
+                state = 5; // DEFERRED
+            }
+        }
+    }
+    ^state;
+}
+
+!compute_generalization_rate(supported_count, discovered_count) {
+    rate_permille = 0;
+    ?(discovered_count > 0) {
+        rate_permille = (supported_count * 1000) / discovered_count;
+    }
+    ^rate_permille;
+}
+
+=ex{classify_entity_state, compute_generalization_rate}

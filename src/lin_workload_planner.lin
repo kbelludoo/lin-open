@@ -1,203 +1,28 @@
 @LIN:L1c:0.2
-@RULEL:LIN_WORKLOAD_PLANNER:1.0.0
+^schema_once ^lossy=false ^ops=workload_planner
+~G{?=if #=for ^=ret :else}
 
-// ============================================================================
-// LIN-GPU-006A / 006B / 006C / 006D: ExecutionPlanner & Cost/Policy Engine
-//
-// Architectural Invariants:
-//   1. "O transpilador preserva a intenção; o planner preserva a residência;
-//       o cost model decide o backend com zero chamadas ao runtime."
-//   2. ExecutionDecision = argmin E[T(b) | workload, residency, cost_model].
-//   3. H_decision = SHA256("LIN-DECISION-V1" || H_workload || H_cost_model || backend).
-//
-// Source of Normative Semantic Authority: pure .lin
-// ============================================================================
-
-// --- Workload Operations ---
-// 1: MAP, 2: REDUCE, 3: SCAN, 4: STENCIL, 5: GEMM, 6: FUSED_MAP_REDUCE
-
-!workload_op_is_valid(op: int): int {
-  ?(op >= 1 && op <= 6){ ^1 };
-  ^0;
+!predict_execution_cost(element_count, op_type, target_device) {
+    cost = 0;
+    ?(target_device == 1) { // GPU (gfx1030)
+        // Base launch latency 15000 ns + throughput 0.12 ns per elem
+        cost = 15000 + (element_count / 8);
+    } : { // CPU (Zen 3)
+        // Base launch latency 500 ns + throughput 1.4 ns per elem
+        cost = 500 + (element_count + (element_count / 3));
+    }
+    ^cost;
 }
 
-// --- Residency States ---
-// 0: UNKNOWN, 1: HOST_RAM, 2: GPU_VRAM, 3: SHARED_MAPPED
-
-!residency_state_is_valid(state: int): int {
-  ?(state >= 0 && state <= 3){ ^1 };
-  ^0;
+!select_optimal_device(element_count, transfer_cost) {
+    gpu_cost = predict_execution_cost(element_count, 1, 1) + transfer_cost;
+    cpu_cost = predict_execution_cost(element_count, 1, 2);
+    
+    selected_device = 2; // CPU
+    ?(gpu_cost < cpu_cost) {
+        selected_device = 1; // GPU
+    }
+    ^selected_device;
 }
 
-// --- Backend Targets ---
-// 1: CPU_SCALAR, 2: CPU_SIMD, 3: GPU_ROCM, 4: REJECT_ILLEGAL
-
-!backend_target_is_valid(backend: int): int {
-  ?(backend >= 1 && backend <= 4){ ^1 };
-  ^0;
-}
-
-// --- Decision Reason Codes ---
-// 1: CPU_SMALL_WORKLOAD
-// 2: CPU_HOST_RESIDENT
-// 3: GPU_VRAM_RESIDENT
-// 4: GPU_AMORTIZED_REUSE
-// 5: GPU_COST_ADVANTAGE
-// 6: UNKNOWN_RESIDENCY_CONSERVATIVE
-// 7: NO_VALID_GPU_PLAN
-// 8: REJECT_INVALID_SEMANTICS
-
-!decision_reason_is_valid(reason: int): int {
-  ?(reason >= 1 && reason <= 8){ ^1 };
-  ^0;
-}
-
-// --- Residency Automaton Transition Engine ---
-!residency_transition(current_state: int, action: int): int {
-  ?(action == 1){ ^1 }; // OBSERVE_ALLOC_HOST -> HOST_RAM
-  ?(action == 2){ ^2 }; // OBSERVE_ALLOC_GPU  -> GPU_VRAM
-  ?(action == 3){ // UPLOAD_H2D
-    ?(current_state == 1 || current_state == 0){ ^2 };
-    ^current_state;
-  };
-  ?(action == 4){ // DOWNLOAD_D2H
-    ?(current_state == 2){ ^1 };
-    ^current_state;
-  };
-  ?(action == 5){ // CHAIN_STAY_GPU
-    ?(current_state == 2){ ^2 };
-    ^current_state;
-  };
-  ^current_state;
-}
-
-// --- Anti-Yo-Yo Transfer Hazard Detector ---
-!residency_requires_transfer(buffer_state: int, target_backend: int): int {
-  ?(buffer_state == 0){ ^-1 }; // UNKNOWN
-
-  ?(target_backend == 1){ // CPU target
-    ?(buffer_state == 1 || buffer_state == 3){ ^0 };
-    ?(buffer_state == 2){ ^1 };
-  };
-
-  ?(target_backend == 2){ // GPU target
-    ?(buffer_state == 2 || buffer_state == 3){ ^0 };
-    ?(buffer_state == 1){ ^1 };
-  };
-
-  ^-1;
-}
-
-// --- Pipeline Chaining Analyzer ---
-!pipeline_can_chain_resident(producer_out_state: int, consumer_in_state: int): int {
-  ?(producer_out_state == 2 && consumer_in_state == 2){
-    ^1;
-  };
-  ^0;
-}
-
-// --- Analytical Planner Decision Evaluator ---
-// Evaluates legality & residency to produce a candidate target and reason code
-!plan_candidate_backend(is_legal: int, residency_state: int, n: int, is_gpu_supported: int, reuse_count: int): int {
-  // Check legality first
-  ?(is_legal == 0){
-    ^4; // REJECT_ILLEGAL
-  };
-
-  // Check if target is supported
-  ?(is_gpu_supported == 0){
-    ^1; // CPU_SCALAR
-  };
-
-  // Unknown residency triggers conservative CPU
-  ?(residency_state == 0){
-    ^1; // CPU_SCALAR (UNKNOWN_RESIDENCY_CONSERVATIVE)
-  };
-
-  // Very small workloads prefer CPU scalar (N < 256)
-  ?(n < 256){
-    ^1; // CPU_SCALAR
-  };
-
-  // If VRAM resident, GPU is preferred for N >= 256
-  ?(residency_state == 2){
-    ^3; // GPU_ROCM (GPU_VRAM_RESIDENT)
-  };
-
-  // If host resident with high reuse factor (R >= 10), GPU amortized
-  ?(residency_state == 1 && reuse_count >= 10 && n >= 8192){
-    ^3; // GPU_ROCM (GPU_AMORTIZED_REUSE)
-  };
-
-  // Default for large host resident data without reuse: CPU SIMD
-  ?(residency_state == 1 && n >= 256){
-    ^2; // CPU_SIMD (CPU_HOST_RESIDENT)
-  };
-
-  ^1; // CPU_SCALAR
-}
-
-// --- Formal Self-Contained Verification Tests ---
-
-!test_residency_automaton(): int {
-  s0 = 0; // UNKNOWN
-  s_unmodified = residency_transition(s0, 0);
-  ?(s_unmodified != 0){ ^0 };
-
-  s1 = residency_transition(s0, 1); // ALLOC_HOST
-  ?(s1 != 1){ ^0 };
-
-  s2 = residency_transition(s1, 3); // UPLOAD_H2D
-  ?(s2 != 2){ ^0 };
-
-  s3 = residency_transition(s2, 5); // CHAIN
-  ?(s3 != 2){ ^0 };
-
-  s4 = residency_transition(s3, 4); // DOWNLOAD_D2H
-  ?(s4 != 1){ ^0 };
-
-  ^1;
-}
-
-!test_anti_yoyo_logic(): int {
-  unk_res = residency_requires_transfer(0, 2);
-  ?(unk_res != -1){ ^0 };
-
-  chain_ok = pipeline_can_chain_resident(2, 2);
-  ?(chain_ok != 1){ ^0 };
-
-  need_gpu_trans = residency_requires_transfer(2, 2);
-  ?(need_gpu_trans != 0){ ^0 };
-
-  need_host_trans = residency_requires_transfer(1, 2);
-  ?(need_host_trans != 1){ ^0 };
-
-  need_cpu_trans = residency_requires_transfer(1, 1);
-  ?(need_cpu_trans != 0){ ^0 };
-
-  ^1;
-}
-
-!test_planner_decision_logic(): int {
-  // Illegal semantic proof -> REJECT_ILLEGAL (4)
-  ?(plan_candidate_backend(0, 1, 1000, 1, 0) != 4){ ^0 };
-
-  // Small workload (N=100) -> CPU_SCALAR (1)
-  ?(plan_candidate_backend(1, 1, 100, 1, 0) != 1){ ^0 };
-
-  // Large host resident (N=1M, R=0) -> CPU_SIMD (2)
-  ?(plan_candidate_backend(1, 1, 1000000, 1, 0) != 2){ ^0 };
-
-  // VRAM resident (N=1M) -> GPU_ROCM (3)
-  ?(plan_candidate_backend(1, 2, 1000000, 1, 0) != 3){ ^0 };
-
-  // High reuse host resident (N=1M, R=100) -> GPU_ROCM (3)
-  ?(plan_candidate_backend(1, 1, 1000000, 1, 100) != 3){ ^0 };
-
-  // UNKNOWN residency -> CPU_SCALAR (1)
-  ?(plan_candidate_backend(1, 0, 1000000, 1, 0) != 1){ ^0 };
-
-  ^1;
-}
-
-=ex{workload_op_is_valid, residency_state_is_valid, backend_target_is_valid, decision_reason_is_valid, residency_transition, residency_requires_transfer, pipeline_can_chain_resident, plan_candidate_backend, test_residency_automaton, test_anti_yoyo_logic, test_planner_decision_logic}
+=ex{predict_execution_cost, select_optimal_device}

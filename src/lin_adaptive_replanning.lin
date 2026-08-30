@@ -1,0 +1,30 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=adaptive_replanning
+~G{?=if #=for ^=ret :else}
+
+!calculate_telemetry_drift(observed_time, predicted_time) {
+    diff = observed_time - predicted_time;
+    ?(diff < 0) {
+        diff = 0 - diff;
+    }
+    relative_drift_permille = (diff * 1000) / predicted_time;
+    ^relative_drift_permille;
+}
+
+!replan_with_feedback(current_device, drift_permille, gpu_congested) {
+    new_device = current_device;
+    ?(gpu_congested > 0) {
+        new_device = 2; // CPU fallback
+    } : {
+        ?(drift_permille > 200) { // > 20% drift
+            ?(current_device == 1) {
+                new_device = 2; // Move to CPU
+            } : {
+                new_device = 1; // Move to GPU
+            }
+        }
+    }
+    ^new_device;
+}
+
+=ex{calculate_telemetry_drift, replan_with_feedback}

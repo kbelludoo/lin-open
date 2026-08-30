@@ -1,0 +1,28 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=blind_generalization
+~G{?=if #=for ^=ret :else}
+
+!verify_mutation_sensitivity(orig_res, mutated_res, is_semantic_mutation) {
+    passed = 0;
+    ?(is_semantic_mutation > 0) {
+        ?(orig_res != mutated_res) {
+            passed = 1; // Correctly diverged
+        }
+    } : {
+        ?(orig_res == mutated_res) {
+            passed = 1; // Correctly invariant
+        }
+    }
+    ^passed;
+}
+
+!evaluate_blind_pool_safety(false_extractions, unsafe_extractions, silent_mismatches) {
+    is_safe = 0;
+    total_violations = false_extractions + unsafe_extractions + silent_mismatches;
+    ?(total_violations == 0) {
+        is_safe = 1;
+    }
+    ^is_safe;
+}
+
+=ex{verify_mutation_sensitivity, evaluate_blind_pool_safety}

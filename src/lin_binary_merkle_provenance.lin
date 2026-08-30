@@ -1,0 +1,15 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=merkle_provenance
+~G{?=if #=for ^=ret :else}
+
+!compute_11_element_leaf_hash(repo_h, commit_h, tree_h, blob_h, src_h, fn_h, in_h, mir_h, kern_h, out_h, trace_h) {
+    leaf = (repo_h * 1000003) ^ (commit_h * 97) ^ (tree_h * 31) ^ (blob_h * 17) ^ (src_h * 13) ^ (fn_h * 7) ^ in_h ^ mir_h ^ kern_h ^ out_h ^ trace_h;
+    ^leaf;
+}
+
+!pairwise_binary_merkle_step(left_node, right_node) {
+    node = ((left_node * 16777619) ^ (right_node * -2128831035)) + 0x517cc1b7;
+    ^node;
+}
+
+=ex{compute_11_element_leaf_hash, pairwise_binary_merkle_step}
