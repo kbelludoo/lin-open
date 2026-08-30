@@ -1,0 +1,30 @@
+@RULEL:LIN_FEDERATION_CONSENSUS:1.0.0
+~R{.s=subject .b=bundles .f=federation .m=migration .v=verdict}
+.s{
+  federation_id="urn:lin:federation:2026-08-30:011"
+  bundle_count=3
+  hardware_dimensions=3
+  spec_evolution_supported=true
+  audit_timestamp="2026-08-30T13:45:00Z"
+}
+.b{
+  .bundle_0{ id="urn:lin:bundle:2026-08-30:007:gpu_parallel_map" repo="lin-compiler/corpus" arch="gfx1030" backend="OPENCL_ROCM" }
+  .bundle_1{ id="urn:lin:bundle:2026-08-30:008:qoi_decompression" repo="phoboslab/qoi" arch="gfx1030" backend="OPENCL_ROCM" }
+  .bundle_2{ id="urn:lin:bundle:2026-08-30:009:darknet_gemm" repo="pjreddie/darknet" arch="CPU_ZEN3" backend="NATIVE_SIMD_AVX2" }
+}
+.f{
+  ordered_reduction=true
+  deterministic_tree=true
+  federation_merkle_root="sha256:d11876041ede39427a3b919e6c4206e837db3f66c84d4e7fb7d8c53b84acf906"
+  hardware_identity_isolated=true
+}
+.m{
+  spec_v1_to_v2_migration_verified=true
+  semantic_invariance_guarantee=true
+  incompatible_migration_policy="STRICT_REJECT"
+}
+.v{
+  federation_consensus_status="FEDERATED_EQUIVALENCE_PRESERVED"
+  common_mode_divergence_observed=0
+  adversarial_tree_mutation_resistance=true
+}
