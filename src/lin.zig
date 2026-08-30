@@ -7506,6 +7506,16 @@ pub fn main() !void {
             try stdout.print(".invariants={{semantic_equivalence,output_equivalence,oracle_equivalence,deterministic_replay}}\n", .{});
             try stdout.print(".fail_on={{semantic_drift,codegen_drift,oracle_mismatch,nondeterminism}}\n", .{});
             if (confirmed_count == corpus_targets.len) {
+                try stdout.print(".status=\"PASS\"\n\n", .{});
+            } else {
+                try stdout.print(".status=\"FAIL\"\n\n", .{});
+            }
+
+            try stdout.print("@LIN:HYPO_DIAGNOSTIC_INVARIANTS:1.0.0\n", .{});
+            try stdout.print(".canonical.confirmed={d}\n.canonical.refuted={d}\n", .{ confirmed_count, corpus_targets.len - confirmed_count });
+            try stdout.print(".refutation.reasons={{backend_divergence,oracle_mismatch,function_not_found,function_rejected}}\n", .{});
+            try stdout.print(".refutation.total=4\n.refutation.unclassified=0\n", .{});
+            if (confirmed_count == corpus_targets.len) {
                 try stdout.print(".status=\"PASS\"\n", .{});
             } else {
                 try stdout.print(".status=\"FAIL\"\n", .{});
@@ -7665,6 +7675,13 @@ pub fn main() !void {
 
             if (vm_res != aot_res or vm_res != jit_res) {
                 try stdout.print(".equivalent=false\n", .{});
+                try stdout.print(".backend.vm={d}\n.backend.aot={d}\n.backend.jit={d}\n", .{ vm_res, aot_res, jit_res });
+                try stdout.print(".disagreement={{\"vm_vs_jit\":{s},\"vm_vs_aot\":{s},\"jit_vs_aot\":{s}}}\n", .{
+                    if (vm_res != jit_res) "true" else "false",
+                    if (vm_res != aot_res) "true" else "false",
+                    if (jit_res != aot_res) "true" else "false",
+                });
+                try stdout.print(".execution={{vm=\"executed\",jit=\"executed\",aot=\"executed\"}}\n", .{});
                 try stdout.print(".verdict=\"REFUTED\"\n.reason=\"backend_divergence\"\n", .{});
                 return;
             }
