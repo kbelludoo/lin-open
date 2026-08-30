@@ -301,6 +301,18 @@
   ^cfs_stmt(t);
 }
 
+!cfs_brace_body(s: string): string {
+  t = jss_trim(s);
+  n = t.length;
+  while (n >= 2 && t.charCodeAt(0) == 123 && t.charCodeAt(n - 1) == 125){
+    t = jss_trim(slice2(t, 1, n - 1));
+    n = t.length;
+  };
+  ?(n == 0){ ^"" };
+  ?(starts_lit(t, 0, "break") == 1 && (n == 5 || is_ident(t.charCodeAt(5)) == false)){ ^"" };
+  ^cfs_body(t);
+}
+
 !cfs_stmt(st: string): string {
   e = jss_trim(st);
   n = e.length;
@@ -325,8 +337,33 @@
         out = out + "?(";
         out = out + cfs_shifts(slice2(e, p + 1, cl));
         out = out + "){ ";
-        out = out + cfs_stmt(slice2(e, cl + 1, n));
+        out = out + cfs_brace_body(slice2(e, cl + 1, n));
         out = out + " }";
+        ^out;
+      };
+    };
+  };
+  ?(starts_lit(e, 0, "while") == 1 && n > 5 && is_ident(e.charCodeAt(5)) == false){
+    p = skip_ws(e, 5);
+    ?(p < n && e.charCodeAt(p) == 40){
+      cl = match_paren(e, p);
+      ?(cl > p){
+        w_cond = jss_trim(cfs_shifts(slice2(e, p + 1, cl)));
+        w_body = jss_trim(slice2(e, cl + 1, n));
+        w_len = w_body.length;
+        while (w_len >= 2 && w_body.charCodeAt(0) == 123 && w_body.charCodeAt(w_len - 1) == 125){
+          w_body = jss_trim(slice2(w_body, 1, w_len - 1));
+          w_len = w_body.length;
+        };
+        out = "";
+        out = out + "while (";
+        out = out + w_cond;
+        out = out + ") {";
+        out = out + rgs_ch(10);
+        ?(w_body.length > 0){
+          out = out + cfs_body(w_body);
+        };
+        out = out + "  }";
         ^out;
       };
     };

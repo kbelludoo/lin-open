@@ -4150,12 +4150,31 @@ pub fn cfs_step_to_assign(s: []const u8) []const u8 {
 
 }
 
+pub fn cfs_brace_body(s: []const u8) []const u8 {
+    var t: []const u8 = "";
+    var n: i64 = 0;
+
+  t = jss_trim(s);
+  n = _lia_len(t);
+  while (n >= 2  and  _lia_char_code_at(t, 0) == 123  and  _lia_char_code_at(t, n - 1) == 125) {
+    t = jss_trim(slice2(t, 1, n - 1));
+    n = _lia_len(t);
+  }
+  if (n == 0) { return "" ;}
+  if (starts_lit(t, 0, "break") == 1  and  (n == 5  or  is_ident(_lia_char_code_at(t, 5)) == false)) { return "" ;}
+  return cfs_body(t);
+
+}
+
 pub fn cfs_stmt(st: []const u8) []const u8 {
     var e: []const u8 = "";
     var n: i64 = 0;
     var out: []const u8 = "";
     var p: i64 = 0;
     var cl: i64 = 0;
+    var w_cond: []const u8 = "";
+    var w_body: []const u8 = "";
+    var w_len: i64 = 0;
     var hdr: []const u8 = "";
     var s1: i64 = 0;
     var s2: i64 = 0;
@@ -4190,8 +4209,33 @@ pub fn cfs_stmt(st: []const u8) []const u8 {
         out = _lia_cat(out ,  "?(");
         out = _lia_cat(out ,  cfs_shifts(slice2(e, p + 1, cl)));
         out = _lia_cat(out ,  "){ ");
-        out = _lia_cat(out ,  cfs_stmt(slice2(e, cl + 1, n)));
+        out = _lia_cat(out ,  cfs_brace_body(slice2(e, cl + 1, n)));
         out = _lia_cat(out ,  " }");
+        return out;
+      }
+    }
+  }
+  if (starts_lit(e, 0, "while") == 1  and  n > 5  and  is_ident(_lia_char_code_at(e, 5)) == false) {
+    p = skip_ws(e, 5);
+    if (p < n  and  _lia_char_code_at(e, p) == 40) {
+      cl = match_paren(e, p);
+      if (cl > p) {
+        w_cond = jss_trim(cfs_shifts(slice2(e, p + 1, cl)));
+        w_body = jss_trim(slice2(e, cl + 1, n));
+        w_len = _lia_len(w_body);
+        while (w_len >= 2  and  _lia_char_code_at(w_body, 0) == 123  and  _lia_char_code_at(w_body, w_len - 1) == 125) {
+          w_body = jss_trim(slice2(w_body, 1, w_len - 1));
+          w_len = _lia_len(w_body);
+        }
+        out = "";
+        out = _lia_cat(out ,  "while (");
+        out = _lia_cat(out ,  w_cond);
+        out = _lia_cat(out ,  ") {");
+        out = _lia_cat(out ,  rgs_ch(10));
+        if (_lia_len(w_body) > 0) {
+          out = _lia_cat(out ,  cfs_body(w_body));
+        }
+        out = _lia_cat(out ,  "  }");
         return out;
       }
     }
