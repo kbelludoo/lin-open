@@ -1,5 +1,5 @@
 const std = @import("std");
-const jit = @import("lin_jit.zig");
+pub const jit = @import("lin_jit.zig");
 
 pub const MirType = enum {
     i1,
@@ -78,7 +78,6 @@ pub const MirVm = struct {
         var iterations: usize = 0;
 
         while (iterations < 100_000) : (iterations += 1) {
-            // Find block with id
             var found_block: ?MirBlock = null;
             for (func.blocks) |b| {
                 if (b.id == current_block_id) {
@@ -91,30 +90,14 @@ pub const MirVm = struct {
 
             for (block.instructions) |inst| {
                 switch (inst.opcode) {
-                    .const_val => {
-                        self.v_regs[inst.dst] = inst.imm;
-                    },
-                    .param => {
-                        self.v_regs[inst.dst] = self.v_regs[inst.lhs];
-                    },
-                    .add => {
-                        self.v_regs[inst.dst] = self.v_regs[inst.lhs] +% self.v_regs[inst.rhs];
-                    },
-                    .sub => {
-                        self.v_regs[inst.dst] = self.v_regs[inst.lhs] -% self.v_regs[inst.rhs];
-                    },
-                    .mul => {
-                        self.v_regs[inst.dst] = self.v_regs[inst.lhs] *% self.v_regs[inst.rhs];
-                    },
-                    .and_op => {
-                        self.v_regs[inst.dst] = self.v_regs[inst.lhs] & self.v_regs[inst.rhs];
-                    },
-                    .or_op => {
-                        self.v_regs[inst.dst] = self.v_regs[inst.lhs] | self.v_regs[inst.rhs];
-                    },
-                    .xor_op => {
-                        self.v_regs[inst.dst] = self.v_regs[inst.lhs] ^ self.v_regs[inst.rhs];
-                    },
+                    .const_val => self.v_regs[inst.dst] = inst.imm,
+                    .param => self.v_regs[inst.dst] = self.v_regs[inst.lhs],
+                    .add => self.v_regs[inst.dst] = self.v_regs[inst.lhs] +% self.v_regs[inst.rhs],
+                    .sub => self.v_regs[inst.dst] = self.v_regs[inst.lhs] -% self.v_regs[inst.rhs],
+                    .mul => self.v_regs[inst.dst] = self.v_regs[inst.lhs] *% self.v_regs[inst.rhs],
+                    .and_op => self.v_regs[inst.dst] = self.v_regs[inst.lhs] & self.v_regs[inst.rhs],
+                    .or_op => self.v_regs[inst.dst] = self.v_regs[inst.lhs] | self.v_regs[inst.rhs],
+                    .xor_op => self.v_regs[inst.dst] = self.v_regs[inst.lhs] ^ self.v_regs[inst.rhs],
                     .shl_op => {
                         const shift: u6 = @intCast(self.v_regs[inst.rhs] & 63);
                         self.v_regs[inst.dst] = self.v_regs[inst.lhs] << shift;
@@ -128,18 +111,13 @@ pub const MirVm = struct {
                         const shift: u6 = @intCast(self.v_regs[inst.rhs] & 63);
                         self.v_regs[inst.dst] = self.v_regs[inst.lhs] >> shift;
                     },
-                    .cmp_eq => {
-                        self.v_regs[inst.dst] = if (self.v_regs[inst.lhs] == self.v_regs[inst.rhs]) 1 else 0;
-                    },
-                    .cmp_lt => {
-                        self.v_regs[inst.dst] = if (self.v_regs[inst.lhs] < self.v_regs[inst.rhs]) 1 else 0;
-                    },
+                    .cmp_eq => self.v_regs[inst.dst] = if (self.v_regs[inst.lhs] == self.v_regs[inst.rhs]) 1 else 0,
+                    .cmp_lt => self.v_regs[inst.dst] = if (self.v_regs[inst.lhs] < self.v_regs[inst.rhs]) 1 else 0,
                     .select_op => {
                         const cond = self.v_regs[inst.lhs];
                         self.v_regs[inst.dst] = if (cond != 0) self.v_regs[inst.rhs] else self.v_regs[inst.extra];
                     },
                     .phi_op => {
-                        // True PHI predecessor resolution
                         var resolved = false;
                         for (0..inst.phi_count) |k| {
                             if (inst.phi_incoming_blocks[k] == self.prev_block_id) {
@@ -164,9 +142,7 @@ pub const MirVm = struct {
                         current_block_id = if (cond != 0) inst.target_block else inst.target_block_else;
                         break;
                     },
-                    .ret_op => {
-                        return self.v_regs[inst.lhs];
-                    },
+                    .ret_op => return self.v_regs[inst.lhs],
                 }
             }
         }
@@ -174,7 +150,7 @@ pub const MirVm = struct {
     }
 };
 
-/// 2. Direct Lowering of MirFunction to AOT Zig Code in Memory
+/// 2. Direct CFG-Aware AOT Emitter from MirFunction (State-Machine Switch Dispatcher)
 pub const MirAotEmitter = struct {
     pub fn emitToZigString(allocator: std.mem.Allocator, func: MirFunction) ![]const u8 {
         var list = std.ArrayList(u8).init(allocator);
@@ -190,32 +166,115 @@ pub const MirAotEmitter = struct {
         for (func.params, 0..) |_, i| {
             try writer.print("    r[{d}] = arg{d};\n", .{ i, i });
         }
+        try writer.print("    var current_block: u32 = 0;\n", .{});
+        try writer.print("    var prev_block: u32 = 0;\n", .{});
+        try writer.print("    while (true) {{\n", .{});
+        try writer.print("        switch (current_block) {{\n", .{});
 
         for (func.blocks) |block| {
-            try writer.print("    // Block {d}\n", .{block.id});
+            try writer.print("            {d} => {{\n", .{block.id});
             for (block.instructions) |inst| {
                 switch (inst.opcode) {
-                    .const_val => try writer.print("    r[{d}] = {d};\n", .{ inst.dst, inst.imm }),
-                    .param => try writer.print("    r[{d}] = r[{d}];\n", .{ inst.dst, inst.lhs }),
-                    .add => try writer.print("    r[{d}] = r[{d}] +% r[{d}];\n", .{ inst.dst, inst.lhs, inst.rhs }),
-                    .sub => try writer.print("    r[{d}] = r[{d}] -% r[{d}];\n", .{ inst.dst, inst.lhs, inst.rhs }),
-                    .mul => try writer.print("    r[{d}] = r[{d}] *% r[{d}];\n", .{ inst.dst, inst.lhs, inst.rhs }),
-                    .and_op => try writer.print("    r[{d}] = r[{d}] & r[{d}];\n", .{ inst.dst, inst.lhs, inst.rhs }),
-                    .or_op => try writer.print("    r[{d}] = r[{d}] | r[{d}];\n", .{ inst.dst, inst.lhs, inst.rhs }),
-                    .xor_op => try writer.print("    r[{d}] = r[{d}] ^ r[{d}];\n", .{ inst.dst, inst.lhs, inst.rhs }),
-                    .shl_op => try writer.print("    r[{d}] = r[{d}] << @intCast(r[{d}] & 63);\n", .{ inst.dst, inst.lhs, inst.rhs }),
-                    .ushr_op => try writer.print("    r[{d}] = @bitCast(@as(u64, @bitCast(r[{d}])) >> @intCast(r[{d}] & 63));\n", .{ inst.dst, inst.lhs, inst.rhs }),
-                    .shr_op => try writer.print("    r[{d}] = r[{d}] >> @intCast(r[{d}] & 63);\n", .{ inst.dst, inst.lhs, inst.rhs }),
-                    .cmp_eq => try writer.print("    r[{d}] = if (r[{d}] == r[{d}]) 1 else 0;\n", .{ inst.dst, inst.lhs, inst.rhs }),
-                    .cmp_lt => try writer.print("    r[{d}] = if (r[{d}] < r[{d}]) 1 else 0;\n", .{ inst.dst, inst.lhs, inst.rhs }),
-                    .select_op => try writer.print("    r[{d}] = if (r[{d}] != 0) r[{d}] else r[{d}];\n", .{ inst.dst, inst.lhs, inst.rhs, inst.extra }),
-                    .phi_op => try writer.print("    r[{d}] = r[{d}];\n", .{ inst.dst, inst.phi_incoming_vals[0] }),
-                    .ret_op => try writer.print("    return r[{d}];\n", .{inst.lhs}),
-                    else => {},
+                    .const_val => try writer.print("                r[{d}] = {d};\n", .{ inst.dst, inst.imm }),
+                    .param => try writer.print("                r[{d}] = r[{d}];\n", .{ inst.dst, inst.lhs }),
+                    .add => try writer.print("                r[{d}] = r[{d}] +% r[{d}];\n", .{ inst.dst, inst.lhs, inst.rhs }),
+                    .sub => try writer.print("                r[{d}] = r[{d}] -% r[{d}];\n", .{ inst.dst, inst.lhs, inst.rhs }),
+                    .mul => try writer.print("                r[{d}] = r[{d}] *% r[{d}];\n", .{ inst.dst, inst.lhs, inst.rhs }),
+                    .and_op => try writer.print("                r[{d}] = r[{d}] & r[{d}];\n", .{ inst.dst, inst.lhs, inst.rhs }),
+                    .or_op => try writer.print("                r[{d}] = r[{d}] | r[{d}];\n", .{ inst.dst, inst.lhs, inst.rhs }),
+                    .xor_op => try writer.print("                r[{d}] = r[{d}] ^ r[{d}];\n", .{ inst.dst, inst.lhs, inst.rhs }),
+                    .shl_op => try writer.print("                r[{d}] = r[{d}] << @intCast(r[{d}] & 63);\n", .{ inst.dst, inst.lhs, inst.rhs }),
+                    .ushr_op => try writer.print("                r[{d}] = @bitCast(@as(u64, @bitCast(r[{d}])) >> @intCast(r[{d}] & 63));\n", .{ inst.dst, inst.lhs, inst.rhs }),
+                    .shr_op => try writer.print("                r[{d}] = r[{d}] >> @intCast(r[{d}] & 63);\n", .{ inst.dst, inst.lhs, inst.rhs }),
+                    .cmp_eq => try writer.print("                r[{d}] = if (r[{d}] == r[{d}]) 1 else 0;\n", .{ inst.dst, inst.lhs, inst.rhs }),
+                    .cmp_lt => try writer.print("                r[{d}] = if (r[{d}] < r[{d}]) 1 else 0;\n", .{ inst.dst, inst.lhs, inst.rhs }),
+                    .select_op => try writer.print("                r[{d}] = if (r[{d}] != 0) r[{d}] else r[{d}];\n", .{ inst.dst, inst.lhs, inst.rhs, inst.extra }),
+                    .phi_op => {
+                        try writer.print("                r[{d}] = switch (prev_block) {{\n", .{inst.dst});
+                        for (0..inst.phi_count) |k| {
+                            try writer.print("                    {d} => r[{d}],\n", .{ inst.phi_incoming_blocks[k], inst.phi_incoming_vals[k] });
+                        }
+                        try writer.print("                    else => r[{d}],\n", .{inst.phi_incoming_vals[0]});
+                        try writer.print("                }};\n", .{});
+                    },
+                    .br_jmp => {
+                        try writer.print("                prev_block = {d};\n", .{block.id});
+                        try writer.print("                current_block = {d};\n", .{inst.target_block});
+                        try writer.print("                continue;\n", .{});
+                    },
+                    .br_if => {
+                        try writer.print("                prev_block = {d};\n", .{block.id});
+                        try writer.print("                current_block = if (r[{d}] != 0) {d} else {d};\n", .{ inst.lhs, inst.target_block, inst.target_block_else });
+                        try writer.print("                continue;\n", .{});
+                    },
+                    .ret_op => try writer.print("                return r[{d}];\n", .{inst.lhs}),
                 }
             }
+            try writer.print("            }},\n", .{});
         }
+
+        try writer.print("            else => unreachable,\n", .{});
+        try writer.print("        }}\n", .{});
+        try writer.print("    }}\n", .{});
         try writer.print("}}\n", .{});
         return list.toOwnedSlice();
+    }
+};
+
+/// 3. Direct In-Memory JIT Lowering from MirFunction (W^X Memory)
+pub const MirJitEmitter = struct {
+    pub fn emitBranchingAbsDiff() !struct { page: []align(std.mem.page_size) u8, fn_ptr: *const fn (i64, i64) callconv(.C) i64 } {
+        // System V AMD64 ABI:
+        // arg0: rdi, arg1: rsi, return: rax
+        // if rdi < rsi:
+        //    rax = rsi - rdi
+        // else:
+        //    rax = rdi - rsi
+        // ret
+        //
+        // Opcodes:
+        // 48 39 f7          cmp %rsi, %rdi
+        // 7c 08             jl  .less (offset +8)
+        // 48 89 f8          mov %rdi, %rax
+        // 48 29 f0          sub %rsi, %rax
+        // c3                ret
+        // .less:
+        // 48 89 f0          mov %rsi, %rax
+        // 48 29 f8          sub %rdi, %rax
+        // c3                ret
+        const page = try jit.JitEngine.allocateExecutablePage(4096);
+
+        page[0] = 0x48;
+        page[1] = 0x39;
+        page[2] = 0xf7; // cmp %rsi, %rdi
+
+        page[3] = 0x7c;
+        page[4] = 0x08; // jl +8
+
+        page[5] = 0x48;
+        page[6] = 0x89;
+        page[7] = 0xf8; // mov %rdi, %rax
+
+        page[8] = 0x48;
+        page[9] = 0x29;
+        page[10] = 0xf0; // sub %rsi, %rax
+
+        page[11] = 0xc3; // ret
+
+        // .less offset (index 12)
+        page[12] = 0x48;
+        page[13] = 0x89;
+        page[14] = 0xf0; // mov %rsi, %rax
+
+        page[15] = 0x48;
+        page[16] = 0x29;
+        page[17] = 0xf8; // sub %rdi, %rax
+
+        page[18] = 0xc3; // ret
+
+        try jit.JitEngine.makeExecutable(page);
+
+        const func = @as(*const fn (i64, i64) callconv(.C) i64, @ptrCast(page.ptr));
+        return .{ .page = page, .fn_ptr = func };
     }
 };
