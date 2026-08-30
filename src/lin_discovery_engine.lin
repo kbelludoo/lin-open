@@ -1,0 +1,28 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=discovery_scanner
+~G{?=if #=for ^=ret :else}
+
+!classify_construct(kind, has_side_effects, has_recursion) {
+    res = 0;
+    ?(has_recursion > 0) {
+        res = 4; // UNSAFE_RECURSION
+    } : {
+        ?(has_side_effects > 0) {
+            res = 3; // REJECT_SERIAL
+        } : {
+            ?(kind == 1) {
+                res = 1; // SUPPORTED_PARALLEL_REDUCE
+            } : {
+                res = 2; // SUPPORTED_PARALLEL_MAP
+            }
+        }
+    }
+    ^res;
+}
+
+!aggregate_leaf_elements(workload_id, git_oid_prefix, src_digest_prefix, input_prefix, mir_prefix) {
+    leaf_accum = (workload_id * 1000003) + (git_oid_prefix * 97) + (src_digest_prefix * 31) + (input_prefix * 17) + mir_prefix;
+    ^leaf_accum;
+}
+
+=ex{classify_construct, aggregate_leaf_elements}
