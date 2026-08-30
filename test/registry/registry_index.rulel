@@ -1,0 +1,40 @@
+@RULEL:LIN_REGISTRY_INDEX:1.0.0
+~R{.m=meta .p=packages .t=trust .r=revocations .v=verdict}
+
+.m{
+  registry_id="urn:lin:registry:mainnet:v1"
+  registry_epoch=42
+  registry_root="sha256:45d5a98abd498cf4a5de9cae89325dce05aca801c17ccc678386761e02b6b57f"
+  timestamp="2026-08-30T14:26:00Z"
+}
+
+.p{
+  .pkg_0{
+    name="gpu_parallel_map"
+    version="1.0.0"
+    canonical_bundle_digest="sha256:f3c7c83538a29d4b9a544f5271757159f75233c79d396ddace2190513234de0b"
+    artifact_digest="sha256:b9d1b80b517f69d15d038ad3afa9342a79b0155d35b508d7de2de0b0f13f7c41"
+    evidence_root="sha256:62b7d202d4f273ab967cc46e705f5b1a035b6540abfa9c97a2ac69480a277482"
+    trust_epoch=2
+    revoked=false
+  }
+}
+
+.t{
+  current_trust_anchor="cdfee9f8cdd5a6bd19238941cdca618a1bbb17ba60c04e3e32c74d5ebdc6bafd"
+  prior_roster_hash="sha256:9d48d79c3c6491fa0a91e92856466e1778a7f3976bcfb464afda4b4be596d1f1"
+  active_roster_hash="sha256:4417c3e2200386ec768b7ba1cb38c1a0f5cf55954fa3c89cb3e114d14edc2944"
+  transition_proof_digest="sha256:228405f34a41e60501c4dc2d90731d24fc735c67a398e3cb028b12f178e1e775"
+}
+
+.r{
+  revocation_list_monotonic=true
+  revoked_count=0
+  checkpoint_seq=1000
+}
+
+.v{
+  registry_status="FEDERATED_CONSISTENCY_VERIFIED"
+  split_view_detected=false
+  rollback_detected=false
+}

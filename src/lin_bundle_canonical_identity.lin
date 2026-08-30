@@ -1,0 +1,45 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=bundle_identity_v340
+~G{?=if #=for ^=ret :else}
+
+!verify_manifest_root_binding(art_match: int, evid_match: int, trust_match: int, prov_match: int, sbom_match: int) -> int {
+    bound = 0;
+    ?(art_match == 1) {
+        ?(evid_match == 1) {
+            ?(trust_match == 1) {
+                ?(prov_match == 1) {
+                    ?(sbom_match == 1) {
+                        bound = 1;
+                    }
+                }
+            }
+        }
+    }
+    ^bound;
+}
+
+!verify_registry_consistency_and_epoch(is_stale: int, is_rollback: int, is_split_view: int) -> int {
+    valid = 0;
+    ?(is_stale == 0) {
+        ?(is_rollback == 0) {
+            ?(is_split_view == 0) {
+                valid = 1;
+            }
+        }
+    }
+    ^valid;
+}
+
+!evaluate_e2e_trust_consistency(binding_ok: int, registry_ok: int, parity_ok: int) -> int {
+    verdict = 0;
+    ?(binding_ok == 1) {
+        ?(registry_ok == 1) {
+            ?(parity_ok == 1) {
+                verdict = 9990;
+            }
+        }
+    }
+    ^verdict;
+}
+
+=ex{verify_manifest_root_binding, verify_registry_consistency_and_epoch, evaluate_e2e_trust_consistency}
