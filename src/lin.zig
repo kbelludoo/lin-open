@@ -3902,7 +3902,7 @@ pub fn cfs_one_shift(s: []const u8) []const u8 {
 
   i = cfs_find_shift(s, ">>");
   op = ">>";
-  fname = "_lia_ushr";
+  fname = "_lia_shr";
   if (i < 0) {
     i = cfs_find_shift(s, "<<");
     op = "<<";

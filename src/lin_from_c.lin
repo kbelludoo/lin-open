@@ -97,7 +97,7 @@
 !cfs_one_shift(s: string): string {
   i = cfs_find_shift(s, ">>");
   op = ">>";
-  fname = "_lia_ushr";
+  fname = "_lia_shr";
   ?(i < 0){
     i = cfs_find_shift(s, "<<");
     op = "<<";
