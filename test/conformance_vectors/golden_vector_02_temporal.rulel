@@ -1,0 +1,25 @@
+@RULEL:LIN_CONFORMANCE_VECTOR:1.0.0
+~R{.m=meta .c=claims .p=payload .e=expected}
+
+.m{
+  vector_id="urn:lin:vector:2026-08-30:golden_002_temporal"
+  spec_version="LIN_VERIFIABLE_SPEC_v1.0"
+  type="GOLDEN_TEMPORAL_MONOTONIC_VECTOR"
+}
+
+.c{
+  epoch=2
+  prev_state_root="sha256:d8a2f1b047a96a12e8b7c3d2e1f049a8b7c6d5e4f3a2b1c0e9f8a7b6c5d4e3f2"
+  current_state_root="sha256:45d5a98abd498cf4a5de9cae89325dce05aca801c17ccc678386761e02b6b57f"
+}
+
+.p{
+  raw_bytes_sha256="sha256:45d5a98abd498cf4a5de9cae89325dce05aca801c17ccc678386761e02b6b57f"
+  trust_anchor="cdfee9f8cdd5a6bd19238941cdca618a1bbb17ba60c04e3e32c74d5ebdc6bafd"
+}
+
+.e{
+  expected_verdict="PASS"
+  expected_failure_code="NONE"
+  expected_audit_digest="sha256:45d5a98abd498cf4a5de9cae89325dce05aca801c17ccc678386761e02b6b57f"
+}

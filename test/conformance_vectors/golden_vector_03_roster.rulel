@@ -1,0 +1,25 @@
+@RULEL:LIN_CONFORMANCE_VECTOR:1.0.0
+~R{.m=meta .c=claims .p=payload .e=expected}
+
+.m{
+  vector_id="urn:lin:vector:2026-08-30:golden_003_roster_succession"
+  spec_version="LIN_VERIFIABLE_SPEC_v1.0"
+  type="GOLDEN_ROSTER_TRANSITION_VECTOR"
+}
+
+.c{
+  prior_roster_hash="sha256:9d48d79c3c6491fa0a91e92856466e1778a7f3976bcfb464afda4b4be596d1f1"
+  successor_roster_hash="sha256:4417c3e2200386ec768b7ba1cb38c1a0f5cf55954fa3c89cb3e114d14edc2944"
+  transition_proof_digest="sha256:228405f34a41e60501c4dc2d90731d24fc735c67a398e3cb028b12f178e1e775"
+}
+
+.p{
+  raw_bytes_sha256="sha256:228405f34a41e60501c4dc2d90731d24fc735c67a398e3cb028b12f178e1e775"
+  trust_anchor="cdfee9f8cdd5a6bd19238941cdca618a1bbb17ba60c04e3e32c74d5ebdc6bafd"
+}
+
+.e{
+  expected_verdict="PASS"
+  expected_failure_code="NONE"
+  expected_audit_digest="sha256:45d5a98abd498cf4a5de9cae89325dce05aca801c17ccc678386761e02b6b57f"
+}
