@@ -1,0 +1,30 @@
+@RULEL:LIN_ROSTER_TRANSITION:1.0.0
+~R{.s=subject .r=roster .t=transition .v=verdict}
+.s{
+  transition_id="urn:lin:roster_transition:2026-08-30:015"
+  transition_type="DYNAMIC_QUORUM_AND_KEY_SUCCESSION"
+  prior_epoch=1
+  successor_epoch=2
+  prior_roster_hash="sha256:9d48d79c3c6491fa0a91e92856466e1778a7f3976bcfb464afda4b4be596d1f1"
+  successor_roster_hash="sha256:4417c3e2200386ec768b7ba1cb38c1a0f5cf55954fa3c89cb3e114d14edc2944"
+  transition_proof_digest="sha256:228405f34a41e60501c4dc2d90731d24fc735c67a398e3cb028b12f178e1e775"
+  audit_timestamp="2026-08-30T14:02:00Z"
+}
+.r{
+  prior_members=["witness:eu:notary_alpha_01", "witness:us:notary_beta_02", "witness:ap:notary_gamma_03", "witness:ch:notary_delta_04"]
+  successor_members=["witness:eu:notary_alpha_01", "witness:ap:notary_gamma_03", "witness:ch:notary_delta_04", "witness:nordic:notary_epsilon_05"]
+  quorum_policy="M=3_OF_N=4"
+  downgrade_protection=true
+}
+.t{
+  voluntary_rotation_supported=true
+  emergency_quorum_override_supported=true
+  compromised_key_isolated=true
+  historical_authenticity_preserved=true
+  manual_reanchor_required=false
+}
+.v{
+  transition_status="SUCCESSION_CONTINUITY_CERTIFIED"
+  disaster_recovery_status="AUTOMATED_CONTINUOUS_STATE"
+  common_mode_divergence_observed=0
+}
