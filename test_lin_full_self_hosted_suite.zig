@@ -643,6 +643,7 @@ pub fn main() !void {
         .{ .name = "x", .val = 10 },
         .{ .name = "y", .val = 20 },
         .{ .name = "z", .val = 5 },
+        .{ .name = "x1", .val = 15 },
     };
 
     const c_parser_test_vectors = [_]struct {
@@ -654,6 +655,8 @@ pub fn main() !void {
         .{ .input = "-5", .expected = -5, .should_fail = false },
         .{ .input = "+12", .expected = 12, .should_fail = false },
         .{ .input = "1 + -2", .expected = -1, .should_fail = false },
+        .{ .input = "1 - -2", .expected = 3, .should_fail = false },
+        .{ .input = "1 - +2", .expected = -1, .should_fail = false },
         .{ .input = "-(1 + 2) * 3", .expected = -9, .should_fail = false },
         .{ .input = "10 % 3", .expected = 1, .should_fail = false },
         .{ .input = "1 + 2 * 3", .expected = 7, .should_fail = false },
@@ -661,11 +664,13 @@ pub fn main() !void {
         .{ .input = "100 - 20 - 10", .expected = 70, .should_fail = false },
         .{ .input = "2 * 3 + 4 * 5", .expected = 26, .should_fail = false },
         .{ .input = "1 < 2", .expected = 1, .should_fail = false },
+        .{ .input = "1 < 2 < 3", .expected = 1, .should_fail = false },
         .{ .input = "3 == 3", .expected = 1, .should_fail = false },
         .{ .input = "5 != 5", .expected = 0, .should_fail = false },
         .{ .input = "10 >= 10", .expected = 1, .should_fail = false },
         .{ .input = "1 + 2 == 3", .expected = 1, .should_fail = false },
         .{ .input = "x + 1", .expected = 11, .should_fail = false },
+        .{ .input = "x1 + 2", .expected = 17, .should_fail = false },
         .{ .input = "x * y + z", .expected = 205, .should_fail = false },
         .{ .input = "(x + y) / z", .expected = 6, .should_fail = false },
         .{ .input = "50 + 20 * (30 - 10) / 4", .expected = 150, .should_fail = false },
@@ -673,6 +678,7 @@ pub fn main() !void {
         .{ .input = "( 2 + 3", .expected = null, .should_fail = true },
         .{ .input = "5 / 0", .expected = null, .should_fail = true },
         .{ .input = "5 % 0", .expected = null, .should_fail = true },
+        .{ .input = "1x + 2", .expected = null, .should_fail = true },
         .{ .input = "unknown_var + 1", .expected = null, .should_fail = true },
     };
 
@@ -703,7 +709,7 @@ pub fn main() !void {
         }
     }
 
-    try stdout.print("  .Exercised {d} Deterministic C Expression Parsing & Evaluation Vectors (24/24 PASS)\n", .{c_parser_test_vectors.len});
+    try stdout.print("  .Exercised {d} Deterministic C Expression Parsing & Evaluation Vectors (29/29 PASS)\n", .{c_parser_test_vectors.len});
     try stdout.print("  [PASS] Phase 6: Stage-0 C expression Pratt parser and Flat AST Arena verified\n\n", .{});
     passed += 1;
 
@@ -721,6 +727,7 @@ pub fn main() !void {
     try stdout.print(".compiler_0_runtime=\"ZIG_BOOTSTRAP_STAGE_0_MINIMAL\"\n", .{});
     try stdout.print(".zig_to_lin_transpiler_active=true\n", .{});
     try stdout.print(".c_expr_pratt_parser_active=true\n", .{});
+    try stdout.print(".c_expr_vectors=29\n", .{});
     try stdout.print(".flat_ast_arena_active=true\n", .{});
     try stdout.print(".self_hosted_lin_modules_active={d}\n", .{lin_module_files.len});
     try stdout.print(".total_self_hosted_lin_bytes={d}\n", .{total_lin_bytes});

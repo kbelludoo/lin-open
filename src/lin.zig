@@ -14217,6 +14217,9 @@ pub fn main() !void {
                         num = num * 10 + @as(i64, @intCast(self.src[self.pos] - '0'));
                         self.pos += 1;
                     }
+                    if (self.pos < self.src.len and ((self.src[self.pos] >= 'a' and self.src[self.pos] <= 'z') or (self.src[self.pos] >= 'A' and self.src[self.pos] <= 'Z') or self.src[self.pos] == '_')) {
+                        return .{ .kind = .invalid, .val = 0, .name = "", .pos = start_pos };
+                    }
                     return .{ .kind = .int_lit, .val = num, .name = "", .pos = start_pos };
                 }
 
@@ -14290,12 +14293,10 @@ pub fn main() !void {
                         return self.arena.addNode(.var_ref, 0, 0, 0, tok.name) catch return error.ArenaOutOfMemory;
                     },
                     .plus => {
-                        // Unary plus
                         const operand = try self.parsePrimary();
                         return self.arena.addNode(.unary_pos, operand, 0, 0, "") catch return error.ArenaOutOfMemory;
                     },
                     .minus => {
-                        // Unary minus
                         const operand = try self.parsePrimary();
                         return self.arena.addNode(.unary_neg, operand, 0, 0, "") catch return error.ArenaOutOfMemory;
                     },
@@ -14317,7 +14318,7 @@ pub fn main() !void {
                     const prec = getPrecedence(next_tok.kind);
                     if (prec == 0 or prec <= min_prec) break;
 
-                    _ = self.nextToken(); // consume operator
+                    _ = self.nextToken();
                     const right_node = try self.parseExpression(prec);
 
                     const op_tag: AstTag = switch (next_tok.kind) {
@@ -14349,7 +14350,7 @@ pub fn main() !void {
         };
 
         try stdout.print("\n================================================================================\n", .{});
-        try stdout.print("=== REAL STAGE-0 C EXPRESSION PARSER & FLAT AST ARENA TEST SUITE (EXTENDED)  ===\n", .{});
+        try stdout.print("=== REAL STAGE-0 C EXPRESSION PARSER & FLAT AST ARENA TEST SUITE (28 VECTORS) ===\n", .{});
         try stdout.print("================================================================================\n\n", .{});
 
         const TestCase = struct {
@@ -14363,6 +14364,7 @@ pub fn main() !void {
             .{ .name = "x", .val = 10 },
             .{ .name = "y", .val = 20 },
             .{ .name = "z", .val = 5 },
+            .{ .name = "x1", .val = 15 },
         };
 
         const test_suite = [_]TestCase{
@@ -14370,6 +14372,8 @@ pub fn main() !void {
             .{ .input = "-5", .expected = -5, .should_fail = false, .desc = "Unary negative literal" },
             .{ .input = "+12", .expected = 12, .should_fail = false, .desc = "Unary positive literal" },
             .{ .input = "1 + -2", .expected = -1, .should_fail = false, .desc = "Addition with unary negative" },
+            .{ .input = "1 - -2", .expected = 3, .should_fail = false, .desc = "Binary minus with unary negative (1 - (-2) = 3)" },
+            .{ .input = "1 - +2", .expected = -1, .should_fail = false, .desc = "Binary minus with unary positive (1 - (+2) = -1)" },
             .{ .input = "-(1 + 2) * 3", .expected = -9, .should_fail = false, .desc = "Unary negative on parenthesized expr" },
             .{ .input = "10 % 3", .expected = 1, .should_fail = false, .desc = "Modulo remainder operation" },
             .{ .input = "1 + 2 * 3", .expected = 7, .should_fail = false, .desc = "Operator precedence (* over +)" },
@@ -14377,11 +14381,13 @@ pub fn main() !void {
             .{ .input = "100 - 20 - 10", .expected = 70, .should_fail = false, .desc = "Left associativity (100-20-10 = 70)" },
             .{ .input = "2 * 3 + 4 * 5", .expected = 26, .should_fail = false, .desc = "Compound precedence (6 + 20)" },
             .{ .input = "1 < 2", .expected = 1, .should_fail = false, .desc = "Comparison less-than true" },
+            .{ .input = "1 < 2 < 3", .expected = 1, .should_fail = false, .desc = "Chained C comparison: (1<2)<3 => 1<3 => 1" },
             .{ .input = "3 == 3", .expected = 1, .should_fail = false, .desc = "Comparison equality true" },
             .{ .input = "5 != 5", .expected = 0, .should_fail = false, .desc = "Comparison inequality false" },
             .{ .input = "10 >= 10", .expected = 1, .should_fail = false, .desc = "Comparison greater-equal true" },
             .{ .input = "1 + 2 == 3", .expected = 1, .should_fail = false, .desc = "Precedence arithmetic before comparison" },
             .{ .input = "x + 1", .expected = 11, .should_fail = false, .desc = "Variable lookup (x=10)" },
+            .{ .input = "x1 + 2", .expected = 17, .should_fail = false, .desc = "Alphanumeric identifier (x1=15)" },
             .{ .input = "x * y + z", .expected = 205, .should_fail = false, .desc = "Multi-variable expression (10*20 + 5)" },
             .{ .input = "(x + y) / z", .expected = 6, .should_fail = false, .desc = "Variables in parentheses (30 / 5)" },
             .{ .input = "50 + 20 * (30 - 10) / 4", .expected = 150, .should_fail = false, .desc = "Complex mixed expression" },
@@ -14389,6 +14395,7 @@ pub fn main() !void {
             .{ .input = "( 2 + 3", .expected = null, .should_fail = true, .desc = "Unclosed parenthesis" },
             .{ .input = "5 / 0", .expected = null, .should_fail = true, .desc = "Division by zero" },
             .{ .input = "5 % 0", .expected = null, .should_fail = true, .desc = "Modulo by zero" },
+            .{ .input = "1x + 2", .expected = null, .should_fail = true, .desc = "Invalid identifier starting with digit" },
             .{ .input = "unknown_var + 1", .expected = null, .should_fail = true, .desc = "Undefined variable reference" },
         };
 
