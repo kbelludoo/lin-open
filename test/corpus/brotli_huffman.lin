@@ -4,20 +4,21 @@
 !brotli_next_table_bits(c0: int, c1: int, c2: int, len: int, root_bits: int): int {
   left = _lia_shl(1 ,  (len - root_bits));
   done = 0;
-  while (len < 15 && done == 0) {
-  ?(len == 0){   left = left - c0;
+  llen = len;
+  while (llen < 15 && done == 0) {
+  ?(llen == 0){   left = left - c0;
  };
-  ?(len == 1){   left = left - c1;
+  ?(llen == 1){   left = left - c1;
  };
-  ?(len == 2){   left = left - c2;
+  ?(llen == 2){   left = left - c2;
  };
   ?(left <= 0){   done = 1;
  };
-  ?(left > 0){   len = len + 1;
+  ?(left > 0){   llen = llen + 1;
   left = _lia_shl(left ,  1);
  };
   };
-  ^len - root_bits;
+  ^llen - root_bits;
 }
 
 !test_brotli_huffman_vector(): int {

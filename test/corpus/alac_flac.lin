@@ -2,9 +2,11 @@
 @CORPUS{origin="ffmpeg/libavcodec" algorithm="ALAC+FLAC lossless audio prediction" scope="alac_decorrelate_stereo_and_flac_lpc_restore4"}
 
 !alac_decorrelate_stereo(a: int, b: int, weight: int, shift: int): int {
-  a = a - (_lia_shr((b * weight) ,  shift));
-  b = b + a;
-  ^b;
+  sa = a;
+  sb = b;
+  sa = sa - (_lia_shr((sb * weight) ,  shift));
+  sb = sb + sa;
+  ^sb;
 }
 
 !flac_lpc_restore4(c0: int, c1: int, c2: int, c3: int, d0: int, d1: int, d2: int, d3: int, residual: int, qlevel: int): int {

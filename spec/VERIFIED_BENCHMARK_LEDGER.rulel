@@ -154,6 +154,26 @@
   oracle="std_crypto_Sha256_genesis_0" status="VERIFIED_MATCH"
   throughput="125793.56_Hashes_s" latency_ms=79.50 hashes=10000
 }
+.entry{
+  idx=31 repo="FFmpeg/FFmpeg" algorithm="ALAC_FLAC_lossless_prediction" fn="alac_decorrelate_stereo"
+  oracle="gcc_C_oracle_transpiled_kernel" status="VERIFIED_MATCH"
+  throughput="1515.26_M_decorrelations_s" latency_ms=3.30 ops=5000000
+}
+.entry{
+  idx=32 repo="webmproject/libvpx" algorithm="VP8_Short_FDCT_4x4" fn="vp8_dct_row_out0"
+  oracle="gcc_C_oracle_transpiled_kernel_RFC6386" status="VERIFIED_MATCH"
+  throughput="1966.17_M_steps_s" latency_ms=2.54 ops=5000000
+}
+.entry{
+  idx=33 repo="google/brotli" algorithm="Brotli_Huffman_NextTableBitSize" fn="brotli_next_table_bits"
+  oracle="gcc_C_oracle_transpiled_kernel_RFC7932" status="VERIFIED_MATCH"
+  throughput="63.02_M_nextbits_s" latency_ms=79.34 ops=5000000
+}
+.entry{
+  idx=34 repo="libtom/libtomcrypt" algorithm="Poly1305_Block_Mul_Reduce" fn="poly1305_l2"
+  oracle="gcc_C_oracle_transpiled_kernel_AEAD" status="VERIFIED_MATCH"
+  throughput="1022.48_M_steps_s" latency_ms=0.98 ops=1000000
+}
 .simd_audit{
   lanes=8 target="@Vector(8,u32)"
   scalar_ms=35.11 simd_ms=9.29 ops=10000000
