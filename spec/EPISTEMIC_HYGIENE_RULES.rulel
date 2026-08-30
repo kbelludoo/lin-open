@@ -1,0 +1,32 @@
+@RULEL:EPISTEMIC_HYGIENE_RULES:1.0.0
+.description="Regras inviolaveis de higiene epistemica e verificacao formal do ecossistema LIN"
+.rules[
+  {
+    .id="RULE_01_NO_SILENT_DROPS"
+    .statement="Descarte nunca e tratamento. Construto nao suportado vira recusa explicita com codigo de motivo (ex: REJ_INDEX_BRACKET), nunca remocao silenciosa."
+  },
+  {
+    .id="RULE_02_SEPARATION_FACTS_VS_HYPOTHESES"
+    .statement="Fatos sao imutaveis (append-only e encadeados por SHA-256 no Proof Ledger); chutes sao volateis e expiram. Chute nunca vira fato sem oraculo nomeado e suite nomeada."
+  },
+  {
+    .id="RULE_03_NO_FAKE_CONFIDENCE_DECIMALS"
+    .statement="Proibido inventar numeros de confianca (ex: 0.98). Confianca deve ser categoria de evidencia (PROVENANCE_SOURCE, DIFFERENTIAL_VERIFIED, UNTESTED_HYPOTHESIS) ou erro medido em conjunto retido."
+  },
+  {
+    .id="RULE_04_LEARNING_DOMAIN_BOUNDARY"
+    .statement="O aprendizado de maquina/estatistico nunca toca a verdade semantica. Pode reordenar prioridades e calibrar custos, mas equivalencia so vem de prova formal ou oraculo diferencial."
+  },
+  {
+    .id="RULE_05_STAGE0_CRYPTOGRAPHIC_ROOT"
+    .statement="A raiz de confianca criptografica (SHA-256 e BLAKE3) reside no Stage 0 em Zig (std.crypto), medindo o compilador de fora para dentro para evitar ataque de auto-referencia Trusting Trust."
+  },
+  {
+    .id="RULE_06_STRICT_RULEL_FORMAT"
+    .statement="Todas as saidas estruturadas, manifestos, capacidades e diagnosticos devem ser emitidos estritamente em RULEL ou LIN, nunca em JSON."
+  },
+  {
+    .id="RULE_07_LINT_EMBEDDED_IN_COMPILE"
+    .statement="O lin compile roda o linter compulsoriamente. Se um erro do compilador Zig vazar para o usuario, e considerado bug do compilador LIN."
+  }
+]

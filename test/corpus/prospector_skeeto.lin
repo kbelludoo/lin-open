@@ -1,0 +1,32 @@
+@LIN:L1c:0.2
+@CORPUS{origin="skeeto/hash-prospector" language="C" scope="scalar"}
+
+!triple32(x_in: int): int {
+  x = x_in & 4294967295;
+  x = x ^ _lia_shr(x, 17);
+  x = (x * 3982152891) & 4294967295;
+  x = x ^ _lia_shr(x, 11);
+  x = (x * 2890668881) & 4294967295;
+  x = x ^ _lia_shr(x, 15);
+  x = (x * 830770091) & 4294967295;
+  x = x ^ _lia_shr(x, 14);
+  ^x;
+}
+
+!lowbias32(x_in: int): int {
+  x = x_in & 4294967295;
+  x = x ^ _lia_shr(x, 16);
+  x = (x * 2146121005) & 4294967295;
+  x = x ^ _lia_shr(x, 15);
+  x = (x * 2221713035) & 4294967295;
+  x = x ^ _lia_shr(x, 16);
+  ^x;
+}
+
+!test_prospector_vectors(): int {
+  ?(triple32(1) != 69681622){ ^0 };
+  ?(lowbias32(1) != 1753845952){ ^0 };
+  ^1;
+}
+
+=ex{triple32, lowbias32, test_prospector_vectors}

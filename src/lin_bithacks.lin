@@ -1,0 +1,229 @@
+@LIN:L1c:0.2
+@LIN_BITHACKS{version=1.0 source="Stanford bit twiddling hacks / twiddle.js" scope=scalar_int32}
+
+!bh_u32(x: int) -> int {
+  ^x & 4294967295
+}
+
+!bh_i32(x: int) -> int {
+  m = x & 4294967295;
+  ?(m >= 2147483648){ ^m - 4294967296 };
+  ^m;
+}
+
+!bh_ushr(x: int, n: int) -> int {
+  ^_lia_shr(x & 4294967295, n & 31)
+}
+
+!bh_ashr(x: int, n: int) -> int {
+  ^_lia_shr(bh_i32(x), n & 31)
+}
+
+!bh_shl(x: int, n: int) -> int {
+  ^bh_i32(_lia_shl(bh_i32(x), n & 31))
+}
+
+!bh_xor(a: int, b: int) -> int {
+  x = a;
+  y = b;
+  ^(x | y) & ~(x & y)
+}
+
+!bh_sign(v: int) -> int {
+  s = bh_i32(v);
+  p = 0;
+  n = 0;
+  ?(s > 0){ p = 1; };
+  ?(s < 0){ n = 1; };
+  out = p - n;
+  ^out;
+}
+
+!bh_abs(v: int) -> int {
+  s = bh_i32(v);
+  mask = bh_ashr(s, 31);
+  ^bh_i32(bh_xor(s, mask) - mask);
+}
+
+!bh_min(x: int, y: int) -> int {
+  a = bh_i32(x);
+  b = bh_i32(y);
+  lt = 0;
+  ?(a < b){ lt = 1; };
+  neg = 0 - lt;
+  out = bh_i32(bh_xor(b, bh_xor(a, b) & neg));
+  ^out;
+}
+
+!bh_max(x: int, y: int) -> int {
+  a = bh_i32(x);
+  b = bh_i32(y);
+  lt = 0;
+  ?(a < b){ lt = 1; };
+  neg = 0 - lt;
+  out = bh_i32(bh_xor(a, bh_xor(a, b) & neg));
+  ^out;
+}
+
+!bh_is_pow2(v: int) -> int {
+  u = bh_u32(v);
+  ?(u == 0){ ^0 };
+  ?(u & (u - 1) == 0){ ^1 };
+  ^0;
+}
+
+!bh_log2(v: int) -> int {
+  x = bh_u32(v);
+  r = 0;
+  shift = 0;
+  ?(x > 65535){ r = 16; x = bh_ushr(x, 16); };
+  ?(x > 255){ shift = 8; x = bh_ushr(x, 8); r = r | shift; };
+  ?(x > 15){ shift = 4; x = bh_ushr(x, 4); r = r | shift; };
+  ?(x > 3){ shift = 2; x = bh_ushr(x, 2); r = r | shift; };
+  out = r | bh_ushr(x, 1);
+  ^out;
+}
+
+!bh_log10(v: int) -> int {
+  u = bh_u32(v);
+  ?(u >= 1000000000){ ^9 };
+  ?(u >= 100000000){ ^8 };
+  ?(u >= 10000000){ ^7 };
+  ?(u >= 1000000){ ^6 };
+  ?(u >= 100000){ ^5 };
+  ?(u >= 10000){ ^4 };
+  ?(u >= 1000){ ^3 };
+  ?(u >= 100){ ^2 };
+  ?(u >= 10){ ^1 };
+  ^0;
+}
+
+!bh_popcount(v: int) -> int {
+  x = bh_u32(v);
+  x = x - (bh_ushr(x, 1) & 1431655765);
+  x = (x & 858993459) + (bh_ushr(x, 2) & 858993459);
+  x = (x + bh_ushr(x, 4)) & 252645135;
+  ^bh_ushr(x * 16843009, 24);
+}
+
+!bh_ctz(v: int) -> int {
+  u = bh_u32(v);
+  c = 32;
+  u = u & (0 - u);
+  ?(u != 0){ c = 31; };
+  w = u & 65535;
+  ?(w != 0){ c = c - 16; };
+  w = u & 16711935;
+  ?(w != 0){ c = c - 8; };
+  w = u & 252645135;
+  ?(w != 0){ c = c - 4; };
+  w = u & 858993459;
+  ?(w != 0){ c = c - 2; };
+  w = u & 1431655765;
+  ?(w != 0){ c = c - 1; };
+  ^c;
+}
+
+!bh_next_pow2(v: int) -> int {
+  x = bh_u32(v);
+  ?(x == 0){
+    x = 1;
+  };
+  x = x - 1;
+  x = x | bh_ushr(x, 1);
+  x = x | bh_ushr(x, 2);
+  x = x | bh_ushr(x, 4);
+  x = x | bh_ushr(x, 8);
+  x = x | bh_ushr(x, 16);
+  t = x + 1;
+  out = t & 4294967295;
+  ^out;
+}
+
+!bh_prev_pow2(v: int) -> int {
+  x = bh_u32(v);
+  x = x | bh_ushr(x, 1);
+  x = x | bh_ushr(x, 2);
+  x = x | bh_ushr(x, 4);
+  x = x | bh_ushr(x, 8);
+  x = x | bh_ushr(x, 16);
+  ^x - bh_ushr(x, 1);
+}
+
+!bh_parity(v: int) -> int {
+  x = bh_u32(v);
+  x = bh_xor(x, bh_ushr(x, 16));
+  x = bh_xor(x, bh_ushr(x, 8));
+  x = bh_xor(x, bh_ushr(x, 4));
+  x = x & 15;
+  ^bh_ushr(27030, x) & 1;
+}
+
+!bh_interleave2(x: int, y: int) -> int {
+  a = x & 65535;
+  a = (a | bh_shl(a, 8)) & 16711935;
+  a = (a | bh_shl(a, 4)) & 252645135;
+  a = (a | bh_shl(a, 2)) & 858993459;
+  a = (a | bh_shl(a, 1)) & 1431655765;
+  b = y & 65535;
+  b = (b | bh_shl(b, 8)) & 16711935;
+  b = (b | bh_shl(b, 4)) & 252645135;
+  b = (b | bh_shl(b, 2)) & 858993459;
+  b = (b | bh_shl(b, 1)) & 1431655765;
+  ^a | bh_shl(b, 1);
+}
+
+!bh_deinterleave2(v: int, n: int) -> int {
+  x = bh_ushr(v, n) & 1431655765;
+  x = (x | bh_ushr(x, 1)) & 858993459;
+  x = (x | bh_ushr(x, 2)) & 252645135;
+  x = (x | bh_ushr(x, 4)) & 16711935;
+  x = (x | bh_ushr(x, 16)) & 65535;
+  ^bh_ashr(bh_shl(x, 16), 16);
+}
+
+!bh_spread3(x: int) -> int {
+  a = x & 1023;
+  a = (a | bh_shl(a, 16)) & 4278190335;
+  a = (a | bh_shl(a, 8)) & 251719695;
+  a = (a | bh_shl(a, 4)) & 3272356035;
+  a = (a | bh_shl(a, 2)) & 1227133513;
+  ^a;
+}
+
+!bh_interleave3(x: int, y: int, z: int) -> int {
+  a = bh_spread3(x);
+  a = a | bh_shl(bh_spread3(y), 1);
+  ^a | bh_shl(bh_spread3(z), 2);
+}
+
+!bh_deinterleave3(v: int, n: int) -> int {
+  x = bh_ushr(v, n) & 1227133513;
+  x = (x | bh_ushr(x, 2)) & 3272356035;
+  x = (x | bh_ushr(x, 4)) & 251719695;
+  x = (x | bh_ushr(x, 8)) & 4278190335;
+  x = (x | bh_ushr(x, 16)) & 1023;
+  ^bh_ashr(bh_shl(x, 22), 22);
+}
+
+!bh_next_combination(v: int) -> int {
+  u = bh_u32(v);
+  t = u | (u - 1);
+  gap = bh_ctz(u) + 1;
+  nt = bh_xor(t, 4294967295);
+  low = (nt & (0 - nt)) - 1;
+  out = ((t + 1) | bh_ushr(low, gap)) & 4294967295;
+  ^out;
+}
+
+!bh_lowbias32(x: int) -> int {
+  v = x & 4294967295;
+  v = (v ^ _lia_shr(v, 16)) & 4294967295;
+  v = (v * 2146129197) & 4294967295;
+  v = (v ^ _lia_shr(v, 15)) & 4294967295;
+  v = (v * 2221712011) & 4294967295;
+  v = (v ^ _lia_shr(v, 16)) & 4294967295;
+  ^v;
+}
+
+=ex{bh_u32, bh_i32, bh_ushr, bh_ashr, bh_shl, bh_xor, bh_sign, bh_abs, bh_min, bh_max, bh_is_pow2, bh_log2, bh_log10, bh_popcount, bh_ctz, bh_next_pow2, bh_prev_pow2, bh_parity, bh_interleave2, bh_deinterleave2, bh_spread3, bh_interleave3, bh_deinterleave3, bh_next_combination, bh_lowbias32}

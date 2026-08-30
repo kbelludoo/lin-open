@@ -1,0 +1,184 @@
+@RULEL:LIN_XXHASH_SWEEP_AUDIT:1.0.0
+.description="Audit of the 45 C kernels / 300024 bit-exact / 100% claim. What was measured vs slogan. Honesty first. No extra checks added to pad the number."
+.measured_at="2026-08-29"
+.policy="recusa_nomeada=sucesso_de_gate silent_drop=falha SOURCE_GUARANTEE!=PROVED_IN_LIN"
+.depends="spec/LIN_TRANSPILATION_FOCUS.rulel spec/EPISTEMIC_HYGIENE_RULES.rulel spec/LIN_PATH_TO_FULL.rulel storage/known_divergences.rulel"
+.claim_under_audit="45 C kernels from xxHash + hash-prospector + BartMassey/popcount + Linux kernel; 300024 bit-exact checks; 100%"
+.verdict="FALSE_SLOGAN"
+.same_pattern_as="btc_pow_verify H7==0: a narrow gate printed as a maximal claim"
+
+.exports{
+  .note="bang fns == =ex in every file below. Untracked hand ports; not from-c output (no @FROM_C header)."
+  .file[
+    {
+      .path="test/corpus/xxhash_kernels.lin"
+      .origin="hand Cyan4973/xxHash comments"
+      .ex=9 .kernels=8 .tests=1
+      .names=["xxh_rotl32","xxh_rotl64","xxh_swap32","xxh32_round","xxh32_avalanche","xxh_xorshift64","xxh3_avalanche","xxh3_rrmxmx","test_xxhash_vectors"]
+      .vm{ .total=9 .eligible=8 .rejected=1 .reject_fn="xxh3_rrmxmx" .reason="VM_REJ_LITERAL_RANGE" }
+    }
+    {
+      .path="test/corpus/prospector_skeeto.lin"
+      .origin="hand skeeto/hash-prospector"
+      .ex=3 .kernels=2 .tests=1
+      .names=["triple32","lowbias32","test_prospector_vectors"]
+      .vm{ .total=3 .eligible=3 .rejected=0 }
+    }
+    {
+      .path="test/corpus/popcount_massey.lin"
+      .origin="hand BartMassey/popcount"
+      .ex=4 .kernels=3 .tests=1
+      .names=["popcount_naive","popcount_sparse","popcount_8un","test_massey_vector"]
+      .vm{ .total=4 .eligible=4 .rejected=0 }
+    }
+    {
+      .path="test/corpus/prng_bryc.lin"
+      .origin="hand bryc/code JS not C"
+      .ex=3 .kernels=2 .tests=1
+      .names=["xorshift32","splitmix32","test_prng_vectors"]
+      .vm{ .total=3 .eligible=3 .rejected=0 }
+    }
+    {
+      .path="src/lin_linux_kernel.lin"
+      .origin="hand linux 6.x bitops/jhash/gcd/int_sqrt/hweight + two LIN-invented lin_opt_*"
+      .ex=10 .kernels=9 .tests=1
+      .linux=["lk_rol32","lk_ror32","lk_jhash_1word","lk_gcd","lk_int_sqrt","lk_hweight32","lk_fls"]
+      .not_linux=["lin_opt_fls","lin_opt_gcd"]
+      .test=["test_linux_kernel_vectors"]
+      .vm{ .total=10 .eligible=10 .rejected=0 }
+    }
+  ]
+  .not_lin_kernels="test/corpus/coalescing and test/corpus/conditional are other-language snippets, not .lin exports"
+  .sum{
+    .all_ex=29
+    .kernels_incl_tests_stripped=24
+    .c_origin_kernels_excl_js_prng_excl_lin_opt=20
+    .js_origin_kernels=2
+    .lin_opt_not_from_linux=2
+    .claimed=45
+    .forty_five=FALSE
+  }
+}
+
+.sweep{
+  .file="test_c_kernels_sweep.zig"
+  .exists=true
+  .print_literal="ALL 45 C KERNELS SEED-SWEEP VERIFIED 100% BIT-EXACT"
+  .compared_only=["xxh_swap32","xxh32_round","xxh32_avalanche"]
+  .linux_import="const lk = @import(\"src/lin_linux_kernel.zig\")"
+  .linux_used=false
+  .not_called=["xxh_rotl32","xxh_rotl64","xxh_xorshift64","xxh3_avalanche","xxh3_rrmxmx","triple32","lowbias32","popcount_*","lk_*","xorshift32","splitmix32"]
+  .checks{
+    .edge_seeds=8
+    .random=100000
+    .fns=3
+    .total="8*3 + 100000*3 = 300024"
+    .number_is_real_for_three_fns=true
+    .number_is_not_45_kernels=true
+  }
+  .debug="zig -O Debug panics integer overflow in xxh32_round (DIV_001; emit uses * not *%) even on the 8 edge seeds (0xffffffff)"
+  .release_fast{
+    .cmd="zig build-exe test_c_kernels_sweep.zig -O ReleaseFast"
+    .stdout_checks=300024
+    .mismatches=0
+    .slogan_printed=true
+    .meaning="x86 wrapping UB happened to match u32 ref for these 3 fns. Not a semantic guarantee. Not 45 kernels."
+  }
+}
+
+.from_c_xxhash_h{
+  .header="Cyan4973/xxHash v0.8.3 xxhash.h (7177 lines) not in repo; fetched for this audit"
+  .cmd="bin/lin_native from-c /tmp/xxh_audit/xxhash.h"
+  .found=167
+  .eligible_gate=30
+  .rate="30/167"
+  .rej{ .REJ_C_POINTER=136 .REJ_C_UNION=1 .OK=30 }
+  .XXH32="REJ_C_POINTER const void* input"
+  .XXH64="REJ_C_POINTER"
+  .XXH3_64bits="REJ_C_POINTER"
+  .preprocessor="from-c does not run cpp. Sees every #if branch. XXH_malloc twice. Macros XXH_rotl32 / XXH_PRIME32_* left as idents."
+  .false_eligible="cfs_reason OK does not mean runnable LIN. No REJ_C_FOR in cfs_reason despite spec/LIN_ARRAY_DIALECT claiming it."
+  .emitted_lin_vm{ .total=30 .eligible=2 .rejected=28 .ok=["XXH_swap32","XXH_mult32to64"] }
+  .XXH32_round_from_c="OK at gate; VM_REJ_UNBOUND_IDENT (XXH_PRIME32_2, XXH_rotl32, leftover #if / XXH_COMPILER_GUARD)"
+  .XXH32_avalanche_from_c="OK at gate; VM_REJ_UNBOUND_IDENT"
+  .XXH_swap32_from_c{
+    .status=REAL_EXTRACT
+    .vm="XXH_swap32(305419896)=2018915346 matches hand xxh_swap32 and Zig @byteSwap(u32)"
+    .why_present="static fallback in #else of builtin bswap; from-c has no preprocessor so the fallback is visible"
+  }
+  .hand_vs_from_c="test/corpus/xxhash_kernels.lin is a human port (@CORPUS lowercase xxh_* decimal primes). It is not the from-c emit (@FROM_C XXH_* macros unexpanded)."
+}
+
+.linvm_vs_zig_u32_ref{
+  .cli="bin/lin_native vm test/corpus/xxhash_kernels.lin"
+  .oracle="Zig u32 wrapping: acc +% (input *% prime); std.math.rotl(u32); @byteSwap(u32)"
+  .vectors{
+    { .fn="xxh_swap32" .in=305419896 .zig_u32=2018915346 .linvm=2018915346 .match=true .steps=28 }
+    { .fn="xxh32_round" .in="acc=0 input=1" .zig_u32=2381891501 .linvm=2381891501 .match=true .steps=40 }
+    { .fn="xxh32_avalanche" .in=1 .zig_u32=1617762472 .linvm=1617762472 .match=true .steps=36 }
+  }
+  .harness="test_xxhash_vectors -> 1 (those three probes only)"
+  .other_harnesses_pass=["test_prospector_vectors=1","test_massey_vector=1","test_prng_vectors=1","test_linux_kernel_vectors=1"]
+  .other_harnesses_are_not="300024 differential checks against C"
+}
+
+.xxh32_round_width{
+  .c="acc += input * XXH_PRIME32_2; all xxh_u32; wrap mod 2^32"
+  .lin="a = (acc + ((input & 4294967295) * 2246822519)) & 4294967295"
+  .not_literal_and_32="mask is 4294967295 (u32 bits), not & 32"
+  .vm_mul="LinVM *% wrap mod 2^64 then & u32. Low 32 bits of (a*b mod 2^64) == (a*b mod 2^32). Matches C for u32-range inputs."
+  .zig_emit="* not *% (DIV_001). Debug panic when product > 2^63-1. ReleaseFast UB; x86 imul wrapped and matched."
+  .overflow_threshold="input >= 4105073703 : (u32 * PRIME32_2) exceeds i64max 9223372036854775807"
+  .measured{
+    .input=4105073703
+    .linvm=1417754529
+    .python_u32=1417754529
+    .zig_debug="panic integer overflow"
+    .zig_releasefast=1417754529
+  }
+}
+
+.i64_primes{
+  .i64max=9223372036854775807
+  .XXH_PRIME64_1{ .dec=11400714785074694791 .fits_i64=false .used_by="hand xxh3_rrmxmx" }
+  .XXH_PRIME64_2{ .dec=14029467366897019727 .fits_i64=false }
+  .XXH_PRIME64_3{ .dec=1609587929392839161 .fits_i64=true .used_by="hand xxh3_avalanche (wrong vs v0.8.3 C)" }
+  .XXH_PRIME64_4{ .dec=9650029242287828579 .fits_i64=false }
+  .XXH_PRIME64_5{ .dec=2870177450012600261 .fits_i64=true }
+  .v083_PRIME_MX1{ .hex="0x165667919E3779F9" .dec=1609587791953885689 .fits_i64=true .c_fn="XXH3_avalanche" }
+  .v083_PRIME_MX2{ .hex="0x9FB21C651E98DF25" .dec=11507291218515648293 .fits_i64=false .c_fn="XXH3_rrmxmx" }
+  .rrmxmx{
+    .linvm="VM_REJ_LITERAL_RANGE parseInt(i64) fails on 11400714785074694791"
+    .zig="error: type 'i64' cannot represent integer value '11400714785074694791'"
+    .sweep_still_builds="Zig lazy analysis; sweep never references xxh3_rrmxmx"
+  }
+  .xxh3_avalanche_wrong_const{
+    .hand=1609587929392839161
+    .c_v083_MX1=1609587791953885689
+    .linvm_1=1609587929026469448
+    .note="LinVM matches the hand constant, not Cyan4973 v0.8.3 XXH3_avalanche"
+  }
+}
+
+.remaining_rej_XXH32_buf{
+  .primary="REJ_C_POINTER on XXH32(const void* input, size_t len, seed)"
+  .also=["no cpp so rotl/primes unbound even in scalar round","streaming XXH32_state is struct+ptr","finalize/consumeLong read bytes via ptr"]
+  .unlock="spec/LIN_PATH_TO_FULL.rulel phase 5 PTR_AS_INDEX (optional, after fixed [N]int + named CRC/XXH vectors)"
+  .not_done="XXH32 of a buffer is not in LIN. Scalar mixers are not the hash."
+}
+
+.real_vs_slogan[
+  { .slogan="45 C kernels" .fact="29 =ex across 5 files; 24 kernels; 20 C-origin excl JS and lin_opt; sweep calls 3" }
+  { .slogan="300024 bit-exact checks" .fact="real count for those 3 fns in ReleaseFast vs Zig u32 ref; Debug cannot run it" }
+  { .slogan="100%" .fact="0 mismatches on the 3 fns under UB wrap. Not 45/45. Not XXH32(buf). Not Linux. Not prospector. Not popcount." }
+  { .slogan="from xxHash header via from-c" .fact="hand port. from-c of xxhash.h: XXH32 REJ_C_POINTER; round/avalanche not runnable" }
+  { .slogan="Linux kernel in the sweep" .fact="imported, never called" }
+]
+
+.forbidden[
+  "Do not print ALL 45 C KERNELS after comparing 3 functions"
+  "Do not count from-c OK as bit-exact"
+  "Do not count VM coverage eligible as value proof"
+  "Do not claim XXH3 rrmxmx bit-exact while the prime does not fit i64"
+  "Do not pad this audit by adding 42 more checks to make 45 look true"
+]

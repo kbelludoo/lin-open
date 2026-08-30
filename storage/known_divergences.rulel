@@ -1,0 +1,12 @@
+@RULEL:KNOWN_DIVERGENCES:1.0.0
+.description="Registro formal de divergencias semanticas conhecidas entre motores de execucao LIN"
+.divergences[
+  {
+    .id="DIV_001_INTEGER_MULTIPLICATION_OVERFLOW"
+    .engines=["LinVM (wrapping *%)", "Zig Native ReleaseFast (undefined behavior)", "Zig Debug (panic)"]
+    .trigger="Multiplicacao de inteiros i64 cujo produto excede [ -2^63, 2^63 - 1 ] (ex: k1 * c1 em murmur3_32 com c1 > 2^31)"
+    .impact="LinVM faz wrapping modular em 2^64; Zig sem operador *% causa panic em Debug e UB em ReleaseFast."
+    .status="SCHEDULED_FOR_EXPLICIT_WRAPPING_EMISSION"
+    .mitigation="Emissor Zig deve emitir *%, +%, -% explicitamente para todas as operacoes inteiras de LIN."
+  }
+]

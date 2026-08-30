@@ -112,6 +112,16 @@
         continue;
       };
     };
+    ?(starts_lit(s, i, "list_new_int()") == 1){
+      out = out + "_lia_list_new_int()";
+      i = i + 14;
+      continue;
+    };
+    ?(starts_lit(s, i, "list_new_str()") == 1){
+      out = out + "_lia_list_new_str()";
+      i = i + 14;
+      continue;
+    };
     id = read_ident(s, i);
     ?(id.length > 0){
       k = i + id.length;
@@ -156,10 +166,63 @@
           };
         };
         ?(starts_lit(s, k + 1, "length") == 1){
-          out = out + "@as(i64, @intCast(";
+          out = out + "_lia_len(";
           out = out + id;
-          out = out + ".len))";
+          out = out + ")";
           i = k + 7;
+          continue;
+        };
+        ?(starts_lit(s, k + 1, "len") == 1 && (k + 4 >= n || is_ident(s.charCodeAt(k + 4)) == false)){
+          out = out + "_lia_len(";
+          out = out + id;
+          out = out + ")";
+          i = k + 4;
+          continue;
+        };
+        ?(starts_lit(s, k + 1, "push(") == 1){
+          open = k + 5;
+          cl = match_paren(s, open);
+          ?(cl > open){
+            out = out + "_lia_list_push(";
+            out = out + id;
+            out = out + ", ";
+            out = out + slice2(s, open + 1, cl);
+            out = out + ")";
+            i = cl + 1;
+            continue;
+          };
+        };
+        ?(starts_lit(s, k + 1, "get(") == 1){
+          open = k + 4;
+          cl = match_paren(s, open);
+          ?(cl > open){
+            out = out + "_lia_list_get(";
+            out = out + id;
+            out = out + ", ";
+            out = out + slice2(s, open + 1, cl);
+            out = out + ")";
+            i = cl + 1;
+            continue;
+          };
+        };
+        ?(starts_lit(s, k + 1, "set(") == 1){
+          open = k + 4;
+          cl = match_paren(s, open);
+          ?(cl > open){
+            out = out + "_lia_list_set(";
+            out = out + id;
+            out = out + ", ";
+            out = out + slice2(s, open + 1, cl);
+            out = out + ")";
+            i = cl + 1;
+            continue;
+          };
+        };
+        ?(starts_lit(s, k + 1, "pop()") == 1){
+          out = out + "_lia_list_pop(";
+          out = out + id;
+          out = out + ")";
+          i = k + 6;
           continue;
         };
       };
@@ -179,6 +242,7 @@
   c = a.charCodeAt(0);
   ?(c == 32 || c == 9){ ^atom_is_str(slice2(a, 1, a.length)) };
   ?(c == 34){ ^1 };
+  ?(starts_lit(a, 0, "_lia_len") == 1 || starts_lit(a, 0, "_lia_char_code_at") == 1){ ^0 };
   ?(starts_lit(a, 0, "_lia_") == 1){ ^1 };
   ?(starts_lit(a, 0, "slice2") == 1){ ^1 };
   ?(starts_lit(a, 0, "read_ident") == 1){ ^1 };
@@ -200,6 +264,13 @@
   ?(starts_lit(a, 0, "read_") == 1){ ^1 };
   ?(starts_lit(a, 0, "curfn") == 1){ ^1 };
   ?(starts_lit(a, 0, "v") == 1 && a.length == 1){ ^1 };
+  ?(starts_lit(a, 0, "lines") == 1){ ^1 };
+  ?(starts_lit(a, 0, "nm") == 1 && a.length == 2){ ^1 };
+  ?(starts_lit(a, 0, "reason") == 1){ ^1 };
+  ?(starts_lit(a, 0, "pass") == 1){ ^1 };
+  ?(starts_lit(a, 0, "last") == 1){ ^1 };
+  ?(starts_lit(a, 0, "jss_") == 1){ ^1 };
+  ?(starts_lit(a, 0, "cfs_") == 1){ ^1 };
   ^0;
 }
 
@@ -211,6 +282,8 @@
   ?(c == 45){ ^1 };
   ?(starts_lit(a, 0, "@as") == 1){ ^1 };
   ?(starts_lit(a, 0, "_lia_char_code") == 1){ ^1 };
+  ?(starts_lit(a, 0, "_lia_len") == 1){ ^1 };
+  ?(starts_lit(a, 0, "_lia_list_len") == 1){ ^1 };
   ^0;
 }
 
@@ -329,119 +402,8 @@
   ^out;
 }
 
-!zig_ty(t: string): string {
-  ?(t.length == 6 && starts_lit(t, 0, "string") == 1){ ^"[]const u8" };
-  ?(t.length == 3 && starts_lit(t, 0, "str") == 1){ ^"[]const u8" };
-  ?(t.length == 4 && starts_lit(t, 0, "bool") == 1){ ^"bool" };
-  ^"i64";
-}
-
-!skip_type(params: string, k0: int): int {
-  k = skip_ws(params, k0);
-  pn = params.length;
-  ?(k < pn && params.charCodeAt(k) == 58){
-    k = skip_ws(params, k + 1);
-    t = read_ident(params, k);
-    ?(t.length > 0){ k = k + t.length };
-  };
-  ^k;
-}
-
-!param_zig_type(params: string, after_id: int): string {
-  k = skip_ws(params, after_id);
-  pn = params.length;
-  ?(k < pn && params.charCodeAt(k) == 58){
-    k = skip_ws(params, k + 1);
-    t = read_ident(params, k);
-    ?(t.length > 0){ ^zig_ty(t) };
-  };
-  ^"i64";
-}
-
-!fn_ret_type(src: string, after_paren: int, brace: int): string {
-  k = skip_ws(src, after_paren);
-  ?(k < brace && src.charCodeAt(k) == 45 && k + 1 < brace && src.charCodeAt(k + 1) == 62){
-    k = skip_ws(src, k + 2);
-    t = read_ident(src, k);
-    ?(t.length > 0){ ^zig_ty(t) };
-  };
-  ?(k < brace && src.charCodeAt(k) == 58){
-    k = skip_ws(src, k + 1);
-    t = read_ident(src, k);
-    ?(t.length > 0){ ^zig_ty(t) };
-  };
-  ^"i64";
-}
-
-!rhs_kind(body: string, eq_pos: int): string {
-  n = body.length;
-  k = skip_ws(body, eq_pos + 1);
-  ?(k >= n){ ^"i64" };
-  ?(body.charCodeAt(k) == 34){ ^"[]const u8" };
-  id = read_ident(body, k);
-  ?(id.length == 0){ ^"i64" };
-  ?(starts_lit(id, 0, "true") == 1 || starts_lit(id, 0, "false") == 1){ ^"bool" };
-  k2 = skip_ws(body, k + id.length);
-  ?(k2 < n && body.charCodeAt(k2) == 46){
-    fld = read_ident(body, k2 + 1);
-    ?(starts_lit(fld, 0, "length") == 1 || starts_lit(fld, 0, "charCodeAt") == 1){ ^"i64" };
-    ^"[]const u8";
-  };
-  ?(starts_lit(id, 0, "read_ident") == 1 || starts_lit(id, 0, "slice2") == 1 || starts_lit(id, 0, "q") == 1){ ^"[]const u8" };
-  ?(starts_lit(id, 0, "js_params") == 1 || starts_lit(id, 0, "rewrite_") == 1 || starts_lit(id, 0, "lin_") == 1){ ^"[]const u8" };
-  ?(starts_lit(id, 0, "andor") == 1 || starts_lit(id, 0, "kw_space") == 1 || starts_lit(id, 0, "zig_") == 1){ ^"[]const u8" };
-  ?(starts_lit(id, 0, "emit_") == 1 || starts_lit(id, 0, "param_") == 1 || starts_lit(id, 0, "fn_ret") == 1){ ^"[]const u8" };
-  ?(starts_lit(id, 0, "rgs_") == 1){ ^"[]const u8" };
-  ^"i64";
-}
-
-!zig_decls(body: string, params: string): string {
-  out = "";
-  seen = "";
-  i = 0;
-  n = body.length;
-  id = "";
-  ty = "";
-  while (i < n) {
-    ?(body.charCodeAt(i) == 34){
-      i = i + 1;
-      while (i < n && body.charCodeAt(i) != 34){ i = i + 1 };
-      ?(i < n){ i = i + 1 };
-      continue;
-    };
-    id = read_ident(body, i);
-    ?(id.length > 0){
-      ?(id.length == 1 && id.charCodeAt(0) == 95){ i = i + 1; continue };
-      j = skip_ws(body, i + id.length);
-      ?(j < n && starts_lit(body, j, "=>") == 1){ i = i + id.length; continue };
-      ?(j < n && body.charCodeAt(j) == 61 && (j + 1 >= n || body.charCodeAt(j + 1) != 61)){
-        ?(in_csv(params, id) == 0 && in_csv(seen, id) == 0){
-          ty = rhs_kind(body, j);
-          out = out + "    var ";
-          out = out + id;
-          out = out + ": ";
-          out = out + ty;
-          ?(starts_lit(ty, 0, "[]const u8") == 1){
-            out = out + " = ";
-            out = out + q();
-            out = out + q();
-            out = out + ";\n";
-          }
-          : (starts_lit(ty, 0, "bool") == 1){ out = out + " = false;\n" }
-          : { out = out + " = 0;\n" };
-          ?(seen.length == 0){ seen = id }
-          : { seen = seen + ","; seen = seen + id };
-        };
-      };
-      i = i + id.length;
-    }
-    : { i = i + 1 };
-  };
-  ^out;
-}
-
 !zig_pipe(body: string): string {
-  ^kw_space(andor(rewrite_semi(rewrite_plus(rewrite_js_methods(rewrite_body(rewrite_cfor(rewrite_match(body))))))));
+  ^rewrite_arr(kw_space(andor(rewrite_semi(rewrite_plus(rewrite_js_methods(rewrite_body(rewrite_cfor(rewrite_match(body)))))))));
 }
 
 !emit_fns(src: string, lang: int): string {

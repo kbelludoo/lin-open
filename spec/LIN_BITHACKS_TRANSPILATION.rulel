@@ -1,0 +1,128 @@
+@RULEL:LIN_BITHACKS_TRANSPILATION:1.0.0
+.description="Relatorio de clone real: o que o LIN aceitou, recusou e mediu. Nao e cobertura aspiracional."
+.measured_at="2026-08-29"
+.policy="recusa_nomeada=sucesso_de_gate silent_drop=falha SOURCE_GUARANTEE!=PROVED_IN_LIN"
+.bit_exact="somente onde VM e oraculo Node/vetor coincidiram; Zig so ast-check"
+
+.winner{
+  .repo="https://github.com/mikolalysenko/bit-twiddle"
+  .why="um arquivo twiddle.js, MIT, Stanford scalar bit hacks, exports.name=function, sem framework"
+  .files="twiddle.js"
+  .clone="git clone --depth 1 https://github.com/mikolalysenko/bit-twiddle"
+}
+
+.from_js{
+  .cmd="bin/lin_native from-js /tmp/bt/twiddle.js -o /tmp/twiddle_from_js.lin"
+  .found=17
+  .eligible=16
+  .ok=["sign","abs","min","max","isPow2","log2","log10","popCount","nextPow2","prevPow2","parity","reverse","interleave2","deinterleave2","interleave3","deinterleave3"]
+  .rej=[
+    { .name="reverse" .reason="OK" .note="REVERSE_TABLE bound to generated stanford reverse-byte [256]int; IIFE not evaled. VM reverse(1)=-2147483648 matches Node ToInt32" },
+    { .name="nextCombination" .reason="REJ_UNKNOWN_CALL" .need="countTrailingZeros nao e exports.X=function" }
+  ]
+  .not_found=[
+    { .name="countTrailingZeros" .reason="nao_exports_eq_function" .shape="function foo(){}; exports.foo=foo" }
+  ]
+  .hex_fold="0x.. baixado para decimal antes de jsf_eligible; senao 0x55555555 vira ident x55555555 = REJ_UNKNOWN_IDENT falso"
+}
+
+.hand_port{
+  .lin="src/lin_bithacks.lin"
+  .source="twiddle.js + Stanford/Hackers Delight popcount_2 + skeeto lowbias32 snippet"
+  .vm_coverage{ total=25 eligible=25 rejected=0 }
+}
+
+.oracle_node_twiddle_js{
+  .status=MEASURED
+  .popCount{ .in=15 .node=4 .vm_fromjs=4 .vm_hand=4 }
+  .popCount{ .in=255 .node=8 .vm_fromjs=8 .vm_hand=8 }
+  .popCount{ .in=4294967295 .node=32 .vm_hand=32 }
+  .popCount{ .in=3935318504 .hex="0xea9031e8" .bart_massey=14 .node=14 .vm_fromjs=14 .vm_hand=14 }
+  .sign{ .in=-5 .node=-1 .vm_fromjs=-1 .vm_hand=-1 }
+  .nextPow2{ .in=5 .node=8 .vm_fromjs=8 .vm_hand=8 }
+  .prevPow2{ .in=10 .node=8 .vm_fromjs=8 .vm_hand=8 }
+  .isPow2{ .in=8 .node=1 .vm_fromjs=1 .vm_hand=1 }
+  .isPow2{ .in=7 .node=0 .vm_fromjs=0 .vm_hand=0 }
+  .verdict="popcount/sign/nextPow2/prevPow2/isPow2 coincidiram VM vs Node. Nao e prova SMT."
+}
+
+.lowbias32{
+  .source="https://github.com/skeeto/hash-prospector README snippet C"
+  .status=DIVERGENT_UNPROVED
+  .note="port em src/lin_bithacks.lin bh_lowbias32. VM(1)=621578565 python_u32(1)=1753845952. Nao alegar bit-exato. Possivel causa: mul i64 vs wrap u32 (DIV_001)."
+}
+
+.zig_emit{
+  .cmd="bin/lin_native compile src/lin_bithacks.lin --target zig -o /tmp/lin_bithacks.zig"
+  .ast_check="zig ast-check /tmp/lin_bithacks.zig exit=0"
+  .from_js_ast="zig ast-check /tmp/twiddle_from_js.zig exit=0"
+  .not_run="binario Zig nao foi executado contra o oraculo; ast-check != bit-exact"
+}
+
+.runners_up[
+  {
+    .n=1
+    .repo="https://github.com/BartMassey/popcount"
+    .license=MIT
+    .fit="popcount_2/popcount_mult/popcount_8un sao u32 escalares; vetores no proprio .c"
+    .accept_estimate="4-6 kernels C apos port manual"
+    .rej="popcount_naive while; tabular_8/16 REJ_INDEX_BRACKET; DRIVER macros; randoms[BLOCKSIZE] array; __builtin/asm"
+    .used_tonight="vetor 0xea9031e8 -> 14 conferido no VM"
+  }
+  {
+    .n=2
+    .repo="https://github.com/skeeto/hash-prospector"
+    .license="unlicense/public-domain typical skeeto"
+    .fit="lowbias32/triple32/prospector32 no README sao u32 puros"
+    .accept_estimate="0 do C JIT (prospector.c arrays/structs); 3-6 snippets do README via port"
+    .rej="prospector.c HF JIT, bins[32][32], shared lib hash()"
+    .used_tonight="bh_lowbias32 portado; valores NAO bateram com python u32"
+  }
+  {
+    .n=3
+    .repo="https://github.com/imneme/pcg-c-basic"
+    .license=Apache-2.0
+    .fit="poucos arquivos"
+    .accept_estimate=0
+    .rej="pcg32_random_t struct; rng->state MEMBER_DOT; sequencia com estado"
+    .next="extrair pcg32_output(uint64 state) sem struct, apos u64 wrapping explicito"
+  }
+  {
+    .n=4
+    .repo="https://github.com/Cyan4973/xxHash"
+    .fit="XXH32_avalanche(U32) e mix u32; o resto e buffer"
+    .accept_estimate="1 funcao se extraida; repo inteiro nao"
+    .rej="XXH32(input,len) REJ_INDEX_BRACKET; streaming state struct"
+  }
+  {
+    .n=5
+    .repo="linux lib/crc32.c pecas (nao clonar o kernel)"
+    .fit="crc32_le_generic de um u32 word-at-a-time sem tabela"
+    .accept_estimate="0 hoje se a API for u8*"
+    .rej="buffer[] REJ_INDEX_BRACKET ate array u8 no dialeto"
+  }
+]
+
+.commands_tonight{
+  .clone="git clone --depth 1 https://github.com/mikolalysenko/bit-twiddle"
+  .from_js="bin/lin_native from-js twiddle.js -o /tmp/twiddle_from_js.lin"
+  .vm_mod="bin/lin_native vm src/lin_bithacks.lin"
+  .vm_run="bin/lin_native vm src/lin_bithacks.lin bh_popcount 15"
+  .compile="bin/lin_native compile src/lin_bithacks.lin --target zig -o /tmp/lin_bithacks.zig"
+}
+
+.gaps[
+  { .id="HEX_FALSE_REJ" .fix="jss_rewrite_hex no pipeline; sem isso taxa eligible~0 em kernels reais" }
+  { .id="SILENT_DROP" .fix="jss_report agora lista .fn reason=REJ_* por exports.function" }
+  { .id="EXPORT_SHAPE" .fix="so pega exports.name=function; function foo+assigns cai fora sem codigo" }
+  { .id="NO_WHILE_FROMJS" .fix="jss_stmt nao baixa while/for; C popcount_naive precisa port" }
+  { .id="LOWBIAS_MUL" .fix="mul u32 wrapping; ate *% no emit Zig, nao comparar com python mask apos i64" }
+  { .id="ZIG_NOT_EXECUTED" .fix="ast-check != oraculo; falta harness que chama as pub fn" }
+]
+
+.next[
+  { .n=1 .item="portar popcount_2 de BartMassey/popcount.c (ja equivalente a bh_popcount) e varrer os 16 testcases[] no VM" }
+  { .n=2 .item="extrair XXH32_avalanche de xxHash como u32->u32" }
+  { .n=3 .item="crc32 word-at-a-time so depois de array u8; ate la recusar com REJ_INDEX_BRACKET" }
+  { .n=4 .item="nao clonar vscode/kernel/python; nao SHA-256 block sem [64]int" }
+]

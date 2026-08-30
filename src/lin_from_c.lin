@@ -1,0 +1,678 @@
+@LIN:L1c:0.2
+@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+
+!cfs_kw(nm: string): int {
+  ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
+  ?(starts_lit(nm, 0, "while") == 1 && nm.length == 5){ ^1 };
+  ?(starts_lit(nm, 0, "for") == 1 && nm.length == 3){ ^1 };
+  ?(starts_lit(nm, 0, "switch") == 1 && nm.length == 6){ ^1 };
+  ?(starts_lit(nm, 0, "sizeof") == 1 && nm.length == 6){ ^1 };
+  ?(starts_lit(nm, 0, "return") == 1 && nm.length == 6){ ^1 };
+  ^0;
+}
+
+!cfs_is_type(nm: string): int {
+  ?(starts_lit(nm, 0, "uint32_t") == 1 && nm.length == 8){ ^1 };
+  ?(starts_lit(nm, 0, "uint64_t") == 1 && nm.length == 8){ ^1 };
+  ?(starts_lit(nm, 0, "int32_t") == 1 && nm.length == 7){ ^1 };
+  ?(starts_lit(nm, 0, "int64_t") == 1 && nm.length == 7){ ^1 };
+  ?(starts_lit(nm, 0, "uint8_t") == 1 && nm.length == 7){ ^1 };
+  ?(starts_lit(nm, 0, "unsigned") == 1 && nm.length == 8){ ^1 };
+  ?(starts_lit(nm, 0, "signed") == 1 && nm.length == 6){ ^1 };
+  ?(starts_lit(nm, 0, "static") == 1 && nm.length == 6){ ^1 };
+  ?(starts_lit(nm, 0, "inline") == 1 && nm.length == 6){ ^1 };
+  ?(starts_lit(nm, 0, "const") == 1 && nm.length == 5){ ^1 };
+  ?(starts_lit(nm, 0, "int") == 1 && nm.length == 3){ ^1 };
+  ?(starts_lit(nm, 0, "long") == 1 && nm.length == 4){ ^1 };
+  ?(starts_lit(nm, 0, "short") == 1 && nm.length == 5){ ^1 };
+  ?(starts_lit(nm, 0, "void") == 1 && nm.length == 4){ ^1 };
+  ^0;
+}
+
+!cfs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "*") > 0){ ^"REJ_C_POINTER" };
+  ?(rg_count_lit(body, "->") > 0){ ^"REJ_C_POINTER" };
+  ?(rg_count_lit(sig, "struct") > 0 || rg_count_lit(body, "struct") > 0){ ^"REJ_C_STRUCT" };
+  ?(rg_count_lit(sig, "union") > 0 || rg_count_lit(body, "union") > 0){ ^"REJ_C_UNION" };
+  ?(rg_count_lit(sig, "float") > 0 || rg_count_lit(body, "float") > 0){ ^"REJ_C_FLOAT" };
+  ?(rg_count_lit(sig, "double") > 0 || rg_count_lit(body, "double") > 0){ ^"REJ_C_FLOAT" };
+  ?(rg_count_lit(body, "goto") > 0){ ^"REJ_C_GOTO" };
+  ^"OK";
+}
+
+!cfs_atom_left(s: string, at: int): int {
+  k = at - 1;
+  while (k >= 0 && (s.charCodeAt(k) == 32 || s.charCodeAt(k) == 9)){ k = k - 1 };
+  ?(k < 0){ ^0 };
+  ?(s.charCodeAt(k) == 41){
+    d = 1;
+    k = k - 1;
+    while (k >= 0 && d > 0) {
+      ?(s.charCodeAt(k) == 41){ d = d + 1 };
+      ?(s.charCodeAt(k) == 40){ d = d - 1 };
+      k = k - 1;
+    };
+    ^(k + 1);
+  };
+  ?(is_ident(s.charCodeAt(k)) == true || (s.charCodeAt(k) >= 48 && s.charCodeAt(k) <= 57)){
+    while (k > 0 && (is_ident(s.charCodeAt(k - 1)) == true || (s.charCodeAt(k - 1) >= 48 && s.charCodeAt(k - 1) <= 57))){ k = k - 1 };
+    ^k;
+  };
+  ^at;
+}
+
+!cfs_atom_right(s: string, at: int): int {
+  n = s.length;
+  k = skip_ws(s, at);
+  ?(k >= n){ ^n };
+  ?(s.charCodeAt(k) == 40){
+    cl = match_paren(s, k);
+    ?(cl > k){ ^(cl + 1) };
+  };
+  id = read_ident(s, k);
+  ?(id.length > 0){ ^(k + id.length) };
+  while (k < n && s.charCodeAt(k) >= 48 && s.charCodeAt(k) <= 57){ k = k + 1 };
+  ^k;
+}
+
+!cfs_find_shift(s: string, op: string): int {
+  n = s.length;
+  m = op.length;
+  i = 0;
+  c = 0;
+  while (i < n) {
+    c = s.charCodeAt(i);
+    ?(c == 34){
+      i = i + 1;
+      while (i < n && s.charCodeAt(i) != 34){ i = i + 1 };
+      ?(i < n){ i = i + 1 };
+      continue;
+    };
+    ?(starts_lit(s, i, op) == 1 && jsx_prev_value(s, i) == 1 && (i + m >= n || s.charCodeAt(i + m) != 61)){ ^i };
+    i = i + 1;
+  };
+  ^-1;
+}
+
+!cfs_one_shift(s: string): string {
+  i = cfs_find_shift(s, ">>");
+  op = ">>";
+  fname = "_lia_ushr";
+  ?(i < 0){
+    i = cfs_find_shift(s, "<<");
+    op = "<<";
+    fname = "_lia_shl";
+  };
+  ?(i < 0){ ^s };
+  L = cfs_atom_left(s, i);
+  R = cfs_atom_right(s, i + 2);
+  out = "";
+  out = out + slice2(s, 0, L);
+  out = out + fname;
+  out = out + "(";
+  out = out + slice2(s, L, i);
+  out = out + ", ";
+  out = out + slice2(s, i + 2, R);
+  out = out + ")";
+  out = out + slice2(s, R, s.length);
+  ^out;
+}
+
+!cfs_shifts(s: string): string {
+  e = jss_trim(s);
+  k = 0;
+  nxt = "";
+  while (k < 32) {
+    nxt = jss_trim(cfs_one_shift(e));
+    ?(nxt.length == e.length){ ^e };
+    e = nxt;
+    k = k + 1;
+  };
+  ^e;
+}
+
+!cfs_strip_types(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  id = "";
+  while (i < n) {
+    ?(s.charCodeAt(i) == 34){
+      out = out + s.charAt(i);
+      i = i + 1;
+      while (i < n && s.charCodeAt(i) != 34){ out = out + s.charAt(i); i = i + 1 };
+      ?(i < n){ out = out + s.charAt(i); i = i + 1 };
+      continue;
+    };
+    id = read_ident(s, i);
+    ?(id.length > 0){
+      ?(cfs_is_type(id) == 1){ i = i + id.length; i = skip_ws(s, i); continue };
+      out = out + id;
+      i = i + id.length;
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!cfs_braces_to_arr(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  cl = 0;
+  k = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) == 34){
+      out = out + s.charAt(i);
+      i = i + 1;
+      while (i < n && s.charCodeAt(i) != 34){ out = out + s.charAt(i); i = i + 1 };
+      ?(i < n){ out = out + s.charAt(i); i = i + 1 };
+      continue;
+    };
+    ?(s.charCodeAt(i) == 123){
+      k = i - 1;
+      while (k >= 0 && (s.charCodeAt(k) == 32 || s.charCodeAt(k) == 9)){ k = k - 1 };
+      ?(k >= 0 && s.charCodeAt(k) == 61){
+        cl = match_brace(s, i);
+        ?(cl > i && jsf_int_elems(s, i + 1, cl) == 1){
+          out = out + "[";
+          out = out + slice2(s, i + 1, cl);
+          out = out + "]";
+          i = cl + 1;
+          continue;
+        };
+      };
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!cfs_find_semi(s: string, start: int): int {
+  n = s.length;
+  k = start;
+  while (k < n) {
+    ?(s.charCodeAt(k) == 59){ ^k };
+    k = k + 1;
+  };
+  ^-1;
+}
+
+!cfs_step_to_assign(s: string): string {
+  t = jss_trim(s);
+  n = t.length;
+  out = "";
+  ?(starts_lit(t, 0, "++") == 1){
+    id = read_ident(t, skip_ws(t, 2));
+    out = out + id;
+    out = out + " = ";
+    out = out + id;
+    out = out + " + 1";
+    ^out;
+  };
+  ?(starts_lit(t, 0, "--") == 1){
+    id = read_ident(t, skip_ws(t, 2));
+    out = out + id;
+    out = out + " = ";
+    out = out + id;
+    out = out + " - 1";
+    ^out;
+  };
+  id = read_ident(t, 0);
+  ?(id.length > 0){
+    p = skip_ws(t, id.length);
+    ?(starts_lit(t, p, "++") == 1){
+      out = out + id;
+      out = out + " = ";
+      out = out + id;
+      out = out + " + 1";
+      ^out;
+    };
+    ?(starts_lit(t, p, "--") == 1){
+      out = out + id;
+      out = out + " = ";
+      out = out + id;
+      out = out + " - 1";
+      ^out;
+    };
+    ?(starts_lit(t, p, "+=") == 1){
+      out = out + id;
+      out = out + " = ";
+      out = out + id;
+      out = out + " + (";
+      out = out + jss_trim(slice2(t, p + 2, n));
+      out = out + ")";
+      ^out;
+    };
+    ?(starts_lit(t, p, "-=") == 1){
+      out = out + id;
+      out = out + " = ";
+      out = out + id;
+      out = out + " - (";
+      out = out + jss_trim(slice2(t, p + 2, n));
+      out = out + ")";
+      ^out;
+    };
+  };
+  ^cfs_stmt(t);
+}
+
+!cfs_stmt(st: string): string {
+  e = jss_trim(st);
+  n = e.length;
+  while (n >= 2 && e.charCodeAt(0) == 123 && e.charCodeAt(n - 1) == 125){
+    e = jss_trim(slice2(e, 1, n - 1));
+    n = e.length;
+  };
+  out = "";
+  ?(n == 0){ ^out };
+  p = 0;
+  cl = 0;
+  ?(starts_lit(e, 0, "return") == 1 && (n == 6 || is_ident(e.charCodeAt(6)) == false)){
+    out = out + "^";
+    out = out + cfs_shifts(jss_trim(slice2(e, 6, n)));
+    ^out;
+  };
+  ?(starts_lit(e, 0, "if") == 1 && n > 2 && is_ident(e.charCodeAt(2)) == false){
+    p = skip_ws(e, 2);
+    ?(p < n && e.charCodeAt(p) == 40){
+      cl = match_paren(e, p);
+      ?(cl > p){
+        out = out + "?(";
+        out = out + cfs_shifts(slice2(e, p + 1, cl));
+        out = out + "){ ";
+        out = out + cfs_stmt(slice2(e, cl + 1, n));
+        out = out + " }";
+        ^out;
+      };
+    };
+  };
+  ?(starts_lit(e, 0, "for") == 1 && n > 3 && is_ident(e.charCodeAt(3)) == false){
+    p = skip_ws(e, 3);
+    ?(p < n && e.charCodeAt(p) == 40){
+      cl = match_paren(e, p);
+      ?(cl > p){
+        hdr = slice2(e, p + 1, cl);
+        s1 = cfs_find_semi(hdr, 0);
+        ?(s1 >= 0){
+          s2 = cfs_find_semi(hdr, s1 + 1);
+          ?(s2 >= 0){
+            f_init = jss_trim(slice2(hdr, 0, s1));
+            f_cond = jss_trim(slice2(hdr, s1 + 1, s2));
+            hdr_len = hdr.length;
+            f_step = jss_trim(slice2(hdr, s2 + 1, hdr_len));
+            f_body = jss_trim(slice2(e, cl + 1, n));
+            f_len = f_body.length;
+            while (f_len >= 2 && f_body.charCodeAt(0) == 123 && f_body.charCodeAt(f_len - 1) == 125){
+              f_body = jss_trim(slice2(f_body, 1, f_len - 1));
+              f_len = f_body.length;
+            };
+            out = "";
+            ?(f_init.length > 0){
+              out = out + cfs_stmt(f_init);
+              out = out + ";";
+              out = out + rgs_ch(10);
+              out = out + "  ";
+            };
+            out = out + "while (";
+            out = out + cfs_shifts(f_cond);
+            out = out + ") {";
+            out = out + rgs_ch(10);
+            ?(f_body.length > 0){
+              out = out + cfs_body(f_body);
+            };
+            ?(f_step.length > 0){
+              out = out + "  ";
+              out = out + cfs_step_to_assign(f_step);
+              out = out + ";";
+              out = out + rgs_ch(10);
+            };
+            out = out + "  }";
+            ^out;
+          };
+        };
+      };
+    };
+  };
+  id = read_ident(e, 0);
+  ?(id.length > 0){
+    p = skip_ws(e, id.length);
+    ?(starts_lit(e, p, "^=") == 1){
+      out = out + id;
+      out = out + " = ";
+      out = out + id;
+      out = out + " ^ (";
+      out = out + cfs_shifts(jss_trim(slice2(e, p + 2, n)));
+      out = out + ")";
+      ^out;
+    };
+    ?(starts_lit(e, p, "*=") == 1){
+      out = out + id;
+      out = out + " = ";
+      out = out + id;
+      out = out + " * (";
+      out = out + cfs_shifts(jss_trim(slice2(e, p + 2, n)));
+      out = out + ")";
+      ^out;
+    };
+    ?(starts_lit(e, p, "+=") == 1){
+      out = out + id;
+      out = out + " = ";
+      out = out + id;
+      out = out + " + (";
+      out = out + cfs_shifts(jss_trim(slice2(e, p + 2, n)));
+      out = out + ")";
+      ^out;
+    };
+    ?(starts_lit(e, p, "-=") == 1){
+      out = out + id;
+      out = out + " = ";
+      out = out + id;
+      out = out + " - (";
+      out = out + cfs_shifts(jss_trim(slice2(e, p + 2, n)));
+      out = out + ")";
+      ^out;
+    };
+    ?(starts_lit(e, p, "&=") == 1){
+      out = out + id;
+      out = out + " = ";
+      out = out + id;
+      out = out + " & (";
+      out = out + cfs_shifts(jss_trim(slice2(e, p + 2, n)));
+      out = out + ")";
+      ^out;
+    };
+    ?(starts_lit(e, p, ">>=") == 1){
+      out = out + id;
+      out = out + " = _lia_ushr(";
+      out = out + id;
+      out = out + ", ";
+      out = out + cfs_shifts(jss_trim(slice2(e, p + 3, n)));
+      out = out + ")";
+      ^out;
+    };
+    ?(starts_lit(e, p, "<<=") == 1){
+      out = out + id;
+      out = out + " = _lia_shl(";
+      out = out + id;
+      out = out + ", ";
+      out = out + cfs_shifts(jss_trim(slice2(e, p + 3, n)));
+      out = out + ")";
+      ^out;
+    };
+    ?(id.length == n){
+      ^"";
+    };
+  };
+  out = out + cfs_shifts(e);
+  ^out;
+}
+
+!cfs_body(b: string): string {
+  t = jss_trim(cfs_braces_to_arr(cfs_strip_types(b)));
+  out = "";
+  n = t.length;
+  i = 0;
+  st = 0;
+  d = 0;
+  c = 0;
+  seg = "";
+  conv = "";
+  while (i <= n) {
+    ?(i == n || (d == 0 && t.charCodeAt(i) == 59)){
+      seg = jss_trim(slice2(t, st, i));
+      ?(seg.length > 0){
+        conv = cfs_stmt(seg);
+        ?(conv.length > 0){
+          out = out + "  ";
+          out = out + conv;
+          out = out + ";";
+          out = out + rgs_ch(10);
+        };
+      };
+      st = i + 1;
+      i = i + 1;
+      continue;
+    };
+    c = t.charCodeAt(i);
+    ?(c == 40 || c == 123 || c == 91){ d = d + 1 };
+    ?(c == 41 || c == 125 || c == 93){
+      d = d - 1;
+      ?(d == 0 && c == 125){
+        seg = jss_trim(slice2(t, st, i + 1));
+        ?(seg.length > 0){
+          conv = cfs_stmt(seg);
+          ?(conv.length > 0){
+            out = out + "  ";
+            out = out + conv;
+            out = out + ";";
+            out = out + rgs_ch(10);
+          };
+        };
+        st = i + 1;
+      };
+    };
+    i = i + 1;
+  };
+  ^out;
+}
+
+!cfs_pdecl(params: string): string {
+  out = "";
+  n = params.length;
+  i = 0;
+  seen = 0;
+  id = "";
+  last = "";
+  while (i < n) {
+    id = read_ident(params, i);
+    ?(id.length > 0){
+      ?(cfs_is_type(id) == 0 && cfs_kw(id) == 0){ last = id };
+      i = i + id.length;
+      continue;
+    };
+    ?(params.charCodeAt(i) == 44 || i + 1 >= n){
+      ?(last.length > 0){
+        ?(seen == 1){ out = out + ", " };
+        out = out + last;
+        out = out + ": int";
+        seen = 1;
+        last = "";
+      };
+    };
+    i = i + 1;
+  };
+  ?(last.length > 0){
+    ?(seen == 1){ out = out + ", " };
+    out = out + last;
+    out = out + ": int";
+  };
+  ^out;
+}
+
+!cfs_ret_u32(s: string): int {
+  n = s.length;
+  i = n - 1;
+  tl = "";
+  a = "";
+  k = 0;
+  while (i >= 0 && k < 2) {
+    while (i >= 0 && (s.charCodeAt(i) == 32 || s.charCodeAt(i) == 9 || s.charCodeAt(i) == 10)){ i = i - 1 };
+    ?(i < 0){ break };
+    ?(is_ident(s.charCodeAt(i)) == false){ break };
+    en = i + 1;
+    while (i > 0 && is_ident(s.charCodeAt(i - 1)) == true){ i = i - 1 };
+    id = slice2(s, i, en);
+    ?(k == 0){ tl = id } : { a = id };
+    k = k + 1;
+  };
+  ?(starts_lit(tl, 0, "uint32_t") == 1 && tl.length == 8){ ^1 };
+  ?(starts_lit(tl, 0, "uint") == 1 && tl.length == 4){ ^1 };
+  ?(starts_lit(tl, 0, "unsigned") == 1 && tl.length == 8){ ^1 };
+  ?(starts_lit(tl, 0, "int") == 1 && tl.length == 3){
+    ?(starts_lit(a, 0, "unsigned") == 1 && a.length == 8){ ^1 };
+  };
+  ^0;
+}
+
+!cfs_fn_apply_u32(out: string): string {
+  n = out.length;
+  k = n - 1;
+  lp = -1;
+  while (k >= 0 && lp < 0) {
+    ?(out.charCodeAt(k) == 94){ lp = k } : { k = k - 1 };
+  };
+  ?(lp < 0){ ^out };
+  e = skip_ws(out, lp + 1);
+  s2 = cfs_find_semi(out, e);
+  ?(s2 > e){
+    res = "";
+    res = res + slice2(out, 0, lp);
+    res = res + "^(";
+    res = res + slice2(out, lp + 1, s2);
+    res = res + " & 4294967295)";
+    res = res + slice2(out, s2, n);
+    ^res;
+  };
+  ^out;
+}
+
+!cfs_fn(nm: string, params: string, body: string, u32r: int): string {
+  out = "";
+  out = out + "!";
+  out = out + nm;
+  out = out + "(";
+  out = out + cfs_pdecl(params);
+  out = out + "): int {";
+  out = out + rgs_ch(10);
+  out = out + cfs_body(body);
+  out = out + "}";
+  out = out + rgs_ch(10);
+  ?(u32r == 1){ ^cfs_fn_apply_u32(out) };
+  ^out;
+}
+
+!cfs_name_before(s: string, op: int): string {
+  k = op - 1;
+  while (k >= 0 && (s.charCodeAt(k) == 32 || s.charCodeAt(k) == 9 || s.charCodeAt(k) == 10)){ k = k - 1 };
+  ?(k < 0 || is_ident(s.charCodeAt(k)) == false){ ^"" };
+  st = k;
+  while (st > 0 && is_ident(s.charCodeAt(st - 1)) == true){ st = st - 1 };
+  ^read_ident(s, st);
+}
+
+!cfs_prep(src: string): string {
+  ^jss_rewrite_hex(jss_strip_comments(src));
+}
+
+!cfs_from_c(src: string): string {
+  pass = jss_trim(cfs_prep(src));
+  out = "";
+  out = jss_ln(out, "@LIN:L1c:0.2");
+  out = jss_ln(out, "@FROM_C{source=transpiled scope=scalar_and_fixed_int_array}");
+  out = jss_ln(out, "");
+  n = pass.length;
+  i = 0;
+  op = 0;
+  cl = 0;
+  b = 0;
+  cb = 0;
+  nm = "";
+  pr = "";
+  bd = "";
+  reason = "";
+  names = "";
+  while (i < n) {
+    ?(pass.charCodeAt(i) == 40){
+      nm = cfs_name_before(pass, i);
+      ?(nm.length > 0 && cfs_kw(nm) == 0){
+        cl = match_paren(pass, i);
+        ?(cl > i){
+          b = skip_ws(pass, cl + 1);
+          ?(b < n && pass.charCodeAt(b) == 123){
+            cb = match_brace(pass, b);
+            ?(cb > b){
+              pr = slice2(pass, i + 1, cl);
+              bd = slice2(pass, b + 1, cb);
+              reason = cfs_reason(slice2(pass, i, cl + 1), bd);
+              ?(starts_lit(reason, 0, "OK") == 1 && reason.length == 2){
+                out = out + cfs_fn(nm, pr, bd, cfs_ret_u32(slice2(pass, 0, i - nm.length)));
+                names = rgs_csv_add(names, nm);
+              };
+              i = cb + 1;
+              continue;
+            };
+          };
+        };
+      };
+    };
+    i = i + 1;
+  };
+  out = out + "=ex{";
+  out = out + names;
+  out = out + "}";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+!cfs_report(src: string): string {
+  pass = jss_trim(cfs_prep(src));
+  out = "";
+  out = jss_ln(out, "@RULEL:LIN_FROM_C:1.0.0");
+  out = jss_ln(out, ".fns{");
+  n = pass.length;
+  i = 0;
+  cl = 0;
+  b = 0;
+  cb = 0;
+  nm = "";
+  pr = "";
+  bd = "";
+  reason = "";
+  found = 0;
+  ok = 0;
+  while (i < n) {
+    ?(pass.charCodeAt(i) == 40){
+      nm = cfs_name_before(pass, i);
+      ?(nm.length > 0 && cfs_kw(nm) == 0){
+        cl = match_paren(pass, i);
+        ?(cl > i){
+          b = skip_ws(pass, cl + 1);
+          ?(b < n && pass.charCodeAt(b) == 123){
+            cb = match_brace(pass, b);
+            ?(cb > b){
+              pr = slice2(pass, i + 1, cl);
+              bd = slice2(pass, b + 1, cb);
+              reason = cfs_reason(slice2(pass, i, cl + 1), bd);
+              found = found + 1;
+              ?(starts_lit(reason, 0, "OK") == 1 && reason.length == 2){ ok = ok + 1 };
+              out = out + "  .fn{ name=";
+              out = out + q();
+              out = out + nm;
+              out = out + q();
+              out = out + " reason=";
+              out = out + reason;
+              out = out + " }";
+              out = out + rgs_ch(10);
+              i = cb + 1;
+              continue;
+            };
+          };
+        };
+      };
+    };
+    i = i + 1;
+  };
+  out = jss_ln(out, "}");
+  out = out + ".found=";
+  out = out + rgs_num(found);
+  out = out + " .eligible=";
+  out = out + rgs_num(ok);
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn}

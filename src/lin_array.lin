@@ -1,0 +1,367 @@
+@LIN:L1c:0.2
+@LIN_ARRAY{version=1 purpose=fixed_size_int_array_types_and_zig_rewrite}
+
+!match_brack(s: string, open: int): int {
+  n = s.length;
+  depth = 0;
+  p = open;
+  while (p < n) {
+    c = s.charCodeAt(p);
+    ?(c == 34){
+      p = p + 1;
+      while (p < n && s.charCodeAt(p) != 34){ p = p + 1 };
+      ?(p < n){ p = p + 1 };
+      continue;
+    };
+    ?(c == 91){ depth = depth + 1 }
+    : (c == 93){
+      depth = depth - 1;
+      ?(depth == 0){ ^p };
+    };
+    p = p + 1;
+  };
+  ^(-1);
+}
+
+!arr_n_str(t: string): string {
+  n = t.length;
+  i = skip_ws(t, 0);
+  ?(i >= n || t.charCodeAt(i) != 91){ ^"0" };
+  i = i + 1;
+  a = skip_ws(t, i);
+  b = a;
+  while (b < n && t.charCodeAt(b) >= 48 && t.charCodeAt(b) <= 57){ b = b + 1 };
+  ?(b > a){ ^slice2(t, a, b) };
+  ^"0";
+}
+
+!is_arr_ty(t: string): int {
+  i = skip_ws(t, 0);
+  ?(i < t.length && t.charCodeAt(i) == 91){ ^1 };
+  ^0;
+}
+
+!zig_ty(t: string): string {
+  out = "";
+  ?(starts_lit(t, 0, "simd8_u32") == 1){ ^"@Vector(8, u32)" };
+  ?(starts_lit(t, 0, "simd4_u32") == 1){ ^"@Vector(4, u32)" };
+  ?(starts_lit(t, 0, "simd8_u64") == 1){ ^"@Vector(8, u64)" };
+  ?(starts_lit(t, 0, "simd4_u64") == 1){ ^"@Vector(4, u64)" };
+  ?(starts_lit(t, 0, "simd8_i64") == 1){ ^"@Vector(8, i64)" };
+  ?(starts_lit(t, 0, "simd8_u5") == 1){ ^"@Vector(8, u5)" };
+  ?(starts_lit(t, 0, "simd8_u6") == 1){ ^"@Vector(8, u6)" };
+  ?(is_arr_ty(t) == 1){
+    out = out + "[";
+    out = out + arr_n_str(t);
+    out = out + "]i64";
+    ^out;
+  };
+  ?(t.length == 6 && starts_lit(t, 0, "string") == 1){ ^"[]const u8" };
+  ?(t.length == 3 && starts_lit(t, 0, "str") == 1){ ^"[]const u8" };
+  ?(t.length == 4 && starts_lit(t, 0, "bool") == 1){ ^"bool" };
+  ?(t.length == 3 && starts_lit(t, 0, "u32") == 1){ ^"u32" };
+  ?(t.length == 3 && starts_lit(t, 0, "i32") == 1){ ^"i32" };
+  ?(t.length == 3 && starts_lit(t, 0, "u64") == 1){ ^"u64" };
+  ?(t.length == 3 && starts_lit(t, 0, "i64") == 1){ ^"i64" };
+  ^"i64";
+}
+
+!read_type(s: string, k0: int): string {
+  k = skip_ws(s, k0);
+  n = s.length;
+  ?(k >= n){ ^"" };
+  ?(s.charCodeAt(k) == 91){
+    cl = match_brack(s, k);
+    ?(cl < k){ ^"" };
+    e = skip_ws(s, cl + 1);
+    t = read_ident(s, e);
+    ?(t.length == 0){ ^"" };
+    ^slice2(s, k, e + t.length);
+  };
+  ^read_ident(s, k);
+}
+
+!skip_type(params: string, k0: int): int {
+  k = skip_ws(params, k0);
+  pn = params.length;
+  ?(k < pn && params.charCodeAt(k) == 58){
+    k = skip_ws(params, k + 1);
+    t = jss_trim(read_type(params, k));
+    ?(t.length > 0){ k = k + t.length };
+  };
+  ^k;
+}
+
+!param_zig_type(params: string, after_id: int): string {
+  k = skip_ws(params, after_id);
+  pn = params.length;
+  ?(k < pn && params.charCodeAt(k) == 58){
+    t = jss_trim(read_type(params, k + 1));
+    ?(t.length > 0){ ^zig_ty(t) };
+  };
+  ^"i64";
+}
+
+!fn_ret_type(src: string, after_paren: int, brace: int): string {
+  k = skip_ws(src, after_paren);
+  ?(k < brace && src.charCodeAt(k) == 45 && k + 1 < brace && src.charCodeAt(k + 1) == 62){
+    t = jss_trim(read_type(src, k + 2));
+    ?(t.length > 0){ ^zig_ty(t) };
+  };
+  ?(k < brace && src.charCodeAt(k) == 58){
+    t = jss_trim(read_type(src, k + 1));
+    ?(t.length > 0){ ^zig_ty(t) };
+  };
+  ^"i64";
+}
+
+!rhs_kind(body: string, eq_pos: int): string {
+  n = body.length;
+  k = skip_ws(body, eq_pos + 1);
+  ?(k >= n){ ^"i64" };
+  ?(body.charCodeAt(k) == 34){ ^"[]const u8" };
+  ?(body.charCodeAt(k) == 91){ ^"i64" };
+  id = read_ident(body, k);
+  ?(id.length == 0){ ^"i64" };
+  ?(starts_lit(id, 0, "true") == 1 || starts_lit(id, 0, "false") == 1){ ^"bool" };
+  k2 = skip_ws(body, k + id.length);
+  ?(k2 < n && body.charCodeAt(k2) == 46){
+    fld = read_ident(body, k2 + 1);
+    ?(starts_lit(fld, 0, "length") == 1 || starts_lit(fld, 0, "len") == 1 || starts_lit(fld, 0, "charCodeAt") == 1){ ^"i64" };
+    ?(starts_lit(id, 0, "l_int") == 1 || starts_lit(id, 0, "list_int") == 1 || starts_lit(id, 0, "int_") == 1){ ^"i64" };
+    ^"[]const u8";
+  };
+  ?(starts_lit(id, 0, "list_new_int") == 1){ ^"*LiaListI64" };
+  ?(starts_lit(id, 0, "list_new_str") == 1){ ^"*LiaListStr" };
+  ?(starts_lit(id, 0, "read_") == 1 || starts_lit(id, 0, "slice2") == 1 || starts_lit(id, 0, "q") == 1){ ^"[]const u8" };
+  ?(starts_lit(id, 0, "arr_n") == 1 || starts_lit(id, 0, "zig_ty") == 1){ ^"[]const u8" };
+  ?(starts_lit(id, 0, "js_params") == 1 || starts_lit(id, 0, "rewrite_") == 1 || starts_lit(id, 0, "lin_") == 1){ ^"[]const u8" };
+  ?(starts_lit(id, 0, "andor") == 1 || starts_lit(id, 0, "kw_space") == 1 || starts_lit(id, 0, "zig_") == 1){ ^"[]const u8" };
+  ?(starts_lit(id, 0, "emit_") == 1 || starts_lit(id, 0, "param_") == 1 || starts_lit(id, 0, "fn_ret") == 1){ ^"[]const u8" };
+  ?(starts_lit(id, 0, "rgs_") == 1 || starts_lit(id, 0, "jss_") == 1 || starts_lit(id, 0, "jsd_") == 1 || starts_lit(id, 0, "jsf_") == 1){ ^"[]const u8" };
+  ?(starts_lit(id, 0, "cks_") == 1){ ^"[]const u8" };
+  ^"i64";
+}
+
+!arr_decl_line(id: string, ty: string): string {
+  out = "    var ";
+  out = out + id;
+  out = out + ": ";
+  out = out + ty;
+  ?(starts_lit(ty, 0, "[]const u8") == 1){
+    out = out + " = ";
+    out = out + q();
+    out = out + q();
+    out = out + ";\n";
+    ^out;
+  };
+  ?(ty.length > 1 && ty.charCodeAt(0) == 91 && ty.charCodeAt(1) >= 48 && ty.charCodeAt(1) <= 57){
+    out = out + " = [_]i64{0} ** ";
+    out = out + arr_n_str(ty);
+    out = out + ";\n";
+    ^out;
+  };
+  ?(starts_lit(ty, 0, "@Vector") == 1){
+    out = out + " = @splat(0);\n";
+    ^out;
+  };
+  ?(starts_lit(ty, 0, "*LiaList") == 1){ out = out + " = undefined;\n"; ^out };
+  ?(starts_lit(ty, 0, "bool") == 1){ out = out + " = false;\n"; ^out };
+  out = out + " = 0;\n";
+  ^out;
+}
+
+!zig_decls(body: string, params: string): string {
+  out = "";
+  seen = "";
+  i = 0;
+  n = body.length;
+  id = "";
+  ty = "";
+  t = "";
+  while (i < n) {
+    ?(body.charCodeAt(i) == 34){
+      i = i + 1;
+      while (i < n && body.charCodeAt(i) != 34){ i = i + 1 };
+      ?(i < n){ i = i + 1 };
+      continue;
+    };
+    id = read_ident(body, i);
+    ?(id.length > 0){
+      ?(id.length == 1 && id.charCodeAt(0) == 95){ i = i + 1; continue };
+      j = skip_ws(body, i + id.length);
+      ?(j < n && starts_lit(body, j, "=>") == 1){ i = i + id.length; continue };
+      ?(j < n && body.charCodeAt(j) == 58){
+        t = jss_trim(read_type(body, j + 1));
+        ?(t.length > 0 && in_csv(params, id) == 0 && in_csv(seen, id) == 0){
+          ty = zig_ty(t);
+          out = out + arr_decl_line(id, ty);
+          ?(seen.length == 0){ seen = id }
+          : { seen = seen + ","; seen = seen + id };
+        };
+        ?(t.length > 0){
+          i = skip_ws(body, j + 1);
+          i = i + t.length;
+          continue;
+        };
+      };
+      ?(j < n && body.charCodeAt(j) == 61 && (j + 1 >= n || body.charCodeAt(j + 1) != 61)){
+        ?(in_csv(params, id) == 0 && in_csv(seen, id) == 0){
+          ty = rhs_kind(body, j);
+          out = out + arr_decl_line(id, ty);
+          ?(seen.length == 0){ seen = id }
+          : { seen = seen + ","; seen = seen + id };
+        };
+      };
+      i = i + id.length;
+    }
+    : { i = i + 1 };
+  };
+  ^out;
+}
+
+!arr_prev_ok_index(s: string, i: int): int {
+  k = i - 1;
+  while (k >= 0 && (s.charCodeAt(k) == 32 || s.charCodeAt(k) == 9)){ k = k - 1 };
+  ?(k < 0){ ^0 };
+  ?(is_ident(s.charCodeAt(k)) == true){ ^1 };
+  ?(s.charCodeAt(k) == 41){ ^1 };
+  ?(s.charCodeAt(k) == 93){ ^1 };
+  ^0;
+}
+
+!rewrite_arr(s: string): string {
+  out = "";
+  chs = "";
+  i = 0;
+  n = s.length;
+  t = "";
+  cl = 0;
+  k = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) == 34){
+      out = out + q();
+      i = i + 1;
+      while (i < n && s.charCodeAt(i) != 34){
+        chs = s.charAt(i);
+        out = out + chs;
+        i = i + 1;
+      };
+      ?(i < n){ out = out + q(); i = i + 1 };
+      continue;
+    };
+    id = read_ident(s, i);
+    ?(id.length > 0){
+      j = skip_ws(s, i + id.length);
+      ?(j < n && s.charCodeAt(j) == 58){
+        t = jss_trim(read_type(s, j + 1));
+        ?(t.length > 0){
+          k = skip_ws(s, j + 1);
+          k = k + t.length;
+          k = skip_ws(s, k);
+          ?(k < n && s.charCodeAt(k) == 61){
+            out = out + id;
+            i = k;
+            continue;
+          };
+          while (k < n && s.charCodeAt(k) != 59 && s.charCodeAt(k) != 10){ k = k + 1 };
+          ?(k < n && s.charCodeAt(k) == 59){ k = k + 1 };
+          i = k;
+          continue;
+        };
+      };
+      out = out + id;
+      i = i + id.length;
+      continue;
+    };
+    ?(s.charCodeAt(i) == 91 && arr_prev_ok_index(s, i) == 1){
+      cl = match_brack(s, i);
+      ?(cl > i){
+        out = out + "[_lia_idx(";
+        out = out + slice2(s, i + 1, cl);
+        out = out + ")]";
+        i = cl + 1;
+        continue;
+      };
+    };
+    ?(s.charCodeAt(i) == 91 && arr_prev_ok_index(s, i) == 0){
+      cl = match_brack(s, i);
+      ?(cl > i){
+        out = out + "[_]i64{";
+        out = out + slice2(s, i + 1, cl);
+        out = out + "}";
+        i = cl + 1;
+        continue;
+      };
+    };
+    chs = s.charAt(i);
+    out = out + chs;
+    i = i + 1;
+  };
+  ^out;
+}
+
+!jsf_int_elems(s: string, a: int, b: int): int {
+  i = a;
+  c = 0;
+  while (i < b) {
+    c = s.charCodeAt(i);
+    ?(c == 32 || c == 9 || c == 10 || c == 13 || c == 44 || c == 45){ i = i + 1; continue };
+    ?(c >= 48 && c <= 57){ i = i + 1; continue };
+    ^0;
+  };
+  ^1;
+}
+
+!jsf_brackets_ok(body: string): string {
+  n = body.length;
+  i = 0;
+  cl = 0;
+  k = 0;
+  c = 0;
+  while (i < n) {
+    c = body.charCodeAt(i);
+    ?(c == 34 || c == 39){
+      i = i + 1;
+      while (i < n && body.charCodeAt(i) != c){ i = i + 1 };
+      ?(i < n){ i = i + 1 };
+      continue;
+    };
+    ?(c == 91){
+      cl = match_brack(body, i);
+      ?(cl < i){ ^"REJ_INDEX_BRACKET" };
+      ?(arr_prev_ok_index(body, i) == 1){ i = cl + 1; continue };
+      ?(jsf_int_elems(body, i + 1, cl) == 1){ i = cl + 1; continue };
+      ^"REJ_INDEX_BRACKET";
+    };
+    i = i + 1;
+  };
+  ^"OK";
+}
+
+!jss_rev_byte(v: int): int {
+  x = v & 255;
+  r = 0;
+  k = 0;
+  while (k < 8) {
+    r = _lia_shl(r, 1) | (x & 1);
+    x = _lia_shr(x, 1);
+    k = k + 1;
+  };
+  ^r & 255;
+}
+
+!jss_rev256_assign(): string {
+  out = "  REVERSE_TABLE: [256]int = [";
+  i = 0;
+  while (i < 256) {
+    ?(i > 0){ out = out + ", " };
+    out = out + rgs_num(jss_rev_byte(i));
+    i = i + 1;
+  };
+  out = out + "];";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+=ex{match_brack, zig_ty, skip_type, param_zig_type, fn_ret_type, zig_decls, rewrite_arr, read_type, is_arr_ty, jsf_brackets_ok, jss_rev256_assign}

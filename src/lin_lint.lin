@@ -1,0 +1,261 @@
+@LIN:L1c:0.2
+@LIN_LINT{version=1 purpose=reject_unsupported_constructs_at_lin_level_with_position_and_repair emits=RULEL}
+
+!ck_line(src: string, at: int): int {
+  ln = 1;
+  k = 0;
+  n = src.length;
+  while (k < at && k < n) {
+    ?(src.charCodeAt(k) == 10){ ln = ln + 1 };
+    k = k + 1;
+  };
+  ^ln;
+}
+
+!ck_col(src: string, at: int): int {
+  k = at;
+  col = 1;
+  while (k > 0 && src.charCodeAt(k - 1) != 10){ col = col + 1; k = k - 1 };
+  ^col;
+}
+
+!ck_heur_str(id: string): int {
+  ?(id.length == 0){ ^0 };
+  ?(starts_lit(id, 0, "q") == 1){ ^1 };
+  ?(starts_lit(id, 0, "body") == 1){ ^1 };
+  ?(starts_lit(id, 0, "params") == 1){ ^1 };
+  ?(starts_lit(id, 0, "names") == 1){ ^1 };
+  ?(starts_lit(id, 0, "chs") == 1){ ^1 };
+  ?(starts_lit(id, 0, "out") == 1){ ^1 };
+  ?(starts_lit(id, 0, "js_p") == 1){ ^1 };
+  ?(starts_lit(id, 0, "rewrite_") == 1){ ^1 };
+  ?(starts_lit(id, 0, "lin_") == 1){ ^1 };
+  ?(starts_lit(id, 0, "zig_") == 1){ ^1 };
+  ?(starts_lit(id, 0, "emit_") == 1){ ^1 };
+  ?(starts_lit(id, 0, "param_") == 1){ ^1 };
+  ?(starts_lit(id, 0, "fn_ret") == 1){ ^1 };
+  ?(starts_lit(id, 0, "andor") == 1){ ^1 };
+  ?(starts_lit(id, 0, "kw_space") == 1){ ^1 };
+  ?(starts_lit(id, 0, "rgs_") == 1){ ^1 };
+  ?(starts_lit(id, 0, "jss_") == 1){ ^1 };
+  ?(starts_lit(id, 0, "cks_") == 1){ ^1 };
+  ?(starts_lit(id, 0, "slice2") == 1){ ^1 };
+  ?(starts_lit(id, 0, "read_ident") == 1){ ^1 };
+  ?(starts_lit(id, 0, "fromCharCode") == 1){ ^1 };
+  ?(starts_lit(id, 0, "charAt") == 1){ ^1 };
+  ?(id.length == 2 && starts_lit(id, 0, "id") == 1){ ^1 };
+  ?(id.length == 3 && starts_lit(id, 0, "src") == 1){ ^1 };
+  ^0;
+}
+
+!cks_diag(src: string, at: int, code: string, fix: string): string {
+  out = "  .d{ code=";
+  out = out + code;
+  out = out + " line=";
+  out = out + rgs_num(ck_line(src, at));
+  out = out + " col=";
+  out = out + rgs_num(ck_col(src, at));
+  out = out + " fix=";
+  out = out + q();
+  out = out + fix;
+  out = out + q();
+  out = out + " }";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+!ck_side_literal(src: string, at: int, oplen: int): int {
+  n = src.length;
+  k = at - 1;
+  while (k >= 0 && (src.charCodeAt(k) == 32 || src.charCodeAt(k) == 9)){ k = k - 1 };
+  ?(k >= 0 && src.charCodeAt(k) == 34){ ^1 };
+  k = skip_ws(src, at + oplen);
+  ?(k < n && src.charCodeAt(k) == 34){ ^1 };
+  ^0;
+}
+
+!ck_call_left_str(src: string, at: int): int {
+  k = at - 1;
+  d = 0;
+  nm = "";
+  st = 0;
+  while (k >= 0 && (src.charCodeAt(k) == 32 || src.charCodeAt(k) == 9)){ k = k - 1 };
+  ?(k < 0){ ^0 };
+  ?(src.charCodeAt(k) != 41){ ^0 };
+  while (k >= 0) {
+    ?(src.charCodeAt(k) == 41){ d = d + 1 };
+    ?(src.charCodeAt(k) == 40){
+      d = d - 1;
+      ?(d == 0){
+        ?(k == 0){ ^0 };
+        ?(is_ident(src.charCodeAt(k - 1)) == false){ ^0 };
+        st = k - 1;
+        while (st > 0 && is_ident(src.charCodeAt(st - 1)) == true){ st = st - 1 };
+        nm = read_ident(src, st);
+        ^ck_heur_str(nm);
+      };
+    };
+    k = k - 1;
+  };
+  ^0;
+}
+
+!cks_ops(src: string): string {
+  out = "";
+  n = src.length;
+  i = 0;
+  c = 0;
+  while (i < n) {
+    c = src.charCodeAt(i);
+    ?(c == 34){
+      i = i + 1;
+      while (i < n && src.charCodeAt(i) != 34) {
+        ?(src.charCodeAt(i) == 92){
+          out = out + cks_diag(src, i, "ESCAPE_IN_LITERAL", "literals carry no escapes; call q() to emit a quote");
+        };
+        i = i + 1;
+      };
+      i = i + 1;
+      continue;
+    };
+    ?(c == 47 && i + 1 < n && src.charCodeAt(i + 1) == 47){
+      while (i < n && src.charCodeAt(i) != 10){ i = i + 1 };
+      continue;
+    };
+    ?(c == 47){
+      out = out + cks_diag(src, i, "INT_DIVISION", "no integer division; subtract in a loop or pass a power of ten");
+      i = i + 1;
+      continue;
+    };
+    ?(c == 60 && i + 1 < n && src.charCodeAt(i + 1) == 60){
+      out = out + cks_diag(src, i, "SHIFT_OPERATOR", "no shift operator; call _lia_shl(a, b)");
+      i = i + 2;
+      continue;
+    };
+    ?(c == 62 && i + 1 < n && src.charCodeAt(i + 1) == 62){
+      out = out + cks_diag(src, i, "SHIFT_OPERATOR", "no shift operator; call _lia_shr(a, b)");
+      i = i + 2;
+      continue;
+    };
+    ?(c == 61 && i + 1 < n && src.charCodeAt(i + 1) == 61){
+      ?(ck_side_literal(src, i, 2) == 1){
+        out = out + cks_diag(src, i, "STRING_COMPARE", "no string equality; compare .length then starts_lit(s, 0, lit)");
+      };
+      i = i + 2;
+      continue;
+    };
+    ?(c == 33 && i + 1 < n && src.charCodeAt(i + 1) == 61){
+      ?(ck_side_literal(src, i, 2) == 1){
+        out = out + cks_diag(src, i, "STRING_COMPARE", "no string inequality; compare .length then starts_lit(s, 0, lit)");
+      };
+      i = i + 2;
+      continue;
+    };
+    ?(c == 43 && i + 1 < n && src.charCodeAt(i + 1) == 43){
+      i = i + 2;
+      continue;
+    };
+    ?(c == 43){
+      ?(ck_call_left_str(src, i) == 1){
+        out = out + cks_diag(src, i, "CALL_LEFT_OF_CONCAT", "bind the call result to a variable first, then concatenate");
+      };
+      i = i + 1;
+      continue;
+    };
+    i = i + 1;
+  };
+  ^out;
+}
+
+!cks_plist(src: string, plist: string, at: int): string {
+  out = "";
+  n = plist.length;
+  i = 0;
+  st = 0;
+  nm = "";
+  ty = "";
+  p = 0;
+  seg = "";
+  while (i <= n) {
+    ?(i == n || plist.charCodeAt(i) == 44){
+      seg = slice2(plist, st, i);
+      nm = read_ident(seg, skip_ws(seg, 0));
+      ?(nm.length > 0){
+        p0 = skip_ws(seg, 0);
+        p = skip_ws(seg, p0 + nm.length);
+        ty = "";
+        ?(p < seg.length && seg.charCodeAt(p) == 58){
+          ty = read_ident(seg, skip_ws(seg, p + 1));
+        };
+        ?(ty.length > 0){
+          ?(starts_lit(ty, 0, "string") == 0 && starts_lit(ty, 0, "str") == 0 && starts_lit(ty, 0, "bool") == 0){
+            ?(ck_heur_str(nm) == 1){
+              out = out + cks_diag(src, at, "NAME_TYPE_COLLISION", "parameter name is read as a string by the type heuristic; rename it");
+            };
+          };
+        };
+      };
+      st = i + 1;
+      i = i + 1;
+      continue;
+    };
+    i = i + 1;
+  };
+  ^out;
+}
+
+!cks_params(src: string): string {
+  out = "";
+  n = src.length;
+  i = 0;
+  nm = "";
+  op = 0;
+  cl = 0;
+  while (i < n) {
+    ?(src.charCodeAt(i) == 33){
+      nm = read_ident(src, i + 1);
+      ?(nm.length > 0){
+        op = skip_ws(src, i + 1 + nm.length);
+        ?(op < n && src.charCodeAt(op) == 40){
+          cl = match_paren(src, op);
+          ?(cl > op){
+            out = out + cks_plist(src, slice2(src, op + 1, cl), op);
+            i = cl;
+          };
+        };
+      };
+    };
+    i = i + 1;
+  };
+  ^out;
+}
+
+!cks_lint(src: string): string {
+  out = "";
+  body = "";
+  body = body + cks_ops(src);
+  body = body + cks_params(src);
+  out = out + "@RULEL:LIN_LINT:1.0.0";
+  out = out + rgs_ch(10);
+  out = out + ".policy{ level=error fail_closed=true rationale=every_rejected_construct_names_its_supported_alternative }";
+  out = out + rgs_ch(10);
+  out = out + ".diagnostics{";
+  out = out + rgs_ch(10);
+  out = out + body;
+  out = out + "}";
+  out = out + rgs_ch(10);
+  out = out + ".summary{ errors=";
+  out = out + rgs_num(rg_count_lit(body, "  .d{"));
+  out = out + " }";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+!ck_errors(src: string): int {
+  body = "";
+  body = body + cks_ops(src);
+  body = body + cks_params(src);
+  ^rg_count_lit(body, "  .d{");
+}
+
+=ex{cks_lint, ck_errors, ck_heur_str, ck_line, ck_col}

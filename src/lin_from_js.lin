@@ -1,0 +1,383 @@
+@LIN:L1c:0.2
+@LIN_FROM_JS{version=1 purpose=transpile_pure_scalar_js_functions_to_lin emits=LIN}
+
+!jss_ln(acc: string, t: string): string {
+  out = "";
+  out = out + acc;
+  out = out + t;
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+!jss_strip_comments(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  c = 0;
+  while (i < n) {
+    c = s.charCodeAt(i);
+    ?(c == 34 || c == 39){
+      out = out + s.charAt(i);
+      i = i + 1;
+      while (i < n && s.charCodeAt(i) != c){ out = out + s.charAt(i); i = i + 1 };
+      ?(i < n){ out = out + s.charAt(i); i = i + 1 };
+      continue;
+    };
+    ?(c == 47 && i + 1 < n && s.charCodeAt(i + 1) == 47){
+      while (i < n && s.charCodeAt(i) != 10){ i = i + 1 };
+      continue;
+    };
+    ?(c == 47 && i + 1 < n && s.charCodeAt(i + 1) == 42){
+      i = i + 2;
+      while (i + 1 < n && (s.charCodeAt(i) != 42 || s.charCodeAt(i + 1) != 47)){ i = i + 1 };
+      i = i + 2;
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!jss_replace_word(s: string, w: string, v: string): string {
+  out = "";
+  n = s.length;
+  wl = w.length;
+  i = 0;
+  keep = 0;
+  while (i < n) {
+    ?(starts_lit(s, i, w) == 1){
+      keep = 1;
+      ?(i > 0 && is_ident(s.charCodeAt(i - 1)) == true){ keep = 0 };
+      ?(i + wl < n && is_ident(s.charCodeAt(i + wl)) == true){ keep = 0 };
+      ?(keep == 1){
+        out = out + v;
+        i = i + wl;
+        continue;
+      };
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!jss_one_const(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  p = 0;
+  e = 0;
+  ds = 0;
+  nm = "";
+  while (i < n) {
+    ?(starts_lit(s, i, "var") == 1 && i + 3 < n && is_ident(s.charCodeAt(i + 3)) == false){
+      p = skip_ws(s, i + 3);
+      nm = read_ident(s, p);
+      ?(nm.length > 0){
+        p = skip_ws(s, p + nm.length);
+        ?(p < n && s.charCodeAt(p) == 61 && (p + 1 >= n || s.charCodeAt(p + 1) != 61)){
+          ds = skip_ws(s, p + 1);
+          e = ds;
+          while (e < n && s.charCodeAt(e) >= 48 && s.charCodeAt(e) <= 57){ e = e + 1 };
+          ?(e > ds){
+            p = skip_ws(s, e);
+            ?(p < n && s.charCodeAt(p) == 59){
+              ^jss_replace_word(s, nm, slice2(s, ds, e));
+            };
+          };
+        };
+      };
+    };
+    i = i + 1;
+  };
+  out = out + s;
+  ^out;
+}
+
+!jss_comp(id: string, fname: string, rhs: string): string {
+  out = "";
+  out = out + id;
+  out = out + " = ";
+  out = out + fname;
+  out = out + "(";
+  out = out + id;
+  out = out + ", ";
+  out = out + jss_e0(rhs);
+  out = out + ")";
+  ^out;
+}
+
+!jss_compn(id: string, ops: string, rhs: string): string {
+  out = "";
+  out = out + id;
+  out = out + " = (";
+  out = out + id;
+  out = out + " ";
+  out = out + ops;
+  out = out + " ";
+  out = out + jss_e0(rhs);
+  out = out + ")";
+  ^out;
+}
+
+!jss_step(id: string, ops: string): string {
+  out = "";
+  out = out + id;
+  out = out + " = ";
+  out = out + id;
+  out = out + " ";
+  out = out + ops;
+  out = out + " 1";
+  ^out;
+}
+
+!jss_vardecl(rest: string): string {
+  out = "";
+  n = rest.length;
+  i = 0;
+  st = 0;
+  d = 0;
+  c = 0;
+  first = 1;
+  seg = "";
+  while (i <= n) {
+    ?(i == n || (d == 0 && rest.charCodeAt(i) == 44)){
+      seg = jss_trim(slice2(rest, st, i));
+      ?(seg.length > 0){
+        ?(first == 0){ out = out + "; " };
+        out = out + jss_one_var(seg);
+        first = 0;
+      };
+      st = i + 1;
+      i = i + 1;
+      continue;
+    };
+    c = rest.charCodeAt(i);
+    ?(c == 40){ d = d + 1 };
+    ?(c == 41){ d = d - 1 };
+    i = i + 1;
+  };
+  ^out;
+}
+
+!jss_one_var(seg: string): string {
+  out = "";
+  n = seg.length;
+  nm = read_ident(seg, 0);
+  ?(nm.length == 0){ ^out };
+  p = skip_ws(seg, nm.length);
+  ?(p < n && seg.charCodeAt(p) == 61){
+    out = out + nm;
+    out = out + " = ";
+    out = out + jss_e0(slice2(seg, p + 1, n));
+    ^out;
+  };
+  out = out + nm;
+  out = out + " = 0";
+  ^out;
+}
+
+!jss_stmt(st: string): string {
+  e = jss_trim(st);
+  n = e.length;
+  out = "";
+  ?(n == 0){ ^out };
+  p = 0;
+  cl = 0;
+  id = "";
+  ?(starts_lit(e, 0, "if") == 1 && n > 2 && is_ident(e.charCodeAt(2)) == false){
+    p = skip_ws(e, 2);
+    ?(p < n && e.charCodeAt(p) == 40){
+      cl = match_paren(e, p);
+      ?(cl > p){
+        out = out + "?(";
+        out = out + jss_e0(slice2(e, p + 1, cl));
+        out = out + " != 0){ ";
+        out = out + jss_stmt(slice2(e, cl + 1, n));
+        out = out + " }";
+        ^out;
+      };
+    };
+  };
+  ?(starts_lit(e, 0, "return") == 1 && (n == 6 || is_ident(e.charCodeAt(6)) == false)){
+    out = out + "^";
+    out = out + jss_e0(slice2(e, 6, n));
+    ^out;
+  };
+  ?(starts_lit(e, 0, "var") == 1 && n > 3 && is_ident(e.charCodeAt(3)) == false){
+    ^jss_vardecl(slice2(e, 3, n));
+  };
+  ?(starts_lit(e, 0, "++") == 1){ ^jss_step(read_ident(e, skip_ws(e, 2)), "+") };
+  ?(starts_lit(e, 0, "--") == 1){ ^jss_step(read_ident(e, skip_ws(e, 2)), "-") };
+  id = read_ident(e, 0);
+  ?(id.length > 0){
+    p = skip_ws(e, id.length);
+    ?(starts_lit(e, p, "++") == 1){ ^jss_step(id, "+") };
+    ?(starts_lit(e, p, "--") == 1){ ^jss_step(id, "-") };
+    ?(starts_lit(e, p, ">>>=") == 1){ ^jss_comp(id, "js_ushr", slice2(e, p + 4, n)) };
+    ?(starts_lit(e, p, "<<=") == 1){ ^jss_comp(id, "js_shl", slice2(e, p + 3, n)) };
+    ?(starts_lit(e, p, ">>=") == 1){ ^jss_comp(id, "js_shr", slice2(e, p + 3, n)) };
+    ?(starts_lit(e, p, "|=") == 1){ ^jss_comp(id, "js_or", slice2(e, p + 2, n)) };
+    ?(starts_lit(e, p, "&=") == 1){ ^jss_comp(id, "js_and", slice2(e, p + 2, n)) };
+    ?(starts_lit(e, p, "^=") == 1){ ^jss_comp(id, "js_xor", slice2(e, p + 2, n)) };
+    ?(starts_lit(e, p, "+=") == 1){ ^jss_compn(id, "+", slice2(e, p + 2, n)) };
+    ?(starts_lit(e, p, "-=") == 1){ ^jss_compn(id, "-", slice2(e, p + 2, n)) };
+    ?(starts_lit(e, p, "*=") == 1){ ^jss_compn(id, "*", slice2(e, p + 2, n)) };
+    ?(p < n && e.charCodeAt(p) == 91){
+      cl = match_brack(e, p);
+      ?(cl > p){
+        qpos = skip_ws(e, cl + 1);
+        ?(qpos < n && e.charCodeAt(qpos) == 61 && (qpos + 1 >= n || e.charCodeAt(qpos + 1) != 61)){
+          out = out + id;
+          out = out + "[";
+          out = out + jss_e0(slice2(e, p + 1, cl));
+          out = out + "] = ";
+          out = out + jss_e0(slice2(e, qpos + 1, n));
+          ^out;
+        };
+      };
+    };
+    ?(p < n && e.charCodeAt(p) == 61 && (p + 1 >= n || e.charCodeAt(p + 1) != 61)){
+      out = out + id;
+      out = out + " = ";
+      out = out + jss_e0(slice2(e, p + 1, n));
+      ^out;
+    };
+  };
+  out = out + "JS_UNSUPPORTED";
+  ^out;
+}
+
+!jss_body(b: string): string {
+  out = "";
+  n = b.length;
+  i = 0;
+  st = 0;
+  d = 0;
+  c = 0;
+  seg = "";
+  conv = "";
+  while (i <= n) {
+    ?(i == n || (d == 0 && b.charCodeAt(i) == 59)){
+      seg = jss_trim(slice2(b, st, i));
+      ?(seg.length > 0){
+        conv = jss_stmt(seg);
+        ?(conv.length > 0){
+          out = out + "  ";
+          out = out + conv;
+          out = out + ";";
+          out = out + rgs_ch(10);
+        };
+      };
+      st = i + 1;
+      i = i + 1;
+      continue;
+    };
+    c = b.charCodeAt(i);
+    ?(c == 40 || c == 123 || c == 91){ d = d + 1 };
+    ?(c == 41 || c == 125 || c == 93){ d = d - 1 };
+    i = i + 1;
+  };
+  ^out;
+}
+
+!jss_pcsv(p: string): string {
+  out = "";
+  n = p.length;
+  i = 0;
+  st = 0;
+  seg = "";
+  while (i <= n) {
+    ?(i == n || p.charCodeAt(i) == 44){
+      seg = jss_trim(slice2(p, st, i));
+      ?(seg.length > 0){ out = rgs_csv_add(out, seg) };
+      st = i + 1;
+      i = i + 1;
+      continue;
+    };
+    i = i + 1;
+  };
+  ^out;
+}
+
+!jss_pdecl(pcsv: string): string {
+  out = "";
+  n = pcsv.length;
+  k = 0;
+  e = 0;
+  idx = 0;
+  while (k < n) {
+    e = rg_csv_end(pcsv, k);
+    ?(idx > 0){ out = out + ", " };
+    out = out + "a";
+    out = out + rgs_num(idx);
+    out = out + ": int";
+    idx = idx + 1;
+    k = e + 1;
+  };
+  ^out;
+}
+
+!jss_palias(pcsv: string): string {
+  out = "";
+  n = pcsv.length;
+  k = 0;
+  e = 0;
+  idx = 0;
+  while (k < n) {
+    e = rg_csv_end(pcsv, k);
+    out = out + "  ";
+    out = out + slice2(pcsv, k, e);
+    out = out + " = a";
+    out = out + rgs_num(idx);
+    out = out + ";";
+    out = out + rgs_ch(10);
+    idx = idx + 1;
+    k = e + 1;
+  };
+  ^out;
+}
+
+!jsf_eligible_reason(pcsv: string, body: string, known: string): string {
+  br = jss_trim(jsf_brackets_ok(body));
+  ?(starts_lit(br, 0, "OK") == 0 || br.length != 2){ ^br };
+  ?(rg_count_lit(body, ".") > 0){ ^"REJ_MEMBER_DOT" };
+  ?(rg_count_lit(body, "=>") > 0){ ^"REJ_ARROW_FN" };
+  ?(rg_count_lit(body, "new ") > 0){ ^"REJ_NEW_CLASS" };
+  ?(rg_count_lit(body, "function") > 0){ ^"REJ_FUNCTION_KEYWORD" };
+  ?(rg_count_lit(body, "{") > 0){ ^"REJ_OBJ_LITERAL" };
+  reads = rgs_csv_minus(rgs_scan(body, 1), rgs_scan(body, 2));
+  reads = rgs_csv_minus(reads, pcsv);
+  reads = rgs_csv_minus(reads, "var,return,if,else,true,false,null,undefined");
+  ?(rg_count_lit(body, "REVERSE_TABLE") > 0){ reads = rgs_csv_minus(reads, "REVERSE_TABLE") };
+  ?(reads.length > 0){ ^"REJ_UNKNOWN_IDENT" };
+  calls = rgs_csv_minus(rgs_scan(body, 3), known);
+  ?(calls.length > 0){ ^"REJ_UNKNOWN_CALL" };
+  ^"OK";
+}
+
+!jsf_eligible(pcsv: string, body: string, known: string): int {
+  r = jss_trim(jsf_eligible_reason(pcsv, body, known));
+  ?(starts_lit(r, 0, "OK") == 1 && r.length == 2){ ^1 };
+  ^0;
+}
+
+!jss_fn(nm: string, params: string, body: string): string {
+  out = "";
+  pcsv = jss_pcsv(params);
+  out = out + "!";
+  out = out + nm;
+  out = out + "(";
+  out = out + jss_pdecl(pcsv);
+  out = out + "): int {";
+  out = out + rgs_ch(10);
+  out = out + jss_palias(pcsv);
+  ?(rg_count_lit(body, "REVERSE_TABLE") > 0){ out = out + jss_rev256_assign() };
+  out = out + jss_body(body);
+  out = out + "}";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+=ex{jss_strip_comments, jss_replace_word, jss_one_const, jss_stmt, jss_body, jss_fn, jsf_eligible, jsf_eligible_reason, jss_pcsv}

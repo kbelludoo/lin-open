@@ -1,0 +1,48 @@
+@RULEL:LIN_POW_PITCH:1.0.0
+.description="Two sellable pitches as written 2026-08-29, plus the forbidden-claim list. Product path is LIN/Zig, not Node/Python."
+.measured_at="2026-08-29"
+.cites="spec/LIN_POW_CLAIMS.rulel spec/LIN_MINER_SHA256D.rulel"
+.moat="same .lin is GF2-certified on linear/bitwise ops, bit-exact vs std.crypto on SHA-256d words, one source text for miner and verifier. Moat is not speed."
+
+.pitch_dev_api{
+  .name="Validation de Proof-of-Work SHA-256d monofonte"
+  .path="dev / API anti-bot (Caminho 1 renamed)"
+  .text="Validation de Proof-of-Work SHA-256d monofonte: o mesmo .lin roda como desafio (miner) e como verificador nativo em Zig. Verificacao gatilho de 32 bits = 0.9us (1.1M/s/CPU-core, medido ReleaseFast), validada byte-a-byte contra std.crypto no bloco genesis do Bitcoin e no vetor FIPS 180-4. Certificado GF(2) replicavel: verify-cert -> VERIFIED_OK 32/32. Nao prometemos 100% de scraper bloqueio nem zero custo. Prometemos: sem cookie, sem servidor terceiro, dificuldade configuravel, verificador assinavel e auditavel."
+  .must_qualify[
+    "0.9us is native Zig ReleaseFast, never LinVM"
+    "verify-cert VERIFIED_OK is sigma0-class unary GF2, not SHA-256d"
+    "32-bit trigger is btc_pow_verify r7==0; product check is btc_pow_meets_nbits (256-bit)"
+    "sem servidor terceiro means btc_pow_bind+monotonic challenge in the app, not a hosted nonce DB"
+  ]
+}
+
+.pitch_grant_zk{
+  .name="GF(2) classifier plus monofonte SHA-256d"
+  .path="grant ZK (Caminho 2 renamed)"
+  .text="Apresentamos um classificador GF(2) affine/linear formal que prova rotacoes/XOR/ANDs bitwise por 32 vetores de base + probes, com certificado machine-readable reexecutavel (cert_sigma0.rulel), e um SHA-256d monofonte validado contra std.crypto. Escopo declarado: provamos ops lineares/bitwise individuais; funcoes com carry (ch/maj/addition no SHA-256) ficam fora do certificado — honestidade que fundacoes de ZK auditam de verdade."
+  .must_qualify[
+    "ch32 and maj32 may still classify as bitwise-independent; SHA-256 compress with add/while is REQUIRES_EXHAUSTIVE"
+    "never say we proved SHA-256"
+  ]
+}
+
+.forbidden[
+  "btc_pow_verify is full Bitcoin difficulty"
+  "validates in <1us on LinVM"
+  "we proved SHA-256"
+  "WASM 5KB emitter"
+  "oracle of 10M cases"
+  "minimized circuits / circuit synthesis"
+  "VERIFIED_OK as a sellable claim for SHA-256d"
+  "Node or Python middleware as the product"
+  "100% scraper block"
+  "zero cost"
+  "LIN faster than std.crypto"
+]
+
+.checklist{
+  .n1="btc_pow_verify is r7==0 only. Full target is btc_pow_meets_nbits / btc_genesis_pow_ok."
+  .n2="Native ~0.9us; LinVM ~265us/op. Never say <1us on VM."
+  .n3="lin verify emits REQUIRES_EXHAUSTIVE for SHA-256 compress."
+  .n4="JS->Zig oracle is dozens of cases + metamorphic, not 10M."
+}

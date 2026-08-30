@@ -1,0 +1,266 @@
+@RULEL:LIN_PATH_TO_FULL:1.0.0
+.description="Caminho honesto e gated ate o LIN ter o necessario para clones reais de GitHub. Nao e dump de dialeto."
+.depends="spec/LIN_TRANSPILATION_FOCUS.rulel spec/LIN_CANONICAL_TRINITY.rulel spec/EPISTEMIC_HYGIENE_RULES.rulel"
+.cites="spec/LIN_BITHACKS_TRANSPILATION.rulel storage/known_divergences.rulel"
+.win_condition="cada subconjunto com parser+emitter+LinVM+oraculo_nomeado e taxa=aceitas/total"
+.lose_condition="silent_drop OR clone_100pct_files_emitted OR PROVED_STRUCTURAL_por_aridade OR bit_exact_em_fase_nunca"
+
+.thesis{
+  .pt="Tudo nao e um dump de dialeto. E uma sequencia de subconjuntos com REJ_* nomeado ate cada subconjunto ter parser, emissor, LinVM e oraculo."
+  .en="Everything is not one dialect dump. It is a sequence of subsets with named REJ_* until each subset has parser+emitter+LinVM+oracle."
+  .unit="subset_not_language"
+  .progress="fase N so abre quando o gate de N-1 mede valores, nao so AST"
+}
+
+.hygiene{
+  .no_silent_drop="EPISTEMIC_HYGIENE RULE_01: construto fora do subconjunto vira REJ_* com causa; strip silencioso e falha"
+  .facts_vs_hypotheses="RULE_02: chute nunca vira fato sem oraculo nomeado e suite nomeada"
+  .no_fake_confidence="RULE_03: proibido 0.98; categoria de evidencia ou erro medido"
+  .source_vs_proved="SOURCE_GUARANTEE != PROVED_IN_LIN (LIN_TRANSPILATION_FOCUS)"
+  .coverage_is_not_proof="LIN_TRANSPILATION_FOCUS.focus_order.n5: nunca priorizar cobertura de repo sobre oraculo nomeado"
+  .taxa="aceitas/total; recusa nomeada nao conta como sucesso do kernel, conta como sucesso do gate de honestidade"
+}
+
+.subset_complete{
+  .parser="aceita a sintaxe do subconjunto; recusa o resto com REJ_*"
+  .emitter="Zig (trinidade canonica); ast-check nao e bit-exact"
+  .linvm="executa o subconjunto; valores comparaveis"
+  .oracle="oraculo nomeado (Node jsf_eligible, vetor C/NIST/RFC, ou SMT UNSAT); oracle=undefined e falha"
+  .missing_any="fase nao fechada; nao avancar"
+}
+
+.whole_clone_policy{
+  .clone_entire_repo=ALLOWED
+  .transpile_all_files=REQUIRED
+  .success="relatorio de lacunas em RULEL: aceitas e recusadas por motivo; NAO 100% dos arquivos emitidos"
+  .fail=["silent_drop","omitir_arquivo_sem_REJ","contar_cobertura_como_prova","emitir_stub_vazio"]
+  .report_must=[
+    ".repo url+rev"
+    ".files_total"
+    ".accepted{ .n .fns }"
+    ".rejected[ { .file .fn .reason=REJ_* } ]"
+    ".taxa aceitas/total"
+    ".oracle named_or_none"
+  ]
+  .cite="EPISTEMIC_HYGIENE_RULES + LIN_TRANSPILATION_FOCUS: clone vscode/kernel e permitido; o produto e a matriz de recusas, nao um LIN equivalente ao repo"
+}
+
+.from_family{
+  .from_js{
+    .status=EXISTS
+    .phase=0
+    .scope="exports.name=function escalar jsf_eligible; hex fold antes de ident"
+    .oracle="Node ToInt32 no subconjunto; nunca alvo de performance"
+  }
+  .from_c{
+    .status=PHASE_2
+    .scope="uint32_t f(uint32_t) depois [N]uint32_t fixo; REJ_C_POINTER REJ_C_STRUCT no inicio"
+    .oracle="vetores no proprio .c ou NIST/RFC"
+    .primary="LIN_CANONICAL_TRINITY.source=C; LIN_TRANSPILATION_FOCUS.source.primary=C"
+  }
+  .from_rs{
+    .status=LATER_FACTS_ONLY
+    .scope="extrair SOURCE_GUARANTEE (NO_ALIASING do borrow checker) como fato de proveniencia"
+    .not="reimplementar borrow checker, traits, generics, Drop, panic"
+    .why="LIN_TRANSPILATION_FOCUS.source.high_value_low_coverage=Rust; caveat fora do subconjunto"
+  }
+  .from_zig="fora deste plano como front; Zig e alvo de emissao sem comptime"
+  .from_py="REJ_FROM_PY; Python bigint e runtime fora de bit-exact"
+  .from_go="REJ_FROM_GO; goroutines/scheduler nao sao nucleo inteiro"
+  .from_cpp="REJ_FROM_CPP; templates fora"
+}
+
+.phases[
+
+  {
+    .n=0
+    .id=NOW_SCALAR
+    .status=CURRENT
+    .entry="dialeto LIN escalar int/string/bool; from-js jsf_eligible; sem [] . => new chamada desconhecida"
+    .have=["from-js","src/lin_crypto.lin","src/lin_bithacks.lin","REJ_INDEX_BRACKET","REJ_MEMBER_DOT","REJ_ARROW_FN","REJ_CONSTRUCTOR","REJ_UNKNOWN_CALL","REJ_FLOAT_OUT_OF_BITEXACT"]
+    .deliverable="kernels escalares medidos (popCount/sign/nextPow2) VM vs Node; gap report RULEL por REJ_*"
+    .unlocks="nada alem de funcao int pura; SHA-256 block e GPU de dados continuam adiados"
+    .still_refused=["[]","ponteiro","struct","slice","float","objeto JS","while/for no from-js"]
+    .whole_repo="clone inteiro = maioria REJ_*; isso e o resultado correto"
+    .gate{
+      .how="LIN_BITHACKS_TRANSPILATION: eligible nomeadas, recusas nomeadas, valores VM==Node nos casos medidos"
+      .not_gate=["ast-check Zig sozinho","contagem de arquivos emitidos","reverse[256] ainda REJ_INDEX_BRACKET e esperado"]
+      .cite="DIV_001: mul wrapping nao provado; lowbias32 DIVERGENT_UNPROVED"
+    }
+  }
+
+  {
+    .n=1
+    .id=FIXED_INT_ARRAY
+    .status=NEXT
+    .entry="fase 0 gated; parser/emissor/VM/oraculo escalar estaveis"
+    .deliverable="[N]int com N comptime-conhecido, indexacao, checagem de bounds; tabela[256] e bloco[64] no dialeto"
+    .unlocks=["bit-twiddle reverse","word kernels","sha256_block apos array; ainda nao SHA-256 de mensagem longa sem slice"]
+    .still_refused=["ponteiro","*p++","struct","n runtime","float"]
+    .rej_codes=["REJ_C_POINTER","REJ_MEMBER_DOT","REJ_SLICE_RUNTIME_LEN","REJ_FLOAT_OUT_OF_BITEXACT"]
+    .gate{
+      .how="reverse de bit-twiddle vira eligible; VM vs JS (e vetor C se portado) coincidem bit a bit nos casos da tabela"
+      .vector="twiddle.js reverse + tabela 256; nao basta parsear [256]int"
+      .fail_if="index sem bounds ou silent_drop de []"
+    }
+  }
+
+  {
+    .n=2
+    .id=FROM_C_SCALAR_FIXED
+    .status=AFTER_1
+    .entry="fase 1 gated: [N]int + bounds no LIN nativo e no from-js do mesmo shape"
+    .deliverable="from-c de uint32_t f(uint32_t) e funcoes com [N]uint32_t fixo; recusa nomeada do resto"
+    .unlocks="kernels C pequenos com vetor no proprio arquivo (popcount_2, popcount_mult)"
+    .still_refused=["uint32_t*","struct","union","*++","VLA","inline asm","__builtin sem allowlist"]
+    .rej_codes=["REJ_C_POINTER","REJ_C_STRUCT","REJ_C_UNION","REJ_UNDEF_SIGNED_OVERFLOW","REJ_C_ASM"]
+    .gate{
+      .how="BartMassey/popcount ou .c pequeno equivalente: transpilar o arquivo, taxa=aceitas/total, VM vs vetores do .c"
+      .example_repo="https://github.com/BartMassey/popcount"
+      .fail_if="aceitar ponteiro; omitir DRIVER/macros sem REJ; alegar repo 100%"
+    }
+  }
+
+  {
+    .n=3
+    .id=RUNTIME_SLICE
+    .status=AFTER_2
+    .entry="fase 2 gated; from-c escalar+fixo mede taxa"
+    .deliverable="[n]int ou slice com n runtime + bounds em toda indexacao; len explicito no tipo ou param"
+    .unlocks=["crc32(buf,len)","XXH32(buf,len)","sha256 de mensagem com padding em buffer limitado"]
+    .still_refused=["ponteiro selvagem","aliasing implicito","struct com ponteiro","realloc oculto"]
+    .rej_codes=["REJ_C_POINTER","REJ_UNBOUNDED_BUF","REJ_MEMBER_DOT"]
+    .gate{
+      .how="um vetor oficial CRC ou NIST-style: entrada bytes+len, saida u32/u64, VM vs vetor (e C de referencia se houver)"
+      .example=["CRC-32 ISO/IEC ou RFC vetor conhecido","XXH32 canonical seed0 em string curta documentada"]
+      .fail_if="buf sem len; index sem bounds; alegar xxHash streaming completo"
+    }
+  }
+
+  {
+    .n=4
+    .id=STRUCT_OF_INTS
+    .status=AFTER_3
+    .entry="fase 3 gated com vetor CRC/NIST"
+    .deliverable="struct so de ints (e arrays fixos de ints); campo .x vira load/store nomeado, nao ponteiro"
+    .unlocks=["pcg32 state","xxhash streaming state sem ptr","PRNG com estado explicito"]
+    .still_refused=["ponteiro aninhado","fat pointer","trait object","union punning"]
+    .rej_codes=["REJ_NESTED_PTR","REJ_C_POINTER","REJ_MEMBER_DOT_NONINT"]
+    .gate{
+      .how="pcg-c-basic output de estado int-only OU XXH32 state sem ptr: VM vs C de referencia em vetor curto"
+      .example_repo="https://github.com/imneme/pcg-c-basic"
+      .fail_if="rng->state via ponteiro aceito; struct opaca sem layout"
+    }
+  }
+
+  {
+    .n=5
+    .id=PTR_AS_INDEX
+    .status=OPTIONAL
+    .entry="fase 4 gated; so se kernels C reais ainda morrerem em uint8_t* buf"
+    .deliverable="ponteiro como indice em buffer explicito passado ao lado (base+len+off); sem * selvagem"
+    .unlocks="from-c de crc32_le_generic / XXH32 que recebem unsigned char* + len"
+    .still_refused=["pointer arithmetic irrestrita","int->ptr","fn ptr","interior mut de objeto JS"]
+    .rej_codes=["REJ_WILD_STAR","REJ_PTR_ARITH","REJ_FN_PTR"]
+    .gate{
+      .how="mesmo vetor CRC/XXH da fase 3, agora via from-c do prototipo com ptr; taxa e valores iguais ao slice nativo"
+      .skip_ok="se fase 3 ja cobre a API por rewrite buf,len sem ptr; nao e obrigatorio para 'full' de clone honesto"
+    }
+  }
+
+  {
+    .n=6
+    .id=ZIG_WRAP_OPS
+    .status=REQUIRED_BEFORE_SWAR
+    .entry="qualquer fase que emita Zig de mul/add/sub de hash; DIV_001 aberto"
+    .deliverable="emissor Zig com *% +% -% (ou wrapping explicito) em todo inteiro LIN; * vs *% resolvido"
+    .unlocks="confiar SWAR e hashes com mul em ReleaseFast; fechar DIV_001"
+    .still_refused="nao muda o dialeto fonte; so a baixa"
+    .cite="storage/known_divergences.rulel DIV_001_INTEGER_MULTIPLICATION_OVERFLOW"
+    .gate{
+      .how="binario Zig ReleaseFast e Debug vs LinVM vs vetor C/JS nos mesmos casos; lowbias32 deixa de ser DIVERGENT ou permanece recusado com motivo"
+      .fail_if="ast-check sem executar; Zig * em ReleaseFast em kernel mul"
+      .required_before="confiar SWAR/mul hashes (murmur, xxhash avalanche, prospector) em emit nativo"
+    }
+  }
+
+  {
+    .n=7
+    .id=SMT_MITER_GF2
+    .status=AFTER_VALUES
+    .entry="fase do kernel ja tem igualdade de VALORES VM vs oraculo; SMT nao substitui oraculo"
+    .deliverable="miter QF_BV (VM xor Zig/C) e/ou estrutural GF(2) com comparacao de VALUE, nao verify vacuo"
+    .unlocks="certificado RULEL: UNSAT prova, SAT contraexemplo; classificacao por opcode"
+    .still_refused="PROVED_STRUCTURAL por aridade; expected_outputs nao medidos"
+    .gate{
+      .how="pelo menos um kernel (popcount ou avalanche) com certificado RULEL: solver, formula hash, UNSAT, e os mesmos vetores de valor"
+      .forbidden="PROVED_STRUCTURAL so porque a funcao tem 1 param; oracle=undefined"
+      .cite="LIN_TRANSPILATION_FOCUS.verification"
+    }
+  }
+
+  {
+    .n=8
+    .id=NEVER_IN_FULL_BITEXACT
+    .status=PERMANENT_REJ_OR_OTHER_DIALECT
+    .entry="nao ha entrada; estes nao entram em 'LIN full' bit-exact"
+    .deliverable="REJ_* eterno OU dialeto separado com prova e oraculo separados (nao misturar no nucleo inteiro)"
+    .items[
+      { .what="IEEE float" .why="FMA/associatividade; LIN_CANONICAL_TRINITY.float_policy" .rej="REJ_FLOAT_OUT_OF_BITEXACT" }
+      { .what="JS objects/prototypes" .why="ToInt32 so em jsf_eligible; objeto nao e int" .rej="REJ_JS_OBJECT" }
+      { .what="Python bigint" .why="largura nao e i64 wrap" .rej="REJ_PY_BIGINT" }
+      { .what="Go goroutines" .why="runtime/scheduler nao e kernel de inteiro" .rej="REJ_GO_RUNTIME" }
+      { .what="C++ templates" .why="instanciacao nao e uint32_t f(uint32_t)" .rej="REJ_CPP_TEMPLATE" }
+      { .what="Linux scheduler/mm" .why="kernel nao e corpus de bit-exact; pecas crc32.c so apos slice" .rej="REJ_OS_RUNTIME" }
+    ]
+    .gate{
+      .how="clone de repo com estes construtos produz so REJ_* nomeado; nenhum emitido como PROVED_IN_LIN bit-exact"
+      .never="promover fase 8 a 'faltam features' do nucleo; sao fora de garantia"
+    }
+  }
+
+]
+
+.order_constraints[
+  "1 antes de sha256_block e de GPU de dados (LIN_TRANSPILATION_FOCUS.focus_order.n4)"
+  "2 nao substitui 1: from-c sem [N]int no LIN ainda recusa tabelas"
+  "3 antes de crc32(buf,len) / XXH32(buf) como API real"
+  "4 antes de pcg/xxhash state; MEMBER_DOT em struct-of-int != MEMBER_DOT de objeto JS"
+  "5 opcional; nao e desculpa para * selvagem"
+  "6 obrigatorio antes de confiar mul em ReleaseFast; pode correr em paralelo a 1-4 no emissor"
+  "7 depois de valores; SMT sem oraculo de valor e vacuo"
+  "8 nunca vira fase de implementacao do nucleo bit-exact"
+]
+
+.clone_success_example{
+  .repo="mikolalysenko/bit-twiddle"
+  .phase=0
+  .ok="15/17 eligible; reverse=REJ_INDEX_BRACKET; nextCombination=REJ_UNKNOWN_CALL"
+  .wrong="emitir reverse como no-op; omitir reverse do relatorio; dizer 100% porque 15 funcoes passaram"
+}
+
+.clone_success_example{
+  .repo="BartMassey/popcount"
+  .phase=2
+  .ok="kernels u32 aceitos + tabular/DRIVER/asm com REJ_*; taxa impressa; vetor 0xea9031e8=14 no VM"
+  .wrong="silenciar popcount_naive while; contar LICENSE.md como emitido"
+}
+
+.agent_must[
+  "Escrever so o subconjunto da fase atual; o resto e REJ_*."
+  "Clone de repo inteiro: emitir gap report RULEL, nao 'traducao completa'."
+  "Nao implementar dialeto neste arquivo; este spec e o mapa de gates."
+  "Nao alegar bit-exact em float, objeto JS, bigint Python, goroutine, template C++, scheduler/mm."
+  "from-rs nao e borrow checker; e extracao posterior de SOURCE_GUARANTEE."
+  "Comparar VALORES entre motores; classificar por opcode."
+]
+
+.forbidden[
+  "silent_drop"
+  "PROVED_STRUCTURAL_by_arity"
+  "whole_repo_equals_full_LIN"
+  "IEEE_float_bit_exact_in_core"
+  "from_c_wild_pointer"
+  "Zig_star_without_wrap_on_hash_mul"
+  "SMT_without_value_oracle"
+]

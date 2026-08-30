@@ -1,0 +1,24 @@
+@RULEL:LIN_CANONICAL_TRINITY:1.0.0
+.description="Definicao estrategica canonica da arquitetura de compilacao e verificacao LIN"
+.trinity{
+  .source={
+    .language="C"
+    .scope="Subconjunto estrito de inteiros puros"
+    .exclusions=["union", "pointer_arithmetic", "undefined_signed_overflow"]
+    .rationale="Onde o codigo de infraestrutura bit-exata do mundo real vive, com suites oficiais NIST/RFCs."
+  }
+  .target={
+    .primary="Zig"
+    .rationale="Sem runtime oculto, ABI C, overflow explicito no operador, sem alocador escondido."
+    .hatches{
+      .oracle="WASM (Verificador de determinismo bit-exato entre arquiteturas W3C)"
+      .legacy="C (Escotilha de portabilidade para hardware antigo)"
+      .differential="JavaScript (Apenas como oraculo diferencial de paridade, nunca alvo de performance)"
+    }
+  }
+  .domain={
+    .focus="Nucleos de Inteiro Bit-Exatos"
+    .modules=["Crypto", "Hashes", "Checksums", "Codecs", "Compressao", "PRNG", "Bit-Twiddle", "VM Bytecode Dispatchers"]
+    .float_policy="Float esta formalmente fora do escopo de garantias bit-exatas devido a FMA contraction e associatividade divergente entre GPUs/CPUs."
+  }
+}

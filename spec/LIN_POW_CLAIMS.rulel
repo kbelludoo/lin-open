@@ -1,0 +1,74 @@
+@RULEL:LIN_POW_CLAIMS:1.0.0
+.description="Ficha medida 2026-08-29: o que e bit-exato, o que e gate de 32 bits, o que e proibido vender. Nao e Node/Python."
+.measured_at="2026-08-29"
+.policy="recusa_nomeada=sucesso_de_gate silent_drop=falha SOURCE_GUARANTEE!=PROVED_IN_LIN"
+.source="src/lin_miner.lin"
+.oracle="std.crypto.hash.sha2.Sha256 twice + FIPS 180-4 SHA-256(abc)"
+.product_path="LIN/Zig stage0. No Node middleware. No Python middleware."
+
+.bit_exact{
+  .fips_abc{ words_match=8/8 vs="std.crypto" vector="ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad" }
+  .genesis{ words_match=8/8 vs="std.crypto" fold=2890201224 display="000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f" nonce=497822588 }
+}
+
+.gates{
+  .btc_pow_verify="ONLY r7==0. 32-bit gate. P(false_positive)~2^-32. NOT full Bitcoin difficulty."
+  .full_target="btc_pow_meets_nbits / btc_genesis_pow_ok: 256-bit hash<=target from nBits. Bitcoin uses 256 bits not 288."
+  .nbits_genesis=486604799
+  .nbits_hex="0x1d00ffff"
+  .target_be="00000000ffff0000000000000000000000000000000000000000000000000000"
+  .measured_this_session{
+    .ok="btc_genesis_pow_ok 497822588 -> 1 steps=67427"
+    .bad="btc_genesis_pow_ok 497822589 -> 0 steps=67249"
+    .lzb="btc_genesis_lzb 497822588 -> 43"
+    .bind0="btc_genesis_bind_h7 497822588 0 -> 0"
+    .bind1="btc_genesis_bind_h7 497822588 1 -> 592492727"
+    .fips_h0="sha256_nist_abc 0 -> 3128432319"
+    .h7_gate="btc_pow_verify genesis nonce -> 0 steps=66787"
+    .coverage="total=27 eligible=27 rejected=0"
+  }
+}
+
+.hashrate_honest{
+  .linvm_h7_us_per_op~=265
+  .linvm_full_target_us_per_op~=388
+  .linvm_full_target_how="vm-sweep src/lin_miner.lin btc_genesis_pow_ok 497822588 200"
+  .native_us_per_op~=0.9
+  .std_crypto_us_per_op~=0.735
+  .forbidden="NEVER claim <1us on LinVM. VM is hundreds of times slower than native. LIN is not faster than std.crypto."
+}
+
+.not_in_repo[
+  "WASM emitter (legacy placeholder only)"
+  "10M oracle"
+  "circuit synthesis"
+  "Node/Python anti-replay server"
+]
+
+.gf2{
+  .applies="linear/bitwise ops only (sigma0/1 gamma0/1 shr ch maj)"
+  .sha256_compress=REQUIRES_EXHAUSTIVE
+  .verify_cert{
+    .status=REAL_NOT_VACUOUS
+    .code="src/lin.zig verify-cert"
+    .does="parses .expected_outputs[32]; vmExec(e_k) vs expected_vals[k]; mismatch => VERIFICATION_FAILED"
+    .sellable="VERIFIED_OK only for the named unary fn in the certificate (e.g. sigma0_32). Not SHA-256d."
+  }
+  .lin_verify{
+    .was="PROVED_STRUCTURAL vacuous (discarded vmExec values)"
+    .now="src/lin.zig vmVerifyFile compares probe actual vs GF2 reconstruction. Still not a SHA-256 proof."
+    .sha256d="REQUIRES_EXHAUSTIVE_OR_SOLVER reason=contains_carry_arithmetic_or_branches"
+    .wrapper_trap="1-arg fn that is 0 on the 32 basis + 17 probes can still print PROVED_STRUCTURAL. btc_genesis_pow_ok has nonce<0 so it does not."
+  }
+}
+
+.anti_replay{
+  .fn="btc_pow_bind(m0..m7,w0,w1,w2,nonce,challenge,sel)"
+  .how="challenge XOR into m0 then SHA-256d. No third-party server."
+  .application="replay is an application concern: challenge must be monotonic (height, timestamp, unique id) and rejected if reused. LIN does not store used challenges."
+}
+
+.correction_vs_pitch{
+  .pitch_said="alvo completo (288 bits)"
+  .fact="Bitcoin target is 256-bit uint; compact nBits is 32-bit encoding"
+}

@@ -1,0 +1,342 @@
+@LIN:L1c:0.2
+@LIN_MINER{version=1.3 purpose=bit_exact_sha256d_and_full_nbits_target scope=scalar_and_fixed_int_array copies_of=lin_crypto_compress_prims}
+
+!shr32(x: int, n: int) -> int {
+  ^(_lia_shr(x & 4294967295, n))
+}
+
+!rotr32(x: int, n: int) -> int {
+  u = x & 4294967295;
+  ^(_lia_shr(u, n) | _lia_shl(u, 32 - n)) & 4294967295
+}
+
+!ch32(x: int, y: int, z: int) -> int {
+  ^((x & y) ^ ((~x) & z)) & 4294967295
+}
+
+!maj32(x: int, y: int, z: int) -> int {
+  ^((x & y) ^ (x & z) ^ (y & z)) & 4294967295
+}
+
+!sigma0_32(x: int) -> int {
+  ^(rotr32(x, 2) ^ rotr32(x, 13) ^ rotr32(x, 22)) & 4294967295
+}
+
+!sigma1_32(x: int) -> int {
+  ^(rotr32(x, 6) ^ rotr32(x, 11) ^ rotr32(x, 25)) & 4294967295
+}
+
+!gamma0_32(x: int) -> int {
+  ^(rotr32(x, 7) ^ rotr32(x, 18) ^ shr32(x, 3)) & 4294967295
+}
+
+!gamma1_32(x: int) -> int {
+  ^(rotr32(x, 17) ^ rotr32(x, 19) ^ shr32(x, 10)) & 4294967295
+}
+
+!sha_k(i: int) -> int {
+  k: [64]int = [1116352408, 1899447441, 3049323471, 3921009573, 961987163, 1508970993, 2453635748, 2870763221, 3624381080, 310598401, 607225278, 1426881987, 1925078388, 2162078206, 2614888103, 3248222580, 3835390401, 4022224774, 264347078, 604807628, 770255983, 1249150122, 1555081692, 1996064986, 2554220882, 2821834349, 2952996808, 3210313671, 3336571891, 3584528711, 113926993, 338241895, 666307205, 773529912, 1294757372, 1396182291, 1695183700, 1986661051, 2177026350, 2456956037, 2730485921, 2820302411, 3259730800, 3345764771, 3516065817, 3600352804, 4094571909, 275423344, 430227734, 506948616, 659060556, 883997877, 958139571, 1322822218, 1537002063, 1747873779, 1955562222, 2024104815, 2227730452, 2361852424, 2428436474, 2756734187, 3204031479, 3329325298];
+  ^k[i];
+}
+
+!sha256_nist_abc(sel: int) -> int {
+  W: [64]int;
+  W[0] = 1633837952;
+  W[1] = 0; W[2] = 0; W[3] = 0; W[4] = 0; W[5] = 0; W[6] = 0; W[7] = 0;
+  W[8] = 0; W[9] = 0; W[10] = 0; W[11] = 0; W[12] = 0; W[13] = 0; W[14] = 0;
+  W[15] = 24;
+  i = 16;
+  while (i < 64) {
+    W[i] = (gamma1_32(W[i - 2]) + W[i - 7] + gamma0_32(W[i - 15]) + W[i - 16]) & 4294967295;
+    i = i + 1;
+  };
+  a = 1779033703; b = 3144134277; c = 1013904242; d = 2773480762;
+  e = 1359893119; f = 2600822924; g = 528734635; h = 1541459225;
+  i = 0;
+  t1 = 0;
+  t2 = 0;
+  while (i < 64) {
+    t1 = (h + sigma1_32(e) + ch32(e, f, g) + sha_k(i) + W[i]) & 4294967295;
+    t2 = (sigma0_32(a) + maj32(a, b, c)) & 4294967295;
+    h = g; g = f; f = e; e = (d + t1) & 4294967295;
+    d = c; c = b; b = a; a = (t1 + t2) & 4294967295;
+    i = i + 1;
+  };
+  r0 = (1779033703 + a) & 4294967295;
+  r1 = (3144134277 + b) & 4294967295;
+  r2 = (1013904242 + c) & 4294967295;
+  r3 = (2773480762 + d) & 4294967295;
+  r4 = (1359893119 + e) & 4294967295;
+  r5 = (2600822924 + f) & 4294967295;
+  r6 = (528734635 + g) & 4294967295;
+  r7 = (1541459225 + h) & 4294967295;
+  ?(sel == 0){ ^r0 };
+  ?(sel == 1){ ^r1 };
+  ?(sel == 2){ ^r2 };
+  ?(sel == 3){ ^r3 };
+  ?(sel == 4){ ^r4 };
+  ?(sel == 5){ ^r5 };
+  ?(sel == 6){ ^r6 };
+  ?(sel == 7){ ^r7 };
+  ^(r0 ^ r1 ^ r2 ^ r3 ^ r4 ^ r5 ^ r6 ^ r7) & 4294967295;
+}
+
+!btc_sha256d_sel(m0: int, m1: int, m2: int, m3: int, m4: int, m5: int, m6: int, m7: int, w0_in: int, w1_in: int, w2_in: int, nonce: int, sel: int) -> int {
+  W: [64]int;
+  W[0] = w0_in; W[1] = w1_in; W[2] = w2_in; W[3] = nonce;
+  W[4] = 2147483648; W[5] = 0; W[6] = 0; W[7] = 0;
+  W[8] = 0; W[9] = 0; W[10] = 0; W[11] = 0;
+  W[12] = 0; W[13] = 0; W[14] = 0; W[15] = 640;
+  i = 16;
+  while (i < 64) {
+    W[i] = (gamma1_32(W[i - 2]) + W[i - 7] + gamma0_32(W[i - 15]) + W[i - 16]) & 4294967295;
+    i = i + 1;
+  };
+  a = m0; b = m1; c = m2; d = m3; e = m4; f = m5; g = m6; h = m7;
+  i = 0;
+  t1 = 0;
+  t2 = 0;
+  while (i < 64) {
+    t1 = (h + sigma1_32(e) + ch32(e, f, g) + sha_k(i) + W[i]) & 4294967295;
+    t2 = (sigma0_32(a) + maj32(a, b, c)) & 4294967295;
+    h = g; g = f; f = e; e = (d + t1) & 4294967295;
+    d = c; c = b; b = a; a = (t1 + t2) & 4294967295;
+    i = i + 1;
+  };
+  h1_0 = (m0 + a) & 4294967295;
+  h1_1 = (m1 + b) & 4294967295;
+  h1_2 = (m2 + c) & 4294967295;
+  h1_3 = (m3 + d) & 4294967295;
+  h1_4 = (m4 + e) & 4294967295;
+  h1_5 = (m5 + f) & 4294967295;
+  h1_6 = (m6 + g) & 4294967295;
+  h1_7 = (m7 + h) & 4294967295;
+  W[0] = h1_0; W[1] = h1_1; W[2] = h1_2; W[3] = h1_3;
+  W[4] = h1_4; W[5] = h1_5; W[6] = h1_6; W[7] = h1_7;
+  W[8] = 2147483648; W[9] = 0; W[10] = 0; W[11] = 0;
+  W[12] = 0; W[13] = 0; W[14] = 0; W[15] = 256;
+  i = 16;
+  while (i < 64) {
+    W[i] = (gamma1_32(W[i - 2]) + W[i - 7] + gamma0_32(W[i - 15]) + W[i - 16]) & 4294967295;
+    i = i + 1;
+  };
+  a = 1779033703; b = 3144134277; c = 1013904242; d = 2773480762;
+  e = 1359893119; f = 2600822924; g = 528734635; h = 1541459225;
+  i = 0;
+  while (i < 64) {
+    t1 = (h + sigma1_32(e) + ch32(e, f, g) + sha_k(i) + W[i]) & 4294967295;
+    t2 = (sigma0_32(a) + maj32(a, b, c)) & 4294967295;
+    h = g; g = f; f = e; e = (d + t1) & 4294967295;
+    d = c; c = b; b = a; a = (t1 + t2) & 4294967295;
+    i = i + 1;
+  };
+  r0 = (1779033703 + a) & 4294967295;
+  r1 = (3144134277 + b) & 4294967295;
+  r2 = (1013904242 + c) & 4294967295;
+  r3 = (2773480762 + d) & 4294967295;
+  r4 = (1359893119 + e) & 4294967295;
+  r5 = (2600822924 + f) & 4294967295;
+  r6 = (528734635 + g) & 4294967295;
+  r7 = (1541459225 + h) & 4294967295;
+  ?(sel == 0){ ^r0 };
+  ?(sel == 1){ ^r1 };
+  ?(sel == 2){ ^r2 };
+  ?(sel == 3){ ^r3 };
+  ?(sel == 4){ ^r4 };
+  ?(sel == 5){ ^r5 };
+  ?(sel == 6){ ^r6 };
+  ?(sel == 7){ ^r7 };
+  ^(r0 ^ r1 ^ r2 ^ r3 ^ r4 ^ r5 ^ r6 ^ r7) & 4294967295;
+}
+
+!btc_pow_verify(m0: int, m1: int, m2: int, m3: int, m4: int, m5: int, m6: int, m7: int, w0: int, w1: int, w2: int, nonce: int) -> int {
+  ^btc_sha256d_sel(m0, m1, m2, m3, m4, m5, m6, m7, w0, w1, w2, nonce, 7);
+}
+
+!btc_sha256d_h0(m0: int, m1: int, m2: int, m3: int, m4: int, m5: int, m6: int, m7: int, w0: int, w1: int, w2: int, nonce: int) -> int {
+  ^btc_sha256d_sel(m0, m1, m2, m3, m4, m5, m6, m7, w0, w1, w2, nonce, 0);
+}
+
+!btc_sha256d_fold(m0: int, m1: int, m2: int, m3: int, m4: int, m5: int, m6: int, m7: int, w0: int, w1: int, w2: int, nonce: int) -> int {
+  ^btc_sha256d_sel(m0, m1, m2, m3, m4, m5, m6, m7, w0, w1, w2, nonce, 8);
+}
+
+!btc_mine_nonce(m0: int, m1: int, m2: int, m3: int, m4: int, m5: int, m6: int, m7: int, w0: int, w1: int, w2: int, start_nonce: int, count: int) -> int {
+  nonce = start_nonce;
+  end_nonce = start_nonce + count;
+  res = 1;
+  while (nonce < end_nonce) {
+    res = btc_pow_verify(m0, m1, m2, m3, m4, m5, m6, m7, w0, w1, w2, nonce);
+    ?(res == 0){
+      ^nonce;
+    };
+    nonce = nonce + 1;
+  };
+  ^-1;
+}
+
+!bswap32(x: int) -> int {
+  u = x & 4294967295;
+  ^(_lia_shl(u & 255, 24) | _lia_shl(_lia_shr(u, 8) & 255, 16) | _lia_shl(_lia_shr(u, 16) & 255, 8) | _lia_shr(u, 24)) & 4294967295;
+}
+
+!clz32(x: int) -> int {
+  u = x & 4294967295;
+  ?(u == 0){ ^32 };
+  n = 0;
+  ?(u <= 65535){ n = n + 16; u = _lia_shl(u, 16) & 4294967295; };
+  ?(u <= 16777215){ n = n + 8; u = _lia_shl(u, 8) & 4294967295; };
+  ?(u <= 268435455){ n = n + 4; u = _lia_shl(u, 4) & 4294967295; };
+  ?(u <= 1073741823){ n = n + 2; u = _lia_shl(u, 2) & 4294967295; };
+  ?(u <= 2147483647){ n = n + 1; };
+  ^n;
+}
+
+!nbits_put_byte(word: int, pos: int, b: int) -> int {
+  ^((word | _lia_shl(b & 255, _lia_shl(3 - pos, 3))) & 4294967295);
+}
+
+!nbits_target_word(nbits: int, wi: int) -> int {
+  tgt: [8]int;
+  tgt[0] = 0; tgt[1] = 0; tgt[2] = 0; tgt[3] = 0;
+  tgt[4] = 0; tgt[5] = 0; tgt[6] = 0; tgt[7] = 0;
+  nSize = _lia_shr(nbits, 24) & 255;
+  mant = nbits & 8388607;
+  ?(nSize <= 3){
+    tgt[7] = _lia_shr(mant, _lia_shl(3 - nSize, 3)) & 4294967295;
+    ^tgt[wi];
+  };
+  ?(nSize > 32){ ^0 };
+  byte0 = 32 - nSize;
+  w0 = _lia_shr(byte0, 2);
+  p0 = byte0 - _lia_shl(w0, 2);
+  tgt[w0] = nbits_put_byte(tgt[w0], p0, _lia_shr(mant, 16) & 255);
+  byte1 = byte0 + 1;
+  w1 = _lia_shr(byte1, 2);
+  p1 = byte1 - _lia_shl(w1, 2);
+  tgt[w1] = nbits_put_byte(tgt[w1], p1, _lia_shr(mant, 8) & 255);
+  byte2 = byte0 + 2;
+  w2 = _lia_shr(byte2, 2);
+  p2 = byte2 - _lia_shl(w2, 2);
+  tgt[w2] = nbits_put_byte(tgt[w2], p2, mant & 255);
+  ^tgt[wi];
+}
+
+!btc_pow_digest_then(m0: int, m1: int, m2: int, m3: int, m4: int, m5: int, m6: int, m7: int, w0_in: int, w1_in: int, w2_in: int, nonce: int, nbits: int, want: int) -> int {
+  W: [64]int;
+  W[0] = w0_in; W[1] = w1_in; W[2] = w2_in; W[3] = nonce;
+  W[4] = 2147483648; W[5] = 0; W[6] = 0; W[7] = 0;
+  W[8] = 0; W[9] = 0; W[10] = 0; W[11] = 0;
+  W[12] = 0; W[13] = 0; W[14] = 0; W[15] = 640;
+  a = m0; b = m1; c = m2; d = m3; e = m4; f = m5; g = m6; h = m7;
+  i = 16;
+  t1 = 0;
+  t2 = 0;
+  while (i < 64) {
+    W[i] = (gamma1_32(W[i - 2]) + W[i - 7] + gamma0_32(W[i - 15]) + W[i - 16]) & 4294967295;
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 64) {
+    t1 = (h + sigma1_32(e) + ch32(e, f, g) + sha_k(i) + W[i]) & 4294967295;
+    t2 = (sigma0_32(a) + maj32(a, b, c)) & 4294967295;
+    h = g; g = f; f = e; e = (d + t1) & 4294967295;
+    d = c; c = b; b = a; a = (t1 + t2) & 4294967295;
+    i = i + 1;
+  };
+  h1_0 = (m0 + a) & 4294967295;
+  h1_1 = (m1 + b) & 4294967295;
+  h1_2 = (m2 + c) & 4294967295;
+  h1_3 = (m3 + d) & 4294967295;
+  h1_4 = (m4 + e) & 4294967295;
+  h1_5 = (m5 + f) & 4294967295;
+  h1_6 = (m6 + g) & 4294967295;
+  h1_7 = (m7 + h) & 4294967295;
+  W[0] = h1_0; W[1] = h1_1; W[2] = h1_2; W[3] = h1_3;
+  W[4] = h1_4; W[5] = h1_5; W[6] = h1_6; W[7] = h1_7;
+  W[8] = 2147483648; W[9] = 0; W[10] = 0; W[11] = 0;
+  W[12] = 0; W[13] = 0; W[14] = 0; W[15] = 256;
+  a = 1779033703; b = 3144134277; c = 1013904242; d = 2773480762;
+  e = 1359893119; f = 2600822924; g = 528734635; h = 1541459225;
+  i = 16;
+  while (i < 64) {
+    W[i] = (gamma1_32(W[i - 2]) + W[i - 7] + gamma0_32(W[i - 15]) + W[i - 16]) & 4294967295;
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 64) {
+    t1 = (h + sigma1_32(e) + ch32(e, f, g) + sha_k(i) + W[i]) & 4294967295;
+    t2 = (sigma0_32(a) + maj32(a, b, c)) & 4294967295;
+    h = g; g = f; f = e; e = (d + t1) & 4294967295;
+    d = c; c = b; b = a; a = (t1 + t2) & 4294967295;
+    i = i + 1;
+  };
+  r0 = (1779033703 + a) & 4294967295;
+  r1 = (3144134277 + b) & 4294967295;
+  r2 = (1013904242 + c) & 4294967295;
+  r3 = (2773480762 + d) & 4294967295;
+  r4 = (1359893119 + e) & 4294967295;
+  r5 = (2600822924 + f) & 4294967295;
+  r6 = (528734635 + g) & 4294967295;
+  r7 = (1541459225 + h) & 4294967295;
+  disp: [8]int;
+  disp[0] = bswap32(r7);
+  disp[1] = bswap32(r6);
+  disp[2] = bswap32(r5);
+  disp[3] = bswap32(r4);
+  disp[4] = bswap32(r3);
+  disp[5] = bswap32(r2);
+  disp[6] = bswap32(r1);
+  disp[7] = bswap32(r0);
+  ?(want == 1){
+    n = 0;
+    i = 0;
+    while (i < 8) {
+      ?(disp[i] != 0){ ^(n + clz32(disp[i])) };
+      n = n + 32;
+      i = i + 1;
+    };
+    ^256;
+  };
+  i = 0;
+  tw = 0;
+  while (i < 8) {
+    tw = nbits_target_word(nbits, i);
+    ?(disp[i] < tw){ ^1 };
+    ?(disp[i] > tw){ ^0 };
+    i = i + 1;
+  };
+  ^1;
+}
+
+!btc_pow_meets_nbits(m0: int, m1: int, m2: int, m3: int, m4: int, m5: int, m6: int, m7: int, w0: int, w1: int, w2: int, nonce: int, nbits: int) -> int {
+  ^btc_pow_digest_then(m0, m1, m2, m3, m4, m5, m6, m7, w0, w1, w2, nonce, nbits, 0);
+}
+
+!btc_pow_leading_zero_bits(m0: int, m1: int, m2: int, m3: int, m4: int, m5: int, m6: int, m7: int, w0: int, w1: int, w2: int, nonce: int) -> int {
+  ^btc_pow_digest_then(m0, m1, m2, m3, m4, m5, m6, m7, w0, w1, w2, nonce, 0, 1);
+}
+
+!btc_pow_bind(m0: int, m1: int, m2: int, m3: int, m4: int, m5: int, m6: int, m7: int, w0: int, w1: int, w2: int, nonce: int, challenge: int, sel: int) -> int {
+  ^btc_sha256d_sel((m0 ^ challenge) & 4294967295, m1, m2, m3, m4, m5, m6, m7, w0, w1, w2, nonce, sel);
+}
+
+!btc_pow_meets_nbits_bound(m0: int, m1: int, m2: int, m3: int, m4: int, m5: int, m6: int, m7: int, w0: int, w1: int, w2: int, nonce: int, nbits: int, challenge: int) -> int {
+  ^btc_pow_meets_nbits((m0 ^ challenge) & 4294967295, m1, m2, m3, m4, m5, m6, m7, w0, w1, w2, nonce, nbits);
+}
+
+!btc_genesis_pow_ok(nonce: int) -> int {
+  ?(nonce < 0){ ^0 };
+  ^btc_pow_meets_nbits(3163593267, 1666760688, 2429332605, 509201064, 3284719849, 1325466568, 2528216886, 1192884507, 1260281418, 699096905, 4294901789, nonce, 486604799);
+}
+
+!btc_genesis_lzb(nonce: int) -> int {
+  ?(nonce < 0){ ^0 };
+  ^btc_pow_leading_zero_bits(3163593267, 1666760688, 2429332605, 509201064, 3284719849, 1325466568, 2528216886, 1192884507, 1260281418, 699096905, 4294901789, nonce);
+}
+
+!btc_genesis_bind_h7(nonce: int, challenge: int) -> int {
+  ^btc_pow_bind(3163593267, 1666760688, 2429332605, 509201064, 3284719849, 1325466568, 2528216886, 1192884507, 1260281418, 699096905, 4294901789, nonce, challenge, 7);
+}
+
+=ex{shr32, rotr32, ch32, maj32, sigma0_32, sigma1_32, gamma0_32, gamma1_32, sha_k, sha256_nist_abc, btc_sha256d_sel, btc_pow_verify, btc_sha256d_h0, btc_sha256d_fold, btc_mine_nonce, bswap32, clz32, nbits_put_byte, nbits_target_word, btc_pow_digest_then, btc_pow_meets_nbits, btc_pow_leading_zero_bits, btc_pow_bind, btc_pow_meets_nbits_bound, btc_genesis_pow_ok, btc_genesis_lzb, btc_genesis_bind_h7}

@@ -232,6 +232,7 @@
 !rgs_verdict(head: string, body: string): string {
   calls = rgs_scan(body, 3);
   ?(calls.length > 0){ ^"UNKNOWN" };
+  ?(head.length == 0){ ^"PROVED" };
   ind = rgs_csv_merge(rgs_induction(head), rgs_induction(body));
   w = rgs_csv_minus(rgs_scan(body, 2), ind);
   ?(w.length == 0){ ^"PROVED" };
@@ -244,6 +245,7 @@
 !rgs_reason(head: string, body: string): string {
   calls = rgs_scan(body, 3);
   ?(calls.length > 0){ ^"calls_with_unproven_effects" };
+  ?(head.length == 0){ ^"pure_scalar_map_parallel" };
   ind = rgs_csv_merge(rgs_induction(head), rgs_induction(body));
   w = rgs_csv_minus(rgs_scan(body, 2), ind);
   ?(w.length == 0){ ^"read_only_region_no_write_conflict" };
@@ -311,8 +313,27 @@
       while (i < n && src.charCodeAt(i) != 10){ i = i + 1 };
       continue;
     };
-    ?(c == 33){
+    ?(c == 33 && (i + 1 >= n || src.charCodeAt(i + 1) != 61)){
       curfn = read_ident(src, i + 1);
+      ?(curfn.length > 0){
+        p = skip_ws(src, i + 1 + curfn.length);
+        ?(p < n && src.charCodeAt(p) == 40){
+          cl = match_paren(src, p);
+          ?(cl > p){
+            b = find_brace(src, cl + 1);
+            ?(b >= 0){
+              cb = match_brace(src, b);
+              ?(cb > b){
+                fn_body = slice2(src, b + 1, cb);
+                ?(rg_count_lit(fn_body, "#(") == 0 && rg_count_lit(fn_body, "while") == 0){
+                  rid = rid + 1;
+                  out = out + rgs_emit(rid, curfn, "scalar_map", "", fn_body);
+                };
+              };
+            };
+          };
+        };
+      };
       i = i + 1;
       continue;
     };

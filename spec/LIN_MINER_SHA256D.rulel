@@ -1,0 +1,133 @@
+@RULEL:LIN_MINER_SHA256D:1.2.0
+.description="Bitcoin SHA-256d miner: o que era vacuous, o que foi medido contra std.crypto, gate H7 vs alvo 256-bit nBits"
+.measured_at="2026-08-29"
+.policy="recusa_nomeada=sucesso_de_gate silent_drop=falha SOURCE_GUARANTEE!=PROVED_IN_LIN no_PROVED_STRUCTURAL_by_arity"
+.oracle="std.crypto.hash.sha2.Sha256 twice + FIPS 180-4 SHA-256(abc)"
+.source="src/lin_miner.lin"
+.cites="spec/LIN_POW_CLAIMS.rulel spec/LIN_POW_PITCH.rulel"
+.not_source=["src/lin_miner.zig","test_differential_miner.zig","test_shift_miner.zig"]
+
+.was_fake[
+  {
+    .claim="ALL DIFFERENTIAL ORACLES PASSED BIT-EXACT"
+    .where="test_differential_miner.zig / test/test_differential_miner.zig"
+    .why="so conferia btc_pow_verify==0 no nonce 497822588 e !=0 no +1. H7==0 e o alvo genesis 0x1d00ffff truncado; hashes errados ainda passam se so o word alto for zero"
+  }
+  {
+    .claim="Shift-register algorithm matches 100% with Bitcoin Genesis PoW"
+    .where="test_shift_miner.zig"
+    .why="mesmo oraculo fraco H7==0; arquivo Zig fora do allowlist"
+  }
+  {
+    .claim="bit_exact because function exists / 11 fns eligible"
+    .why="cobertura VM eligible!=valores. peek() do Zig finaliza e NAO e midstate Bitcoin; midstate real e hasher.s apos update(64) sem padding"
+  }
+]
+
+.was_real{
+  .algo="SHA-256d midstate: bloco2 16B header + pad 640 bits; segundo SHA de 32B + pad 256 bits"
+  .schedule="[16]int circular W[i&15]; K[64]int em sha_k"
+  .arith="soma i64 depois & 4294967295; sem * ; LinVM wrapping; nao ha overflow i64 nas somas de 5 u32"
+  .prims="shr32 rotr32 ch32 maj32 sigma0_32 sigma1_32 gamma0_32 gamma1_32 copiados de src/lin_crypto.lin (LIN nao tem include). murmur3_32 fica no crypto"
+  .midstate_unpadded="m0=3163593267 m1=1666760688 m2=2429332605 m3=509201064 m4=3284719849 m5=1325466568 m6=2528216886 m7=1192884507"
+  .block2="w0=1260281418=0x4b1e5e4a w1=699096905=0x29ab5f49 w2=4294901789=0xffff001d nonce_be=497822588=0x1dac2b7c"
+}
+
+.measured{
+  .vm="bin/lin_native vm src/lin_miner.lin"
+  .coverage{ total=15 eligible=15 rejected=0 }
+  .nist_abc{
+    .vector="FIPS 180-4 SHA-256('abc') ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+    .cmd="bin/lin_native vm src/lin_miner.lin sha256_nist_abc 0"
+    .h0=3128432319
+    .h7=4060091821
+    .match=VM_EQ_FIPS
+  }
+  .genesis{
+    .header80="0100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4a29ab5f49ffff001d1dac2b7c"
+    .btc_display="000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
+    .h2_0=1877117962
+    .h2_1=3069293426
+    .h2_2=3248923206
+    .h2_3=2925786959
+    .h2_4=2468250469
+    .h2_5=3780774044
+    .h2_6=1758861568
+    .h2_7=0
+    .xor_fold=2890201224
+    .vm_h0="btc_sha256d_h0 ... 497822588 -> 1877117962 steps=66759"
+    .vm_h7="btc_pow_verify ... 497822588 -> 0 steps=66787"
+    .vm_fold="btc_sha256d_fold ... 497822588 -> 2890201224"
+    .vm_bad="btc_pow_verify ... 497822589 -> 3152618356"
+    .mine="btc_mine_nonce ... start=497822578 count=20 -> 497822588"
+  }
+  .nonces_h0_h7_fold_match_std_crypto[
+    { .nonce=497822588 .h0=1877117962 .h7=0 .fold=2890201224 }
+    { .nonce=497822589 .h0=3034675934 .h7=3152618356 .fold=4231973155 }
+    { .nonce=0 .h0=3209181592 .h7=4121411883 .fold=2890398800 }
+    { .nonce=1 .h0=1910203597 .h7=1959869783 .fold=3733061201 }
+    { .nonce=2083236893 .h0=2783898827 .h7=692510907 .fold=2881710733 }
+  ]
+  .engines="LinVM e Zig nativo (apos intCast usize no emit) coincidiram com std.crypto nos 5 nonces; VM nonce0 h0=3209181592 nonce1 h0=1910203597"
+}
+
+.full_target{
+  .btc_pow_verify="ONLY r7==0. P(false_positive)~2^-32. NOT Bitcoin difficulty."
+  .api="btc_pow_meets_nbits / btc_genesis_pow_ok. One SHA-256d then 8 display words vs nBits target. hash<=target."
+  .display_order="disp[i]=bswap32(r[7-i]). Bitcoin hex hash is BE of reversed digest bytes."
+  .nbits_genesis=486604799
+  .nbits_hex="0x1d00ffff"
+  .target_word0=0
+  .target_word1=4294901760
+  .target_word_rest=0
+  .vm_ok="btc_genesis_pow_ok 497822588 -> 1 steps=67427"
+  .vm_bad="btc_genesis_pow_ok 497822589 -> 0 steps=67249"
+  .vm_lzb="btc_genesis_lzb 497822588 -> 43 (display 000000000019d668... = 32+11 leading zeros)"
+  .coverage{ total=27 eligible=27 rejected=0 }
+}
+
+.anti_replay{
+  .fn="btc_pow_bind: (m0 xor challenge) then SHA-256d. btc_pow_meets_nbits_bound same then nBits compare."
+  .vm_bind0="btc_genesis_bind_h7 497822588 0 -> 0 (unbound genesis)"
+  .vm_bind1="btc_genesis_bind_h7 497822588 1 -> 592492727"
+  .app="replay is application concern: monotonic challenge (height/timestamp/unique id); LIN does not store used challenges. No Node/Python server."
+}
+
+.verify_cert{
+  .cmd="bin/lin_native verify-cert cert_sigma0.rulel"
+  .status=VERIFIED_OK
+  .real="compares vmExec(1<<k) against .expected_outputs[k]; not vacuous"
+  .not="VERIFIED_OK is not a SHA-256d proof. SHA compress = REQUIRES_EXHAUSTIVE"
+  .wrapper_trap="1-arg wrappers that return 0 on GF2 probes can false-emit PROVED_STRUCTURAL. btc_genesis_pow_ok has nonce<0 branch so REQUIRES_EXHAUSTIVE."
+}
+
+.zig_emit{
+  .cmd="bin/lin_native compile src/lin_miner.lin --target zig -o /tmp/lin_miner.zig"
+  .ast_check="zig ast-check passa; zig run falha: w[i&15] e k[i] sao i64, Zig exige usize"
+  .workaround="cast pontual so em /tmp; nao commitar lin_miner.zig em src/"
+  .not_proved="emit Zig cru != bit-exact ate o indice ser usize"
+}
+
+.hashrate{
+  .kind=CPU_native_ReleaseFast
+  .not=["GPU","ASIC"]
+  .cmd="zig build-exe /tmp/miner_diff.zig -O ReleaseFast"
+  .count=100000
+  .Hps=1101219.92
+  .ms=90.81
+  .debug_Hps=44165.27
+  .note="~1.1e6 H/s neste CPU ReleaseFast; 900kH/s era ordem de grandeza, nao GPU"
+  .linvm_h7_us_per_op~=265
+  .linvm_full_target="vm-sweep btc_genesis_pow_ok start=497822588 count=200 wall~77.5ms => ~388us/op this CPU; steps=67427 vs h7 66787. NEVER claim <1us on VM."
+  .native_us_per_op~=0.9
+}
+
+.remaining[
+  "retorno LIN e um i64: 256 bits no check interno (8 words); fold ainda e XOR, nao um segundo hash"
+  "sem include: primitivos duplicados vs lin_crypto.lin; devem permanecer texto-iguais"
+  "sem buffer u8: header 80B nao entra no LIN; midstate+3 words sao SOURCE_GUARANTEE do Zig hasher.s"
+  "sha256 de mensagem arbitraria / bloco NIST multi-block ainda deferred"
+  "compile --target zig nao e executavel sem cast de indice; nao rebuild do host nesta rodada"
+  "nao e prova SMT; valores medidos != PROVED_STRUCTURAL. SHA-256 compress REQUIRES_EXHAUSTIVE"
+  "no WASM emitter, no 10M oracle, no circuit synthesis"
+]

@@ -1,0 +1,242 @@
+@RULEL:LIN_POW_VERIFY_RUN:1.0.0
+.description="Rodada viva 2026-08-29: LinVM + std.crypto no genesis Bitcoin e FIPS 180-4 abc. Nao e prova estrutural. Nao e Node."
+.measured_at="2026-08-29T03:28:24-03:00"
+.measured_end="2026-08-29T03:30:03-03:00"
+.host="America/Sao_Paulo"
+.policy="recusa_nomeada=sucesso_de_gate silent_drop=falha SOURCE_GUARANTEE!=PROVED_IN_LIN no_PROVED_STRUCTURAL"
+.source="src/lin_miner.lin"
+.cli="bin/lin_native"
+.zig="0.13.0"
+.oracle_run="std.crypto.hash.sha2.Sha256 in /tmp/pow_std_crypto.zig"
+.not=["PROVED_STRUCTURAL","Node","Python","GPU","ASIC"]
+
+.host_rebuild{
+  .needed=true
+  .why="src/lin.zig mtime 03:27:14 newer than bin/lin_native 03:19:21"
+  .cmd="zig build-exe src/lin.zig -O ReleaseFast -femit-bin=bin/lin_native"
+  .exit=0
+  .bin_mtime="2026-08-29 03:28:10.765375322 -0300"
+  .bin_bytes=4328104
+  .bin_sha256="97d78864188f3b32568994d5f652f3c3e8210dd382bca8779f065082a756c065"
+  .miner_sha256="c03839e7330942b36070913a1f82a49e8067855cd81382f797d09bc158f75dd6"
+  .version_out="2.0.0"
+}
+
+.midstate{
+  .m0=3163593267 .m1=1666760688 .m2=2429332605 .m3=509201064
+  .m4=3284719849 .m5=1325466568 .m6=2528216886 .m7=1192884507
+  .w0=1260281418 .w1=699096905 .w2=4294901789
+  .nonce_good=497822588 .nonce_bad=497822589
+  .nbits=486604799 .nbits_hex="0x1d00ffff"
+}
+
+.coverage{
+  .when="2026-08-29T03:28:24-03:00"
+  .cmd="bin/lin_native vm src/lin_miner.lin"
+  .stdout="""
+@RULEL:LIN_VM:1.0.0
+.engine{ opcodes=28 overflow=wrapping shifts=lia_compatible step_limit=200000000 }
+.coverage{ total=27 eligible=27 rejected=0 }
+"""
+  .verdict=PASS
+  .note="eligible=27 is a gate count, not a value proof"
+}
+
+.check[
+  {
+    .id="pow_verify_good"
+    .cmd="bin/lin_native vm src/lin_miner.lin btc_pow_verify 3163593267 1666760688 2429332605 509201064 3284719849 1325466568 2528216886 1192884507 1260281418 699096905 4294901789 497822588"
+    .when="2026-08-29T03:28:33-03:00"
+    .stdout="""
+@RULEL:LIN_VM_RUN:1.0.0
+.result{ fn="btc_pow_verify" value=0 steps=66787 }
+"""
+    .expect=0 .got=0 .verdict=PASS
+    .meaning="H7==0 only. NOT full Bitcoin difficulty."
+  }
+  {
+    .id="pow_verify_bad"
+    .cmd="bin/lin_native vm src/lin_miner.lin btc_pow_verify 3163593267 1666760688 2429332605 509201064 3284719849 1325466568 2528216886 1192884507 1260281418 699096905 4294901789 497822589"
+    .when="2026-08-29T03:28:33-03:00"
+    .stdout="""
+@RULEL:LIN_VM_RUN:1.0.0
+.result{ fn="btc_pow_verify" value=3152618356 steps=66787 }
+"""
+    .expect=3152618356 .got=3152618356 .verdict=PASS
+  }
+  {
+    .id="genesis_pow_ok_good"
+    .cmd="bin/lin_native vm src/lin_miner.lin btc_genesis_pow_ok 497822588"
+    .when="2026-08-29T03:28:24-03:00"
+    .stdout="""
+@RULEL:LIN_VM_RUN:1.0.0
+.result{ fn="btc_genesis_pow_ok" value=1 steps=67427 }
+"""
+    .expect=1 .got=1 .verdict=PASS
+  }
+  {
+    .id="genesis_pow_ok_bad"
+    .cmd="bin/lin_native vm src/lin_miner.lin btc_genesis_pow_ok 497822589"
+    .when="2026-08-29T03:28:24-03:00"
+    .stdout="""
+@RULEL:LIN_VM_RUN:1.0.0
+.result{ fn="btc_genesis_pow_ok" value=0 steps=67249 }
+"""
+    .expect=0 .got=0 .verdict=PASS
+  }
+  {
+    .id="meets_nbits_good"
+    .cmd="bin/lin_native vm src/lin_miner.lin btc_pow_meets_nbits 3163593267 1666760688 2429332605 509201064 3284719849 1325466568 2528216886 1192884507 1260281418 699096905 4294901789 497822588 486604799"
+    .when="2026-08-29T03:28:33-03:00"
+    .stdout="""
+@RULEL:LIN_VM_RUN:1.0.0
+.result{ fn="btc_pow_meets_nbits" value=1 steps=67408 }
+"""
+    .expect=1 .got=1 .verdict=PASS
+    .note="nbits 0x1d00ffff = 486604799. Full 256-bit hash<=target."
+  }
+  {
+    .id="meets_nbits_bad"
+    .cmd="bin/lin_native vm src/lin_miner.lin btc_pow_meets_nbits 3163593267 1666760688 2429332605 509201064 3284719849 1325466568 2528216886 1192884507 1260281418 699096905 4294901789 497822589 486604799"
+    .when="2026-08-29T03:28:33-03:00"
+    .stdout="""
+@RULEL:LIN_VM_RUN:1.0.0
+.result{ fn="btc_pow_meets_nbits" value=0 steps=67230 }
+"""
+    .expect=0 .got=0 .verdict=PASS
+  }
+  {
+    .id="sha256d_h0_good"
+    .cmd="bin/lin_native vm src/lin_miner.lin btc_sha256d_h0 3163593267 1666760688 2429332605 509201064 3284719849 1325466568 2528216886 1192884507 1260281418 699096905 4294901789 497822588"
+    .when="2026-08-29T03:28:33-03:00"
+    .stdout="""
+@RULEL:LIN_VM_RUN:1.0.0
+.result{ fn="btc_sha256d_h0" value=1877117962 steps=66759 }
+"""
+    .expect=1877117962 .got=1877117962 .verdict=PASS
+  }
+  {
+    .id="sha256d_sel0_good"
+    .cmd="bin/lin_native vm src/lin_miner.lin btc_sha256d_sel 3163593267 1666760688 2429332605 509201064 3284719849 1325466568 2528216886 1192884507 1260281418 699096905 4294901789 497822588 0"
+    .when="2026-08-29T03:28:33-03:00"
+    .stdout="""
+@RULEL:LIN_VM_RUN:1.0.0
+.result{ fn="btc_sha256d_sel" value=1877117962 steps=66744 }
+"""
+    .expect=1877117962 .got=1877117962 .verdict=PASS
+  }
+  {
+    .id="sha256d_sel7_good"
+    .cmd="bin/lin_native vm src/lin_miner.lin btc_sha256d_sel 3163593267 1666760688 2429332605 509201064 3284719849 1325466568 2528216886 1192884507 1260281418 699096905 4294901789 497822588 7"
+    .when="2026-08-29T03:28:33-03:00"
+    .stdout="""
+@RULEL:LIN_VM_RUN:1.0.0
+.result{ fn="btc_sha256d_sel" value=0 steps=66772 }
+"""
+    .expect=0 .got=0 .verdict=PASS
+  }
+  {
+    .id="nist_abc_sel0"
+    .cmd="bin/lin_native vm src/lin_miner.lin sha256_nist_abc 0"
+    .when="2026-08-29T03:28:24-03:00"
+    .stdout="""
+@RULEL:LIN_VM_RUN:1.0.0
+.result{ fn="sha256_nist_abc" value=3128432319 steps=33378 }
+"""
+    .expect=3128432319 .got=3128432319 .verdict=PASS
+    .fips="ba7816bf = 3128432319"
+  }
+  {
+    .id="nist_abc_sel7"
+    .cmd="bin/lin_native vm src/lin_miner.lin sha256_nist_abc 7"
+    .when="2026-08-29T03:30:03-03:00"
+    .stdout="""
+@RULEL:LIN_VM_RUN:1.0.0
+.result{ fn="sha256_nist_abc" value=4060091821 steps=33406 }
+"""
+    .expect=4060091821 .got=4060091821 .verdict=PASS
+    .fips="f20015ad = 4060091821"
+  }
+]
+
+.sel_1_to_6_good{
+  .when="2026-08-29T03:30:03-03:00"
+  .nonce=497822588
+  .words[
+    { .sel=1 .value=3069293426 .steps=66748 }
+    { .sel=2 .value=3248923206 .steps=66752 }
+    { .sel=3 .value=2925786959 .steps=66756 }
+    { .sel=4 .value=2468250469 .steps=66760 }
+    { .sel=5 .value=3780774044 .steps=66764 }
+    { .sel=6 .value=1758861568 .steps=66768 }
+  ]
+  .verdict=PASS
+}
+
+.std_crypto{
+  .when="2026-08-29T03:29:42-03:00"
+  .cmd="zig build-exe /tmp/pow_std_crypto.zig -O ReleaseFast -femit-bin=/tmp/pow_std_crypto && /tmp/pow_std_crypto"
+  .exit=0
+  .stdout="""
+std_crypto nist_abc h0=3128432319 h7=4060091821 hex=ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+std_crypto genesis_sha256d words h0=1877117962 h1=3069293426 h2=3248923206 h3=2925786959 h4=2468250469 h5=3780774044 h6=1758861568 h7=0 hex=6fe28c0ab6f1b372c1a6a246ae63f74f931e8365e15a089c68d6190000000000
+std_crypto genesis_display=000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f
+"""
+  .vm_eq_std_crypto_nist_h0=PASS
+  .vm_eq_std_crypto_nist_h7=PASS
+  .vm_eq_std_crypto_genesis_8_words=PASS
+  .display_eq_bitcoin_genesis=PASS
+}
+
+.zig_emit_native{
+  .cmd="bin/lin_native compile src/lin_miner.lin --target zig -o /tmp/lin_miner_pow.zig"
+  .compile_exit=0
+  .ast_check="zig ast-check /tmp/lin_miner_pow.zig -> exit 0"
+  .run="PASS"
+  .when="2026-08-29"
+  .fix="rewrite_arr emits [_lia_idx(expr)] on sizeof(?): index access [i64] now wraps _lia_idx(a: i64) usize in ZIG_RUNTIME_PRELUDE"
+  .driver="/tmp/pow_emitted_driver.zig"
+  .emit_eq_vm={
+    .btc_sha256d_h0_good=1877117962 .vm=1877117962 .eq=PASS
+    .btc_genesis_pow_ok_good=1 .vm=1 .eq=PASS
+    .sha256_nist_abc_sel0=3128432319 .vm=3128432319 .eq=PASS
+    .sha256_nist_abc_sel7=4060091821 .vm=4060091821 .eq=PASS
+    .verbatim="btc_sha256d_h0 good = 1877117962 ... EMITTED_ZIG_PASS"
+  }
+  .note="Emitted Zig executable now in bit-exact agreement with LinVM and std.crypto."
+}
+
+.w64_schedule{
+  .when="2026-08-29"
+  .step="lin_miner.lin v1.2 -> v1.3"
+  .change="message schedule no longer circular w[16] window; now explicit W: [64]int expansion (i=16..63 sigma gamma1(W[i-2])+W[i-7]+gamma0(W[i-15])+W[i-16]) in sha256_nist_abc, btc_sha256d_sel, btc_pow_digest_then"
+  .array_use="write W[i], read W[i-2]/W[i-7]/W[i-15]/W[i-16] at computed int index; zig emit wraps as [_lia_idx(...)] usize"
+  .verb_same="btc_sha256d_sel unchanged"
+  .oracle="std.crypto 8 words genesis nonce=497822588"
+  .vm_8_words=[
+    { .sel=0 .value=1877117962 } { .sel=1 .value=3069293426 } { .sel=2 .value=3248923206 }
+    { .sel=3 .value=2925786959 } { .sel=4 .value=2468250469 } { .sel=5 .value=3780774044 }
+    { .sel=6 .value=1758861568 } { .sel=7 .value=0 }
+  ]
+  .vm_eq_std_crypto=PASS
+  .emitted_zig{
+    .cmd="bin/lin_native compile src/lin_miner.lin --target zig -o /tmp/lin_miner_pow.zig && zig build-exe /tmp/pow_emitted_verify.zig -O ReleaseFast"
+    .run=PASS
+    .carries=["btc_sha256d_sel 8 words", "ba7816bf=3128432319", "sha256d f20015ad=4060091821", "btc_pow_verify good=0 bad=3152618356", "btc_genesis_pow_ok=1", "btc_pow_meets_nbits(0x1d00ffff)=1"]
+    .verdict="EMITTED_ZIG_PASS"
+  }
+  .claim="Schedule now exercises the fixed [64]int array mechanically in the real Bitcoin verb, not only in a synthetic demo."
+}
+
+.score{
+  .vm_checks_pass=11
+  .vm_checks_fail=0
+  .zig_native_miner=PASS
+  .std_crypto_oracle=PASS
+  .forbidden_claim_avoided=["PROVED_STRUCTURAL","<1us on LinVM","btc_pow_verify is full difficulty"]
+}
+
+.remaining[
+  "measured values != PROVED_STRUCTURAL; SHA-256 compress REQUIRES_EXHAUSTIVE"
+  "btc_pow_verify is r7==0 only; product check is btc_pow_meets_nbits"
+]
