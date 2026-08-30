@@ -98,14 +98,18 @@ pub fn rotl64(x: i64, s: i64) i64 {
 }
 
 pub fn keccak_theta_c(a0: i64, a1: i64, a2: i64, a3: i64, a4: i64) i64 {
+    var c: i64 = 0;
 
-  return a0 ^ a1 ^ a2 ^ a3 ^ a4;
+  c = a0  ^  a1  ^  a2  ^  a3  ^  a4;
+  return c;
 
 }
 
 pub fn keccak_theta_d(c_prev: i64, c_next: i64) i64 {
+    var d: i64 = 0;
 
-  return c_prev ^ rotl64(c_next, 1);
+  d = c_prev  ^  rotl64(c_next, 1);
+  return d;
 
 }
 
@@ -113,15 +117,11 @@ pub fn test_keccak_vector() i64 {
     var c: i64 = 0;
     var d: i64 = 0;
 
-  // Test with sample lanes: 1, 2, 4, 8, 16
-  // c = 1 return  2 ^ 4 ^ 8 ^ 16 = 31
   c = keccak_theta_c(1, 2, 4, 8, 16);
-  ?(c != 31) { return 0 ;}
+  if (c != 31) { return 0 ;}
 
-  // d = c_prev return  rotl64(c_next, 1)
-  // c_prev = 31, c_next = 1 -> rotl64(1, 1) = 2 -> d = 31 ^ 2 = 29
   d = keccak_theta_d(31, 1);
-  ?(d != 29) { return 0 ;}
+  if (d != 29) { return 0 ;}
   return 1;
 
 }

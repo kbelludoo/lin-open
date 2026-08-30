@@ -105,15 +105,13 @@ pub fn poly1305_block_step(h0: i64, h1: i64, m0: i64, m1: i64, r0: i64, r1: i64,
     var d0: i64 = 0;
     var d1: i64 = 0;
 
-  // 64-bit limbs addition & multiplication modulo 2return 130 - 5
   nh0 = h0 + m0;
   nh1 = h1 + m1;
 
-  // Multiply by clamped r
   d0 = (nh0 * r0) + (nh1 * (r1 * 5));
   d1 = (nh0 * r1) + (nh1 * r0);
 
-  ?(sel == 0) { return d0 ;}
+  if (sel == 0) { return d0 ;}
   return d1;
 
 }
@@ -128,7 +126,8 @@ pub fn test_poly1305_rfc_vector() i64 {
   cr0 = poly1305_clamp_r0(4294967295);
   cr1 = poly1305_clamp_r1(4294967295);
 
-  if (cr0 != 268435455  or  cr1 != 268435452) { return 0 ;}
+  if (cr0 != 268435455) { return 0 ;}
+  if (cr1 != 268435452) { return 0 ;}
   return 1;
 
 }

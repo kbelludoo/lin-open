@@ -98,17 +98,17 @@ pub fn aes_rotword(w: i64) i64 {
 
 pub fn aes_rcon(i: i64) i64 {
 
-  if (i == 1) { return 16777216 ;}   // 0x01000000
-  if (i == 2) { return 33554432 ;}   // 0x02000000
-  if (i == 3) { return 67108864 ;}   // 0x04000000
-  if (i == 4) { return 134217728 ;}  // 0x08000000
-  if (i == 5) { return 268435456 ;}  // 0x10000000
-  if (i == 6) { return 536870912 ;}  // 0x20000000
-  if (i == 7) { return 1073741824 ;} // 0x40000000
-  if (i == 8) { return 2147483648 ;} // 0x80000000
-  if (i == 9) { return 452984832 ;}  // 0x1B000000
-  return 905969664;               // 0x36000000
-;
+  if (i == 1) { return 16777216 ;}
+  if (i == 2) { return 33554432 ;}
+  if (i == 3) { return 67108864 ;}
+  if (i == 4) { return 134217728 ;}
+  if (i == 5) { return 268435456 ;}
+  if (i == 6) { return 536870912 ;}
+  if (i == 7) { return 1073741824 ;}
+  if (i == 8) { return 2147483648 ;}
+  if (i == 9) { return 452984832 ;}
+  return 905969664;
+
 }
 
 pub fn test_aes_vector() i64 {

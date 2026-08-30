@@ -144,9 +144,8 @@ pub fn test_xoshiro256_vector() i64 {
   ns2 = xoshiro256ss_step(1, 2, 3, 4, 2);
   ns3 = xoshiro256ss_step(1, 2, 3, 4, 3);
 
-  // s0return s3 = 1^6 = 7
-  // s1^s2 = 2^2 = 0
-  ?(ns0 != 7  or  ns1 != 0) { return 0 ;}
+  if (ns0 != 7) { return 0 ;}
+  if (ns1 != 0) { return 0 ;}
   return 1;
 
 }

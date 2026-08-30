@@ -53,7 +53,8 @@ fn _lia_idx(a: i64) usize {
 fn _lia_shl(a: i64, b: i64) i64 {
     if (b < 0 or b >= 64) return 0;
     const shift: u6 = @as(u6, @truncate(@as(u64, @intCast(b))));
-    return a << shift;
+    const ua: u64 = @bitCast(a);
+    return @bitCast(ua << shift);
 }
 fn _lia_shr(a: i64, b: i64) i64 {
     if (b < 0 or b >= 64) return 0;
@@ -64,6 +65,10 @@ fn _lia_ushr(a: i64, b: i64) i64 {
     if (b < 0 or b >= 64) return 0;
     const shift: u6 = @as(u6, @truncate(@as(u64, @intCast(b))));
     return @bitCast(@as(u64, @bitCast(a)) >> shift);
+}
+fn _lia_mod(a: i64, b: i64) i64 {
+    if (b == 0) return 0;
+    return @rem(a, b);
 }
 fn _lia_len(x: anytype) i64 {
     const T = @TypeOf(x);

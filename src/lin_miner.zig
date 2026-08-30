@@ -53,7 +53,8 @@ fn _lia_idx(a: i64) usize {
 fn _lia_shl(a: i64, b: i64) i64 {
     if (b < 0 or b >= 64) return 0;
     const shift: u6 = @as(u6, @truncate(@as(u64, @intCast(b))));
-    return a << shift;
+    const ua: u64 = @bitCast(a);
+    return @bitCast(ua << shift);
 }
 fn _lia_shr(a: i64, b: i64) i64 {
     if (b < 0 or b >= 64) return 0;
@@ -64,6 +65,10 @@ fn _lia_ushr(a: i64, b: i64) i64 {
     if (b < 0 or b >= 64) return 0;
     const shift: u6 = @as(u6, @truncate(@as(u64, @intCast(b))));
     return @bitCast(@as(u64, @bitCast(a)) >> shift);
+}
+fn _lia_mod(a: i64, b: i64) i64 {
+    if (b == 0) return 0;
+    return @rem(a, b);
 }
 fn _lia_len(x: anytype) i64 {
     const T = @TypeOf(x);
@@ -410,7 +415,7 @@ pub fn nbits_target_word(nbits: i64, wi: i64) i64 {
 }
 
 pub fn btc_pow_digest_then(m0: i64, m1: i64, m2: i64, m3: i64, m4: i64, m5: i64, m6: i64, m7: i64, w0_in: i64, w1_in: i64, w2_in: i64, nonce: i64, nbits: i64, want: i64) i64 {
-    var w: [16]i64 = [_]i64{0} ** 16;
+    var W: [64]i64 = [_]i64{0} ** 64;
     var a: i64 = 0;
     var b: i64 = 0;
     var c: i64 = 0;
@@ -420,7 +425,6 @@ pub fn btc_pow_digest_then(m0: i64, m1: i64, m2: i64, m3: i64, m4: i64, m5: i64,
     var g: i64 = 0;
     var h: i64 = 0;
     var i: i64 = 0;
-    var cur_w: i64 = 0;
     var t1: i64 = 0;
     var t2: i64 = 0;
     var h1_0: i64 = 0;
@@ -444,22 +448,21 @@ pub fn btc_pow_digest_then(m0: i64, m1: i64, m2: i64, m3: i64, m4: i64, m5: i64,
     var tw: i64 = 0;
 
   
-  w[_lia_idx(0)] = w0_in; w[_lia_idx(1)] = w1_in; w[_lia_idx(2)] = w2_in; w[_lia_idx(3)] = nonce;
-  w[_lia_idx(4)] = 2147483648; w[_lia_idx(5)] = 0; w[_lia_idx(6)] = 0; w[_lia_idx(7)] = 0;
-  w[_lia_idx(8)] = 0; w[_lia_idx(9)] = 0; w[_lia_idx(10)] = 0; w[_lia_idx(11)] = 0;
-  w[_lia_idx(12)] = 0; w[_lia_idx(13)] = 0; w[_lia_idx(14)] = 0; w[_lia_idx(15)] = 640;
+  W[_lia_idx(0)] = w0_in; W[_lia_idx(1)] = w1_in; W[_lia_idx(2)] = w2_in; W[_lia_idx(3)] = nonce;
+  W[_lia_idx(4)] = 2147483648; W[_lia_idx(5)] = 0; W[_lia_idx(6)] = 0; W[_lia_idx(7)] = 0;
+  W[_lia_idx(8)] = 0; W[_lia_idx(9)] = 0; W[_lia_idx(10)] = 0; W[_lia_idx(11)] = 0;
+  W[_lia_idx(12)] = 0; W[_lia_idx(13)] = 0; W[_lia_idx(14)] = 0; W[_lia_idx(15)] = 640;
   a = m0; b = m1; c = m2; d = m3; e = m4; f = m5; g = m6; h = m7;
-  i = 0;
-  cur_w = 0;
+  i = 16;
   t1 = 0;
   t2 = 0;
   while (i < 64) {
-    if (i > 15) {
-      t1 = (gamma1_32(w[_lia_idx((i - 2) & 15)]) + w[_lia_idx((i - 7) & 15)] + gamma0_32(w[_lia_idx((i - 15) & 15)]) + w[_lia_idx((i - 16) & 15)]) & 4294967295;
-      w[_lia_idx(i & 15)] = t1;
-    }
-    cur_w = w[_lia_idx(i & 15)];
-    t1 = (h + sigma1_32(e) + ch32(e, f, g) + sha_k(i) + cur_w) & 4294967295;
+    W[_lia_idx(i)] = (gamma1_32(W[_lia_idx(i - 2)]) + W[_lia_idx(i - 7)] + gamma0_32(W[_lia_idx(i - 15)]) + W[_lia_idx(i - 16)]) & 4294967295;
+    i = i + 1;
+  }
+  i = 0;
+  while (i < 64) {
+    t1 = (h + sigma1_32(e) + ch32(e, f, g) + sha_k(i) + W[_lia_idx(i)]) & 4294967295;
     t2 = (sigma0_32(a) + maj32(a, b, c)) & 4294967295;
     h = g; g = f; f = e; e = (d + t1) & 4294967295;
     d = c; c = b; b = a; a = (t1 + t2) & 4294967295;
@@ -473,20 +476,20 @@ pub fn btc_pow_digest_then(m0: i64, m1: i64, m2: i64, m3: i64, m4: i64, m5: i64,
   h1_5 = (m5 + f) & 4294967295;
   h1_6 = (m6 + g) & 4294967295;
   h1_7 = (m7 + h) & 4294967295;
-  w[_lia_idx(0)] = h1_0; w[_lia_idx(1)] = h1_1; w[_lia_idx(2)] = h1_2; w[_lia_idx(3)] = h1_3;
-  w[_lia_idx(4)] = h1_4; w[_lia_idx(5)] = h1_5; w[_lia_idx(6)] = h1_6; w[_lia_idx(7)] = h1_7;
-  w[_lia_idx(8)] = 2147483648; w[_lia_idx(9)] = 0; w[_lia_idx(10)] = 0; w[_lia_idx(11)] = 0;
-  w[_lia_idx(12)] = 0; w[_lia_idx(13)] = 0; w[_lia_idx(14)] = 0; w[_lia_idx(15)] = 256;
+  W[_lia_idx(0)] = h1_0; W[_lia_idx(1)] = h1_1; W[_lia_idx(2)] = h1_2; W[_lia_idx(3)] = h1_3;
+  W[_lia_idx(4)] = h1_4; W[_lia_idx(5)] = h1_5; W[_lia_idx(6)] = h1_6; W[_lia_idx(7)] = h1_7;
+  W[_lia_idx(8)] = 2147483648; W[_lia_idx(9)] = 0; W[_lia_idx(10)] = 0; W[_lia_idx(11)] = 0;
+  W[_lia_idx(12)] = 0; W[_lia_idx(13)] = 0; W[_lia_idx(14)] = 0; W[_lia_idx(15)] = 256;
   a = 1779033703; b = 3144134277; c = 1013904242; d = 2773480762;
   e = 1359893119; f = 2600822924; g = 528734635; h = 1541459225;
+  i = 16;
+  while (i < 64) {
+    W[_lia_idx(i)] = (gamma1_32(W[_lia_idx(i - 2)]) + W[_lia_idx(i - 7)] + gamma0_32(W[_lia_idx(i - 15)]) + W[_lia_idx(i - 16)]) & 4294967295;
+    i = i + 1;
+  }
   i = 0;
   while (i < 64) {
-    if (i > 15) {
-      t1 = (gamma1_32(w[_lia_idx((i - 2) & 15)]) + w[_lia_idx((i - 7) & 15)] + gamma0_32(w[_lia_idx((i - 15) & 15)]) + w[_lia_idx((i - 16) & 15)]) & 4294967295;
-      w[_lia_idx(i & 15)] = t1;
-    }
-    cur_w = w[_lia_idx(i & 15)];
-    t1 = (h + sigma1_32(e) + ch32(e, f, g) + sha_k(i) + cur_w) & 4294967295;
+    t1 = (h + sigma1_32(e) + ch32(e, f, g) + sha_k(i) + W[_lia_idx(i)]) & 4294967295;
     t2 = (sigma0_32(a) + maj32(a, b, c)) & 4294967295;
     h = g; g = f; f = e; e = (d + t1) & 4294967295;
     d = c; c = b; b = a; a = (t1 + t2) & 4294967295;
