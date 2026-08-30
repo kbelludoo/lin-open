@@ -1,16 +1,16 @@
-@RULEL:LIN_ATTEST_SPEC:1.8.0
+@RULEL:LIN_ATTEST_SPEC:1.9.0
 ~R{.s=schema .c=compliance .p=provenance .d=determinism .h=hardware .k=cryptography .a=adversarial}
 .s{
   architecture="ZERO_TRUST_PHYSICAL_SILICON_BOUND"
-  type="DETERMINISTIC_SUPPLY_CHAIN_ATTESTATION_v0.6"
+  type="DETERMINISTIC_SUPPLY_CHAIN_ATTESTATION_v0.7"
   format="RULEL"
   merkle_type="8_LEAF_BALANCED_DOMAIN_SEPARATED_BINARY_MERKLE_TREE"
 }
 .h{
   execution_mode="PHYSICAL_SILICON_DISPATCH"
-  target_device="gfx1030"
+  target_arch="gfx1030"
   runtime="AMD_ROCM_OPENCL_2.0"
-  identity_policy="STRICT_EXACT_DEVICE_NAME_AND_FINGERPRINT"
+  identity_schema="SEPARATED_ARCHITECTURE_AND_DEVICE_PROPERTIES"
 }
 .k{
   signature_algorithm="Ed25519"
@@ -29,7 +29,7 @@
     "L1: leaf:mir:MirSemanticHash",
     "L2: leaf:kernel:LoweringHash",
     "L3: leaf:input:InputCommitment",
-    "L4: leaf:hardware:HardwareFingerprint",
+    "L4: leaf:hardware:TargetArch:HardwareFingerprint",
     "L5: leaf:exec:cpu:CpuResult",
     "L6: leaf:exec:gpu:GpuResult",
     "L7: leaf:policy:StandardsProfile"
@@ -59,7 +59,7 @@
     "MUT_ORACLE_RESULT_DOC",
     "MUT_MERKLE_ROOT_DOC",
     "MUT_HARDWARE_FP_DOC",
-    "MUT_TARGET_DEVICE_DOC"
+    "MUT_TARGET_ARCH_DOC"
   ]
   policy="ALL_MUTATIONS_MUST_BE_REJECTED"
 }

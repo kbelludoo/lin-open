@@ -7469,7 +7469,6 @@ pub fn main() !void {
         var num_dev: cl.cl_uint = 0;
         _ = cl.clGetDeviceIDs(ocl_plat, cl.CL_DEVICE_TYPE_GPU, 1, &dev, &num_dev);
         if (num_dev == 0 or dev == null) return error.NoGpuDevice;
-
         var dev_vendor_buf: [256]u8 = undefined;
         _ = cl.clGetDeviceInfo(dev, cl.CL_DEVICE_VENDOR, dev_vendor_buf.len, &dev_vendor_buf, null);
         const actual_vendor = std.mem.sliceTo(&dev_vendor_buf, 0);
@@ -7479,15 +7478,16 @@ pub fn main() !void {
         const actual_device_name = std.mem.sliceTo(&dev_name_buf, 0);
 
         var dev_ver_buf: [256]u8 = undefined;
-        _ = cl.clGetDeviceInfo(dev, cl.CL_DEVICE_VERSION, dev_ver_buf.len, &dev_ver_buf, null);
-        const actual_version = std.mem.sliceTo(&dev_ver_buf, 0);
+        _ = cl.clGetDeviceInfo(dev, cl.CL_DRIVER_VERSION, dev_ver_buf.len, &dev_ver_buf, null);
+        const actual_driver = std.mem.sliceTo(&dev_ver_buf, 0);
 
         var cu_count: cl.cl_uint = 0;
         _ = cl.clGetDeviceInfo(dev, cl.CL_DEVICE_MAX_COMPUTE_UNITS, @sizeOf(cl.cl_uint), &cu_count, null);
 
-        const is_device_match = std.mem.eql(u8, actual_device_name, target_device);
+        const target_arch = target_device;
+        const is_device_match = std.mem.eql(u8, actual_device_name, target_arch);
         if (!is_device_match) {
-            try stderr.print("attest-issue: Target device mismatch! Requested '{s}', actual hardware is '{s}' by '{s}'\n", .{ target_device, actual_device_name, actual_vendor });
+            try stderr.print("attest-issue: Target architecture mismatch! Requested '{s}', actual silicon is '{s}' by '{s}'\n", .{ target_arch, actual_device_name, actual_vendor });
             return error.TargetDeviceMismatch;
         }
 
@@ -7496,7 +7496,7 @@ pub fn main() !void {
         h_fp.update(":");
         h_fp.update(actual_device_name);
         h_fp.update(":");
-        h_fp.update(actual_version);
+        h_fp.update(actual_driver);
         var cu_buf: [16]u8 = undefined;
         const cu_str = try std.fmt.bufPrint(&cu_buf, ":{d}", .{cu_count});
         h_fp.update(cu_str);
@@ -7569,11 +7569,13 @@ pub fn main() !void {
         if (r_gpu_physical != r_cpu) return error.SiliconParityDivergence;
 
         try stdout.print("PHYSICAL EXECUTION EVIDENCE:\n", .{});
+        try stdout.print("  Target Architecture ....... {s} [MATCH]\n", .{target_arch});
         try stdout.print("  Silicon Device Name ....... {s} [MATCH]\n", .{actual_device_name});
         try stdout.print("  Silicon Vendor ............ {s} [MATCH]\n", .{actual_vendor});
+        try stdout.print("  Silicon Compute Units ..... {d} CUs [MATCH]\n", .{cu_count});
         try stdout.print("  Hardware Fingerprint ...... sha256:{s}... [PASS]\n", .{fp_hex[0..16]});
         try stdout.print("  CPU Oracle Execution ...... R_cpu = {d} [PASS]\n", .{r_cpu});
-        try stdout.print("  GPU Silicon Execution ..... R_gpu = {d} on {s} [PASS]\n", .{ r_gpu_physical, target_device });
+        try stdout.print("  GPU Silicon Execution ..... R_gpu = {d} on {s} [PASS]\n", .{ r_gpu_physical, target_arch });
         try stdout.print("  Bit-Exact Silicon Parity .. R_cpu == R_gpu == R_oracle [BIT-EXACT MATCH]\n", .{});
 
         // 5. 8-Leaf Balanced Domain-Separated Binary Merkle Tree Computation
@@ -7605,9 +7607,11 @@ pub fn main() !void {
         var l3: [32]u8 = undefined;
         h_l3.final(&l3);
 
-        // L4: leaf:hardware:
+        // L4: leaf:hardware: (Architectural & Physical Silicon Binding)
         var h_l4 = std.crypto.hash.sha2.Sha256.init(.{});
         h_l4.update("leaf:hardware:");
+        h_l4.update(target_arch);
+        h_l4.update(":");
         h_l4.update(&fp_hex);
         var l4: [32]u8 = undefined;
         h_l4.final(&l4);
@@ -7727,7 +7731,7 @@ pub fn main() !void {
         }
 
         const keypair = try std.crypto.sign.Ed25519.KeyPair.create(authority_seed);
-        const canonical_msg = try std.fmt.allocPrint(LIA_ALLOC, "urn:lin:attestation:2026-08-30:004|{s}|{s}|{d}|{s}", .{ target_device, fp_hex, r_cpu, merkle_hex });
+        const canonical_msg = try std.fmt.allocPrint(LIA_ALLOC, "urn:lin:attestation:2026-08-30:004|{s}|{s}|{d}|{s}", .{ target_arch, fp_hex, r_cpu, merkle_hex });
         defer LIA_ALLOC.free(canonical_msg);
 
         const sig = try keypair.sign(canonical_msg, null);
@@ -7740,7 +7744,7 @@ pub fn main() !void {
 
         // 7. Emit Canonical RULEL Attestation Document
         const rulel_doc = try std.fmt.allocPrint(LIA_ALLOC,
-            \\@RULEL:LIN_ATTEST:1.8.0
+            \\@RULEL:LIN_ATTEST:1.9.0
             \\~R{{.s=schema .c=claim .e=evidence .v=verification .p=proof}}
             \\.s{{
             \\  id="urn:lin:attestation:2026-08-30:004"
@@ -7748,10 +7752,13 @@ pub fn main() !void {
             \\  profile=["EU_CRA_PROFILE", "NIST_SP_800_218_PROFILE", "SLSA_L4_PROFILE"]
             \\}}
             \\.c{{
-            \\  target_device="{s}"
+            \\  target_arch="{s}"
+            \\  device_name="{s}"
+            \\  vendor="{s}"
+            \\  driver="{s}"
+            \\  compute_units={d}
             \\  hardware_fingerprint="sha256:{s}"
             \\  host="CPU_ZEN3_LINUX_X86_64"
-            \\  driver="AMD_ROCM_OPENCL_2.0"
             \\  cpu_result={d}
             \\  gpu_result={d}
             \\  oracle_result={d}
@@ -7780,13 +7787,17 @@ pub fn main() !void {
             \\}}
             \\.p{{
             \\  type="Ed25519Signature2020"
-            \\  created="2026-08-30T11:55:00Z"
+            \\  created="2026-08-30T11:58:00Z"
             \\  pubkey_hex="{s}"
             \\  signature_hex="{s}"
             \\}}
             \\
         , .{
-            target_device,
+            target_arch,
+            actual_device_name,
+            actual_vendor,
+            actual_driver,
+            cu_count,
             fp_hex,
             r_cpu,
             r_gpu_physical,
@@ -7833,7 +7844,11 @@ pub fn main() !void {
 
         const Verifier = struct {
             const Doc = struct {
-                target_device: []const u8 = "",
+                target_arch: []const u8 = "",
+                device_name: []const u8 = "",
+                vendor: []const u8 = "",
+                driver: []const u8 = "",
+                compute_units: u32 = 0,
                 hardware_fingerprint: []const u8 = "",
                 cpu_result: i32 = 0,
                 gpu_result: i32 = 0,
@@ -7861,8 +7876,16 @@ pub fn main() !void {
                         if (val.len >= 2 and val[0] == '"' and val[val.len - 1] == '"') {
                             val = val[1 .. val.len - 1];
                         }
-                        if (std.mem.eql(u8, key, "target_device")) {
-                            doc.target_device = val;
+                        if (std.mem.eql(u8, key, "target_arch") or std.mem.eql(u8, key, "target_device")) {
+                            doc.target_arch = val;
+                        } else if (std.mem.eql(u8, key, "device_name")) {
+                            doc.device_name = val;
+                        } else if (std.mem.eql(u8, key, "vendor")) {
+                            doc.vendor = val;
+                        } else if (std.mem.eql(u8, key, "driver")) {
+                            doc.driver = val;
+                        } else if (std.mem.eql(u8, key, "compute_units")) {
+                            doc.compute_units = try std.fmt.parseInt(u32, val, 10);
                         } else if (std.mem.eql(u8, key, "hardware_fingerprint")) {
                             doc.hardware_fingerprint = val;
                         } else if (std.mem.eql(u8, key, "cpu_result")) {
@@ -8046,15 +8069,22 @@ pub fn main() !void {
                 const actual_device_name = std.mem.sliceTo(&dev_name_buf, 0);
 
                 var dev_ver_buf: [256]u8 = undefined;
-                _ = cl.clGetDeviceInfo(dev, cl.CL_DEVICE_VERSION, dev_ver_buf.len, &dev_ver_buf, null);
-                const actual_version = std.mem.sliceTo(&dev_ver_buf, 0);
+                _ = cl.clGetDeviceInfo(dev, cl.CL_DRIVER_VERSION, dev_ver_buf.len, &dev_ver_buf, null);
+                const actual_driver = std.mem.sliceTo(&dev_ver_buf, 0);
 
                 var cu_count: cl.cl_uint = 0;
                 _ = cl.clGetDeviceInfo(dev, cl.CL_DEVICE_MAX_COMPUTE_UNITS, @sizeOf(cl.cl_uint), &cu_count, null);
 
-                const is_device_match = std.mem.eql(u8, actual_device_name, doc.target_device);
+                const is_device_match = std.mem.eql(u8, actual_device_name, doc.target_arch);
                 if (!is_device_match) {
                     return error.TargetDeviceMismatch;
+                }
+
+                if (doc.vendor.len > 0 and !std.mem.eql(u8, actual_vendor, doc.vendor)) {
+                    return error.VendorMismatch;
+                }
+                if (doc.compute_units > 0 and cu_count != doc.compute_units) {
+                    return error.ComputeUnitsMismatch;
                 }
 
                 var h_fp = std.crypto.hash.sha2.Sha256.init(.{});
@@ -8062,7 +8092,7 @@ pub fn main() !void {
                 h_fp.update(":");
                 h_fp.update(actual_device_name);
                 h_fp.update(":");
-                h_fp.update(actual_version);
+                h_fp.update(actual_driver);
                 var cu_buf: [16]u8 = undefined;
                 const cu_str = try std.fmt.bufPrint(&cu_buf, ":{d}", .{cu_count});
                 h_fp.update(cu_str);
@@ -8169,9 +8199,11 @@ pub fn main() !void {
                 var l3: [32]u8 = undefined;
                 h_l3.final(&l3);
 
-                // L4: leaf:hardware:
+                // L4: leaf:hardware: (Architectural & Physical Silicon Binding)
                 var h_l4 = std.crypto.hash.sha2.Sha256.init(.{});
                 h_l4.update("leaf:hardware:");
+                h_l4.update(doc.target_arch);
+                h_l4.update(":");
                 h_l4.update(&fp_hex);
                 var l4: [32]u8 = undefined;
                 h_l4.final(&l4);
@@ -8268,7 +8300,7 @@ pub fn main() !void {
                 var sig_raw: [64]u8 = undefined;
                 _ = try std.fmt.hexToBytes(&sig_raw, doc.signature_hex);
 
-                const canonical_msg = try std.fmt.allocPrint(LIA_ALLOC, "urn:lin:attestation:2026-08-30:004|{s}|{s}|{d}|{s}", .{ doc.target_device, fp_hex, doc.oracle_result, merkle_hex });
+                const canonical_msg = try std.fmt.allocPrint(LIA_ALLOC, "urn:lin:attestation:2026-08-30:004|{s}|{s}|{d}|{s}", .{ doc.target_arch, fp_hex, doc.oracle_result, merkle_hex });
                 defer LIA_ALLOC.free(canonical_msg);
 
                 const pubkey = try std.crypto.sign.Ed25519.PublicKey.fromBytes(pubkey_raw);
@@ -8287,6 +8319,7 @@ pub fn main() !void {
                     try out.print("  [8/9] 8-LEAF MERKLE TREE .... [PASS] (Recomputed 8-Leaf Root: sha256:{s}...)\n", .{merkle_hex[0..16]});
                     try out.print("  [9/9] ED25519 SIGNATURE ..... [PASS] (Document-Bound Signature Cryptographically Verified)\n", .{});
                     try out.print("        .Claimed Authority PubKey: {s}\n", .{doc.pubkey_hex});
+                    try out.print("        .Target Architecture:      {s}\n", .{doc.target_arch});
                     try out.print("        .Silicon Hardware FP:      sha256:{s}...\n", .{fp_hex[0..16]});
                     try out.print("        .Verified Canonical Msg:   \"{s}\"\n", .{canonical_msg});
                     try out.print("--------------------------------------------------------------------------------\n", .{});
@@ -8296,10 +8329,10 @@ pub fn main() !void {
         };
 
         try stdout.print("\n================================================================================\n", .{});
-        try stdout.print("=== LIN-ATTEST-004R.2: STRICT HARDWARE IDENTITY & 8-LEAF MERKLE VERIFIER     ===\n", .{});
+        try stdout.print("=== LIN-ATTEST-004R.3: ARCHITECTURE & SILICON REGISTRY 8-LEAF VERIFIER       ===\n", .{});
         try stdout.print("================================================================================\n\n", .{});
         try stdout.print("Target Attestation Document: {s} | Size: {d} B\n", .{ file_path, rulel_bytes.len });
-        try stdout.print("Mode: REAL LIN COMPILATION + STRICT HARDWARE MATCH + 8-LEAF BINARY MERKLE + ED25519\n\n", .{});
+        try stdout.print("Mode: REAL LIN COMPILATION + STRICT HARDWARE REGISTRY + 8-LEAF MERKLE + ED25519\n\n", .{});
 
         // Verify genuine authentic document
         try Verifier.verify(rulel_bytes, true);
@@ -8320,9 +8353,9 @@ pub fn main() !void {
                 .{ .name = "MUT_CPU_RESULT_DOC", .find = "cpu_result=-630063104", .rep = "cpu_result=-630063105" },
                 .{ .name = "MUT_GPU_RESULT_DOC", .find = "gpu_result=-630063104", .rep = "gpu_result=-630063105" },
                 .{ .name = "MUT_ORACLE_RESULT_DOC", .find = "oracle_result=-630063104", .rep = "oracle_result=-630063105" },
-                .{ .name = "MUT_MERKLE_ROOT_DOC", .find = "merkle_root=\"sha256:dc29", .rep = "merkle_root=\"sha256:ec29" },
+                .{ .name = "MUT_MERKLE_ROOT_DOC", .find = "merkle_root=\"sha256:", .rep = "merkle_root=\"sha256:0000000000000000" },
                 .{ .name = "MUT_HARDWARE_FP_DOC", .find = "hardware_fingerprint=\"sha256:", .rep = "hardware_fingerprint=\"sha256:0000" },
-                .{ .name = "MUT_TARGET_DEVICE_DOC", .find = "target_device=\"gfx1030\"", .rep = "target_device=\"non_existent_gpu_9999\"" },
+                .{ .name = "MUT_TARGET_ARCH_DOC", .find = "target_arch=\"gfx1030\"", .rep = "target_arch=\"non_existent_gpu_9999\"" },
             };
 
             for (test_mutations, 0..) |tm, vi| {

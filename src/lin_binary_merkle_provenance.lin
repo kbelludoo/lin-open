@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-^schema_once ^lossy=false ^ops=binary_merkle_provenance_8leaf
+^schema_once ^lossy=false ^ops=binary_merkle_provenance_v190
 ~G{?=if #=for ^=ret :else}
 
 !compute_merkle_leaf_hash(tag_id: int, content_hash: int) -> int {
@@ -23,9 +23,9 @@
     ^root;
 }
 
-!validate_hardware_fingerprint_strict(vendor_id: int, device_id: int, compute_units: int, driver_id: int) -> int {
-    fp = (vendor_id * 10000000) + (device_id * 100000) + (compute_units * 1000) + driver_id;
-    ^fp;
+!validate_architecture_and_hardware_fingerprint(arch_id: int, fp_id: int) -> int {
+    bound = (arch_id * 10000000) + fp_id;
+    ^bound;
 }
 
-=ex{compute_merkle_leaf_hash, compute_merkle_parent_node, compute_8leaf_merkle_root, validate_hardware_fingerprint_strict}
+=ex{compute_merkle_leaf_hash, compute_merkle_parent_node, compute_8leaf_merkle_root, validate_architecture_and_hardware_fingerprint}
