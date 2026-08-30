@@ -1,0 +1,33 @@
+@LIN:L1c:0.2
+@CORPUS{origin="BLAKE2/BLAKE2" algorithm="Blake2b_G" scope="rfc7693_argon2_quarter_round"}
+
+!rotr64(x: int, s: int): int {
+  w = x;
+  r = s & 63;
+  ^(_lia_ushr(w, r)) | (_lia_shl(w, 64 - r));
+}
+
+!blake2b_g(a_in: int, b_in: int, c_in: int, d_in: int, m0: int, m1: int, sel: int): int {
+  a = a_in + b_in + m0;
+  d = rotr64(d_in ^ a, 32);
+  c = c_in + d;
+  b = rotr64(b_in ^ c, 24);
+
+  a = a + b + m1;
+  d = rotr64(d ^ a, 16);
+  c = c + d;
+  b = rotr64(b ^ c, 63);
+
+  ?(sel == 0){ ^a };
+  ?(sel == 1){ ^b };
+  ?(sel == 2){ ^c };
+  ^d;
+}
+
+!test_blake2b_vector(): int {
+  va = blake2b_g(1, 2, 3, 4, 10, 20, 0);
+  ?(va != 1099511630113){ ^0 };
+  ^1;
+}
+
+=ex{rotr64, blake2b_g, test_blake2b_vector}

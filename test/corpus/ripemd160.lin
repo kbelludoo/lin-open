@@ -1,0 +1,31 @@
+@LIN:L1c:0.2
+@CORPUS{origin="trezor/trezor-crypto" algorithm="RIPEMD-160" scope="nonlinear_round_functions"}
+
+!rotl32(x: int, s: int): int {
+  w = x & 4294967295;
+  r = s & 31;
+  ^(_lia_shl(w, r) | _lia_ushr(w, 32 - r)) & 4294967295;
+}
+
+!ripemd_f1(x: int, y: int, z: int): int {
+  // (x & y) | (~x & z)
+  not_x = (~x) & 4294967295;
+  ^((x & y) | (not_x & z)) & 4294967295;
+}
+
+!ripemd_f2(x: int, y: int, z: int): int {
+  not_y = (~y) & 4294967295;
+  res = ((x | not_y) ^ z) & 4294967295;
+  ^res;
+}
+
+!test_ripemd160_vector(): int {
+  r1 = ripemd_f1(1732584193, 4023233417, 2562383102);
+  r2 = ripemd_f2(1732584193, 4023233417, 2562383102);
+
+  ?(r1 != 4294967295){ ^0 };
+  ?(r2 != 4023233417){ ^0 };
+  ^1;
+}
+
+=ex{rotl32, ripemd_f1, ripemd_f2, test_ripemd160_vector}

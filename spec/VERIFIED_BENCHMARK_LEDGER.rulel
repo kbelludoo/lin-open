@@ -7,95 +7,120 @@
 .entry{
   idx=1 repo="floodyberry/chacha-opt" algorithm="ChaCha20" fn="chacha_qr"
   oracle="RFC_8439_Sec_2.1.1" status="VERIFIED_MATCH"
-  throughput="348.87_M_QR_s" latency_ms=22.93 ops=8000000
+  throughput="350.84_M_QR_s" latency_ms=22.80 ops=8000000
 }
 .entry{
   idx=2 repo="BLAKE3-team/BLAKE3" algorithm="BLAKE3" fn="blake3_g"
   oracle="Official_BLAKE3_IV" status="VERIFIED_MATCH"
-  throughput="335.61_M_mix_s" latency_ms=23.84 ops=8000000
+  throughput="336.45_M_mix_s" latency_ms=23.78 ops=8000000
 }
 .entry{
   idx=3 repo="imneme/pcg-c" algorithm="PCG32" fn="pcg_output_xsh_rr_64_32"
   oracle="PCG32_Reference_Test_Vector" status="VERIFIED_MATCH"
-  throughput="633.91_M_draws_s" latency_ms=7.89 ops=5000000
+  throughput="631.96_M_draws_s" latency_ms=7.91 ops=5000000
 }
 .entry{
   idx=4 repo="madler/zlib" algorithm="Adler32" fn="adler32_step"
   oracle="RFC_1950_Wikipedia_0x11E60398" status="VERIFIED_MATCH"
-  throughput="254.58_MB_s" latency_ms=19.64 bytes=5000000
+  throughput="254.89_MB_s" latency_ms=19.62 bytes=5000000
 }
 .entry{
   idx=5 repo="aappleby/smhasher" algorithm="MurmurHash3" fn="fmix32_and_step"
   oracle="SMHasher_Official_Vectors" status="VERIFIED_MATCH"
-  throughput="675.08_M_steps_s" latency_ms=7.41 ops=5000000
+  throughput="672.76_M_steps_s" latency_ms=7.43 ops=5000000
 }
 .entry{
   idx=6 repo="veorq/SipHash" algorithm="SipHash-2-4" fn="sipround"
   oracle="Aumasson_DJB_SipHash_Vectors" status="VERIFIED_MATCH"
-  throughput="900.09_M_rounds_s" latency_ms=8.89 ops=8000000
+  throughput="901.40_M_rounds_s" latency_ms=8.88 ops=8000000
 }
 .entry{
   idx=7 repo="wangyi-fudan/wyhash" algorithm="wyhash_wyrand" fn="wy32x32_wyrand"
   oracle="Wang_Yi_Official_Vectors" status="VERIFIED_MATCH"
-  throughput="433.38_M_draws_s" latency_ms=11.54 ops=5000000
+  throughput="432.19_M_draws_s" latency_ms=11.57 ops=5000000
 }
 .entry{
   idx=8 repo="skeeto/splitmix64" algorithm="SplitMix64" fn="splitmix64_step"
   oracle="Guy_Steele_SplittableRandom" status="VERIFIED_MATCH"
-  throughput="272.33_M_draws_s" latency_ms=18.36 ops=5000000
+  throughput="272.54_M_draws_s" latency_ms=18.35 ops=5000000
 }
 .entry{
   idx=9 repo="POSIX_DNS" algorithm="FNV-1a" fn="fnv1a32_step"
   oracle="FNV_Standard_RFC" status="VERIFIED_MATCH"
-  throughput="895.52_MB_s" latency_ms=5.58 bytes=5000000
+  throughput="894.59_MB_s" latency_ms=5.59 bytes=5000000
 }
 .entry{
   idx=10 repo="IEEE_802_3" algorithm="CRC-32" fn="crc32_byte"
   oracle="std_hash_Crc32_ISO_3309" status="VERIFIED_MATCH"
-  throughput="114.16_MB_s" latency_ms=4.38 bytes=500000
+  throughput="114.75_MB_s" latency_ms=4.36 bytes=500000
 }
 .entry{
   idx=11 repo="vigna/xoshiro" algorithm="xoshiro256starstar" fn="xoshiro256ss_step"
   oracle="Blackman_Vigna_Reference" status="VERIFIED_MATCH"
-  throughput="716.17_M_draws_s" latency_ms=6.98 ops=5000000
+  throughput="710.57_M_draws_s" latency_ms=7.04 ops=5000000
 }
 .entry{
   idx=12 repo="uber/h3" algorithm="Morton2D" fn="morton2d_encode"
   oracle="Z_Order_Curve_2D" status="VERIFIED_MATCH"
-  throughput="270.25_M_coords_s" latency_ms=18.50 coords=5000000
+  throughput="271.31_M_coords_s" latency_ms=18.43 coords=5000000
 }
 .entry{
   idx=13 repo="floodyberry/poly1305-donna" algorithm="Poly1305" fn="poly1305_block_step"
   oracle="RFC_8439_Key_Clamp_Modulo" status="VERIFIED_MATCH"
-  throughput="353.40_M_blocks_s" latency_ms=14.15 blocks=5000000
+  throughput="352.99_M_blocks_s" latency_ms=14.16 blocks=5000000
 }
 .entry{
   idx=14 repo="XKCP/XKCP" algorithm="Keccak-f1600" fn="keccak_theta_lane"
   oracle="NIST_FIPS_202_Keccak" status="VERIFIED_MATCH"
-  throughput="550.47_M_rounds_s" latency_ms=9.08 rounds=5000000
+  throughput="530.26_M_rounds_s" latency_ms=9.43 rounds=5000000
 }
 .entry{
   idx=15 repo="kokke/tiny-AES-c" algorithm="AES-128" fn="aes_rotword_rcon"
   oracle="NIST_FIPS_197_Appendix_A" status="VERIFIED_MATCH"
-  throughput="593.03_M_rot_s" latency_ms=8.43 words=5000000
+  throughput="569.36_M_rot_s" latency_ms=8.78 words=5000000
 }
 .entry{
-  idx=16 repo="Cyan4973/xxHash" algorithm="XXH32" fn="xxh32_avalanche"
+  idx=16 repo="protobuf-c/protobuf-c" algorithm="Protobuf_Varint_ZigZag" fn="zigzag_encode32"
+  oracle="Google_Protobuf_V3_Spec" status="VERIFIED_MATCH"
+  throughput="9206.27_M_ops_s" latency_ms=0.54 ops=5000000
+}
+.entry{
+  idx=17 repo="BLAKE2/BLAKE2" algorithm="Blake2b_G" fn="blake2b_g"
+  oracle="RFC_7693_Argon2_Winner" status="VERIFIED_MATCH"
+  throughput="373.60_M_mix_s" latency_ms=21.41 ops=8000000
+}
+.entry{
+  idx=18 repo="floodyberry/ed25519-donna" algorithm="Curve25519_FE" fn="curve25519_fold19"
+  oracle="Bernstein_RFC_8032" status="VERIFIED_MATCH"
+  throughput="8440.63_M_red_s" latency_ms=0.59 ops=5000000
+}
+.entry{
+  idx=19 repo="trezor/trezor-crypto" algorithm="RIPEMD-160" fn="ripemd_f1_f2"
+  oracle="ISO_IEC_10118_3_Bitcoin" status="VERIFIED_MATCH"
+  throughput="1161.60_M_rounds_s" latency_ms=4.30 ops=5000000
+}
+.entry{
+  idx=20 repo="lemire/FastBitset" algorithm="Popcount64" fn="popcount64"
+  oracle="std_math_popCount_Lemire" status="VERIFIED_MATCH"
+  throughput="2646.94_M_words_s" latency_ms=1.89 ops=5000000
+}
+.entry{
+  idx=21 repo="Cyan4973/xxHash" algorithm="XXH32" fn="xxh32_avalanche"
   oracle="Yann_Collet_Reference_Vectors" status="VERIFIED_MATCH"
-  throughput="284.36_M_hashes_s" latency_ms=17.58 ops=5000000
+  throughput="284.70_M_hashes_s" latency_ms=17.56 ops=5000000
 }
 .entry{
-  idx=17 repo="torvalds/linux" algorithm="Binary_GCD" fn="lin_opt_gcd"
+  idx=22 repo="torvalds/linux" algorithm="Binary_GCD" fn="lin_opt_gcd"
   oracle="lib_math_gcd_c_oracle" status="VERIFIED_MATCH"
-  throughput="13.89_M_pairs_s" latency_ms=71.99 ops=1000000
+  throughput="13.82_M_pairs_s" latency_ms=72.36 ops=1000000
 }
 .entry{
-  idx=18 repo="bitcoin/bitcoin" algorithm="SHA256d_PoW" fn="btc_pow_verify"
+  idx=23 repo="bitcoin/bitcoin" algorithm="SHA256d_PoW" fn="btc_pow_verify"
   oracle="std_crypto_Sha256_genesis_0" status="VERIFIED_MATCH"
-  throughput="105722.54_Hashes_s" latency_ms=94.59 hashes=10000
+  throughput="124996.07_Hashes_s" latency_ms=80.00 hashes=10000
 }
 .simd_audit{
   lanes=8 target="@Vector(8,u32)"
-  scalar_ms=35.14 simd_ms=9.27 ops=10000000
+  scalar_ms=35.10 simd_ms=9.27 ops=10000000
   relative_speedup="3.79x" status="VERIFIED_MATCH_8_OF_8"
 }
