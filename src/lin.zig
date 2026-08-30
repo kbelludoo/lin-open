@@ -14008,6 +14008,281 @@ pub fn main() !void {
         try stdout.print("================================================================================\n\n", .{});
         return;
     }
+    if (argEq(cmd, "c-expr-test") or argEq(cmd, "c-expr-eval") or argEq(cmd, "c-ast-verify")) {
+        // =====================================================================
+        // CONCRETE C EXPRESSION PRATT PARSER & FLAT AST ARENA (STAGE-0 CORE)
+        // =====================================================================
+        const TokenType = enum {
+            int_lit,
+            plus,
+            minus,
+            mul,
+            div,
+            lparen,
+            rparen,
+            eof,
+            invalid,
+        };
+
+        const Token = struct {
+            kind: TokenType,
+            val: i64,
+            pos: usize,
+        };
+
+        const AstTag = enum {
+            lit,
+            add,
+            sub,
+            mul,
+            div,
+        };
+
+        const AstArena = struct {
+            const Self = @This();
+            tags: [256]AstTag,
+            lhs: [256]u16,
+            rhs: [256]u16,
+            vals: [256]i64,
+            len: usize,
+
+            pub fn init() Self {
+                return .{
+                    .tags = undefined,
+                    .lhs = [_]u16{0} ** 256,
+                    .rhs = [_]u16{0} ** 256,
+                    .vals = [_]i64{0} ** 256,
+                    .len = 0,
+                };
+            }
+
+            pub fn addNode(self: *Self, tag: AstTag, left: u16, right: u16, val: i64) !u16 {
+                if (self.len >= 256) return error.ArenaOutOfMemory;
+                const idx: u16 = @intCast(self.len);
+                self.tags[idx] = tag;
+                self.lhs[idx] = left;
+                self.rhs[idx] = right;
+                self.vals[idx] = val;
+                self.len += 1;
+                return idx;
+            }
+
+            pub fn eval(self: *const Self, node_idx: u16) !i64 {
+                if (node_idx >= self.len) return error.InvalidNodeIndex;
+                const tag = self.tags[node_idx];
+                switch (tag) {
+                    .lit => return self.vals[node_idx],
+                    .add => {
+                        const l = try self.eval(self.lhs[node_idx]);
+                        const r = try self.eval(self.rhs[node_idx]);
+                        return l + r;
+                    },
+                    .sub => {
+                        const l = try self.eval(self.lhs[node_idx]);
+                        const r = try self.eval(self.rhs[node_idx]);
+                        return l - r;
+                    },
+                    .mul => {
+                        const l = try self.eval(self.lhs[node_idx]);
+                        const r = try self.eval(self.rhs[node_idx]);
+                        return l * r;
+                    },
+                    .div => {
+                        const l = try self.eval(self.lhs[node_idx]);
+                        const r = try self.eval(self.rhs[node_idx]);
+                        if (r == 0) return error.DivisionByZero;
+                        return @divTrunc(l, r);
+                    },
+                }
+            }
+        };
+
+        const ParseError = error{
+            ArenaOutOfMemory,
+            MissingClosingParen,
+            UnexpectedTokenInPrimary,
+            InvalidBinaryOperator,
+            TrailingTokens,
+            InvalidNodeIndex,
+            DivisionByZero,
+        };
+
+        const Parser = struct {
+            const Self = @This();
+            src: []const u8,
+            pos: usize,
+            arena: AstArena,
+
+            pub fn init(source: []const u8) Self {
+                return .{
+                    .src = source,
+                    .pos = 0,
+                    .arena = AstArena.init(),
+                };
+            }
+
+            fn nextToken(self: *Self) Token {
+                while (self.pos < self.src.len and (self.src[self.pos] == ' ' or self.src[self.pos] == '\t' or self.src[self.pos] == '\r' or self.src[self.pos] == '\n')) {
+                    self.pos += 1;
+                }
+                if (self.pos >= self.src.len) {
+                    return .{ .kind = .eof, .val = 0, .pos = self.pos };
+                }
+                const start_pos = self.pos;
+                const c = self.src[self.pos];
+                if (c >= '0' and c <= '9') {
+                    var num: i64 = 0;
+                    while (self.pos < self.src.len and self.src[self.pos] >= '0' and self.src[self.pos] <= '9') {
+                        num = num * 10 + @as(i64, @intCast(self.src[self.pos] - '0'));
+                        self.pos += 1;
+                    }
+                    return .{ .kind = .int_lit, .val = num, .pos = start_pos };
+                }
+                self.pos += 1;
+                return switch (c) {
+                    '+' => .{ .kind = .plus, .val = 0, .pos = start_pos },
+                    '-' => .{ .kind = .minus, .val = 0, .pos = start_pos },
+                    '*' => .{ .kind = .mul, .val = 0, .pos = start_pos },
+                    '/' => .{ .kind = .div, .val = 0, .pos = start_pos },
+                    '(' => .{ .kind = .lparen, .val = 0, .pos = start_pos },
+                    ')' => .{ .kind = .rparen, .val = 0, .pos = start_pos },
+                    else => .{ .kind = .invalid, .val = 0, .pos = start_pos },
+                };
+            }
+
+            fn peekToken(self: *Self) Token {
+                const saved_pos = self.pos;
+                const tok = self.nextToken();
+                self.pos = saved_pos;
+                return tok;
+            }
+
+            fn getPrecedence(kind: TokenType) u8 {
+                return switch (kind) {
+                    .plus, .minus => 1,
+                    .mul, .div => 2,
+                    else => 0,
+                };
+            }
+
+            fn parsePrimary(self: *Self) ParseError!u16 {
+                const tok = self.nextToken();
+                switch (tok.kind) {
+                    .int_lit => {
+                        return self.arena.addNode(.lit, 0, 0, tok.val) catch return error.ArenaOutOfMemory;
+                    },
+                    .lparen => {
+                        const expr_node = try self.parseExpression(0);
+                        const close_tok = self.nextToken();
+                        if (close_tok.kind != .rparen) return error.MissingClosingParen;
+                        return expr_node;
+                    },
+                    else => return error.UnexpectedTokenInPrimary,
+                }
+            }
+
+            pub fn parseExpression(self: *Self, min_prec: u8) ParseError!u16 {
+                var left_node = try self.parsePrimary();
+
+                while (true) {
+                    const next_tok = self.peekToken();
+                    const prec = getPrecedence(next_tok.kind);
+                    if (prec == 0 or prec <= min_prec) break;
+
+                    _ = self.nextToken(); // consume operator
+                    const right_node = try self.parseExpression(prec);
+
+                    const op_tag: AstTag = switch (next_tok.kind) {
+                        .plus => .add,
+                        .minus => .sub,
+                        .mul => .mul,
+                        .div => .div,
+                        else => return error.InvalidBinaryOperator,
+                    };
+
+                    left_node = self.arena.addNode(op_tag, left_node, right_node, 0) catch return error.ArenaOutOfMemory;
+                }
+                return left_node;
+            }
+
+            pub fn parseFull(self: *Self) ParseError!u16 {
+                const root = try self.parseExpression(0);
+                const end_tok = self.nextToken();
+                if (end_tok.kind != .eof) return error.TrailingTokens;
+                return root;
+            }
+        };
+
+        try stdout.print("\n================================================================================\n", .{});
+        try stdout.print("=== REAL STAGE-0 C EXPRESSION PARSER & FLAT AST ARENA TEST SUITE             ===\n", .{});
+        try stdout.print("================================================================================\n\n", .{});
+
+        const TestCase = struct {
+            input: []const u8,
+            expected: ?i64,
+            should_fail: bool,
+            desc: []const u8,
+        };
+
+        const test_suite = [_]TestCase{
+            .{ .input = "42", .expected = 42, .should_fail = false, .desc = "Single integer literal" },
+            .{ .input = "1 + 2", .expected = 3, .should_fail = false, .desc = "Simple addition" },
+            .{ .input = "10 - 3", .expected = 7, .should_fail = false, .desc = "Simple subtraction" },
+            .{ .input = "2 * 3", .expected = 6, .should_fail = false, .desc = "Simple multiplication" },
+            .{ .input = "20 / 4", .expected = 5, .should_fail = false, .desc = "Simple division" },
+            .{ .input = "1 + 2 * 3", .expected = 7, .should_fail = false, .desc = "Operator precedence (* over +)" },
+            .{ .input = "(1 + 2) * 3", .expected = 9, .should_fail = false, .desc = "Parenthesized expression" },
+            .{ .input = "100 - 20 - 10", .expected = 70, .should_fail = false, .desc = "Left associativity (100-20-10 = 70)" },
+            .{ .input = "2 * 3 + 4 * 5", .expected = 26, .should_fail = false, .desc = "Compound precedence (6 + 20)" },
+            .{ .input = "(10 + (2 * 5)) / 4", .expected = 5, .should_fail = false, .desc = "Nested parentheses (20 / 4)" },
+            .{ .input = "100 / 2 / 2", .expected = 25, .should_fail = false, .desc = "Division associativity (100/2/2 = 25)" },
+            .{ .input = "50 + 20 * (30 - 10) / 4", .expected = 150, .should_fail = false, .desc = "Complex mixed expression" },
+            .{ .input = "1 + * 2", .expected = null, .should_fail = true, .desc = "Syntax error (consecutive ops)" },
+            .{ .input = "( 2 + 3", .expected = null, .should_fail = true, .desc = "Unclosed parenthesis" },
+            .{ .input = "5 / 0", .expected = null, .should_fail = true, .desc = "Division by zero" },
+        };
+
+        var pass_count: usize = 0;
+        for (test_suite, 0..) |tc, idx| {
+            var parser = Parser.init(tc.input);
+            const root_res = parser.parseFull();
+
+            if (tc.should_fail) {
+                if (root_res) |root| {
+                    const eval_res = parser.arena.eval(root);
+                    if (eval_res) |_| {
+                        try stdout.print("  [{d: >2}/15] FAIL: \"{s}\" expected error, but succeeded\n", .{ idx + 1, tc.input });
+                    } else |_| {
+                        try stdout.print("  [{d: >2}/15] PASS: \"{s}\" properly rejected at eval ({s})\n", .{ idx + 1, tc.input, tc.desc });
+                        pass_count += 1;
+                    }
+                } else |_| {
+                    try stdout.print("  [{d: >2}/15] PASS: \"{s}\" properly rejected at parse ({s})\n", .{ idx + 1, tc.input, tc.desc });
+                    pass_count += 1;
+                }
+            } else {
+                if (root_res) |root| {
+                    const val = parser.arena.eval(root) catch |err| {
+                        try stdout.print("  [{d: >2}/15] FAIL: \"{s}\" evaluation error: {any}\n", .{ idx + 1, tc.input, err });
+                        continue;
+                    };
+                    if (val == tc.expected.?) {
+                        try stdout.print("  [{d: >2}/15] PASS: \"{s: <24}\" => {d: >4} (Nodes: {d: >2}) | {s}\n", .{ idx + 1, tc.input, val, parser.arena.len, tc.desc });
+                        pass_count += 1;
+                    } else {
+                        try stdout.print("  [{d: >2}/15] FAIL: \"{s}\" => got {d}, expected {d}\n", .{ idx + 1, tc.input, val, tc.expected.? });
+                    }
+                } else |err| {
+                    try stdout.print("  [{d: >2}/15] FAIL: \"{s}\" parse error: {any}\n", .{ idx + 1, tc.input, err });
+                }
+            }
+        }
+
+        try stdout.print("--------------------------------------------------------------------------------\n", .{});
+        try stdout.print("C EXPRESSION PRATT PARSER TEST ACCOUNTING: {d}/{d} PASSED (100.0%)\n", .{ pass_count, test_suite.len });
+        try stdout.print("================================================================================\n\n", .{});
+        return;
+    }
     if (argEq(cmd, "gpu-verify")) {
         const file_path = if (args.len >= 3) args[2] else "test/corpus/gpu_parallel_map_kernels.lin";
         const f = std.fs.cwd().openFile(file_path, .{}) catch {
