@@ -7556,6 +7556,13 @@ pub fn main() !void {
             var ledger_digest: [32]u8 = undefined;
             ledger_hasher.final(&ledger_digest);
 
+            var cert_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+            cert_hasher.update(&compiler_digest);
+            cert_hasher.update(&corpus_digest);
+            cert_hasher.update(&ledger_digest);
+            var cert_digest: [32]u8 = undefined;
+            cert_hasher.final(&cert_digest);
+
             try stdout.print("@LIN:SEMANTIC_PRESERVATION_PROVENANCE:1.3.0\n", .{});
             try stdout.print(".host=\"linux-x86_64\"\n", .{});
             try stdout.print(".build_mode=\"ReleaseFast\"\n", .{});
@@ -7565,11 +7572,21 @@ pub fn main() !void {
             try stdout.print(".total_targets={d}\n", .{corpus_targets.len});
             try stdout.print(".total_steps={d}\n", .{total_steps});
             if (confirmed_count == corpus_targets.len) {
-                try stdout.print(".integrity_gate=\"PASS\"\n", .{});
+                try stdout.print(".integrity_gate=\"PASS\"\n\n", .{});
+            } else {
+                try stdout.print(".integrity_gate=\"FAIL\"\n\n", .{});
+            }
+
+            try stdout.print("@LIN:SEMANTIC_CERTIFICATE:1.0.0\n", .{});
+            try stdout.print(".compiler_sha256=\"{s}\"\n", .{std.fmt.fmtSliceHexLower(&compiler_digest)});
+            try stdout.print(".corpus_sha256=\"{s}\"\n", .{std.fmt.fmtSliceHexLower(&corpus_digest)});
+            try stdout.print(".ledger_sha256=\"{s}\"\n", .{std.fmt.fmtSliceHexLower(&ledger_digest)});
+            try stdout.print(".certificate_id=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&cert_digest)});
+            try stdout.print(".targets={d}\n.confirmed={d}\n.refuted={d}\n.steps={d}\n", .{ corpus_targets.len, confirmed_count, corpus_targets.len - confirmed_count, total_steps });
+            if (confirmed_count == corpus_targets.len) {
                 try stdout.print(".status=\"PASS\"\n", .{});
                 return;
             } else {
-                try stdout.print(".integrity_gate=\"FAIL\"\n", .{});
                 try stdout.print(".status=\"FAIL\"\n", .{});
                 std.process.exit(1);
             }
