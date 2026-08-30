@@ -1,0 +1,40 @@
+@RULEL:ARENA_SUGESTOES:1.0.0
+~R{.m=meta .p=problemas .a=adicionar .f=remover .e=estruturas .x=executivo .v=veredito}
+.m{fonte=arena.ai modo=direct modelo="Alibaba (Max)" data=2026-08-30 alvo=src/indice.lin sessao=https://arena.ai/c/01a054ab-4329-7e95-abc5-fce1e10c1b64 coleta=navegador_real_brave_cdp}
+.p{
+  P1=mismatch_comentario_7_vs_codigo_8(subsistema_8_fantasma_sem_documentacao)
+  P2=numero_magico_sem_semantica(101|202|...|9999 opacos ao leitor)
+  P3=explain_how_it_operates_stub(retorna 1 para 100-900 sem explicar)
+  P4=thresholds_arbitrarios(gates>=15 e verdict=9999 sem origem documentada)
+  P5=conteudo_rico_so_em_comentario(codigo executavel = esqueleto int)
+  P6=macro_tilde_G_definida_mas_nao_usada_nas_funcoes
+}
+.a{
+  A1=constantes_nomeadas($STATUS_SUPPLY_CHAIN_ACTIVE=404 em vez de literal)
+  A2=subsistemas_8_a_15(type_system|modules|error_handling|memory_model|ffi|stdlib|tooling_dx|macros)
+  A3=@changelog{0.2=merkle_temporal;0.1=bootstrap_5_subsistemas}
+  A4=@depends{3->1_2;5->4;6->5}(grafo de dependencia entre subsistemas)
+  A5=faixas_semanticas_de_id(100-199=frontend;200-299=workload;300-399=silicon;400-499=supply;500-599=notarization;600-699=keys;700-799=verification;800-899=type_modules;900-999=tooling)
+  A6=tipo_estruturado_percent_Capability{id;name;status;layer} no lugar de int solto
+  A7=atributo_ arroba_todo("implementar despacho por capability_id") para stubs
+  A8=self_check_lin(consistencia: capability tem implementacao; faixas nao colidem; depends sem ciclos; ^0=ok)
+  A9=separacao_declarativo_imperativo(indice.lin so registro @capability(N,"nome",$LAYER,$STATUS); logica em src/capabilities/*.lin)
+}
+.f{
+  R1=^lossy=false_do_header(ruido se default do schema)
+  R2=macro_tilde_G_do_indice(mover para syntax.lin ou stdlib/macros.lin; indice deve ser declarativo)
+  R3=get_master_verdict_summary_como_esta(ou documenta origem dos numeros ou move para test_oracle.lin)
+}
+.e{
+  E1=indice_declarativo_com_@capability
+  E2=implementacao_em_src/capabilities/<subsystem>.lin
+  E3=verificacao_em_test_oracle.lin
+}
+.x{
+  P0=corrigir_mismatch_7v8(5min);P0=constantes_nomeadas(20min)
+  P1=subsistemas_8_a_15(1-2h);P1=faixas_semanticas_id(30min)
+  P2=separar_declarativo_imperativo(2-4h);P2=tipo_percent_Capability(1h)
+  P3=@depends_e_self_check(2h)
+}
+.v{tese_maior="transformar o comentario gigante em dados reais no codigo; hoje a informacao rica esta em texto livre que o compilador ignora e o codigo e um esqueleto de int sem significado — inverta isso"}
+.v{nota_validacao=sugestoes_usam_sintaxe_inexistente_em_LIN(@todo/@capability/%Capability/$CONST/@changelog/@depends) — candidatas a novas features da linguagem, nao patch direto}

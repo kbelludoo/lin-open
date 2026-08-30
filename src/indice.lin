@@ -1,11 +1,11 @@
 @LIN:L1c:0.2
-^schema_once ^lossy=false ^ops=lin_master_index_v320
+^schema_once ^lossy=false ^ops=lin_master_index_v360
 ~G{?=if #=for ^=ret :else}
 
 // ============================================================================
 // LIN MASTER CAPABILITY INDEX & ARCHITECTURAL EXECUTION ATLAS (indice.lin)
 // ============================================================================
-// O QUE LIN FAZ E COMO FAZ:
+// O QUE LIN FAZ E COMO FAZ (9 SUBSISTEMAS PRINCIPAIS):
 //
 // 1. FRONTEND, PARSING & COMPILATION:
 //    - O que faz: Transpila, formata e valida código LIN (.lin) e RULEL (.rulel).
@@ -19,64 +19,77 @@
 //    - O que faz: Executa kernels com paridade bit-exact em GPU (AMD ROCm gfx1030) e CPU (Zen3).
 //    - Como faz: Geração de OpenCL C nativo, despacho assíncrono e verificação por triplo oráculo.
 //
-// 4. SUPPLY CHAIN & TEMPORAL MERKLE PROVENANCE:
-//    - O que faz: Rastreia proveniência de ponta a ponta, revogações e progressão monotônica.
-//    - Como faz: Redução Merkle binária por pares e acumulador de estado temporal S_t.
+// 4. SUPPLY CHAIN & HIERARCHICAL MERKLE REDUCTION:
+//    - O que faz: Rastreia proveniência de artefatos de build e ligações binárias.
+//    - Como faz: Redução Merkle binária por pares (Pairwise Merkle) gerando digest canônico.
 //
-// 5. EXTERNAL NOTARIZATION & ANTI-EQUIVOCATION:
+// 5. TEMPORAL MONOTONIC LEDGER & REVOCATION ENGINE:
+//    - O que faz: Garante continuidade temporal sem rollback e revogação monotônica.
+//    - Como faz: Acumulador de estado temporal S_t e verificação estrita de épocas crescentes.
+//
+// 6. WITNESS QUORUM & ANTI-EQUIVOCATION NOTARIZATION:
 //    - O que faz: Previne split-view e notaria Signed Tree Heads (STH).
-//    - Como faz: Quórum M-of-N de testemunhas soberanas e provas de consistência append-only.
+//    - Como faz: Quórum M-of-N de testemunhas soberanas e provas append-only.
 //
-// 6. DYNAMIC QUORUM, KEY SUCCESSION & DISASTER RECOVERY:
+// 7. DYNAMIC QUORUM, KEY SUCCESSION & DISASTER RECOVERY:
 //    - O que faz: Rotaciona chaves e recupera autoridade pós-comprometimento sem reancoragem manual.
 //    - Como faz: Compromisso criptográfico de transição T_t e isolamento de chaves afetadas.
 //
-// 7. SOVEREIGN EXTERNAL VERIFICATION PLANE (ZERO-TRUST):
+// 8. SOVEREIGN EXTERNAL VERIFICATION PLANE & POLYGLOT PARITY:
 //    - O que faz: Permite auditoria completa e independente por terceiros (lin verify-all).
 //    - Como faz: Desacoplamento estrito entre Prover e Verifier, e paridade polyglot conformante.
+//
+// 9. MULTI-DOMAIN FEDERATION & PARTITION-TOLERANT GOVERNANCE:
+//    - O que faz: Intercâmbio de artefatos entre domínios sem raiz central e provas de fraude (Fraud Proofs).
+//    - Como faz: Reconciliação offline pós-partição e isolamento BFT de notários fraudulentos.
 // ============================================================================
 
 !query_subsystem_capability(subsystem_id: int) -> int {
     status = 0;
-    // 1: Frontend & Lexer/Parser Engine
+    // 1: Frontend & Lexer/Parser Engine (Faixa 100-199)
     ?(subsystem_id == 1) {
-        status = 101;
+        status = 100;
     }
-    // 2: Adaptive Workload Planner & Replanning
+    // 2: Adaptive Workload Planner & Replanning (Faixa 200-299)
     ?(subsystem_id == 2) {
-        status = 202;
+        status = 200;
     }
-    // 3: Physical Hardware Identity & OpenCL Silicon Bridge
+    // 3: Physical Hardware Identity & OpenCL Silicon Bridge (Faixa 300-399)
     ?(subsystem_id == 3) {
-        status = 303;
+        status = 300;
     }
-    // 4: Hierarchical Pairwise Merkle & Supply Chain Ledger
+    // 4: Hierarchical Pairwise Merkle & Supply Chain Ledger (Faixa 400-499)
     ?(subsystem_id == 4) {
-        status = 404;
+        status = 400;
     }
-    // 5: Monotonic Temporal Ledger & Revocation Engine
+    // 5: Monotonic Temporal Ledger & Revocation Engine (Faixa 500-599)
     ?(subsystem_id == 5) {
-        status = 505;
+        status = 500;
     }
-    // 6: Witness Quorum & Anti-Equivocation Transparency Notary
+    // 6: Witness Quorum & Anti-Equivocation Transparency Notary (Faixa 600-699)
     ?(subsystem_id == 6) {
-        status = 606;
+        status = 600;
     }
-    // 7: Dynamic Quorum Reconfiguration & Disaster Recovery
+    // 7: Dynamic Quorum Reconfiguration & Disaster Recovery (Faixa 700-799)
     ?(subsystem_id == 7) {
-        status = 707;
+        status = 700;
     }
-    // 8: Sovereign External Verification Plane & Polyglot Parity
+    // 8: Sovereign External Verification Plane & Polyglot Parity (Faixa 800-899)
     ?(subsystem_id == 8) {
-        status = 808;
+        status = 800;
+    }
+    // 9: Multi-Domain Federation & Partitioned Governance (Faixa 900-999)
+    ?(subsystem_id == 9) {
+        status = 900;
     }
     ^status;
 }
 
 !explain_how_it_operates(capability_id: int) -> int {
     mechanism = 0;
+    // Valida se o ID pertence a uma das 9 faixas semânticas ativas (100 a 999)
     ?(capability_id >= 100) {
-        ?(capability_id <= 900) {
+        ?(capability_id <= 999) {
             mechanism = 1;
         }
     }
@@ -85,9 +98,10 @@
 
 !get_master_verdict_summary(total_gates_passed: int, common_mode_divergences: int) -> int {
     verdict = 0;
-    ?(total_gates_passed >= 15) {
+    // Status 9990 = Mestre de Integridade Consolidada (>= 16 gates concluídos e 0 divergências)
+    ?(total_gates_passed >= 16) {
         ?(common_mode_divergences == 0) {
-            verdict = 9999;
+            verdict = 9990;
         }
     }
     ^verdict;
