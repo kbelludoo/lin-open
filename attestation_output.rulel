@@ -1,7 +1,7 @@
-@RULEL:LIN_ATTEST:1.5.0
+@RULEL:LIN_ATTEST:1.6.0
 ~R{.s=schema .c=claim .e=evidence .v=verification .p=proof}
 .s{
-  id="urn:lin:attestation:2026-08-30:003"
+  id="urn:lin:attestation:2026-08-30:004"
   type="DETERMINISTIC_SUPPLY_CHAIN_ATTESTATION"
   profile=["EU_CRA_PROFILE", "NIST_SP_800_218_PROFILE", "SLSA_L4_PROFILE"]
 }
@@ -9,23 +9,25 @@
   target_device="gfx1030"
   host="CPU_ZEN3_LINUX_X86_64"
   driver="AMD_ROCM_OPENCL_2.0"
-  cpu_result=-210632704
-  gpu_result=-210632704
-  oracle_result=-210632704
+  cpu_result=-630063104
+  gpu_result=-630063104
+  oracle_result=-630063104
   bit_exact_parity=true
 }
 .e{
-  repo_url="https://github.com/phoboslab/qoi.git"
-  source_blob_oid="e09d3a43dc3ce04cdb2945f88b08beee1f691502"
-  blob_bytes=18326
-  mir_hash="sha256:3c8687bbc4167679cd6ff98fd06ebc993f1dd6940e572b0bfa6a6e89c659bfc9"
-  kernel_symbol="attest_kernel_mod_pass1_tree"
+  source_file="test/corpus/gpu_parallel_map_kernels.lin"
+  source_blob_oid="b28f7db1e98ded1e4126feffd3b5d2bef6ab2eca"
+  blob_bytes=2783
+  mir_hash="sha256:a774a8ef6ed56dd800d35e7dc7539880c71114379489cae8ff767c2816d0a76a"
+  kernel_hash="sha256:428ee42e0d5745f6f91053f06646f402f662d4cce0e34e0a1435c0589d4b5e22"
+  kernel_symbol="kernel_arithmetic"
   input_commitment="sha256:e0b249383ec6bb63adfd42a94a17b64c3116e8c08c894b98ff58286001886122"
-  merkle_root="sha256:94d5287f74a60b63f7d460720794c151c5c62f6cb901fb17b6d36e35393c1542"
+  merkle_root="sha256:cd9134d40282f6347773691843af4a916f2731bd144101770aed882f4b8b6180"
 }
 .v{
   recomputed_source_binding=true
   recomputed_mir_coherence=true
+  recomputed_kernel_lowering=true
   recomputed_input_commitment=true
   recomputed_merkle_root=true
   reproduced_oracle_execution=true
@@ -34,7 +36,7 @@
 }
 .p{
   type="Ed25519Signature2020"
-  created="2026-08-30T11:25:00Z"
-  pubkey_hex="cd3e87e3c3c5c86e7016c30bbaea41393f3b4ac40d7a7afa762f0581e82b2a88"
-  signature_hex="8039a0e8c16e49b7a382340dbaa36e2e5b86090a83a3f06d4689c1d6b60b84b3ca479350a1f182f411f27efc01da6cd4f7256905944145e7b165ea8a425d2008"
+  created="2026-08-30T11:45:00Z"
+  pubkey_hex="cdfee9f8cdd5a6bd19238941cdca618a1bbb17ba60c04e3e32c74d5ebdc6bafd"
+  signature_hex="98245076f0bb7df24ef0859e4cb286eedb61789e54cf34e7e09ecbf7835670a7514ee036cf35bdd46540b3ef7e859a3d5966934946bee716610807fbc3b5890d"
 }

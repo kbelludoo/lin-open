@@ -39,12 +39,22 @@ pub const MirToOpenCLLowerer = struct {
         kernel_name: []const u8,
         target: GpuTarget,
     ) !LoweringResult {
-        // 1. Compute MIR semantic hash (device-independent, same for all targets)
         var hasher = std.crypto.hash.sha2.Sha256.init(.{});
         hasher.update(func.name);
         for (func.blocks) |block| {
             for (block.instructions) |inst| {
-                hasher.update(std.mem.asBytes(&inst));
+                hasher.update(std.mem.asBytes(&inst.opcode));
+                hasher.update(std.mem.asBytes(&inst.ty));
+                hasher.update(std.mem.asBytes(&inst.dst));
+                hasher.update(std.mem.asBytes(&inst.imm));
+                hasher.update(std.mem.asBytes(&inst.lhs));
+                hasher.update(std.mem.asBytes(&inst.rhs));
+                hasher.update(std.mem.asBytes(&inst.extra));
+                hasher.update(std.mem.asBytes(&inst.target_block));
+                hasher.update(std.mem.asBytes(&inst.target_block_else));
+                hasher.update(std.mem.asBytes(&inst.phi_incoming_blocks));
+                hasher.update(std.mem.asBytes(&inst.phi_incoming_vals));
+                hasher.update(std.mem.asBytes(&inst.phi_count));
             }
         }
         var mir_hash: [32]u8 = undefined;
