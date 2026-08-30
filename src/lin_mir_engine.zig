@@ -12,6 +12,13 @@ pub const MirType = enum {
     v8u32,
 };
 
+pub const ParallelMapInfo = struct {
+    element_type: MirType = .i32,
+    independent_iterations: bool = true,
+    contiguous_input: bool = true,
+    contiguous_output: bool = true,
+};
+
 pub const MirOpcode = enum {
     const_val,
     param,
@@ -31,6 +38,8 @@ pub const MirOpcode = enum {
     br_jmp,
     br_if,
     ret_op,
+    parallel_map,
+    parallel_reduce,
 };
 
 pub const MirInst = struct {
@@ -143,6 +152,8 @@ pub const MirVm = struct {
                         break;
                     },
                     .ret_op => return self.v_regs[inst.lhs],
+                    .parallel_map => self.v_regs[inst.dst] = self.v_regs[inst.lhs],
+                    .parallel_reduce => self.v_regs[inst.dst] = self.v_regs[inst.lhs],
                 }
             }
         }
@@ -208,6 +219,8 @@ pub const MirAotEmitter = struct {
                         try writer.print("                continue;\n", .{});
                     },
                     .ret_op => try writer.print("                return r[{d}];\n", .{inst.lhs}),
+                    .parallel_map => try writer.print("                r[{d}] = r[{d}];\n", .{ inst.dst, inst.lhs }),
+                    .parallel_reduce => try writer.print("                r[{d}] = r[{d}];\n", .{ inst.dst, inst.lhs }),
                 }
             }
             try writer.print("            }},\n", .{});
