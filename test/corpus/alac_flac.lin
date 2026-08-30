@@ -1,0 +1,38 @@
+@LIN:L1c:0.2
+@CORPUS{origin="ffmpeg/libavcodec" algorithm="ALAC+FLAC lossless audio prediction" scope="alac_decorrelate_stereo_and_flac_lpc_restore4"}
+
+!alac_decorrelate_stereo(a: int, b: int, weight: int, shift: int): int {
+  a = a - (_lia_shr((b * weight) ,  shift));
+  b = b + a;
+  ^b;
+}
+
+!flac_lpc_restore4(c0: int, c1: int, c2: int, c3: int, d0: int, d1: int, d2: int, d3: int, residual: int, qlevel: int): int {
+  sum = 0;
+  sum = sum + (c0 * d0);
+  sum = sum + (c1 * d1);
+  sum = sum + (c2 * d2);
+  sum = sum + (c3 * d3);
+  ^residual + (_lia_shr(sum ,  qlevel));
+}
+
+!test_alac_flac_vector(): int {
+  // ALAC decorrelate_stereo (a,b,weight,shift)->b  vs gcc oracle:
+  // (100,50,3,4)->141 (-100,50,3,4)->-59 (7,-9,2,1)->7 (0,1000000,9,4)->437500 (-128,127,255,7)->-254
+  ?(alac_decorrelate_stereo(100, 50, 3, 4) != 141){ ^0 };
+  ?(alac_decorrelate_stereo(-100, 50, 3, 4) != -59){ ^0 };
+  ?(alac_decorrelate_stereo(7, -9, 2, 1) != 7){ ^0 };
+  ?(alac_decorrelate_stereo(0, 1000000, 9, 4) != 437500){ ^0 };
+  ?(alac_decorrelate_stereo(-128, 127, 255, 7) != -254){ ^0 };
+  // FLAC flac_lpc_restore4 (c0..c3,d0..d3,residual,qlevel)->out vs gcc oracle:
+  // 6/6 -> 5 -5 -5983 -10 117 -1
+  ?(flac_lpc_restore4(2, -1, 0, 0, 100, 200, 150, 300, 5, 1) != 5){ ^0 };
+  ?(flac_lpc_restore4(-2, 1, 0, 0, -100, -200, -150, 300, -5, 2) != -5){ ^0 };
+  ?(flac_lpc_restore4(10, -5, 2, -1, 1000, 2000, -1500, 3000, 17, 0) != -5983){ ^0 };
+  ?(flac_lpc_restore4(1, 1, 1, 1, 1, 2, 3, 4, -10, 4) != -10){ ^0 };
+  ?(flac_lpc_restore4(-100, 50, -25, 12, 7, -7, 7, -7, 123, 8) != 117){ ^0 };
+  ?(flac_lpc_restore4(0, 0, 0, 0, 99, 88, 77, 66, -1, 3) != -1){ ^0 };
+  ^1;
+}
+
+=ex{alac_decorrelate_stereo, flac_lpc_restore4, test_alac_flac_vector}

@@ -32,6 +32,10 @@ const xxh = @import("test/corpus/xxhash_kernels.zig");
 const lk = @import("src/lin_linux_kernel.zig");
 const miner = @import("src/lin_miner.zig");
 const simd_mod = @import("src/lin_simd_kernel.zig");
+const alac_flac = @import("test/corpus/alac_flac.zig");
+const vp8dct = @import("test/corpus/vp8_dct.zig");
+const brotli_huff = @import("test/corpus/brotli_huffman.zig");
+const aead_poly = @import("test/corpus/aead_poly1305.zig");
 
 pub fn main() !void {
     const stdout = std.io.getStdOut().writer();
@@ -793,6 +797,102 @@ pub fn main() !void {
         try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (std.crypto Sha256d Oracle)" else "MISMATCH"});
         try stdout.print("        Measured Hashrate:  {d:.2} Hashes/s ({d} double-SHA256 in {d:.2} ms)\n\n", .{
             rate, iters, @as(f64, @floatFromInt(ns)) / 1_000_000.0
+        });
+    }
+
+    // 31. FFmpeg ALAC Decorrelate Stereo + FLAC LPC Order-4 (FFmpeg libavcodec)
+    {
+        const alac_b = alac_flac.alac_decorrelate_stereo(100, 50, 3, 4);
+        const alac_neg = alac_flac.alac_decorrelate_stereo(-100, 50, 3, 4);
+        const flac_o = alac_flac.flac_lpc_restore4(2, -1, 0, 0, 100, 200, 150, 300, 5, 1);
+        const match = (alac_b == 141 and alac_neg == -59 and flac_o == 5);
+
+        const iters: usize = 5_000_000;
+        var acc: i64 = 0;
+        var timer = try std.time.Timer.start();
+        for (0..iters) |k| {
+            const w = @as(i64, @intCast(k % 255)) + 1;
+            acc +%= alac_flac.alac_decorrelate_stereo(@as(i64, @intCast(k & 0x7FF)), -7, w, 4);
+        }
+        std.mem.doNotOptimizeAway(&acc);
+        const ns = timer.read();
+        const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
+
+        try stdout.print("[31/34] FFmpeg ALAC Stereo Decorrelation (FFmpeg libavcodec/alacdsp):\n", .{});
+        try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (gcc C oracle on transpiled kernel)" else "MISMATCH"});
+        try stdout.print("        Execution Time:     {d:.2} ms for {d} decorrelations ({d:.2} M/s)\n\n", .{
+            @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
+        });
+    }
+
+    // 32. libvpx VP8 Short FDCT 4x4 (RFC 6386 14.4.2)
+    {
+        const r0 = vp8dct.vp8_dct_row_out0(5, 9, 1, 3);
+        const r1 = vp8dct.vp8_dct_row_out1(5, 9, 1, 3);
+        const c0v = vp8dct.vp8_dct_col0(5, 9, 1, 3);
+        const match = (r0 == 144 and r1 == 59 and c0v == 1);
+
+        const iters: usize = 5_000_000;
+        var acc: i64 = 0;
+        var timer = try std.time.Timer.start();
+        for (0..iters) |k| {
+            acc +%= vp8dct.vp8_dct_row_out0(@as(i64, @intCast(k & 0xFF)), 9, 1, @as(i64, @intCast(k % 17)));
+        }
+        std.mem.doNotOptimizeAway(&acc);
+        const ns = timer.read();
+        const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
+
+        try stdout.print("[32/34] libvpx VP8 Short FDCT Row/Col Step (RFC 6386 14.4.2):\n", .{});
+        try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (gcc C oracle on transpiled kernel)" else "MISMATCH"});
+        try stdout.print("        Execution Time:     {d:.2} ms for {d} transform steps ({d:.2} M steps/s)\n\n", .{
+            @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
+        });
+    }
+
+    // 33. Brotli Huffman Table Bit-Size Advance (google/brotli c/dec/huffman.c)
+    {
+        const h1 = brotli_huff.brotli_next_table_bits(1, 0, 0, 3, 2);
+        const h2 = brotli_huff.brotli_next_table_bits(0, 2, 0, 2, 1);
+        const h3 = brotli_huff.brotli_next_table_bits(0, 0, 0, 3, 2);
+        const match = (h1 == 13 and h2 == 14 and h3 == 13);
+
+        const iters: usize = 5_000_000;
+        var acc: i64 = 0;
+        var timer = try std.time.Timer.start();
+        for (0..iters) |k| {
+            acc +%= brotli_huff.brotli_next_table_bits(@as(i64, @intCast(k % 4)), 1, 0, 3, 2);
+        }
+        std.mem.doNotOptimizeAway(&acc);
+        const ns = timer.read();
+        const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
+
+        try stdout.print("[33/34] Brotli Huffman Table Bit-Size Advance (RFC 7932):\n", .{});
+        try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (gcc C oracle on transpiled kernel)" else "MISMATCH"});
+        try stdout.print("        Execution Time:     {d:.2} ms for {d} next-bits ({d:.2} M/s)\n\n", .{
+            @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
+        });
+    }
+
+    // 34. libtomcrypt Poly1305 Block Mul/Reduce Step (ChaCha20-Poly1305 AEAD)
+    {
+        const p1 = aead_poly.poly1305_l2(1, 0, 0, 0, 0, 67, 114, 121, 112, 116, 111, 103, 114);
+        const p2 = aead_poly.poly1305_l2(139005364, 14005001, 1, 12345, 67890, 1, 2, 3, 4, 5, 6, 7, 8);
+        const match = (p1 == 133531614933571 and p2 == 3121720217052711);
+
+        const iters: usize = 1_000_000;
+        var acc: i64 = 0;
+        var timer = try std.time.Timer.start();
+        for (0..iters) |k| {
+            acc +%= aead_poly.poly1305_l2(@as(i64, @intCast(k % 1000)), 14005001, 1, 0, 0, 67, 114, 121, 112, 116, 111, 103, 114);
+        }
+        std.mem.doNotOptimizeAway(&acc);
+        const ns = timer.read();
+        const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
+
+        try stdout.print("[34/34] libtomcrypt Poly1305 Block Step (ChaCha20-Poly1305 AEAD):\n", .{});
+        try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (gcc C oracle on transpiled kernel)" else "MISMATCH"});
+        try stdout.print("        Execution Time:     {d:.2} ms for {d} block steps ({d:.2} M steps/s)\n\n", .{
+            @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
         });
     }
 

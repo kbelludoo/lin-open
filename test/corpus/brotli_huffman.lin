@@ -1,0 +1,39 @@
+@LIN:L1c:0.2
+@CORPUS{origin="google/brotli" algorithm="Brotli Huffman table bit-size advance" scope="brotli_next_table_bits"}
+
+!brotli_next_table_bits(c0: int, c1: int, c2: int, len: int, root_bits: int): int {
+  left = _lia_shl(1 ,  (len - root_bits));
+  done = 0;
+  while (len < 15 && done == 0) {
+  ?(len == 0){   left = left - c0;
+ };
+  ?(len == 1){   left = left - c1;
+ };
+  ?(len == 2){   left = left - c2;
+ };
+  ?(left <= 0){   done = 1;
+ };
+  ?(left > 0){   len = len + 1;
+  left = _lia_shl(left ,  1);
+ };
+  };
+  ^len - root_bits;
+}
+
+!test_brotli_huffman_vector(): int {
+  // brotli_next_table_bits(c0,c1,c2,len,root_bits)->out, from gcc oracle
+  // on transpiled scalar C: 13 14 13 0 14 13 / 13 12 13 11
+  ?(brotli_next_table_bits(1, 0, 0, 3, 2) != 13){ ^0 };
+  ?(brotli_next_table_bits(0, 2, 0, 2, 1) != 14){ ^0 };
+  ?(brotli_next_table_bits(3, 0, 0, 4, 2) != 13){ ^0 };
+  ?(brotli_next_table_bits(1, 1, 1, 1, 1) != 0){ ^0 };
+  ?(brotli_next_table_bits(4, 0, 0, 2, 1) != 14){ ^0 };
+  ?(brotli_next_table_bits(0, 0, 0, 3, 2) != 13){ ^0 };
+  ?(brotli_next_table_bits(2, 1, 0, 5, 2) != 13){ ^0 };
+  ?(brotli_next_table_bits(1, 1, 0, 6, 3) != 12){ ^0 };
+  ?(brotli_next_table_bits(7, 0, 0, 8, 2) != 13){ ^0 };
+  ?(brotli_next_table_bits(0, 1, 2, 7, 4) != 11){ ^0 };
+  ^1;
+}
+
+=ex{brotli_next_table_bits, test_brotli_huffman_vector}
