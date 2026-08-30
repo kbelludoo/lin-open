@@ -1,0 +1,32 @@
+@LIN:L1c:0.2
+@CORPUS{origin="lin/core" algorithm="NestedMatrixSum" scope="nested_loops_and_carried_state"}
+
+!nested_matrix_sum(rows: int, cols: int): int {
+  total = 0;
+  r = 0;
+  while (r < rows) {
+    c = 0;
+    while (c < cols) {
+      total = total + 1;
+      c = c + 1;
+    }
+    r = r + 1;
+  }
+  ^total;
+}
+
+!test_nested_matrix_sum_vector(): int {
+  v0 = nested_matrix_sum(0, 0);
+  ?(v0 != 0) { ^0 };
+
+  v1 = nested_matrix_sum(2, 3);
+  ?(v1 != 6) { ^0 };
+
+  v2 = nested_matrix_sum(7, 11);
+  ?(v2 != 77) { ^0 };
+
+  v3 = nested_matrix_sum(257, 193);
+  ?(v3 != 49601) { ^0 };
+
+  ^1;
+}

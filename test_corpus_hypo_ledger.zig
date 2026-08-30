@@ -14,6 +14,7 @@ pub fn main() !void {
         .{ .file = "test/corpus/crc32.lin", .fn_name = "test_crc32_vector", .args = &.{}, .expected = "1" },
         .{ .file = "test/corpus/fast_bitset.lin", .fn_name = "test_bitset_vector", .args = &.{}, .expected = "1" },
         .{ .file = "test/corpus/siphash.lin", .fn_name = "sipround", .args = &.{ "1", "2", "3", "4", "0" }, .expected = "12885164039" },
+        .{ .file = "test/corpus/nested_matrix_sum.lin", .fn_name = "test_nested_matrix_sum_vector", .args = &.{}, .expected = "1" },
     };
 
     var verified_count: usize = 0;
