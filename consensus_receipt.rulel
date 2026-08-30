@@ -2,16 +2,21 @@
 ~R{.s=subject .r=runtimes .c=consensus}
 .s{
   bundle_file="bundle_attestation.rulel"
+  bundle_digest="sha256:b9d1b80b517f69d15d038ad3afa9342a79b0155d35b508d7de2de0b0f13f7c41"
+  canonicalization_version="LIN_CANONICAL_RECEIPT_v1.0"
+  runtime_count=3
   audit_timestamp="2026-08-30T12:24:00Z"
-  runtimes_evaluated=3
 }
 .r{
-  .r_0{ name="RUNTIME_1: HOST_NATIVE_EXECUTION" status="PASS" }
-  .r_1{ name="RUNTIME_2: HERMETIC_CLEANROOM_ENV_SANITIZED" status="PASS" }
-  .r_2{ name="RUNTIME_3: SANDBOXED_PROCESS_JAIL" status="PASS" }
+  .native{ name="HOST_NATIVE_EXECUTION" status="PASS" receipt_digest="sha256:f059162242e2f4ff9f3aa20483f2673ca4b0e2d83eaeb57d8f4f0af4f8965f9e" }
+  .cleanroom{ name="HERMETIC_CLEANROOM_ENV_SANITIZED" status="PASS" receipt_digest="sha256:f059162242e2f4ff9f3aa20483f2673ca4b0e2d83eaeb57d8f4f0af4f8965f9e" }
+  .jail{ name="SANDBOXED_PROCESS_JAIL" status="PASS" receipt_digest="sha256:f059162242e2f4ff9f3aa20483f2673ca4b0e2d83eaeb57d8f4f0af4f8965f9e" }
 }
 .c{
+  semantic_equality=true
+  canonical_byte_equality=true
+  digest_equality=true
   consensus_status="BIT_EXACT_EQUIVALENCE_ESTABLISHED"
-  consensus_merkle_digest="sha256:641589fba9384844a76c419e8292b95eb9d9ca3d5e00517f840751bba66a8b91"
+  consensus_digest="sha256:f059162242e2f4ff9f3aa20483f2673ca4b0e2d83eaeb57d8f4f0af4f8965f9e"
   cross_runtime_verified=true
 }
