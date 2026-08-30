@@ -1,0 +1,20 @@
+@RULEL:LIN_MIR_SSA_TRANSPILATION:1.0.0
+~R{.f=frontend .m=mir .t=targets .v=verdict}
+.f{
+  lexer_model="ZERO_ALLOC_SPAN_LEXER"
+  parser_architecture="SWC_ALIGNED"
+  heap_allocations_in_lexer=0
+}
+.m{
+  ir_model="MINIMALIST_SSA_QBE_ALIGNED"
+  phi_node_placement="PRUNED_SSA"
+  basic_block_ordering="DOMINATOR_TREE"
+}
+.t{
+  supported_targets=["ZIG_NATIVE", "JS_WASM", "OPENCL_SILICON_GFX1030"]
+  semantic_parity_verified=true
+}
+.v{
+  transpiler_status="SSA_MULTI_TARGET_CERTIFIED"
+  silent_divergences=0
+}
