@@ -1,0 +1,59 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=federation_governance_v360
+~G{?=if #=for ^=ret :else}
+
+// ============================================================================
+// LIN-FED-001: MULTI-DOMAIN FEDERATION & PARTITIONED GOVERNANCE
+// Status Codes:
+//   1: FEDERATED_PASS (Valid cross-domain verification)
+//   2: FRAUD_DETECTED (Equivocation/Split-View proven cryptographically)
+//   3: PARTITION_LOCAL (Safe local progress during network disconnect)
+//   4: FAIL_CLOSED (Invalid transition or unauthenticated claim)
+// ============================================================================
+
+!verify_cross_domain_attestation(art_digest_match: int, dom_a_valid: int, dom_b_valid: int) -> int {
+    status = 0;
+    ?(art_digest_match == 1) {
+        ?(dom_a_valid == 1) {
+            ?(dom_b_valid == 1) {
+                status = 1; // FEDERATED_PASS
+            }
+        }
+    }
+    ^status;
+}
+
+!evaluate_fraud_proof_equivocation(same_seq: int, different_roots: int, valid_sig_a: int, valid_sig_b: int) -> int {
+    fraud_verdict = 0;
+    ?(same_seq == 1) {
+        ?(different_roots == 1) {
+            ?(valid_sig_a == 1) {
+                ?(valid_sig_b == 1) {
+                    fraud_verdict = 2; // FRAUD_DETECTED -> Irrefutable double-sign proof
+                }
+            }
+        }
+    }
+    ^fraud_verdict;
+}
+
+!evaluate_byzantine_quorum(honest_count: int, byzantine_faults: int, threshold_m: int) -> int {
+    quorum_ok = 0;
+    effective_honest = honest_count - byzantine_faults;
+    ?(effective_honest >= threshold_m) {
+        quorum_ok = 1;
+    }
+    ^quorum_ok;
+}
+
+!evaluate_reconciliation_merge(ancestor_link_valid: int, no_equivocation: int) -> int {
+    merge_decision = 0;
+    ?(ancestor_link_valid == 1) {
+        ?(no_equivocation == 1) {
+            merge_decision = 1; // MERGE_APPROVED
+        }
+    }
+    ^merge_decision;
+}
+
+=ex{verify_cross_domain_attestation, evaluate_fraud_proof_equivocation, evaluate_byzantine_quorum, evaluate_reconciliation_merge}

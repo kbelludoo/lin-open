@@ -1,0 +1,31 @@
+@RULEL:LIN_FRAUD_PROOF:1.0.0
+~R{.s=subject .a=statement_a .b=statement_b .p=proof .v=verdict}
+
+.s{
+  fraud_type="EQUIVOCATION_DOUBLE_SIGN"
+  accused_notary="notary_malicious_04"
+  accused_domain="urn:lin:domain:org_gamma"
+  sequence=1042
+  timestamp="2026-08-30T18:58:00Z"
+}
+
+.a{
+  sth_root_a="sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  signature_a="sig_notary_04_statement_A"
+}
+
+.b{
+  sth_root_b="sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  signature_b="sig_notary_04_statement_B"
+}
+
+.p{
+  proof_digest="sha256:5e7c37a22a36bcf81de68a2af8acf36f4eef9bcfa6b5539df0d9365743cce4c1"
+  independent_verification_status="PROVEN_FRAUD"
+  accuser_trust_independent=true
+}
+
+.v{
+  action_required="IMMEDIATE_QUARANTINE_AND_EXCLUSION"
+  roster_mutation_admissible=true
+}

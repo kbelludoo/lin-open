@@ -1,0 +1,24 @@
+@RULEL:LIN_TRUST_DOMAIN:1.0.0
+~R{.d=domain .p=policy .r=roster .v=verdict}
+
+.d{
+  domain_id="urn:lin:domain:org_beta"
+  trust_root="sha256:2222222222222222222222222222222222222222222222222222222222222222"
+  registry_epoch=204
+  status="ACTIVE"
+}
+
+.p{
+  cross_domain_policy="AUTHENTICATED_PEER"
+  quarantine_threshold=1
+  byzantine_tolerance="BFT_2_OF_7"
+}
+
+.r{
+  notary_nodes=["beta_01", "beta_02", "beta_03", "beta_04", "beta_05", "beta_06", "beta_07"]
+  active_quorum=5
+}
+
+.v{
+  domain_integrity="SOVEREIGN_AUTHENTICATED"
+}
