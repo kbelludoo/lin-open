@@ -1,92 +1,243 @@
-//! lin_self_optimizing_runtime.zig — Self-Optimizing Heterogeneous Runtime Engine (LIN-GPU-011)
-//!
-//! Architectural Invariants:
-//!   1. Continuous physical hardware measurement (T_obs) triggers deterministic CostModel v2 evolution.
-//!   2. Linear slope regression extracts true asymptotic compute rates and bus bandwidths.
-//!   3. Performance optimization is strictly orthogonal to semantic correctness:
-//!      forall P, Execute(P, D*_v2) ==_C Execute(P, D*_v1) ==_C Oracle(P).
-//!   4. Non-retroactivity invariant: Historical decisions retain CostModel v1 hashes.
+//! lin_self_optimizing_runtime.zig — LIN-GPU-011
+//! Deterministic empirical profiling, CostModel evolution, adaptive decision hashing,
+//! and non-retroactive provenance chaining.
 
 const std = @import("std");
-const ir = @import("lin_gpu_ir.zig");
-const lowerer = @import("lin_mir_to_gpu_ir.zig");
-const emitter = @import("lin_gpu_ir_to_opencl.zig");
-const oracle = @import("lin_gpu_execution_oracle.zig");
 const planner = @import("lin_workload_planner.zig");
-const verifier = @import("lin_heterogeneous_verifier.zig");
 
-const GpuModule = ir.GpuModule;
-const WorkloadDescriptor = planner.WorkloadDescriptor;
-const CostModel = planner.CostModel;
-const ExecutionDecision = planner.ExecutionDecision;
-const ExecutionPlanner = planner.ExecutionPlanner;
-const UniversalGpuOracle = oracle.UniversalGpuOracle;
-const HeterogeneousVerifier = verifier.HeterogeneousVerifier;
+pub const CostModel = planner.CostModel;
+pub const ExecutionDecision = planner.ExecutionDecision;
 
-pub const HardwareSample = struct {
-    elements: usize,
-    data_bytes: usize,
-    t_cpu_ns: u64,
-    t_h2d_ns: u64,
-    t_kernel_ns: u64,
-    t_d2h_ns: u64,
-    t_gpu_total_ns: u64,
+pub const TimingSample = struct {
+    elements: u64,
+    bytes: u64,
+    cpu_ns: u64,
+    gpu_compute_ns: u64,
+    h2d_ns: u64,
+    d2h_ns: u64,
 };
 
-pub const CostModelEvolver = struct {
-    /// Deterministically synthesizes CostModel v2 from physical hardware samples using asymptotic slope regression
-    pub fn evolve(v1: CostModel, samples: []const HardwareSample) CostModel {
-        if (samples.len < 2) return v1;
+pub const ProfileSummary = struct {
+    sample_count: usize,
+    cpu_r2: f64,
+    gpu_r2: f64,
+    h2d_r2: f64,
+    d2h_r2: f64,
+    cpu_intercept_ns: f64,
+    cpu_ns_per_element: f64,
+    gpu_launch_ns: f64,
+    gpu_ns_per_element: f64,
+    h2d_intercept_ns: f64,
+    h2d_ns_per_byte: f64,
+    d2h_intercept_ns: f64,
+    d2h_ns_per_byte: f64,
+};
 
-        const s_min = samples[0];
-        const s_max = samples[samples.len - 1];
+pub const EvolutionRecord = struct {
+    parent_model_hash: [32]u8,
+    child_model_hash: [32]u8,
+    sample_set_hash: [32]u8,
+    version_from: u32,
+    version_to: u32,
+    minimum_r2: f64,
+    achieved_r2: f64,
+};
 
-        const delta_n = @as(f64, @floatFromInt(s_max.elements - s_min.elements));
-        const delta_bytes = @as(f64, @floatFromInt(s_max.data_bytes - s_min.data_bytes));
+pub const EvolutionResult = struct {
+    model: CostModel,
+    profile: ProfileSummary,
+    record: EvolutionRecord,
+};
 
-        const delta_cpu = @as(f64, @floatFromInt(s_max.t_cpu_ns - s_min.t_cpu_ns));
-        const delta_kern = @as(f64, @floatFromInt(s_max.t_kernel_ns - s_min.t_kernel_ns));
-        const delta_h2d = @as(f64, @floatFromInt(s_max.t_h2d_ns - s_min.t_h2d_ns));
+fn regression(xs: []const f64, ys: []const f64) struct { intercept: f64, slope: f64, r2: f64 } {
+    std.debug.assert(xs.len == ys.len);
+    std.debug.assert(xs.len >= 2);
 
-        const cpu_rate = if (delta_n > 0) @max(0.01, delta_cpu / delta_n) else v1.cpu_ns_per_element;
-        const gpu_rate = if (delta_n > 0) @max(0.005, delta_kern / delta_n) else v1.gpu_compute_ns_per_element;
-        const h2d_rate = if (delta_bytes > 0) @max(0.01, delta_h2d / delta_bytes) else v1.gpu_h2d_ns_per_byte;
+    var sx: f64 = 0.0;
+    var sy: f64 = 0.0;
+    for (xs, ys) |x, y| {
+        sx += x;
+        sy += y;
+    }
 
-        return CostModel{
-            .version = v1.version + 1,
-            .machine_fingerprint = v1.machine_fingerprint,
-            .device = v1.device,
-            .cpu_intercept_ns = v1.cpu_intercept_ns,
-            .cpu_ns_per_element = cpu_rate * 0.70 + v1.cpu_ns_per_element * 0.30,
-            .gpu_launch_ns = v1.gpu_launch_ns,
-            .gpu_h2d_ns_per_byte = h2d_rate * 0.70 + v1.gpu_h2d_ns_per_byte * 0.30,
-            .gpu_d2h_ns_per_byte = v1.gpu_d2h_ns_per_byte,
-            .gpu_compute_ns_per_element = gpu_rate * 0.70 + v1.gpu_compute_ns_per_element * 0.30,
-            .fit_quality = 0.999,
-            .measurement_count = v1.measurement_count + @as(u32, @intCast(samples.len)),
+    const n = @as(f64, @floatFromInt(xs.len));
+    const mx = sx / n;
+    const my = sy / n;
+
+    var sxx: f64 = 0.0;
+    var sxy: f64 = 0.0;
+    var sst: f64 = 0.0;
+    for (xs, ys) |x, y| {
+        const dx = x - mx;
+        const dy = y - my;
+        sxx += dx * dx;
+        sxy += dx * dy;
+        sst += dy * dy;
+    }
+
+    const slope = if (sxx == 0.0) 0.0 else sxy / sxx;
+    const intercept = my - slope * mx;
+
+    var sse: f64 = 0.0;
+    for (xs, ys) |x, y| {
+        const residual = y - (intercept + slope * x);
+        sse += residual * residual;
+    }
+
+    const raw_r2 = if (sst == 0.0) 1.0 else 1.0 - sse / sst;
+    return .{
+        .intercept = intercept,
+        .slope = slope,
+        .r2 = std.math.clamp(raw_r2, -1.0, 1.0),
+    };
+}
+
+pub const SelfOptimizingRuntime = struct {
+    pub const minimum_r2: f64 = 0.99;
+
+    pub fn computeSampleSetHash(samples: []const TimingSample) [32]u8 {
+        var h = std.crypto.hash.sha2.Sha256.init(.{});
+        h.update("LIN-011-SAMPLE-SET-V1");
+        for (samples) |s| {
+            h.update(std.mem.asBytes(&s.elements));
+            h.update(std.mem.asBytes(&s.bytes));
+            h.update(std.mem.asBytes(&s.cpu_ns));
+            h.update(std.mem.asBytes(&s.gpu_compute_ns));
+            h.update(std.mem.asBytes(&s.h2d_ns));
+            h.update(std.mem.asBytes(&s.d2h_ns));
+        }
+        var out: [32]u8 = undefined;
+        h.final(&out);
+        return out;
+    }
+
+    pub fn summarize(allocator: std.mem.Allocator, samples: []const TimingSample) !ProfileSummary {
+        if (samples.len < 4) return error.InsufficientSamples;
+
+        const xe = try allocator.alloc(f64, samples.len);
+        defer allocator.free(xe);
+        const xb = try allocator.alloc(f64, samples.len);
+        defer allocator.free(xb);
+        const cpu = try allocator.alloc(f64, samples.len);
+        defer allocator.free(cpu);
+        const gpu = try allocator.alloc(f64, samples.len);
+        defer allocator.free(gpu);
+        const h2d = try allocator.alloc(f64, samples.len);
+        defer allocator.free(h2d);
+        const d2h = try allocator.alloc(f64, samples.len);
+        defer allocator.free(d2h);
+
+        for (samples, 0..) |s, i| {
+            xe[i] = @floatFromInt(s.elements);
+            xb[i] = @floatFromInt(s.bytes);
+            cpu[i] = @floatFromInt(s.cpu_ns);
+            gpu[i] = @floatFromInt(s.gpu_compute_ns);
+            h2d[i] = @floatFromInt(s.h2d_ns);
+            d2h[i] = @floatFromInt(s.d2h_ns);
+        }
+
+        const rcpu = regression(xe, cpu);
+        const rgpu = regression(xe, gpu);
+        const rh2d = regression(xb, h2d);
+        const rd2h = regression(xb, d2h);
+
+        return .{
+            .sample_count = samples.len,
+            .cpu_r2 = rcpu.r2,
+            .gpu_r2 = rgpu.r2,
+            .h2d_r2 = rh2d.r2,
+            .d2h_r2 = rd2h.r2,
+            .cpu_intercept_ns = rcpu.intercept,
+            .cpu_ns_per_element = rcpu.slope,
+            .gpu_launch_ns = @max(0.0, rgpu.intercept),
+            .gpu_ns_per_element = @max(0.0, rgpu.slope),
+            .h2d_intercept_ns = @max(0.0, rh2d.intercept),
+            .h2d_ns_per_byte = @max(0.0, rh2d.slope),
+            .d2h_intercept_ns = @max(0.0, rd2h.intercept),
+            .d2h_ns_per_byte = @max(0.0, rd2h.slope),
         };
     }
-};
 
-pub const SelfOptimizingLedger = struct {
+    pub fn evolveCostModel(
+        allocator: std.mem.Allocator,
+        parent: CostModel,
+        samples: []const TimingSample,
+    ) !EvolutionResult {
+        const p = try summarize(allocator, samples);
+        const achieved = @min(p.cpu_r2, @min(p.gpu_r2, @min(p.h2d_r2, p.d2h_r2)));
+        if (achieved < minimum_r2)
+            return error.ModelFitBelowRequiredR2;
+
+        var child = parent;
+        child.version = parent.version + 1;
+        child.cpu_intercept_ns = p.cpu_intercept_ns;
+        child.cpu_ns_per_element = p.cpu_ns_per_element;
+        child.gpu_launch_ns = p.gpu_launch_ns;
+        child.gpu_compute_ns_per_element = p.gpu_ns_per_element;
+        child.gpu_h2d_ns_per_byte = p.h2d_ns_per_byte;
+        child.gpu_d2h_ns_per_byte = p.d2h_ns_per_byte;
+        child.fit_quality = achieved;
+        child.measurement_count = @intCast(samples.len);
+
+        return .{
+            .model = child,
+            .profile = p,
+            .record = .{
+                .parent_model_hash = parent.computeModelHash(),
+                .child_model_hash = child.computeModelHash(),
+                .sample_set_hash = computeSampleSetHash(samples),
+                .version_from = parent.version,
+                .version_to = child.version,
+                .minimum_r2 = minimum_r2,
+                .achieved_r2 = achieved,
+            },
+        };
+    }
+
+    pub fn decisionHash(decision: ExecutionDecision) [32]u8 {
+        return decision.computeDecisionHash();
+    }
+
+    pub fn semanticResultHash(result: i32) [32]u8 {
+        var h = std.crypto.hash.sha2.Sha256.init(.{});
+        h.update("LIN-011-SEMANTIC-RESULT-V1");
+        h.update(std.mem.asBytes(&result));
+        var out: [32]u8 = undefined;
+        h.final(&out);
+        return out;
+    }
+
+    /// v2 root is chained to v1. No operation here can mutate or replace v1.
     pub fn computeEvolutionRoot(
-        h_model_v1: [32]u8,
-        h_model_v2: [32]u8,
-        h_decision_v1: [32]u8,
-        h_decision_v2: [32]u8,
-        result_v1: i32,
-        result_v2: i32,
+        parent_root: [32]u8,
+        parent_model_hash: [32]u8,
+        child_model_hash: [32]u8,
+        sample_set_hash: [32]u8,
+        old_decision_hash: [32]u8,
+        new_decision_hash: [32]u8,
+        semantic_result_hash: [32]u8,
     ) [32]u8 {
-        var hasher = std.crypto.hash.sha2.Sha256.init(.{});
-        hasher.update("LIN-EVOLUTION-ROOT-V1");
-        hasher.update(&h_model_v1);
-        hasher.update(&h_model_v2);
-        hasher.update(&h_decision_v1);
-        hasher.update(&h_decision_v2);
-        hasher.update(std.mem.asBytes(&result_v1));
-        hasher.update(std.mem.asBytes(&result_v2));
-        var root: [32]u8 = undefined;
-        hasher.final(&root);
-        return root;
+        var h = std.crypto.hash.sha2.Sha256.init(.{});
+        h.update("LIN-011-EVOLUTION-ROOT-V1");
+        h.update(&parent_root);
+        h.update(&parent_model_hash);
+        h.update(&child_model_hash);
+        h.update(&sample_set_hash);
+        h.update(&old_decision_hash);
+        h.update(&new_decision_hash);
+        h.update(&semantic_result_hash);
+        var out: [32]u8 = undefined;
+        h.final(&out);
+        return out;
+    }
+
+    pub fn crossoverN(model: CostModel, bytes_per_element: f64) f64 {
+        const beta_cpu = model.cpu_ns_per_element;
+        const beta_gpu = model.gpu_compute_ns_per_element;
+        const gpu_fixed = model.gpu_launch_ns +
+            model.gpu_h2d_ns_per_byte * bytes_per_element +
+            model.gpu_d2h_ns_per_byte * 4.0;
+        if (beta_cpu <= beta_gpu) return std.math.inf(f64);
+        return gpu_fixed / (beta_cpu - beta_gpu);
     }
 };
