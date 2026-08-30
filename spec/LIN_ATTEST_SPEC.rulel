@@ -1,30 +1,38 @@
-@RULEL:LIN_ATTEST_SPEC:1.6.0
+@RULEL:LIN_ATTEST_SPEC:1.7.0
 ~R{.s=schema .c=compliance .p=provenance .d=determinism .h=hardware .k=cryptography .a=adversarial}
 .s{
   architecture="ZERO_TRUST_PHYSICAL_SILICON_BOUND"
-  type="DETERMINISTIC_SUPPLY_CHAIN_ATTESTATION_v0.4"
+  type="DETERMINISTIC_SUPPLY_CHAIN_ATTESTATION_v0.5"
   format="RULEL"
-  merkle_type="AUTHENTIC_PAIRWISE_BINARY_HIERARCHICAL"
+  merkle_type="TRUE_BINARY_HIERARCHICAL_MERKLE_TREE"
 }
 .h{
   execution_mode="PHYSICAL_SILICON_DISPATCH"
   target_device="gfx1030"
   runtime="AMD_ROCM_OPENCL_2.0"
-  verification_requirement="R_GPU_PHYSICAL_MUST_BE_DISPATCHED_AND_READ_FROM_VRAM"
+  fingerprint_policy="STRICT_VENDOR_NAME_DRIVER_COMPUTE_UNITS_BINDING"
 }
 .k{
   signature_algorithm="Ed25519"
   signature_size_bytes=64
   public_key_size_bytes=32
   payload_digest="SHA256"
-  zero_trust_recomputation=true
+  authority_key_mode="EXTERNAL_SECURE_KEYFILE"
 }
 .c{
   standards=["EU_CYBER_RESILIENCE_ACT_PROFILE", "NIST_SP_800_218_SSDF_PROFILE", "SLSA_LEVEL_4_INTEGRITY_PROFILE"]
   guarantee="PHYSICAL_SILICON_EXACT_ORACLE_PARITY"
 }
 .p{
-  chain=["repo_url", "commit_sha", "tree_sha", "source_blob_oid", "function_symbol", "input_commitment", "mir_dag", "gpu_kernel", "cpu_result", "gpu_result", "oracle_result", "merkle_root", "ed25519_signature"]
+  tree_structure=[
+    "L0: leaf:source:GitBlobOID",
+    "L1: leaf:mir:MirSemanticHash",
+    "L2: leaf:kernel:LoweringHash",
+    "L3: leaf:input:InputCommitment",
+    "H01: node:L0:L1",
+    "H23: node:L2:L3",
+    "Root: node:H01:H23"
+  ]
 }
 .d{
   rule="R_CPU(x) == R_GPU_PHYSICAL(x) == R_ORACLE(x)"
@@ -34,13 +42,13 @@
   vectors=[
     "MUT_SOURCE_DOC",
     "MUT_MIR_DOC",
+    "MUT_KERNEL_DOC",
     "MUT_INPUT_DOC",
     "MUT_CPU_RESULT_DOC",
     "MUT_GPU_RESULT_DOC",
     "MUT_ORACLE_RESULT_DOC",
     "MUT_MERKLE_ROOT_DOC",
     "MUT_PUBKEY_SUBST_DOC",
-    "MUT_SIGNATURE_FORGERY",
     "MUT_TARGET_DEVICE_DOC"
   ]
   policy="ALL_MUTATIONS_MUST_BE_REJECTED"

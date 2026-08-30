@@ -1,15 +1,29 @@
 @LIN:L1c:0.2
-^schema_once ^lossy=false ^ops=merkle_provenance
+^schema_once ^lossy=false ^ops=binary_merkle_provenance
 ~G{?=if #=for ^=ret :else}
 
-!compute_11_element_leaf_hash(repo_h, commit_h, tree_h, blob_h, src_h, fn_h, in_h, mir_h, kern_h, out_h, trace_h) {
-    leaf = (repo_h * 1000003) ^ (commit_h * 97) ^ (tree_h * 31) ^ (blob_h * 17) ^ (src_h * 13) ^ (fn_h * 7) ^ in_h ^ mir_h ^ kern_h ^ out_h ^ trace_h;
+!compute_merkle_leaf_hash(tag_id: int, content_hash: int) -> int {
+    leaf = (tag_id * 104729) + (content_hash * 31) + 17;
     ^leaf;
 }
 
-!pairwise_binary_merkle_step(left_node, right_node) {
-    node = ((left_node * 16777619) ^ (right_node * -2128831035)) + 0x517cc1b7;
-    ^node;
+!compute_merkle_parent_node(left_child: int, right_child: int) -> int {
+    parent = (left_child * 65537) + (right_child * 1009) + 42;
+    ^parent;
 }
 
-=ex{compute_11_element_leaf_hash, pairwise_binary_merkle_step}
+!verify_merkle_tree_root(h01: int, h23: int, expected_root: int) -> int {
+    root = (h01 * 65537) + (h23 * 1009) + 42;
+    valid = 0;
+    ?(root == expected_root) {
+        valid = 1;
+    }
+    ^valid;
+}
+
+!validate_hardware_fingerprint(vendor_id: int, device_id: int, compute_units: int) -> int {
+    fp = (vendor_id * 1000000) + (device_id * 1000) + compute_units;
+    ^fp;
+}
+
+=ex{compute_merkle_leaf_hash, compute_merkle_parent_node, verify_merkle_tree_root, validate_hardware_fingerprint}
