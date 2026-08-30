@@ -1,0 +1,18 @@
+@RULEL:LIN_RECEIPT:1.0.0
+~R{.s=subject .a=audit .v=verdict}
+.s{
+  bundle_file="bundle_attestation.rulel"
+  audit_timestamp="2026-08-30T12:12:00Z"
+  auditor="LIN_INDEPENDENT_THIRD_PARTY_VERIFIER"
+}
+.a{
+  recomputed_mir=true
+  recomputed_lowering=true
+  recomputed_merkle_ledger=true
+  verified_ed25519_seal=true
+  oracle_parity=true
+}
+.v{
+  status="VERIFIED_AUTHENTIC_AND_DETERMINISTIC"
+  zero_trust_passed=true
+}

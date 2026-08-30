@@ -1,10 +1,15 @@
-@RULEL:LIN_ATTEST_SPEC:2.1.0
-~R{.s=schema .c=compliance .p=provenance .d=determinism .h=hardware .k=cryptography .l=ledger .r=reporting .a=adversarial}
+@RULEL:LIN_ATTEST_SPEC:2.2.0
+~R{.s=schema .c=compliance .p=provenance .d=determinism .h=hardware .k=cryptography .l=ledger .r=reporting .b=bundle .a=adversarial}
 .s{
   architecture="ZERO_TRUST_PHYSICAL_SILICON_BOUND"
   type="DETERMINISTIC_SUPPLY_CHAIN_UNIFIED_LEDGER_v1.0"
   format="RULEL"
   merkle_type="HIERARCHICAL_2LEVEL_UNIFIED_MERKLE_LEDGER"
+}
+.b{
+  bundle_format="RULEL_CANONICAL_AUDIT_BUNDLE_v1.0"
+  replay_modes=["AIRGAP_CRYPTOGRAPHIC_REPLAY", "PHYSICAL_SILICON_REPLICATION"]
+  receipt_schema="THIRD_PARTY_AUDIT_RECEIPT_v1.0"
 }
 .h{
   execution_mode="PHYSICAL_SILICON_MULTI_KERNEL_DISPATCH"
@@ -20,11 +25,11 @@
   permutation_invariance_rule="STRICT_ORDER_BOUND_E_i_SERIALIZATION"
 }
 .r{
-  report_types=["EXECUTIVE_COMPLIANCE_SUMMARY", "AUDIT_EVIDENCE_MATRIX", "CYCLONEDX_SPDX_SBOM"]
+  report_types=["TECHNICAL_CONTROL_EVIDENCE_SUMMARY", "AUDIT_EVIDENCE_MATRIX", "CYCLONEDX_SPDX_SBOM"]
   supported_regulations=[
     "EU_CYBER_RESILIENCE_ACT_ARTICLE_10",
     "NIST_SP_800_218_SSDF_v1.1",
-    "SLSA_LEVEL_4_BUILD_INTEGRITY"
+    "SLSA_PROVENANCE_AND_INTEGRITY_MAPPING"
   ]
 }
 .k{
@@ -35,7 +40,7 @@
   authority_key_mode="EXTERNAL_SECURE_KEYFILE"
 }
 .c{
-  standards=["EU_CYBER_RESILIENCE_ACT_PROFILE", "NIST_SP_800_218_SSDF_PROFILE", "SLSA_LEVEL_4_INTEGRITY_PROFILE"]
+  standards=["EU_CYBER_RESILIENCE_ACT_PROFILE", "NIST_SP_800_218_SSDF_PROFILE", "SLSA_INTEGRITY_MAPPING_PROFILE"]
   guarantee="MULTI_KERNEL_PHYSICAL_SILICON_ORACLE_PARITY"
 }
 .p{
@@ -69,7 +74,8 @@
     "MUT_HARDWARE_FP_DOC",
     "MUT_TARGET_ARCH_DOC",
     "MUT_KERNEL_COUNT_DOC",
-    "MUT_KERNEL_PERMUTATION_SWAP"
+    "MUT_KERNEL_PERMUTATION_SWAP",
+    "MUT_BUNDLE_TAMPERED_PUBKEY"
   ]
   policy="ALL_MUTATIONS_MUST_BE_REJECTED"
 }

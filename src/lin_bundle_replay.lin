@@ -1,0 +1,44 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=bundle_replay_v220
+~G{?=if #=for ^=ret :else}
+
+!verify_bundle_integrity_code(source_ok: int, mir_ok: int, lowering_ok: int, ledger_ok: int, sig_ok: int) -> int {
+    verified = 0;
+    ?(source_ok == 1) {
+        ?(mir_ok == 1) {
+            ?(lowering_ok == 1) {
+                ?(ledger_ok == 1) {
+                    ?(sig_ok == 1) {
+                        verified = 1;
+                    }
+                }
+            }
+        }
+    }
+    ^verified;
+}
+
+!select_replay_mode_policy(has_target_gpu: int, airgap_mode: int) -> int {
+    mode = 0;
+    ?(has_target_gpu == 1) {
+        ?(airgap_mode == 0) {
+            mode = 1;
+        }
+    }
+    ?(mode == 0) {
+        mode = 2;
+    }
+    ^mode;
+}
+
+!format_replay_verdict(verified: int, total_kernels: int) -> int {
+    verdict = 0;
+    ?(verified == 1) {
+        ?(total_kernels > 0) {
+            verdict = 200;
+        }
+    }
+    ^verdict;
+}
+
+=ex{verify_bundle_integrity_code, select_replay_mode_policy, format_replay_verdict}
