@@ -7521,10 +7521,24 @@ pub fn main() !void {
                 try stdout.print(".status=\"FAIL\"\n\n", .{});
             }
 
-            try stdout.print("@LIN:SEMANTIC_PRESERVATION_PROVENANCE:1.0.0\n", .{});
+            var corpus_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+            for (corpus_targets) |t| {
+                if (std.fs.cwd().openFile(t.file, .{})) |f| {
+                    defer f.close();
+                    if (f.readToEndAlloc(LIA_ALLOC, 10 * 1024 * 1024)) |content| {
+                        defer LIA_ALLOC.free(content);
+                        corpus_hasher.update(content);
+                    } else |_| {}
+                } else |_| {}
+            }
+            var corpus_digest: [32]u8 = undefined;
+            corpus_hasher.final(&corpus_digest);
+
+            try stdout.print("@LIN:SEMANTIC_PRESERVATION_PROVENANCE:1.1.0\n", .{});
             try stdout.print(".host=\"linux-x86_64\"\n", .{});
             try stdout.print(".build_mode=\"ReleaseFast\"\n", .{});
-            try stdout.print(".corpus_checksum=\"36_CANONICAL_TARGETS_BIT_VERIFIED\"\n", .{});
+            try stdout.print(".corpus_sha256=\"{s}\"\n", .{std.fmt.fmtSliceHexLower(&corpus_digest)});
+            try stdout.print(".total_targets={d}\n", .{corpus_targets.len});
             try stdout.print(".total_steps={d}\n", .{total_steps});
             if (confirmed_count == corpus_targets.len) {
                 try stdout.print(".integrity_gate=\"PASS\"\n", .{});
