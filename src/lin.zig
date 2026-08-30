@@ -7522,22 +7522,32 @@ pub fn main() !void {
             }
 
             var corpus_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+            var ledger_hasher = std.crypto.hash.sha2.Sha256.init(.{});
             for (corpus_targets) |t| {
                 if (std.fs.cwd().openFile(t.file, .{})) |f| {
                     defer f.close();
                     if (f.readToEndAlloc(LIA_ALLOC, 10 * 1024 * 1024)) |content| {
                         defer LIA_ALLOC.free(content);
                         corpus_hasher.update(content);
+                        var target_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+                        target_hasher.update(content);
+                        var target_digest: [32]u8 = undefined;
+                        target_hasher.final(&target_digest);
+                        ledger_hasher.update(&target_digest);
                     } else |_| {}
                 } else |_| {}
             }
             var corpus_digest: [32]u8 = undefined;
             corpus_hasher.final(&corpus_digest);
 
-            try stdout.print("@LIN:SEMANTIC_PRESERVATION_PROVENANCE:1.1.0\n", .{});
+            var ledger_digest: [32]u8 = undefined;
+            ledger_hasher.final(&ledger_digest);
+
+            try stdout.print("@LIN:SEMANTIC_PRESERVATION_PROVENANCE:1.2.0\n", .{});
             try stdout.print(".host=\"linux-x86_64\"\n", .{});
             try stdout.print(".build_mode=\"ReleaseFast\"\n", .{});
             try stdout.print(".corpus_sha256=\"{s}\"\n", .{std.fmt.fmtSliceHexLower(&corpus_digest)});
+            try stdout.print(".ledger_sha256=\"{s}\"\n", .{std.fmt.fmtSliceHexLower(&ledger_digest)});
             try stdout.print(".total_targets={d}\n", .{corpus_targets.len});
             try stdout.print(".total_steps={d}\n", .{total_steps});
             if (confirmed_count == corpus_targets.len) {
