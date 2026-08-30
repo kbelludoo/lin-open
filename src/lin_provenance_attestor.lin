@@ -1,0 +1,29 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=provenance_attestor
+~G{?=if #=for ^=ret :else}
+
+!validate_provenance_node(node_id: int, hash_val: int) -> int {
+    valid = 0;
+    ?(hash_val != 0) {
+        valid = 1;
+    }
+    attest_hash = (node_id * 31) + hash_val + valid;
+    ^attest_hash;
+}
+
+!reduce_pairwise_merkle_attestation(h_left: int, h_right: int) -> int {
+    combined = (h_left * 65537) + (h_right * 257) + 104729;
+    ^combined;
+}
+
+!certify_deterministic_execution(cpu_res: int, gpu_res: int, oracle_res: int) -> int {
+    is_bit_exact = 0;
+    ?(cpu_res == gpu_res) {
+        ?(gpu_res == oracle_res) {
+            is_bit_exact = 1;
+        }
+    }
+    ^is_bit_exact;
+}
+
+=ex{validate_provenance_node, reduce_pairwise_merkle_attestation, certify_deterministic_execution}
