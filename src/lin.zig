@@ -10323,13 +10323,13 @@ pub fn main() !void {
                     try out.print("  [5/8] CPU ORACLE REPLAY ..... [PASS] (Deterministic reference execution verified)\n", .{});
                     try out.print("  [6/8] MERKLE HIERARCHY ...... [PASS] (Recomputed all 8-leaf trees & 2-level ledger root)\n", .{});
                     try out.print("  [7/8] CRYPTO SEAL ........... [PASS] (Ed25519 Authority Digital Seal Verified)\n", .{});
-                    try out.print("  [8/8] THIRD-PARTY VERDICT ... [PASS] (Mode: {s} | Zero-Trust Verification Successful)\n", .{if (airgap_mode) "AIR-GAPPED CRYPTOGRAPHIC REPLAY" else "PHYSICAL SILICON REPLICATION"});
+                    try out.print("  [8/8] REPLAY CAPABILITY ..... [PASS] (Mode: {s} | Independent Verification Verified)\n", .{if (airgap_mode) "AIR-GAPPED CRYPTOGRAPHIC REPLAY" else "PHYSICAL SILICON REPLICATION"});
                 }
             }
         };
 
         try stdout.print("\n================================================================================\n", .{});
-        try stdout.print("=== LIN-ATTEST-007: ZERO-TRUST THIRD-PARTY VERIFIER & REPLAY ENGINE          ===\n", .{});
+        try stdout.print("=== LIN-ATTEST-007: ZERO-TRUST INDEPENDENT REPLAY & AUDIT CAPABILITY         ===\n", .{});
         try stdout.print("================================================================================\n\n", .{});
         try stdout.print("Target Audit Bundle:   {s} ({d} B)\n", .{ bundle_path, bundle_bytes.len });
         try stdout.print("Audit Mode:            {s}\n\n", .{if (is_airgap) "AIR-GAPPED CRYPTOGRAPHIC REPLAY (No GPU/Driver Trust Required)" else "PHYSICAL SILICON REPLICATION"});
@@ -10347,7 +10347,7 @@ pub fn main() !void {
                 \\.s{{
                 \\  bundle_file="{s}"
                 \\  audit_timestamp="2026-08-30T12:12:00Z"
-                \\  auditor="LIN_INDEPENDENT_THIRD_PARTY_VERIFIER"
+                \\  verifier_type="INDEPENDENT_AIRGAPPED_REPLAY_ENGINE"
                 \\}}
                 \\.a{{
                 \\  recomputed_mir=true
@@ -10357,7 +10357,8 @@ pub fn main() !void {
                 \\  oracle_parity=true
                 \\}}
                 \\.v{{
-                \\  status="VERIFIED_AUTHENTIC_AND_DETERMINISTIC"
+                \\  replay_status="INDEPENDENT_REPLAY_PASS"
+                \\  external_audit_status="CAPABILITY_ESTABLISHED_PENDING_EXTERNAL_OPERATOR"
                 \\  zero_trust_passed=true
                 \\}}
                 \\
@@ -10366,7 +10367,7 @@ pub fn main() !void {
             const rf = try std.fs.cwd().createFile(rp, .{});
             defer rf.close();
             try rf.writeAll(receipt.items);
-            try stdout.print("\n[THIRD-PARTY AUDIT RECEIPT GENERATED]: Written to {s}\n", .{rp});
+            try stdout.print("\n[INDEPENDENT REPLAY RECEIPT GENERATED]: Written to {s}\n", .{rp});
         }
 
         // Extended 12/12 Zero-Trust Adversarial Bundle Challenge

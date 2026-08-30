@@ -3,7 +3,7 @@
 .s{
   bundle_file="bundle_attestation.rulel"
   audit_timestamp="2026-08-30T12:12:00Z"
-  auditor="LIN_INDEPENDENT_THIRD_PARTY_VERIFIER"
+  verifier_type="INDEPENDENT_AIRGAPPED_REPLAY_ENGINE"
 }
 .a{
   recomputed_mir=true
@@ -13,6 +13,7 @@
   oracle_parity=true
 }
 .v{
-  status="VERIFIED_AUTHENTIC_AND_DETERMINISTIC"
+  replay_status="INDEPENDENT_REPLAY_PASS"
+  external_audit_status="CAPABILITY_ESTABLISHED_PENDING_EXTERNAL_OPERATOR"
   zero_trust_passed=true
 }
