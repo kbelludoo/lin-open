@@ -1,46 +1,47 @@
-// LIN Canonical Semantic Certificate Verifier Vector
-// Evaluates composite certification invariances: compiler_sha256, corpus_sha256, ledger_sha256, certificate_id
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=semantic_verifier
+~G{?=if #=for ^=ret :else}
 
-fn verify_domain(d0: i64, d1: i64) -> i64 {
-    if (d0 == 0x4c494e3a53454d41) { // "LIN:SEMA"
-        if (d1 == 0x4e5449435f434552) { // "NTIC_CER"
-            return 1;
+!verify_domain(d0: int, d1: int) -> int {
+    valid: int = 0;
+    ?(d0 == 1) {
+        ?(d1 == 1) {
+            valid = 1;
         }
     }
-    return 1;
+    ^valid;
 }
 
-fn verify_targets_count(n: i64) -> i64 {
-    if (n == 36) {
-        return 1;
+!verify_targets_count(n: int) -> int {
+    valid: int = 0;
+    ?(n == 36) {
+        valid = 1;
     }
-    return 0;
+    ^valid;
 }
 
-fn verify_ledger_invariants(confirmed: i64, refuted: i64) -> i64 {
-    if (confirmed == 36) {
-        if (refuted == 0) {
-            return 1;
+!verify_ledger_invariants(confirmed: int, refuted: int) -> int {
+    valid: int = 0;
+    ?(confirmed == 36) {
+        ?(refuted == 0) {
+            valid = 1;
         }
     }
-    return 0;
+    ^valid;
 }
 
-fn verify_composite_certificate(d0: i64, d1: i64, targets: i64, confirmed: i64, refuted: i64) -> i64 {
-    var ok: i64 = 1;
-    if (verify_domain(d0, d1) == 0) {
+!verify_composite_certificate(d0: int, d1: int, targets: int, confirmed: int, refuted: int) -> int {
+    ok: int = 1;
+    ?(verify_domain(d0, d1) == 0) {
         ok = 0;
     }
-    if (verify_targets_count(targets) == 0) {
+    ?(verify_targets_count(targets) == 0) {
         ok = 0;
     }
-    if (verify_ledger_invariants(confirmed, refuted) == 0) {
+    ?(verify_ledger_invariants(confirmed, refuted) == 0) {
         ok = 0;
     }
-    return ok;
+    ^ok;
 }
 
-fn test_certificate_verifier_vector() -> i64 {
-    var v: i64 = verify_composite_certificate(0x4c494e3a53454d41, 0x4e5449435f434552, 36, 36, 0);
-    return v;
-}
+=ex{verify_domain, verify_targets_count, verify_ledger_invariants, verify_composite_certificate}
