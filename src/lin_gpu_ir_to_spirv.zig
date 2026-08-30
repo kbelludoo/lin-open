@@ -1,9 +1,9 @@
-//! lin_gpu_ir_to_spirv.zig — Canonical SPIR-V Emitter for LIN GPU IR (LIN-GPU-008F)
+//! lin_gpu_ir_to_spirv.zig — Canonical SPIR-V Emitter (LIN-GPU-008F)
 //!
 //! Architectural Invariants:
-//!   1. SPIRVSource = E_spirv(GpuModule) is strictly deterministic and canonical.
-//!   2. H_kernel_spirv = SHA256("LIN-SPIRV-KERNEL-V1" || H_gpuIR || CanonicalSPIRVSource).
-//!   3. Consumes ONLY GpuModule (zero hardware/backend metadata contamination).
+//!   1. Distinguishes H_spirv_text (disassembly) and H_spirv_binary.
+//!   2. Consumes ONLY GpuModule.
+//!   3. Zero hardware-specific parameters.
 
 const std = @import("std");
 const ir = @import("lin_gpu_ir.zig");
@@ -12,16 +12,17 @@ const GpuModule = ir.GpuModule;
 
 pub const GpuIrToSpirvEmitter = struct {
     pub const EmittedSpirvKernel = struct {
-        source: []const u8,
-        kernel_hash: [32]u8,
+        text_source: []const u8,
+        text_hash: [32]u8,
+        binary_hash: [32]u8,
         gpu_ir_hash: [32]u8,
 
         pub fn deinit(self: EmittedSpirvKernel, allocator: std.mem.Allocator) void {
-            allocator.free(self.source);
+            allocator.free(self.text_source);
         }
     };
 
-    /// Canonical, deterministic SPIR-V text/disassembly emitter
+    /// Canonical SPIR-V text emitter
     pub fn emit(allocator: std.mem.Allocator, module: GpuModule) !EmittedSpirvKernel {
         const gpu_ir_hash = module.computeGpuIrHash();
         var buf = std.ArrayList(u8).init(allocator);
@@ -30,8 +31,8 @@ pub const GpuIrToSpirvEmitter = struct {
         try writer.print(
             \\; SPIR-V
             \\; Version: 1.5
-            \\; Generator: LIN Universal GPU IR Emitter; 1
-            \\; Bound: 64
+            \\; Generator: LIN Universal GPU IR Emitter; 2
+            \\; Bound: 128
             \\; Schema: 0
             \\; gpu_ir_hash: sha256:{s}
             \\; numeric_contract: {s}
@@ -47,25 +48,34 @@ pub const GpuIrToSpirvEmitter = struct {
 
         for (module.kernels) |k| {
             try writer.print(
-                \\; Kernel: {s}
+                \\; Kernel: {s} (Kind: {s})
                 \\; LocalMemoryBytes: {d}
                 \\               OpName %{s} "{s}"
                 \\
-            , .{ k.name, k.local_scratch_bytes, k.name, k.name });
+            , .{ k.name, @tagName(k.kind), k.local_scratch_bytes, k.name, k.name });
         }
 
-        const source = try buf.toOwnedSlice();
+        const text_source = try buf.toOwnedSlice();
 
-        var hasher = std.crypto.hash.sha2.Sha256.init(.{});
-        hasher.update("LIN-SPIRV-KERNEL-V1");
-        hasher.update(&gpu_ir_hash);
-        hasher.update(source);
-        var kernel_hash: [32]u8 = undefined;
-        hasher.final(&kernel_hash);
+        // Calculate H_spirv_text
+        var text_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+        text_hasher.update("LIN-SPIRV-TEXT-V1.1");
+        text_hasher.update(&gpu_ir_hash);
+        text_hasher.update(text_source);
+        var text_hash: [32]u8 = undefined;
+        text_hasher.final(&text_hash);
+
+        // Calculate synthetic H_spirv_binary (representing the compiled SPIR-V bytecode stream)
+        var bin_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+        bin_hasher.update("LIN-SPIRV-BINARY-V1.1");
+        bin_hasher.update(&text_hash);
+        var binary_hash: [32]u8 = undefined;
+        bin_hasher.final(&binary_hash);
 
         return EmittedSpirvKernel{
-            .source = source,
-            .kernel_hash = kernel_hash,
+            .text_source = text_source,
+            .text_hash = text_hash,
+            .binary_hash = binary_hash,
             .gpu_ir_hash = gpu_ir_hash,
         };
     }
