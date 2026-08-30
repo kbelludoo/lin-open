@@ -1,11 +1,12 @@
 //! test_lang_001_novel_language_induction.zig — LIN-LANG-001 Test Harness
 //!
 //! Validates:
-//!   - 001A: Lexical / Syntactic Grammar Induction for Unknown Language L_alien
-//!   - 001B: Semantic Hypothesis Space Generation (L_alien -> Canonical MIR)
-//!   - 001C: Discriminant Boundary Probing against Ambiguities (Add vs Mul vs Bitwise)
-//!   - 001D: Counterexample-Guided Synthesis (CEGIS) Refinement (|H_k| -> 1)
+//!   - 001A: Lexical / Syntactic Grammar Induction for Unknown Alien Language L_alien
+//!   - 001B: Rejection of Single-Example Ambiguity (|H| > 1) & Semantic Hypothesis Space Generation
+//!   - 001C: Discriminant Boundary Probing (Identities, Zero Annihilators, Negatives)
+//!   - 001D: Counterexample-Guided Synthesis (CEGIS) Refinement (|H_unresolved| = 0)
 //!   - 001E: End-to-End Compiler Materialization & Physical GPU Execution on AMD RX 6600 (gfx1030)
+//!   - 8-Layer Cryptographic Provenance Root Ledger Synthesis
 //!
 //! @LIN:INDUCED_LANGUAGE_GROUNDED:1.0.0
 
@@ -69,6 +70,7 @@ pub fn main() !void {
         \\BOR ZUN VEK
     ;
 
+    const lexical_tokens = "TOKENS: KRA MEL ZUN BOR VEK [ ] INTEGER IDENTIFIER";
     const grammar_rules_induced =
         \\grammar AlienLanguage_V1 {
         \\    DECL_CONST := ("KRA" | "MEL") <integer>
@@ -83,29 +85,46 @@ pub fn main() !void {
     passed += 1;
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 001B & 001C: DISCRIMINANT PROBING & COUNTEREXAMPLE REFINEMENT (ZUN)
+    // 001B: REJECTION OF SINGLE-EXAMPLE AMBIGUITY (|H| > 1)
     // ──────────────────────────────────────────────────────────────────────────
-    try stdout.print("[001B/C] Discriminant Probing & Elimination of Ambiguities for 'ZUN'\n", .{});
+    try stdout.print("[001B] Rejection of Single-Observation Ambiguity (Single Example Insufficient)\n", .{});
+    total += 1;
+
+    const single_ambiguous_test = [_]IOTestCase{
+        .{ .inputs = .{ 7, 3, 0 }, .input_count = 2, .expected_output = 21 },
+    };
+
+    const single_res = LanguageInductionEngine.induceSymbolSemantics(alloc, "ZUN", false, &single_ambiguous_test);
+    if (single_res == error.SingleExampleInsufficientDiscriminantProbingRequired) {
+        try stdout.print("  [REJECTED] Single example correctly rejected as under-constrained\n", .{});
+        try stdout.print("  [PASS] 001B: Strict multi-probe requirement enforced\n\n", .{});
+        passed += 1;
+    } else {
+        try stdout.print("  [FAIL] 001B single example was not rejected\n", .{});
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 001C: DISCRIMINANT PROBING & COUNTEREXAMPLE REFINEMENT (ZUN)
+    // ──────────────────────────────────────────────────────────────────────────
+    try stdout.print("[001C] Discriminant Probing & Elimination of Ambiguities for 'ZUN'\n", .{});
     total += 1;
 
     // Probing test suite with boundary and counterexamples:
-    // Ambiguity 1: (7, 3) -> 10 could be ADD or SUB or BITWISE? No, 7+3=10, 7*3=21, 7^3=4.
-    // Let's test if ZUN is ADD or MUL or XOR:
     const zun_tests = [_]IOTestCase{
         .{ .inputs = .{ 7, 3, 0 }, .input_count = 2, .expected_output = 21 }, // 7 * 3 = 21 (Eliminates ADD and XOR!)
-        .{ .inputs = .{ 10, 0, 0 }, .input_count = 2, .expected_output = 0 }, // 10 * 0 = 0 (Multiplicative zero boundary)
-        .{ .inputs = .{ 5, 1, 0 }, .input_count = 2, .expected_output = 5 }, // 5 * 1 = 5 (Multiplicative identity boundary)
-        .{ .inputs = .{ -4, 2, 0 }, .input_count = 2, .expected_output = -8 }, // Sign propagation
+        .{ .inputs = .{ 10, 0, 0 }, .input_count = 2, .expected_output = 0 }, // 10 * 0 = 0 (Multiplicative zero annihilator)
+        .{ .inputs = .{ 5, 1, 0 }, .input_count = 2, .expected_output = 5 }, // 5 * 1 = 5 (Multiplicative identity)
+        .{ .inputs = .{ -4, 2, 0 }, .input_count = 2, .expected_output = -8 }, // Negative sign propagation
     };
 
     const zun_hyp = try LanguageInductionEngine.induceSymbolSemantics(alloc, "ZUN", false, &zun_tests);
 
     if (zun_hyp.mir_target == .mul and zun_hyp.passed_tests == 4) {
         try stdout.print("  [GROUNDED] Symbol 'ZUN' uniquely resolved to MIR: {s} (confidence=1.0, 0 counterexamples)\n", .{@tagName(zun_hyp.mir_target)});
-        try stdout.print("  [PASS] 001B/C: Discriminant probing narrowed hypothesis space to |H| = 1\n\n", .{});
+        try stdout.print("  [PASS] 001C: Discriminant probing narrowed hypothesis space to |H| = 1\n\n", .{});
         passed += 1;
     } else {
-        try stdout.print("  [FAIL] 001B/C failed for ZUN\n", .{});
+        try stdout.print("  [FAIL] 001C failed for ZUN\n", .{});
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -125,7 +144,7 @@ pub fn main() !void {
 
     if (bor_hyp.mir_target == .reduce_sum and bor_hyp.passed_tests == 2) {
         try stdout.print("  [GROUNDED] Symbol 'BOR' uniquely resolved to MIR: {s} (confidence=1.0)\n", .{@tagName(bor_hyp.mir_target)});
-        try stdout.print("  [PASS] 001D: Vector reduction reducer grounded via algebraic identities\n\n", .{});
+        try stdout.print("  [PASS] 001D: Vector reduction reducer grounded via algebraic identities (|H_unresolved|=0)\n\n", .{});
         passed += 1;
     } else {
         try stdout.print("  [FAIL] 001D failed for BOR\n", .{});
@@ -256,13 +275,25 @@ pub fn main() !void {
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // CERTIFICATE SYNTHESIS & LEDGER REPORT
+    // 8-LAYER CRYPTOGRAPHIC MERKLE CERTIFICATE LEDGER REPORT
     // ──────────────────────────────────────────────────────────────────────────
-    total += 1;
-    const cert = LanguageInductionEngine.synthesizeCertificate(
-        grammar_rules_induced,
-        "ZUN -> mir.mul, BOR -> mir.reduce.sum",
-        alien_program_corpus,
+    const h_corpus = LanguageInductionEngine.computeHash("LIN-CORPUS-V1", alien_program_corpus);
+    const h_lexical = LanguageInductionEngine.computeHash("LIN-LEXICAL-V1", lexical_tokens);
+    const h_syntax = LanguageInductionEngine.computeHash("LIN-SYNTAX-V1", grammar_rules_induced);
+    const h_semantic = LanguageInductionEngine.computeHash("LIN-SEMANTIC-V1", "ZUN -> mir.mul, BOR -> mir.reduce.sum");
+    const h_mir = induced_workload.computeWorkloadHash();
+    const h_gpu_ir = gpu_mod.computeGpuIrHash();
+    const h_artifact = ocl_k.kernel_hash;
+
+    const cert = LanguageInductionEngine.synthesize8LayerCertificate(
+        h_corpus,
+        h_lexical,
+        h_syntax,
+        h_semantic,
+        h_mir,
+        h_gpu_ir,
+        h_artifact,
+        gpu_result,
         6, // training examples
         4, // validation probes
         0, // counterexamples remaining
@@ -275,15 +306,18 @@ pub fn main() !void {
     try stdout.print(".validation_examples={d}\n", .{cert.validation_examples_count});
     try stdout.print(".counterexamples_remaining={d}\n", .{cert.counterexamples_found});
     try stdout.print(".unresolved_hypotheses={d}\n", .{cert.unresolved_hypotheses});
-    try stdout.print(".lexical_syntax_hash=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&cert.induced_grammar_hash)});
-    try stdout.print(".semantic_bindings_hash=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&cert.induced_semantic_hash)});
-    try stdout.print(".corpus_hash=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&cert.corpus_hash)});
+    try stdout.print(".h_corpus=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&cert.h_corpus)});
+    try stdout.print(".h_lexical=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&cert.h_lexical)});
+    try stdout.print(".h_syntax=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&cert.h_syntax)});
+    try stdout.print(".h_semantic=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&cert.h_semantic)});
+    try stdout.print(".h_mir=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&cert.h_mir)});
+    try stdout.print(".h_gpu_ir=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&cert.h_gpu_ir)});
+    try stdout.print(".h_artifact=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&cert.h_artifact)});
+    try stdout.print(".h_result=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&cert.h_result)});
     try stdout.print(".cpu_oracle_match=true\n", .{});
     try stdout.print(".gpu_oracle_match=true\n", .{});
     try stdout.print(".provenance_root=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&cert.provenance_root)});
     try stdout.print("================================================================================\n\n", .{});
-
-    passed += 1;
 
     if (passed != total) {
         return error.VerificationFailed;

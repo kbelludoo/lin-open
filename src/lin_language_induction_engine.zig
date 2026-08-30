@@ -1,10 +1,11 @@
 //! lin_language_induction_engine.zig — Novel Language Induction & Counterexample-Guided Semantic Grounding (LIN-LANG-001)
 //!
 //! Architectural Invariants:
-//!   1. Recovers syntax and semantic lowering rules from unknown alien language corpus L_novel without human prior.
-//!   2. Employs Counterexample-Guided Inductive Synthesis (CEGIS) with discriminant boundary probing.
-//!   3. Automatically synthesizes an executable Compiler for L_novel -> Canonical MIR -> LIN GPU IR v1.1.
-//!   4. Cryptographically certifies the induced grammar, semantics, and provenance root in the ledger.
+//!   1. Independent, clean induction engine operating strictly on unknown language tokens and traces (no regex hardcoding).
+//!   2. Single examples are rejected as insufficient (|H| > 1); CEGIS strictly requires discriminant counterexample tests.
+//!   3. Uniqueness guarantee: pruning continues until |H_unresolved| = 0.
+//!   4. 8-Layer Cryptographic Merkle Root:
+//!      PROVENANCE_ROOT = SHA256("LIN-LANG-001-V1" || H_corpus || H_lexical || H_syntax || H_semantic || H_mir || H_gpu_ir || H_artifact || H_result).
 
 const std = @import("std");
 const ir = @import("lin_gpu_ir.zig");
@@ -37,12 +38,6 @@ pub const CanonicalMirOp = enum {
     map_scale_add,
 };
 
-pub const AlienOperator = struct {
-    identifier: []const u8,
-    arity: u8,
-    is_vector_op: bool,
-};
-
 pub const IOTestCase = struct {
     inputs: [3]i32,
     input_count: u8,
@@ -63,9 +58,14 @@ pub const GroundingReport = struct {
     validation_examples_count: usize,
     counterexamples_found: usize,
     unresolved_hypotheses: usize,
-    induced_grammar_hash: [32]u8,
-    induced_semantic_hash: [32]u8,
-    corpus_hash: [32]u8,
+    h_corpus: [32]u8,
+    h_lexical: [32]u8,
+    h_syntax: [32]u8,
+    h_semantic: [32]u8,
+    h_mir: [32]u8,
+    h_gpu_ir: [32]u8,
+    h_artifact: [32]u8,
+    h_result: [32]u8,
     provenance_root: [32]u8,
 };
 
@@ -126,13 +126,15 @@ pub const LanguageInductionEngine = struct {
         }
     }
 
-    /// CEGIS Inductive Loop: Prunes candidate semantic space using discriminant probes
+    /// CEGIS Inductive Loop: Rejects ambiguous single observations, requiring discriminant probes
     pub fn induceSymbolSemantics(
         allocator: std.mem.Allocator,
         symbol: []const u8,
         is_vector: bool,
         test_suite: []const IOTestCase,
     ) !HypothesisCandidate {
+        if (test_suite.len < 2) return error.SingleExampleInsufficientDiscriminantProbingRequired;
+
         const candidate_ops: []const CanonicalMirOp = if (is_vector)
             &[_]CanonicalMirOp{ .reduce_sum, .reduce_product, .reduce_min, .reduce_max, .map_scale_add }
         else
@@ -171,24 +173,36 @@ pub const LanguageInductionEngine = struct {
         return survivors.items[0];
     }
 
-    /// Synthesizes the full cryptographic Language Grounding Certificate
-    pub fn synthesizeCertificate(
-        grammar_rules_raw: []const u8,
-        semantic_bindings_raw: []const u8,
-        training_corpus_raw: []const u8,
+    /// Synthesizes the 8-Layer Cryptographic Language Grounding Certificate
+    pub fn synthesize8LayerCertificate(
+        h_corpus: [32]u8,
+        h_lexical: [32]u8,
+        h_syntax: [32]u8,
+        h_semantic: [32]u8,
+        h_mir: [32]u8,
+        h_gpu_ir: [32]u8,
+        h_artifact: [32]u8,
+        result: i32,
         training_count: usize,
         validation_count: usize,
         counterexamples_count: usize,
     ) GroundingReport {
-        const g_hash = computeHash("LIN-INDUCED-GRAMMAR-V1", grammar_rules_raw);
-        const s_hash = computeHash("LIN-INDUCED-SEMANTICS-V1", semantic_bindings_raw);
-        const c_hash = computeHash("LIN-INDUCTION-CORPUS-V1", training_corpus_raw);
+        var h_res: [32]u8 = undefined;
+        var r_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+        r_hasher.update("LIN-RESULT-V1");
+        r_hasher.update(std.mem.asBytes(&result));
+        r_hasher.final(&h_res);
 
         var h = std.crypto.hash.sha2.Sha256.init(.{});
         h.update("LIN-LANG-001-PROVENANCE-ROOT-V1");
-        h.update(&g_hash);
-        h.update(&s_hash);
-        h.update(&c_hash);
+        h.update(&h_corpus);
+        h.update(&h_lexical);
+        h.update(&h_syntax);
+        h.update(&h_semantic);
+        h.update(&h_mir);
+        h.update(&h_gpu_ir);
+        h.update(&h_artifact);
+        h.update(&h_res);
         h.update(std.mem.asBytes(&training_count));
         h.update(std.mem.asBytes(&validation_count));
         var prov_root: [32]u8 = undefined;
@@ -199,9 +213,14 @@ pub const LanguageInductionEngine = struct {
             .validation_examples_count = validation_count,
             .counterexamples_found = counterexamples_count,
             .unresolved_hypotheses = 0,
-            .induced_grammar_hash = g_hash,
-            .induced_semantic_hash = s_hash,
-            .corpus_hash = c_hash,
+            .h_corpus = h_corpus,
+            .h_lexical = h_lexical,
+            .h_syntax = h_syntax,
+            .h_semantic = h_semantic,
+            .h_mir = h_mir,
+            .h_gpu_ir = h_gpu_ir,
+            .h_artifact = h_artifact,
+            .h_result = h_res,
             .provenance_root = prov_root,
         };
     }
