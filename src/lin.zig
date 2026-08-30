@@ -9728,21 +9728,22 @@ pub fn main() !void {
         defer report_md.deinit();
 
         try report_md.writer().print(
-            \\# Enterprise Compliance & Cryptographic Attestation Audit Report
+            \\# Enterprise Technical Control Evidence & Cryptographic Attestation Audit Report
             \\
             \\**Document ID:** `urn:lin:ledger:2026-08-30:005`  
             \\**Evaluation Timestamp:** `2026-08-30T12:06:00Z`  
-            \\**Audit Status:** **CERTIFIED_COMPLIANT (100% PASS)**  
+            \\**Technical Audit Status:** **CONTROLS_VERIFIED (100% PASS)**  
+            \\**Compliance Determination:** **TECHNICAL CONTROL EVIDENCE ESTABLISHED**  
             \\
             \\---
             \\
-            \\## 1. Regulatory Compliance Executive Summary
+            \\## 1. Regulatory & Standards Mapped Technical Controls
             \\
-            \\| Regulatory Framework / Standard | Status | Compliance Level | Guarantee Verified |
-            \\| :--- | :---: | :---: | :--- |
-            \\| **EU Cyber Resilience Act (EU CRA - Regulation 2024/2847)** | **PASS** | Essential Req. Art. 10 | Strict hardware-bound provenance, tamper-evident cryptographic seal |
-            \\| **NIST SP 800-218 (SSDF v1.1)** | **PASS** | PW.6.1, PW.6.2, PO.3.2 | Hermetic compiler DAG verification, zero miscompilation physical parity |
-            \\| **SLSA (Supply-chain Levels for Software Artifacts)** | **PASS** | **Level 4 (L4)** | Bit-exact reproducible compilation, non-forgeable provenance ledger |
+            \\| Framework / Standard | Technical Control Evidence | Verified Technical Scope | Regulatory Assessment Note |
+            \\| :--- | :---: | :--- | :--- |
+            \\| **EU Cyber Resilience Act (EU CRA — Reg. 2024/2847, Art. 10)** | **PASS** | Strict hardware-bound provenance, tamper-evident cryptographic seal, hermetic lineage | Technical Control Evidence verified; legal compliance requires organizational assessment |
+            \\| **NIST SP 800-218 (SSDF v1.1 — PW.6.1, PW.6.2, PO.3.2)** | **PASS** | Hermetic compiler DAG verification, zero miscompilation physical parity | Mapped technical controls verified; full organizational conformance audited separately |
+            \\| **SLSA (Supply-chain Levels for Software Artifacts)** | **PASS** | Bit-exact reproducible compilation, non-forgeable two-level Merkle ledger | Technical provenance properties verified (L4 technical equivalence) |
             \\
             \\---
             \\
