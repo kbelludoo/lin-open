@@ -1,10 +1,10 @@
-//! lin_adaptive_replanning_engine.zig — Dynamic Adaptive Re-Planning & Semantic Preservation (LIN-LANG-008)
+//! lin_adaptive_replanning_engine.zig — Dynamic Adaptive Re-Planning & Non-Retroactive Chaining (LIN-LANG-008)
 //!
 //! Architectural Invariants:
-//!   1. Drift detection: Workload contraction (N=1M -> N=128), PCIe throttling, VRAM eviction.
-//!   2. Dynamic re-planning: ArgMin(T_CPU, T_GPU) recalculates optimal backend D* without user intervention.
-//!   3. Semantic Preservation Invariant: R_{v1} ==_C R_{v2} ==_C R_Oracle bit-exact across re-planning.
-//!   4. Non-retroactive Merkle root progression.
+//!   1. Mandatory observable plan shift: Plan_{v1} != Plan_{v2} for all 3 drift scenarios.
+//!   2. Explicit drift mode classification: Physical Measurement vs Controlled Cost/Residency Injection.
+//!   3. Zero Semantic Drift Invariant: R_{v1} ==_C R_{v2} ==_C R_Oracle bit-exact.
+//!   4. Non-Retroactive Merkle Chaining: Root_{v2} = H(Root_{v1} || DriftDelta || Plan_{v2} || Execution_{v2}).
 
 const std = @import("std");
 const ir = @import("lin_gpu_ir.zig");
@@ -23,24 +23,29 @@ const CostModel = planner.CostModel;
 const ExecutionPlanner = planner.ExecutionPlanner;
 const HeterogeneousVerifier = verifier.HeterogeneousVerifier;
 
-pub const DriftKind = enum {
-    scale_contraction, // N=1M -> N=128
-    pcie_bus_throttling, // Bandwidth throttled
-    vram_residency_eviction, // VRAM evicted to Host
+pub const DriftMechanism = enum {
+    physical_scale_shift,
+    controlled_cost_injection,
+    injected_residency_eviction,
 };
 
-pub const AdaptivePlanTransition = struct {
-    drift: DriftKind,
-    initial_backend: planner.BackendTarget,
-    recalculated_backend: planner.BackendTarget,
-    semantic_parity_verified: bool,
-    oracle_match: bool,
-    t_v1_est_ns: u64,
-    t_v2_est_ns: u64,
+pub const DriftScenarioRecord = struct {
+    id: usize,
+    name: []const u8,
+    mechanism: DriftMechanism,
+    plan_v1_backend: planner.BackendTarget,
+    plan_v2_backend: planner.BackendTarget,
+    decision_changed: bool,
+    r_v1: i32,
+    r_v2: i32,
+    r_oracle: i32,
+    semantic_preservation_ok: bool,
+    cost_v1_ns: u64,
+    cost_v2_ns: u64,
 };
 
 pub const AdaptiveRePlanningEngine = struct {
-    pub fn planInitialWorkload(n_elements: usize) planner.ExecutionDecision {
+    pub fn planBaseline(n_elements: usize) planner.ExecutionDecision {
         const cost_model = CostModel{};
         const wl = WorkloadDescriptor{
             .op = .reduce,
@@ -57,64 +62,87 @@ pub const AdaptiveRePlanningEngine = struct {
         return ExecutionPlanner.plan(wl, cost_model, true);
     }
 
-    pub fn rePlanUnderDrift(
-        drift: DriftKind,
-        n_elements: usize,
-    ) planner.ExecutionDecision {
-        var cost_model = CostModel{};
+    pub fn planDriftScenario1(n_elements: usize) planner.ExecutionDecision {
+        _ = n_elements;
+        const cost_model = CostModel{};
+        // Scale collapse to N=128 (N < N*)
+        const wl = WorkloadDescriptor{
+            .op = .reduce,
+            .elem_type = .i32,
+            .accum_type = .i32,
+            .reduction_op = .sum,
+            .total_elements = 128,
+            .layout = .{ .data_bytes = 128 * @sizeOf(i32) },
+            .reuse_count = 1,
+            .dependencies = .{ .transfer_amortization_eligible = false },
+            .input_residency = .host_ram,
+            .output_residency = .host_ram,
+        };
+        return ExecutionPlanner.plan(wl, cost_model, true);
+    }
 
-        var wl = WorkloadDescriptor{
+    pub fn planDriftScenario2(n_elements: usize) planner.ExecutionDecision {
+        // PCIe Throttling injection (cost per byte spiked)
+        var cost_model = CostModel{};
+        cost_model.gpu_h2d_ns_per_byte = 3.0;
+        cost_model.gpu_d2h_ns_per_byte = 3.0;
+
+        const wl = WorkloadDescriptor{
             .op = .reduce,
             .elem_type = .i32,
             .accum_type = .i32,
             .reduction_op = .sum,
             .total_elements = n_elements,
             .layout = .{ .data_bytes = n_elements * @sizeOf(i32) },
-            .reuse_count = 50,
-            .dependencies = .{ .transfer_amortization_eligible = true },
+            .reuse_count = 1,
+            .dependencies = .{ .transfer_amortization_eligible = false },
             .input_residency = .host_ram,
-            .output_residency = .gpu_vram,
+            .output_residency = .host_ram,
         };
-
-        switch (drift) {
-            .scale_contraction => {
-                // Scale dropped to 128 (N < N*)
-                wl.total_elements = 128;
-                wl.layout.data_bytes = 128 * @sizeOf(i32);
-                wl.reuse_count = 1;
-                wl.dependencies.transfer_amortization_eligible = false;
-            },
-            .pcie_bus_throttling => {
-                // Bus latency throttled by 20x
-                cost_model.gpu_h2d_ns_per_byte = 3.0;
-                cost_model.gpu_d2h_ns_per_byte = 3.0;
-                wl.reuse_count = 1;
-                wl.dependencies.transfer_amortization_eligible = false;
-            },
-            .vram_residency_eviction => {
-                // Buffer evicted from VRAM to Host RAM with single-shot execution
-                wl.input_residency = .host_ram;
-                wl.output_residency = .host_ram;
-                wl.reuse_count = 1;
-                wl.dependencies.transfer_amortization_eligible = false;
-            },
-        }
-
         return ExecutionPlanner.plan(wl, cost_model, true);
     }
 
-    pub fn computeAdaptiveLedgerRoot(
-        transitions: []const AdaptivePlanTransition,
+    pub fn planDriftScenario3(n_elements: usize) planner.ExecutionDecision {
+        const cost_model = CostModel{};
+        // Injected residency eviction from VRAM to Host RAM with single-shot execution
+        const wl = WorkloadDescriptor{
+            .op = .reduce,
+            .elem_type = .i32,
+            .accum_type = .i32,
+            .reduction_op = .sum,
+            .total_elements = n_elements,
+            .layout = .{ .data_bytes = n_elements * @sizeOf(i32) },
+            .reuse_count = 1,
+            .dependencies = .{ .transfer_amortization_eligible = false },
+            .input_residency = .host_ram,
+            .output_residency = .host_ram,
+        };
+        return ExecutionPlanner.plan(wl, cost_model, true);
+    }
+
+    pub fn computeRootV1(initial_plan: planner.ExecutionDecision, initial_result: i32) [32]u8 {
+        var h = std.crypto.hash.sha2.Sha256.init(.{});
+        h.update("LIN-LANG-008-ROOT-V1");
+        h.update(@tagName(initial_plan.backend));
+        h.update(std.mem.asBytes(&initial_result));
+        var root: [32]u8 = undefined;
+        h.final(&root);
+        return root;
+    }
+
+    pub fn computeRootV2NonRetroactive(
+        root_v1: [32]u8,
+        scenarios: []const DriftScenarioRecord,
     ) [32]u8 {
         var h = std.crypto.hash.sha2.Sha256.init(.{});
-        h.update("LIN-LANG-008-ADAPTIVE-REPLANNING-V1");
-        for (transitions) |t| {
-            h.update(@tagName(t.drift));
-            h.update(@tagName(t.initial_backend));
-            h.update(@tagName(t.recalculated_backend));
-            h.update(std.mem.asBytes(&t.semantic_parity_verified));
-            h.update(std.mem.asBytes(&t.t_v1_est_ns));
-            h.update(std.mem.asBytes(&t.t_v2_est_ns));
+        h.update("LIN-LANG-008-ROOT-V2-NON-RETROACTIVE");
+        h.update(&root_v1);
+        for (scenarios) |s| {
+            h.update(@tagName(s.mechanism));
+            h.update(@tagName(s.plan_v1_backend));
+            h.update(@tagName(s.plan_v2_backend));
+            h.update(std.mem.asBytes(&s.decision_changed));
+            h.update(std.mem.asBytes(&s.r_v2));
         }
         var root: [32]u8 = undefined;
         h.final(&root);
