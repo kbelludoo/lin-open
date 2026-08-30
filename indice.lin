@@ -7,80 +7,50 @@
 // ============================================================================
 // O QUE LIN FAZ E COMO FAZ (9 SUBSISTEMAS PRINCIPAIS):
 //
-// 1. FRONTEND, PARSING & COMPILATION:
+// 1. FRONTEND, PARSING & COMPILATION (Faixa 100-199):
 //    - O que faz: Transpila, formata e valida código LIN (.lin) e RULEL (.rulel).
 //    - Como faz: Lexer de fatia zero-alloc, AST MIR SSA, canonical formatter (lin fmt).
 //
-// 2. ADAPTIVE DISCOVERY & WORKLOAD PLANNING:
+// 2. ADAPTIVE DISCOVERY & WORKLOAD PLANNING (Faixa 200-299):
 //    - O que faz: Analisa padrões de computação e particiona execuções heterogêneas.
 //    - Como faz: Reconhecimento de laços paralelos e remapeamento dinâmico GPU/CPU.
 //
-// 3. PHYSICAL SILICON EXECUTION:
+// 3. PHYSICAL SILICON EXECUTION (Faixa 300-399):
 //    - O que faz: Executa kernels com paridade bit-exact em GPU (AMD ROCm gfx1030) e CPU (Zen3).
 //    - Como faz: Geração de OpenCL C nativo, despacho assíncrono e verificação por triplo oráculo.
 //
-// 4. SUPPLY CHAIN & HIERARCHICAL MERKLE REDUCTION:
+// 4. SUPPLY CHAIN & HIERARCHICAL MERKLE REDUCTION (Faixa 400-499):
 //    - O que faz: Rastreia proveniência de artefatos de build e ligações binárias.
 //    - Como faz: Redução Merkle binária por pares (Pairwise Merkle) gerando digest canônico.
 //
-// 5. TEMPORAL MONOTONIC LEDGER & REVOCATION ENGINE:
+// 5. TEMPORAL MONOTONIC LEDGER & REVOCATION ENGINE (Faixa 500-599):
 //    - O que faz: Garante continuidade temporal sem rollback e revogação monotônica.
 //    - Como faz: Acumulador de estado temporal S_t e verificação estrita de épocas crescentes.
 //
-// 6. WITNESS QUORUM & ANTI-EQUIVOCATION NOTARIZATION:
+// 6. WITNESS QUORUM & ANTI-EQUIVOCATION NOTARIZATION (Faixa 600-699):
 //    - O que faz: Previne split-view e notaria Signed Tree Heads (STH).
 //    - Como faz: Quórum M-of-N de testemunhas soberanas e provas append-only.
 //
-// 7. DYNAMIC QUORUM, KEY SUCCESSION & DISASTER RECOVERY:
+// 7. DYNAMIC QUORUM, KEY SUCCESSION & DISASTER RECOVERY (Faixa 700-799):
 //    - O que faz: Rotaciona chaves e recupera autoridade pós-comprometimento sem reancoragem manual.
 //    - Como faz: Compromisso criptográfico de transição T_t e isolamento de chaves afetadas.
 //
-// 8. SOVEREIGN EXTERNAL VERIFICATION PLANE & POLYGLOT PARITY:
+// 8. SOVEREIGN EXTERNAL VERIFICATION PLANE & POLYGLOT PARITY (Faixa 800-899):
 //    - O que faz: Permite auditoria completa e independente por terceiros (lin verify-all).
 //    - Como faz: Desacoplamento estrito entre Prover e Verifier, e paridade polyglot conformante.
 //
-// 9. MULTI-DOMAIN FEDERATION & PARTITION-TOLERANT GOVERNANCE:
+// 9. MULTI-DOMAIN FEDERATION & PARTITION-TOLERANT GOVERNANCE (Faixa 900-999):
 //    - O que faz: Intercâmbio de artefatos entre domínios sem raiz central e provas de fraude (Fraud Proofs).
 //    - Como faz: Reconciliação offline pós-partição e isolamento BFT de notários fraudulentos.
 // ============================================================================
 
 !query_subsystem_capability(subsystem_id: int) -> int {
     status = 0;
-    // 1: Frontend & Lexer/Parser Engine (Faixa 100-199)
-    ?(subsystem_id == 1) {
-        status = 100;
-    }
-    // 2: Adaptive Workload Planner & Replanning (Faixa 200-299)
-    ?(subsystem_id == 2) {
-        status = 200;
-    }
-    // 3: Physical Hardware Identity & OpenCL Silicon Bridge (Faixa 300-399)
-    ?(subsystem_id == 3) {
-        status = 300;
-    }
-    // 4: Hierarchical Pairwise Merkle & Supply Chain Ledger (Faixa 400-499)
-    ?(subsystem_id == 4) {
-        status = 400;
-    }
-    // 5: Monotonic Temporal Ledger & Revocation Engine (Faixa 500-599)
-    ?(subsystem_id == 5) {
-        status = 500;
-    }
-    // 6: Witness Quorum & Anti-Equivocation Transparency Notary (Faixa 600-699)
-    ?(subsystem_id == 6) {
-        status = 600;
-    }
-    // 7: Dynamic Quorum Reconfiguration & Disaster Recovery (Faixa 700-799)
-    ?(subsystem_id == 7) {
-        status = 700;
-    }
-    // 8: Sovereign External Verification Plane & Polyglot Parity (Faixa 800-899)
-    ?(subsystem_id == 8) {
-        status = 800;
-    }
-    // 9: Multi-Domain Federation & Partitioned Governance (Faixa 900-999)
-    ?(subsystem_id == 9) {
-        status = 900;
+    // Dispatch tabular invariante: Subsystem N mapeia deterministicamente para N * 100
+    ?(subsystem_id >= 1) {
+        ?(subsystem_id <= 9) {
+            status = subsystem_id * 100;
+        }
     }
     ^status;
 }
@@ -98,8 +68,9 @@
 
 !get_master_verdict_summary(total_gates_passed: int, common_mode_divergences: int) -> int {
     verdict = 0;
-    // Status 9990 = Mestre de Integridade Consolidada (>= 16 gates concluídos e 0 divergências)
-    ?(total_gates_passed >= 16) {
+    // 20 GATES TOTAIS OBRIGATÓRIOS CONGELADOS:
+    // ATTEST-001..015 (15) + VERIFY-001..004 (4) + FED-001 (1) = 20 GATES
+    ?(total_gates_passed >= 20) {
         ?(common_mode_divergences == 0) {
             verdict = 9990;
         }
@@ -107,4 +78,40 @@
     ^verdict;
 }
 
-=ex{query_subsystem_capability, explain_how_it_operates, get_master_verdict_summary}
+!self_check_architectural_consistency(check_mode: int) -> int {
+    errors = 0;
+    // 1. Testa os limites inferior e superior das capacidades válidas (1 e 9)
+    s1 = query_subsystem_capability(1);
+    ?(s1 != 100) {
+        errors = errors + 1;
+    }
+    s9 = query_subsystem_capability(9);
+    ?(s9 != 900) {
+        errors = errors + 1;
+    }
+    // 2. Testa que subsistema fora da faixa (ex: 0 ou 10) retorna estritamente 0 (FAIL_CLOSED)
+    s0 = query_subsystem_capability(0);
+    ?(s0 != 0) {
+        errors = errors + 1;
+    }
+    s10 = query_subsystem_capability(10);
+    ?(s10 != 0) {
+        errors = errors + 1;
+    }
+    // 3. Testa que o verdict mestre rejeita contagem menor que 20 gates
+    v_below = get_master_verdict_summary(19, 0);
+    ?(v_below != 0) {
+        errors = errors + 1;
+    }
+    v_div = get_master_verdict_summary(20, 1);
+    ?(v_div != 0) {
+        errors = errors + 1;
+    }
+    v_ok = get_master_verdict_summary(20, 0);
+    ?(v_ok != 9990) {
+        errors = errors + 1;
+    }
+    ^errors;
+}
+
+=ex{query_subsystem_capability, explain_how_it_operates, get_master_verdict_summary, self_check_architectural_consistency}
