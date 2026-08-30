@@ -2,7 +2,7 @@
 ^schema_once ^lossy=false ^ops=compatibility_matrix
 ~G{?=if #=for ^=ret :else}
 
-!verify_behavior_equivalence(zig_result, lin_result) {
+!verify_behavior_equivalence(zig_result: int, lin_result: int) -> int {
     equiv = 0;
     ?(zig_result == lin_result) {
         equiv = 1;
@@ -10,7 +10,7 @@
     ^equiv;
 }
 
-!evaluate_fuzz_differential_pass(test_id, input_scalar, zig_sum, lin_sum) {
+!evaluate_fuzz_differential_pass(test_id: int, input_scalar: int, zig_sum: int, lin_sum: int) -> int {
     match = 0;
     ?(zig_sum == lin_sum) {
         match = 1;
@@ -19,8 +19,7 @@
     ^fuzz_audit_hash;
 }
 
-!audit_17_subgates_closure(subgates_mask) {
-    // All 17 subgates (bits 0..16) must be 1 => 0x1FFFF = 131071
+!audit_17_subgates_closure(subgates_mask: int) -> int {
     all_passed = 0;
     ?(subgates_mask == 131071) {
         all_passed = 1;

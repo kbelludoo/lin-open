@@ -3,7 +3,7 @@
 ~G{?=if #=for ^=ret :else}
 
 !verify_domain(d0: int, d1: int) -> int {
-    valid: int = 0;
+    valid = 0;
     ?(d0 == 1) {
         ?(d1 == 1) {
             valid = 1;
@@ -13,7 +13,7 @@
 }
 
 !verify_targets_count(n: int) -> int {
-    valid: int = 0;
+    valid = 0;
     ?(n == 36) {
         valid = 1;
     }
@@ -21,7 +21,7 @@
 }
 
 !verify_ledger_invariants(confirmed: int, refuted: int) -> int {
-    valid: int = 0;
+    valid = 0;
     ?(confirmed == 36) {
         ?(refuted == 0) {
             valid = 1;
@@ -31,7 +31,7 @@
 }
 
 !verify_composite_certificate(d0: int, d1: int, targets: int, confirmed: int, refuted: int) -> int {
-    ok: int = 1;
+    ok = 1;
     ?(verify_domain(d0, d1) == 0) {
         ok = 0;
     }
