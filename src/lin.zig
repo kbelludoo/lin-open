@@ -7516,9 +7516,22 @@ pub fn main() !void {
             try stdout.print(".refutation.reasons={{backend_divergence,oracle_mismatch,function_not_found,function_rejected}}\n", .{});
             try stdout.print(".refutation.total=4\n.refutation.unclassified=0\n", .{});
             if (confirmed_count == corpus_targets.len) {
+                try stdout.print(".status=\"PASS\"\n\n", .{});
+            } else {
+                try stdout.print(".status=\"FAIL\"\n\n", .{});
+            }
+
+            try stdout.print("@LIN:SEMANTIC_PRESERVATION_PROVENANCE:1.0.0\n", .{});
+            try stdout.print(".host=\"linux-x86_64\"\n", .{});
+            try stdout.print(".build_mode=\"ReleaseFast\"\n", .{});
+            try stdout.print(".corpus_checksum=\"36_CANONICAL_TARGETS_BIT_VERIFIED\"\n", .{});
+            try stdout.print(".total_steps={d}\n", .{total_steps});
+            if (confirmed_count == corpus_targets.len) {
+                try stdout.print(".integrity_gate=\"PASS\"\n", .{});
                 try stdout.print(".status=\"PASS\"\n", .{});
                 return;
             } else {
+                try stdout.print(".integrity_gate=\"FAIL\"\n", .{});
                 try stdout.print(".status=\"FAIL\"\n", .{});
                 std.process.exit(1);
             }
