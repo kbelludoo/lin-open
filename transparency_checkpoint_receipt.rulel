@@ -1,0 +1,27 @@
+@RULEL:LIN_TRANSPARENCY_CHECKPOINT:1.0.0
+~R{.s=subject .w=witnesses .p=proofs .v=verdict}
+.s{
+  log_id="urn:lin:transparency_log:mainnet:v1"
+  tree_size=1000
+  epoch=2
+  state_root="sha256:45d5a98abd498cf4a5de9cae89325dce05aca801c17ccc678386761e02b6b57f"
+  sth_digest="sha256:f77e720756a7d916d1bb341829a109bd03edf2ffceca230f068fbfd70686a8b4"
+  quorum_policy="M=3_OF_N=4"
+  audit_timestamp="2026-08-30T13:58:00Z"
+}
+.w{
+  .witness_0{ id="witness:eu:notary_alpha_01" role="PUBLIC_AUDIT_NOTARY_ALPHA" signature="VALID" }
+  .witness_1{ id="witness:us:notary_beta_02" role="PUBLIC_AUDIT_NOTARY_BETA" signature="VALID" }
+  .witness_2{ id="witness:ap:notary_gamma_03" role="PUBLIC_AUDIT_NOTARY_GAMMA" signature="VALID" }
+}
+.p{
+  append_only_consistency_verified=true
+  inclusion_proof_verified=true
+  split_view_equivocation_detected=false
+  conflict_evidence_generator_ready=true
+}
+.v{
+  notarization_status="EXTERNAL_CHECKPOINT_SEALED"
+  anti_equivocation_status="SPLIT_VIEW_RESISTANT"
+  common_mode_divergence_observed=0
+}

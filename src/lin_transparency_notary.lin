@@ -1,0 +1,45 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=transparency_notary_v280
+~G{?=if #=for ^=ret :else}
+
+!check_witness_quorum(valid_signatures: int, required_threshold: int) -> int {
+    ok = 0;
+    ?(valid_signatures >= required_threshold) {
+        ok = 1;
+    }
+    ^ok;
+}
+
+!detect_equivocation_conflict(epoch_a: int, epoch_b: int, root_hash_a: int, root_hash_b: int) -> int {
+    conflict = 0;
+    ?(epoch_a == epoch_b) {
+        ?(root_hash_a != root_hash_b) {
+            conflict = 1;
+        }
+    }
+    ^conflict;
+}
+
+!verify_append_only_consistency(tree_size_old: int, tree_size_new: int, proof_valid: int) -> int {
+    valid = 0;
+    ?(tree_size_new >= tree_size_old) {
+        ?(proof_valid == 1) {
+            valid = 1;
+        }
+    }
+    ^valid;
+}
+
+!evaluate_notary_verdict(quorum_ok: int, equivocation_detected: int, append_only_ok: int) -> int {
+    status = 0;
+    ?(quorum_ok == 1) {
+        ?(equivocation_detected == 0) {
+            ?(append_only_ok == 1) {
+                status = 7000;
+            }
+        }
+    }
+    ^status;
+}
+
+=ex{check_witness_quorum, detect_equivocation_conflict, verify_append_only_consistency, evaluate_notary_verdict}
