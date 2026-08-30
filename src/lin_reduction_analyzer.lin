@@ -1,0 +1,139 @@
+@LIN:L1c:0.2
+@RULEL:LIN_REDUCTION_ANALYZER:1.0.0
+
+// ============================================================================
+// LIN-GPU-005A: Parallel Reduction Semantics & Dependency Analyzer
+//
+// Architectural Invariant:
+//   "O analisador decide se a transformacao e legal; o lowerer apenas implementa
+//    uma decisao ja provada legal."
+//
+// Source of Normative Semantic Authority: pure .lin
+// ============================================================================
+
+// --- Operator Enumeration ---
+// 1: SUM, 2: PRODUCT, 3: MIN, 4: MAX, 5: BAND, 6: BOR, 7: BXOR
+
+!reduction_op_is_valid(op: int): int {
+  ?(op >= 1 && op <= 7){ ^1 };
+  ^0;
+}
+
+!reduction_op_is_associative(op: int): int {
+  ?(op >= 1 && op <= 7){ ^1 };
+  ^0;
+}
+
+!reduction_op_is_commutative(op: int): int {
+  ?(op >= 1 && op <= 7){ ^1 };
+  ^0;
+}
+
+// --- Neutral Element / Identity Mapping ---
+// Types: 1: i32, 2: u32, 3: i64, 4: u64, 5: f64
+
+!reduction_get_identity(op: int, ty: int): int {
+  // SUM: 0
+  ?(op == 1){ ^0 };
+
+  // PRODUCT: 1
+  ?(op == 2){ ^1 };
+
+  // MIN: max value of type
+  ?(op == 3){
+    ?(ty == 1){ ^2147483647 }; // i32 max
+    ?(ty == 2){ ^4294967295 }; // u32 max
+    ^2147483647;
+  };
+
+  // MAX: min value of type
+  ?(op == 4){
+    ?(ty == 1){ ^-2147483648 }; // i32 min
+    ?(ty == 2){ ^0 };
+    ^-2147483648;
+  };
+
+  // BITWISE AND: all 1s
+  ?(op == 5){
+    ?(ty == 1 || ty == 2){ ^4294967295 };
+    ^-1;
+  };
+
+  // BITWISE OR: 0
+  ?(op == 6){ ^0 };
+
+  // BITWISE XOR: 0
+  ?(op == 7){ ^0 };
+
+  ^0;
+}
+
+// --- Semantic Rejection Classifier ---
+// Reason Codes:
+// 0: LEGAL_REDUCTION
+// 101: REJECT_NON_ASSOCIATIVE
+// 102: REJECT_UNSUPPORTED_ACCUM_DEP
+// 103: REJECT_MULTIPLE_LOOP_DEPS
+// 104: REJECT_FLOAT_STRICT_MODE
+// 105: REJECT_NO_PATTERN
+
+!classify_reduction_instruction(opcode: int, is_float: int, fp_mode_relaxed: int): int {
+  // Add, Mul, And, Or, Xor, Cmp/Select (valid families)
+  ?(opcode == 3 || opcode == 5 || opcode == 6 || opcode == 7 || opcode == 8){
+    ?(is_float != 0 && fp_mode_relaxed == 0){
+      ^104; // REJECT_FLOAT_STRICT_MODE
+    };
+    ^0; // LEGAL
+  };
+
+  // Subtraction, Shift, Division (non-associative)
+  ?(opcode == 4 || opcode == 9 || opcode == 10 || opcode == 11){
+    ^101; // REJECT_NON_ASSOCIATIVE
+  };
+
+  ^105; // REJECT_NO_PATTERN
+}
+
+// --- Self-Contained Formal Verification Tests ---
+
+!test_reduction_properties(): int {
+  // Test associative & commutative invariants
+  op = 1;
+  while (op <= 7) {
+    ?(reduction_op_is_associative(op) != 1){ ^0 };
+    ?(reduction_op_is_commutative(op) != 1){ ^0 };
+    op = op + 1;
+  };
+
+  // Test identities
+  ?(reduction_get_identity(1, 1) != 0){ ^0 };          // SUM
+  ?(reduction_get_identity(2, 1) != 1){ ^0 };          // PROD
+  ?(reduction_get_identity(3, 1) != 2147483647){ ^0 }; // MIN i32
+  ?(reduction_get_identity(4, 1) != -2147483648){ ^0 };// MAX i32
+  ?(reduction_get_identity(5, 1) != 4294967295){ ^0 }; // BAND i32
+  ?(reduction_get_identity(6, 1) != 0){ ^0 };          // BOR
+  ?(reduction_get_identity(7, 1) != 0){ ^0 };          // BXOR
+
+  ^1;
+}
+
+!test_analyzer_rejection(): int {
+  // Check legal add
+  ?(classify_reduction_instruction(3, 0, 0) != 0){ ^0 };
+  
+  // Check illegal sub
+  ?(classify_reduction_instruction(4, 0, 0) != 101){ ^0 };
+  
+  // Check illegal shift
+  ?(classify_reduction_instruction(9, 0, 0) != 101){ ^0 };
+  
+  // Check float strict mode rejection
+  ?(classify_reduction_instruction(3, 1, 0) != 104){ ^0 };
+  
+  // Check float relaxed mode acceptance
+  ?(classify_reduction_instruction(3, 1, 1) != 0){ ^0 };
+
+  ^1;
+}
+
+=ex{reduction_op_is_valid, reduction_op_is_associative, reduction_op_is_commutative, reduction_get_identity, classify_reduction_instruction, test_reduction_properties, test_analyzer_rejection}
