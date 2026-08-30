@@ -7410,6 +7410,136 @@ pub fn main() !void {
         }
         return;
     }
+    if (argEq(cmd, "hypo")) {
+        if (args.len < 3) {
+            try stderr.print("usage: lin hypo <hypothesis.rulel> or lin hypo <file.lin> <fn> [expected]\n", .{});
+            std.process.exit(1);
+        }
+        if (args.len >= 4) {
+            const target_file = args[2];
+            const fn_name = args[3];
+            const has_expected = (args.len >= 5);
+            var expected_val: ?i64 = null;
+            if (has_expected) {
+                expected_val = std.fmt.parseInt(i64, args[4], 10) catch null;
+            }
+
+            const src_file = try std.fs.cwd().openFile(target_file, .{});
+            defer src_file.close();
+            const src = try src_file.readToEndAlloc(LIA_ALLOC, 10 * 1024 * 1024);
+            defer LIA_ALLOC.free(src);
+
+            const mod = try vmBuild(LIA_ALLOC, src);
+            const fi = vmFind(&mod, fn_name) orelse {
+                try stdout.print("@RULEL:LIN_HYPOTHESIS_VERDICT:1.0.0\n.target=\"{s}::{s}\"\n.verdict=\"REFUTED\"\n.reason=\"function_not_found\"\n", .{ target_file, fn_name });
+                return;
+            };
+            const f = &mod.fns[fi];
+            if (!f.ok) {
+                try stdout.print("@RULEL:LIN_HYPOTHESIS_VERDICT:1.0.0\n.target=\"{s}::{s}\"\n.verdict=\"REFUTED\"\n.reason=\"function_rejected\"\n", .{ target_file, fn_name });
+                return;
+            }
+
+            var steps: u64 = 0;
+            const actual = try vmExec(&mod, fi, &.{}, 0, &steps);
+            try stdout.print("@RULEL:LIN_HYPOTHESIS_VERDICT:1.0.0\n", .{});
+            try stdout.print(".target=\"{s}::{s}\"\n", .{ target_file, fn_name });
+            try stdout.print(".actual={d}\n.steps={d}\n", .{ actual, steps });
+            if (expected_val) |exp| {
+                try stdout.print(".expected={d}\n", .{exp});
+                if (actual == exp) {
+                    try stdout.print(".verdict=\"CONFIRMED\"\n", .{});
+                } else {
+                    try stdout.print(".verdict=\"REFUTED\"\n", .{});
+                }
+            } else {
+                if (actual != 0) {
+                    try stdout.print(".verdict=\"CONFIRMED\"\n", .{});
+                } else {
+                    try stdout.print(".verdict=\"REFUTED\"\n", .{});
+                }
+            }
+            return;
+        }
+
+        const hyp_file = try std.fs.cwd().openFile(args[2], .{});
+        defer hyp_file.close();
+        const hyp_content = try hyp_file.readToEndAlloc(LIA_ALLOC, 10 * 1024 * 1024);
+        defer LIA_ALLOC.free(hyp_content);
+
+        const target_file_tag = ".target_file=\"";
+        const tf_start = std.mem.indexOf(u8, hyp_content, target_file_tag) orelse {
+            try stderr.print("hypo: missing .target_file in hypothesis\n", .{});
+            std.process.exit(1);
+        };
+        const tf_val_start = tf_start + target_file_tag.len;
+        const tf_val_end = std.mem.indexOfPos(u8, hyp_content, tf_val_start, "\"") orelse {
+            try stderr.print("hypo: malformed .target_file\n", .{});
+            std.process.exit(1);
+        };
+        const target_file = hyp_content[tf_val_start..tf_val_end];
+
+        const fn_tag = ".fn=\"";
+        const fn_start = std.mem.indexOf(u8, hyp_content, fn_tag) orelse {
+            try stderr.print("hypo: missing .fn in hypothesis\n", .{});
+            std.process.exit(1);
+        };
+        const fn_val_start = fn_start + fn_tag.len;
+        const fn_val_end = std.mem.indexOfPos(u8, hyp_content, fn_val_start, "\"") orelse {
+            try stderr.print("hypo: malformed .fn\n", .{});
+            std.process.exit(1);
+        };
+        const fn_name = hyp_content[fn_val_start..fn_val_end];
+
+        var expected_val: ?i64 = null;
+        const exp_tag = ".expected=";
+        if (std.mem.indexOf(u8, hyp_content, exp_tag)) |exp_pos| {
+            const exp_val_start = exp_pos + exp_tag.len;
+            var exp_val_end = exp_val_start;
+            while (exp_val_end < hyp_content.len and hyp_content[exp_val_end] != '\n' and hyp_content[exp_val_end] != ' ' and hyp_content[exp_val_end] != '}') : (exp_val_end += 1) {}
+            expected_val = std.fmt.parseInt(i64, hyp_content[exp_val_start..exp_val_end], 10) catch null;
+        }
+
+        const src_file = try std.fs.cwd().openFile(target_file, .{});
+        defer src_file.close();
+        const src = try src_file.readToEndAlloc(LIA_ALLOC, 10 * 1024 * 1024);
+        defer LIA_ALLOC.free(src);
+
+        const mod = try vmBuild(LIA_ALLOC, src);
+        const fi = vmFind(&mod, fn_name) orelse {
+            try stdout.print("@RULEL:LIN_HYPOTHESIS_VERDICT:1.0.0\n.hypothesis=\"{s}\"\n.target=\"{s}::{s}\"\n.verdict=\"REFUTED\"\n.reason=\"function_not_found\"\n", .{ args[2], target_file, fn_name });
+            return;
+        };
+        const f = &mod.fns[fi];
+        if (!f.ok) {
+            try stdout.print("@RULEL:LIN_HYPOTHESIS_VERDICT:1.0.0\n.hypothesis=\"{s}\"\n.target=\"{s}::{s}\"\n.verdict=\"REFUTED\"\n.reason=\"function_rejected\"\n", .{ args[2], target_file, fn_name });
+            return;
+        }
+
+        var steps: u64 = 0;
+        const actual = try vmExec(&mod, fi, &.{}, 0, &steps);
+
+        try stdout.print("@RULEL:LIN_HYPOTHESIS_VERDICT:1.0.0\n", .{});
+        try stdout.print(".hypothesis=\"{s}\"\n", .{args[2]});
+        try stdout.print(".target=\"{s}::{s}\"\n", .{ target_file, fn_name });
+        try stdout.print(".actual={d}\n.steps={d}\n", .{ actual, steps });
+
+        if (expected_val) |exp| {
+            try stdout.print(".expected={d}\n", .{exp});
+            if (actual == exp) {
+                try stdout.print(".verdict=\"CONFIRMED\"\n", .{});
+            } else {
+                try stdout.print(".verdict=\"REFUTED\"\n", .{});
+            }
+        } else {
+            if (actual != 0) {
+                try stdout.print(".verdict=\"CONFIRMED\"\n", .{});
+            } else {
+                try stdout.print(".verdict=\"REFUTED\"\n", .{});
+            }
+        }
+        return;
+    }
     if (argEq(cmd, "fmt") or argEq(cmd, "format")) {
         if (args.len < 3) {
             try stderr.print("usage: lin fmt <file.lin>\n", .{});
