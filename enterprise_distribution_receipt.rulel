@@ -1,0 +1,26 @@
+@RULEL:LIN_ENTERPRISE_DISTRIBUTION:1.0.0
+~R{.s=subject .m=manifest .i=interop .v=verdict}
+.s{
+  distribution_id="urn:lin:pkg:2026-08-30:003"
+  package_path="test/packages/gpu_parallel_map.linpkg"
+  canonical_bundle_digest="sha256:f3c7c83538a29d4b9a544f5271757159f75233c79d396ddace2190513234de0b"
+  audit_timestamp="2026-08-30T14:19:00Z"
+}
+.m{
+  artifact_digest="sha256:b9d1b80b517f69d15d038ad3afa9342a79b0155d35b508d7de2de0b0f13f7c41"
+  evidence_root="sha256:62b7d202d4f273ab967cc46e705f5b1a035b6540abfa9c97a2ac69480a277482"
+  trust_root="sha256:228405f34a41e60501c4dc2d90731d24fc735c67a398e3cb028b12f178e1e775"
+  provenance_root="sha256:45d5a98abd498cf4a5de9cae89325dce05aca801c17ccc678386761e02b6b57f"
+}
+.i{
+  spdx_version="SPDX_3.0"
+  cyclonedx_version="CYCLONEDX_1.7"
+  slsa_provenance_level="SLSA_1.2_ALIGNED"
+  offline_verification_supported=true
+  machine_api_response_valid=true
+}
+.v{
+  enterprise_policy_status="DEPLOY_APPROVED"
+  common_mode_divergence_observed=0
+  fail_closed_integrity_certified=true
+}
