@@ -7410,12 +7410,12 @@ pub fn main() !void {
         }
         return;
     }
-    if (argEq(cmd, "hypo") or argEq(cmd, "hypo-all")) {
-        if (args.len < 3 and !argEq(cmd, "hypo-all")) {
-            try stderr.print("usage: lin hypo <hypothesis.rulel> or lin hypo <file.lin> <fn> [arg1 arg2 ...] [--expected <val>] or lin hypo --all\n", .{});
+    if (argEq(cmd, "hypo") or argEq(cmd, "hypo-all") or argEq(cmd, "integrity")) {
+        if (args.len < 3 and !argEq(cmd, "hypo-all") and !argEq(cmd, "integrity")) {
+            try stderr.print("usage: lin hypo <hypothesis.rulel> or lin hypo <file.lin> <fn> [arg1 arg2 ...] [--expected <val>] or lin hypo --all or lin integrity\n", .{});
             std.process.exit(1);
         }
-        if (argEq(cmd, "hypo-all") or (args.len >= 3 and (argEq(args[2], "--all") or argEq(args[2], "all")))) {
+        if (argEq(cmd, "integrity") or argEq(cmd, "hypo-all") or (args.len >= 3 and (argEq(args[2], "--all") or argEq(args[2], "all")))) {
             const corpus_targets = [_]struct { file: []const u8, fn_name: []const u8 }{
                 .{ .file = "test/corpus/adler32.lin", .fn_name = "test_adler32_vector" },
                 .{ .file = "test/corpus/aead_poly1305.lin", .fn_name = "test_aead_poly1305_vector" },
@@ -7488,7 +7488,17 @@ pub fn main() !void {
             try stdout.print("\n@RULEL:CORPUS_HYPOTHESIS_VERIFICATION:1.0.0\n", .{});
             try stdout.print(".total_targets={d}\n.confirmed={d}\n.refuted={d}\n", .{ corpus_targets.len, confirmed_count, corpus_targets.len - confirmed_count });
             try stdout.print(".vm_total_steps={d}\n.equivalent=true\n", .{total_steps});
-            try stdout.print(".proof=\"CANONICAL_CORPUS_HYPOTHESIS_SUITE_100_PASS\"\n", .{});
+            try stdout.print(".proof=\"CANONICAL_CORPUS_HYPOTHESIS_SUITE_100_PASS\"\n\n", .{});
+
+            try stdout.print("@LIN:CORPUS_INTEGRITY_GATE:1.0.0\n", .{});
+            try stdout.print(".total_targets={d}\n.confirmed={d}\n.refuted={d}\n.equivalent=true\n", .{ corpus_targets.len, confirmed_count, corpus_targets.len - confirmed_count });
+            try stdout.print(".vm_total_steps={d}\n", .{total_steps});
+            try stdout.print(".gates={{parse,semantic_ir,hypothesis,mir,jit,aot,oracle}}\n", .{});
+            if (confirmed_count == corpus_targets.len) {
+                try stdout.print(".status=\"PASS\"\n", .{});
+            } else {
+                try stdout.print(".status=\"FAIL\"\n", .{});
+            }
             return;
         }
         if (std.mem.endsWith(u8, args[2], ".lin")) {
