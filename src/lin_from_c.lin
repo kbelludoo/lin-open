@@ -131,6 +131,47 @@
   ^e;
 }
 
+!cfs_all_type(s: string): int {
+  n = s.length;
+  i = 0;
+  id = "";
+  ws = 0;
+  while (i < n) {
+    c = s.charCodeAt(i);
+    ?(c == 32 || c == 9 || c == 10){ i = i + 1; ws = 1; continue };
+    id = read_ident(s, i);
+    ?(id.length > 0){
+      ?(cfs_is_type(id) == 1){ i = i + id.length; continue };
+      ^0;
+    };
+    ^0;
+  };
+  ^1;
+}
+
+!cfs_strip_casts(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  cl = 0;
+  seg = "";
+  while (i < n) {
+    ?(s.charCodeAt(i) == 40){
+      cl = match_paren(s, i);
+      ?(cl > i){
+        seg = jss_trim(slice2(s, i + 1, cl));
+        ?(seg.length > 0 && cfs_all_type(seg) == 1){
+          i = cl + 1;
+          continue;
+        };
+      };
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
 !cfs_strip_types(s: string): string {
   out = "";
   n = s.length;
@@ -412,7 +453,7 @@
 }
 
 !cfs_body(b: string): string {
-  t = jss_trim(cfs_braces_to_arr(cfs_strip_types(b)));
+  t = jss_trim(cfs_braces_to_arr(cfs_strip_types(cfs_strip_casts(b))));
   out = "";
   n = t.length;
   i = 0;
@@ -675,4 +716,4 @@
   ^out;
 }
 
-=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn}
+=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type}

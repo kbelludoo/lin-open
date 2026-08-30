@@ -3942,6 +3942,61 @@ pub fn cfs_shifts(s: []const u8) []const u8 {
 
 }
 
+pub fn cfs_all_type(s: []const u8) i64 {
+    var n: i64 = 0;
+    var i: i64 = 0;
+    var id: []const u8 = "";
+    var ws: i64 = 0;
+    var c: i64 = 0;
+
+  n = _lia_len(s);
+  i = 0;
+  id = "";
+  ws = 0;
+  while (i < n) {
+    c = _lia_char_code_at(s, i);
+    if (c == 32  or  c == 9  or  c == 10) { i = i + 1; ws = 1; continue ;}
+    id = read_ident(s, i);
+    if (_lia_len(id) > 0) {
+      if (cfs_is_type(id) == 1) { i = i + _lia_len(id); continue ;}
+      return 0;
+    }
+    return 0;
+  }
+  return 1;
+
+}
+
+pub fn cfs_strip_casts(s: []const u8) []const u8 {
+    var out: []const u8 = "";
+    var n: i64 = 0;
+    var i: i64 = 0;
+    var cl: i64 = 0;
+    var seg: []const u8 = "";
+
+  out = "";
+  n = _lia_len(s);
+  i = 0;
+  cl = 0;
+  seg = "";
+  while (i < n) {
+    if (_lia_char_code_at(s, i) == 40) {
+      cl = match_paren(s, i);
+      if (cl > i) {
+        seg = jss_trim(slice2(s, i + 1, cl));
+        if (_lia_len(seg) > 0  and  cfs_all_type(seg) == 1) {
+          i = cl + 1;
+          continue;
+        }
+      }
+    }
+    out = _lia_cat(out ,  _lia_char_at(s, i));
+    i = i + 1;
+  }
+  return out;
+
+}
+
 pub fn cfs_strip_types(s: []const u8) []const u8 {
     var out: []const u8 = "";
     var n: i64 = 0;
@@ -4274,7 +4329,7 @@ pub fn cfs_body(b: []const u8) []const u8 {
     var seg: []const u8 = "";
     var conv: []const u8 = "";
 
-  t = jss_trim(cfs_braces_to_arr(cfs_strip_types(b)));
+  t = jss_trim(cfs_braces_to_arr(cfs_strip_types(cfs_strip_casts(b))));
   out = "";
   n = _lia_len(t);
   i = 0;
