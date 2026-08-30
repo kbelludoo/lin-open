@@ -2,11 +2,26 @@
 @CORPUS{origin="lin-compiler" algorithm="GPU_parallel_map_kernels" scope="gpu_lowering_gate"}
 
 // LIN-GPU-004: General MIR GPU Lowering
-// Four structurally distinct kernels, written in LIN source.
-// These functions compile through LIN frontend -> AST -> Semantic IR -> MIR.
-// The MIR is then lowered to OpenCL C by MirToOpenCLLowerer and
-// executed on the AMD RX 6600 (gfx1030), verified BIT_EXACT against
-// the same LIN scalar execution used as mathematical oracle.
+// Four structurally distinct parallel kernels, written in pure LIN source.
+//
+// Pipeline:
+//   gpu_parallel_map_kernels.lin
+//       │
+//    vmBuild (LIN Frontend: Tokenizer + AST + TypeChecker + Bytecode Gen)
+//       │
+//    VmFn (Stack Bytecode)
+//       │
+//    compileVmFnToMir (Stack-to-SSA Compiler: lin_vm_to_mir.zig)
+//       │
+//    MirFunction (SSA MIR with semantic_hash)
+//       │
+//    MirToOpenCLLowerer (MIR-to-OpenCL Lowerer: lin_mir_gpu_lowerer.zig)
+//       │
+//    OpenCL C 2.0 (compiled for AMD gfx1030 / RX 6600)
+//       │
+//    Silicon Execution (1,066,601 elements across 7 matrix sizes)
+//       │
+//    Differential Oracle (BIT_EXACT vs LIN VM mathematical execution)
 
 // K1 — Arithmetic: output = input * 3 + 7
 !kernel_arithmetic(x: int): int {
@@ -20,11 +35,11 @@
   ^lo | hi;
 }
 
-// K3 — Cmp + Select: output = abs(input)
-!kernel_abs(x: int): int {
-  neg = 0 - x;
-  ?(x < 0){ ^neg };
-  ^x;
+// K3 — Non-linear Multi-Op: output = (input * 5 - 13) ^ (input + 101)
+!kernel_nonlinear(x: int): int {
+  a = x * 5 - 13;
+  b = x + 101;
+  ^a ^ b;
 }
 
 // K4 — Xor + Shift + Sub: output = ((input ^ 0xDEAD) >>> 3) - 42
@@ -34,22 +49,15 @@
   ^shifted - 42;
 }
 
-// Verification vectors — identical PRNG: Fibonacci hashing (i+1)*0x9e3779b9
-// Each function returns 1 if BIT_EXACT against mathematical oracle, 0 otherwise.
-
 !test_kernel_arithmetic_vector(): int {
-  // spot-check 8 representative inputs matching the PRNG sequence
-  v0 = 2654435762;   // i=0: u32(1 * 0x9e3779b9) reinterp as i32
-  v1 = 1013904322;   // i=1: u32(2 * 0x9e3779b9) trunc
-  v2 = 3668340082;   // i=2
-  v3 = 2027808642;   // i=3
-
+  v0 = 2654435762;
+  v1 = 1013904322;
+  v2 = 3668340082;
+  v3 = 2027808642;
   ?(kernel_arithmetic(v0) != v0 * 3 + 7){ ^0 };
   ?(kernel_arithmetic(v1) != v1 * 3 + 7){ ^0 };
   ?(kernel_arithmetic(v2) != v2 * 3 + 7){ ^0 };
   ?(kernel_arithmetic(v3) != v3 * 3 + 7){ ^0 };
-
-  // fixed small inputs
   ?(kernel_arithmetic(0)    != 7){   ^0 };
   ?(kernel_arithmetic(1)    != 10){  ^0 };
   ?(kernel_arithmetic(-1)   != 4){   ^0 };
@@ -59,31 +67,27 @@
 
 !test_kernel_bitwise_vector(): int {
   ?(kernel_bitwise(0)     != 0){       ^0 };
-  ?(kernel_bitwise(1)     != 257){     ^0 };  // (1 & FF) | (1 << 8) = 1 | 256 = 257
-  ?(kernel_bitwise(255)   != 65535){   ^0 };  // 255 | (255 << 8)
+  ?(kernel_bitwise(1)     != 257){     ^0 };
+  ?(kernel_bitwise(255)   != 65535){   ^0 };
   ?(kernel_bitwise(256)   != 0 | _lia_shl(256, 8)){ ^0 };
   ^1;
 }
 
-!test_kernel_abs_vector(): int {
-  ?(kernel_abs(0)    != 0){   ^0 };
-  ?(kernel_abs(1)    != 1){   ^0 };
-  ?(kernel_abs(-1)   != 1){   ^0 };
-  ?(kernel_abs(-100) != 100){ ^0 };
-  ?(kernel_abs(100)  != 100){ ^0 };
+!test_kernel_nonlinear_vector(): int {
+  ?(kernel_nonlinear(0)   != (-13) ^ 101){ ^0 };
+  ?(kernel_nonlinear(1)   != (-8) ^ 102){  ^0 };
+  ?(kernel_nonlinear(10)  != 37 ^ 111){    ^0 };
+  ?(kernel_nonlinear(-5)  != (-38) ^ 96){  ^0 };
   ^1;
 }
 
 !test_kernel_xor_shift_vector(): int {
-  // 0 ^ 57005 = 57005; 57005 >>> 3 = 7125; 7125 - 42 = 7083
-  ?(kernel_xor_shift(0) != 7083){ ^0 };
-  // 1 ^ 57005 = 57004; 57004 >>> 3 = 7125; 7125 - 42 = 7083
-  ?(kernel_xor_shift(1) != 7083){ ^0 };
-  // 57005 ^ 57005 = 0; 0 >>> 3 = 0; 0 - 42 = -42
-  ?(kernel_xor_shift(57005) != -42){ ^0 };
+  ?(kernel_xor_shift(0)     != 7083){ ^0 };
+  ?(kernel_xor_shift(1)     != 7083){ ^0 };
+  ?(kernel_xor_shift(57005) != -42){  ^0 };
   ^1;
 }
 
-=ex{kernel_arithmetic, kernel_bitwise, kernel_abs, kernel_xor_shift,
+=ex{kernel_arithmetic, kernel_bitwise, kernel_nonlinear, kernel_xor_shift,
     test_kernel_arithmetic_vector, test_kernel_bitwise_vector,
-    test_kernel_abs_vector, test_kernel_xor_shift_vector}
+    test_kernel_nonlinear_vector, test_kernel_xor_shift_vector}

@@ -4,10 +4,13 @@ all: build test bench
 
 build:
 	@mkdir -p bin
-	zig build-exe src/lin.zig -O ReleaseFast -femit-bin=bin/lin_native
+	zig build-exe src/lin.zig -O ReleaseFast -I/usr/include -L/usr/lib -lOpenCL --library c -femit-bin=bin/lin_native
 
 test: build
 	./bin/lin_native test
+
+gpu: build
+	./bin/lin_native gpu-verify
 
 integrity: build
 	./bin/lin_native integrity
