@@ -16,7 +16,6 @@ const oracle = @import("src/lin_gpu_execution_oracle.zig");
 const planner = @import("src/lin_workload_planner.zig");
 const verifier = @import("src/lin_heterogeneous_verifier.zig");
 const obs = @import("src/lin_physical_observer.zig");
-const fetch = @import("src/lin_live_git_fetch_engine.zig");
 
 const GpuModule = ir.GpuModule;
 const MirToGpuIrLowerer = lowerer.MirToGpuIrLowerer;
@@ -24,7 +23,6 @@ const GpuIrToOpenClEmitter = emitter.GpuIrToOpenClEmitter;
 const UniversalGpuOracle = oracle.UniversalGpuOracle;
 const WorkloadDescriptor = planner.WorkloadDescriptor;
 const HeterogeneousVerifier = verifier.HeterogeneousVerifier;
-const LiveGitFetchEngine = fetch.LiveGitFetchEngine;
 
 const cl = @cImport({
     @cDefine("CL_TARGET_OPENCL_VERSION", "200");
