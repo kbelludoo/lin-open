@@ -7324,7 +7324,7 @@ pub fn main() !void {
     }
     if (argEq(cmd, "attest-verify") or argEq(cmd, "verify-attest")) {
         var is_adversarial = false;
-        var file_path: []const u8 = "attestation_output.json";
+        var file_path: []const u8 = "attestation_output.rulel";
 
         var ai: usize = 2;
         while (ai < args.len) : (ai += 1) {

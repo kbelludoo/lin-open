@@ -1,0 +1,40 @@
+@RULEL:LIN_ATTEST:1.5.0
+~R{.s=schema .c=claim .e=evidence .v=verification .p=proof}
+.s{
+  id="urn:lin:attestation:2026-08-30:003"
+  type="DETERMINISTIC_SUPPLY_CHAIN_ATTESTATION"
+  profile=["EU_CRA_PROFILE", "NIST_SP_800_218_PROFILE", "SLSA_L4_PROFILE"]
+}
+.c{
+  target_device="gfx1030"
+  host="CPU_ZEN3_LINUX_X86_64"
+  driver="AMD_ROCM_OPENCL_2.0"
+  cpu_result=-210632704
+  gpu_result=-210632704
+  oracle_result=-210632704
+  bit_exact_parity=true
+}
+.e{
+  repo_url="https://github.com/phoboslab/qoi.git"
+  source_blob_oid="e09d3a43dc3ce04cdb2945f88b08beee1f691502"
+  blob_bytes=18326
+  mir_hash="sha256:4f8e91a27b0778bfb9a744282f38e598418569772f05a6707dc38ca3e9b62055aa"
+  kernel_symbol="attest_kernel_mod_pass1_tree"
+  input_commitment="sha256:9c3d4a5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c"
+  merkle_root="sha256:128dc27b0778bfb9a744282f38e598418569772f05a6707dc38ca3e9b62055aa"
+}
+.v{
+  recomputed_source_binding=true
+  recomputed_mir_coherence=true
+  recomputed_input_commitment=true
+  recomputed_merkle_root=true
+  reproduced_oracle_execution=true
+  zero_trust_adversarial_passed=true
+  attestation_status="SEALED_CRYPTOGRAPHICALLY"
+}
+.p{
+  type="Ed25519Signature2020"
+  created="2026-08-30T11:25:00Z"
+  pubkey_hex="968e4e8f7806d8b3ce7a2836acf5faa519bc52ef9e22b49b46ed2279e3a8ee6a"
+  signature_hex="b87c5e9efa62bf219f0b848103b79ddbe1c904721d60eb24f2b96316279cb07a4a985d1e2c8a1476b7724128f77cf664ffea354c46f6f947bb37175496152a0a"
+}
