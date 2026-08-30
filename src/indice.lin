@@ -1,0 +1,96 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=lin_master_index_v320
+~G{?=if #=for ^=ret :else}
+
+// ============================================================================
+// LIN MASTER CAPABILITY INDEX & ARCHITECTURAL EXECUTION ATLAS (indice.lin)
+// ============================================================================
+// O QUE LIN FAZ E COMO FAZ:
+//
+// 1. FRONTEND, PARSING & COMPILATION:
+//    - O que faz: Transpila, formata e valida código LIN (.lin) e RULEL (.rulel).
+//    - Como faz: Lexer de fatia zero-alloc, AST MIR SSA, canonical formatter (lin fmt).
+//
+// 2. ADAPTIVE DISCOVERY & WORKLOAD PLANNING:
+//    - O que faz: Analisa padrões de computação e particiona execuções heterogêneas.
+//    - Como faz: Reconhecimento de laços paralelos e remapeamento dinâmico GPU/CPU.
+//
+// 3. PHYSICAL SILICON EXECUTION:
+//    - O que faz: Executa kernels com paridade bit-exact em GPU (AMD ROCm gfx1030) e CPU (Zen3).
+//    - Como faz: Geração de OpenCL C nativo, despacho assíncrono e verificação por triplo oráculo.
+//
+// 4. SUPPLY CHAIN & TEMPORAL MERKLE PROVENANCE:
+//    - O que faz: Rastreia proveniência de ponta a ponta, revogações e progressão monotônica.
+//    - Como faz: Redução Merkle binária por pares e acumulador de estado temporal S_t.
+//
+// 5. EXTERNAL NOTARIZATION & ANTI-EQUIVOCATION:
+//    - O que faz: Previne split-view e notaria Signed Tree Heads (STH).
+//    - Como faz: Quórum M-of-N de testemunhas soberanas e provas de consistência append-only.
+//
+// 6. DYNAMIC QUORUM, KEY SUCCESSION & DISASTER RECOVERY:
+//    - O que faz: Rotaciona chaves e recupera autoridade pós-comprometimento sem reancoragem manual.
+//    - Como faz: Compromisso criptográfico de transição T_t e isolamento de chaves afetadas.
+//
+// 7. SOVEREIGN EXTERNAL VERIFICATION PLANE (ZERO-TRUST):
+//    - O que faz: Permite auditoria completa e independente por terceiros (lin verify-all).
+//    - Como faz: Desacoplamento estrito entre Prover e Verifier, e paridade polyglot conformante.
+// ============================================================================
+
+!query_subsystem_capability(subsystem_id: int) -> int {
+    status = 0;
+    // 1: Frontend & Lexer/Parser Engine
+    ?(subsystem_id == 1) {
+        status = 101;
+    }
+    // 2: Adaptive Workload Planner & Replanning
+    ?(subsystem_id == 2) {
+        status = 202;
+    }
+    // 3: Physical Hardware Identity & OpenCL Silicon Bridge
+    ?(subsystem_id == 3) {
+        status = 303;
+    }
+    // 4: Hierarchical Pairwise Merkle & Supply Chain Ledger
+    ?(subsystem_id == 4) {
+        status = 404;
+    }
+    // 5: Monotonic Temporal Ledger & Revocation Engine
+    ?(subsystem_id == 5) {
+        status = 505;
+    }
+    // 6: Witness Quorum & Anti-Equivocation Transparency Notary
+    ?(subsystem_id == 6) {
+        status = 606;
+    }
+    // 7: Dynamic Quorum Reconfiguration & Disaster Recovery
+    ?(subsystem_id == 7) {
+        status = 707;
+    }
+    // 8: Sovereign External Verification Plane & Polyglot Parity
+    ?(subsystem_id == 8) {
+        status = 808;
+    }
+    ^status;
+}
+
+!explain_how_it_operates(capability_id: int) -> int {
+    mechanism = 0;
+    ?(capability_id >= 100) {
+        ?(capability_id <= 900) {
+            mechanism = 1;
+        }
+    }
+    ^mechanism;
+}
+
+!get_master_verdict_summary(total_gates_passed: int, common_mode_divergences: int) -> int {
+    verdict = 0;
+    ?(total_gates_passed >= 15) {
+        ?(common_mode_divergences == 0) {
+            verdict = 9999;
+        }
+    }
+    ^verdict;
+}
+
+=ex{query_subsystem_capability, explain_how_it_operates, get_master_verdict_summary}
