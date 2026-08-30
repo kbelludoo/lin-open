@@ -1,18 +1,20 @@
 @LIN:L1c:0.2
-^schema_once ^lossy=false ^ops=c_expr_parser_v100
+^schema_once ^lossy=false ^ops=c_expr_parser_helpers_v100
 ~G{?=if #=for ^=ret :else}
 
 // ============================================================================
-// REAL FLAT AST ARENA EVALUATOR & AST PARSER IN LIN (L1c:0.2)
+// LIN MIRROR HELPERS (LIMITAÇÕES CONHECIDAS E CONTRATO EXPLÍCITO)
 //
-// Representação Flat AST Arena:
-//   node_tags: [ 10: LITERAL, 20: ADD, 21: SUB, 22: MUL, 23: DIV ]
-//   node_lhs:  [ índice filho esquerdo ]
-//   node_rhs:  [ índice filho direito ]
-//   node_vals: [ valor imediato se literal ]
+// NOTA DE TRANSPARÊNCIA ARQUITETURAL:
+//   1. Este arquivo NÃO é o parser completo. O parser real reside em
+//      Stage-0 (src/lin.zig) executado via 'lin c-expr-test'.
+//   2. eval_flat_ast_node é um ALU escalar de 1 nó. Não percorre árvore recursiva
+//      no dialecto L1c:0.2.
+//   3. DIV (tag 23): Retorna sentinel de erro explícito (-1) pois o LinVM
+//      ainda não possui instrução de divisão não-linear nativa.
 // ============================================================================
 
-!eval_flat_ast_node(node_idx: int, tag: int, left_val: int, right_val: int, lit_val: int) -> int {
+!eval_flat_ast_node(tag: int, left_val: int, right_val: int, lit_val: int) -> int {
     res = 0;
     // 10: LITERAL
     ?(tag == 10) {
@@ -30,14 +32,9 @@
     ?(tag == 22) {
         res = left_val * right_val;
     }
-    // 23: DIV (/) - Divisão segura via LinVM sem op de divisão não linear
+    // 23: DIV (/) - Não suportado no LinVM L1c escalar; retorna erro formal -1
     ?(tag == 23) {
-        ?(right_val == 0) {
-            res = 0 - 999999;
-        } : {
-            // Placeholder linear seguro para o LinVM probe
-            res = left_val;
-        }
+        res = 0 - 1;
     }
     ^res;
 }
