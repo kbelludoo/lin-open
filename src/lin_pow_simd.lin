@@ -1,0 +1,125 @@
+@LIN:L1c:0.2
+@LIN_POW_SIMD{version=1 purpose=sha256d_8lanes_lane_parallel scope=simd8_u32 emit_zig_only copies_of=lin_miner_scalar}
+
+!p8_splat(x: u32) -> simd8_u32 {
+  ^@as(@Vector(8, u32), @splat(x));
+}
+
+!p8_rotr8(x: simd8_u32, n: u32) -> simd8_u32 {
+  s: simd8_u5 = @splat(@as(u5, @intCast(n)));
+  s2: simd8_u5 = @splat(@as(u5, @intCast(32 - n)));
+  ^(x >> s) | (x << s2);
+}
+
+!p8_ch8(x: simd8_u32, y: simd8_u32, z: simd8_u32) -> simd8_u32 {
+  ^(x & y) ^ (~x & z);
+}
+
+!p8_maj8(x: simd8_u32, y: simd8_u32, z: simd8_u32) -> simd8_u32 {
+  ^(x & y) ^ (x & z) ^ (y & z);
+}
+
+!p8_sig0(x: simd8_u32) -> simd8_u32 {
+  ^p8_rotr8(x, 2) ^ p8_rotr8(x, 13) ^ p8_rotr8(x, 22);
+}
+
+!p8_sig1(x: simd8_u32) -> simd8_u32 {
+  ^p8_rotr8(x, 6) ^ p8_rotr8(x, 11) ^ p8_rotr8(x, 25);
+}
+
+!p8_gam0(x: simd8_u32) -> simd8_u32 {
+  s3: simd8_u5 = @splat(3);
+  ^p8_rotr8(x, 7) ^ p8_rotr8(x, 18) ^ (x >> s3);
+}
+
+!p8_gam1(x: simd8_u32) -> simd8_u32 {
+  s10: simd8_u5 = @splat(10);
+  ^p8_rotr8(x, 17) ^ p8_rotr8(x, 19) ^ (x >> s10);
+}
+
+!p8_k(i: int) -> simd8_u32 {
+  k: [64]int = [1116352408, 1899447441, 3049323471, 3921009573, 961987163, 1508970993, 2453635748, 2870763221, 3624381080, 310598401, 607225278, 1426881987, 1925078388, 2162078206, 2614888103, 3248222580, 3835390401, 4022224774, 264347078, 604807628, 770255983, 1249150122, 1555081692, 1996064986, 2554220882, 2821834349, 2952996808, 3210313671, 3336571891, 3584528711, 113926993, 338241895, 666307205, 773529912, 1294757372, 1396182291, 1695183700, 1986661051, 2177026350, 2456956037, 2730485921, 2820302411, 3259730800, 3345764771, 3516065817, 3600352804, 4094571909, 275423344, 430227734, 506948616, 659060556, 883997877, 958139571, 1322822218, 1537002063, 1747873779, 1955562222, 2024104815, 2227730452, 2361852424, 2428436474, 2756734187, 3204031479, 3329325298];
+  ^@as(@Vector(8, u32), @splat(@as(u32, @intCast(k[i]))));
+}
+
+!p8_sha256d8_word(m0: u32, m1: u32, m2: u32, m3: u32, m4: u32, m5: u32, m6: u32, m7: u32, w0_in: u32, w1_in: u32, w2_in: u32, nonces: simd8_u32, sel: u32) -> simd8_u32 {
+  W: [64]simd8_u32;
+  W[0] = p8_splat(w0_in); W[1] = p8_splat(w1_in); W[2] = p8_splat(w2_in); W[3] = nonces;
+  W[4] = p8_splat(2147483648); W[5] = p8_splat(0); W[6] = p8_splat(0); W[7] = p8_splat(0);
+  W[8] = p8_splat(0); W[9] = p8_splat(0); W[10] = p8_splat(0); W[11] = p8_splat(0);
+  W[12] = p8_splat(0); W[13] = p8_splat(0); W[14] = p8_splat(0); W[15] = p8_splat(640);
+  a: simd8_u32 = p8_splat(m0);
+  b: simd8_u32 = p8_splat(m1);
+  c: simd8_u32 = p8_splat(m2);
+  d: simd8_u32 = p8_splat(m3);
+  e: simd8_u32 = p8_splat(m4);
+  f: simd8_u32 = p8_splat(m5);
+  g: simd8_u32 = p8_splat(m6);
+  h: simd8_u32 = p8_splat(m7);
+  X1: simd8_u32 = p8_splat(0);
+  X2: simd8_u32 = p8_splat(0);
+  i: int = 16;
+  while (i < 64) {
+    W[i] = p8_gam1(W[i - 2]) + W[i - 7] + p8_gam0(W[i - 15]) + W[i - 16];
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 64) {
+    X1 = h + p8_sig1(e) + p8_ch8(e, f, g) + p8_k(i) + W[i];
+    X2 = p8_sig0(a) + p8_maj8(a, b, c);
+    h = g; g = f; f = e; e = d + X1;
+    d = c; c = b; b = a; a = X1 + X2;
+    i = i + 1;
+  };
+  h1_0: simd8_u32 = p8_splat(m0) + a;
+  h1_1: simd8_u32 = p8_splat(m1) + b;
+  h1_2: simd8_u32 = p8_splat(m2) + c;
+  h1_3: simd8_u32 = p8_splat(m3) + d;
+  h1_4: simd8_u32 = p8_splat(m4) + e;
+  h1_5: simd8_u32 = p8_splat(m5) + f;
+  h1_6: simd8_u32 = p8_splat(m6) + g;
+  h1_7: simd8_u32 = p8_splat(m7) + h;
+  W[0] = h1_0; W[1] = h1_1; W[2] = h1_2; W[3] = h1_3;
+  W[4] = h1_4; W[5] = h1_5; W[6] = h1_6; W[7] = h1_7;
+  W[8] = p8_splat(2147483648); W[9] = p8_splat(0); W[10] = p8_splat(0); W[11] = p8_splat(0);
+  W[12] = p8_splat(0); W[13] = p8_splat(0); W[14] = p8_splat(0); W[15] = p8_splat(256);
+  a = p8_splat(1779033703);
+  b = p8_splat(3144134277);
+  c = p8_splat(1013904242);
+  d = p8_splat(2773480762);
+  e = p8_splat(1359893119);
+  f = p8_splat(2600822924);
+  g = p8_splat(528734635);
+  h = p8_splat(1541459225);
+  i = 16;
+  while (i < 64) {
+    W[i] = p8_gam1(W[i - 2]) + W[i - 7] + p8_gam0(W[i - 15]) + W[i - 16];
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 64) {
+    X1 = h + p8_sig1(e) + p8_ch8(e, f, g) + p8_k(i) + W[i];
+    X2 = p8_sig0(a) + p8_maj8(a, b, c);
+    h = g; g = f; f = e; e = d + X1;
+    d = c; c = b; b = a; a = X1 + X2;
+    i = i + 1;
+  };
+  r0: simd8_u32 = p8_splat(1779033703) + a;
+  r1: simd8_u32 = p8_splat(3144134277) + b;
+  r2: simd8_u32 = p8_splat(1013904242) + c;
+  r3: simd8_u32 = p8_splat(2773480762) + d;
+  r4: simd8_u32 = p8_splat(1359893119) + e;
+  r5: simd8_u32 = p8_splat(2600822924) + f;
+  r6: simd8_u32 = p8_splat(528734635) + g;
+  r7: simd8_u32 = p8_splat(1541459225) + h;
+  ?(sel == 0){ ^r0 };
+  ?(sel == 1){ ^r1 };
+  ?(sel == 2){ ^r2 };
+  ?(sel == 3){ ^r3 };
+  ?(sel == 4){ ^r4 };
+  ?(sel == 5){ ^r5 };
+  ?(sel == 6){ ^r6 };
+  ?(sel == 7){ ^r7 };
+  ^r0;
+}
+=ex{p8_splat, p8_rotr8, p8_ch8, p8_maj8, p8_sig0, p8_sig1, p8_gam0, p8_gam1, p8_k, p8_sha256d8_word}

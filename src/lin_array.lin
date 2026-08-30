@@ -41,6 +41,29 @@
   ^0;
 }
 
+!arr_inner_ident(t: string): string {
+  n = t.length;
+  i = skip_ws(t, 0);
+  ?(i < n && t.charCodeAt(i) == 91){
+    cb = match_brack(t, i);
+    ?(cb > i){
+      e = skip_ws(t, cb + 1);
+      ^read_ident(t, e);
+    };
+  };
+  ^"";
+}
+
+!arr_vec_elems(t: string): string {
+  n = t.length;
+  i = skip_ws(t, 0);
+  ?(i < n && t.charCodeAt(i) == 91){
+    cb = match_brack(t, i);
+    ?(cb > i){ ^jss_trim(slice2(t, cb + 1, n)) };
+  };
+  ^"";
+}
+
 !zig_ty(t: string): string {
   out = "";
   ?(starts_lit(t, 0, "simd8_u32") == 1){ ^"@Vector(8, u32)" };
@@ -53,7 +76,16 @@
   ?(is_arr_ty(t) == 1){
     out = out + "[";
     out = out + arr_n_str(t);
-    out = out + "]i64";
+    out = out + "]";
+    eid = arr_inner_ident(t);
+    ?(starts_lit(eid, 0, "simd8_u32") == 1){ out = out + "@Vector(8, u32)" }
+    : (starts_lit(eid, 0, "simd4_u32") == 1){ out = out + "@Vector(4, u32)" }
+    : (starts_lit(eid, 0, "simd8_u64") == 1){ out = out + "@Vector(8, u64)" }
+    : (starts_lit(eid, 0, "simd4_u64") == 1){ out = out + "@Vector(4, u64)" }
+    : (starts_lit(eid, 0, "simd8_i64") == 1){ out = out + "@Vector(8, i64)" }
+    : (starts_lit(eid, 0, "simd8_u5") == 1){ out = out + "@Vector(8, u5)" }
+    : (starts_lit(eid, 0, "simd8_u6") == 1){ out = out + "@Vector(8, u6)" }
+    : { out = out + "i64" };
     ^out;
   };
   ?(t.length == 6 && starts_lit(t, 0, "string") == 1){ ^"[]const u8" };
@@ -134,7 +166,7 @@
   ?(starts_lit(id, 0, "list_new_int") == 1){ ^"*LiaListI64" };
   ?(starts_lit(id, 0, "list_new_str") == 1){ ^"*LiaListStr" };
   ?(starts_lit(id, 0, "read_") == 1 || starts_lit(id, 0, "slice2") == 1 || starts_lit(id, 0, "q") == 1){ ^"[]const u8" };
-  ?(starts_lit(id, 0, "arr_n") == 1 || starts_lit(id, 0, "zig_ty") == 1){ ^"[]const u8" };
+  ?(starts_lit(id, 0, "arr_n") == 1 || starts_lit(id, 0, "arr_inner_") == 1 || starts_lit(id, 0, "arr_vec_") == 1 || starts_lit(id, 0, "is_arr_ty") == 1 || starts_lit(id, 0, "zig_ty") == 1){ ^"[]const u8" };
   ?(starts_lit(id, 0, "js_params") == 1 || starts_lit(id, 0, "rewrite_") == 1 || starts_lit(id, 0, "lin_") == 1){ ^"[]const u8" };
   ?(starts_lit(id, 0, "andor") == 1 || starts_lit(id, 0, "kw_space") == 1 || starts_lit(id, 0, "zig_") == 1){ ^"[]const u8" };
   ?(starts_lit(id, 0, "emit_") == 1 || starts_lit(id, 0, "param_") == 1 || starts_lit(id, 0, "fn_ret") == 1){ ^"[]const u8" };
@@ -152,6 +184,14 @@
     out = out + " = ";
     out = out + q();
     out = out + q();
+    out = out + ";\n";
+    ^out;
+  };
+  ?(ty.length > 1 && ty.charCodeAt(0) == 91 && starts_lit(arr_vec_elems(ty), 0, "@Vector") == 1){
+    out = out + " = [_]";
+    out = out + arr_vec_elems(ty);
+    out = out + "{@splat(0)} ** ";
+    out = out + arr_n_str(ty);
     out = out + ";\n";
     ^out;
   };
@@ -180,6 +220,12 @@
   ty = "";
   t = "";
   while (i < n) {
+    ?(body.charCodeAt(i) == 47 && i + 1 < n && body.charCodeAt(i + 1) == 47){
+      i = i + 2;
+      while (i < n && body.charCodeAt(i) != 10){ i = i + 1 };
+      ?(i < n){ i = i + 1 };
+      continue;
+    };
     ?(body.charCodeAt(i) == 34){
       i = i + 1;
       while (i < n && body.charCodeAt(i) != 34){ i = i + 1 };
@@ -239,6 +285,15 @@
   cl = 0;
   k = 0;
   while (i < n) {
+    ?(s.charCodeAt(i) == 47 && i + 1 < n && s.charCodeAt(i + 1) == 47){
+      while (i < n && s.charCodeAt(i) != 10){
+        chs = s.charAt(i);
+        out = out + chs;
+        i = i + 1;
+      };
+      ?(i < n){ chs = s.charAt(i); out = out + chs; i = i + 1 };
+      continue;
+    };
     ?(s.charCodeAt(i) == 34){
       out = out + q();
       i = i + 1;
