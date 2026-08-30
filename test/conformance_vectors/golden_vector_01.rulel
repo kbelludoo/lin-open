@@ -1,0 +1,25 @@
+@RULEL:LIN_CONFORMANCE_VECTOR:1.0.0
+~R{.m=meta .c=claims .p=payload .e=expected}
+
+.m{
+  vector_id="urn:lin:vector:2026-08-30:golden_001"
+  spec_version="LIN_VERIFIABLE_SPEC_v1.0"
+  type="GOLDEN_CANONICAL_TEST_VECTOR"
+}
+
+.c{
+  bundle_id="urn:lin:bundle:2026-08-30:007:gpu_parallel_map"
+  target_arch="gfx1030"
+  merkle_root="sha256:924a2606accc96386948b96b7a9b9375c2c8476acc8e20b2be8f1611d1fefe10"
+}
+
+.p{
+  raw_bytes_sha256="sha256:b9d1b80b517f69d15d038ad3afa9342a79b0155d35b508d7de2de0b0f13f7c41"
+  trust_anchor="cdfee9f8cdd5a6bd19238941cdca618a1bbb17ba60c04e3e32c74d5ebdc6bafd"
+}
+
+.e{
+  expected_verdict="PASS"
+  expected_failure_code="NONE"
+  expected_audit_digest="sha256:45d5a98abd498cf4a5de9cae89325dce05aca801c17ccc678386761e02b6b57f"
+}

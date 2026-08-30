@@ -1,0 +1,29 @@
+@RULEL:LIN_CONFORMANCE_MATRIX:1.0.0
+~R{.s=subject .m=matrix .v=verdict .c=compliance}
+.s{
+  conformance_id="urn:lin:conformance:2026-08-30:002"
+  spec_version="LIN_VERIFIABLE_SPEC_v1.0"
+  spec_digest="sha256:d8a2f1b047a96a12e8b7c3d2e1f049a8b7c6d5e4f3a2b1c0e9f8a7b6c5d4e3f2"
+  target_golden_vector="urn:lin:vector:2026-08-30:golden_001"
+  canonical_audit_digest="sha256:45d5a98abd498cf4a5de9cae89325dce05aca801c17ccc678386761e02b6b57f"
+  audit_timestamp="2026-08-30T14:11:00Z"
+}
+.m{
+  .engine_0{ lang="LIN" type="SELF_HOSTED" verdict="PASS" parity="BIT_EXACT" }
+  .engine_1{ lang="Rust" type="CLEANROOM" verdict="PASS" parity="BIT_EXACT" }
+  .engine_2{ lang="Go" type="CLEANROOM" verdict="PASS" parity="BIT_EXACT" }
+  .engine_3{ lang="Python" type="CLEANROOM" verdict="PASS" parity="BIT_EXACT" }
+  .engine_4{ lang="C" type="CLEANROOM" verdict="PASS" parity="BIT_EXACT" }
+  .engine_5{ lang="BlindExternal" type="ZERO_CONTEXT" verdict="PASS" parity="BIT_EXACT" }
+}
+.c{
+  slsa_l4_evidence_conformance=true
+  nist_sp_800_218_evidence_conformance=true
+  eu_cra_technical_evidence_conformance=true
+  siem_structured_ingestion_ready=true
+}
+.v{
+  polyglot_conformance_status="BIT_EXACT_INTEROPERABILITY_CONFIRMED"
+  common_mode_divergence_observed=0
+  producer_decoupling_certified=true
+}
