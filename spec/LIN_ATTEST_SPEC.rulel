@@ -1,16 +1,22 @@
-@RULEL:LIN_ATTEST_SPEC:1.9.0
-~R{.s=schema .c=compliance .p=provenance .d=determinism .h=hardware .k=cryptography .a=adversarial}
+@RULEL:LIN_ATTEST_SPEC:2.0.0
+~R{.s=schema .c=compliance .p=provenance .d=determinism .h=hardware .k=cryptography .l=ledger .a=adversarial}
 .s{
   architecture="ZERO_TRUST_PHYSICAL_SILICON_BOUND"
-  type="DETERMINISTIC_SUPPLY_CHAIN_ATTESTATION_v0.7"
+  type="DETERMINISTIC_SUPPLY_CHAIN_UNIFIED_LEDGER_v1.0"
   format="RULEL"
-  merkle_type="8_LEAF_BALANCED_DOMAIN_SEPARATED_BINARY_MERKLE_TREE"
+  merkle_type="HIERARCHICAL_2LEVEL_UNIFIED_MERKLE_LEDGER"
 }
 .h{
-  execution_mode="PHYSICAL_SILICON_DISPATCH"
+  execution_mode="PHYSICAL_SILICON_MULTI_KERNEL_DISPATCH"
   target_arch="gfx1030"
   runtime="AMD_ROCM_OPENCL_2.0"
   identity_schema="SEPARATED_ARCHITECTURE_AND_DEVICE_PROPERTIES"
+}
+.l{
+  multi_kernel_policy="ALL_DISCOVERED_COMPATIBLE_KERNELS"
+  aggregation_rule="BALANCED_BINARY_LEDGER_TREE"
+  domain_separation="ledger:entry:idx:symbol:kernel_merkle_root"
+  signature_cardinality="N_KERNELS_TO_1_SEAL"
 }
 .k{
   signature_algorithm="Ed25519"
@@ -21,10 +27,10 @@
 }
 .c{
   standards=["EU_CYBER_RESILIENCE_ACT_PROFILE", "NIST_SP_800_218_SSDF_PROFILE", "SLSA_LEVEL_4_INTEGRITY_PROFILE"]
-  guarantee="PHYSICAL_SILICON_EXACT_ORACLE_PARITY"
+  guarantee="MULTI_KERNEL_PHYSICAL_SILICON_ORACLE_PARITY"
 }
 .p{
-  leaves=[
+  level1_kernel_leaves=[
     "L0: leaf:source:GitBlobOID",
     "L1: leaf:mir:MirSemanticHash",
     "L2: leaf:kernel:LoweringHash",
@@ -34,18 +40,12 @@
     "L6: leaf:exec:gpu:GpuResult",
     "L7: leaf:policy:StandardsProfile"
   ]
-  tree_nodes=[
-    "H01: node:L0:L1",
-    "H23: node:L2:L3",
-    "H45: node:L4:L5",
-    "H67: node:L6:L7",
-    "H0123: node:H01:H23",
-    "H4567: node:H45:H67",
-    "Root: node:H0123:H4567"
+  level2_ledger_entries=[
+    "E_i: SHA256(ledger:entry:i:kernel_symbol_i:K_i)"
   ]
 }
 .d{
-  rule="R_CPU(x) == R_GPU_PHYSICAL(x) == R_ORACLE(x)"
+  rule="FOR_ALL_i in [0..N-1]: R_CPU_i == R_GPU_PHYSICAL_i == R_ORACLE_i"
   precision="BIT_EXACT"
 }
 .a{
@@ -57,7 +57,7 @@
     "MUT_CPU_RESULT_DOC",
     "MUT_GPU_RESULT_DOC",
     "MUT_ORACLE_RESULT_DOC",
-    "MUT_MERKLE_ROOT_DOC",
+    "MUT_LEDGER_ROOT_DOC",
     "MUT_HARDWARE_FP_DOC",
     "MUT_TARGET_ARCH_DOC"
   ]
