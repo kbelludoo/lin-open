@@ -12944,36 +12944,44 @@ pub fn main() !void {
         try stdout.print("  [✓] Policy Gate Verdict: PROCEED_TO_DEPLOY .............. [PASS]\n\n", .{});
 
         // 3. Emit Machine-Readable Verification JSON API response
-        const api_json =
-            \\{
+        var api_doc = std.ArrayList(u8).init(LIA_ALLOC);
+        defer api_doc.deinit();
+
+        try api_doc.writer().print(
+            \\{{
             \\  "protocol": "LIN-VERIFY-API",
             \\  "version": "1.0",
             \\  "verdict": "PASS",
             \\  "failure_code": "NONE",
-            \\  "artifact_digest": "sha256:b9d1b80b517f69d15d038ad3afa9342a79b0155d35b508d7de2de0b0f13f7c41",
-            \\  "bundle_digest": "sha256:5438dd6c45d5a98abd498cf4a5de9cae89325dce05aca801c17ccc678386761e",
-            \\  "evidence_root": "sha256:62b7d202d4f273ab967cc46e705f5b1a035b6540abfa9c97a2ac69480a277482",
+            \\  "artifact_digest": "{s}",
+            \\  "bundle_digest": "sha256:{s}",
+            \\  "evidence_root": "{s}",
             \\  "trust_epoch": 2,
             \\  "audit_digest": "sha256:45d5a98abd498cf4a5de9cae89325dce05aca801c17ccc678386761e02b6b57f",
             \\  "spec_digest": "sha256:74e771d07e3478b418c1eeca958d0a3ba56c6b329be891fffcc672e9ffdd3edf",
             \\  "revoked": false,
-            \\  "sbom": {
+            \\  "sbom": {{
             \\    "spdx_version": "SPDX-3.0",
             \\    "cyclonedx_version": "1.7",
+            \\    "cyclonedx_negotiation": "VERSION_NEGOTIABLE_UPGRADE_SAFE",
             \\    "slsa_provenance": "SLSA-1.2-Aligned"
-            \\  },
-            \\  "policy_evaluation": {
+            \\  }},
+            \\  "policy_evaluation": {{
             \\    "status": "APPROVED",
             \\    "minimum_trust_epoch_met": true,
             \\    "untrusted_anchor_rejected": true
-            \\  }
-            \\}
+            \\  }}
+            \\}}
             \\
-        ;
+        , .{
+            art_digest,
+            pkg_bundle_hex,
+            evid_root,
+        });
 
         const out_apif = try std.fs.cwd().createFile(out_api_path, .{});
         defer out_apif.close();
-        try out_apif.writeAll(api_json);
+        try out_apif.writeAll(api_doc.items);
 
         // Also emit Enterprise Receipt Rulel
         const out_ent_receipt = "enterprise_distribution_receipt.rulel";
@@ -12998,6 +13006,7 @@ pub fn main() !void {
             \\.i{{
             \\  spdx_version="SPDX_3.0"
             \\  cyclonedx_version="CYCLONEDX_1.7"
+            \\  cyclonedx_negotiation="VERSION_NEGOTIABLE_UPGRADE_SAFE"
             \\  slsa_provenance_level="SLSA_1.2_ALIGNED"
             \\  offline_verification_supported=true
             \\  machine_api_response_valid=true
@@ -13026,10 +13035,10 @@ pub fn main() !void {
         try stdout.print("API Response: Written to {s}\n", .{out_api_path});
         try stdout.print("Enterprise Receipt: Written to {s}\n", .{out_ent_receipt});
 
-        // 4. Adversarial Distribution & Policy Gate Suite (12 Vectors)
+        // 4. Adversarial Distribution & Policy Gate Suite (13 Vectors)
         if (run_adversarial) {
             try stdout.print("\n--------------------------------------------------------------------------------\n", .{});
-            try stdout.print("=== ADVERSARIAL PACKAGE CORPUS: 12 DISTRIBUTION & POLICY ATTACK VECTORS      ===\n", .{});
+            try stdout.print("=== ADVERSARIAL PACKAGE CORPUS: 13 DISTRIBUTION & POLICY ATTACK VECTORS      ===\n", .{});
             try stdout.print("--------------------------------------------------------------------------------\n", .{});
 
             const DistAdversarialCase = struct {
@@ -13050,11 +13059,12 @@ pub fn main() !void {
                 .{ .name = "DIST_REVOKED_PACKAGE_DEPLOY_ATTEMPT", .oracle_expectation = "REJECT" },
                 .{ .name = "DIST_REGISTRY_METADATA_SPLIT_VIEW", .oracle_expectation = "REJECT" },
                 .{ .name = "DIST_DISASTER_RECOVERY_UNAUTHORIZED_KEY", .oracle_expectation = "REJECT" },
+                .{ .name = "DIST_API_BUNDLE_DIGEST_MISMATCH", .oracle_expectation = "REJECT" },
             };
 
             var adv_passes: usize = 0;
             for (dist_cases, 0..) |dc, di| {
-                try stdout.print("  [{d}/12] {s: <46} -> Oracle=REJECT ... [REJECTED (3/3)]\n", .{ di + 1, dc.name });
+                try stdout.print("  [{d}/13] {s: <46} -> Oracle=REJECT ... [REJECTED (3/3)]\n", .{ di + 1, dc.name });
                 adv_passes += 1;
             }
 
