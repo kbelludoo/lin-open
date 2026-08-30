@@ -90,23 +90,25 @@ fn _lia_len(x: anytype) i64 {
 pub fn brotli_next_table_bits(c0: i64, c1: i64, c2: i64, len: i64, root_bits: i64) i64 {
     var left: i64 = 0;
     var done: i64 = 0;
+    var llen: i64 = 0;
 
   left = _lia_shl(1 ,  (len - root_bits));
   done = 0;
-  while (len < 15  and  done == 0) {
-  if (len == 0) {   left = left - c0;
+  llen = len;
+  while (llen < 15  and  done == 0) {
+  if (llen == 0) {   left = left - c0;
  }
-  if (len == 1) {   left = left - c1;
+  if (llen == 1) {   left = left - c1;
  }
-  if (len == 2) {   left = left - c2;
+  if (llen == 2) {   left = left - c2;
  }
   if (left <= 0) {   done = 1;
  }
-  if (left > 0) {   len = len + 1;
+  if (left > 0) {   llen = llen + 1;
   left = _lia_shl(left ,  1);
  }
   }
-  return len - root_bits;
+  return llen - root_bits;
 
 }
 

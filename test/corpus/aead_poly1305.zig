@@ -90,6 +90,8 @@ fn _lia_len(x: anytype) i64 {
 pub fn poly1305_l2(r0: i64, r1: i64, r2: i64, h0: i64, h1: i64, b0: i64, b1: i64, b2: i64, b3: i64, b4: i64, b5: i64, b6: i64, b7: i64) i64 {
     var s1: i64 = 0;
     var s2: i64 = 0;
+    var sh0: i64 = 0;
+    var sh1: i64 = 0;
     var t0: i64 = 0;
     var t1: i64 = 0;
     var d0: i64 = 0;
@@ -99,25 +101,27 @@ pub fn poly1305_l2(r0: i64, r1: i64, r2: i64, h0: i64, h1: i64, b0: i64, b1: i64
 
   s1 = r1 * 5;
   s2 = r2 * 5;
+  sh0 = h0;
+  sh1 = h1;
   t0 = b0 + (_lia_shl(b1 ,  8)) + (_lia_shl(b2 ,  16)) + (_lia_shl(b3 ,  24));
   t1 = b4 + (_lia_shl(b5 ,  8)) + (_lia_shl(b6 ,  16)) + (_lia_shl(b7 ,  24));
-  h0 = h0 + (t0 & 67108863);
-  h1 = h1 + ((_lia_shr(t0 ,  2)) & 67108863);
-  d0 = (h0 * r0) + (h1 * s2);
-  d1 = (h0 * r1) + (h1 * r0);
-  d2 = (h0 * r2) + (h1 * s1);
+  sh0 = sh0 + (t0 & 67108863);
+  sh1 = sh1 + ((_lia_shr(t0 ,  2)) & 67108863);
+  d0 = (sh0 * r0) + (sh1 * s2);
+  d1 = (sh0 * r1) + (sh1 * r0);
+  d2 = (sh0 * r2) + (sh1 * s1);
   c = _lia_shr(d0 ,  26);
-  h0 = d0 & 67108863;
+  sh0 = d0 & 67108863;
   d1 = d1 + c;
   c = _lia_shr(d1 ,  26);
-  h1 = d1 & 67108863;
+  sh1 = d1 & 67108863;
   d2 = d2 + c;
   c = _lia_shr(d2 ,  26);
-  h0 = h0 + c * 5;
-  c = _lia_shr(h0 ,  26);
-  h0 = h0 & 67108863;
-  h1 = h1 + c;
-  return h0 + (_lia_shl(h1 ,  26));
+  sh0 = sh0 + c * 5;
+  c = _lia_shr(sh0 ,  26);
+  sh0 = sh0 & 67108863;
+  sh1 = sh1 + c;
+  return sh0 + (_lia_shl(sh1 ,  26));
 
 }
 
