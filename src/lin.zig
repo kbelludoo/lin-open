@@ -7412,16 +7412,27 @@ pub fn main() !void {
     }
     if (argEq(cmd, "hypo")) {
         if (args.len < 3) {
-            try stderr.print("usage: lin hypo <hypothesis.rulel> or lin hypo <file.lin> <fn> [expected]\n", .{});
+            try stderr.print("usage: lin hypo <hypothesis.rulel> or lin hypo <file.lin> <fn> [arg1 arg2 ...] [--expected <val>]\n", .{});
             std.process.exit(1);
         }
-        if (args.len >= 4) {
+        if (std.mem.endsWith(u8, args[2], ".lin")) {
             const target_file = args[2];
-            const fn_name = args[3];
-            const has_expected = (args.len >= 5);
+            const fn_name = if (args.len >= 4) args[3] else "main";
             var expected_val: ?i64 = null;
-            if (has_expected) {
-                expected_val = std.fmt.parseInt(i64, args[4], 10) catch null;
+            var call_args_buf: [32]i64 = [_]i64{0} ** 32;
+            var call_args_count: usize = 0;
+
+            var ai: usize = 4;
+            while (ai < args.len) : (ai += 1) {
+                if (argEq(args[ai], "--expected") and ai + 1 < args.len) {
+                    ai += 1;
+                    expected_val = std.fmt.parseInt(i64, args[ai], 10) catch null;
+                } else if (args[ai].len > 0 and args[ai][0] != '-') {
+                    if (call_args_count < 32) {
+                        call_args_buf[call_args_count] = std.fmt.parseInt(i64, args[ai], 10) catch 0;
+                        call_args_count += 1;
+                    }
+                }
             }
 
             const src_file = try std.fs.cwd().openFile(target_file, .{});
@@ -7441,7 +7452,7 @@ pub fn main() !void {
             }
 
             var steps: u64 = 0;
-            const actual = try vmExec(&mod, fi, &.{}, 0, &steps);
+            const actual = try vmExec(&mod, fi, call_args_buf[0..call_args_count], 0, &steps);
             try stdout.print("@RULEL:LIN_HYPOTHESIS_VERDICT:1.0.0\n", .{});
             try stdout.print(".target=\"{s}::{s}\"\n", .{ target_file, fn_name });
             try stdout.print(".actual={d}\n.steps={d}\n", .{ actual, steps });
@@ -7491,6 +7502,25 @@ pub fn main() !void {
         };
         const fn_name = hyp_content[fn_val_start..fn_val_end];
 
+        var call_args_buf: [32]i64 = [_]i64{0} ** 32;
+        var call_args_count: usize = 0;
+        const args_tag = ".args=[";
+        if (std.mem.indexOf(u8, hyp_content, args_tag)) |arg_pos| {
+            const arg_val_start = arg_pos + args_tag.len;
+            if (std.mem.indexOfPos(u8, hyp_content, arg_val_start, "]")) |arg_val_end| {
+                const arg_slice = hyp_content[arg_val_start..arg_val_end];
+                var it = std.mem.splitSequence(u8, arg_slice, ",");
+                while (it.next()) |num_str| {
+                    const trimmed = std.mem.trim(u8, num_str, " \t\r\n");
+                    if (trimmed.len == 0) continue;
+                    if (call_args_count < 32) {
+                        call_args_buf[call_args_count] = std.fmt.parseInt(i64, trimmed, 10) catch 0;
+                        call_args_count += 1;
+                    }
+                }
+            }
+        }
+
         var expected_val: ?i64 = null;
         const exp_tag = ".expected=";
         if (std.mem.indexOf(u8, hyp_content, exp_tag)) |exp_pos| {
@@ -7517,7 +7547,7 @@ pub fn main() !void {
         }
 
         var steps: u64 = 0;
-        const actual = try vmExec(&mod, fi, &.{}, 0, &steps);
+        const actual = try vmExec(&mod, fi, call_args_buf[0..call_args_count], 0, &steps);
 
         try stdout.print("@RULEL:LIN_HYPOTHESIS_VERDICT:1.0.0\n", .{});
         try stdout.print(".hypothesis=\"{s}\"\n", .{args[2]});
