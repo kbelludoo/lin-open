@@ -1,5 +1,5 @@
-@RULEL:LIN_ATTEST_SPEC:2.2.0
-~R{.s=schema .c=compliance .p=provenance .d=determinism .h=hardware .k=cryptography .l=ledger .r=reporting .b=bundle .a=adversarial}
+@RULEL:LIN_ATTEST_SPEC:2.3.0
+~R{.s=schema .c=compliance .p=provenance .d=determinism .h=hardware .k=cryptography .l=ledger .r=reporting .b=bundle .i=isolation .a=adversarial}
 .s{
   architecture="ZERO_TRUST_PHYSICAL_SILICON_BOUND"
   type="DETERMINISTIC_SUPPLY_CHAIN_UNIFIED_LEDGER_v1.0"
@@ -10,6 +10,11 @@
   bundle_format="RULEL_CANONICAL_AUDIT_BUNDLE_v1.0"
   replay_modes=["AIRGAP_CRYPTOGRAPHIC_REPLAY", "PHYSICAL_SILICON_REPLICATION"]
   receipt_schema="THIRD_PARTY_AUDIT_RECEIPT_v1.0"
+}
+.i{
+  cleanroom_reproducibility="HERMETIC_OCI_CONTAINER_SANDBOX_v1.0"
+  runtime_requirements=["CPU_ONLY", "ZERO_GPU_DRIVER_DEPENDENCY", "ENV_SANITIZED"]
+  isolation_policy="STRIPPED_ENVIRONMENT_VARIABLES_READONLY_BUNDLE"
 }
 .h{
   execution_mode="PHYSICAL_SILICON_MULTI_KERNEL_DISPATCH"

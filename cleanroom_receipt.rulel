@@ -1,0 +1,19 @@
+@RULEL:LIN_RECEIPT:1.0.0
+~R{.s=subject .a=audit .v=verdict}
+.s{
+  bundle_file="bundle_attestation.rulel"
+  audit_timestamp="2026-08-30T12:20:00Z"
+  verifier_type="HERMETIC_CLEANROOM_OCI_REPLAY_ENGINE"
+  isolation_mode="ENV_SANITIZED_CPU_ONLY"
+}
+.a{
+  recomputed_mir=true
+  recomputed_lowering=true
+  recomputed_merkle_ledger=true
+  verified_ed25519_seal=true
+  oracle_parity=true
+}
+.v{
+  cleanroom_reproduction="BIT_EXACT_REPRODUCED"
+  zero_trust_passed=true
+}

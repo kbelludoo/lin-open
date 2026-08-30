@@ -1,0 +1,27 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=cleanroom_verifier_v230
+~G{?=if #=for ^=ret :else}
+
+!verify_cleanroom_isolation(env_cleared: int, no_gpu_driver_dep: int, bit_exact_reproduced: int) -> int {
+    score = 0;
+    ?(env_cleared == 1) {
+        ?(no_gpu_driver_dep == 1) {
+            ?(bit_exact_reproduced == 1) {
+                score = 100;
+            }
+        }
+    }
+    ^score;
+}
+
+!format_reproducibility_verdict(cleanroom_score: int, total_kernels: int) -> int {
+    verdict = 0;
+    ?(cleanroom_score == 100) {
+        ?(total_kernels > 0) {
+            verdict = 300;
+        }
+    }
+    ^verdict;
+}
+
+=ex{verify_cleanroom_isolation, format_reproducibility_verdict}

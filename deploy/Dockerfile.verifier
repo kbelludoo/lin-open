@@ -1,0 +1,17 @@
+# syntax=docker/dockerfile:1
+# LIN-ATTEST-008: Hermetic Cleanroom Independent Verifier Image
+# Minimal, CPU-only container for isolated zero-trust audit reproduction.
+
+FROM debian:bookworm-slim AS verifier-cleanroom
+
+# Minimal dependencies (libc only, NO GPU drivers, NO ROCm, NO OpenCL runtime)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /cleanroom
+COPY src/ /cleanroom/src/
+COPY spec/ /cleanroom/spec/
+
+# Cleanroom entrypoint
+ENTRYPOINT ["/cleanroom/bin/lin-verify"]
