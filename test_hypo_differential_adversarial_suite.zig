@@ -18,6 +18,7 @@ pub fn main() !void {
         args_str: []const u8,
         expected: []const u8,
         expect_confirmed: bool,
+        extra_rulel: []const u8 = "",
     }{
         .{
             .name = "Positive: FastBitset Popcount Canonical Vector",
@@ -67,6 +68,15 @@ pub fn main() !void {
             .expected = "1",
             .expect_confirmed = false,
         },
+        .{
+            .name = "Adversarial: Injected Backend Divergence (VM != JIT)",
+            .target_file = "test/corpus/fast_bitset.lin",
+            .fn_name = "popcount64",
+            .args_str = "[6148914691236517205]",
+            .expected = "32",
+            .expect_confirmed = false,
+            .extra_rulel = ".adversarial_inject_backend_divergence=true\n",
+        },
     };
 
     var all_verified = true;
@@ -84,8 +94,9 @@ pub fn main() !void {
             \\.executors=["vm","aot","jit"]
             \\.oracle="reference"
             \\.expected={s}
+            \\{s}
             \\
-        , .{ th.target_file, th.fn_name, th.args_str, th.expected });
+        , .{ th.target_file, th.fn_name, th.args_str, th.expected, th.extra_rulel });
         defer alloc.free(hyp_text);
 
         const f = try std.fs.cwd().createFile(tmp_path, .{});

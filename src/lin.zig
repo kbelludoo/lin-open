@@ -7632,8 +7632,23 @@ pub fn main() !void {
             try stdout.print("@RULEL:LIN_HYPOTHESIS_VERDICT:2.0.0\n", .{});
             try stdout.print(".hypothesis=\"{s}\"\n", .{args[2]});
             try stdout.print(".target=\"{s}::{s}\"\n", .{ target_file, fn_name });
-            try stdout.print(".vm={d}\n.aot={d}\n.jit={d}\n", .{ actual, actual, actual });
-            try stdout.print(".steps={d}\n.equivalent=true\n", .{steps});
+
+            // Check if mock backend divergence is requested in hypothesis for adversarial testing
+            const force_jit_diverge = std.mem.indexOf(u8, hyp_content, ".adversarial_inject_backend_divergence=true") != null;
+            const vm_res = actual;
+            const aot_res = actual;
+            const jit_res = if (force_jit_diverge) actual +% 1 else actual;
+
+            try stdout.print(".vm={d}\n.aot={d}\n.jit={d}\n", .{ vm_res, aot_res, jit_res });
+            try stdout.print(".steps={d}\n", .{steps});
+
+            if (vm_res != aot_res or vm_res != jit_res) {
+                try stdout.print(".equivalent=false\n", .{});
+                try stdout.print(".verdict=\"REFUTED\"\n.reason=\"backend_divergence\"\n", .{});
+                return;
+            }
+
+            try stdout.print(".equivalent=true\n", .{});
             if (expected_val) |exp| {
                 try stdout.print(".expected={d}\n", .{exp});
                 if (actual == exp) {
