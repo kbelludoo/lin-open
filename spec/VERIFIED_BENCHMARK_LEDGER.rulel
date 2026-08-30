@@ -1,5 +1,8 @@
 @RULEL:BENCHMARK_LEDGER:1.0.0
-@AUDIT_ENV{os="linux_x86_64" compiler="zig_0.13.0" opt="-O_ReleaseFast" verification="bit_exact_differential_oracle"}
+@AUDIT_ENV{
+  os="linux_x86_64" compiler="zig_0.13.0" opt="-O_ReleaseFast" verification="bit_exact_differential_oracle"
+  note="Absolute throughput and latency are reference machine baselines. Bit-exact matches (100%) and relative SIMD speedup ratios are machine-independent invariants."
+}
 
 .entry{
   idx=1 repo="floodyberry/chacha-opt" algorithm="ChaCha20" fn="chacha_qr"
