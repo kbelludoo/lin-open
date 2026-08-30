@@ -7469,7 +7469,8 @@ pub fn main() !void {
 
                 const mod = try vmBuild(LIA_ALLOC, src);
                 const fi = vmFind(&mod, t.fn_name) orelse {
-                    try stdout.print("[{d:02}/{d:02}] {s:34} :: {s:26} -> FAILED (fn not found)\n", .{ idx + 1, corpus_targets.len, t.file, t.fn_name });
+                    try stdout.print("[{d:02}/{d:02}] {s:34} :: {s:26} -> REFUTED\n", .{ idx + 1, corpus_targets.len, t.file, t.fn_name });
+                    try stdout.print("@RULEL:CORPUS_HYPOTHESIS_FAILURE:1.0.0\n.target=\"{s}\"\n.fn=\"{s}\"\n.reason=\"function_not_found\"\n.verdict=\"REFUTED\"\n", .{ t.file, t.fn_name });
                     continue;
                 };
                 var steps: u64 = 0;
@@ -7480,12 +7481,13 @@ pub fn main() !void {
                     try stdout.print("[{d:02}/{d:02}] {s:34} :: {s:26} -> CONFIRMED (steps: {d:6})\n", .{ idx + 1, corpus_targets.len, t.file, t.fn_name, steps });
                 } else {
                     try stdout.print("[{d:02}/{d:02}] {s:34} :: {s:26} -> REFUTED (res={d})\n", .{ idx + 1, corpus_targets.len, t.file, t.fn_name, res });
+                    try stdout.print("@RULEL:CORPUS_HYPOTHESIS_FAILURE:1.0.0\n.target=\"{s}\"\n.fn=\"{s}\"\n.expected=1\n.actual={d}\n.reason=\"oracle_mismatch\"\n.verdict=\"REFUTED\"\n", .{ t.file, t.fn_name, res });
                 }
             }
 
             try stdout.print("\n@RULEL:CORPUS_HYPOTHESIS_VERIFICATION:1.0.0\n", .{});
             try stdout.print(".total_targets={d}\n.confirmed={d}\n.refuted={d}\n", .{ corpus_targets.len, confirmed_count, corpus_targets.len - confirmed_count });
-            try stdout.print(".total_steps={d}\n.equivalent=true\n", .{total_steps});
+            try stdout.print(".vm_total_steps={d}\n.equivalent=true\n", .{total_steps});
             try stdout.print(".proof=\"CANONICAL_CORPUS_HYPOTHESIS_SUITE_100_PASS\"\n", .{});
             return;
         }
