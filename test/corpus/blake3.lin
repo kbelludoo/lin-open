@@ -1,0 +1,41 @@
+@LIN:L1c:0.2
+@CORPUS{origin="BLAKE3-team/BLAKE3" algorithm="BLAKE3" scope="g_mixing_and_round"}
+
+!rotr32(x: int, n: int) -> int {
+  w = x & 4294967295;
+  ^((_lia_shr(w, n)) | (_lia_shl(w, 32 - n))) & 4294967295;
+}
+
+!blake3_g(a: int, b: int, c: int, d: int, mx: int, my: int, sel: int) -> int {
+  oa = (a + b + mx) & 4294967295;
+  od = rotr32(d ^ oa, 16);
+  oc = (c + od) & 4294967295;
+  ob = rotr32(b ^ oc, 12);
+  oa = (oa + ob + my) & 4294967295;
+  od = rotr32(od ^ oa, 8);
+  oc = (oc + od) & 4294967295;
+  ob = rotr32(ob ^ oc, 7);
+
+  ?(sel == 0){ ^oa };
+  ?(sel == 1){ ^ob };
+  ?(sel == 2){ ^oc };
+  ^od;
+}
+
+!test_blake3_g(): int {
+  // Initial IV constants from BLAKE3 spec
+  // IV[0] = 0x6A09E667 (1779033703)
+  // IV[1] = 0xBB67AE85 (3144134277)
+  // IV[2] = 0x3C6EF372 (1013904242)
+  // IV[3] = 0xA54FF53A (2773480762)
+  // mx = 1, my = 2
+  a = blake3_g(1779033703, 3144134277, 1013904242, 2773480762, 1, 2, 0);
+  b = blake3_g(1779033703, 3144134277, 1013904242, 2773480762, 1, 2, 1);
+  c = blake3_g(1779033703, 3144134277, 1013904242, 2773480762, 1, 2, 2);
+  d = blake3_g(1779033703, 3144134277, 1013904242, 2773480762, 1, 2, 3);
+
+  ?(a != 4173588236 || b != 336010164 || c != 3504310295 || d != 848893031){ ^0 };
+  ^1;
+}
+
+=ex{rotr32, blake3_g, test_blake3_g}

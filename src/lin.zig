@@ -54,7 +54,8 @@ fn _lia_slice(s: []const u8, a: i64, b: i64) []const u8 {
 fn _lia_shl(a: i64, b: i64) i64 {
     if (b < 0 or b >= 64) return 0;
     const shift: u6 = @as(u6, @truncate(@as(u64, @intCast(b))));
-    return a << shift;
+    const ua: u64 = @bitCast(a);
+    return @bitCast(ua << shift);
 }
 fn _lia_shr(a: i64, b: i64) i64 {
     if (b < 0 or b >= 64) return 0;
@@ -65,6 +66,10 @@ fn _lia_ushr(a: i64, b: i64) i64 {
     if (b < 0 or b >= 64) return 0;
     const shift: u6 = @as(u6, @truncate(@as(u64, @intCast(b))));
     return @bitCast(@as(u64, @bitCast(a)) >> shift);
+}
+fn _lia_mod(a: i64, b: i64) i64 {
+    if (b == 0) return 0;
+    return @rem(a, b);
 }
 fn _lia_len(x: anytype) i64 {
     const T = @TypeOf(x);
@@ -632,8 +637,43 @@ pub fn is_arr_ty(t: []const u8) i64 {
 
 }
 
+pub fn arr_inner_ident(t: []const u8) []const u8 {
+    var n: i64 = 0;
+    var i: i64 = 0;
+    var cb: i64 = 0;
+    var e: i64 = 0;
+
+  n = _lia_len(t);
+  i = skip_ws(t, 0);
+  if (i < n  and  _lia_char_code_at(t, i) == 91) {
+    cb = match_brack(t, i);
+    if (cb > i) {
+      e = skip_ws(t, cb + 1);
+      return read_ident(t, e);
+    }
+  }
+  return "";
+
+}
+
+pub fn arr_vec_elems(t: []const u8) []const u8 {
+    var n: i64 = 0;
+    var i: i64 = 0;
+    var cb: i64 = 0;
+
+  n = _lia_len(t);
+  i = skip_ws(t, 0);
+  if (i < n  and  _lia_char_code_at(t, i) == 91) {
+    cb = match_brack(t, i);
+    if (cb > i) { return jss_trim(slice2(t, cb + 1, n)) ;}
+  }
+  return "";
+
+}
+
 pub fn zig_ty(t: []const u8) []const u8 {
     var out: []const u8 = "";
+    var eid: []const u8 = "";
 
   out = "";
   if (starts_lit(t, 0, "simd8_u32") == 1) { return "@Vector(8, u32)" ;}
@@ -646,7 +686,16 @@ pub fn zig_ty(t: []const u8) []const u8 {
   if (is_arr_ty(t) == 1) {
     out = _lia_cat(out ,  "[");
     out = _lia_cat(out ,  arr_n_str(t));
-    out = _lia_cat(out ,  "]i64");
+    out = _lia_cat(out ,  "]");
+    eid = arr_inner_ident(t);
+    if (starts_lit(eid, 0, "simd8_u32") == 1) { out = _lia_cat(out ,  "@Vector(8, u32)") ;}
+     else if (starts_lit(eid, 0, "simd4_u32") == 1) { out = _lia_cat(out ,  "@Vector(4, u32)") ;}
+     else if (starts_lit(eid, 0, "simd8_u64") == 1) { out = _lia_cat(out ,  "@Vector(8, u64)") ;}
+     else if (starts_lit(eid, 0, "simd4_u64") == 1) { out = _lia_cat(out ,  "@Vector(4, u64)") ;}
+     else if (starts_lit(eid, 0, "simd8_i64") == 1) { out = _lia_cat(out ,  "@Vector(8, i64)") ;}
+     else if (starts_lit(eid, 0, "simd8_u5") == 1) { out = _lia_cat(out ,  "@Vector(8, u5)") ;}
+     else if (starts_lit(eid, 0, "simd8_u6") == 1) { out = _lia_cat(out ,  "@Vector(8, u6)") ;}
+     else { out = _lia_cat(out ,  "i64") ;}
     return out;
   }
   if (_lia_len(t) == 6  and  starts_lit(t, 0, "string") == 1) { return "[]const u8" ;}
@@ -755,7 +804,7 @@ pub fn rhs_kind(body: []const u8, eq_pos: i64) []const u8 {
   if (starts_lit(id, 0, "list_new_int") == 1) { return "*LiaListI64" ;}
   if (starts_lit(id, 0, "list_new_str") == 1) { return "*LiaListStr" ;}
   if (starts_lit(id, 0, "read_") == 1  or  starts_lit(id, 0, "slice2") == 1  or  starts_lit(id, 0, "q") == 1) { return "[]const u8" ;}
-  if (starts_lit(id, 0, "arr_n") == 1  or  starts_lit(id, 0, "zig_ty") == 1) { return "[]const u8" ;}
+  if (starts_lit(id, 0, "arr_n") == 1  or  starts_lit(id, 0, "arr_inner_") == 1  or  starts_lit(id, 0, "arr_vec_") == 1  or  starts_lit(id, 0, "is_arr_ty") == 1  or  starts_lit(id, 0, "zig_ty") == 1) { return "[]const u8" ;}
   if (starts_lit(id, 0, "js_params") == 1  or  starts_lit(id, 0, "rewrite_") == 1  or  starts_lit(id, 0, "lin_") == 1) { return "[]const u8" ;}
   if (starts_lit(id, 0, "andor") == 1  or  starts_lit(id, 0, "kw_space") == 1  or  starts_lit(id, 0, "zig_") == 1) { return "[]const u8" ;}
   if (starts_lit(id, 0, "emit_") == 1  or  starts_lit(id, 0, "param_") == 1  or  starts_lit(id, 0, "fn_ret") == 1) { return "[]const u8" ;}
@@ -776,6 +825,14 @@ pub fn arr_decl_line(id: []const u8, ty: []const u8) []const u8 {
     out = _lia_cat(out ,  " = ");
     out = _lia_cat(out ,  q());
     out = _lia_cat(out ,  q());
+    out = _lia_cat(out ,  ";\n");
+    return out;
+  }
+  if (_lia_len(ty) > 1  and  _lia_char_code_at(ty, 0) == 91  and  starts_lit(arr_vec_elems(ty), 0, "@Vector") == 1) {
+    out = _lia_cat(out ,  " = [_]");
+    out = _lia_cat(out ,  arr_vec_elems(ty));
+    out = _lia_cat(out ,  "{@splat(0)} ** ");
+    out = _lia_cat(out ,  arr_n_str(ty));
     out = _lia_cat(out ,  ";\n");
     return out;
   }
@@ -814,6 +871,12 @@ pub fn zig_decls(body: []const u8, params: []const u8) []const u8 {
   ty = "";
   t = "";
   while (i < n) {
+    if (_lia_char_code_at(body, i) == 47  and  i + 1 < n  and  _lia_char_code_at(body, i + 1) == 47) {
+      i = i + 2;
+      while (i < n  and  _lia_char_code_at(body, i) != 10) { i = i + 1 ;}
+      if (i < n) { i = i + 1 ;}
+      continue;
+    }
     if (_lia_char_code_at(body, i) == 34) {
       i = i + 1;
       while (i < n  and  _lia_char_code_at(body, i) != 34) { i = i + 1 ;}
@@ -887,6 +950,15 @@ pub fn rewrite_arr(s: []const u8) []const u8 {
   cl = 0;
   k = 0;
   while (i < n) {
+    if (_lia_char_code_at(s, i) == 47  and  i + 1 < n  and  _lia_char_code_at(s, i + 1) == 47) {
+      while (i < n  and  _lia_char_code_at(s, i) != 10) {
+        chs = _lia_char_at(s, i);
+        out = _lia_cat(out ,  chs);
+        i = i + 1;
+      }
+      if (i < n) { chs = _lia_char_at(s, i); out = _lia_cat(out ,  chs); i = i + 1 ;}
+      continue;
+    }
     if (_lia_char_code_at(s, i) == 34) {
       out = _lia_cat(out ,  q());
       i = i + 1;
@@ -5792,12 +5864,12 @@ const VmComp = struct {
                     }
                 }
                 if (!self.acceptPunct(")")) self.fail("VM_REJ_PARSE");
-                if (std.mem.eql(u8, tk.text, "_lia_shl") or std.mem.eql(u8, tk.text, "_lia_shr") or std.mem.eql(u8, tk.text, "_lia_ushr")) {
+                if (std.mem.eql(u8, tk.text, "_lia_shl") or std.mem.eql(u8, tk.text, "_lia_shr") or std.mem.eql(u8, tk.text, "_lia_ushr") or std.mem.eql(u8, tk.text, "_lia_mod") or std.mem.eql(u8, tk.text, "@rem")) {
                     if (argc != 2) {
                         self.fail("VM_REJ_ARITY");
                         return;
                     }
-                    const op: VmOp = if (std.mem.eql(u8, tk.text, "_lia_shl")) .shl else if (std.mem.eql(u8, tk.text, "_lia_shr")) .shr else .ushr;
+                    const op: VmOp = if (std.mem.eql(u8, tk.text, "_lia_shl")) .shl else if (std.mem.eql(u8, tk.text, "_lia_shr")) .shr else if (std.mem.eql(u8, tk.text, "_lia_ushr")) .ushr else .mod;
                     _ = try self.emit(op, 0);
                     return;
                 }
@@ -6183,7 +6255,10 @@ pub fn vmFind(mod: *const VmModule, name: []const u8) ?usize {
 fn vmShift(a: i64, b: i64, left: bool) i64 {
     if (b < 0 or b >= 64) return 0;
     const shift: u6 = @as(u6, @truncate(@as(u64, @intCast(b))));
-    if (left) return a << shift;
+    if (left) {
+        const ua: u64 = @bitCast(a);
+        return @bitCast(ua << shift);
+    }
     return a >> shift;
 }
 
@@ -6822,7 +6897,8 @@ const ZIG_RUNTIME_PRELUDE =
     \\fn _lia_shl(a: i64, b: i64) i64 {
     \\    if (b < 0 or b >= 64) return 0;
     \\    const shift: u6 = @as(u6, @truncate(@as(u64, @intCast(b))));
-    \\    return a << shift;
+    \\    const ua: u64 = @bitCast(a);
+    \\    return @bitCast(ua << shift);
     \\}
     \\fn _lia_shr(a: i64, b: i64) i64 {
     \\    if (b < 0 or b >= 64) return 0;
@@ -6833,6 +6909,10 @@ const ZIG_RUNTIME_PRELUDE =
     \\    if (b < 0 or b >= 64) return 0;
     \\    const shift: u6 = @as(u6, @truncate(@as(u64, @intCast(b))));
     \\    return @bitCast(@as(u64, @bitCast(a)) >> shift);
+    \\}
+    \\fn _lia_mod(a: i64, b: i64) i64 {
+    \\    if (b == 0) return 0;
+    \\    return @rem(a, b);
     \\}
     \\fn _lia_len(x: anytype) i64 {
     \\    const T = @TypeOf(x);

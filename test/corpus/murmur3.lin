@@ -1,0 +1,40 @@
+@LIN:L1c:0.2
+@CORPUS{origin="aappleby/smhasher" algorithm="MurmurHash3" scope="fmix32_fmix64_rotl"}
+
+!rotl32(x: int, r: int): int {
+  w = x & 4294967295;
+  s = r & 31;
+  ^((_lia_shl(w, s)) | (_lia_ushr(w, 32 - s))) & 4294967295;
+}
+
+!fmix32(h_in: int): int {
+  h = h_in & 4294967295;
+  h = h ^ _lia_ushr(h, 16);
+  h = (h * 2246822507) & 4294967295;
+  h = h ^ _lia_ushr(h, 13);
+  h = (h * 3266489909) & 4294967295;
+  h = h ^ _lia_ushr(h, 16);
+  ^h;
+}
+
+!murmur3_step(h: int, k_in: int): int {
+  k = k_in & 4294967295;
+  k = (k * 3432918353) & 4294967295;
+  k = rotl32(k, 15);
+  k = (k * 461845907) & 4294967295;
+
+  hash = h & 4294967295;
+  hash = hash ^ k;
+  hash = rotl32(hash, 13);
+  hash = ((hash * 5) + 3864292196) & 4294967295;
+  ^hash;
+}
+
+!test_murmur3_vectors(): int {
+  f = fmix32(305419896);
+  m = murmur3_step(0, 305419896);
+  ?(f != 3816608188 || m != 3438514222){ ^0 };
+  ^1;
+}
+
+=ex{rotl32, fmix32, murmur3_step, test_murmur3_vectors}

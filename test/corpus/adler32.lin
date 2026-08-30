@@ -1,0 +1,44 @@
+@LIN:L1c:0.2
+@CORPUS{origin="madler/zlib" algorithm="Adler32" scope="checksum_and_combine"}
+
+!adler32_step(adler: int, b: int): int {
+  s1 = adler & 65535;
+  s2 = _lia_shr(adler, 16) & 65535;
+  s1 = _lia_mod(s1 + b, 65521);
+  s2 = _lia_mod(s2 + s1, 65521);
+  ^(_lia_shl(s2, 16) | s1) & 4294967295;
+}
+
+!adler32_combine(adler1: int, adler2: int, len2: int): int {
+  BASE = 65521;
+  rem = _lia_mod(len2, BASE);
+  a1 = adler1 & 65535;
+  a2 = _lia_shr(adler1, 16) & 65535;
+  b1 = adler2 & 65535;
+  b2 = _lia_shr(adler2, 16) & 65535;
+
+  s1 = _lia_mod(a1 + b1 + BASE - 1, BASE);
+  s2 = _lia_mod(a2 + b2 + BASE - 1 + (rem * (a1 + BASE - 1)), BASE);
+
+  ^(_lia_shl(s2, 16) | s1) & 4294967295;
+}
+
+!test_adler32_vector(): int {
+  // Test with ASCII "Wikipedia": [87, 105, 107, 105, 112, 101, 100, 105, 97]
+  // Standard Adler32 for "Wikipedia" is 0x11E60398 (300286872)
+  adler = 1;
+  adler = adler32_step(adler, 87);
+  adler = adler32_step(adler, 105);
+  adler = adler32_step(adler, 107);
+  adler = adler32_step(adler, 105);
+  adler = adler32_step(adler, 112);
+  adler = adler32_step(adler, 101);
+  adler = adler32_step(adler, 100);
+  adler = adler32_step(adler, 105);
+  adler = adler32_step(adler, 97);
+
+  ?(adler != 300286872){ ^0 };
+  ^1;
+}
+
+=ex{adler32_step, adler32_combine, test_adler32_vector}
