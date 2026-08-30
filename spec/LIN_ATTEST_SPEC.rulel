@@ -1,19 +1,34 @@
-@RULEL:LIN_ATTEST_SPEC:1.0.0
-~R{.s=schema .c=compliance .p=provenance .d=determinism}
+@RULEL:LIN_ATTEST_SPEC:1.4.0
+~R{.s=schema .c=compliance .p=provenance .d=determinism .a=adversarial}
 .s{
-  type="SLSA_v1.0_PROVENANCE_AND_DETERMINISTIC_GPU_ATTESTATION"
+  architecture="TRIPARTITE_CLAIM_EVIDENCE_VERIFICATION"
+  type="DETERMINISTIC_SUPPLY_CHAIN_ATTESTATION_v0.2"
   format="JSON-LD"
   merkle_type="AUTHENTIC_PAIRWISE_BINARY_HIERARCHICAL"
-  leaf_count=11
 }
 .c{
-  standards=["EU_CYBER_RESILIENCE_ACT", "NIST_SP_800_218", "SLSA_LEVEL_4", "SBOM_CYCLONEDX"]
-  guarantee="ZERO_SILENT_MISCOMPILATIONS_AND_SUPPLY_CHAIN_CRYPTOGRAPHIC_INTEGRITY"
+  standards=["EU_CYBER_RESILIENCE_ACT_PROFILE", "NIST_SP_800_218_PROFILE", "SLSA_LEVEL_4_PROFILE"]
+  guarantee="ZERO_SILENT_MISCOMPILATIONS_AND_ANTI_FORGERY_INTEGRITY"
 }
 .p{
-  chain=["repo_url", "commit_sha", "tree_sha", "blob_oid", "function_symbol", "input_digest", "mir_dag", "gpu_kernel", "output_digest", "oracle_digest", "execution_trace"]
+  chain=["repo_url", "commit_sha", "tree_sha", "source_blob_oid", "function_symbol", "input_commitment", "mir_dag", "gpu_kernel", "cpu_result", "gpu_result", "oracle_result", "merkle_root"]
 }
 .d{
   rule="R_CPU(x) == R_GPU(x) == R_ORACLE(x)"
   precision="BIT_EXACT"
+}
+.a{
+  vectors=[
+    "SOURCE_MUTATION",
+    "BLOB_OID_MUTATION",
+    "MIR_MUTATION",
+    "CPU_RESULT_MUTATION",
+    "GPU_RESULT_MUTATION",
+    "ORACLE_MUTATION",
+    "MERKLE_MUTATION",
+    "SIGNATURE_MUTATION",
+    "DEVICE_MUTATION",
+    "INPUT_MUTATION"
+  ]
+  policy="ALL_MUTATIONS_MUST_BE_REJECTED"
 }
