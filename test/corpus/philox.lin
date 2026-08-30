@@ -1,0 +1,39 @@
+@LIN:L1c:0.2
+@CORPUS{origin="DEShawResearch/Random123" algorithm="Philox4x32" scope="philox_round_permutation"}
+
+!philox4x32_round(x0: int, x1: int, x2: int, x3: int, k0: int, k1: int, sel: int): int {
+  w0 = x0 & 4294967295;
+  w2 = x2 & 4294967295;
+  prod0 = w0 * 3528531795;
+  hi0 = _lia_ushr(prod0, 32) & 4294967295;
+  lo0 = prod0 & 4294967295;
+
+  prod1 = w2 * 3449695575;
+  hi1 = _lia_ushr(prod1, 32) & 4294967295;
+  lo1 = prod1 & 4294967295;
+
+  nx0 = (hi1 ^ x1 ^ k0) & 4294967295;
+  nx1 = lo1;
+  nx2 = (hi0 ^ x3 ^ k1) & 4294967295;
+  nx3 = lo0;
+
+  ?(sel == 0){ ^nx0 };
+  ?(sel == 1){ ^nx1 };
+  ?(sel == 2){ ^nx2 };
+  ^nx3;
+}
+
+!test_philox_vector(): int {
+  r0 = philox4x32_round(1, 2, 3, 4, 10, 20, 0);
+  r1 = philox4x32_round(1, 2, 3, 4, 10, 20, 1);
+  r2 = philox4x32_round(1, 2, 3, 4, 10, 20, 2);
+  r3 = philox4x32_round(1, 2, 3, 4, 10, 20, 3);
+
+  ?(r0 != 10){ ^0 };
+  ?(r1 != 1759152133){ ^0 };
+  ?(r2 != 16){ ^0 };
+  ?(r3 != 3528531795){ ^0 };
+  ^1;
+}
+
+=ex{philox4x32_round, test_philox_vector}

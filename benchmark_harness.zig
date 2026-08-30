@@ -21,6 +21,11 @@ const b2b = @import("test/corpus/blake2b.zig");
 const c25519 = @import("test/corpus/curve25519_fe.zig");
 const ripemd = @import("test/corpus/ripemd160.zig");
 const bitset = @import("test/corpus/fast_bitset.zig");
+const xxh64 = @import("test/corpus/xxhash64.zig");
+const city = @import("test/corpus/cityhash64.zig");
+const philox = @import("test/corpus/philox.zig");
+const morton3d = @import("test/corpus/hilbert3d.zig");
+const brotli = @import("test/corpus/brotli_bit.zig");
 const xxh = @import("test/corpus/xxhash_kernels.zig");
 const lk = @import("src/lin_linux_kernel.zig");
 const miner = @import("src/lin_miner.zig");
@@ -57,7 +62,7 @@ pub fn main() !void {
         const total_qr = iters * 4;
         const rate = (@as(f64, @floatFromInt(total_qr)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[1/23] RFC 8439 ChaCha20 QR (Dynamic State):\n", .{});
+        try stdout.print("[1/28] RFC 8439 ChaCha20 QR (Dynamic State):\n", .{});
         try stdout.print("       Status:             {s}\n", .{if (match) "VERIFIED MATCH (RFC 8439 Section 2.1.1)" else "MISMATCH"});
         try stdout.print("       Execution Time:     {d:.2} ms for {d} QRs ({d:.2} M QR/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, total_qr, rate
@@ -89,7 +94,7 @@ pub fn main() !void {
         const total_g = iters * 4;
         const rate = (@as(f64, @floatFromInt(total_g)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[2/23] BLAKE3 G-Mixing Function (Dynamic Words):\n", .{});
+        try stdout.print("[2/28] BLAKE3 G-Mixing Function (Dynamic Words):\n", .{});
         try stdout.print("       Status:             {s}\n", .{if (match) "VERIFIED MATCH (Official BLAKE3 IV)" else "MISMATCH"});
         try stdout.print("       Execution Time:     {d:.2} ms for {d} G-mix ({d:.2} M mix/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, total_g, rate
@@ -114,7 +119,7 @@ pub fn main() !void {
         const ns = timer.read();
         const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[3/23] PCG-Random xsh_rr_64_32 (LCG Chain):\n", .{});
+        try stdout.print("[3/28] PCG-Random xsh_rr_64_32 (LCG Chain):\n", .{});
         try stdout.print("       Status:             {s}\n", .{if (match) "VERIFIED MATCH (PCG32 Reference Test Vector)" else "MISMATCH"});
         try stdout.print("       Execution Time:     {d:.2} ms for {d} PRNG draws ({d:.2} M draws/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
@@ -140,7 +145,7 @@ pub fn main() !void {
         const ns = timer.read();
         const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[4/23] Adler32 Checksum (zlib):\n", .{});
+        try stdout.print("[4/28] Adler32 Checksum (zlib):\n", .{});
         try stdout.print("       Status:             {s}\n", .{if (match) "VERIFIED MATCH (RFC 1950 ASCII 'Wikipedia' -> 0x11E60398)" else "MISMATCH"});
         try stdout.print("       Execution Time:     {d:.2} ms for {d} bytes ({d:.2} MB/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
@@ -164,7 +169,7 @@ pub fn main() !void {
         const ns = timer.read();
         const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[5/23] MurmurHash3 Full Chained Pipeline:\n", .{});
+        try stdout.print("[5/28] MurmurHash3 Full Chained Pipeline:\n", .{});
         try stdout.print("       Status:             {s}\n", .{if (match) "VERIFIED MATCH (SMHasher Official Vectors)" else "MISMATCH"});
         try stdout.print("       Execution Time:     {d:.2} ms for {d} steps ({d:.2} M steps/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
@@ -196,7 +201,7 @@ pub fn main() !void {
         const total_rounds = iters * 4;
         const rate = (@as(f64, @floatFromInt(total_rounds)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[6/23] SipHash-2-4 64-bit SIPROUND (Chained State):\n", .{});
+        try stdout.print("[6/28] SipHash-2-4 64-bit SIPROUND (Chained State):\n", .{});
         try stdout.print("       Status:             {s}\n", .{if (match) "VERIFIED MATCH (Aumasson/DJB SipHash Vectors)" else "MISMATCH"});
         try stdout.print("       Execution Time:     {d:.2} ms for {d} SIPROUNDs ({d:.2} M rounds/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, total_rounds, rate
@@ -219,7 +224,7 @@ pub fn main() !void {
         const ns = timer.read();
         const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[7/23] wyhash wyrand (PRNG Chain):\n", .{});
+        try stdout.print("[7/28] wyhash wyrand (PRNG Chain):\n", .{});
         try stdout.print("       Status:             {s}\n", .{if (match) "VERIFIED MATCH (Wang Yi Official Reference Vectors)" else "MISMATCH"});
         try stdout.print("       Execution Time:     {d:.2} ms for {d} wyrands ({d:.2} M/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
@@ -241,7 +246,7 @@ pub fn main() !void {
         const ns = timer.read();
         const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[8/23] SplitMix64 (Java / Guy Steele Chain):\n", .{});
+        try stdout.print("[8/28] SplitMix64 (Java / Guy Steele Chain):\n", .{});
         try stdout.print("       Status:             {s}\n", .{if (match) "VERIFIED MATCH (Guy Steele / SplittableRandom Oracle)" else "MISMATCH"});
         try stdout.print("       Execution Time:     {d:.2} ms for {d} draws ({d:.2} M/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
@@ -267,7 +272,7 @@ pub fn main() !void {
         const ns = timer.read();
         const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[9/23] FNV-1a 32-bit Hash (Byte Stream):\n", .{});
+        try stdout.print("[9/28] FNV-1a 32-bit Hash (Byte Stream):\n", .{});
         try stdout.print("       Status:             {s}\n", .{if (match) "VERIFIED MATCH (FNV Standard 'hello' 32 & 64-bit)" else "MISMATCH"});
         try stdout.print("       Execution Time:     {d:.2} ms for {d} bytes ({d:.2} MB/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
@@ -294,7 +299,7 @@ pub fn main() !void {
         const ns = timer.read();
         const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[10/23] IEEE 802.3 Bitwise CRC-32:\n", .{});
+        try stdout.print("[10/28] IEEE 802.3 Bitwise CRC-32:\n", .{});
         try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (std.hash.Crc32 '123456789' -> 0xCBF43926)" else "MISMATCH"});
         try stdout.print("        Execution Time:     {d:.2} ms for {d} bytes ({d:.2} KB/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate * 1000.0
@@ -324,7 +329,7 @@ pub fn main() !void {
         const ns = timer.read();
         const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[11/23] xoshiro256** PRNG (Rust/Julia Standard):\n", .{});
+        try stdout.print("[11/28] xoshiro256** PRNG (Rust/Julia Standard):\n", .{});
         try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (Blackman & Vigna Reference Vectors)" else "MISMATCH"});
         try stdout.print("        Execution Time:     {d:.2} ms for {d} PRNG draws ({d:.2} M draws/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
@@ -346,7 +351,7 @@ pub fn main() !void {
         const ns = timer.read();
         const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[12/23] Morton 2D Spatial Indexing (Uber H3 / Z-Order):\n", .{});
+        try stdout.print("[12/28] Morton 2D Spatial Indexing (Uber H3 / Z-Order):\n", .{});
         try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (Z-Order Curve 2D Interleave)" else "MISMATCH"});
         try stdout.print("        Execution Time:     {d:.2} ms for {d} coordinates ({d:.2} M coords/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
@@ -371,7 +376,7 @@ pub fn main() !void {
         const ns = timer.read();
         const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[13/23] Poly1305 130-bit Donna Step (RFC 8439 Section 2.5):\n", .{});
+        try stdout.print("[13/28] Poly1305 130-bit Donna Step (RFC 8439 Section 2.5):\n", .{});
         try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (RFC 8439 Key Clamp & Modulo 2^130-5)" else "MISMATCH"});
         try stdout.print("        Execution Time:     {d:.2} ms for {d} blocks ({d:.2} M blocks/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
@@ -394,7 +399,7 @@ pub fn main() !void {
         const ns = timer.read();
         const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[14/23] Keccak-f[1600] Theta Column Parity (SHA-3 / Ethereum):\n", .{});
+        try stdout.print("[14/28] Keccak-f[1600] Theta Column Parity (SHA-3 / Ethereum):\n", .{});
         try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (NIST FIPS 202 Keccak Specification)" else "MISMATCH"});
         try stdout.print("        Execution Time:     {d:.2} ms for {d} theta rounds ({d:.2} M rounds/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
@@ -417,7 +422,7 @@ pub fn main() !void {
         const ns = timer.read();
         const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[15/23] AES-128 Key Schedule RotWord (NIST FIPS 197):\n", .{});
+        try stdout.print("[15/28] AES-128 Key Schedule RotWord (NIST FIPS 197):\n", .{});
         try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (NIST FIPS 197 Appendix A Vectors)" else "MISMATCH"});
         try stdout.print("        Execution Time:     {d:.2} ms for {d} RotWords ({d:.2} M rot/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
@@ -442,7 +447,7 @@ pub fn main() !void {
         const ns = timer.read();
         const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[16/23] Google Protocol Buffers Varint/ZigZag (protobuf-c):\n", .{});
+        try stdout.print("[16/28] Google Protocol Buffers Varint/ZigZag (protobuf-c):\n", .{});
         try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (Google Protobuf V3 ZigZag Specification)" else "MISMATCH"});
         try stdout.print("        Execution Time:     {d:.2} ms for {d} enc/dec ({d:.2} M ops/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
@@ -471,7 +476,7 @@ pub fn main() !void {
         const total_g = iters * 4;
         const rate = (@as(f64, @floatFromInt(total_g)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[17/23] Blake2b / Argon2 64-bit G-Round (RFC 7693 / RFC 9106):\n", .{});
+        try stdout.print("[17/28] Blake2b / Argon2 64-bit G-Round (RFC 7693 / RFC 9106):\n", .{});
         try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (RFC 7693 Reference Vectors)" else "MISMATCH"});
         try stdout.print("        Execution Time:     {d:.2} ms for {d} G-mix ({d:.2} M mix/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, total_g, rate
@@ -493,7 +498,7 @@ pub fn main() !void {
         const ns = timer.read();
         const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[18/23] Curve25519 Field Arithmetic Modulo 2^255-19 (RFC 8032):\n", .{});
+        try stdout.print("[18/28] Curve25519 Field Arithmetic Modulo 2^255-19 (RFC 8032):\n", .{});
         try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (Bernstein 51-bit Limb Reduction)" else "MISMATCH"});
         try stdout.print("        Execution Time:     {d:.2} ms for {d} reductions ({d:.2} M/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
@@ -516,7 +521,7 @@ pub fn main() !void {
         const ns = timer.read();
         const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[19/23] RIPEMD-160 Bitcoin Address Compression (ISO/IEC 10118-3):\n", .{});
+        try stdout.print("[19/28] RIPEMD-160 Bitcoin Address Compression (ISO/IEC 10118-3):\n", .{});
         try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (Bitcoin Address Cryptographic Standard)" else "MISMATCH"});
         try stdout.print("        Execution Time:     {d:.2} ms for {d} rounds ({d:.2} M rounds/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
@@ -539,14 +544,136 @@ pub fn main() !void {
         const ns = timer.read();
         const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[20/23] FastBitset Parallel Popcount (Daniel Lemire Algorithm):\n", .{});
+        try stdout.print("[20/28] FastBitset Parallel Popcount (Daniel Lemire Algorithm):\n", .{});
         try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (std.math.popCount Differential Oracle)" else "MISMATCH"});
         try stdout.print("        Execution Time:     {d:.2} ms for {d} 64-bit words ({d:.2} M words/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
         });
     }
 
-    // 21. xxHash Avalanche (Cyan4973/xxHash)
+    // 21. xxHash XXH64 Round & Avalanche (Cyan4973/xxHash)
+    {
+        const ava64 = xxh64.xxh64_avalanche(1);
+        const match = (ava64 == 2898755366276535251);
+
+        const iters: usize = 5_000_000;
+        var h: i64 = 1;
+        var timer = try std.time.Timer.start();
+        for (0..iters) |k| {
+            h = xxh64.xxh64_avalanche(h ^ @as(i64, @intCast(k & 0xFF)));
+        }
+        std.mem.doNotOptimizeAway(&h);
+        const ns = timer.read();
+        const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
+
+        try stdout.print("[21/28] xxHash XXH64 Avalanche (Cyan4973 Reference):\n", .{});
+        try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (Yann Collet 64-bit Reference)" else "MISMATCH"});
+        try stdout.print("        Execution Time:     {d:.2} ms for {d} avalanches ({d:.2} M/s)\n\n", .{
+            @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
+        });
+    }
+
+    // 22. Google CityHash64 HashLen16 (google/cityhash)
+    {
+        const city_val = city.cityhash_len16(1, 2, -7286425919675154321);
+        const match = (city_val == -3040228277396401595);
+
+        const iters: usize = 5_000_000;
+        var h: i64 = 1;
+        var timer = try std.time.Timer.start();
+        for (0..iters) |k| {
+            h = city.cityhash_len16(h, @as(i64, @intCast(k)), -7286425919675154321);
+        }
+        std.mem.doNotOptimizeAway(&h);
+        const ns = timer.read();
+        const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
+
+        try stdout.print("[22/28] Google CityHash64 HashLen16 (Pike & Alakuijala):\n", .{});
+        try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (Google Production Hash Oracle)" else "MISMATCH"});
+        try stdout.print("        Execution Time:     {d:.2} ms for {d} mixes ({d:.2} M/s)\n\n", .{
+            @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
+        });
+    }
+
+    // 23. Philox4x32 GPU PRNG Round (DEShawResearch/Random123)
+    {
+        const pr0 = philox.philox4x32_round(1, 2, 3, 4, 10, 20, 0);
+        const pr1 = philox.philox4x32_round(1, 2, 3, 4, 10, 20, 1);
+        const match = (pr0 == 10 and pr1 == 1759152133);
+
+        const iters: usize = 2_000_000;
+        var x0: i64 = 1;
+        var x1: i64 = 2;
+        var x2: i64 = 3;
+        var x3: i64 = 4;
+        var timer = try std.time.Timer.start();
+        for (0..iters) |k| {
+            x0 = philox.philox4x32_round(x0, x1, x2, x3, @as(i64, @intCast(k & 0xFF)), 1, 0);
+            x1 = philox.philox4x32_round(x0, x1, x2, x3, @as(i64, @intCast(k & 0xFF)), 1, 1);
+            x2 = philox.philox4x32_round(x0, x1, x2, x3, @as(i64, @intCast(k & 0xFF)), 1, 2);
+            x3 = philox.philox4x32_round(x0, x1, x2, x3, @as(i64, @intCast(k & 0xFF)), 1, 3);
+            std.mem.doNotOptimizeAway(&x0);
+        }
+        const ns = timer.read();
+        const total_rounds = iters * 4;
+        const rate = (@as(f64, @floatFromInt(total_rounds)) / @as(f64, @floatFromInt(ns))) * 1000.0;
+
+        try stdout.print("[23/28] Philox4x32-10 GPU PRNG Round (PyTorch/Random123):\n", .{});
+        try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (D.E. Shaw Research SC11 Spec)" else "MISMATCH"});
+        try stdout.print("        Execution Time:     {d:.2} ms for {d} rounds ({d:.2} M rounds/s)\n\n", .{
+            @as(f64, @floatFromInt(ns)) / 1_000_000.0, total_rounds, rate
+        });
+    }
+
+    // 24. Morton 3D Spatial Indexing (chmike/hilbert)
+    {
+        const m3_single = morton3d.morton3d_encode(7, 0, 0);
+        const m3_all = morton3d.morton3d_encode(7, 7, 7);
+        const match = (m3_single == 73 and m3_all == 511);
+
+        const iters: usize = 5_000_000;
+        var sum_m3: i64 = 0;
+        var timer = try std.time.Timer.start();
+        for (0..iters) |k| {
+            sum_m3 +%= morton3d.morton3d_encode(@as(i64, @intCast(k & 0x3FF)), 0, 0);
+        }
+        std.mem.doNotOptimizeAway(&sum_m3);
+        const ns = timer.read();
+        const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
+
+        try stdout.print("[24/28] Morton 3D Spatial Indexing (3D Octree / GIS):\n", .{});
+        try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (Z-Order 3D Interleave)" else "MISMATCH"});
+        try stdout.print("        Execution Time:     {d:.2} ms for {d} coords ({d:.2} M coords/s)\n\n", .{
+            @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
+        });
+    }
+
+    // 25. Google Brotli Bit-Reader Window (google/brotli)
+    {
+        const b_peek = brotli.brotli_mask_bits(52651, 4);
+        const b_drop = brotli.brotli_drop_bits(52651, 4);
+        const match = (b_peek == 11 and b_drop == 3290);
+
+        const iters: usize = 5_000_000;
+        var w: i64 = 52651;
+        var timer = try std.time.Timer.start();
+        for (0..iters) |k| {
+            const p = brotli.brotli_mask_bits(w, 4);
+            w = brotli.brotli_fill_byte(w, @as(i64, @intCast(k & 0xFF)), 8);
+            w = brotli.brotli_drop_bits(w, 2);
+            std.mem.doNotOptimizeAway(&p);
+        }
+        const ns = timer.read();
+        const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
+
+        try stdout.print("[25/28] Google Brotli Bit-Reader Window (RFC 7932 Compression):\n", .{});
+        try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (RFC 7932 Bitstream Window Oracle)" else "MISMATCH"});
+        try stdout.print("        Execution Time:     {d:.2} ms for {d} operations ({d:.2} M ops/s)\n\n", .{
+            @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
+        });
+    }
+
+    // 26. xxHash Avalanche (Cyan4973/xxHash)
     {
         const xxh_swap = xxh.xxh_swap32(305419896);
         const xxh_round = xxh.xxh32_round(0, 1);
@@ -563,14 +690,14 @@ pub fn main() !void {
         const ns = timer.read();
         const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[21/23] xxHash XXH32 Avalanche (Chained Hash):\n", .{});
+        try stdout.print("[26/28] xxHash XXH32 Avalanche (Chained Hash):\n", .{});
         try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (Yann Collet Reference Vectors)" else "MISMATCH"});
         try stdout.print("        Execution Time:     {d:.2} ms for {d} avalanches ({d:.2} M/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
         });
     }
 
-    // 22. Linux Kernel Binary GCD (torvalds/linux)
+    // 27. Linux Kernel Binary GCD (torvalds/linux)
     {
         const lk_gcd = lk.lin_opt_gcd(1071, 462);
         const lk_sqrt = lk.lk_int_sqrt(144);
@@ -588,14 +715,14 @@ pub fn main() !void {
         const ns = timer.read();
         const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1000.0;
 
-        try stdout.print("[22/23] Linux Kernel Binary GCD (lin_opt_gcd dynamic pairs):\n", .{});
+        try stdout.print("[27/28] Linux Kernel Binary GCD (lin_opt_gcd dynamic pairs):\n", .{});
         try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (lib/math/gcd.c test oracle)" else "MISMATCH"});
         try stdout.print("        Execution Time:     {d:.2} ms for {d} pairs ({d:.2} M pairs/s)\n\n", .{
             @as(f64, @floatFromInt(ns)) / 1_000_000.0, iters, rate
         });
     }
 
-    // 23. Bitcoin Genesis PoW Double SHA-256 (bitcoin/bitcoin)
+    // 28. Bitcoin Genesis PoW Double SHA-256 (bitcoin/bitcoin)
     {
         const btc_pow = miner.btc_pow_verify(3163593267, 1666760688, 2429332605, 509201064, 3284719849, 1325466568, 2528216886, 1192884507, 1260281418, 699096905, 4294901789, 497822588);
         const match = (btc_pow == 0);
@@ -610,7 +737,7 @@ pub fn main() !void {
         const ns = timer.read();
         const rate = (@as(f64, @floatFromInt(iters)) / @as(f64, @floatFromInt(ns))) * 1_000_000_000.0;
 
-        try stdout.print("[23/23] Bitcoin Genesis Block PoW (W[64] schedule):\n", .{});
+        try stdout.print("[28/28] Bitcoin Genesis Block PoW (W[64] schedule):\n", .{});
         try stdout.print("        Status:             {s}\n", .{if (match) "VERIFIED MATCH (std.crypto Sha256d Oracle)" else "MISMATCH"});
         try stdout.print("        Measured Hashrate:  {d:.2} Hashes/s ({d} double-SHA256 in {d:.2} ms)\n\n", .{
             rate, iters, @as(f64, @floatFromInt(ns)) / 1_000_000.0

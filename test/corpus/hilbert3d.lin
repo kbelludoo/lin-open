@@ -1,0 +1,31 @@
+@LIN:L1c:0.2
+@CORPUS{origin="chmike/hilbert" algorithm="Morton3D" scope="morton3d_spatial_encoding"}
+
+!morton3d_spread(v_in: int): int {
+  w = v_in & 1023;
+  w = (w | _lia_shl(w, 16)) & 50331903;
+  w = (w | _lia_shl(w, 8))  & 50393103;
+  w = (w | _lia_shl(w, 4))  & 51130563;
+  w = (w | _lia_shl(w, 2))  & 153391689;
+  ^w;
+}
+
+!morton3d_encode(x: int, y: int, z: int): int {
+  sx = morton3d_spread(x);
+  sy = morton3d_spread(y);
+  sz = morton3d_spread(z);
+  ^(sx | _lia_shl(sy, 1) | _lia_shl(sz, 2));
+}
+
+!test_morton3d_vector(): int {
+  // Test coordinate (7, 0, 0) -> sx = 73
+  // Test coordinate (7, 7, 7) -> 73 | (73 << 1) | (73 << 2) = 73 | 146 | 292 = 511
+  c_single = morton3d_encode(7, 0, 0);
+  c_all = morton3d_encode(7, 7, 7);
+
+  ?(c_single != 73){ ^0 };
+  ?(c_all != 511){ ^0 };
+  ^1;
+}
+
+=ex{morton3d_spread, morton3d_encode, test_morton3d_vector}

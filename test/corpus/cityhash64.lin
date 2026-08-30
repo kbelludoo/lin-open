@@ -1,0 +1,20 @@
+@LIN:L1c:0.2
+@CORPUS{origin="google/cityhash" algorithm="CityHash64" scope="hash_len_16_mixing"}
+
+!cityhash_len16(u: int, v: int, mul: int): int {
+  a = (u ^ v) * mul;
+  a = a ^ _lia_ushr(a, 47);
+  b = (v ^ a) * mul;
+  b = b ^ _lia_ushr(b, 47);
+  ^(b * mul);
+}
+
+!test_cityhash_vector(): int {
+  // Test HashLen16(1, 2, mul) with mul = -7286425919675154321
+  // Expected = -3040228277396401595
+  r = cityhash_len16(1, 2, -7286425919675154321);
+  ?(r != -3040228277396401595){ ^0 };
+  ^1;
+}
+
+=ex{cityhash_len16, test_cityhash_vector}
