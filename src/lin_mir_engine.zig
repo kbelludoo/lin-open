@@ -77,7 +77,7 @@ pub const MirVm = struct {
         var current_block_id: u32 = 0;
         var iterations: usize = 0;
 
-        while (iterations < 100_000) : (iterations += 1) {
+        while (iterations < 100_000_000) : (iterations += 1) {
             var found_block: ?MirBlock = null;
             for (func.blocks) |b| {
                 if (b.id == current_block_id) {
