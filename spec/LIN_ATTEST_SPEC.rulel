@@ -1,10 +1,19 @@
-@RULEL:LIN_ATTEST_SPEC:2.3.0
-~R{.s=schema .c=compliance .p=provenance .d=determinism .h=hardware .k=cryptography .l=ledger .r=reporting .b=bundle .i=isolation .a=adversarial}
+@RULEL:LIN_ATTEST_SPEC:2.4.0
+~R{.s=schema .c=compliance .p=provenance .d=determinism .h=hardware .k=cryptography .l=ledger .r=reporting .b=bundle .i=isolation .m=consensus .a=adversarial}
 .s{
   architecture="ZERO_TRUST_PHYSICAL_SILICON_BOUND"
   type="DETERMINISTIC_SUPPLY_CHAIN_UNIFIED_LEDGER_v1.0"
   format="RULEL"
   merkle_type="HIERARCHICAL_2LEVEL_UNIFIED_MERKLE_LEDGER"
+}
+.m{
+  consensus_policy="MULTI_RUNTIME_CANONICAL_RECEIPT_EQUALITY"
+  evaluated_runtimes=[
+    "RUNTIME_1: HOST_NATIVE_EXECUTION",
+    "RUNTIME_2: HERMETIC_CLEANROOM_ENV_SANITIZED",
+    "RUNTIME_3: SANDBOXED_PROCESS_JAIL"
+  ]
+  invariance_invariant="FOR_ALL_Rj: SHA256(CanonicalReceipt_Rj) == ConsensusReceiptDigest"
 }
 .b{
   bundle_format="RULEL_CANONICAL_AUDIT_BUNDLE_v1.0"

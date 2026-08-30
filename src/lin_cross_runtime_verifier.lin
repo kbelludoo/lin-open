@@ -1,0 +1,29 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=cross_runtime_v240
+~G{?=if #=for ^=ret :else}
+
+!verify_runtime_consensus(r1_ok: int, r2_ok: int, r3_ok: int, digests_equal: int) -> int {
+    consensus = 0;
+    ?(r1_ok == 1) {
+        ?(r2_ok == 1) {
+            ?(r3_ok == 1) {
+                ?(digests_equal == 1) {
+                    consensus = 1;
+                }
+            }
+        }
+    }
+    ^consensus;
+}
+
+!format_consensus_verdict(consensus: int, runtimes_evaluated: int) -> int {
+    verdict = 0;
+    ?(consensus == 1) {
+        ?(runtimes_evaluated >= 3) {
+            verdict = 400;
+        }
+    }
+    ^verdict;
+}
+
+=ex{verify_runtime_consensus, format_consensus_verdict}
