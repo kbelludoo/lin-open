@@ -6,6 +6,14 @@ pub const vm_to_mir = @import("lin_vm_to_mir.zig");
 pub const gpu_runner = @import("lin_gpu_runner.zig");
 pub var LIA_ALLOC: std.mem.Allocator = undefined;
 
+const SINGLE_BYTE_TABLE: [256][1]u8 = blk: {
+    var table: [256][1]u8 = undefined;
+    for (0..256) |i| {
+        table[i] = .{@as(u8, @intCast(i))};
+    }
+    break :blk table;
+};
+
 fn _lia_str(x: anytype) []const u8 {
     const T = @TypeOf(x);
     switch (@typeInfo(T)) {
@@ -28,7 +36,11 @@ fn _lia_str(x: anytype) []const u8 {
     return "";
 }
 pub fn _lia_cat(a: anytype, b: anytype) []const u8 {
-    return std.mem.concat(LIA_ALLOC, u8, &.{ _lia_str(a), _lia_str(b) }) catch "";
+    const sa = _lia_str(a);
+    const sb = _lia_str(b);
+    if (sa.len == 0) return sb;
+    if (sb.len == 0) return sa;
+    return std.mem.concat(LIA_ALLOC, u8, &.{ sa, sb }) catch "";
 }
 fn _lia_char_at(s: []const u8, i: i64) []const u8 {
     if (i < 0) return "";
@@ -43,8 +55,10 @@ fn _lia_char_code_at(s: []const u8, i: i64) i64 {
     return 0;
 }
 fn _lia_from_code(c: i64) []const u8 {
-    var buf: [1]u8 = .{@as(u8, @truncate(@as(u64, @intCast(c))))};
-    return std.fmt.allocPrint(LIA_ALLOC, "{s}", .{buf[0..]}) catch "";
+    if (c >= 0 and c < 256) {
+        return SINGLE_BYTE_TABLE[@as(usize, @intCast(c))][0..];
+    }
+    return "";
 }
 fn _lia_slice(s: []const u8, a: i64, b: i64) []const u8 {
     if (a < 0 or b < 0) return "";
@@ -55,6 +69,14 @@ fn _lia_slice(s: []const u8, a: i64, b: i64) []const u8 {
     if (start >= end) return "";
     return s[start..end];
 }
+
+// Canonical LIN runtime aliases
+pub const _lin_cat = _lia_cat;
+pub const _lin_str = _lia_str;
+pub const _lin_char_at = _lia_char_at;
+pub const _lin_char_code_at = _lia_char_code_at;
+pub const _lin_from_code = _lia_from_code;
+pub const _lin_slice = _lia_slice;
 fn _lia_shl(a: i64, b: i64) i64 {
     if (b < 0 or b >= 64) return 0;
     const shift: u6 = @as(u6, @truncate(@as(u64, @intCast(b))));
@@ -12212,6 +12234,42 @@ pub fn main() !void {
             std.process.exit(1);
         }
         try stdout.print("{s}", .{rgs_regions(src)});
+        return;
+    }
+    if (argEq(cmd, "fmt") or argEq(cmd, "format")) {
+        if (lin_syntax_valid(src) == 0) {
+            try stderr.print("LIN_PARSE_ERROR: cannot format invalid syntax\n", .{});
+            std.process.exit(1);
+        }
+        var out_buf = std.ArrayList(u8).init(LIA_ALLOC);
+        defer out_buf.deinit();
+        var it = std.mem.split(u8, src, "\n");
+        var depth: usize = 0;
+        while (it.next()) |line| {
+            const trimmed = std.mem.trim(u8, line, " \t\r");
+            if (trimmed.len == 0) {
+                try out_buf.append('\n');
+                continue;
+            }
+            if (trimmed[0] == '}') {
+                if (depth > 0) depth -= 1;
+            }
+            if (trimmed[0] != '@' and trimmed[0] != '^' and trimmed[0] != '~' and trimmed[0] != '=') {
+                for (0..depth * 4) |_| try out_buf.append(' ');
+            }
+            try out_buf.writer().print("{s}\n", .{trimmed});
+            if (std.mem.endsWith(u8, trimmed, "{") and !std.mem.startsWith(u8, trimmed, "=")) {
+                depth += 1;
+            }
+        }
+        if (out_path) |op| {
+            const f = try std.fs.cwd().createFile(op, .{});
+            defer f.close();
+            try f.writeAll(out_buf.items);
+            try stdout.print("@RULEL:LIN_FMT:1.0.0\n.out=\"{s}\" .status=\"FORMATTED_CANONICAL\"\n", .{op});
+        } else {
+            try stdout.print("{s}", .{out_buf.items});
+        }
         return;
     }
     if (argEq(cmd, "compile")) {
