@@ -1,0 +1,49 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=global_ledger_engine_v260
+~G{?=if #=for ^=ret :else}
+
+!check_spec_migration_policy(source_version: int, target_version: int) -> int {
+    allowed = 0;
+    // Source v1 (1) -> Target v1 (1), v2 (2), v3 (3)
+    ?(source_version == 1) {
+        ?(target_version >= 1) {
+            ?(target_version <= 3) {
+                allowed = 1;
+            }
+        }
+    }
+    // Source v2 (2) -> Target v2 (2), v3 (3)
+    ?(source_version == 2) {
+        ?(target_version >= 2) {
+            ?(target_version <= 3) {
+                allowed = 1;
+            }
+        }
+    }
+    // Source v3 (3) -> Target v3 (3)
+    ?(source_version == 3) {
+        ?(target_version == 3) {
+            allowed = 1;
+        }
+    }
+    ^allowed;
+}
+
+!compute_global_entry_hash(bundle_idx: int, repo_oid: int, spec_v: int, arch_id: int, root_hash: int) -> int {
+    entry = (bundle_idx * 104729) + (repo_oid * 65537) + (spec_v * 10007) + (arch_id * 1009) + (root_hash * 31) + 19;
+    ^entry;
+}
+
+!evaluate_global_scale_closure(total_bundles: int, processed_bundles: int, rejected_migrations: int) -> int {
+    verdict = 0;
+    ?(total_bundles >= 100) {
+        ?(total_bundles == processed_bundles) {
+            ?(rejected_migrations == 0) {
+                verdict = 5000;
+            }
+        }
+    }
+    ^verdict;
+}
+
+=ex{check_spec_migration_policy, compute_global_entry_hash, evaluate_global_scale_closure}

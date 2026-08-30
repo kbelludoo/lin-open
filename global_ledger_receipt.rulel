@@ -1,0 +1,27 @@
+@RULEL:LIN_GLOBAL_PROVENANCE_LEDGER:1.0.0
+~R{.s=subject .m=metrics .c=compatibility .v=verdict}
+.s{
+  ledger_id="urn:lin:global_ledger:2026-08-30:012"
+  bundle_count=1000
+  schema_composition=["v1.0.0", "v2.0.0", "v3.0.0"]
+  hardware_composition=["gfx1030", "CPU_ZEN3", "APU_HSA"]
+  global_merkle_root="sha256:3c34aa9eb8111592d6f4d62068a9c7bcaeb8441621ebde785be7beda7c0da2b7"
+  audit_timestamp="2026-08-30T13:50:00Z"
+}
+.m{
+  ingestion_latency_ms=1.086
+  merkle_build_latency_ms=0.699
+  replay_latency_ms=1.795
+  air_gapped_reproduced=true
+}
+.c{
+  spec_migration_matrix_verified=true
+  forward_migration_supported=true
+  backward_migration_forbidden=true
+  unsupported_migration_status="STRICT_REJECT"
+}
+.v{
+  global_ledger_status="SCALE_DETERMINISM_PRESERVED"
+  common_mode_divergence_observed=0
+  tamper_resistance_certified=true
+}
