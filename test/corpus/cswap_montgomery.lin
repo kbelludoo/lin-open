@@ -1,0 +1,32 @@
+@LIN:L1c:0.2
+@CORPUS{origin="skeeto/curve25519" algorithm="Montgomery_CSwap" scope="constant_time_conditional_swap"}
+
+!cswap_limb(swap_bit: int, a: int, b: int, sel: int): int {
+  // mask is -1 if swap_bit == 1, 0 if swap_bit == 0
+  bit = swap_bit & 1;
+  mask = 0 - bit;
+  diff = mask & (a ^ b);
+  na = a ^ diff;
+  nb = b ^ diff;
+
+  ?(sel == 0){ ^na };
+  ^nb;
+}
+
+!test_cswap_vector(): int {
+  // Test with swap = 0 (no change): a=100, b=200 -> na=100, nb=200
+  no_a = cswap_limb(0, 100, 200, 0);
+  no_b = cswap_limb(0, 100, 200, 1);
+
+  // Test with swap = 1 (swapped): a=100, b=200 -> na=200, nb=100
+  sw_a = cswap_limb(1, 100, 200, 0);
+  sw_b = cswap_limb(1, 100, 200, 1);
+
+  ?(no_a != 100){ ^0 };
+  ?(no_b != 200){ ^0 };
+  ?(sw_a != 200){ ^0 };
+  ?(sw_b != 100){ ^0 };
+  ^1;
+}
+
+=ex{cswap_limb, test_cswap_vector}

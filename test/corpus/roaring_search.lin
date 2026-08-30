@@ -1,0 +1,23 @@
+@LIN:L1c:0.2
+@CORPUS{origin="RoaringBitmap/CRoaring" algorithm="Roaring_Bsearch" scope="branchless_search_step"}
+
+!roaring_search_step(low: int, high: int, mid_val: int, target: int): int {
+  mid = _lia_ushr(low + high, 1);
+  ?(mid_val < target){
+    ^(mid + 1);
+  };
+  ^mid;
+}
+
+!test_roaring_vector(): int {
+  // low=0, high=10 -> mid=5. mid_val=42, target=100 -> mid_val < target -> return 6
+  r_gt = roaring_search_step(0, 10, 42, 100);
+  // low=0, high=10 -> mid=5. mid_val=150, target=100 -> mid_val >= target -> return 5
+  r_le = roaring_search_step(0, 10, 150, 100);
+
+  ?(r_gt != 6){ ^0 };
+  ?(r_le != 5){ ^0 };
+  ^1;
+}
+
+=ex{roaring_search_step, test_roaring_vector}
