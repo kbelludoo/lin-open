@@ -1,0 +1,54 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=temporal_provenance_v270
+~G{?=if #=for ^=ret :else}
+
+!verify_monotonic_epoch_progression(prev_epoch: int, current_epoch: int) -> int {
+    valid = 0;
+    ?(current_epoch > prev_epoch) {
+        valid = 1;
+    }
+    ^valid;
+}
+
+!evaluate_revocation_status(action_code: int, signed_epoch: int, revocation_epoch: int) -> int {
+    status = 0;
+    // action_code: 1=ATTEST, 2=REVOKE
+    ?(action_code == 1) {
+        status = 100; // VALID
+        ?(revocation_epoch > 0) {
+            ?(signed_epoch >= revocation_epoch) {
+                status = 200; // REVOKED / REJECT
+            }
+        }
+    }
+    ?(action_code == 2) {
+        status = 200; // REVOKED
+    }
+    ^status;
+}
+
+!verify_state_continuity(prev_root_match: int, accumulator_match: int, sig_match: int) -> int {
+    continuity_ok = 0;
+    ?(prev_root_match == 1) {
+        ?(accumulator_match == 1) {
+            ?(sig_match == 1) {
+                continuity_ok = 1;
+            }
+        }
+    }
+    ^continuity_ok;
+}
+
+!format_temporal_ledger_verdict(monotonic_ok: int, continuity_ok: int, anti_rollback_ok: int) -> int {
+    verdict = 0;
+    ?(monotonic_ok == 1) {
+        ?(continuity_ok == 1) {
+            ?(anti_rollback_ok == 1) {
+                verdict = 6000;
+            }
+        }
+    }
+    ^verdict;
+}
+
+=ex{verify_monotonic_epoch_progression, evaluate_revocation_status, verify_state_continuity, format_temporal_ledger_verdict}
