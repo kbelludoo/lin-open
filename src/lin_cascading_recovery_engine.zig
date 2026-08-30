@@ -26,6 +26,7 @@ const HeterogeneousVerifier = verifier.HeterogeneousVerifier;
 
 pub const StructuralPlan = struct {
     version: usize,
+    plan_version: usize,
     backend: planner.BackendTarget,
     crossover_n_star: usize,
     chunk_size: usize,
@@ -33,6 +34,10 @@ pub const StructuralPlan = struct {
     output_residency: []const u8,
     transfer_policy: []const u8,
     fault_trigger: []const u8,
+    backend_before: planner.BackendTarget,
+    chunk_before: usize,
+    nstar_before: usize,
+    decision_changed: bool,
 
     pub fn isStructurallyDistinct(a: StructuralPlan, b: StructuralPlan) bool {
         if (a.backend != b.backend) return true;
