@@ -1,0 +1,19 @@
+@LIN:L1c:0.2
+@CORPUS{origin="skeeto/splitmix64" algorithm="SplitMix64" scope="splitmix64_step"}
+
+!splitmix64_step(state: int): int {
+  z = state + -7046029254386353131;
+  z = (z ^ _lia_ushr(z, 30)) * -4658895280553007687;
+  z = (z ^ _lia_ushr(z, 27)) * -7723592293110705685;
+  ^z ^ _lia_ushr(z, 31);
+}
+
+!test_splitmix64_vector(): int {
+  // Test with seed = 0
+  // Standard first output for seed 0: 0xe220a8397b1dcdaf (-2152535657050944081)
+  r = splitmix64_step(0);
+  ?(r != -2152535657050944081){ ^0 };
+  ^1;
+}
+
+=ex{splitmix64_step, test_splitmix64_vector}

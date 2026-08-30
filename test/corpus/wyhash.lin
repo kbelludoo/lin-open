@@ -1,0 +1,46 @@
+@LIN:L1c:0.2
+@CORPUS{origin="wangyi-fudan/wyhash" algorithm="wyhash32_and_wyrand" scope="wymix32_wy32x32_wyrand"}
+
+!_wyrot64(x: int): int {
+  w = x;
+  ^(_lia_ushr(w, 32)) | (_lia_shl(w, 32));
+}
+
+!wymix32(a_in: int, b_in: int, sel: int): int {
+  a = a_in & 4294967295;
+  b = b_in & 4294967295;
+  c = (a ^ 1405471321) * (b ^ 1953774619);
+  res_a = c & 4294967295;
+  res_b = _lia_ushr(c, 32) & 4294967295;
+  ?(sel == 0){ ^res_a };
+  ^res_b;
+}
+
+!wy32x32(a_in: int, b_in: int): int {
+  a1 = wymix32(a_in, b_in, 0);
+  b1 = wymix32(a_in, b_in, 1);
+  a2 = wymix32(a1, b1, 0);
+  b2 = wymix32(a1, b1, 1);
+  ^(a2 ^ b2) & 4294967295;
+}
+
+!wyrand_step(seed_in: int): int {
+  s = seed_in + -6884282663029611473;
+  see1 = s ^ -1800455987208640293;
+  see1_rot = _wyrot64(see1);
+  see1 = see1 * see1_rot;
+  s_rot = _wyrot64(s);
+  see1_rot2 = _wyrot64(see1);
+  ^(s * s_rot) ^ see1_rot2;
+}
+
+!test_wyhash_vectors(): int {
+  // Test wy32x32(0x12345678, 0x9abcdef0)
+  w32 = wy32x32(305419896, 2596069104);
+  // Test wyrand_step(0)
+  r = wyrand_step(0);
+  ?(w32 != 1207097889 || r != -6556845288980439527){ ^0 };
+  ^1;
+}
+
+=ex{_wyrot64, wymix32, wy32x32, wyrand_step, test_wyhash_vectors}

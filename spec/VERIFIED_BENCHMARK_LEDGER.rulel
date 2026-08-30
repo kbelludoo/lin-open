@@ -4,50 +4,70 @@
 .entry{
   idx=1 repo="floodyberry/chacha-opt" algorithm="ChaCha20" fn="chacha_qr"
   oracle="RFC_8439_Sec_2.1.1" status="VERIFIED_MATCH"
-  throughput="349.44_M_QR_s" latency_ms=22.89 ops=8000000
+  throughput="352.51_M_QR_s" latency_ms=22.69 ops=8000000
 }
 .entry{
   idx=2 repo="BLAKE3-team/BLAKE3" algorithm="BLAKE3" fn="blake3_g"
   oracle="Official_BLAKE3_IV" status="VERIFIED_MATCH"
-  throughput="343.89_M_mix_s" latency_ms=23.26 ops=8000000
+  throughput="337.67_M_mix_s" latency_ms=23.69 ops=8000000
 }
 .entry{
   idx=3 repo="imneme/pcg-c" algorithm="PCG32" fn="pcg_output_xsh_rr_64_32"
   oracle="PCG32_Reference_Test_Vector" status="VERIFIED_MATCH"
-  throughput="631.63_M_draws_s" latency_ms=7.92 ops=5000000
+  throughput="635.35_M_draws_s" latency_ms=7.87 ops=5000000
 }
 .entry{
   idx=4 repo="madler/zlib" algorithm="Adler32" fn="adler32_step"
   oracle="RFC_1950_Wikipedia_0x11E60398" status="VERIFIED_MATCH"
-  throughput="255.01_MB_s" latency_ms=19.61 bytes=5000000
+  throughput="255.30_MB_s" latency_ms=19.59 bytes=5000000
 }
 .entry{
   idx=5 repo="aappleby/smhasher" algorithm="MurmurHash3" fn="fmix32_and_step"
   oracle="SMHasher_Official_Vectors" status="VERIFIED_MATCH"
-  throughput="673.80_M_steps_s" latency_ms=7.42 ops=5000000
+  throughput="675.42_M_steps_s" latency_ms=7.40 ops=5000000
 }
 .entry{
   idx=6 repo="veorq/SipHash" algorithm="SipHash-2-4" fn="sipround"
   oracle="Aumasson_DJB_SipHash_Vectors" status="VERIFIED_MATCH"
-  throughput="901.30_M_rounds_s" latency_ms=8.88 ops=8000000
+  throughput="904.56_M_rounds_s" latency_ms=8.84 ops=8000000
 }
 .entry{
-  idx=7 repo="Cyan4973/xxHash" algorithm="XXH32" fn="xxh32_avalanche"
+  idx=7 repo="wangyi-fudan/wyhash" algorithm="wyhash_wyrand" fn="wy32x32_wyrand"
+  oracle="Wang_Yi_Official_Vectors" status="VERIFIED_MATCH"
+  throughput="433.42_M_draws_s" latency_ms=11.54 ops=5000000
+}
+.entry{
+  idx=8 repo="skeeto/splitmix64" algorithm="SplitMix64" fn="splitmix64_step"
+  oracle="Guy_Steele_SplittableRandom" status="VERIFIED_MATCH"
+  throughput="273.21_M_draws_s" latency_ms=18.30 ops=5000000
+}
+.entry{
+  idx=9 repo="POSIX_DNS" algorithm="FNV-1a" fn="fnv1a32_step"
+  oracle="FNV_Standard_RFC" status="VERIFIED_MATCH"
+  throughput="895.55_MB_s" latency_ms=5.58 bytes=5000000
+}
+.entry{
+  idx=10 repo="IEEE_802_3" algorithm="CRC-32" fn="crc32_byte"
+  oracle="std_hash_Crc32_ISO_3309" status="VERIFIED_MATCH"
+  throughput="115.55_MB_s" latency_ms=4.33 bytes=500000
+}
+.entry{
+  idx=11 repo="Cyan4973/xxHash" algorithm="XXH32" fn="xxh32_avalanche"
   oracle="Yann_Collet_Reference_Vectors" status="VERIFIED_MATCH"
-  throughput="284.64_M_hashes_s" latency_ms=17.57 ops=5000000
+  throughput="285.42_M_hashes_s" latency_ms=17.52 ops=5000000
 }
 .entry{
-  idx=8 repo="torvalds/linux" algorithm="Binary_GCD" fn="lin_opt_gcd"
+  idx=12 repo="torvalds/linux" algorithm="Binary_GCD" fn="lin_opt_gcd"
   oracle="lib_math_gcd_c_oracle" status="VERIFIED_MATCH"
-  throughput="13.64_M_pairs_s" latency_ms=73.30 ops=1000000
+  throughput="13.79_M_pairs_s" latency_ms=72.51 ops=1000000
 }
 .entry{
-  idx=9 repo="bitcoin/bitcoin" algorithm="SHA256d_PoW" fn="btc_pow_verify"
+  idx=13 repo="bitcoin/bitcoin" algorithm="SHA256d_PoW" fn="btc_pow_verify"
   oracle="std_crypto_Sha256_genesis_0" status="VERIFIED_MATCH"
-  throughput="106654.43_Hashes_s" latency_ms=93.76 hashes=10000
+  throughput="108357.06_Hashes_s" latency_ms=92.29 hashes=10000
 }
 .simd_audit{
   lanes=8 target="@Vector(8,u32)"
-  scalar_ms=35.11 simd_ms=9.27 ops=10000000
-  relative_speedup="3.79x" status="VERIFIED_MATCH_8_OF_8"
+  scalar_ms=35.05 simd_ms=9.26 ops=10000000
+  relative_speedup="3.78x" status="VERIFIED_MATCH_8_OF_8"
 }
