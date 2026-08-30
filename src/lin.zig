@@ -7517,10 +7517,11 @@ pub fn main() !void {
             try stdout.print(".refutation.total=4\n.refutation.unclassified=0\n", .{});
             if (confirmed_count == corpus_targets.len) {
                 try stdout.print(".status=\"PASS\"\n", .{});
+                return;
             } else {
                 try stdout.print(".status=\"FAIL\"\n", .{});
+                std.process.exit(1);
             }
-            return;
         }
         if (std.mem.endsWith(u8, args[2], ".lin")) {
             const target_file = args[2];
