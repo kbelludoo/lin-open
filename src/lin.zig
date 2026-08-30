@@ -7557,6 +7557,7 @@ pub fn main() !void {
             ledger_hasher.final(&ledger_digest);
 
             var cert_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+            cert_hasher.update("LIN:SEMANTIC_CERTIFICATE:1.0.0");
             cert_hasher.update(&compiler_digest);
             cert_hasher.update(&corpus_digest);
             cert_hasher.update(&ledger_digest);
@@ -7576,6 +7577,13 @@ pub fn main() !void {
             } else {
                 try stdout.print(".integrity_gate=\"FAIL\"\n\n", .{});
             }
+
+            try stdout.print("@LIN:SEMANTIC_CERTIFICATE_SPEC:1.0.0\n", .{});
+            try stdout.print(".hash_algorithm=\"SHA-256\"\n", .{});
+            try stdout.print(".digest_encoding=\"raw_bytes\"\n", .{});
+            try stdout.print(".digest_size=32\n", .{});
+            try stdout.print(".domain=\"LIN:SEMANTIC_CERTIFICATE:1.0.0\"\n", .{});
+            try stdout.print(".concatenate_order={{domain,compiler_sha256,corpus_sha256,ledger_sha256}}\n\n", .{});
 
             try stdout.print("@LIN:SEMANTIC_CERTIFICATE:1.0.0\n", .{});
             try stdout.print(".compiler_sha256=\"{s}\"\n", .{std.fmt.fmtSliceHexLower(&compiler_digest)});
