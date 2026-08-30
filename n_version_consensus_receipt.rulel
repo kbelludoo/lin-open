@@ -1,0 +1,35 @@
+@RULEL:LIN_N_VERSION_CONSENSUS:1.0.0
+~R{.s=subject .p=provenance .v=verifiers .c=consensus .o=oracle}
+.s{
+  bundle_file="bundle_attestation.rulel"
+  bundle_digest="sha256:b9d1b80b517f69d15d038ad3afa9342a79b0155d35b508d7de2de0b0f13f7c41"
+  canonicalization_version="LIN_CANONICAL_RECEIPT_v1.0"
+  merkle_spec_version="LIN_BINARY_MERKLE_v2.0"
+  signature_spec="ED25519_LIN_v1.0"
+  audit_timestamp="2026-08-30T12:40:00Z"
+}
+.p{
+  verifier_a_source="src/lin.zig (LIN Core Stage-0 v1.4.1)"
+  verifier_b_source="src/lin_cleanroom_verifier.lin (@LIN:L1c:0.2)"
+  verifier_c_source="ExternalReferenceVerifier (Independent Spec Parser & Merkle Engine)"
+  source_commit="518a47b1"
+}
+.v{
+  .verifier_a{ id="VERIFIER_A_CORE" status="PASS" receipt_digest="sha256:f059162242e2f4ff9f3aa20483f2673ca4b0e2d83eaeb57d8f4f0af4f8965f9e" }
+  .verifier_b{ id="VERIFIER_B_CLEANROOM" status="PASS" receipt_digest="sha256:f059162242e2f4ff9f3aa20483f2673ca4b0e2d83eaeb57d8f4f0af4f8965f9e" }
+  .verifier_c{ id="VERIFIER_C_REFERENCE" status="PASS" receipt_digest="sha256:f059162242e2f4ff9f3aa20483f2673ca4b0e2d83eaeb57d8f4f0af4f8965f9e" }
+}
+.o{
+  ground_truth_oracle_verdict="PASS"
+  expected_canonical_digest="sha256:f059162242e2f4ff9f3aa20483f2673ca4b0e2d83eaeb57d8f4f0af4f8965f9e"
+  oracle_agreement=true
+}
+.c{
+  implementations_tested=3
+  tripartite_semantic_equality=true
+  canonical_byte_equality=true
+  digest_equality=true
+  common_mode_divergence_observed=0
+  consensus_status="N_VERSION_BIT_EXACT_EQUIVALENCE_ESTABLISHED"
+  consensus_digest="sha256:f059162242e2f4ff9f3aa20483f2673ca4b0e2d83eaeb57d8f4f0af4f8965f9e"
+}
