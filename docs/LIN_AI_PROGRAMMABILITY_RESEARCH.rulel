@@ -1,0 +1,308 @@
+@RULEL:LIN_AI_PROGRAMMABILITY_RESEARCH:1.0.0
+~MARKDOWN_SPEC
+# Pesquisa — tornar LIN mais fácil e seguro para IAs programarem
+
+> **Status:** análise de linguagem e proposta, não implementação do compilador.
+> **Escopo honesto:** “fácil para IA” significa aumentar a taxa de programas válidos,
+> facilitar reparos automáticos e tornar resultados verificáveis. Não significa que a
+> linguagem prove intenção, elimine bugs lógicos ou transforme um modelo em verificador.
+
+## 1. Método e fontes primárias
+
+A comparação separa três famílias, porque elas resolvem problemas diferentes:
+
+1. linguagens de sistemas e verificação, que ensinam como restringir programas;
+2. linguagens/ferramentas declarativas para programar modelos, que ensinam como restringir
+   geração;
+3. sistemas de código endereçado por conteúdo, que ensinam como uma IA pode editar sem
+   confundir identidade e nome.
+
+Fontes primárias selecionadas para reprodução da pesquisa:
+
+| Projeto | Fonte primária | Ideia estudada |
+|---|---|---|
+| Rust | `https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html` | ownership, move e borrow |
+| Dafny | `https://dafny.org/dafny/OnlineTutorial/guide` | pre/postconditions, invariantes e terminação |
+| Koka | `https://koka-lang.github.io/koka/doc/index.html` | efeitos inferidos e explícitos no tipo |
+| Elm | `https://elm-lang.org/news/compiler-errors-for-humans` | diagnóstico localizado e orientado à correção |
+| Unison | `https://www.unison-lang.org/docs/fundamentals/abilities/` e language reference | abilities e identidade por conteúdo |
+| WIT | `https://component-model.bytecodealliance.org/design/wit.html` | interfaces pequenas e serializáveis entre componentes |
+| LMQL | `https://lmql.ai/docs/language/overview.html` e paper associado | variáveis de geração com constraints |
+| Guidance | `https://guidance.readthedocs.io/` | geração estruturada por gramática |
+| PDL | `https://ibm.github.io/prompt-declaration-language/` | composição declarativa de chamadas e dados |
+| DSPy | `https://dspy.ai/` e paper associado | signatures tipadas e avaliação/otimização do pipeline |
+| Structured Outputs | `https://platform.openai.com/docs/guides/structured-outputs` | output aderente a schema |
+
+Esses projetos não são todos “linguagens para uma IA escrever código”. LMQL, Guidance, PDL
+e DSPy programam ou restringem modelos; Rust, Dafny, Koka, Elm, Unison e WIT oferecem ideias
+para a linguagem-alvo. Misturar as categorias produziria conclusões falsas.
+
+## 2. O que realmente ajuda uma IA
+
+### 2.1 Uma construção canônica por intenção
+
+Modelos erram mais quando há várias grafias, coerções implícitas e regras dependentes de
+contexto para a mesma operação. O perfil `AI_SAFE` deve escolher **uma** forma canônica para:
+
+- declaração e inicialização;
+- condição e loop;
+- retorno e erro;
+- conversão numérica;
+- acesso a recurso externo;
+- criação, borrow, move e drop.
+
+Aliases podem continuar aceitos no perfil humano, mas `lin check --profile ai-safe` deve
+rejeitá-los com um reparo canônico. Isso reduz o espaço de geração sem empobrecer o núcleo.
+
+### 2.2 Diagnósticos como API, não prosa
+
+Inspirado pela localização útil do Elm, mas adaptado a agentes, cada erro deve ter:
+
+    code, phase, span_start, span_end, expected, found, repair, context_hash
+
+- `code` e `repair` são estáveis entre patch releases;
+- `span_*` usa offsets de bytes, além de linha/coluna;
+- `context_hash` impede aplicar um reparo a uma versão diferente da fonte;
+- a prosa humana é opcional e não participa da decisão automática.
+
+Uma IA deve conseguir executar `check -> aplicar repair -> check` sem extrair informação de
+texto livre. Um diagnóstico sem posição ou reparo acionável é dívida do compilador.
+
+### 2.3 Constraints antes da execução
+
+LMQL/Guidance/Structured Outputs mostram o valor de restringir a forma durante a geração. No
+LIN, a aplicação equivalente é publicar uma gramática pequena e versionada por perfil:
+
+    lin grammar --profile ai-safe --format ebnf
+    lin grammar --profile ai-safe --format schema
+
+O schema não prova semântica, mas evita gastar ciclos com tokens impossíveis. O compilador
+continua sendo a autoridade; o decoder da IA nunca substitui parse/typecheck.
+
+### 2.4 Contratos locais e terminação
+
+Dafny sugere uma direção útil, desde que LIN comece com contratos executáveis antes de
+alegar prova formal:
+
+    requires: predicado de entrada
+    ensures:  predicado de saída
+    invariant: predicado verificado em cada iteração
+    decreases: expressão inteira que deve diminuir
+
+No primeiro estágio, esses contratos viram checks determinísticos e fixtures negativas. Só
+devem ser chamados de “provados” quando um verificador formal realmente descarregar as
+obrigações. `decreases` é particularmente útil para código de IA porque loops sem progresso
+são um erro comum e o limite global de passos é apenas a última defesa.
+
+### 2.5 Efeitos e capacidades no tipo
+
+Koka, Unison abilities e WIT apontam para interfaces que tornam efeitos observáveis. Para
+LIN, funções puras permanecem o default e capacidades devem aparecer na assinatura:
+
+    !hash(xs: bytes) -> digest effects={}
+    !load(cap: source_read, id: source_id) -> bytes effects={source_read}
+    !emit(cap: opencl_emit, ir: gpu_ir) -> bytes effects={opencl_emit}
+
+Benefícios para IA:
+
+- não inventar I/O onde ele não foi concedido;
+- descobrir dependências pela assinatura;
+- testar funções puras sem mocks ocultos;
+- excluir relógio, rede e host dos receipts por construção.
+
+O conjunto de efeitos deve ser fechado e ordenado canonicamente. “Qualquer syscall” não é
+uma capacidade válida.
+
+### 2.6 Ownership simplificado, dirigido a recursos reais
+
+Copiar todo o borrow checker do Rust não é a melhor primeira etapa. LIN hoje usa valores
+inteiros e arenas limitadas; lifetimes genéricos acrescentariam grande custo ao parser,
+typechecker e mensagens.
+
+Adotar primeiro três qualificadores explícitos para recursos não copiáveis:
+
+    own<T>     único dono; atribuição transfere
+    view<T>    leitura compartilhada; não escapa do escopo
+    edit<T>    acesso exclusivo; não coexiste com view/edit
+
+Regras mínimas:
+
+1. scalar `int` continua copiável;
+2. arenas, buffers, capabilities e handles são lineares;
+3. use-after-move/drop é erro;
+4. `edit` é exclusivo;
+5. move/drop exige zero borrows vivos;
+6. nenhum borrow cruza `await`, GPU dispatch ou retorno no perfil v1;
+7. o fim lexical encerra `view/edit` automaticamente, mas o IR registra o evento.
+
+`src/lin_ai_borrow_checker.lin` já modela a máquina de estados de um recurso como protótipo
+experimental. O próximo passo correto é fazê-la consumir eventos do AST tipado; não criar
+uma segunda sintaxe textual permanente.
+
+O protótipo v2 também vincula a decisão ao trace exato: `aibc_trace_hash32` recomputa um
+commitment FNV-1a/32 com domínio `AIBC_TRACE_V1:`, e `aibc_check_bound` rejeita com código 19
+quando o hash esperado não corresponde. Isso evita reutilizar acidentalmente um PASS depois
+que a sequência de ownership mudou. Por ser 32-bit e não resistente a colisões, esse valor é
+somente um detector de estado stale; o receipt de produção deve vincular separadamente
+`SHA-256(AST tipado canônico)`, `SHA-256(trace ownership)` e o resultado do checker.
+
+### 2.7 Identidade por conteúdo para edições de IA
+
+Unison demonstra a utilidade de separar nome e identidade por conteúdo. LIN já possui
+receipts e Merkle; pode aplicar a mesma disciplina ao protocolo de edição:
+
+    edit{base_source_sha256, symbol_id, old_symbol_sha256, replacement, intent}
+
+O compilador aceita a edição apenas se os hashes-base ainda coincidirem. Isso evita que dois
+agentes editem silenciosamente versões diferentes ou que um reparo atrasado seja aplicado ao
+span errado. O hash identifica bytes canônicos, enquanto `symbol_id` continua humano.
+
+### 2.8 Holes tipados em vez de arquivos parcialmente inválidos
+
+Adicionar um único hole canônico, somente no modo de síntese:
+
+    _?{id=next_acc expected=int effects={}}
+
+`lin check --allow-holes` deve emitir contexto tipado e obrigações, mas nunca produzir
+artefato executável ou receipt `PASS`. Isso permite que uma IA preencha uma função por partes
+sem ensinar ao parser a aceitar código arbitrariamente quebrado.
+
+## 3. Proposta `@LIN:AI_SAFE:1`
+
+O perfil deve ser aditivo e não alterar a semântica do núcleo:
+
+| Recurso | `AI_SAFE:1` |
+|---|---|
+| sintaxe | forma canônica única; sem aliases |
+| tipos | sem coerção implícita; conversão nomeada |
+| efeitos | lista explícita e fechada |
+| recursos | `own/view/edit` somente para tipos lineares |
+| loops | limite estático ou `decreases` |
+| erros | RULEL estável com span, repair e context hash |
+| testes | `self_check` obrigatório para export público |
+| execução | limites de passos, pilha, locais e memória no manifesto |
+| output | schema declarado e validado |
+| receipts | fonte, perfil, efeitos, limites, bytecode, trace e output vinculados |
+| holes | aceitos só em análise; proibidos em execução/receipt |
+
+O header entra no hash semântico:
+
+    @LIN:AI_SAFE:1
+    @LIMITS{steps=200000 stack=64 locals=32 arena_bytes=65536}
+    @EFFECTS{allow=[]}
+
+Assim, dois programas com limites ou poderes diferentes não compartilham o mesmo significado
+nem o mesmo receipt.
+
+## 4. Loop de trabalho para um agente
+
+    1. DESCRIBE  -> `lin api --symbol alvo --profile ai-safe`
+    2. GENERATE  -> fonte completa ou patch com base hash
+    3. CHECK     -> parse + type + effects + ownership + contracts
+    4. REPAIR    -> aplicar somente repair cujo context_hash coincide
+    5. SELFTEST  -> executar testes públicos sob limites
+    6. HOLDOUT   -> executar vetores que o agente não recebeu
+    7. RECEIPT   -> emitir prova de execução, nunca prova de intenção
+    8. REVIEW    -> humano aceita mudanças de capacidade, domínio ou root
+
+O comando deve ser idempotente: repetir CHECK/SELFTEST sobre os mesmos bytes produz o mesmo
+RULEL. Nenhum timestamp, caminho absoluto, endereço ou ordem de mapa entra no resultado.
+
+## 5. Métricas: provar que ficou mais fácil
+
+Antes de promover o perfil, medir em um corpus versionado:
+
+- `first_parse_rate`: compilou na primeira geração;
+- `first_semantic_rate`: passou type/effect/ownership na primeira geração;
+- `repair_success_rate`: reparo sugerido resolveu exatamente um erro;
+- `hidden_test_pass_rate`: passou fixtures não mostradas ao agente;
+- `mean_repair_rounds`: ciclos até PASS;
+- `invalid_receipt_rate`: deve ser zero;
+- `nondeterminism_rate`: duas execuções divergentes; deve ser zero;
+- `unsafe_capability_attempts`: tentativas bloqueadas pelo effect checker;
+- `resource_protocol_errors`: use-after-move, alias mutável e leak;
+- `step_limit_rate`: programas interrompidos pelo limite.
+
+Comparar pelo menos três condições: LIN atual, `AI_SAFE:1` sem repairs e `AI_SAFE:1` com
+repairs. Sem baseline e holdout, dizer “melhor para IA” é marketing, não resultado.
+
+## 6. Ordem recomendada de incorporação
+
+### P0 — Diagnóstico estável e corpus
+
+- congelar códigos existentes;
+- acrescentar byte spans, `repair` e `context_hash`;
+- criar 50 tarefas com fixtures públicas e ocultas;
+- medir baseline antes de mudar sintaxe.
+
+**Gate:** todas as rejeições têm código/posição determinísticos; rerun byte-idêntico.
+
+### P1 — Gramática e interface para agentes
+
+- publicar EBNF/schema do `AI_SAFE:1`;
+- `lin api` retorna assinaturas, efeitos e limites em RULEL;
+- patches exigem base hash.
+
+**Gate:** geração constrained nunca é tratada como valida sem o compilador.
+
+### P2 — Contratos e loops
+
+- `requires/ensures/invariant/decreases` executáveis;
+- checagem em entradas públicas e holdout;
+- nenhum uso da palavra “prova” ainda.
+
+**Gate:** violações falham fechadas com a mesma obrigação e span.
+
+### P3 — Efeitos/capacidades
+
+- pureza default;
+- conjunto fechado de capacidades;
+- efeito vira parte da assinatura, cache e receipt.
+
+**Gate:** função sem capacidade não consegue observar host, I/O ou GPU.
+
+### P4 — Ownership linear
+
+- integrar eventos `own/view/edit/move/drop` ao AST tipado;
+- análise por CFG, incluindo branches e loops;
+- substituir o protótipo single-resource somente após paridade de fixtures.
+
+**Gate:** nenhum use-after-move, borrow conflitante ou recurso linear vivo no retorno.
+
+### P5 — Holes e síntese incremental
+
+- holes tipados somente para análise;
+- API de obrigações e patches hash-bound;
+- artefatos incompletos nunca executam nem recebem receipt PASS.
+
+**Gate:** preencher holes e recompilar produz o mesmo resultado de fonte completa canônica.
+
+## 7. O que não incorporar agora
+
+1. **Lifetimes escritos à mão em toda assinatura:** custo alto antes de existirem recursos
+   lineares reais no typechecker.
+2. **Coerções “inteligentes” para aceitar output de modelo:** escondem erros e quebram
+   determinismo.
+3. **Correção automática sem base hash:** pode consertar a versão errada.
+4. **Prompt dentro do digest de execução:** prompt, fonte, bytecode e output têm significados
+   distintos; podem ser vinculados em folhas separadas, nunca no mesmo campo ambíguo.
+5. **Prova por self-test ou receipt:** ambos são evidência de execuções, não prova universal.
+6. **Sintaxe natural-language executável:** texto livre não deve adquirir capacidade.
+7. **Borrow checker apenas por regex/texto:** o gate real precisa do AST tipado e CFG.
+
+## 8. Decisão
+
+LIN tem uma base favorável para IA — sintaxe pequena, execução limitada, determinismo e
+receipts — mas o maior ganho imediato não é copiar outra linguagem inteira. A sequência de
+maior retorno é:
+
+    diagnósticos estruturados
+      -> gramática constrained
+      -> contratos/terminação
+      -> efeitos/capacidades
+      -> ownership linear
+      -> holes tipados
+
+Essa ordem primeiro melhora o ciclo de reparo mensurável, depois adiciona segurança de
+recursos. Cada item preserva as regras do projeto: implementação em LIN/RULEL, Stage0
+congelado, um digest por significado e nenhuma alegação além da evidência medida.
