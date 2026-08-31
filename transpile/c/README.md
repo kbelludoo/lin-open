@@ -167,3 +167,71 @@ transpile/c/
    `diff` dos resultados — o oráculo deixa de ser finito.
 4. **Slice 5 (opcional)**: `--ai-feedback` JSON — comparar a taxonomia de
    erros (`E_SYNTAX_*`, `E_EXEC_*`) como saída estruturada, não só valor.
+
+---
+
+## N-Version cross-check (adicionado em 2026-08-31)
+
+O port deixou de ser apenas um exercício de transpilação: ele é agora a **segunda
+implementação independente** usada pelo verificador N-Version do LIN.
+
+```bash
+make -C transpile/c xver          # compila bin/lin_c_receipt
+./zig-out/bin/lin_native crosscheck-c
+# ou, da raiz:  make xver
+```
+
+`tool/lin_c_receipt.c` empurra uma expressão pela pipeline C (tokenizer → parser
+Pratt → arena plana → lowerer → LinVM C) e emite um **commitment Merkle SHA-256**
+do que computou. O lado Zig (`crosscheck-c` em `compiler/lin.zig`) faz o mesmo com
+a sua própria implementação e compara as raízes.
+
+### Canonicalização (idêntica nos dois lados)
+
+```
+bytecode_image = por instrução: 1 byte (ordinal do opcode) + operando i64 little-endian
+
+leaf_source = SHA256("lin:xver:source:" || expr)
+leaf_env    = SHA256("lin:xver:env:"    || env_spec)          # "x=10,y=20,z=5,x1=15"
+leaf_code   = SHA256("lin:xver:code:"   || bytecode_image)
+leaf_exec   = SHA256("lin:xver:exec:"   || result ":" steps ":" sp_at_ret)
+
+root = node(node(leaf_source, leaf_env), node(leaf_code, leaf_exec))
+node(l, r) = SHA256("node:" || l || r)
+```
+
+Raízes iguais significam que as duas implementações concordam sobre: a fonte, o
+ambiente, **cada instrução emitida**, o resultado, a contagem de passos e a
+profundidade final da pilha. Qualquer diferença é divergência e o comando falha
+(`error.NVersionDivergence`, exit não-zero, sem recibo).
+
+### Arquivos novos
+
+| Arquivo | Papel |
+|---|---|
+| `lin_c/lin_sha256.{h,c}` | SHA-256 (FIPS 180-4) próprio, sem OpenSSL — a "implementação independente" não pode depender de uma terceira base de código |
+| `test/test_sha256.c` | vetores **publicados** (FIPS + NIST CAVP de 1 MiB); nenhum valor esperado foi gerado pela implementação testada |
+| `tool/lin_c_receipt.c` | emissor do recibo de execução do lado C |
+
+### Resultado verificado
+
+```
+$ make xver
+N-VERSION CONSENSUS: 34 vectors | agreements 34 | divergences 0
+Independent implementations compared: 2 (Zig, C11)
+```
+
+Os 34 vetores são os 29 do oráculo compartilhado (23 avaliados + 6 que ambos os
+lados devem rejeitar) mais 5 vetores de fronteira INT64 (`9223372036854775807+1`,
+`-9223372036854775807-2`, `9223372036854775807*2`, `(0-9223372036854775807)-1`,
+`x*x*x*x`) — exatamente os casos em que um port de aritmética com wrapping diverge.
+
+O recibo (`xver_receipt.rulel`) fixa o binário C por SHA-256
+(`engine_b_sha256`), para que "concordaram" seja auditável: sabe-se *qual* segunda
+implementação concordou.
+
+### Teste de injeção de falha
+
+`test/attestation_honesty.sh` substitui a segunda implementação por um script que
+mente (`result=999`, raiz falsa). O `crosscheck-c` reporta `DIVERGENCE DETECTED`,
+não escreve recibo e sai não-zero — ou seja, a comparação é real, não decorativa.
