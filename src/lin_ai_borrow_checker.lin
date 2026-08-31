@@ -1,0 +1,67 @@
+@LIN:L1c:0.2
+
+
+// Borrow protocol pequeno e explícito para agentes de IA.
+// Cada caractere é um evento sobre um recurso:
+//   O own/create       R shared-borrow     r shared-release
+//   W mutable-borrow   w mutable-release   U use/read
+//   M move             D drop
+
+
+!aibc_check(events: string): int {
+  state = 0;       // 0=unborn, 1=owned, 2=moved, 3=dropped
+  shared = 0;
+  mutable = 0;
+  i = 0;
+  while (i < events.length) {
+    op = events.charCodeAt(i);
+
+    // O: só é permitido criar uma vez.
+    ?(op == 79) {
+      ?(state != 0) { ^1 };
+      state = 1;
+    } : (op == 82) {
+      // R: empréstimo compartilhado exige ownership vivo e nenhum mutable.
+      ?(state != 1) { ^2 };
+      ?(mutable != 0) { ^3 };
+      shared = shared + 1;
+    } : (op == 114) {
+      // r: não se pode liberar borrow que não existe.
+      ?(shared == 0) { ^4 };
+      shared = shared - 1;
+    } : (op == 87) {
+      // W: empréstimo mutável é exclusivo.
+      ?(state != 1) { ^5 };
+      ?(mutable != 0 || shared != 0) { ^6 };
+      mutable = 1;
+    } : (op == 119) {
+      ?(mutable == 0) { ^7 };
+      mutable = 0;
+    } : (op == 85) {
+      // U: leitura direta do owner é bloqueada durante borrow mutável.
+      ?(state != 1) { ^8 };
+      ?(mutable != 0) { ^9 };
+    } : (op == 77) {
+      // M: move exige exclusividade e invalida usos futuros.
+      ?(state != 1) { ^10 };
+      ?(mutable != 0 || shared != 0) { ^11 };
+      state = 2;
+    } : (op == 68) {
+      // D: drop também exige que todos os borrows tenham terminado.
+      ?(state != 1) { ^12 };
+      ?(mutable != 0 || shared != 0) { ^13 };
+      state = 3;
+    } : {
+      ^14;
+    };
+    i = i + 1;
+  };
+
+  ?(shared != 0) { ^15 };
+  ?(mutable != 0) { ^16 };
+  ?(state == 1) { ^17 }; // recurso vivo deve ser movido ou liberado explicitamente
+  ?(state == 0) { ^18 };
+  ^0;
+}
+
+

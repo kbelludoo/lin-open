@@ -1,0 +1,59 @@
+# Pending CI addition for the cryptanalysis gates.
+#
+# This is NOT an active workflow: it deliberately lives outside .github/workflows/,
+# because the automation that produced this branch has no `workflows` permission on
+# this repository (a push touching .github/workflows/ci.yml is rejected outright by
+# GitHub). Keeping the job here instead of dropping it means the intended CI wiring
+# stays reviewable and reproducible rather than lost.
+#
+# To activate: append everything below the marker to the `jobs:` mapping of
+# .github/workflows/ci.yml, at the same indentation as the existing `verify:` job.
+#
+# Why a separate job, and why it must not depend on the Zig build: an "independent
+# cleanroom reproduction" that first requires trusting our own toolchain is not an
+# independent reproduction. This job needs only gcc + python3.
+#
+# NOTE on the audit step: verify_digest_binding.py is EXPECTED to exit non-zero while
+# the superseded MAX-256 v1.0.0 receipt stands in the tree. That is a defect report,
+# not a broken build; the step asserts the specific findings are still present so the
+# audit cannot silently stop checking them.
+
+# --- APPEND BELOW THE `jobs:` MAPPING IN .github/workflows/ci.yml ---
+
+  # ------------------------------------------------------------------
+  # Cryptanalysis gates.  Deliberately independent of the Zig build: an
+  # "independent reproduction" that requires trusting our toolchain is not an
+  # independent reproduction.  Needs only gcc + python3.
+  # ------------------------------------------------------------------
+  cryptanalysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: LIN-CRYPTO-256-REAL (attack -> re-encryption -> holdout -> cleanroom)
+        run: make crypto256-real
+
+      - name: Bind the receipt, then prove the binder is deterministic
+        run: |
+          python3 examples/bind_crypto256_real_receipt.py
+          git diff --quiet docs/events/EVENT_LIN_CRYPTO_256_REAL.rulel || {
+            echo "receipt is NOT reproducible: rebinding changed committed bytes"; git diff; exit 1; }
+
+      - name: MAX-256 digest-binding audit (findings must be reported)
+        run: |
+          set +e
+          python3 examples/verify_digest_binding.py > /tmp/audit.txt 2>&1
+          rc=$?
+          set -e
+          cat /tmp/audit.txt
+          test "$rc" -ne 0 || { echo "audit unexpectedly passed; the v1.0.0 defects were removed?"; exit 1; }
+          for code in DIGEST_UNBOUND PREDICTED_REPORTED_AS_OBSERVED ALGORITHM_MISLABELLED OVERCLAIM_UNBREAKABLE ADVERSARIAL_TESTS_UNBOUND; do
+            grep -q "$code" /tmp/audit.txt || { echo "audit lost finding $code"; exit 1; }
+          done
+          # the audited restatement must regenerate byte-identically
+          python3 examples/verify_digest_binding.py --emit-corrections > /dev/null
+          git diff --quiet docs/events/EVENT_LIN_CRYPTO_MAX_256_FRONTIER_v1_1_0.rulel || {
+            echo "v1.1.0 restatement is not reproducible"; git diff; exit 1; }
+          # and the superseded v1.0.0 receipt must stay untouched, as history
+          git diff --quiet docs/events/EVENT_LIN_CRYPTO_MAX_256_FRONTIER.rulel || {
+            echo "v1.0.0 receipt was modified; supersede it, never rewrite it"; exit 1; }
