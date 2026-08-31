@@ -52,14 +52,21 @@ pub fn runGpuVerificationSuite(
     }
 
     var num_dev: cl.cl_uint = 0;
-    _ = cl.clGetDeviceIDs(ocl_plat, cl.CL_DEVICE_TYPE_GPU, 0, null, &num_dev);
+    // Prefer a discrete GPU, but fall back to any OpenCL device (e.g. a PoCL
+    // CPU device) so the parity test runs on machines without a discrete GPU.
+    var dev_type: cl.cl_device_type = cl.CL_DEVICE_TYPE_GPU;
+    _ = cl.clGetDeviceIDs(ocl_plat, dev_type, 0, null, &num_dev);
     if (num_dev == 0) {
-        try stderr.print("gpu-verify: no OpenCL GPU device found\n", .{});
+        dev_type = cl.CL_DEVICE_TYPE_ALL;
+        _ = cl.clGetDeviceIDs(ocl_plat, dev_type, 0, null, &num_dev);
+    }
+    if (num_dev == 0) {
+        try stderr.print("gpu-verify: no OpenCL device found\n", .{});
         return false;
     }
     const devs = try alloc.alloc(cl.cl_device_id, num_dev);
     defer alloc.free(devs);
-    _ = cl.clGetDeviceIDs(ocl_plat, cl.CL_DEVICE_TYPE_GPU, num_dev, devs.ptr, null);
+    _ = cl.clGetDeviceIDs(ocl_plat, dev_type, num_dev, devs.ptr, null);
     const dev = devs[0];
 
     var dname: [256]u8 = undefined;
@@ -186,7 +193,7 @@ pub fn runGpuVerificationSuite(
 
         try stdout.print("\n  @LIN:GPU_KERNEL_CONFORMANCE:1.0.0\n", .{});
         try stdout.print("  .kernel=\"{s}\"\n", .{kfunc.name});
-        try stdout.print("  .source=\"test/corpus/gpu_parallel_map_kernels.lin\"\n", .{});
+        try stdout.print("  .source=examples/map_kernels.lin\n", .{});
         try stdout.print("  .mir_semantic_hash=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&lower_res.mir_semantic_hash)});
         try stdout.print("  .lowering_hash=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&lower_res.lowering_hash)});
         try stdout.print("  .targets=7 .confirmed={d} .refuted={d}\n\n", .{ k_confirmed, 7 - k_confirmed });
@@ -194,7 +201,7 @@ pub fn runGpuVerificationSuite(
 
     try stdout.print("================================================================================\n", .{});
     try stdout.print("@LIN:GPU_SOVEREIGN_PIPELINE:1.0.0\n", .{});
-    try stdout.print(".source=\"test/corpus/gpu_parallel_map_kernels.lin\"\n", .{});
+    try stdout.print(".source=examples/map_kernels.lin\n", .{});
     try stdout.print(".device=\"{s}\"\n", .{device_name});
     try stdout.print(".pipeline_layers={{lin_source,lin_ast,vm_stack_ir,lin_ssa_mir,rocm_opencl_c,rx6600_vram}}\n", .{});
     try stdout.print(".kernels_tested={d}\n", .{kernel_funcs.len});

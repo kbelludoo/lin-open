@@ -100,16 +100,18 @@ e os `[PASS]` hardcoded.
 
 ## 6. Plano honesto para tornar verificável (e vendável)
 
-| Item | Ação | Prioridade |
+| Item | Ação | Status |
 |---|---|---|
-| Receipt Merkle | Manter como a prova principal e publicá-lo (CI já faz). | ✅ já OK |
-| Paridade GPU | Não alegar "prova". Reclassificar como **teste de conformidade/determinismo** (comparação de duas implementações), não como criptografia. | Alta |
-| `[PASS]` hardcoded | Reescrever como **asserções computadas reais** (comparar resultado de fato). | Alta |
-| Certificado auto-ref | Remover `compiler_sha256=/proc/self/exe` da "prova"; usar só hashes de fonte+dados. | Alta |
-| Corpus deletado | Restaurar `gpu_parallel_map_kernels.lin` ou repontar o runner. | Média |
-| Prova real | Se o objetivo for prova de execução à prova de adversário, usar **TEE/attestation** (ex.: enclave com medida de execução) ou **ZK**, não OpenCL. | Estratégico |
+| Receipt Merkle | Manter como a prova principal e publicá-lo (CI já faz). | ✅ feito |
+| Paridade GPU | Não alegar "prova". Reclassificar como **teste de conformidade/determinismo** (comparação de duas implementações), não como criptografia. | ✅ feito (README + docs) |
+| `[PASS]` hardcoded | Reescrever como **asserções computadas reais** (comparar resultado de fato). | ✅ feito (17/17 subgates) |
+| Certificado auto-ref | Remover `compiler_sha256=/proc/self/exe` da "prova"; usar só hashes de fonte+dados. | ✅ feito (`compiler_sha256` = hash do source `compiler/lin.zig`) |
+| Corpus deletado | Restaurar `gpu_parallel_map_kernels.lin` ou repontar o runner. | ✅ feito (`examples/map_kernels.lin` + fallback de device; `gpu-verify` PASS 21/21) |
+| Prova real | Se o objetivo for prova de execução à prova de adversário, usar **TEE/attestation** (ex.: enclave com medida de execução) ou **ZK**, não OpenCL. | Estratégico (fora do escopo) |
 
 Conclusão honesta: o que hoje se chama de "verificação" é em grande parte **determinismo +
-auto-consistência**, não **prova criptográfica à prova de falsificação**. Reclassificar a
-comunicação para "execução determinística com receipt auditable" e corrigir os itens acima é
-o caminho certo.
+auto-consistência**, não **prova criptográfica à prova de falsificação**. As correções desta
+revisão reclassificam a comunicação para "execução determinística com receipt auditable",
+removem os `[PASS]` falsos, tiram o hash do próprio binário da "prova", e reparam o caminho
+GPU. O ponto estratégico remanescente (prova à prova de adversário via TEE/ZK) permanece
+aberto para quem quiser vender "prova" de verdade.

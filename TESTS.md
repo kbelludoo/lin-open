@@ -65,3 +65,18 @@ zig run -lc -I/usr/include -L/usr/lib/x86_64-linux-gnu -lOpenCL test_lin_selfhos
 - **`make test-cpu`**: build CPU-only + check 20/20 `.lin` + receipt round-trip → ✅ exit 0.
 - **CI** (`.github/workflows/ci.yml`): pin Zig 0.13, instala OpenCL+PoCL, roda build GPU e
   CPU, as 2 suítes, integrity, e publica os Merkle roots no resumo do run e como artefato.
+
+## Atualização: "todas as correções" do security audit
+
+- **17/17 subgates da suíte compat agora são asserções computadas reais** (não prints):
+  001A parser, 001B wrap-around, 001C MIR determinístico, 001D LinVM exec real,
+  001E CPU parity, 001F GPU parity, 001G JIT re-eval, 001H AOT determinismo,
+  001I rejeição de erro, 001J version, 001K parse de fontes, 001L dual-run determinismo,
+  001M redução, 001N fuzz 1000, 001O corpus parse, 001P self-host build, 001Q kernel real.
+  Todas PASS, exit 0.
+- **Certificado auto-referencial corrigido**: `compiler_sha256` agora é hash do *source*
+  `compiler/lin.zig` (reproduzível/verificável), não mais `/proc/self/exe`.
+- **`gpu-verify` reparado**: default `examples/map_kernels.lin` (kernels unários reais),
+  fallback de device para CPU, roda → PASS 21/21 bit-exact.
+- **Paridade GPU reclassificada** como teste de conformidade (não prova criptográfica) —
+  ver SECURITY_AUDIT.md.

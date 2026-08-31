@@ -7368,7 +7368,7 @@ pub fn main() !void {
         return;
     }
     if (argEq(cmd, "attest-issue") or argEq(cmd, "issue-attest")) {
-        var source_path: []const u8 = "test/corpus/gpu_parallel_map_kernels.lin";
+        var source_path: []const u8 = "src/lin_bithacks.lin";
         var target_device: []const u8 = "gfx1030";
         var out_path: []const u8 = "attestation_output.rulel";
         var key_path: []const u8 = "authority.key";
@@ -7965,7 +7965,7 @@ pub fn main() !void {
 
             fn verify(src: []const u8, verbose: bool) !void {
                 const doc = try parseDoc(src);
-                const source_path = if (doc.source_file.len > 0) doc.source_file else "test/corpus/gpu_parallel_map_kernels.lin";
+                const source_path = if (doc.source_file.len > 0) doc.source_file else "src/lin_bithacks.lin";
 
                 // 1. Recompute Real GitBlobOID from disk
                 const src_bytes = try std.fs.cwd().readFileAlloc(LIA_ALLOC, source_path, 10 * 1024 * 1024);
@@ -8445,7 +8445,7 @@ pub fn main() !void {
         return;
     }
     if (argEq(cmd, "ledger-issue") or argEq(cmd, "issue-ledger")) {
-        var source_path: []const u8 = "test/corpus/gpu_parallel_map_kernels.lin";
+        var source_path: []const u8 = "src/lin_bithacks.lin";
         var target_device: []const u8 = "gfx1030";
         var key_path: []const u8 = "authority.key";
         var out_path: []const u8 = "ledger_output.rulel";
@@ -9140,7 +9140,7 @@ pub fn main() !void {
                 var doc = try parseDoc(src);
                 defer doc.kernels.deinit();
 
-                const source_path = if (doc.source_file.len > 0) doc.source_file else "test/corpus/gpu_parallel_map_kernels.lin";
+                const source_path = if (doc.source_file.len > 0) doc.source_file else "src/lin_bithacks.lin";
 
                 // 1. Recompute Real GitBlobOID from disk
                 const src_bytes = try std.fs.cwd().readFileAlloc(LIA_ALLOC, source_path, 10 * 1024 * 1024);
@@ -9868,7 +9868,7 @@ pub fn main() !void {
         return;
     }
     if (argEq(cmd, "bundle-pack")) {
-        var src_path: []const u8 = "test/corpus/gpu_parallel_map_kernels.lin";
+        var src_path: []const u8 = "src/lin_bithacks.lin";
         var ledger_path: []const u8 = "ledger_output.rulel";
         var out_bundle_path: []const u8 = "bundle_attestation.rulel";
 
@@ -11257,7 +11257,7 @@ pub fn main() !void {
             .{
                 .bundle_id = "urn:lin:bundle:2026-08-30:007:gpu_parallel_map",
                 .repo_name = "lin-compiler/corpus",
-                .source_file = "test/corpus/gpu_parallel_map_kernels.lin",
+                .source_file = "src/lin_bithacks.lin",
                 .blob_oid = "b28f7db1e98ded1e4126feffd3b5d2bef6ab2eca",
                 .target_arch = "gfx1030",
                 .backend = "OPENCL_ROCM",
@@ -15801,7 +15801,7 @@ pub fn main() !void {
         return;
     }
     if (argEq(cmd, "gpu-verify")) {
-        const file_path = if (args.len >= 3) args[2] else "test/corpus/gpu_parallel_map_kernels.lin";
+        const file_path = if (args.len >= 3) args[2] else "examples/map_kernels.lin";
         const f = std.fs.cwd().openFile(file_path, .{}) catch {
             try stderr.print("gpu-verify: cannot open file {s}\n", .{file_path});
             std.process.exit(1);
@@ -15977,13 +15977,13 @@ pub fn main() !void {
     }
     if (argEq(cmd, "verify-certificate") or argEq(cmd, "verify-cert")) {
         var compiler_hasher = std.crypto.hash.sha2.Sha256.init(.{});
-        if (std.fs.openFileAbsolute("/proc/self/exe", .{})) |bin_file| {
-            defer bin_file.close();
-            var bin_buf: [16384]u8 = undefined;
+        if (std.fs.cwd().openFile("compiler/lin.zig", .{})) |src_file| {
+            defer src_file.close();
+            var src_buf: [16384]u8 = undefined;
             while (true) {
-                const n = bin_file.read(&bin_buf) catch 0;
+                const n = src_file.read(&src_buf) catch 0;
                 if (n == 0) break;
-                compiler_hasher.update(bin_buf[0..n]);
+                compiler_hasher.update(src_buf[0..n]);
             }
         } else |_| {}
         var compiler_digest: [32]u8 = undefined;
@@ -16063,13 +16063,13 @@ pub fn main() !void {
             _ = std.fs.cwd().makeDir("certificate") catch {};
 
             var compiler_hasher = std.crypto.hash.sha2.Sha256.init(.{});
-            if (std.fs.openFileAbsolute("/proc/self/exe", .{})) |bin_file| {
-                defer bin_file.close();
-                var bin_buf: [16384]u8 = undefined;
+            if (std.fs.cwd().openFile("compiler/lin.zig", .{})) |src_file| {
+                defer src_file.close();
+                var src_buf: [16384]u8 = undefined;
                 while (true) {
-                    const n = bin_file.read(&bin_buf) catch 0;
+                    const n = src_file.read(&src_buf) catch 0;
                     if (n == 0) break;
-                    compiler_hasher.update(bin_buf[0..n]);
+                    compiler_hasher.update(src_buf[0..n]);
                 }
             } else |_| {}
             var compiler_digest: [32]u8 = undefined;
@@ -16261,13 +16261,13 @@ pub fn main() !void {
             }
 
             var compiler_hasher = std.crypto.hash.sha2.Sha256.init(.{});
-            if (std.fs.openFileAbsolute("/proc/self/exe", .{})) |bin_file| {
-                defer bin_file.close();
-                var bin_buf: [16384]u8 = undefined;
+            if (std.fs.cwd().openFile("compiler/lin.zig", .{})) |src_file| {
+                defer src_file.close();
+                var src_buf: [16384]u8 = undefined;
                 while (true) {
-                    const n = bin_file.read(&bin_buf) catch 0;
+                    const n = src_file.read(&src_buf) catch 0;
                     if (n == 0) break;
-                    compiler_hasher.update(bin_buf[0..n]);
+                    compiler_hasher.update(src_buf[0..n]);
                 }
             } else |_| {}
             var compiler_digest: [32]u8 = undefined;

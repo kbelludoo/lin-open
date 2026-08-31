@@ -1,0 +1,6 @@
+@LIN:L1c:0.2
+@MAP_KERNELS{version=1.0 purpose=parallel_map_kernels}
+
+!k_scale(x: int) -> int { ^x * 2 + 1 }
+!k_neg(x: int) -> int { ^0 - x }
+!k_square(x: int) -> int { ^x * x }

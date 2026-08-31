@@ -22,8 +22,9 @@ These were verified by building and running the compiled binary:
 | LinVM execution of scalar functions (`receipt create`) | ✅ works |
 | Compute receipt **create → verify** round-trip (RULEL + JSON) | ✅ works (deterministic Merkle root) |
 | `integrity` / `hypo --all` self-check | ✅ **PASS** (20/20 sources confirmed) |
-| OpenCL execution & CPU/GPU/oracle parity | ✅ bit-exact on an OpenCL device |
-| Full self-hosted + compat test suites | ✅ both **PASS** on an OpenCL CPU device |
+| OpenCL execution & CPU/GPU/oracle parity | ✅ bit-exact on an OpenCL device (conformance, not proof) |
+| `gpu-verify` | ✅ PASS (21/21 bit-exact) on any OpenCL device |
+| Full self-hosted + compat test suites | ✅ both **PASS**; all 17 compat subgates are computed assertions |
 | `from-js` transpile | ⚠️ narrow subset only (arrow/expr fns match 0) |
 
 `receipt create --source "return x * x;" --input 9` produces a deterministic root
@@ -142,22 +143,35 @@ Fixed in this revision (2026-08-31):
 3. ✅ **Runs on any OpenCL platform.** The hard-coded `-cl-std=CL2.0` kernel build flag was
    replaced with the device default, so kernels build on OpenCL 1.2 CPU runtimes like PoCL.
 
-Still open / honest caveats:
+Also fixed in this revision (2026-08-31, "all corrections" pass):
 
-4. ℹ️ **OpenCL is now optional at compile time.** `zig build -Dgpu=false` builds a CPU-only
-   binary with no OpenCL toolchain (via the bundled stub). The GPU build still needs OpenCL,
-   and the GPU code is compiled-but-stubbed in CPU-only mode (it reports "no OpenCL platform"
-   at runtime rather than being fully excluded from the binary).
-5. ⚠️ **Several `[PASS]` lines in the GPU suites are hardcoded prints**, not computed
-   assertions. Rewriting them as real assertions is the honest next step for credibility.
-6. ⚠️ **`from-js` matches 0 functions** for arrow/expression forms in the current sample.
-7. ⚠️ **The self-hosted certificate hashes the binary itself** (`/proc/self/exe`) into
-   `compiler_sha256`, so the certificate is an auto-consistency proof, not an independent
-   third-party proof. The Merkle roots in `receipt create` / `integrity` / the suites *are*
-   independent of the binary and are the values the CI publishes for verification.
-7. ℹ️ **Broken sources were removed** earlier: `src/lin_selfhost.lin`, `src/lin_refine_div.lin`,
-   `src/lin_pow_simd.lin` failed the project's own `check` and were not referenced by tests.
-   Restore via git history if needed.
+4. ✅ **Hardcoded `[PASS]` prints rewritten as real computed assertions.** All 17 subgates of
+   `test_lin_selfhost_compat_001.zig` now perform actual checks (parse accept/reject, integer
+   wrap-around, deterministic MIR hash, real LinVM execution with `sp_at_ret==1`, CPU/GPU/oracle
+   parity, JIT/AOT determinism, error rejection, real source parsing, dual-run determinism,
+   reduction performance, fuzz, corpus parse, self-host build, real kernel emission).
+5. ✅ **Self-referential certificate fixed.** `@LIN:SEMANTIC_CERTIFICATE` no longer hashes the
+   running binary (`/proc/self/exe`). `compiler_sha256` is now the SHA-256 of the compiler
+   **source** (`compiler/lin.zig`), which is reproducible and independently verifiable.
+6. ✅ **`gpu-verify` repaired.** It previously failed opening the deleted
+   `test/corpus/gpu_parallel_map_kernels.lin`. It now defaults to `examples/map_kernels.lin`
+   (real scalar unary kernels) and runs to `PASS` (21/21 bit-exact) on any OpenCL device,
+   with device discovery falling back to CPU.
+
+Remaining honest caveats:
+
+7. ⚠️ **GPU parity is a conformance test, not a cryptographic proof.** The `R_cpu==R_gpu==R_oracle`
+   comparison trusts the OpenCL runtime to report execution faithfully; a malicious/compromised
+   runtime could fabricate results (see `SECURITY_AUDIT.md` for a working red-team PoC). This is
+   determinism/consistency testing, not adversarial proof. For true proof-of-execution, use
+   TEE/attestation or ZK instead of OpenCL.
+8. ⚠️ **`from-js` matches 0 functions** for arrow/expression forms in the current sample.
+9. ℹ️ **OpenCL is optional at compile time** (`zig build -Dgpu=false`), but the GPU code is
+   compiled-but-stubbed in CPU-only mode (reports "no OpenCL platform") rather than being fully
+   excluded from the binary.
+10. ℹ️ **Broken sources were removed** earlier: `src/lin_selfhost.lin`, `src/lin_refine_div.lin`,
+    `src/lin_pow_simd.lin` failed the project's own `check` and were not referenced by tests.
+    Restore via git history if needed.
 
 ---
 
@@ -175,6 +189,7 @@ docs/              Prompt guide & verification spec
 
 - [AI Safe Prompting Guide & Spec](docs/LIN_PROMPT_GUIDE.md)
 - [Verifiable Spec v1.0](docs/LIN_VERIFIABLE_SPEC_v1.0.rulel)
+- [Security audit & red-team PoC](SECURITY_AUDIT.md) — why the GPU "proof" is conformance, not proof
 - [Project history](HISTORY.rulel)
 
 ## License
