@@ -6391,6 +6391,23 @@ pub fn vmFind(mod: *const VmModule, name: []const u8) ?usize {
     return null;
 }
 
+// SECURITY-AUDIT helper (2026-08-31): extract the quoted value of a
+// `.tag="value"` field from certificate text. Returns null if absent.
+// (Previously `verify-cert` / `cert verify` never parsed the certificate
+// at all and printed match=true unconditionally.)
+fn certFieldValue(cert: []const u8, tag: []const u8) ?[]const u8 {
+    if (tag.len + 2 > 128) return null;
+    var needle: [130]u8 = undefined;
+    needle[0] = '.';
+    @memcpy(needle[1 .. tag.len + 1], tag);
+    needle[tag.len + 1] = '=';
+    const n = needle[0 .. tag.len + 2];
+    const start = std.mem.indexOf(u8, cert, n) orelse return null;
+    const val_start = start + n.len;
+    const val_end = std.mem.indexOfPos(u8, cert, val_start, "\"") orelse return null;
+    return cert[val_start..val_end];
+}
+
 fn vmShift(a: i64, b: i64, left: bool) i64 {
     if (b < 0 or b >= 64) return 0;
     const shift: u6 = @as(u6, @truncate(@as(u64, @intCast(b))));
@@ -15976,6 +15993,25 @@ pub fn main() !void {
         return;
     }
     if (argEq(cmd, "verify-certificate") or argEq(cmd, "verify-cert")) {
+        // SECURITY-AUDIT fix (2026-08-31): the certificate file is now
+        // actually read, and its claimed hashes are compared against the
+        // recomputed ones (previously the file was ignored and
+        // match=true / CERTIFICATE_VALID / PASS were printed unconditionally).
+        if (args.len < 3) {
+            try stderr.print("usage: lin verify-cert <certificate-file>\n", .{});
+            std.process.exit(1);
+        }
+        const cert_file = std.fs.cwd().openFile(args[2], .{}) catch |err| {
+            try stderr.print("verify-cert: cannot open {s}: {any}\n", .{ args[2], err });
+            std.process.exit(1);
+        };
+        defer cert_file.close();
+        const cert_txt = cert_file.readToEndAlloc(LIA_ALLOC, 10 * 1024 * 1024) catch |err| {
+            try stderr.print("verify-cert: cannot read {s}: {any}\n", .{ args[2], err });
+            std.process.exit(1);
+        };
+        defer LIA_ALLOC.free(cert_txt);
+
         var compiler_hasher = std.crypto.hash.sha2.Sha256.init(.{});
         if (std.fs.cwd().openFile("compiler/lin.zig", .{})) |src_file| {
             defer src_file.close();
@@ -16042,14 +16078,55 @@ pub fn main() !void {
         var cert_digest: [32]u8 = undefined;
         cert_hasher.final(&cert_digest);
 
+        // Compare claimed certificate fields against recomputed digests.
+        // compiler_match is self-anchored: it only proves the running binary
+        // is the one that issued the certificate — not an independent proof
+        // of correctness (labeled as such in the output).
+        const claimed_compiler = certFieldValue(cert_txt, "compiler_sha256");
+        const claimed_corpus = certFieldValue(cert_txt, "corpus_sha256");
+        const claimed_ledger = certFieldValue(cert_txt, "ledger_sha256");
+        const cert_id_claim = certFieldValue(cert_txt, "certificate_id") orelse "";
+
+        var comp_hex_buf: [64]u8 = undefined;
+        const comp_hex = std.fmt.bufPrint(&comp_hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&compiler_digest)}) catch "";
+        var corp_hex_buf: [64]u8 = undefined;
+        const corp_hex = std.fmt.bufPrint(&corp_hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&corpus_digest)}) catch "";
+        var ledg_hex_buf: [64]u8 = undefined;
+        const ledg_hex = std.fmt.bufPrint(&ledg_hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&ledger_digest)}) catch "";
+        var cert_hex_buf: [64]u8 = undefined;
+        const cert_hex = std.fmt.bufPrint(&cert_hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&cert_digest)}) catch "";
+
+        const compiler_match = claimed_compiler != null and
+            std.mem.eql(u8, claimed_compiler.?, comp_hex);
+        const corpus_match = claimed_corpus != null and
+            std.mem.eql(u8, claimed_corpus.?, corp_hex);
+        const ledger_match = claimed_ledger != null and
+            std.mem.eql(u8, claimed_ledger.?, ledg_hex);
+        const certificate_match = cert_id_claim.len > "sha256:".len and
+            std.mem.eql(u8, cert_id_claim[0.."sha256:".len], "sha256:") and
+            std.mem.eql(u8, cert_id_claim["sha256:".len..], cert_hex);
+
+        const all_match = compiler_match and corpus_match and ledger_match and certificate_match;
+
         try stdout.print("@LIN:SEMANTIC_CERTIFICATE_VERIFICATION:1.0.0\n", .{});
-        try stdout.print(".compiler_match=true\n", .{});
-        try stdout.print(".corpus_match=true\n", .{});
-        try stdout.print(".ledger_match=true\n", .{});
-        try stdout.print(".certificate_match=true\n", .{});
-        try stdout.print(".certificate_id=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&cert_digest)});
-        try stdout.print(".verification=\"CERTIFICATE_VALID\"\n", .{});
-        try stdout.print(".status=\"PASS\"\n", .{});
+        try stdout.print(".certificate_file=\"{s}\"\n", .{args[2]});
+        try stdout.print(".compiler_match={s}\n", .{if (compiler_match) "true" else "false"});
+        try stdout.print(".compiler_match_scope=\"self_anchored_running_binary_not_independent_proof\"\n", .{});
+        try stdout.print(".corpus_match={s}\n", .{if (corpus_match) "true" else "false"});
+        try stdout.print(".ledger_match={s}\n", .{if (ledger_match) "true" else "false"});
+        try stdout.print(".certificate_id_match={s}\n", .{if (certificate_match) "true" else "false"});
+        try stdout.print(".compiler_sha256_recomputed=\"{s}\"\n", .{std.fmt.fmtSliceHexLower(&compiler_digest)});
+        try stdout.print(".corpus_sha256_recomputed=\"{s}\"\n", .{std.fmt.fmtSliceHexLower(&corpus_digest)});
+        try stdout.print(".ledger_sha256_recomputed=\"{s}\"\n", .{std.fmt.fmtSliceHexLower(&ledger_digest)});
+        try stdout.print(".certificate_id_recomputed=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&cert_digest)});
+        if (all_match) {
+            try stdout.print(".verification=\"CERTIFICATE_VALID\"\n", .{});
+            try stdout.print(".status=\"PASS\"\n", .{});
+        } else {
+            try stdout.print(".verification=\"CERTIFICATE_MISMATCH\"\n", .{});
+            try stdout.print(".status=\"FAIL\"\n", .{});
+            std.process.exit(1);
+        }
         return;
     }
     if (argEq(cmd, "cert")) {
@@ -16128,20 +16205,37 @@ pub fn main() !void {
             var cert_digest: [32]u8 = undefined;
             cert_hasher.final(&cert_digest);
 
+            // SECURITY-AUDIT fix (2026-08-31): .confirmed/.refuted/.status are
+            // now computed from actual corpus presence. The fabricated
+            // `.steps=664123` is removed — execution steps are measured by
+            // `lin integrity`, not asserted at issuance time.
+            var corpus_present: usize = 0;
+            for (corpus_targets) |t| {
+                if (std.fs.cwd().openFile(t, .{})) |pf| {
+                    pf.close();
+                    corpus_present += 1;
+                } else |_| {}
+            }
+            const cert_status = if (corpus_present == corpus_targets.len) "PASS" else "DEGRADED";
+
             if (std.fs.cwd().createFile(out_path, .{})) |out_file| {
                 defer out_file.close();
                 const w = out_file.writer();
                 try w.print("@LIN:SEMANTIC_CERTIFICATE_SPEC:1.0.0\n.hash_algorithm=\"SHA-256\"\n.digest_encoding=\"raw_bytes\"\n.digest_size=32\n.domain=\"LIN:SEMANTIC_CERTIFICATE:1.0.0\"\n.concatenate_order={{domain,compiler_sha256,corpus_sha256,ledger_sha256}}\n\n", .{});
-                try w.print("@LIN:SEMANTIC_CERTIFICATE:1.0.0\n.compiler_sha256=\"{s}\"\n.corpus_sha256=\"{s}\"\n.ledger_sha256=\"{s}\"\n.certificate_id=\"sha256:{s}\"\n.targets={d}\n.confirmed={d}\n.refuted=0\n.steps=664123\n.status=\"PASS\"\n", .{
+                try w.print("@LIN:SEMANTIC_CERTIFICATE:1.0.0\n.compiler_sha256=\"{s}\"\n.corpus_sha256=\"{s}\"\n.ledger_sha256=\"{s}\"\n.certificate_id=\"sha256:{s}\"\n.targets={d}\n.confirmed={d}\n.refuted={d}\n.status=\"{s}\"\n", .{
                     std.fmt.fmtSliceHexLower(&compiler_digest),
                     std.fmt.fmtSliceHexLower(&corpus_digest),
                     std.fmt.fmtSliceHexLower(&ledger_digest),
                     std.fmt.fmtSliceHexLower(&cert_digest),
                     corpus_targets.len,
-                    corpus_targets.len,
+                    corpus_present,
+                    corpus_targets.len - corpus_present,
+                    cert_status,
                 });
                 try stdout.print("[BUILD-CERT] Written certified bundle to {s}\n", .{out_path});
-                try stdout.print(".certificate_id=\"sha256:{s}\"\n.status=\"PASS\"\n", .{std.fmt.fmtSliceHexLower(&cert_digest)});
+                try stdout.print(".certificate_id=\"sha256:{s}\"\n.corpus_present={d}\n.status=\"{s}\"\n", .{
+                    std.fmt.fmtSliceHexLower(&cert_digest), corpus_present, cert_status,
+                });
             } else |err| {
                 try stderr.print("failed to write certificate bundle: {any}\n", .{err});
                 std.process.exit(1);
@@ -16160,10 +16254,129 @@ pub fn main() !void {
             };
             defer LIA_ALLOC.free(cert_txt);
 
+            // SECURITY-AUDIT fix (2026-08-31): recompute the digests and
+            // compare them against the claimed fields (previously the claimed
+            // fields were never parsed and match=true was printed).
+            var compiler_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+            if (std.fs.openFileAbsolute("/proc/self/exe", .{})) |bin_file| {
+                defer bin_file.close();
+                var bin_buf: [16384]u8 = undefined;
+                while (true) {
+                    const n = bin_file.read(&bin_buf) catch 0;
+                    if (n == 0) break;
+                    compiler_hasher.update(bin_buf[0..n]);
+                }
+            } else |_| {}
+            var compiler_digest: [32]u8 = undefined;
+            compiler_hasher.final(&compiler_digest);
+
+            const corpus_targets = [_]struct { file: []const u8, fn_name: []const u8 }{
+                .{ .file = "test/corpus/adler32.lin", .fn_name = "test_adler32_vector" },
+                .{ .file = "test/corpus/aead_poly1305.lin", .fn_name = "test_aead_poly1305_vector" },
+                .{ .file = "test/corpus/aes128.lin", .fn_name = "test_aes_vector" },
+                .{ .file = "test/corpus/alac_flac.lin", .fn_name = "test_alac_flac_vector" },
+                .{ .file = "test/corpus/blake2b.lin", .fn_name = "test_blake2b_vector" },
+                .{ .file = "test/corpus/blake3.lin", .fn_name = "test_blake3_g" },
+                .{ .file = "test/corpus/brotli_bit.lin", .fn_name = "test_brotli_vector" },
+                .{ .file = "test/corpus/brotli_huffman.lin", .fn_name = "test_brotli_huffman_vector" },
+                .{ .file = "test/corpus/chacha20.lin", .fn_name = "test_chacha_rfc_vector" },
+                .{ .file = "test/corpus/cityhash64.lin", .fn_name = "test_cityhash_vector" },
+                .{ .file = "test/corpus/crc32.lin", .fn_name = "test_crc32_vector" },
+                .{ .file = "test/corpus/cswap_montgomery.lin", .fn_name = "test_cswap_vector" },
+                .{ .file = "test/corpus/curve25519_fe.lin", .fn_name = "test_curve25519_vector" },
+                .{ .file = "test/corpus/fast_bitset.lin", .fn_name = "test_bitset_vector" },
+                .{ .file = "test/corpus/fnv1a.lin", .fn_name = "test_fnv1a_vectors" },
+                .{ .file = "test/corpus/hilbert3d.lin", .fn_name = "test_morton3d_vector" },
+                .{ .file = "test/corpus/keccak.lin", .fn_name = "test_keccak_vector" },
+                .{ .file = "test/corpus/morton_spatial.lin", .fn_name = "test_morton_vector" },
+                .{ .file = "test/corpus/murmur3.lin", .fn_name = "test_murmur3_vectors" },
+                .{ .file = "test/corpus/nested_matrix_sum.lin", .fn_name = "test_nested_matrix_sum_vector" },
+                .{ .file = "test/corpus/pcg_random.lin", .fn_name = "test_pcg_vector" },
+                .{ .file = "test/corpus/philox.lin", .fn_name = "test_philox_vector" },
+                .{ .file = "test/corpus/poly1305.lin", .fn_name = "test_poly1305_rfc_vector" },
+                .{ .file = "test/corpus/popcount_massey.lin", .fn_name = "test_massey_vector" },
+                .{ .file = "test/corpus/prng_bryc.lin", .fn_name = "test_prng_vectors" },
+                .{ .file = "test/corpus/prospector_skeeto.lin", .fn_name = "test_prospector_vectors" },
+                .{ .file = "test/corpus/protobuf_varint.lin", .fn_name = "test_protobuf_varint_vector" },
+                .{ .file = "test/corpus/ripemd160.lin", .fn_name = "test_ripemd160_vector" },
+                .{ .file = "test/corpus/roaring_search.lin", .fn_name = "test_roaring_vector" },
+                .{ .file = "test/corpus/siphash.lin", .fn_name = "test_sipround_vectors" },
+                .{ .file = "test/corpus/splitmix64.lin", .fn_name = "test_splitmix64_vector" },
+                .{ .file = "test/corpus/vp8_dct.lin", .fn_name = "test_vp8_dct_vector" },
+                .{ .file = "test/corpus/wyhash.lin", .fn_name = "test_wyhash_vectors" },
+                .{ .file = "test/corpus/xoshiro256.lin", .fn_name = "test_xoshiro256_vector" },
+                .{ .file = "test/corpus/xxhash64.lin", .fn_name = "test_xxh64_vector" },
+                .{ .file = "test/corpus/xxhash_kernels.lin", .fn_name = "test_xxhash_vectors" },
+            };
+
+            var corpus_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+            var ledger_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+            for (corpus_targets) |t| {
+                if (std.fs.cwd().openFile(t.file, .{})) |vf| {
+                    defer vf.close();
+                    if (vf.readToEndAlloc(LIA_ALLOC, 10 * 1024 * 1024)) |content| {
+                        defer LIA_ALLOC.free(content);
+                        corpus_hasher.update(content);
+                        var target_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+                        target_hasher.update(content);
+                        var target_digest: [32]u8 = undefined;
+                        target_hasher.final(&target_digest);
+                        ledger_hasher.update(&target_digest);
+                    } else |_| {}
+                } else |_| {}
+            }
+            var corpus_digest: [32]u8 = undefined;
+            corpus_hasher.final(&corpus_digest);
+            var ledger_digest: [32]u8 = undefined;
+            ledger_hasher.final(&ledger_digest);
+
+            var cert_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+            cert_hasher.update("LIN:SEMANTIC_CERTIFICATE:1.0.0");
+            cert_hasher.update(&compiler_digest);
+            cert_hasher.update(&corpus_digest);
+            cert_hasher.update(&ledger_digest);
+            var cert_digest: [32]u8 = undefined;
+            cert_hasher.final(&cert_digest);
+
+            const claimed_compiler = certFieldValue(cert_txt, "compiler_sha256");
+            const claimed_corpus = certFieldValue(cert_txt, "corpus_sha256");
+            const claimed_ledger = certFieldValue(cert_txt, "ledger_sha256");
+            const cert_id_claim = certFieldValue(cert_txt, "certificate_id") orelse "";
+
+            var comp_hex_buf: [64]u8 = undefined;
+            const comp_hex = std.fmt.bufPrint(&comp_hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&compiler_digest)}) catch "";
+            var corp_hex_buf: [64]u8 = undefined;
+            const corp_hex = std.fmt.bufPrint(&corp_hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&corpus_digest)}) catch "";
+            var ledg_hex_buf: [64]u8 = undefined;
+            const ledg_hex = std.fmt.bufPrint(&ledg_hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&ledger_digest)}) catch "";
+            var cert_hex_buf: [64]u8 = undefined;
+            const cert_hex = std.fmt.bufPrint(&cert_hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&cert_digest)}) catch "";
+
+            const compiler_match = claimed_compiler != null and
+                std.mem.eql(u8, claimed_compiler.?, comp_hex);
+            const corpus_match = claimed_corpus != null and
+                std.mem.eql(u8, claimed_corpus.?, corp_hex);
+            const ledger_match = claimed_ledger != null and
+                std.mem.eql(u8, claimed_ledger.?, ledg_hex);
+            const certificate_match = cert_id_claim.len > "sha256:".len and
+                std.mem.eql(u8, cert_id_claim[0.."sha256:".len], "sha256:") and
+                std.mem.eql(u8, cert_id_claim["sha256:".len..], cert_hex);
+
+            const all_match = compiler_match and corpus_match and ledger_match and certificate_match;
+
             try stdout.print("@LIN:SEMANTIC_CERTIFICATE_VERIFICATION:1.0.0\n", .{});
             try stdout.print(".certificate_file=\"{s}\"\n", .{in_path});
-            try stdout.print(".compiler_match=true\n.corpus_match=true\n.ledger_match=true\n.certificate_match=true\n", .{});
-            try stdout.print(".verification=\"CERTIFICATE_VALID\"\n.status=\"PASS\"\n", .{});
+            try stdout.print(".compiler_match={s}\n", .{if (compiler_match) "true" else "false"});
+            try stdout.print(".compiler_match_scope=\"self_anchored_running_binary_not_independent_proof\"\n", .{});
+            try stdout.print(".corpus_match={s}\n", .{if (corpus_match) "true" else "false"});
+            try stdout.print(".ledger_match={s}\n", .{if (ledger_match) "true" else "false"});
+            try stdout.print(".certificate_id_match={s}\n", .{if (certificate_match) "true" else "false"});
+            if (all_match) {
+                try stdout.print(".verification=\"CERTIFICATE_VALID\"\n.status=\"PASS\"\n", .{});
+            } else {
+                try stdout.print(".verification=\"CERTIFICATE_MISMATCH\"\n.status=\"FAIL\"\n", .{});
+                std.process.exit(1);
+            }
             return;
         }
     }
