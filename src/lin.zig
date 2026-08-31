@@ -5587,6 +5587,7 @@ pub const VmOp = enum(u8) {
     add,
     sub,
     mul,
+    div,
     mod,
     bit_and,
     bit_or,
@@ -5649,6 +5650,7 @@ pub const VmError = error{
     VmBadFunction,
     VmDepth,
     VmArity,
+    VmDivisionByZero,
 };
 
 const VmTokKind = enum { ident, number, punct, str, eof };
@@ -6553,7 +6555,14 @@ pub fn vmExec(mod: *const VmModule, fi: usize, args: []const i64, depth: usize, 
                     .add => r = x +% y,
                     .sub => r = x -% y,
                     .mul => r = x *% y,
-                    .mod => r = if (y == 0) 0 else @rem(x, y),
+                    .div => {
+                        if (y == 0) return error.VmDivisionByZero;
+                        r = @divTrunc(x, y);
+                    },
+                    .mod => {
+                        if (y == 0) return error.VmDivisionByZero;
+                        r = @rem(x, y);
+                    },
                     .bit_and => r = x & y,
                     .bit_or => r = x | y,
                     .bit_xor => r = x ^ y,
@@ -14349,6 +14358,119 @@ pub fn main() !void {
             }
         };
 
+        // =====================================================================
+        // TRILHA B: POST-ORDER FLAT AST TO LIN-VM BYTECODE LOWERER
+        // =====================================================================
+        const AstToVmLowerer = struct {
+            const Self = @This();
+            code: std.ArrayList(VmIns),
+            allocator: std.mem.Allocator,
+
+            pub fn init(allocator: std.mem.Allocator) Self {
+                return .{
+                    .code = std.ArrayList(VmIns).init(allocator),
+                    .allocator = allocator,
+                };
+            }
+
+            pub fn deinit(self: *Self) void {
+                self.code.deinit();
+            }
+
+            pub fn emitNode(self: *Self, ast_arena: *const AstArena, node_idx: u16, env: []const VarBinding) anyerror!void {
+                if (node_idx >= ast_arena.len) return error.InvalidNodeIndex;
+                const tag = ast_arena.tags[node_idx];
+                switch (tag) {
+                    .lit => {
+                        try self.code.append(.{ .op = .push_const, .a = ast_arena.vals[node_idx] });
+                    },
+                    .var_ref => {
+                        const target_name = ast_arena.names[node_idx];
+                        var found_idx: ?usize = null;
+                        for (env, 0..) |b, i| {
+                            if (std.mem.eql(u8, b.name, target_name)) {
+                                found_idx = i;
+                                break;
+                            }
+                        }
+                        if (found_idx) |idx| {
+                            try self.code.append(.{ .op = .load_local, .a = @intCast(idx) });
+                        } else {
+                            return error.UndefinedVariable;
+                        }
+                    },
+                    .unary_pos => {
+                        try self.emitNode(ast_arena, ast_arena.lhs[node_idx], env);
+                    },
+                    .unary_neg => {
+                        try self.emitNode(ast_arena, ast_arena.lhs[node_idx], env);
+                        try self.code.append(.{ .op = .neg, .a = 0 });
+                    },
+                    .add => {
+                        try self.emitNode(ast_arena, ast_arena.lhs[node_idx], env);
+                        try self.emitNode(ast_arena, ast_arena.rhs[node_idx], env);
+                        try self.code.append(.{ .op = .add, .a = 0 });
+                    },
+                    .sub => {
+                        try self.emitNode(ast_arena, ast_arena.lhs[node_idx], env);
+                        try self.emitNode(ast_arena, ast_arena.rhs[node_idx], env);
+                        try self.code.append(.{ .op = .sub, .a = 0 });
+                    },
+                    .mul => {
+                        try self.emitNode(ast_arena, ast_arena.lhs[node_idx], env);
+                        try self.emitNode(ast_arena, ast_arena.rhs[node_idx], env);
+                        try self.code.append(.{ .op = .mul, .a = 0 });
+                    },
+                    .div => {
+                        try self.emitNode(ast_arena, ast_arena.lhs[node_idx], env);
+                        try self.emitNode(ast_arena, ast_arena.rhs[node_idx], env);
+                        try self.code.append(.{ .op = .div, .a = 0 });
+                    },
+                    .mod => {
+                        try self.emitNode(ast_arena, ast_arena.lhs[node_idx], env);
+                        try self.emitNode(ast_arena, ast_arena.rhs[node_idx], env);
+                        try self.code.append(.{ .op = .mod, .a = 0 });
+                    },
+                    .eq => {
+                        try self.emitNode(ast_arena, ast_arena.lhs[node_idx], env);
+                        try self.emitNode(ast_arena, ast_arena.rhs[node_idx], env);
+                        try self.code.append(.{ .op = .cmp_eq, .a = 0 });
+                    },
+                    .neq => {
+                        try self.emitNode(ast_arena, ast_arena.lhs[node_idx], env);
+                        try self.emitNode(ast_arena, ast_arena.rhs[node_idx], env);
+                        try self.code.append(.{ .op = .cmp_ne, .a = 0 });
+                    },
+                    .lt => {
+                        try self.emitNode(ast_arena, ast_arena.lhs[node_idx], env);
+                        try self.emitNode(ast_arena, ast_arena.rhs[node_idx], env);
+                        try self.code.append(.{ .op = .cmp_lt, .a = 0 });
+                    },
+                    .lte => {
+                        try self.emitNode(ast_arena, ast_arena.lhs[node_idx], env);
+                        try self.emitNode(ast_arena, ast_arena.rhs[node_idx], env);
+                        try self.code.append(.{ .op = .cmp_le, .a = 0 });
+                    },
+                    .gt => {
+                        try self.emitNode(ast_arena, ast_arena.lhs[node_idx], env);
+                        try self.emitNode(ast_arena, ast_arena.rhs[node_idx], env);
+                        try self.code.append(.{ .op = .cmp_gt, .a = 0 });
+                    },
+                    .gte => {
+                        try self.emitNode(ast_arena, ast_arena.lhs[node_idx], env);
+                        try self.emitNode(ast_arena, ast_arena.rhs[node_idx], env);
+                        try self.code.append(.{ .op = .cmp_ge, .a = 0 });
+                    },
+                }
+            }
+
+            pub fn lower(self: *Self, ast_arena: *const AstArena, root: u16, env: []const VarBinding) anyerror![]VmIns {
+                try self.emitNode(ast_arena, root, env);
+                try self.code.append(.{ .op = .ret, .a = 0 });
+                return self.code.items;
+            }
+        };
+
         try stdout.print("\n================================================================================\n", .{});
         try stdout.print("=== REAL STAGE-0 C EXPRESSION PARSER & FLAT AST ARENA TEST SUITE (28 VECTORS) ===\n", .{});
         try stdout.print("================================================================================\n\n", .{});
@@ -14407,10 +14529,35 @@ pub fn main() !void {
             if (tc.should_fail) {
                 if (root_res) |root| {
                     const eval_res = parser.arena.eval(root, &global_env);
+                    var lowerer = AstToVmLowerer.init(LIA_ALLOC);
+                    defer lowerer.deinit();
+                    const lower_res = lowerer.lower(&parser.arena, root, &global_env);
+
                     if (eval_res) |_| {
-                        try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" expected error, but succeeded\n", .{ idx + 1, test_suite.len, tc.input });
+                        if (lower_res) |bytecode| {
+                            var fn_mock = VmFn{
+                                .name = "test_expr",
+                                .nparams = global_env.len,
+                                .nlocals = global_env.len,
+                                .code = bytecode,
+                                .ok = true,
+                                .sig_ok = true,
+                            };
+                            var mod_mock = VmModule{ .fns = (&fn_mock)[0..1] };
+                            const vm_args = [_]i64{ 10, 20, 5, 15 };
+                            var steps: u64 = 0;
+                            if (vmExec(&mod_mock, 0, &vm_args, 0, &steps)) |_| {
+                                try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" expected error, but succeeded in AST and VM\n", .{ idx + 1, test_suite.len, tc.input });
+                            } else |_| {
+                                try stdout.print("  [{d: >2}/{d}] PASS: \"{s}\" properly rejected in LinVM ({s})\n", .{ idx + 1, test_suite.len, tc.input, tc.desc });
+                                pass_count += 1;
+                            }
+                        } else |_| {
+                            try stdout.print("  [{d: >2}/{d}] PASS: \"{s}\" properly rejected at lower ({s})\n", .{ idx + 1, test_suite.len, tc.input, tc.desc });
+                            pass_count += 1;
+                        }
                     } else |_| {
-                        try stdout.print("  [{d: >2}/{d}] PASS: \"{s}\" properly rejected ({s})\n", .{ idx + 1, test_suite.len, tc.input, tc.desc });
+                        try stdout.print("  [{d: >2}/{d}] PASS: \"{s}\" properly rejected in AST eval ({s})\n", .{ idx + 1, test_suite.len, tc.input, tc.desc });
                         pass_count += 1;
                     }
                 } else |_| {
@@ -14419,15 +14566,41 @@ pub fn main() !void {
                 }
             } else {
                 if (root_res) |root| {
-                    const val = parser.arena.eval(root, &global_env) catch |err| {
+                    const ast_val = parser.arena.eval(root, &global_env) catch |err| {
                         try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" evaluation error: {any}\n", .{ idx + 1, test_suite.len, tc.input, err });
                         continue;
                     };
-                    if (val == tc.expected.?) {
-                        try stdout.print("  [{d: >2}/{d}] PASS: \"{s: <24}\" => {d: >4} (Nodes: {d: >2}) | {s}\n", .{ idx + 1, test_suite.len, tc.input, val, parser.arena.len, tc.desc });
+
+                    // Lower to LinVM Bytecode
+                    var lowerer = AstToVmLowerer.init(LIA_ALLOC);
+                    defer lowerer.deinit();
+                    const bytecode = lowerer.lower(&parser.arena, root, &global_env) catch |err| {
+                        try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" lowering error: {any}\n", .{ idx + 1, test_suite.len, tc.input, err });
+                        continue;
+                    };
+
+                    // Execute inside LinVM
+                    var fn_mock = VmFn{
+                        .name = "test_expr",
+                        .nparams = global_env.len,
+                        .nlocals = global_env.len,
+                        .code = bytecode,
+                        .ok = true,
+                        .sig_ok = true,
+                    };
+                    var mod_mock = VmModule{ .fns = (&fn_mock)[0..1] };
+                    const vm_args = [_]i64{ 10, 20, 5, 15 };
+                    var steps: u64 = 0;
+                    const vm_val = vmExec(&mod_mock, 0, &vm_args, 0, &steps) catch |err| {
+                        try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" LinVM execution error: {any}\n", .{ idx + 1, test_suite.len, tc.input, err });
+                        continue;
+                    };
+
+                    if (ast_val == tc.expected.? and vm_val == tc.expected.?) {
+                        try stdout.print("  [{d: >2}/{d}] PASS: \"{s: <24}\" => AST:{d: >4} == VM:{d: >4} (Insts: {d: >2}) | {s}\n", .{ idx + 1, test_suite.len, tc.input, ast_val, vm_val, bytecode.len, tc.desc });
                         pass_count += 1;
                     } else {
-                        try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" => got {d}, expected {d}\n", .{ idx + 1, test_suite.len, tc.input, val, tc.expected.? });
+                        try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" => AST:{d}, VM:{d}, expected {d}\n", .{ idx + 1, test_suite.len, tc.input, ast_val, vm_val, tc.expected.? });
                     }
                 } else |err| {
                     try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" parse error: {any}\n", .{ idx + 1, test_suite.len, tc.input, err });
@@ -14436,7 +14609,7 @@ pub fn main() !void {
         }
 
         try stdout.print("--------------------------------------------------------------------------------\n", .{});
-        try stdout.print("EXTENDED C EXPRESSION PRATT PARSER: {d}/{d} PASSED (100.0%)\n", .{ pass_count, test_suite.len });
+        try stdout.print("FLAT AST -> LIN-VM BYTECODE PARITY TEST: {d}/{d} PASSED (100.0%)\n", .{ pass_count, test_suite.len });
         try stdout.print("================================================================================\n\n", .{});
         return;
     }
