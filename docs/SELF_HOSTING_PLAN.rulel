@@ -1,0 +1,303 @@
+@RULEL:DOC_SELF_HOSTING_PLAN:1.0.0
+~MARKDOWN_SPEC
+# Self-Hosting Plan — `compiler_0` (Zig) → LIN com gates de hash
+
+> **Veredito:** self-hosting é portar o **compilador inteiro** (17.057 linhas / 180 funções
+> de nível superior) para LIN — **não só o LinVM** (33 opcodes). O compilador Zig é **Stage0
+> congelado (R2)**: permanece apenas como referência de paridade e builder de transição, e é
+> removido na Fase 7. Cada fase avança **somente** com gate de hash:
+> `H_selfhost_root(LIN) == H_selfhost_root(Zig)` sobre o mesmo input canônico —
+> **bit-exact, sem tolerância**.
+
+---
+
+## 1. Contexto verificado (dados reais do repo)
+
+_Coletado 2026-08-31, commit `4debcf0`. Cada item tem referência de código._
+
+| Item | Valor | Base |
+|---|---|---|
+| `compiler_0` | `compiler/lin.zig` — **17.057 linhas** (~737 KB) | `wc -l compiler/lin.zig` |
+| Superfície | **180** `pub fn` de nível superior (211 incl. aninhadas) | `grep -cE '^pub fn'` |
+| LinVM | **33 opcodes** (`VmOp`) — a menor parte do compilador | lin.zig:5583 |
+| MIR | 20 opcodes (`MirOpcode`) | lin_mir_engine.zig:22 |
+| Corpus | **20** `.lin` (18 em `src/` + 2 em `examples/`) | `corpus_targets` lin.zig:16028 |
+| Regras | R0 escrever em `.lin`/`.rulel` · R1 zero novos `.zig` · R2 `STAGE0_ZIG_FROZEN_BOOTSTRAP_ONLY` · R3 `SELF_HOSTING_DOGFOODING` | `AGENTS.md@1.4.0` |
+| Proibições | `NEW_ZIG_FILES` · `hand_TS` · `hand_JS` · `mutate_lin_nucleus` | `AGENTS.md` `.f{}` |
+| Roots pinados | `compat_root=sha256:5e7c37a2…cce4c1` · `live_git_root=sha256:049c352b…aa203` | `AGENTS.md` `.h{}` |
+| Transpilador | `src/zig_to_lin_transpiler.lin` — hoje **lossy** (só bin-op/cond/signature) | `COMPILER_0_MIGRATION_ANALYSIS.rulel` |
+
+Conclusões que orientam o plano:
+
+1. **Self-host ≠ portar o LinVM.** O VM são 33 opcodes, mas o compilador tem 180 funções de
+   nível superior (lexer, parser, typecheck, lint, MIR, GPU, CLI, receipts) — cada uma precisa
+   de port.
+2. **O caminho é o 4B da análise de migração** (self-host incremental por módulos, dogfooding),
+   **não** reescrever em outra linguagem — isso quebraria receipts e não atinge R3.
+3. **O que garante verificabilidade é o hash, não a confiança:** o compilador já produz três
+   âncoras reproduzíveis (seção 2); o plano as estende por função (seção 3).
+
+---
+
+## 2. Âncoras — baseline medido e gate P0
+
+O bootstrap já computa 3 âncoras reproduzíveis (`lin verify-cert`, `lin cert build`). O P0
+adiciona `lin selfhost parity` (instrumentação read-only, emenda `R2a`), que recomputa as 3
+âncoras + o **`H_selfhost_root(Zig, 0)`** e o manifesto `I_canon` dos 20 `.lin`.
+
+### 2.1 Âncoras estáveis (não dependem da fonte do compilador) — **asserted**
+
+Estas 3 mudam **somente** se o corpus de 20 `.lin` mudar. `lin selfhost parity` as compara
+contra o baseline abaixo e **falha** (exit 1) em divergência:
+
+| Âncora | Fórmula exata (nível de bytes) | Valor medido (estável) |
+|---|---|---|
+| `corpus_sha256` | `SHA-256(‖ bytes crus dos 20 .lin na ordem de corpus_targets, sem separador)` | `28b64d7433c44f02a176a1dd5617abfc88d23181e2046d3283f104d0a637a766` |
+| `ledger_sha256` | `SHA-256(‖ SHA-256(cada .lin), mesma ordem)` — 32 bytes crus | `d32d0d6d0897d0786b93a50ca1eb6fa88ee9153e09a8b30a3b09354d1d8545a1` |
+| `selfhost_root_zig_0` | `H_selfhost_root` do §3.2 sobre os 20 `.lin` (Merkle, domínio `selfhost:`) | `sha256:f7a0c6fae02cdb89fc3236619919432d4138015f9bdb8a69209d797c01e1d01f` |
+| `selfhost_root_zig_1` | `H_selfhost_root(Zig, 1)` do §3.1 sobre o `I_canon(P1)` (medição `lin selfhost p1ref`) | **medido em CI** — pinar após a 1ª execução verificada (anti-gate: pin exige valor CI-verificado) |
+
+`selfhost_root_zig_0` fica **pinado** em `AGENTS.md` (`.h{}`). É a âncora de referência do
+P0: toda fase futura deve reproduzi-la como base antes de acrescentar seus `H_M`.
+
+### 2.2 Âncoras autorreferenciais (dependem da fonte do compilador) — **reported**
+
+`compiler_sha256` e `certificate_id` mudam **sempre** que `compiler/lin.zig` muda (por
+definição: são o hash da fonte). Por isso o P0 **as reporta** (não as asserta) — e as
+re-pina aqui, por proveniência, após cada mudança autorizada do bootstrap:
+
+| Âncora | Fórmula | Pré-P0 (`4debcf0`) | Pós-P0 (instrumentado) |
+|---|---|---|---|
+| `compiler_sha256` | `SHA-256(bytes(compiler/lin.zig))` | `5d7b928ca0e96cbdaa434e92194189a0a1abe6687584020b84701f61f46780a7` | `2928bcc80291f520131549ff67b119ad2d8606591229c2269594edb2f3ecc74f` |
+| `certificate_id` | `SHA-256(domain ‖ compiler ‖ corpus ‖ ledger)` (32 bytes crus) | `sha256:7751f3ee21291b9b65c39954239a4fe5938e848ecf4cfdb6d5c52c5add0d56b9` | `sha256:3399e86f77c0dd36e6493c3416a7ec1e72abb0d00f5b3d2f5cb4ddfb866352cf` |
+
+### 2.3 Gate P0 (`GATE(0)`)
+
+```
+GATE(0) PASS  ⇔  lin selfhost parity  →  .status="PASS"   (asserta corpus/ledger/root)
+                    e  lin cert build && lin verify-cert  →  .status="PASS"   (auto-consistente)
+```
+
+Se `corpus_sha256`, `ledger_sha256` ou `selfhost_root_zig_0` divergirem do baseline, algo
+driftou a montante (corpus tocado sem registro) e o plano **pausa**. Mudar o corpus exige
+novo baseline documentado (risco R6, §6).
+
+---
+
+## 3. Esquema de verificação (coração do plano)
+
+### 3.1 Hash por função `H_F` — domain separation + trace determinístico
+
+Para cada função `F` (referência Zig instrumentada e port LIN):
+
+    H_F = SHA-256("selfhost:func:<fase>:<nome>" ‖ H_src ‖ H_out ‖ H_trace)
+
+- `H_src` — SHA-256 da fonte canônica da função (texto: trailing newline único, sem tabs,
+  sem comentários, sem linhas em branco entre statements). A canonicalização é **idêntica**
+  nos dois lados (LIN e Zig).
+- `H_out` — SHA-256 da saída sobre o conjunto canônico de inputs `I_canon` (fixtures por
+  fase: corpus `.lin` + fixtures de borda: input vazio, i64 máx, wrap, divisão por zero).
+- `H_trace` — SHA-256 do **rastro de execução determinístico**: sequência
+  `(opcode, profundidade_pilha)` com semântica i64-wrapping (LinVM: "arithmetic wraps on i64",
+  lin.zig:5580). O rastro é evidência de equivalência, não só do resultado — o mesmo critério
+  que o VM já usa contra `lin_to_zig` ("bit-exact agreement between the two is evidence of
+  equivalence rather than a tautology", lin.zig:5577).
+
+**Perfil de medição da referência P1 (implementado, `lin selfhost p1ref`):** a referência
+usa a evidência canônica `(resultado, steps)` — resultado (8B LE, ou `@errorName` em erro
+do VM) e contagem de instruções (`steps`, limitada por `VM_STEP_LIMIT`) — em layout de
+bytes documentado:
+`H_F = SHA-256("selfhost:func:P1:" ‖ path ‖ "::" ‖ fn ‖ 0x00 ‖ args(8B LE cada) ‖ 0x00 ‖ resultado ‖ 0x00 ‖ steps(8B LE))`,
+e `H_selfhost_root(Zig, 1) = SHA-256("selfhost:root:P1:" ‖ topo_Merkle)` (Merkle pairwise,
+nó ímpar promovido, ordem corpus/função). O rastro opcode+stack completo vira exigência do
+**lado LIN** no gate P1 (o port emite o próprio rastro); a referência só é estendida ao
+rastro completo quando o port souber reportá-lo — sem nunca relaxar o bit-exact.
+
+**Domain separation é obrigatória.** Hashes de self-hosting usam o prefixo `selfhost:`;
+o certificado usa `LIN:SEMANTIC_CERTIFICATE:1.0.0`; a Merkle do spec usa `leaf:`/`node:`.
+Nenhum domínio mistura — colisão anula a verificação.
+
+### 3.2 Âncora acumulativa `H_selfhost_root` — Merkle por módulo
+
+    H_M  = Merkle_balanced( H_F das funções do módulo )        domínio "selfhost:module:<nome>"
+    H_selfhost_root = Merkle_balanced( H_M dos módulos prontos ) domínio "selfhost:root"
+
+- Árvore: **balanced pairwise**, mesma construção do `LIN_VERIFIABLE_SPEC` (seções `.f`/`.c`).
+- **Acumulativa**: cada módulo concluído acrescenta seu `H_M` à raiz. Propriedade Merkle:
+  qualquer mudança num módulo já ancorado invalida `H_selfhost_root` — tamper-evidence sem
+  reprocessar tudo.
+- "Módulo concluído" = todos os seus `H_F` computados sobre o **mesmo** `I_canon` da
+  referência Zig.
+
+### 3.3 Gate de cada fase
+
+    GATE(k) = PASS  ⇔  H_selfhost_root(LIN, k) == H_selfhost_root(Zig, k)   (mesmo I_canon)
+
+- **Bit-exact**: igualdade byte a byte. Sem tolerância, sem threshold, sem "quase passou".
+- **Não avança sem PASS**: fase com gate falho fica aberta; a fase seguinte não inicia.
+- A **referência Zig não é modificada** durante o port (R2 + `.f{mutate_lin_nucleus}`).
+  Gate falhou → corrige-se o port LIN. Nunca a referência, nunca o gate.
+
+---
+
+## 4. Fases (ordem de dependência)
+
+_Cada fase consome o `H_M` da anterior. P5 (receipts) vem por último de propósito: receipt
+**emite** roots, então deve congelar **depois** que o resto parar de mudar._
+
+### Fase 0 — Instrumentação e `selfhost parity` — **FEITA (awaiting CI)**
+
+- **Status:** `R2a` assinada (`AGENTS.md@1.4.1`); subcomando `lin selfhost parity`
+  implementado em `compiler/lin.zig` (bloco autossuficiente, read-only, zero mudança
+  semântica); `selfhost_root_zig_0` pinado em `AGENTS.md` (`.h{}`); baseline re-pinado na
+  seção 2. **P0b-p1 (medição de referência P1) implementado** (`lin selfhost p1ref`).
+  Faltando: build+run em CI para o `GATE(0)` virar PASS verificado e para
+  `selfhost_root_zig_1` ser pinado.
+- **Escopo (P0a, entregue):** subcomando `lin selfhost parity` recomputa e emite:
+  as 3 âncoras estáveis (asserted), as 2 autorreferenciais (reported), o manifesto
+  `I_canon` (path/bytes/sha256 dos 20 `.lin`) e `H_selfhost_root(Zig, 0)` (Merkle §3.2).
+- **Escopo (P0b, próximo):** instrumentação read-only por função — `H_F`/`H_M` de
+  referência das 180 funções Zig (§3.1) sobre o `I_canon`, alimentando as referências
+  `H_selfhost_root(Zig, k)` das fases P1..P6.
+- **Entregas:** este documento; marcador `src/lin_selfhost_plan.lin` (R0); `AGENTS.md@1.4.1`
+  com `R2a` + `selfhost_parity` + `selfhost_root_zig_0`; baseline report (§2).
+- **Gate:** `GATE(0)` conforme §2.3 — `lin selfhost parity` PASS (asserta as 3 âncoras
+  estáveis) **e** `lin cert build && lin verify-cert` PASS (auto-consistente).
+- **Anti-gate:** a instrumentação é a **única exceção autorizada** ao freeze R2, formalizada
+  como emenda `R2a` em `AGENTS.md` **antes** de tocar no bootstrap (cumprido). Nenhum novo
+  `.zig` (R1) — o subcomando vive em `compiler/lin.zig`. Depois de P0, o freeze volta a ser
+  absoluto até P7.
+
+### Fase 1 — LinVM (33 opcodes)
+
+- **Escopo:** portar `VmOp` (33), `VmIns`/`VmFn`/`VmModule`, intérprete (VM_STEP_LIMIT,
+  wrap, `_lia_shl/_lia_shr/_lia_ushr`, mod-zero=0) para LIN.
+- **Entregas:** `src/linvm_selfhost.lin`; `I_canon(P1)` = **todas as funções VM-eligíveis
+  do corpus** (20 arquivos, já ancorados por `corpus_sha256`) com argumentos canônicos
+  `[1..nparams]` — referência medida por `lin selfhost p1ref` (disponível), port LIN a
+  implementar.
+- **Gate:** `GATE(1)` = `H_M(vm_LIN) == H_M(vm_Zig)` no mesmo `I_canon` (resultado **e** rastro).
+- **Anti-gate:** nenhuma otimização que mude o rastro (wrap idêntico); resultado igual com
+  sequência de opcodes diferente **falha** o gate.
+
+### Fase 2 — Lexer + Parser (a maior, ~40%)
+
+- **Escopo:** tokenizer, parser LIN (cabeçalhos `@LIN`/`@RULEL`), arena flat do AST
+  (contrato `heap_allocations_in_lexer=0`, lin.zig:13834), `lin_syntax_valid`, `check`,
+  `ebnf`/`grammar`.
+- **Entregas:** `src/lin_lexer_selfhost.lin`, `src/lin_parser_selfhost.lin`; `I_canon(P2)` =
+  corpus de 20 `.lin` + fixtures de rejeição sintática (cada código `*_REJ_*`).
+- **Gate:** `GATE(2)` = `H_M(lexer_LIN) == H_M(lexer_Zig)` **e** `H_M(parser_LIN) == H_M(parser_Zig)`
+  (aceitar/rejeitar + bytes de tokens/AST bit-exact).
+- **Anti-gate:** não quebrar o contrato heap-free (asserts devem seguir passando); sem
+  tolerância silenciosa (fixture rejeitada no Zig deve ser rejeitada no LIN com o **mesmo**
+  código e posição).
+
+### Fase 3 — Typecheck + Lint
+
+- **Escopo:** inferência de tipos (ex. `length`/`len`/`charCodeAt` → i64), lógica
+  `sig_ok`/`ok`/`reject`, `lint` (diagnóstico com linha/col e repair), `fmt`/`format`/`compact`.
+- **Entregas:** `src/lin_typecheck_selfhost.lin`, `src/lin_lint_selfhost.lin`; `I_canon(P3)` =
+  corpus + fixtures de erro de tipo (um por cada código `VM_REJ_*`/`LIN_REJ_*`).
+- **Gate:** `GATE(3)` = `H_M(typecheck_LIN) == H_M(typecheck_Zig)` **e** `H_M(lint_LIN) == H_M(lint_Zig)`
+  (bytes do diagnóstico bit-exact, incluindo linha/col).
+- **Anti-gate:** nenhum diagnóstico novo, removido ou "melhorado" — mudar mensagem é
+  falhar o gate.
+
+### Fase 4 — MIR + GPU
+
+- **Escopo:** `MirOpcode` (20), SSA, `parallel_map`/`parallel_reduce`, MIR→GPU-IR, emissão
+  OpenCL, `mir-verify`/`mir-ssa-verify`/`gpu-verify` (11 arquivos `lin_*.zig` de GPU/MIR).
+- **Entregas:** `src/lin_mir_selfhost.lin`, `src/lin_gpu_emit_selfhost.lin`; `I_canon(P4)` =
+  fixtures GPU com roots pinados (reuso de `compat_root`).
+- **Gate:** `GATE(4)` = `H_M(mir_LIN) == H_M(mir_Zig)` **e** `H_M(gpu_LIN) == H_M(gpu_Zig)`
+  (bytes do IR + OpenCL emitido bit-exact; hardware não é necessário — a emissão é
+  determinística).
+- **Anti-gate:** nenhuma dependência de host nos hashes (sem timestamp, pointer, `/proc`);
+  sem relaxar `compat_root`.
+
+### Fase 5 — Receipts e certificado (congela por último)
+
+- **Escopo:** `cert build/verify`, `receipt-create/verify`, ledger, provenance Merkle
+  (`lin_binary_merkle_provenance`), família attest/verify.
+- **Por que por último:** o receipt **emite** roots — qualquer fase que ainda mude módulos
+  invalida receipts emitidos. Congelar somente quando `H_selfhost_root` parar de mudar.
+- **Entregas:** `src/lin_receipts_selfhost.lin`; `I_canon(P5)` = certificado do corpus +
+  fixture de ledger.
+- **Gate:** `GATE(5)` = `H_M(receipts_LIN) == H_M(receipts_Zig)`, **mais** reverificação total:
+  `lin selfhost parity` na raiz completa (P1..P5) e `lin verify-cert` no certificado emitido
+  pelo caminho LIN com `all_match=true`.
+- **Anti-gate:** não reemitir receipts históricos (`docs/history/` é imutável); sem novo root
+  pinado sem nova versão de `AGENTS.md`.
+
+### Fase 6 — CLI + transpiladores
+
+- **Escopo:** subcomandos restantes do CLI (40+), crescimento do `zig_to_lin_transpiler.lin`
+  (sair do lossy), `lin_from_c.lin`, `lin_from_js.lin`, `bundle-pack/verify`, `pkg-*`.
+- **Entregas:** `src/lin_cli_selfhost.lin` + transpiladores estendidos; `I_canon(P6)` =
+  corpus de comandos (cada subcomando × fixture) + vetores de `transpiler-verify`.
+- **Gate:** `GATE(6)` = `H_M(cli_LIN) == H_M(cli_Zig)` **e** `H_M(transpilers_LIN) == H_M(transpilers_Zig)`.
+- **Anti-gate:** `hand_TS`/`hand_JS` seguem proibidos (`.f{}`) — todo output de
+  transpilador é gerado por LIN, nunca escrito à mão.
+
+### Fase 7 — Swap do bootstrap (fim do R2)
+
+- **Escopo:** o compilador LIN (P1..P6) compila o próximo estágio; o Stage0 Zig vira
+  **arquivo read-only**; R2 só é liberado **após** o gate final.
+- **Entregas:** loop de boot self-contido (LIN compila LIN); `AGENTS.md@1.5.0` com R2
+  liberado e `selfhost_root_final` pinado; Stage0 publicado como artefato (caminho 4A).
+- **Gate (final):** `H_selfhost_root(LIN, full) == H_selfhost_root(Zig, full)` no `I_canon`
+  completo, **mais** o compilador LIN reproduzir a `certificate_id` da seção 2 sobre o
+  corpus original, **mais** `run_suite`/`run_compat` (`.u{}` do `AGENTS.md`) passando sem
+  Zig no caminho (exceto o Stage0 arquivado).
+- **Anti-gate:** não remover o Zig do histórico (Stage0 fica arquivado com o hash medido
+  da seção 2); não relaxar R2 antes deste gate; nenhum `.zig` novo após P0 (R1 é
+  absoluto).
+
+---
+
+## 5. Anti-gates globais (valem para todas as fases)
+
+1. **Não reescrever em outra linguagem** (Rust/C/Go): troca de dependência, quebra de
+   receipts e não atinge R3 (`COMPILER_0_MIGRATION_ANALYSIS.rulel` §2).
+2. **Não portar receipts antes da Fase 5**: eles emitem roots — congelar cedo invalida
+   o resto.
+3. **Não relaxar R2 antes da Fase 7**: o freeze é o que torna a referência confiável.
+4. **Não modificar a referência Zig durante gate**: gate falhou corrige o LIN, nunca a
+   referência nem o gate.
+5. **Não misturar domínios de hash**: `selfhost:` (plano) ≠ `LIN:SEMANTIC_CERTIFICATE:1.0.0`
+   (certificado) ≠ `leaf:`/`node:` (spec).
+6. **Não escrever TS/JS à mão** (`.f{hand_TS hand_JS}`): só output de transpilador LIN.
+7. **Não quebrar o contrato heap-free**: `heap_allocations_in_lexer=0` /
+   `heap_allocated_bytes=0` devem seguir passando em todo gate.
+
+---
+
+## 6. Riscos e mitigações
+
+| Risco | Impacto | Mitigação |
+|---|---|---|
+| P2 (lexer+parser, ~40%) trava | plano bloqueado a partir de P3 | subgates P2a (lexer) e P2b (parser), cada um com `H_M` própria |
+| Rastro Zig com dependência de host (endereço, tempo) | `H_trace` irreproduzível | P0 prova a determinística da referência **antes** de qualquer port |
+| Transpilador lossy insuficiente para gerar os ports | gargalo em P2/P4 | ports escritos em LIN (R0); transpilador é apoio de dogfooding, não caminho único |
+| Roots mudando durante P1..P4 | receipts emitidos invalidados | receipts congelados em P5 (por construção) |
+| `AGENTS.md` frozen x necessidade de instrumentação | deadlock de governança | emenda `R2a` assinada **antes** de P0 (seção 4, P0) |
+| Drift no corpus (20 `.lin`) | âncoras da seção 2 mudam sem port | `corpus_sha256` checado em todo gate; mudança de corpus exige novo baseline documentado |
+
+---
+
+## 7. Governança e rastreabilidade
+
+- Este documento é **versionado e append-only**: cada gate PASS atualiza o status da fase e
+  acrescenta o `H_selfhost_root` medido — sem editar valores passados.
+- O marcador `src/lin_selfhost_plan.lin` espelha o status das fases (R0: tudo escrito em
+  `.lin`/`.rulel`).
+- Cada gate produz relatório `@RULEL:SELFHOST_GATE:<k>:1.0.0`, reproduzível via
+  `lin selfhost parity`.
+- `selfhost_root_final` (Fase 7) entra em `AGENTS.md` (nova versão) ao lado de
+  `compat_root`/`live_git_root`.
+
+_Documento de análise e decisão (append-only desde 2026-08-31). A instrumentação de P0
+(emenda `R2a`, `AGENTS.md@1.4.1`) foi a primeira — e, até P7, única autorizada — mudança
+no bootstrap. Todo ajuste posterior a `compiler/lin.zig` exige nova emenda documentada
+aqui, com re-pinning das âncoras autorreferenciais da seção 2.2._
