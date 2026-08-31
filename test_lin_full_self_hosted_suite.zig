@@ -912,18 +912,32 @@ pub fn main() !void {
     }
 
     // =====================================================================
-    // FATIA C1: STATEMENTS, ASSIGNMENTS & BLOCK SEQUENCING
+    // FATIA C1 & C2: STATEMENTS, ASSIGNMENTS, BLOCK & CONTROL FLOW
     // =====================================================================
     const c_stmt_suite = [_]struct {
         input: []const u8,
-        expected: i64,
+        expected: ?i64,
+        should_fail: bool = false,
         desc: []const u8,
     }{
+        // C1 Basics
         .{ .input = "x = 10; y = 20; return x + y;", .expected = 30, .desc = "Sequential variable assignment and return" },
         .{ .input = "a = 5; b = a * 2; c = b + a; return c;", .expected = 15, .desc = "Chained variable dependencies" },
         .{ .input = "x = 1; x = x + 10; return x;", .expected = 11, .desc = "Variable mutation / reassignment" },
         .{ .input = "x = 5; x + 100; return x;", .expected = 5, .desc = "Expression-statement with clean stack pop" },
         .{ .input = "x = 2; { y = 3; x = x * y; } return x;", .expected = 6, .desc = "Nested block scope execution" },
+
+        // C2 Control Flow: if / else / while / for
+        .{ .input = "x = 10; if (x > 5) { x = x + 1; } return x;", .expected = 11, .desc = "If condition true branch" },
+        .{ .input = "x = 2; if (x > 5) { x = 10; } else { x = 20; } return x;", .expected = 20, .desc = "If condition false with else branch" },
+        .{ .input = "i = 1; acc = 1; while (i <= 5) { acc = acc * i; i = i + 1; } return acc;", .expected = 120, .desc = "While loop accumulator (factorial of 5)" },
+        .{ .input = "x = 0; while (x > 10) { x = x + 1; } return x;", .expected = 0, .desc = "While loop with false initial condition (zero iterations)" },
+        .{ .input = "sum = 0; for (i = 1; i <= 10; i = i + 1) { sum = sum + i; } return sum;", .expected = 55, .desc = "Desugared for-loop accumulator (sum 1..10)" },
+        .{ .input = "n = 1; evens = 0; while (n <= 10) { if (n % 2 == 0) { evens = evens + 1; } n = n + 1; } return evens;", .expected = 5, .desc = "Nested if-in-while loop search (count evens 1..10)" },
+
+        // C2 Negative Parse Vectors
+        .{ .input = "if (x > 5 { x = 1; }", .expected = null, .should_fail = true, .desc = "Missing closing parenthesis in if condition" },
+        .{ .input = "while x > 5 { }", .expected = null, .should_fail = true, .desc = "Missing opening parenthesis in while condition" },
     };
 
     const StmtKind = enum {
@@ -931,6 +945,8 @@ pub fn main() !void {
         expr_stmt,
         return_stmt,
         block,
+        if_stmt,
+        while_stmt,
     };
 
     const StmtNode = struct {
@@ -939,6 +955,7 @@ pub fn main() !void {
         var_name: []const u8 = "",
         expr_root: u16 = 0,
         stmts: []const Self = &[_]Self{},
+        else_stmts: []const Self = &[_]Self{},
     };
 
     const StmtParser = struct {
@@ -998,54 +1015,154 @@ pub fn main() !void {
             return root;
         }
 
+        pub fn parseStatement(self: *Self) anyerror!StmtNode {
+            self.skipWs();
+            if (self.matchChar('{')) {
+                const inner = try self.parseBlock();
+                if (!self.matchChar('}')) return error.MissingClosingBrace;
+                return .{ .kind = .block, .stmts = inner };
+            }
+
+            const saved_pos = self.pos;
+            if (self.matchIdent()) |id| {
+                if (std.mem.eql(u8, id, "if")) {
+                    if (!self.matchChar('(')) return error.MissingOpeningParen;
+                    const cond_root = try self.parseExpr();
+                    if (!self.matchChar(')')) return error.MissingClosingParen;
+                    const then_stmt = try self.parseStatement();
+                    var else_slice: []const StmtNode = &[_]StmtNode{};
+                    const else_saved = self.pos;
+                    if (self.matchIdent()) |else_id| {
+                        if (std.mem.eql(u8, else_id, "else")) {
+                            const else_stmt = try self.parseStatement();
+                            const mem = try self.allocator.alloc(StmtNode, 1);
+                            mem[0] = else_stmt;
+                            else_slice = mem;
+                        } else {
+                            self.pos = else_saved;
+                        }
+                    } else {
+                        self.pos = else_saved;
+                    }
+
+                    const then_mem = try self.allocator.alloc(StmtNode, 1);
+                    then_mem[0] = then_stmt;
+                    return .{
+                        .kind = .if_stmt,
+                        .expr_root = cond_root,
+                        .stmts = then_mem,
+                        .else_stmts = else_slice,
+                    };
+                }
+
+                if (std.mem.eql(u8, id, "while")) {
+                    if (!self.matchChar('(')) return error.MissingOpeningParen;
+                    const cond_root = try self.parseExpr();
+                    if (!self.matchChar(')')) return error.MissingClosingParen;
+                    const body_stmt = try self.parseStatement();
+                    const body_mem = try self.allocator.alloc(StmtNode, 1);
+                    body_mem[0] = body_stmt;
+                    return .{
+                        .kind = .while_stmt,
+                        .expr_root = cond_root,
+                        .stmts = body_mem,
+                    };
+                }
+
+                if (std.mem.eql(u8, id, "for")) {
+                    if (!self.matchChar('(')) return error.MissingOpeningParen;
+                    // Desugar: for (init; cond; step) body => { init; while (cond) { body; step; } }
+                    const init_stmt = try self.parseStatement();
+                    const cond_root = try self.parseExpr();
+                    if (!self.matchChar(';')) return error.MissingSemicolon;
+
+                    // Step statement without trailing semicolon inside for head: e.g. i = i + 1
+                    const step_var = self.matchIdent() orelse return error.InvalidForStep;
+                    if (!self.matchChar('=')) return error.InvalidForStep;
+                    const step_expr_root = try self.parseExpr();
+                    if (!self.matchChar(')')) return error.MissingClosingParen;
+
+                    const step_stmt = StmtNode{ .kind = .assign, .var_name = step_var, .expr_root = step_expr_root };
+                    const body_stmt = try self.parseStatement();
+
+                    var while_body_list = std.ArrayList(StmtNode).init(self.allocator);
+                    if (body_stmt.kind == .block) {
+                        for (body_stmt.stmts) |s| try while_body_list.append(s);
+                    } else {
+                        try while_body_list.append(body_stmt);
+                    }
+                    try while_body_list.append(step_stmt);
+
+                    const while_body_slice = try while_body_list.toOwnedSlice();
+                    const while_body_node = StmtNode{ .kind = .block, .stmts = while_body_slice };
+                    const while_body_mem = try self.allocator.alloc(StmtNode, 1);
+                    while_body_mem[0] = while_body_node;
+
+                    const while_node = StmtNode{
+                        .kind = .while_stmt,
+                        .expr_root = cond_root,
+                        .stmts = while_body_mem,
+                    };
+
+                    var outer_block = std.ArrayList(StmtNode).init(self.allocator);
+                    try outer_block.append(init_stmt);
+                    try outer_block.append(while_node);
+
+                    return .{ .kind = .block, .stmts = try outer_block.toOwnedSlice() };
+                }
+
+                if (std.mem.eql(u8, id, "return")) {
+                    const root = try self.parseExpr();
+                    if (!self.matchChar(';')) return error.MissingSemicolon;
+                    return .{ .kind = .return_stmt, .expr_root = root };
+                }
+
+                if (self.matchChar('=')) {
+                    const root = try self.parseExpr();
+                    if (!self.matchChar(';')) return error.MissingSemicolon;
+                    return .{ .kind = .assign, .var_name = id, .expr_root = root };
+                }
+            }
+
+            self.pos = saved_pos;
+            const expr_root = try self.parseExpr();
+            if (!self.matchChar(';')) return error.MissingSemicolon;
+            return .{ .kind = .expr_stmt, .expr_root = expr_root };
+        }
+
         pub fn parseBlock(self: *Self) anyerror![]StmtNode {
             var list = std.ArrayList(StmtNode).init(self.allocator);
             while (true) {
                 self.skipWs();
                 if (self.pos >= self.src.len or (self.pos < self.src.len and self.src[self.pos] == '}')) break;
-
-                if (self.matchChar('{')) {
-                    const inner = try self.parseBlock();
-                    if (!self.matchChar('}')) return error.MissingClosingBrace;
-                    try list.append(.{ .kind = .block, .stmts = inner });
-                    continue;
-                }
-
-                const saved_pos = self.pos;
-                if (self.matchIdent()) |id| {
-                    if (std.mem.eql(u8, id, "return")) {
-                        const root = try self.parseExpr();
-                        if (!self.matchChar(';')) return error.MissingSemicolon;
-                        try list.append(.{ .kind = .return_stmt, .expr_root = root });
-                        continue;
-                    }
-                    if (self.matchChar('=')) {
-                        const root = try self.parseExpr();
-                        if (!self.matchChar(';')) return error.MissingSemicolon;
-                        try list.append(.{ .kind = .assign, .var_name = id, .expr_root = root });
-                        continue;
-                    }
-                }
-
-                self.pos = saved_pos;
-                const expr_root = try self.parseExpr();
-                if (!self.matchChar(';')) return error.MissingSemicolon;
-                try list.append(.{ .kind = .expr_stmt, .expr_root = expr_root });
+                const stmt = try self.parseStatement();
+                try list.append(stmt);
             }
             return list.toOwnedSlice();
         }
+    };
+
+    const Fixup = struct {
+        ins_index: usize,
+        label_id: usize,
     };
 
     const StmtLowerer = struct {
         const Self = @This();
         code: std.ArrayList(VmIns),
         locals_map: std.ArrayList([]const u8),
+        fixups: std.ArrayList(Fixup),
+        labels: std.AutoHashMap(usize, usize),
+        next_label_id: usize,
         allocator: std.mem.Allocator,
 
         pub fn init(allocator: std.mem.Allocator) Self {
             return .{
                 .code = std.ArrayList(VmIns).init(allocator),
                 .locals_map = std.ArrayList([]const u8).init(allocator),
+                .fixups = std.ArrayList(Fixup).init(allocator),
+                .labels = std.AutoHashMap(usize, usize).init(allocator),
+                .next_label_id = 1,
                 .allocator = allocator,
             };
         }
@@ -1053,6 +1170,40 @@ pub fn main() !void {
         pub fn deinit(self: *Self) void {
             self.code.deinit();
             self.locals_map.deinit();
+            self.fixups.deinit();
+            self.labels.deinit();
+        }
+
+        fn allocLabel(self: *Self) usize {
+            const id = self.next_label_id;
+            self.next_label_id += 1;
+            return id;
+        }
+
+        fn markLabel(self: *Self, label_id: usize) !void {
+            try self.labels.put(label_id, self.code.items.len);
+        }
+
+        fn emitJumpIfFalse(self: *Self, label_id: usize) !void {
+            const ins_idx = self.code.items.len;
+            try self.code.append(.{ .op = .jump_if_false, .a = 0 });
+            try self.fixups.append(.{ .ins_index = ins_idx, .label_id = label_id });
+        }
+
+        fn emitJump(self: *Self, label_id: usize) !void {
+            const ins_idx = self.code.items.len;
+            try self.code.append(.{ .op = .jump, .a = 0 });
+            try self.fixups.append(.{ .ins_index = ins_idx, .label_id = label_id });
+        }
+
+        pub fn resolveFixups(self: *Self) !void {
+            for (self.fixups.items) |fix| {
+                if (self.labels.get(fix.label_id)) |target_pc| {
+                    self.code.items[fix.ins_index].a = @intCast(target_pc);
+                } else {
+                    return error.UnresolvedLabelFixup;
+                }
+            }
         }
 
         fn getOrAllocLocal(self: *Self, name: []const u8) !usize {
@@ -1160,6 +1311,37 @@ pub fn main() !void {
                     .block => {
                         try self.emitStmts(ast_arena, s.stmts);
                     },
+                    .if_stmt => {
+                        const lbl_else = self.allocLabel();
+                        const lbl_end = self.allocLabel();
+
+                        try self.emitExpr(ast_arena, s.expr_root);
+                        try self.emitJumpIfFalse(lbl_else);
+
+                        try self.emitStmts(ast_arena, s.stmts);
+                        if (s.else_stmts.len > 0) {
+                            try self.emitJump(lbl_end);
+                        }
+
+                        try self.markLabel(lbl_else);
+                        if (s.else_stmts.len > 0) {
+                            try self.emitStmts(ast_arena, s.else_stmts);
+                            try self.markLabel(lbl_end);
+                        }
+                    },
+                    .while_stmt => {
+                        const lbl_top = self.allocLabel();
+                        const lbl_exit = self.allocLabel();
+
+                        try self.markLabel(lbl_top);
+                        try self.emitExpr(ast_arena, s.expr_root);
+                        try self.emitJumpIfFalse(lbl_exit);
+
+                        try self.emitStmts(ast_arena, s.stmts);
+                        try self.emitJump(lbl_top);
+
+                        try self.markLabel(lbl_exit);
+                    },
                 }
             }
         }
@@ -1167,7 +1349,17 @@ pub fn main() !void {
 
     for (c_stmt_suite) |tc| {
         var s_parser = StmtParser.init(alloc, tc.input);
-        const stmts = s_parser.parseBlock() catch {
+        const stmts_res = s_parser.parseBlock();
+
+        if (tc.should_fail) {
+            if (stmts_res) |_| {
+                try stdout.print("  [FAIL] Expected parse failure for: \"{s}\"\n", .{tc.input});
+                return error.CParserVerificationFailed;
+            } else |_| {}
+            continue;
+        }
+
+        const stmts = stmts_res catch {
             try stdout.print("  [FAIL] Statement parse failed for: \"{s}\"\n", .{tc.input});
             return error.CParserVerificationFailed;
         };
@@ -1176,6 +1368,10 @@ pub fn main() !void {
         defer s_lowerer.deinit();
         s_lowerer.emitStmts(&s_parser.arena, stmts) catch {
             try stdout.print("  [FAIL] Statement lowering failed for: \"{s}\"\n", .{tc.input});
+            return error.CParserVerificationFailed;
+        };
+        s_lowerer.resolveFixups() catch {
+            try stdout.print("  [FAIL] Label resolution failed for: \"{s}\"\n", .{tc.input});
             return error.CParserVerificationFailed;
         };
 
@@ -1200,14 +1396,14 @@ pub fn main() !void {
             return error.CParserVerificationFailed;
         }
 
-        if (res.val != tc.expected) {
-            try stdout.print("  [FAIL] Statement \"{s}\" => VM:{d}, expected {d}\n", .{ tc.input, res.val, tc.expected });
+        if (res.val != tc.expected.?) {
+            try stdout.print("  [FAIL] Statement \"{s}\" => VM:{d}, expected {d}\n", .{ tc.input, res.val, tc.expected.? });
             return error.CParserVerificationFailed;
         }
     }
 
     try stdout.print("  .Exercised {d} Deterministic C Expression Parsing & LinVM Execution Vectors (29/29 PASS)\n", .{c_parser_test_vectors.len});
-    try stdout.print("  .Exercised {d} Deterministic C Statement Sequencing & Block Execution Vectors (5/5 PASS)\n", .{c_stmt_suite.len});
+    try stdout.print("  .Exercised {d} Deterministic C Statement & Control Flow Vectors (13/13 PASS)\n", .{c_stmt_suite.len});
     try stdout.print("  [PASS] Phase 6: Stage-0 C expression Pratt parser, Flat AST Arena and LinVM Lowerer verified\n\n", .{});
     passed += 1;
 
@@ -1218,7 +1414,7 @@ pub fn main() !void {
     total += 1;
 
     try stdout.print("================================================================================\n", .{});
-    try stdout.print("@LIN:FULL_SELF_HOSTED_SUITE_CERTIFICATE:1.2.0\n", .{});
+    try stdout.print("@LIN:FULL_SELF_HOSTED_SUITE_CERTIFICATE:1.3.0\n", .{});
     try stdout.print(".status=\"PASS_FULL_SELF_HOSTED_LIN\"\n", .{});
     try stdout.print(".target_device=\"{s}\"\n", .{dev_name});
     try stdout.print(".host_device=\"CPU_ZEN3\"\n", .{});
@@ -1226,7 +1422,9 @@ pub fn main() !void {
     try stdout.print(".zig_to_lin_transpiler_active=true\n", .{});
     try stdout.print(".c_expr_pratt_parser_active=true\n", .{});
     try stdout.print(".c_expr_vectors=29\n", .{});
-    try stdout.print(".c_stmt_vectors=5\n", .{});
+    try stdout.print(".c_stmt_vectors=13\n", .{});
+    try stdout.print(".control_flow_active=true\n", .{});
+    try stdout.print(".if_while_for_active=true\n", .{});
     try stdout.print(".linvm_div_supported=true\n", .{});
     try stdout.print(".ast_to_vm_lowerer_active=true\n", .{});
     try stdout.print(".ast_vm_parity_vectors=29\n", .{});
