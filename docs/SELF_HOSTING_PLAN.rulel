@@ -71,6 +71,14 @@ re-pina aqui, por proveniência, após cada mudança autorizada do bootstrap:
 | `compiler_sha256` | `SHA-256(bytes(compiler/lin.zig))` | `5d7b928ca0e96cbdaa434e92194189a0a1abe6687584020b84701f61f46780a7` | `2928bcc80291f520131549ff67b119ad2d8606591229c2269594edb2f3ecc74f` |
 | `certificate_id` | `SHA-256(domain ‖ compiler ‖ corpus ‖ ledger)` (32 bytes crus) | `sha256:7751f3ee21291b9b65c39954239a4fe5938e848ecf4cfdb6d5c52c5add0d56b9` | `sha256:3399e86f77c0dd36e6493c3416a7ec1e72abb0d00f5b3d2f5cb4ddfb866352cf` |
 
+**Pós-merge (master @ `8aad8692`, 2026-08-31):** merge 3-way do PR #4 com o master
+então-atual (incluindo PRs #2/#3 de criptografia) foi **limpo** — bloco selfhost
+preservado, corpus byte-idêntico (pins de nível 0 seguem válidos). Novos valores
+autorreferenciais (**reported**, não assertados):
+`compiler_sha256 = 6ec4fcadab4ec03fe6bbf23f7b2f8d186b85840203e4c01326a98d714ba19062`,
+`certificate_id = sha256:c7b06d30f062a47fa0783a0028ac74aa59b12c9a0b3e52e85850ac7b9ac06af8`.
+O próximo re-pinning segue o procedimento do rodapé, após o `GATE(0)` verificado em CI.
+
 ### 2.3 Gate P0 (`GATE(0)`)
 
 ```
