@@ -25,7 +25,8 @@ zig run -lc -I/usr/include -L/usr/lib/x86_64-linux-gnu -lOpenCL test_lin_selfhos
 | `lin lint` | ✅ sem erros |
 | **full self-hosted suite** | ✅ `PASS_FULL_SELF_HOSTED_LIN`, bit-exact, Merkle `62b7d202…` |
 | **compat suite** | ✅ `PASS_FULL_LEGACY_COMPATIBILITY`, 17/17 subgates, 1000/1000 fuzz, 0 mismatches |
-| `make attestation-gate` | ✅ **PASS** — 5 testes unitários do guard + 27 asserções de honestidade |
+| `make attestation-gate` | ✅ **PASS** — 5 testes unitários do guard + 35 asserções de honestidade |
+| `make gate` (LIN Gate, Merkle do toolchain) | ✅ **GATE OPEN** — 31 arquivos, 6 níveis, raiz = atestada |
 | `make xver` (N-Version Zig × C) | ✅ **34/34 vectors, 0 divergences** — mesmas raízes Merkle nas duas implementações |
 | `make -C transpile/c test` / `test-edges` / `test-sha256` | ✅ 29/29, 17/17, 5/5 (vetores FIPS/NIST publicados) |
 
@@ -53,6 +54,14 @@ Executado com o build CPU-only (`zig build -Dgpu=false -O ReleaseFast`):
   ok   receipt pins the C binary by SHA-256
   ok   a lying second implementation is detected (divergence, no receipt)
   ok   missing second implementation -> NotImplemented (exit 3)
+  ok   gate without a manifest is not evaluable (exit 3)
+  ok   gate-attest writes a manifest with the recomputed root
+  ok   gate opens on an attested tree
+  ok   gate Merkle root is deterministic across runs
+  ok   a modified compiler file blocks the gate (exit 1)
+  ok   a new unattested file blocks the gate (exit 1)
+  ok   deleting an attested file blocks the gate (exit 1)
+  ok   committed manifest matches the tracked toolchain at the repo root
 ```
 
 ### N-Version Zig × C (`make xver`)
@@ -68,6 +77,25 @@ Corpus: os 29 vetores do oráculo compartilhado (23 avaliados + 6 rejeitados por
 ambos os lados, com o mesmo nome de erro) mais 5 vetores de fronteira INT64.
 Canonicalização `LIN_XVER_CANONICAL_v1` (4 folhas: fonte, ambiente, bytecode
 emitido, execução). O recibo fixa o binário C por SHA-256 (`engine_b_sha256`).
+
+### LIN Gate (`make gate`) — verificador de integridade do CI
+
+```
+$ make gate
+  scope ........... compiler,transpile/c/lin_c,transpile/c/tool,transpile/c/test
+  tracked files ... 31
+  merkle levels ... 6
+  recomputed root . sha256:948850d1abcad93752d49bccb0d97b20738640fd8d318a73dbf314cb26b2f0e0
+  merkle root (attested) ... sha256:948850d1…
+  merkle root (recomputed) . sha256:948850d1…
+GATE OPEN — Merkle root matches the attested manifest (31 files).
+```
+
+Códigos de saída: **0** = gate aberto, **1** = bloqueado (mudança não atestada),
+**3** = não avaliável (manifesto ausente/malformado, escopo vazio). Os caminhos de
+bloqueio (MODIFIED / ADDED / DELETED) são testados dentro de um sandbox temporário
+pela suíte de honestidade; o manifesto commitado é conferido contra a árvore real
+na raiz do repositório. Re-atestação humana: `make gate-attest`.
 
 Rodar isoladamente: `make attestation-gate` (ou `./test/attestation_honesty.sh
 zig-out/bin/lin_native`). O alvo também é chamado por `make test` e `make test-cpu`

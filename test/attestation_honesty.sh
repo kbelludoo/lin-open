@@ -9,7 +9,11 @@
 #   3. cleanroom-verify fails closed on a bundle that does not verify;
 #   4. notary-verify verifies real Ed25519 co-signatures, refuses a roster that
 #      cannot reach quorum, and rejects every mutation in its adversarial corpus;
-#   5. the genuine compute-receipt Merkle round-trip still passes.
+#   5. the genuine compute-receipt Merkle round-trip still passes;
+#   6. the Zig x C11 N-Version cross-check reaches consensus and rejects a
+#      lying second implementation;
+#   7. the LIN Gate blocks a change whose tracked-toolchain Merkle root
+#      differs from the attested manifest, and opens on an attested tree.
 #
 # Usage: test/attestation_honesty.sh [path/to/lin_native]
 set -u
@@ -255,6 +259,81 @@ EOF
   else
     bad "missing second implementation did not fail closed"
   fi
+fi
+
+# --- 7. LIN GATE: CI integrity checker must block unattested changes --------
+echo
+echo "-- LIN Gate (CI integrity checker) --"
+
+group gate_sandbox
+mkdir -p compiler transpile/c/lin_c transpile/c/tool transpile/c/test
+printf 'const a = 1;\n' > compiler/a.zig
+printf 'int b(void) { return 2; }\n' > transpile/c/lin_c/b.c
+printf 'int c(void) { return 3; }\n' > transpile/c/tool/c.c
+printf 'int t(void) { return 4; }\n' > transpile/c/test/t.c
+
+"$BIN" gate-check --manifest m.rulel >/dev/null 2>&1
+if [ $? = 3 ]; then
+  ok "gate without a manifest is not evaluable (exit 3)"
+else
+  bad "gate accepted a missing manifest"
+fi
+
+"$BIN" gate-attest --manifest m.rulel >/dev/null 2>&1
+if [ $? = 0 ] && [ -f m.rulel ]; then
+  ok "gate-attest writes a manifest with the recomputed root"
+else
+  bad "gate-attest did not write a manifest"
+fi
+
+"$BIN" gate-check --manifest m.rulel >open.txt 2>&1
+if [ $? = 0 ] && grep -q 'GATE OPEN' open.txt; then
+  ok "gate opens on an attested tree"
+else
+  bad "gate did not open on an attested tree"
+fi
+
+root1=$(grep -o 'merkle_root="sha256:[0-9a-f]*"' m.rulel | head -1)
+"$BIN" gate-attest --manifest m.rulel >/dev/null 2>&1
+root2=$(grep -o 'merkle_root="sha256:[0-9a-f]*"' m.rulel | head -1)
+if [ -n "$root1" ] && [ "$root1" = "$root2" ]; then
+  ok "gate Merkle root is deterministic across runs"
+else
+  bad "gate Merkle root is not deterministic ($root1 vs $root2)"
+fi
+
+printf '// tampered by a PR\n' >> compiler/a.zig
+"$BIN" gate-check --manifest m.rulel >mod.txt 2>&1
+if [ $? = 1 ] && grep -q 'MODIFIED' mod.txt; then
+  ok "a modified compiler file blocks the gate (exit 1)"
+else
+  bad "a modified compiler file did not block the gate"
+fi
+printf 'const a = 1;\n' > compiler/a.zig
+
+printf 'const injected = 0;\n' > compiler/zz_injected.zig
+"$BIN" gate-check --manifest m.rulel >add.txt 2>&1
+if [ $? = 1 ] && grep -q 'ADDED' add.txt; then
+  ok "a new unattested file blocks the gate (exit 1)"
+else
+  bad "a new unattested file did not block the gate"
+fi
+rm -f compiler/zz_injected.zig
+
+rm -f transpile/c/lin_c/b.c
+"$BIN" gate-check --manifest m.rulel >del.txt 2>&1
+if [ $? = 1 ] && grep -q 'DELETED' del.txt; then
+  ok "deleting an attested file blocks the gate (exit 1)"
+else
+  bad "deleting an attested file did not block the gate"
+fi
+
+cd "$REPO_ROOT" || exit 1
+"$BIN" gate-check >"$WORK/gate_repo.txt" 2>&1
+if [ $? = 0 ] && grep -q 'GATE OPEN' "$WORK/gate_repo.txt"; then
+  ok "committed manifest matches the tracked toolchain at the repo root"
+else
+  bad "repo manifest does not match the tree (re-attest: lin gate-attest)"
 fi
 
 echo

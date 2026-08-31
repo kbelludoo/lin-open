@@ -29,7 +29,8 @@ These were verified by building and running the compiled binary:
 | `cleanroom-verify` | ✅ real: CPU-only cryptographic replay of a signed bundle; fails closed and writes nothing when the bundle does not verify |
 | `notary-sign` / `notary-verify` witness quorum | ✅ real Ed25519 M-of-N co-signature verification over a signed tree head (roster file required) |
 | N-Version cross-check (`make xver` / `lin crosscheck-c`) | ✅ real: the same 34 vectors through the Zig LinVM and the independent C11 port in `transpile/c/`, comparing canonical Merkle roots — 34/34 agreement, 0 divergences |
-| Attestation honesty gate (`make attestation-gate`) | ✅ 27 assertions + 5 unit tests; refuses any command that would publish an uncomputed verdict |
+| **LIN Gate** (`make gate` / `lin gate-check`) | ✅ real: recomputes the Merkle root of the tracked toolchain (`compiler/**`, `transpile/c/{lin_c,tool,test}/**`) and blocks the PR unless it matches the root attested in `lin_gate_manifest.rulel` |
+| Attestation honesty gate (`make attestation-gate`) | ✅ 35 assertions + 5 unit tests; refuses any command that would publish an uncomputed verdict |
 | `from-js` transpile | ⚠️ narrow subset only (arrow/expr fns match 0) |
 
 `receipt create --source "return x * x;" --input 9` produces a deterministic root
@@ -186,6 +187,16 @@ Fixed in the attestation-honesty pass (2026-08-31):
     (source, environment, emitted bytecode, result, steps, final stack depth).
     34/34 vectors agree; a lying second implementation is detected and no receipt is
     written; a missing second implementation fails closed with `error.NotImplemented`.
+
+13. ✅ **LIN Gate — CI integrity checker (the first functional product).** `lin gate-check`
+    hashes every tracked file of the toolchain (`compiler/**`, `transpile/c/lin_c|tool|test/**`),
+    folds the digests into a real SHA-256 Merkle tree (`LIN_GATE_MANIFEST_v1`) and compares the
+    root with the one attested in `lin_gate_manifest.rulel`. Any unattested change — a modified
+    compiler file, an injected file, a deletion — reports the exact file and exits 1; a missing
+    manifest exits 3; an attested tree exits 0 (GATE OPEN). `.github/workflows/lin_gate.yml` runs
+    it on every pull request, together with the honesty suite and the N-Version cross-check, so a
+    PR (AI-authored or not) cannot merge with an unattested toolchain. Re-attestation is an
+    explicit human act: `make gate-attest`, then commit the new root with the change.
 
 Remaining honest caveats:
 

@@ -1,4 +1,4 @@
-.PHONY: all build build-gpu build-cpu test test-cpu attestation-gate guard-unit xver lint clean
+.PHONY: all build build-gpu build-cpu test test-cpu attestation-gate guard-unit xver gate gate-attest ci-gate lint clean
 
 # LIN build/test Makefile (2026-08-31)
 #
@@ -15,6 +15,10 @@
 #                        receipt/Merkle, Ed25519 notary and N-Version paths pass
 #   make xver         -> build the C11 port and cross-check it against the Zig
 #                        LinVM (same expression, same bytecode, same Merkle root)
+#   make gate         -> LIN Gate: fail unless the tracked toolchain still hashes
+#                        to the Merkle root attested in lin_gate_manifest.rulel
+#   make gate-attest  -> re-attest that root after a human reviewed the change
+#   make ci-gate      -> the whole PR gate (gate + honesty + N-Version + integrity)
 
 BUILD_GPU := zig build -Doptimize=ReleaseFast
 BUILD_CPU := zig build -Dgpu=false -Doptimize=ReleaseFast
@@ -78,6 +82,23 @@ attestation-gate: guard-unit
 xver: build-cpu
 	@$(MAKE) -C transpile/c xver
 	@$(BIN) crosscheck-c
+
+# LIN Gate: recompute the Merkle root of the tracked toolchain
+# (compiler/**, transpile/c/lin_c|tool|test/**) and compare it with the root
+# attested in lin_gate_manifest.rulel. A PR that changes any of those files
+# without re-attesting fails here — that is what .github/workflows/lin_gate.yml
+# runs on every pull request.
+gate: build-cpu
+	@$(BIN) gate-check
+
+# Human action: accept a reviewed change to the toolchain by committing a new
+# attested root together with the change.
+gate-attest: build-cpu
+	@$(BIN) gate-attest
+
+# The full PR gate, in the order CI runs it.
+ci-gate: gate attestation-gate xver
+	@$(BIN) integrity
 
 clean:
 	@rm -rf zig-out zig-cache .zig-cache bin/lin_native /tmp/lin_rec.rulel simulated_attestations.log

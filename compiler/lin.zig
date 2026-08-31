@@ -14629,7 +14629,7 @@ fn runCli() !void {
         return;
     }
 
-    if (argEq(cmd, "c-expr-test") or argEq(cmd, "c-expr-eval") or argEq(cmd, "c-ast-verify") or argEq(cmd, "receipt") or argEq(cmd, "receipt-create") or argEq(cmd, "receipt-verify") or argEq(cmd, "crosscheck-c") or argEq(cmd, "xver-c") or argEq(cmd, "nversion-c")) {
+    if (argEq(cmd, "c-expr-test") or argEq(cmd, "c-expr-eval") or argEq(cmd, "c-ast-verify") or argEq(cmd, "receipt") or argEq(cmd, "receipt-create") or argEq(cmd, "receipt-verify") or argEq(cmd, "crosscheck-c") or argEq(cmd, "xver-c") or argEq(cmd, "nversion-c") or argEq(cmd, "gate") or argEq(cmd, "gate-check") or argEq(cmd, "gate-attest") or argEq(cmd, "lin-gate")) {
         var ai_feedback_mode = false;
         for (args) |arg| {
             if (std.mem.eql(u8, arg, "--ai-feedback")) {
@@ -15646,6 +15646,340 @@ fn runCli() !void {
             try rf.writeAll(doc.items);
 
             try stdout.print("RESULT: CONSENSUS — receipt written to {s}\n", .{out_receipt});
+            try stdout.print("================================================================================\n\n", .{});
+            return;
+        }
+
+        // ==================================================================
+        // === LIN GATE — CI INTEGRITY CHECKER ==============================
+        //
+        // The first functional product: a gate that blocks a pull request —
+        // AI-authored or not — whose tracked toolchain sources no longer hash
+        // to the Merkle root recorded in the gate manifest. Nothing here is
+        // simulated: every digest is computed over the bytes on disk with
+        // SHA-256 by this same binary and folded into a real Merkle tree.
+        //
+        //   lin gate-check  [--manifest PATH]   exit 0 OPEN / 1 BLOCKED / 3 missing
+        //   lin gate-attest [--manifest PATH]   recompute + rewrite the manifest
+        //
+        // A PR that touches the compiler or the independent C implementation
+        // changes the root, so the gate fails until a human re-attests by
+        // committing a new manifest root together with the change.
+        //
+        // Canonicalization LIN_GATE_MANIFEST_v1:
+        //   leaf_i = SHA256("lin:gate:leaf:" || path || ":" || bytes || ":" || hex(sha256))
+        //   node(l,r) = SHA256("lin:gate:node:" || l || r)   (unpaired node promoted)
+        //   root = fold over the leaves sorted by path (lexicographic)
+        // ==================================================================
+        if (argEq(cmd, "gate") or argEq(cmd, "gate-check") or argEq(cmd, "gate-attest") or argEq(cmd, "lin-gate")) {
+            const attesting = argEq(cmd, "gate-attest");
+            var manifest_path: []const u8 = "lin_gate_manifest.rulel";
+            var i_gate: usize = 2;
+            while (i_gate < args.len) : (i_gate += 1) {
+                if (std.mem.eql(u8, args[i_gate], "--manifest") and i_gate + 1 < args.len) {
+                    manifest_path = args[i_gate + 1];
+                    i_gate += 1;
+                }
+            }
+
+            const GateFile = struct { path: []const u8, bytes: u64, sha: [32]u8 };
+            const GateHash = struct {
+                fn leafOf(path: []const u8, bytes: u64, sha: []const u8) [32]u8 {
+                    var h = std.crypto.hash.sha2.Sha256.init(.{});
+                    h.update("lin:gate:leaf:");
+                    h.update(path);
+                    h.update(":");
+                    var nb: [32]u8 = undefined;
+                    const ns = std.fmt.bufPrint(&nb, "{d}", .{bytes}) catch "0";
+                    h.update(ns);
+                    h.update(":");
+                    h.update(sha);
+                    var out: [32]u8 = undefined;
+                    h.final(&out);
+                    return out;
+                }
+                fn nodeOf(l: [32]u8, r: [32]u8) [32]u8 {
+                    var h = std.crypto.hash.sha2.Sha256.init(.{});
+                    h.update("lin:gate:node:");
+                    h.update(&l);
+                    h.update(&r);
+                    var out: [32]u8 = undefined;
+                    h.final(&out);
+                    return out;
+                }
+                fn rootOf(leaves: []const [32]u8, alloc: std.mem.Allocator) anyerror![32]u8 {
+                    if (leaves.len == 0) return error.EmptyMerkleTree;
+                    var level = try std.ArrayList([32]u8).initCapacity(alloc, leaves.len);
+                    defer level.deinit();
+                    level.appendSliceAssumeCapacity(leaves);
+                    while (level.items.len > 1) {
+                        var next = try std.ArrayList([32]u8).initCapacity(alloc, level.items.len / 2 + 1);
+                        defer next.deinit();
+                        var i: usize = 0;
+                        while (i < level.items.len) : (i += 2) {
+                            if (i + 1 < level.items.len) {
+                                try next.append(nodeOf(level.items[i], level.items[i + 1]));
+                            } else {
+                                try next.append(level.items[i]);
+                            }
+                        }
+                        level.clearRetainingCapacity();
+                        try level.appendSlice(next.items);
+                    }
+                    return level.items[0];
+                }
+                fn levelsOf(n_in: usize) usize {
+                    var n = n_in;
+                    var lv: usize = 1;
+                    while (n > 1) {
+                        n = (n + 1) / 2;
+                        lv += 1;
+                    }
+                    return lv;
+                }
+                fn hex(alloc: std.mem.Allocator, d: []const u8) anyerror![]const u8 {
+                    return std.fmt.allocPrint(alloc, "{s}", .{std.fmt.fmtSliceHexLower(d)});
+                }
+            };
+
+            // ---- 1. Hash every tracked file on disk, in a stable order ----
+            const gate_scopes = [_][]const u8{ "compiler", "transpile/c/lin_c", "transpile/c/tool", "transpile/c/test" };
+            var disk = std.ArrayList(GateFile).init(LIA_ALLOC);
+            defer disk.deinit();
+            var scopes_used: usize = 0;
+            var scope_desc = std.ArrayList(u8).init(LIA_ALLOC);
+            defer scope_desc.deinit();
+            for (gate_scopes, 0..) |sc, sc_i| {
+                var d = std.fs.cwd().openDir(sc, .{ .iterate = true }) catch |e| {
+                    try stdout.print("  [warn] scope not readable: {s} ({s})\n", .{ sc, @errorName(e) });
+                    continue;
+                };
+                defer d.close();
+                scopes_used += 1;
+                if (sc_i > 0) try scope_desc.append(',');
+                try scope_desc.appendSlice(sc);
+                var walker = d.walk(LIA_ALLOC) catch |e| {
+                    try stdout.print("  [warn] cannot walk {s}: {s}\n", .{ sc, @errorName(e) });
+                    continue;
+                };
+                defer walker.deinit();
+                while (walker.next() catch null) |ent| {
+                    if (ent.kind != .file) continue;
+                    const full = try std.fs.path.join(LIA_ALLOC, &[_][]const u8{ sc, ent.path });
+                    var f = std.fs.cwd().openFile(full, .{}) catch { continue; };
+                    defer f.close();
+                    const sz = try f.getEndPos();
+                    var h = std.crypto.hash.sha2.Sha256.init(.{});
+                    var rbuf: [16384]u8 = undefined;
+                    while (true) {
+                        const n = try f.read(&rbuf);
+                        if (n == 0) break;
+                        h.update(rbuf[0..n]);
+                    }
+                    var dg: [32]u8 = undefined;
+                    h.final(&dg);
+                    try disk.append(.{ .path = full, .bytes = sz, .sha = dg });
+                }
+            }
+            const gateLess = struct {
+                fn f(_: void, a: GateFile, b: GateFile) bool {
+                    return std.mem.order(u8, a.path, b.path) == .lt;
+                }
+            }.f;
+            std.mem.sort(GateFile, disk.items, {}, gateLess);
+
+            if (disk.items.len == 0) {
+                try stdout.print("GATE BLOCKED — no tracked files found under the gate scope.\n", .{});
+                try stdout.print("Run the gate from the repository root (scope: {s}).\n", .{scope_desc.items});
+                std.process.exit(3);
+            }
+
+            var leaves = try std.ArrayList([32]u8).initCapacity(LIA_ALLOC, disk.items.len);
+            defer leaves.deinit();
+            for (disk.items) |gf| {
+                var hx: [64]u8 = undefined;
+                _ = try std.fmt.bufPrint(&hx, "{s}", .{std.fmt.fmtSliceHexLower(&gf.sha)});
+                try leaves.append(GateHash.leafOf(gf.path, gf.bytes, &hx));
+            }
+            const recomputed_root = try GateHash.rootOf(leaves.items, LIA_ALLOC);
+            var root_hex: [64]u8 = undefined;
+            _ = try std.fmt.bufPrint(&root_hex, "{s}", .{std.fmt.fmtSliceHexLower(&recomputed_root)});
+
+            try stdout.print("\n================================================================================\n", .{});
+            try stdout.print("=== LIN GATE — CI INTEGRITY CHECKER (LIN_GATE_MANIFEST_v1)                    ===\n", .{});
+            try stdout.print("================================================================================\n", .{});
+            try stdout.print("  scope ........... {s}\n", .{scope_desc.items});
+            try stdout.print("  tracked files ... {d}\n", .{disk.items.len});
+            try stdout.print("  merkle levels ... {d}\n", .{GateHash.levelsOf(disk.items.len)});
+            if (std.process.Child.run(.{ .allocator = LIA_ALLOC, .argv = &[_][]const u8{ "git", "rev-parse", "--short", "HEAD" } })) |gres| {
+                if (gres.term == .Exited and gres.term.Exited == 0) {
+                    try stdout.print("  git HEAD ........ {s}\n", .{std.mem.trimRight(u8, gres.stdout, " \r\n\t")});
+                }
+            } else |_| {}
+            try stdout.print("  recomputed root . sha256:{s}\n\n", .{root_hex});
+
+            // ---- 2. Attest mode: write the manifest with this root ----
+            if (attesting) {
+                var attest_by: []const u8 = "unknown";
+                if (std.process.getEnvVarOwned(LIA_ALLOC, "USER")) |u| attest_by = u else |_| {}
+                var doc = std.ArrayList(u8).init(LIA_ALLOC);
+                defer doc.deinit();
+                try doc.writer().print(
+                    \\@RULEL:LIN_GATE_MANIFEST:1.0.0
+                    \\~R{{.s=subject .f=tracked_files .v=verdict}}
+                    \\.s{{
+                    \\  scope="{s}"
+                    \\  canonicalization="LIN_GATE_MANIFEST_v1"
+                    \\  merkle_root="sha256:{s}"
+                    \\  attested_by="{s}"
+                    \\  audit_timestamp_unix={d}
+                    \\}}
+                    \\.f{{
+                    \\
+                , .{ scope_desc.items, root_hex, attest_by, std.time.timestamp() });
+                for (disk.items) |gf| {
+                    try doc.writer().print(
+                        \\  .f{{ path="{s}" bytes={d} sha256="sha256:{s}" }}
+                    , .{ gf.path, gf.bytes, std.fmt.fmtSliceHexLower(&gf.sha) });
+                    try doc.writer().print("\n", .{});
+                }
+                try doc.writer().print(
+                    \\}}
+                    \\.v{{
+                    \\  files={d}
+                    \\  merkle_levels={d}
+                    \\  merkle_root="sha256:{s}"
+                    \\  status="GATE_ATTESTED"
+                    \\  evidence_status="COMPUTED"
+                    \\}}
+                    \\
+                , .{ disk.items.len, GateHash.levelsOf(disk.items.len), root_hex });
+
+                const mf = try std.fs.cwd().createFile(manifest_path, .{});
+                defer mf.close();
+                try mf.writeAll(doc.items);
+                try stdout.print("  manifest written: {s}\n", .{manifest_path});
+                try stdout.print("GATE ATTESTED — root sha256:{s} over {d} files.\n", .{ root_hex, disk.items.len });
+                try stdout.print("Commit the manifest together with the change it attests.\n", .{});
+                try stdout.print("================================================================================\n\n", .{});
+                return;
+            }
+
+            // ---- 3. Check mode: compare against the attested manifest ----
+            const ManiFile = struct { path: []const u8, bytes: u64, sha_hex: []const u8 };
+            const gateStr = struct {
+                fn f(line: []const u8, key: []const u8) ?[]const u8 {
+                    var kb: [128]u8 = undefined;
+                    const k = std.fmt.bufPrint(&kb, "{s}=\"", .{key}) catch return null;
+                    const st = std.mem.indexOf(u8, line, k) orelse return null;
+                    const rest = line[st + k.len ..];
+                    const en = std.mem.indexOfScalar(u8, rest, '"') orelse return null;
+                    return rest[0..en];
+                }
+            }.f;
+            const gateInt = struct {
+                fn f(line: []const u8, key: []const u8) ?u64 {
+                    var kb: [64]u8 = undefined;
+                    const k = std.fmt.bufPrint(&kb, "{s}=", .{key}) catch return null;
+                    const st = std.mem.indexOf(u8, line, k) orelse return null;
+                    const rest = line[st + k.len ..];
+                    var e: usize = 0;
+                    while (e < rest.len and rest[e] >= '0' and rest[e] <= '9') e += 1;
+                    return std.fmt.parseInt(u64, rest[0..e], 10) catch null;
+                }
+            }.f;
+
+            const man_file = std.fs.cwd().openFile(manifest_path, .{}) catch {
+                try stdout.print("GATE BLOCKED — no gate manifest at {s}\n", .{manifest_path});
+                try stdout.print("Attest the toolchain first:  lin gate-attest --manifest {s}\n", .{manifest_path});
+                try stdout.print("================================================================================\n\n", .{});
+                std.process.exit(3);
+            };
+            defer man_file.close();
+            var mbuf = std.ArrayList(u8).init(LIA_ALLOC);
+            defer mbuf.deinit();
+            try man_file.reader().readAllArrayList(&mbuf, 16 << 20);
+
+            var expected_root: []const u8 = "";
+            var listed = std.ArrayList(ManiFile).init(LIA_ALLOC);
+            defer listed.deinit();
+            var it = std.mem.tokenizeAny(u8, mbuf.items, "\n");
+            while (it.next()) |raw| {
+                const line = std.mem.trim(u8, raw, " \r\t");
+                if (gateStr(line, "merkle_root")) |r| {
+                    if (expected_root.len == 0 and std.mem.startsWith(u8, r, "sha256:")) expected_root = r["sha256:".len..];
+                }
+                if (!std.mem.startsWith(u8, line, ".f{")) continue;
+                const p = gateStr(line, "path") orelse continue;
+                const b = gateInt(line, "bytes") orelse 0;
+                const s = gateStr(line, "sha256") orelse continue;
+                const s_hex = if (std.mem.startsWith(u8, s, "sha256:")) s["sha256:".len..] else s;
+                try listed.append(.{ .path = p, .bytes = b, .sha_hex = s_hex });
+            }
+
+            if (expected_root.len != 64 or listed.items.len == 0) {
+                try stdout.print("GATE BLOCKED — manifest {s} is malformed or empty.\n", .{manifest_path});
+                try stdout.print("  merkle_root found: {s}   tracked files listed: {d}\n", .{ if (expected_root.len != 0) expected_root else "(none)", listed.items.len });
+                try stdout.print("================================================================================\n\n", .{});
+                std.process.exit(3);
+            }
+
+            var changes: usize = 0;
+            var modified: usize = 0;
+            var added: usize = 0;
+            var deleted: usize = 0;
+            for (disk.items) |gf| {
+                var hx: [64]u8 = undefined;
+                _ = try std.fmt.bufPrint(&hx, "{s}", .{std.fmt.fmtSliceHexLower(&gf.sha)});
+                var found = false;
+                for (listed.items) |lf| {
+                    if (!std.mem.eql(u8, lf.path, gf.path)) continue;
+                    found = true;
+                    if (!std.mem.eql(u8, lf.sha_hex, &hx) or lf.bytes != gf.bytes) {
+                        modified += 1;
+                        changes += 1;
+                        try stdout.print("  MODIFIED  {s}\n", .{gf.path});
+                        try stdout.print("            attested sha256:{s} ({d} B)\n", .{ lf.sha_hex[0..16], lf.bytes });
+                        try stdout.print("            on-disk  sha256:{s} ({d} B)\n", .{ hx[0..16], gf.bytes });
+                    }
+                    break;
+                }
+                if (!found) {
+                    added += 1;
+                    changes += 1;
+                    try stdout.print("  ADDED     {s}  sha256:{s}\n", .{ gf.path, hx[0..16] });
+                }
+            }
+            for (listed.items) |lf| {
+                var found = false;
+                for (disk.items) |gf| {
+                    if (std.mem.eql(u8, gf.path, lf.path)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    deleted += 1;
+                    changes += 1;
+                    try stdout.print("  DELETED   {s}\n", .{lf.path});
+                }
+            }
+
+            const root_matches = std.mem.eql(u8, expected_root, &root_hex);
+            try stdout.print("  merkle root (attested) ... sha256:{s}\n", .{expected_root});
+            try stdout.print("  merkle root (recomputed) . sha256:{s}\n\n", .{root_hex});
+
+            if (changes != 0 or !root_matches) {
+                try stdout.print("GATE BLOCKED — {d} unattested change(s): {d} modified, {d} added, {d} deleted.\n", .{ changes, modified, added, deleted });
+                try stdout.print("The Merkle root of the tracked toolchain differs from the attested root in {s}.\n", .{manifest_path});
+                try stdout.print("A human must review the change and re-attest it:\n", .{});
+                try stdout.print("  lin gate-attest --manifest {s}   # then commit the manifest with the change\n", .{manifest_path});
+                try stdout.print("================================================================================\n\n", .{});
+                return error.GateBlocked;
+            }
+
+            try stdout.print("GATE OPEN — Merkle root matches the attested manifest ({d} files).\n", .{disk.items.len});
+            try stdout.print("No unattested change to the compiler or the independent C implementation.\n", .{});
             try stdout.print("================================================================================\n\n", .{});
             return;
         }

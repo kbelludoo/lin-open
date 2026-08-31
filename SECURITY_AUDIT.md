@@ -283,3 +283,89 @@ O recibo fixa a segunda implementação por hash: `engine_b_sha256="sha256:238fe
 - `n-version-verify` (nível de *bundle*) continua bloqueado pelo guard: ele precisa
   passar a usar esta segunda implementação e deixar de fixar as constantes de um
   único bundle.
+
+---
+
+## 9. LIN Gate — verificador de integridade no CI (2026-08-31)
+
+Item 3 do relatório: "LIN CI Integrity Checker: o *LIN Gate* que bloqueia um PR
+gerado por IA cujo *receipt Merkle root* difere do esperado". Implementado e
+executado, sem simulação.
+
+### O que faz
+
+`lin gate-check` (ou `make gate`):
+
+1. percorre o escopo rastreado — `compiler/`, `transpile/c/lin_c/`,
+   `transpile/c/tool/`, `transpile/c/test/` — e calcula o **SHA-256 real** de cada
+   arquivo em disco (stream, 16 KiB por vez);
+2. ordena os caminhos lexicograficamente e constrói uma **árvore de Merkle real**
+   com a canonicalização `LIN_GATE_MANIFEST_v1`:
+   - `folha_i = SHA256("lin:gate:leaf:" || caminho || ":" || bytes || ":" || hex(sha256))`
+   - `no(l,r) = SHA256("lin:gate:node:" || l || r)` (nó sem par é promovido)
+   - `raiz = redução sobre as folhas ordenadas`
+3. compara a raiz recomputada com a raiz atestada em `lin_gate_manifest.rulel`
+   (31 arquivos, 6 níveis) e lista cada divergência por arquivo;
+4. decide: **GATE OPEN** (exit 0), **GATE BLOCKED** (exit 1) ou "não avaliável"
+   — manifesto ausente/malformado/escopo vazio (exit 3, nunca 0).
+
+`lin gate-attest` regrava o manifesto com a raiz recalculada. É o ato humano de
+re-atestação: quem revisa a mudança assina o novo raiz e o commita junto com ela.
+
+### Resultado executado
+
+```
+$ make gate
+  scope ........... compiler,transpile/c/lin_c,transpile/c/tool,transpile/c/test
+  tracked files ... 31
+  merkle levels ... 6
+  git HEAD ........ 8c6bf25
+  recomputed root . sha256:948850d1abcad93752d49bccb0d97b20738640fd8d318a73dbf314cb26b2f0e0
+  merkle root (attested) ... sha256:948850d1abcad93752d49bccb0d97b20738640fd8d318a73dbf314cb26b2f0e0
+  merkle root (recomputed) . sha256:948850d1abcad93752d49bccb0d97b20738640fd8d318a73dbf314cb26b2f0e0
+GATE OPEN — Merkle root matches the attested manifest (31 files).
+```
+
+Injeções de falha executadas contra o repositório real (todas bloqueadas):
+
+| Injeção | Saída | Exit |
+| :--- | :--- | :--- |
+| `printf '\n// tampered\n' >> compiler/lin_gpu_execution_oracle.zig` | `MODIFIED` + raiz diferente | **1** |
+| `echo 'const probe = 1;' > compiler/zz_gate_probe.zig` | `ADDED` | **1** |
+| `mv transpile/c/lin_c/lin_sha256.h /tmp/` | `DELETED` | **1** |
+| `gate-check --manifest /tmp/nope.rulel` (inexistente) | "não avaliável" | **3** |
+| escopo vazio (cwd fora do repositório) | `GATE BLOCKED — no tracked files` | **3** |
+
+O gate também pegou a si mesmo durante o desenvolvimento: editar `compiler/lin.zig`
+e recompilar invalidou o manifesto até a re-atestação — comportamento esperado, já
+que o compilador é parte do artefato atestado.
+
+Os mesmos cinco caminhos são assertados em `test/attestation_honesty.sh` (seção 7,
+8 asserções, dentro de um *sandbox* temporário para não sujar o repositório), mais
+uma asserção de que o manifesto commitado confere com a árvore na raiz do repo.
+Total: **35 asserções**.
+
+### Por que isso é um produto e não teatro
+
+- O verificador é o próprio binário construído a partir do checkout do PR — não há
+  raiz "esperada" embutida em código; ela está no manifesto, em texto, auditável.
+- Nenhum caminho de sucesso imprime `PASS` sem ter calculado: se o manifesto falta,
+  se o escopo está vazio ou se qualquer digest diverge, o exit é ≠ 0 e nada é escrito.
+- A raiz é determinística (atestada duas vezes no teste → mesmo valor), então um
+  terceiro pode reproduzi-la em qualquer máquina com `make gate-attest`.
+
+### O que isto **não** cobre
+
+- **Assinatura da atestação.** O manifesto não é assinado: um autor malicioso com
+  permissão de push pode rodar `make gate-attest` e commitar a raiz nova. O gate
+  impede mudança *silenciosa*, não mudança *autorizada* — a defesa contra isso é o
+  `notary-verify` (quórum Ed25519 real), que ainda exige um roster fora do repositório.
+- **Conteúdo semântico.** O gate garante que o toolchain é o atestado; não prova que
+  ele é correto. A correção vem das suítes (N-Version, honestidade, `integrity`).
+- **Fora do escopo.** `src/**` (corpus `.lin`), `stubs/**`, os testes auto-hospedados
+  na raiz e os artefatos de build não entram na raiz — só o compilador e a segunda
+  implementação independente.
+- **CI não executado aqui.** O sandbox não tem GitHub Actions; o YAML
+  `.github/workflows/lin_gate.yml` foi escrito, mas o push de arquivos de workflow é
+  recusado pelo token desta sessão (permissão `workflows`). O gate em si foi
+  verificado localmente, comando por comando.
