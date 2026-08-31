@@ -1,0 +1,91 @@
+@RULEL:DOC_HOST_ABI_1:1.0.0
+~MARKDOWN_SPEC
+# HOST-ABI-1 — Fronteira mínima de host da LinVM (3 I/O + 6 strings)
+
+> **Status (R5): PROPOSED.** Esta é a tabela **fechada e versionada** de intrínsecos
+> que a imagem `compiler0.linbc` pode usar (plano §4.2/§4.3). Os 6 intrínsecos de
+> string **existem hoje** como helpers do host Zig — não são especulação: a semântica
+> abaixo foi extraída de `compiler/lin.zig` (`_lia_len` :108, `_lia_str`/`_lia_cat`/
+> `_lia_from_code` :23–68, `starts_lit` :1170, `rg_count_lit` :1999) e o uso real foi
+> medido no corpus: `charCodeAt` 212×, `.length` 200×, `starts_lit` 156×,
+> `rg_count_lit` 27×, `String.fromCharCode` 2× (src/*.lin). **Meta do plano: ≤ 20
+> intrínsecos — este ABI tem 9.** Os 3 de fronteira (I/O) não têm implementação
+> ainda: são entrega de **V1** (host C11), com a emenda `R6` de
+> `LINVM_COMPILER0_PLAN.rulel` §7 aprovada antes (host runtime mínimo C11 em
+> `transpile/c/lin_c/`).
+>
+> Strings são **sequências de bytes** (UTF-8 agnóstico; indexação por byte), vindas
+> de pool imutável gerenciado pelo host. Nenhum intrínseco expõe relógio, aleatoriedade,
+> rede, variáveis de ambiente ou endereços — tudo que afeta output é input hashável
+> (a propriedade de receipt se preserva por construção, plano §4.2).
+
+Dependência: V0 de `docs/LINVM_COMPILER0_PLAN.rulel`. Documentos irmãos:
+`docs/LINVM_ISA_V1.rulel` · `docs/LINBC1_FORMAT.rulel`.
+
+---
+
+## 1. Fronteira de I/O (3 intrínsecos — a única fronteira com o mundo)
+
+| abi_id | nome | assinatura | semântica | determinismo |
+|---|---|---|---|---|
+| 0 | `host_read` | `(path: string) → bytes` | lê arquivo do workspace declarado | digest do conteúdo **entra no receipt** da compilação (input-bound, como hoje); ausência/erro = falha fechada |
+| 1 | `host_write` | `(path: string, data: bytes) → 0|1` | emite artefato byte-exato | digest reportado; escrita só ocorre se toda a compilação verificar |
+| 2 | `host_exit` | `(code: i64) → !` | termina o processo | fail-closed: divergência interna ⇒ `code != 0` e **nada escrito** |
+
+Regras da fronteira: paths relativos a um único workspace declarado no manifesto da
+imagem; sem glob, sem rede, sem herdar env; leitura dupla do mesmo path dentro da
+mesma execução deve produzir os mesmos bytes (host re-hashing confere).
+
+## 2. Intrínsecos de string (6 — subestrato congelado)
+
+| abi_id | nome canônico | sintaxe LIN atual | semântica exata (extraída do host Zig) |
+|---|---|---|---|
+| 3 | `str_len` | `s.length` | número de bytes de `s` |
+| 4 | `str_char_code_at` | `s.charCodeAt(i)` | byte em `i` como i64; `i < 0` ou `i >= len` ⇒ **0** |
+| 5 | `str_starts_lit` | `starts_lit(s, i, lit)` | 1 sse `lit` casa byte-a-byte em `s` a partir de `i`; estouro do fim ⇒ 0; `lit` vazio ⇒ **1** |
+| 6 | `str_count_lit` | `rg_count_lit(hay, needle)` | nº de posições `i ∈ [0, len)` onde `starts_lit(hay, i, needle)==1` — **sobrepostas contam** |
+| 7 | `str_from_code` | `String.fromCharCode(c)` | string de 1 byte se `0 <= c < 256`; senão `""` |
+| 8 | `str_cat` | `a + b` (strings) | concatenação com coerção `_lia_str`: string = identidade; i64 = decimal ASCII; bool = `true`/`false`; operando que coage p/ `""` é identidade do outro |
+
+## 3. Vetores dourados (tabela fechada por abi_id)
+
+**Proveniência:** derivados da semântica acima e **verificados por emulação
+byte-exata independente** (rodada neste checkout, 2026-08-31; 19/19 consistentes,
+incl. a correção de fronteira `starts_lit('hello',3,'lo')`). Falta a medição no
+host Zig — que é parte do gate G(V0)/G(V1) e depende de CI.
+
+| # | chamada | resultado |
+|---|---|---|
+| S0 | `str_len("hello")` | `5` |
+| S1 | `str_len("")` | `0` |
+| S2 | `str_char_code_at("ABC", 1)` | `66` |
+| S3 | `str_char_code_at("ABC", -1)` | `0` |
+| S4 | `str_char_code_at("ABC", 3)` | `0` |
+| S5 | `str_starts_lit("hello world", 6, "world")` | `1` |
+| S6 | `str_starts_lit("hello", 3, "lo")` | `1` |
+| S7 | `str_starts_lit("hello", 4, "lo")` | `0` (cabe 1 byte, needle tem 2) |
+| S8 | `str_starts_lit("hello", 0, "")` | `1` (needle vazio) |
+| S9 | `str_count_lit("ababab", "ab")` | `3` (i=0,2,4) |
+| S10 | `str_count_lit("aaa", "aa")` | `2` (sobrepostas contam) |
+| S11 | `str_count_lit("abc", "")` | `3` (needle vazio casa em [0,len)) |
+| S12 | `str_from_code(65)` | `"A"` |
+| S13 | `str_from_code(256)` | `""` |
+| S14 | `str_from_code(-1)` | `""` |
+| S15 | `str_cat("a", "b")` | `"ab"` |
+| S16 | `str_cat(12, 3)` | `"123"` |
+| S17 | `str_cat("x", "")` | `"x"` |
+| S18 | `str_cat("", 7)` | `"7"` |
+
+## 4. Regras do ABI (bind da imagem, auditável)
+
+1. **Tabela fechada:** imagem LINBC1 declara os `abi_id` usados; o loader rejeita
+   imagem com intrínseco fora da tabela (fail-closed — `LINBC1_FORMAT.rulel` §3).
+2. **Versionado:** qualquer mudança de semântica de intrínseco = `HOST_ABI_2`
+   (um digest um significado, R4); aditivos aumentam a tabela sem reordenar ids.
+3. **Implementável em duplo:** todo host (C11, Zig-VL) implementa exatamente estes 9;
+   o custo de port do C11 disso se mede em V1 (meta ≤ 20 intrínsecos ✓ 9 hoje).
+4. **Sem efeitos puros na VM:** intrínsecos 3–8 são puros e totais; efeitos (0–2)
+   existem só na fronteira e são contabilizados no receipt — nunca dentro da
+   semântica pura do compilador (B4 do plano irmão).
+5. **Evidência por vetor:** cada intrínseco entra com goldens S*; expansão exige
+   vetores novos no mesmo PR (princípio Q5 da emenda 1.5.0 draft).
