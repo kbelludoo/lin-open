@@ -39,20 +39,47 @@ Conclusões que orientam o plano:
 
 ---
 
-## 2. Âncoras existentes — hashes medidos (baseline)
+## 2. Âncoras — baseline medido e gate P0
 
-`lin verify-cert` (lin.zig:16015-16083) já computa estas âncoras. **Valores medidos** neste
-commit (`4debcf0`, 2026-08-31):
+O bootstrap já computa 3 âncoras reproduzíveis (`lin verify-cert`, `lin cert build`). O P0
+adiciona `lin selfhost parity` (instrumentação read-only, emenda `R2a`), que recomputa as 3
+âncoras + o **`H_selfhost_root(Zig, 0)`** e o manifesto `I_canon` dos 20 `.lin`.
 
-| Âncora | Fórmula exata (nível de bytes) | Valor medido |
+### 2.1 Âncoras estáveis (não dependem da fonte do compilador) — **asserted**
+
+Estas 3 mudam **somente** se o corpus de 20 `.lin` mudar. `lin selfhost parity` as compara
+contra o baseline abaixo e **falha** (exit 1) em divergência:
+
+| Âncora | Fórmula exata (nível de bytes) | Valor medido (estável) |
 |---|---|---|
-| `compiler_sha256` | `SHA-256(bytes(compiler/lin.zig))` | `5d7b928ca0e96cbdaa434e92194189a0a1abe6687584020b84701f61f46780a7` |
 | `corpus_sha256` | `SHA-256(‖ bytes crus dos 20 .lin na ordem de corpus_targets, sem separador)` | `28b64d7433c44f02a176a1dd5617abfc88d23181e2046d3283f104d0a637a766` |
 | `ledger_sha256` | `SHA-256(‖ SHA-256(cada .lin), mesma ordem)` — 32 bytes crus | `d32d0d6d0897d0786b93a50ca1eb6fa88ee9153e09a8b30a3b09354d1d8545a1` |
-| `certificate_id` | `SHA-256("LIN:SEMANTIC_CERTIFICATE:1.0.0" ‖ compiler ‖ corpus ‖ ledger)` — 32 bytes crus | `sha256:7751f3ee21291b9b65c39954239a4fe5938e848ecf4cfdb6d5c52c5add0d56b9` |
+| `selfhost_root_zig_0` | `H_selfhost_root` do §3.2 sobre os 20 `.lin` (Merkle, domínio `selfhost:`) | `sha256:f7a0c6fae02cdb89fc3236619919432d4138015f9bdb8a69209d797c01e1d01f` |
 
-Esses 4 valores são o **baseline da Fase 0**: antes de qualquer port, `lin cert build` +
-`lin verify-cert` devem reproduzi-los. Se mudarem, algo driftou a montante e o plano **pausa**.
+`selfhost_root_zig_0` fica **pinado** em `AGENTS.md` (`.h{}`). É a âncora de referência do
+P0: toda fase futura deve reproduzi-la como base antes de acrescentar seus `H_M`.
+
+### 2.2 Âncoras autorreferenciais (dependem da fonte do compilador) — **reported**
+
+`compiler_sha256` e `certificate_id` mudam **sempre** que `compiler/lin.zig` muda (por
+definição: são o hash da fonte). Por isso o P0 **as reporta** (não as asserta) — e as
+re-pina aqui, por proveniência, após cada mudança autorizada do bootstrap:
+
+| Âncora | Fórmula | Pré-P0 (`4debcf0`) | Pós-P0 (instrumentado) |
+|---|---|---|---|
+| `compiler_sha256` | `SHA-256(bytes(compiler/lin.zig))` | `5d7b928ca0e96cbdaa434e92194189a0a1abe6687584020b84701f61f46780a7` | `2928bcc80291f520131549ff67b119ad2d8606591229c2269594edb2f3ecc74f` |
+| `certificate_id` | `SHA-256(domain ‖ compiler ‖ corpus ‖ ledger)` (32 bytes crus) | `sha256:7751f3ee21291b9b65c39954239a4fe5938e848ecf4cfdb6d5c52c5add0d56b9` | `sha256:3399e86f77c0dd36e6493c3416a7ec1e72abb0d00f5b3d2f5cb4ddfb866352cf` |
+
+### 2.3 Gate P0 (`GATE(0)`)
+
+```
+GATE(0) PASS  ⇔  lin selfhost parity  →  .status="PASS"   (asserta corpus/ledger/root)
+                    e  lin cert build && lin verify-cert  →  .status="PASS"   (auto-consistente)
+```
+
+Se `corpus_sha256`, `ledger_sha256` ou `selfhost_root_zig_0` divergirem do baseline, algo
+driftou a montante (corpus tocado sem registro) e o plano **pausa**. Mudar o corpus exige
+novo baseline documentado (risco R6, §6).
 
 ---
 
@@ -107,18 +134,26 @@ Nenhum domínio mistura — colisão anula a verificação.
 _Cada fase consome o `H_M` da anterior. P5 (receipts) vem por último de propósito: receipt
 **emite** roots, então deve congelar **depois** que o resto parar de mudar._
 
-### Fase 0 — Instrumentação e `selfhost parity`
+### Fase 0 — Instrumentação e `selfhost parity` — **FEITA (awaiting CI)**
 
-- **Escopo:** zero mudança semântica. Novo subcomando `lin selfhost parity` no bootstrap:
-  emite os âncoras medidos (seção 2) + manifest de `I_canon` + `H_F`/`H_M` de referência
-  (instrumentação read-only das 180 funções Zig).
-- **Entregas:** este documento; marcador `src/lin_selfhost_plan.lin` (R0); manifest `I_canon`
-  (lista de inputs byte-exact); baseline report com os valores da seção 2.
-- **Gate:** `GATE(0)` = os 4 âncoras medidos reproduzidos por `lin selfhost parity` e
-  `lin verify-cert`; `H_selfhost_root(Zig, 0)` registrado.
+- **Status:** `R2a` assinada (`AGENTS.md@1.4.1`); subcomando `lin selfhost parity`
+  implementado em `compiler/lin.zig` (bloco autossuficiente, read-only, zero mudança
+  semântica); `selfhost_root_zig_0` pinado em `AGENTS.md` (`.h{}`); baseline re-pinado na
+  seção 2. Faltando: build+run em CI para o `GATE(0)` virar PASS verificado.
+- **Escopo (P0a, entregue):** subcomando `lin selfhost parity` recomputa e emite:
+  as 3 âncoras estáveis (asserted), as 2 autorreferenciais (reported), o manifesto
+  `I_canon` (path/bytes/sha256 dos 20 `.lin`) e `H_selfhost_root(Zig, 0)` (Merkle §3.2).
+- **Escopo (P0b, próximo):** instrumentação read-only por função — `H_F`/`H_M` de
+  referência das 180 funções Zig (§3.1) sobre o `I_canon`, alimentando as referências
+  `H_selfhost_root(Zig, k)` das fases P1..P6.
+- **Entregas:** este documento; marcador `src/lin_selfhost_plan.lin` (R0); `AGENTS.md@1.4.1`
+  com `R2a` + `selfhost_parity` + `selfhost_root_zig_0`; baseline report (§2).
+- **Gate:** `GATE(0)` conforme §2.3 — `lin selfhost parity` PASS (asserta as 3 âncoras
+  estáveis) **e** `lin cert build && lin verify-cert` PASS (auto-consistente).
 - **Anti-gate:** a instrumentação é a **única exceção autorizada** ao freeze R2, formalizada
-  como emenda `R2a` em `AGENTS.md` **antes** de tocar no bootstrap. Sem `R2a` assinada, P0
-  não executa. Nenhum novo `.zig` (R1) — o subcomando vive em `compiler/lin.zig`.
+  como emenda `R2a` em `AGENTS.md` **antes** de tocar no bootstrap (cumprido). Nenhum novo
+  `.zig` (R1) — o subcomando vive em `compiler/lin.zig`. Depois de P0, o freeze volta a ser
+  absoluto até P7.
 
 ### Fase 1 — LinVM (33 opcodes)
 
@@ -247,6 +282,7 @@ _Cada fase consome o `H_M` da anterior. P5 (receipts) vem por último de propós
 - `selfhost_root_final` (Fase 7) entra em `AGENTS.md` (nova versão) ao lado de
   `compat_root`/`live_git_root`.
 
-_Documento de análise e decisão. Nenhum código do compilador foi modificado por este
-documento; a instrumentação de P0 (com emenda `R2a`) é a primeira — e única autorizada —
-mudança no bootstrap._
+_Documento de análise e decisão (append-only desde 2026-08-31). A instrumentação de P0
+(emenda `R2a`, `AGENTS.md@1.4.1`) foi a primeira — e, até P7, única autorizada — mudança
+no bootstrap. Todo ajuste posterior a `compiler/lin.zig` exige nova emenda documentada
+aqui, com re-pinning das âncoras autorreferenciais da seção 2.2._

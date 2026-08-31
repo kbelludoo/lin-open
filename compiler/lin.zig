@@ -15891,6 +15891,175 @@ pub fn main() !void {
         if (!pass) std.process.exit(1);
         return;
     }
+    if (argEq(cmd, "selfhost")) {
+        // P0 instrumentation (R2a, docs/SELF_HOSTING_PLAN.rulel): read-only
+        // parity measurement. Recomputes the baseline anchors, emits the
+        // I_canon manifest and H_selfhost_root(Zig, 0). Zero semantic change
+        // to the compiler pipeline — this block only reads files and hashes
+        // bytes; it feeds no result back into compile/verify of .lin code.
+        if (args.len < 3 or !argEq(args[2], "parity")) {
+            try stderr.print("usage: lin selfhost parity\n", .{});
+            std.process.exit(1);
+        }
+
+        const corpus_targets = [_][]const u8{
+            "src/zig_to_lin_transpiler.lin",
+            "src/lin_discovery_engine.lin",
+            "src/lin_merkle_tree.lin",
+            "src/lin_workload_planner.lin",
+            "src/lin_adaptive_replanning.lin",
+            "src/lin_autonomous_discovery.lin",
+            "src/lin_blind_generalization.lin",
+            "src/lin_binary_merkle_provenance.lin",
+            "src/lin_compatibility_matrix.lin",
+            "src/lin_c_expr_parser.lin",
+            "src/lin_array.lin",
+            "src/lin_array_kernel.lin",
+            "src/lin_bithacks.lin",
+            "src/lin_crypto.lin",
+            "src/lin_from_c.lin",
+            "src/lin_from_js.lin",
+            "src/lin_lint.lin",
+            "src/lin_regions.lin",
+            "examples/bytes.lin",
+            "examples/safe-compare.lin",
+        };
+
+        // compiler_sha256 = SHA-256(bytes(compiler/lin.zig)). Self-referential:
+        // reported, not asserted (it changes when this source changes).
+        var compiler_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+        if (std.fs.cwd().openFile("compiler/lin.zig", .{})) |src_file| {
+            defer src_file.close();
+            var src_buf: [16384]u8 = undefined;
+            while (true) {
+                const n = src_file.read(&src_buf) catch 0;
+                if (n == 0) break;
+                compiler_hasher.update(src_buf[0..n]);
+            }
+        } else |_| {}
+        var compiler_digest: [32]u8 = undefined;
+        compiler_hasher.final(&compiler_digest);
+
+        // corpus_sha256 = SHA-256(‖ raw bytes of the 20 .lin, corpus_targets
+        // order, no separator). ledger_sha256 = SHA-256(‖ per-file SHA-256).
+        var corpus_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+        var ledger_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+        var per_file: [20][32]u8 = undefined;
+        var per_len: [20]usize = [_]usize{0} ** 20;
+        var present: usize = 0;
+        for (corpus_targets, 0..) |path, idx| {
+            if (std.fs.cwd().openFile(path, .{})) |f| {
+                defer f.close();
+                if (f.readToEndAlloc(LIA_ALLOC, 10 * 1024 * 1024)) |content| {
+                    defer LIA_ALLOC.free(content);
+                    per_len[idx] = content.len;
+                    corpus_hasher.update(content);
+                    var target_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+                    target_hasher.update(content);
+                    target_hasher.final(&per_file[idx]);
+                    ledger_hasher.update(&per_file[idx]);
+                    present += 1;
+                } else |_| {}
+            } else |_| {}
+        }
+        var corpus_digest: [32]u8 = undefined;
+        corpus_hasher.final(&corpus_digest);
+        var ledger_digest: [32]u8 = undefined;
+        ledger_hasher.final(&ledger_digest);
+
+        // certificate_id = SHA-256(domain ‖ compiler ‖ corpus ‖ ledger),
+        // raw 32-byte digests (identical to `lin cert build`).
+        var cert_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+        cert_hasher.update("LIN:SEMANTIC_CERTIFICATE:1.0.0");
+        cert_hasher.update(&compiler_digest);
+        cert_hasher.update(&corpus_digest);
+        cert_hasher.update(&ledger_digest);
+        var cert_digest: [32]u8 = undefined;
+        cert_hasher.final(&cert_digest);
+
+        // H_selfhost_root(Zig, 0): balanced pairwise Merkle over the 20 corpus
+        // files with domain separation (docs/SELF_HOSTING_PLAN.rulel §3.2):
+        //   leaf = SHA-256("selfhost:leaf:" ‖ path ‖ 0x00 ‖ file_sha256)
+        //   node = SHA-256("selfhost:node:" ‖ left ‖ right)   (odd node promoted)
+        //   root = SHA-256("selfhost:root:" ‖ top)
+        var level: [20][32]u8 = undefined;
+        for (per_file, 0..) |d, idx| {
+            var lh = std.crypto.hash.sha2.Sha256.init(.{});
+            lh.update("selfhost:leaf:");
+            lh.update(corpus_targets[idx]);
+            lh.update(&[_]u8{0});
+            lh.update(&d);
+            lh.final(&level[idx]);
+        }
+        var level_len: usize = 20;
+        while (level_len > 1) {
+            var next: [20][32]u8 = undefined;
+            var next_len: usize = 0;
+            var i: usize = 0;
+            while (i < level_len) : (i += 2) {
+                if (i + 1 < level_len) {
+                    var nh = std.crypto.hash.sha2.Sha256.init(.{});
+                    nh.update("selfhost:node:");
+                    nh.update(&level[i]);
+                    nh.update(&level[i + 1]);
+                    nh.final(&next[next_len]);
+                } else {
+                    next[next_len] = level[i];
+                }
+                next_len += 1;
+            }
+            level = next;
+            level_len = next_len;
+        }
+        var root_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+        root_hasher.update("selfhost:root:");
+        root_hasher.update(&level[0]);
+        var selfhost_root: [32]u8 = undefined;
+        root_hasher.final(&selfhost_root);
+
+        // Baselines pinned in docs/SELF_HOSTING_PLAN.rulel §2 (commit 4debcf0).
+        // corpus/ledger/root do NOT depend on the compiler source, so they are
+        // asserted; compiler/cert are self-referential, so they are reported.
+        const baseline_corp = "28b64d7433c44f02a176a1dd5617abfc88d23181e2046d3283f104d0a637a766";
+        const baseline_ledg = "d32d0d6d0897d0786b93a50ca1eb6fa88ee9153e09a8b30a3b09354d1d8545a1";
+        const baseline_root = "f7a0c6fae02cdb89fc3236619919432d4138015f9bdb8a69209d797c01e1d01f";
+        const comp_hex = std.fmt.fmtSliceHexLower(&compiler_digest);
+        const corp_hex = std.fmt.fmtSliceHexLower(&corpus_digest);
+        const ledg_hex = std.fmt.fmtSliceHexLower(&ledger_digest);
+        const cert_hex = std.fmt.fmtSliceHexLower(&cert_digest);
+        const root_hex = std.fmt.fmtSliceHexLower(&selfhost_root);
+        const corpus_match = std.mem.eql(u8, corp_hex, baseline_corp);
+        const ledger_match = std.mem.eql(u8, ledg_hex, baseline_ledg);
+        const root_match = std.mem.eql(u8, root_hex, baseline_root);
+        const all_match = corpus_match and ledger_match and root_match and present == 20;
+
+        try stdout.print("@RULEL:SELFHOST_PARITY:1.0.0\n", .{});
+        try stdout.print(".phase=P0\n", .{});
+        try stdout.print(".compiler_sha256_recomputed=\"{s}\"\n", .{comp_hex});
+        try stdout.print(".corpus_sha256_recomputed=\"{s}\"\n", .{corp_hex});
+        try stdout.print(".ledger_sha256_recomputed=\"{s}\"\n", .{ledg_hex});
+        try stdout.print(".certificate_id_recomputed=\"sha256:{s}\"\n", .{cert_hex});
+        try stdout.print(".selfhost_root_zig_0=\"sha256:{s}\"\n", .{root_hex});
+        try stdout.print(".icanon{{\n", .{});
+        for (corpus_targets, 0..) |path, idx| {
+            const fh = std.fmt.fmtSliceHexLower(&per_file[idx]);
+            try stdout.print("  .file{{ path=\"{s}\" bytes={d} sha256=\"{s}\" }}\n", .{ path, per_len[idx], fh });
+        }
+        try stdout.print("}}\n", .{});
+        try stdout.print(".corpus_match={s}\n", .{if (corpus_match) "true" else "false"});
+        try stdout.print(".ledger_match={s}\n", .{if (ledger_match) "true" else "false"});
+        try stdout.print(".selfhost_root_match={s}\n", .{if (root_match) "true" else "false"});
+        try stdout.print(".corpus_present={d}/{d}\n", .{ present, corpus_targets.len });
+        if (all_match) {
+            try stdout.print(".verification=PARITY_BASELINE_VALID\n", .{});
+            try stdout.print(".status=\"PASS\"\n", .{});
+        } else {
+            try stdout.print(".verification=PARITY_BASELINE_MISMATCH\n", .{});
+            try stdout.print(".status=\"FAIL\"\n", .{});
+            std.process.exit(1);
+        }
+        return;
+    }
     if (argEq(cmd, "verify-cert")) {
         if (args.len < 3) {
             try stderr.print("usage: lin verify-cert <certificate.rulel>\n", .{});

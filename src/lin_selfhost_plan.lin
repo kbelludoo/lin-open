@@ -15,7 +15,7 @@
 }
 
 !shp_status(i: int): string {
-  ?(i == 0){ ^"plan_written_gate_pending" }
+  ?(i == 0){ ^"p0_instrumented_awaiting_ci" }
   : { ^"blocked_on_previous" };
 }
 
@@ -36,6 +36,6 @@
     out = out + shp_line(k) + shp_nl();
     k = k + 1;
   };
-  out = out + ".status=WAITING_P0_BASELINE";
+  out = out + ".status=P0_INSTRUMENTED_AWAITING_CI";
   ^out;
 }
