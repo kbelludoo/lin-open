@@ -1,0 +1,143 @@
+@LIN:L1c:0.2
+@LINVM_EMBEDDED{version=1 purpose=mini_linvm_interpreter_written_in_lin}
+
+// ============================================================================
+// SEGUNDA VERSÃO EM LinVM — um mini-intérprete da LinVM escrito em LIN.
+//
+// Tese (confirmada): a LinVM é interpretável simbolicamente (e aqui, também
+// dogfood-ada): estado = PC + pilha + locais; heap-free; sem syscalls; sem
+// ponteiros. Abaixo, o bytecode oficial dos dois programas (opcodes seguem a
+// enum `VmOp` real de compiler/lin.zig) é EXECUTADO por um interpretador LIN.
+//
+// Correção em relação à demonstração original:
+//   O rastreio de fatorial trazia `jump_if_false 14` com `14: jump 02` logo
+//   antes — o salto apontaria para o `jump`, causando LOOP INFINITO. Aqui o
+//   alvo correto é `jump_if_false 15` (pula direto para o fim), como na LinVM
+//   real, que POPA o operando no `jump_if_false`.
+//
+// Resultados esperados (bit-exact, aritmética i64 com wrap):
+//   sq_demo()   -> 64   (x=7, y=15)
+//   fact_demo() -> 24   (n=4)
+// ============================================================================
+
+// ---------------------------------------------------------------------------
+// Fonte canônica LIN dos dois programas interpretados abaixo.
+// ---------------------------------------------------------------------------
+!soma_quadrado_com_offset(x: int, y: int) -> int {
+    quadrado = x * x;
+    resultado = quadrado + y;
+    ^resultado;
+}
+
+!fatorial(n: int) -> int {
+    acc = 1;
+    while (n > 1) {
+        acc = acc * n;
+        n = n - 1;
+    };
+    ^acc;
+}
+
+// ---------------------------------------------------------------------------
+// Interpretador LinVM em LIN.
+// Opcodes usados (subconjunto da enum VmOp de compiler/lin.zig):
+//   0 push_const   1 load_local   2 store_local   3 add   4 sub   5 mul
+//  19 cmp_gt      23 jump         24 jump_if_false 29 ret
+// ---------------------------------------------------------------------------
+!vm_run(prog: int, in0: int, in1: int): int {
+    opc: [20]int;
+    arg: [20]int;
+    loc: [8]int;
+    st:  [64]int;
+    n = 0;
+    pc = 0;
+    sp = 0;
+
+    loc[0] = in0;
+    loc[1] = in1;
+
+    // prog 0 = soma_quadrado_com_offset(x=7,y=15) -> 64
+    ?(prog == 0) {
+        opc[0] = 1;  arg[0] = 0;   // load_local 0    (x)
+        opc[1] = 1;  arg[1] = 0;   // load_local 0    (x)
+        opc[2] = 5;  arg[2] = 0;   // mul             (x*x)
+        opc[3] = 2;  arg[3] = 2;   // store_local 2   (quadrado)
+        opc[4] = 1;  arg[4] = 2;   // load_local 2    (quadrado)
+        opc[5] = 1;  arg[5] = 1;   // load_local 1    (y)
+        opc[6] = 3;  arg[6] = 0;   // add             (quadrado+y)
+        opc[7] = 2;  arg[7] = 3;   // store_local 3   (resultado)
+        opc[8] = 1;  arg[8] = 3;   // load_local 3    (resultado)
+        opc[9] = 29; arg[9] = 0;   // ret
+        n = 10;
+    } : (prog == 1) {
+        // prog 1 = fatorial(n=4) -> 24  (bytecode CORRIGIDO)
+        opc[0] = 0;  arg[0] = 1;   // push_const 1      (acc=1)
+        opc[1] = 2;  arg[1] = 1;   // store_local 1     (acc)
+        opc[2] = 1;  arg[2] = 0;   // load_local 0      (n)   [LoopHead]
+        opc[3] = 0;  arg[3] = 1;   // push_const 1
+        opc[4] = 19; arg[4] = 0;   // cmp_gt            (n>1)
+        opc[5] = 24; arg[5] = 15;  // jump_if_false 15  -> fim (corrigido)
+        opc[6] = 1;  arg[6] = 1;   // load_local 1      (acc)
+        opc[7] = 1;  arg[7] = 0;   // load_local 0      (n)
+        opc[8] = 5;  arg[8] = 0;   // mul               (acc*n)
+        opc[9] = 2;  arg[9] = 1;   // store_local 1     (acc=acc*n)
+        opc[10] = 1; arg[10] = 0;  // load_local 0      (n)
+        opc[11] = 0; arg[11] = 1;  // push_const 1
+        opc[12] = 4; arg[12] = 0;  // sub               (n-1)
+        opc[13] = 2; arg[13] = 0;  // store_local 0     (n=n-1)
+        opc[14] = 23; arg[14] = 2; // jump 2            -> LoopHead
+        opc[15] = 1; arg[15] = 1;  // load_local 1      (acc)   [Fim]
+        opc[16] = 29; arg[16] = 0; // ret
+        n = 17;
+    };
+
+    while (pc < n) {
+        o = opc[pc];
+        a = arg[pc];
+        pc = pc + 1;
+        ?(o == 0) {              // push_const
+            st[sp] = a;
+            sp = sp + 1;
+        } : (o == 1) {           // load_local
+            st[sp] = loc[a];
+            sp = sp + 1;
+        } : (o == 2) {           // store_local (pop)
+            sp = sp - 1;
+            loc[a] = st[sp];
+        } : (o == 3) {           // add (pop,pop,push)
+            sp = sp - 1; r = st[sp];
+            sp = sp - 1; l = st[sp];
+            st[sp] = l + r;
+            sp = sp + 1;
+        } : (o == 4) {           // sub
+            sp = sp - 1; r = st[sp];
+            sp = sp - 1; l = st[sp];
+            st[sp] = l - r;
+            sp = sp + 1;
+        } : (o == 5) {           // mul
+            sp = sp - 1; r = st[sp];
+            sp = sp - 1; l = st[sp];
+            st[sp] = l * r;
+            sp = sp + 1;
+        } : (o == 19) {          // cmp_gt (pop,pop,push 1/0)
+            sp = sp - 1; r = st[sp];
+            sp = sp - 1; l = st[sp];
+            ?(l > r) { st[sp] = 1 } : { st[sp] = 0 };
+            sp = sp + 1;
+        } : (o == 23) {          // jump
+            pc = a;
+        } : (o == 24) {          // jump_if_false (pop; se 0, pula)
+            sp = sp - 1;
+            ?(st[sp] == 0) { pc = a };
+        } : (o == 29) {          // ret -> topo da pilha
+            ^st[sp - 1];
+        };
+    };
+    ^0;
+}
+
+// Exportáveis (esperado: sq_demo -> 64, fact_demo -> 24)
+!sq_demo(): int { ^vm_run(0, 7, 15); }
+!fact_demo(): int { ^vm_run(1, 4, 0); }
+
+=ex{soma_quadrado_com_offset, fatorial, vm_run, sq_demo, fact_demo}

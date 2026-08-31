@@ -1,0 +1,91 @@
+@RULEL:DOC_COMPILER0_MIGRATION_ANALYSIS:1.0.0
+~MARKDOWN_SPEC
+# Compiler_0 — Análise de Migração de Linguagem & Execução em Memória
+
+> Verdicto: **NÃO reescrever `compiler/lin.zig` em outra linguagem.** A troca não traz
+> facilidade, quebra a verificabilidade dos receipts e não atinge self-hosting. O caminho
+> seguro e alinhado ao `AGENTS.md` é congelar o bootstrap Zig (regra R2) e transpilar o
+> núcleo para LIN (regra R3). O LIN **já roda em memória por design** — isso não depende
+> da linguagem do compilador.
+
+---
+
+## 1. Contexto verificado (dados do repo, 2026-08-31)
+
+| Item | Valor |
+|---|---|
+| `compiler_0` | `compiler/lin.zig` (17.057 linhas / ~737 KB) |
+| Superfície Zig | 1 bloco `comptime`; casts `@intCast`/`@truncate`/`@typeInfo`; 1 `ArenaAllocator`; 2 `page_allocator` |
+| Núcleo em memória | `LinVM: in-memory execution engine` (lin.zig:5575) |
+| Contrato de memória | arena flat heap-free; asserts `heap_allocations_in_lexer=0` / `heap_allocated_bytes=0` |
+| Hash verificado | `compiler_sha256` = SHA-256 da **fonte** `compiler/lin.zig` (reproduzível) |
+| Roots pinados | `compat_root`, `live_git_root` em `AGENTS.md` |
+| Transpilador Zig→LIN | `src/zig_to_lin_transpiler.lin` (atualmente lossy: só bin-op/cond/signature) |
+
+Conclusão de escopo: o código é procedural quase neutro de linguagem — o **Zig é a parte
+menor** do problema. A dificuldade real é **tamanho + contrato bit-exact** (Merkle roots
+determinísticos), e isso não muda ao trocar de linguagem.
+
+---
+
+## 2. Por que trocar Zig → outra linguagem não facilita
+
+1. **Troca de linguagem = troca de dependência, não remoção.**
+   O objetivo é self-host (R3). Reescrever em Rust/C/Go deixa um bootstrap Rust/C/Go — ainda
+   não é LIN. O caminho previsto é transpilar o bootstrap para LIN.
+2. **Quebra os receipts e hashes pinados.**
+   Qualquer reescrita muda todo comportamento → todos os Merkle roots mudam → o round-trip
+   determinístico e a verificação independente colapsam. Exigiria migração de validação completa.
+3. **Sem ganho de facilidade.**
+   - **Rust:** ownership/borrow trava o parser de arena flat (anti-ethos heap-free); toolchain pesado.
+   - **C:** mais próximo do que o código já é, mas perde type-checking e config de build; menos seguro.
+   - **Go:** GC (stop-the-world) + alocação não-determinística conflita com receipts determinísticos.
+   - **Zig (manter):** já funciona, pinado (0.13.0, CI), custo de manter = só ter Zig para buildar o bootstrap.
+
+---
+
+## 3. "Rodar em memória" já é verdade — e independe da linguagem
+
+- `LinVM` executa inteiro em memória (lin.zig:5575).
+- README: heap-free flat AST arena; **sem strings, sem `malloc`, sem I/O de arquivo**.
+- Asserts de `heap_allocations_in_lexer=0` / `heap_allocated_bytes=0`.
+
+Se o problema prático é "não depender de instalar Zig para rodar", a solução **não** é
+reescrever — são os dois caminhos da seção 4.
+
+---
+
+## 4. Caminhos seguros (escolhidos por risco)
+
+### 4A. Emitir o binário Stage0 pré-compilado (risco: BAIXO, ganho imediato)
+Publicar o bootstrap Zig congelado como artefato de build/`release`. Usuários nunca instalam Zig.
+- Não toca em fonte do compilador; não muda receipts.
+- Já alinhado ao CI (que builda ambos os modos e publica roots).
+
+### 4B. Self-host incremental via `zig_to_lin_transpiler.lin` (risco: MÉDIO, ganho de longo prazo)
+Transpilar o núcleo para LIN, dogfooding, até remover a dependência de linguagem externa.
+- Subset Zig necessário é pequeno (1 `comptime`, 1 allocator, casts) — favorece o transpilador.
+- Transpilador hoje é **lossy** (só bin-op/cond/signature) → precisa crescer por módulos, na ordem:
+  1. lexer/tokenizer (puro, sem alocação)
+  2. parser + arena flat
+  3. LinVM + MIR
+  4. GPU lowering / OpenCL emission
+  5. receipts (merkle) — congelados em último, pois mudam roots
+- Cada etapa valida o contrato bit-exact antes de avançar.
+
+> Regras vigentes (`AGENTS.md`): R0 escrever em `.lin`/`.rulel`; R1 zero novos `.zig`;
+> R2 `STAGE0_ZIG_FROZEN_BOOTSTRAP_ONLY`; R3 self-hosting dogfooding.
+> Portanto: **4A é imediato**, **4B é o destino**, e **nenhuma reescrita em Rust/C/Go**.
+
+---
+
+## 5. Recomendação de execução
+
+| Prioridade | Ação | Risco |
+|---|---|---|
+| 1 | Manter `compiler/lin.zig` intacto (não reescrever) | — |
+| 2 | Adotar 4A (publicar Stage0 pré-compilado) | Baixo |
+| 3 | Adotar 4B por módulos, validando Merkle root a cada etapa | Médio |
+| 4 | Não seguir caminho Rust/C/Go | Evita colapso de verificação |
+
+_Arquivo de análise e decisão. Nenhum código do compilador foi modificado._
