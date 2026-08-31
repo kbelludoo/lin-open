@@ -15897,8 +15897,152 @@ pub fn main() !void {
         // I_canon manifest and H_selfhost_root(Zig, 0). Zero semantic change
         // to the compiler pipeline — this block only reads files and hashes
         // bytes; it feeds no result back into compile/verify of .lin code.
-        if (args.len < 3 or !argEq(args[2], "parity")) {
-            try stderr.print("usage: lin selfhost parity\n", .{});
+        if (args.len < 3) {
+            try stderr.print("usage: lin selfhost [parity|p1ref]\n", .{});
+            std.process.exit(1);
+        }
+        const sh_sub = args[2];
+        if (argEq(sh_sub, "p1ref")) {
+            // P0b (first slice) — P1 reference measurement (docs/SELF_HOSTING_PLAN.rulel
+            // §3.1/§3.2). I_canon(P1) = every VM-eligible function of the 20-file
+            // corpus (itself pinned by corpus_sha256), executed with canonical args
+            // [1, 2, ..., nparams]. Read-only: no semantic change to the pipeline.
+            //   H_F = SHA-256("selfhost:func:P1:" ‖ path ‖ "::" ‖ fn ‖ 0x00 ‖
+            //            args(8B little-endian each) ‖ 0x00 ‖
+            //            result(8B LE, or @errorName on VM error) ‖ 0x00 ‖ steps(8B LE))
+            //   H_selfhost_root(Zig,1) = SHA-256("selfhost:root:P1:" ‖ Merkle_top)
+            // where Merkle_top is the balanced pairwise tree (odd node promoted)
+            // over the H_F values in corpus/fn declaration order.
+            // MEASURED, not yet asserted: the first CI run pins the value in
+            // AGENTS.md (.h{selfhost_root_zig_1}); a later commit turns this into
+            // an assertion. Anti-gate: pinning requires a CI-verified value.
+            const p1_targets = [_][]const u8{
+                "src/zig_to_lin_transpiler.lin",
+                "src/lin_discovery_engine.lin",
+                "src/lin_merkle_tree.lin",
+                "src/lin_workload_planner.lin",
+                "src/lin_adaptive_replanning.lin",
+                "src/lin_autonomous_discovery.lin",
+                "src/lin_blind_generalization.lin",
+                "src/lin_binary_merkle_provenance.lin",
+                "src/lin_compatibility_matrix.lin",
+                "src/lin_c_expr_parser.lin",
+                "src/lin_array.lin",
+                "src/lin_array_kernel.lin",
+                "src/lin_bithacks.lin",
+                "src/lin_crypto.lin",
+                "src/lin_from_c.lin",
+                "src/lin_from_js.lin",
+                "src/lin_lint.lin",
+                "src/lin_regions.lin",
+                "examples/bytes.lin",
+                "examples/safe-compare.lin",
+            };
+            var hf_list = std.ArrayList([32]u8).init(LIA_ALLOC);
+            defer hf_list.deinit();
+            var fn_lines = std.ArrayList(u8).init(LIA_ALLOC);
+            defer fn_lines.deinit();
+            var files_ok: usize = 0;
+            var fns_total: usize = 0;
+            var fns_eligible: usize = 0;
+            var fns_executed: usize = 0;
+            var steps_total: u64 = 0;
+            for (p1_targets, 0..) |path, pidx| {
+                const src = std.fs.cwd().readFileAlloc(LIA_ALLOC, path, 10 * 1024 * 1024) catch continue;
+                defer LIA_ALLOC.free(src);
+                const mod = vmBuild(LIA_ALLOC, src) catch continue;
+                files_ok += 1;
+                for (mod.fns, 0..) |f, fi| {
+                    fns_total += 1;
+                    if (!f.ok) continue;
+                    if (f.nparams > 32) continue;
+                    fns_eligible += 1;
+                    var arg_buf: [32]i64 = undefined;
+                    var ai: usize = 0;
+                    while (ai < f.nparams) : (ai += 1) {
+                        arg_buf[ai] = @as(i64, @intCast(ai + 1));
+                    }
+                    var steps: u64 = 0;
+                    var hf = std.crypto.hash.sha2.Sha256.init(.{});
+                    hf.update("selfhost:func:P1:");
+                    hf.update(path);
+                    hf.update("::");
+                    hf.update(f.name);
+                    hf.update(&[_]u8{0});
+                    var b8: [8]u8 = undefined;
+                    for (arg_buf[0..f.nparams]) |a| {
+                        std.mem.writeInt(i64, &b8, a, .little);
+                        hf.update(&b8);
+                    }
+                    hf.update(&[_]u8{0});
+                    const res = vmExec(&mod, fi, arg_buf[0..f.nparams], 0, &steps);
+                    fns_executed += 1;
+                    steps_total += steps;
+                    if (res) |val| {
+                        std.mem.writeInt(i64, &b8, val, .little);
+                        hf.update(&b8);
+                        try fn_lines.writer().print("  .fn{{ path=\"{s}\" fn=\"{s}\" params={d} result={d} steps={d} }}\n", .{ path, f.name, f.nparams, val, steps });
+                    } else |err| {
+                        hf.update(@errorName(err));
+                        try fn_lines.writer().print("  .fn{{ path=\"{s}\" fn=\"{s}\" params={d} error=\"{s}\" steps={d} }}\n", .{ path, f.name, f.nparams, @errorName(err), steps });
+                    }
+                    hf.update(&[_]u8{0});
+                    std.mem.writeInt(u64, &b8, steps, .little);
+                    hf.update(&b8);
+                    var leaf: [32]u8 = undefined;
+                    hf.final(&leaf);
+                    try hf_list.append(leaf);
+                }
+            }
+            if (files_ok != 20 or hf_list.items.len == 0) {
+                try stdout.print("@RULEL:SELFHOST_P1REF:1.0.0\n.files_ok={d}/20\n.fns_total={d}\n.fns_eligible={d}\n.status=\"FAIL\"\n.reason=\"corpus_not_measured\"\n", .{ files_ok, fns_total, fns_eligible });
+                std.process.exit(1);
+            }
+            // balanced pairwise Merkle over the H_F values (odd node promoted)
+            var level = try LIA_ALLOC.alloc([32]u8, hf_list.items.len);
+            for (hf_list.items, 0..) |l, li| {
+                level[li] = l;
+            }
+            while (level.len > 1) {
+                const next = try LIA_ALLOC.alloc([32]u8, (level.len + 1) / 2);
+                var mi: usize = 0;
+                var oi: usize = 0;
+                while (mi < level.len) : (mi += 2) {
+                    if (mi + 1 < level.len) {
+                        var nh = std.crypto.hash.sha2.Sha256.init(.{});
+                        nh.update("selfhost:node:");
+                        nh.update(&level[mi]);
+                        nh.update(&level[mi + 1]);
+                        nh.final(&next[oi]);
+                    } else {
+                        next[oi] = level[mi];
+                    }
+                    oi += 1;
+                }
+                level = next;
+            }
+            var rh = std.crypto.hash.sha2.Sha256.init(.{});
+            rh.update("selfhost:root:P1:");
+            rh.update(&level[0]);
+            var p1_root: [32]u8 = undefined;
+            rh.final(&p1_root);
+            try stdout.print("@RULEL:SELFHOST_P1REF:1.0.0\n", .{});
+            try stdout.print(".phase=P0b_ref_P1\n", .{});
+            try stdout.print(".files_ok=20\n", .{});
+            try stdout.print(".fns_total={d}\n", .{fns_total});
+            try stdout.print(".fns_eligible={d}\n", .{fns_eligible});
+            try stdout.print(".fns_executed={d}\n", .{fns_executed});
+            try stdout.print(".steps_total={d}\n", .{steps_total});
+            try stdout.print(".fns{{\n", .{});
+            try stdout.writeAll(fn_lines.items);
+            try stdout.print("}}\n", .{});
+            try stdout.print(".selfhost_root_zig_1=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&p1_root)});
+            try stdout.print(".pin=AWAITING_FIRST_CI_MEASUREMENT\n", .{});
+            try stdout.print(".status=\"MEASURED\"\n", .{});
+            return;
+        }
+        if (!argEq(sh_sub, "parity")) {
+            try stderr.print("usage: lin selfhost [parity|p1ref]\n", .{});
             std.process.exit(1);
         }
 

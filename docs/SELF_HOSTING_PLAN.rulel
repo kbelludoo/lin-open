@@ -55,6 +55,7 @@ contra o baseline abaixo e **falha** (exit 1) em divergência:
 | `corpus_sha256` | `SHA-256(‖ bytes crus dos 20 .lin na ordem de corpus_targets, sem separador)` | `28b64d7433c44f02a176a1dd5617abfc88d23181e2046d3283f104d0a637a766` |
 | `ledger_sha256` | `SHA-256(‖ SHA-256(cada .lin), mesma ordem)` — 32 bytes crus | `d32d0d6d0897d0786b93a50ca1eb6fa88ee9153e09a8b30a3b09354d1d8545a1` |
 | `selfhost_root_zig_0` | `H_selfhost_root` do §3.2 sobre os 20 `.lin` (Merkle, domínio `selfhost:`) | `sha256:f7a0c6fae02cdb89fc3236619919432d4138015f9bdb8a69209d797c01e1d01f` |
+| `selfhost_root_zig_1` | `H_selfhost_root(Zig, 1)` do §3.1 sobre o `I_canon(P1)` (medição `lin selfhost p1ref`) | **medido em CI** — pinar após a 1ª execução verificada (anti-gate: pin exige valor CI-verificado) |
 
 `selfhost_root_zig_0` fica **pinado** em `AGENTS.md` (`.h{}`). É a âncora de referência do
 P0: toda fase futura deve reproduzi-la como base antes de acrescentar seus `H_M`.
@@ -102,6 +103,16 @@ Para cada função `F` (referência Zig instrumentada e port LIN):
   que o VM já usa contra `lin_to_zig` ("bit-exact agreement between the two is evidence of
   equivalence rather than a tautology", lin.zig:5577).
 
+**Perfil de medição da referência P1 (implementado, `lin selfhost p1ref`):** a referência
+usa a evidência canônica `(resultado, steps)` — resultado (8B LE, ou `@errorName` em erro
+do VM) e contagem de instruções (`steps`, limitada por `VM_STEP_LIMIT`) — em layout de
+bytes documentado:
+`H_F = SHA-256("selfhost:func:P1:" ‖ path ‖ "::" ‖ fn ‖ 0x00 ‖ args(8B LE cada) ‖ 0x00 ‖ resultado ‖ 0x00 ‖ steps(8B LE))`,
+e `H_selfhost_root(Zig, 1) = SHA-256("selfhost:root:P1:" ‖ topo_Merkle)` (Merkle pairwise,
+nó ímpar promovido, ordem corpus/função). O rastro opcode+stack completo vira exigência do
+**lado LIN** no gate P1 (o port emite o próprio rastro); a referência só é estendida ao
+rastro completo quando o port souber reportá-lo — sem nunca relaxar o bit-exact.
+
 **Domain separation é obrigatória.** Hashes de self-hosting usam o prefixo `selfhost:`;
 o certificado usa `LIN:SEMANTIC_CERTIFICATE:1.0.0`; a Merkle do spec usa `leaf:`/`node:`.
 Nenhum domínio mistura — colisão anula a verificação.
@@ -139,7 +150,9 @@ _Cada fase consome o `H_M` da anterior. P5 (receipts) vem por último de propós
 - **Status:** `R2a` assinada (`AGENTS.md@1.4.1`); subcomando `lin selfhost parity`
   implementado em `compiler/lin.zig` (bloco autossuficiente, read-only, zero mudança
   semântica); `selfhost_root_zig_0` pinado em `AGENTS.md` (`.h{}`); baseline re-pinado na
-  seção 2. Faltando: build+run em CI para o `GATE(0)` virar PASS verificado.
+  seção 2. **P0b-p1 (medição de referência P1) implementado** (`lin selfhost p1ref`).
+  Faltando: build+run em CI para o `GATE(0)` virar PASS verificado e para
+  `selfhost_root_zig_1` ser pinado.
 - **Escopo (P0a, entregue):** subcomando `lin selfhost parity` recomputa e emite:
   as 3 âncoras estáveis (asserted), as 2 autorreferenciais (reported), o manifesto
   `I_canon` (path/bytes/sha256 dos 20 `.lin`) e `H_selfhost_root(Zig, 0)` (Merkle §3.2).
@@ -159,8 +172,10 @@ _Cada fase consome o `H_M` da anterior. P5 (receipts) vem por último de propós
 
 - **Escopo:** portar `VmOp` (33), `VmIns`/`VmFn`/`VmModule`, intérprete (VM_STEP_LIMIT,
   wrap, `_lia_shl/_lia_shr/_lia_ushr`, mod-zero=0) para LIN.
-- **Entregas:** `src/linvm_selfhost.lin`; `I_canon(P1)` = fixtures de programas VM
-  (saída de `vm-sweep` + `test-vectors`).
+- **Entregas:** `src/linvm_selfhost.lin`; `I_canon(P1)` = **todas as funções VM-eligíveis
+  do corpus** (20 arquivos, já ancorados por `corpus_sha256`) com argumentos canônicos
+  `[1..nparams]` — referência medida por `lin selfhost p1ref` (disponível), port LIN a
+  implementar.
 - **Gate:** `GATE(1)` = `H_M(vm_LIN) == H_M(vm_Zig)` no mesmo `I_canon` (resultado **e** rastro).
 - **Anti-gate:** nenhuma otimização que mude o rastro (wrap idêntico); resultado igual com
   sequência de opcodes diferente **falha** o gate.

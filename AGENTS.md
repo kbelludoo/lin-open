@@ -21,6 +21,7 @@
   run_suite="zig run -I/opt/rocm/include -lc -L/opt/rocm/lib -lOpenCL test_lin_full_self_hosted_suite.zig"
   run_compat="zig run -I/opt/rocm/include -lc -L/opt/rocm/lib -lOpenCL test_lin_selfhost_compat_001.zig"
   selfhost_parity="zig run -I/opt/rocm/include -lc -L/opt/rocm/lib -lOpenCL compiler/lin.zig selfhost parity"
+  selfhost_p1ref="zig run -I/opt/rocm/include -lc -L/opt/rocm/lib -lOpenCL compiler/lin.zig selfhost p1ref"
 }
 .h{
   compat_root="sha256:5e7c37a22a36bcf81de68a2af8acf36f4eef9bcfa6b5539df0d9365743cce4c1"
