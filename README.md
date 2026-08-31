@@ -25,6 +25,10 @@ These were verified by building and running the compiled binary:
 | OpenCL execution & CPU/GPU/oracle parity | ✅ bit-exact on an OpenCL device (conformance, not proof) |
 | `gpu-verify` | ✅ PASS (21/21 bit-exact) on any OpenCL device |
 | Full self-hosted + compat test suites | ✅ both **PASS**; all 17 compat subgates are computed assertions |
+| `bundle-pack` / `bundle-verify` attestation bundle | ✅ real: Git blob OID, MIR + lowering hashes, CPU oracle replay, 8-leaf kernel Merkle trees, ledger root, **Ed25519 seal verified** |
+| `cleanroom-verify` | ✅ real: CPU-only cryptographic replay of a signed bundle; fails closed and writes nothing when the bundle does not verify |
+| `notary-sign` / `notary-verify` witness quorum | ✅ real Ed25519 M-of-N co-signature verification over a signed tree head (roster file required) |
+| Attestation honesty gate (`make attestation-gate`) | ✅ 19 assertions + 5 unit tests; refuses any command that would publish an uncomputed verdict |
 | `from-js` transpile | ⚠️ narrow subset only (arrow/expr fns match 0) |
 
 `receipt create --source "return x * x;" --input 9` produces a deterministic root
@@ -41,6 +45,10 @@ The two self-hosted suites (`test_lin_full_self_hosted_suite.zig` and
   subset to LIN; JS support is experimental and limited. Do not market it as a 5-language compiler.
 - **No** strings, floats (`f32`/`f64`), dynamic structs, heap `malloc`, OS file I/O, or OOP.
 - **Target domain:** deterministic integer kernels, hashing/bit-manipulation, small math, receipts.
+- **No 5-language polyglot parity, no federation, no transparency log.** The sub-commands that
+  used to claim those (`polyglot-verify`, `federation-verify`, `verify-all`, …) are refused by
+  `compiler/lin_attestation_guard.zig` with `error.NotImplemented` until real evidence exists.
+  See `SECURITY_AUDIT.md` section 7.
 
 ---
 
@@ -157,6 +165,18 @@ Also fixed in this revision (2026-08-31, "all corrections" pass):
    `test/corpus/gpu_parallel_map_kernels.lin`. It now defaults to `examples/map_kernels.lin`
    (real scalar unary kernels) and runs to `PASS` (21/21 bit-exact) on any OpenCL device,
    with device discovery falling back to CPU.
+
+Fixed in the attestation-honesty pass (2026-08-31):
+
+11. ✅ **Mock attestation commands can no longer publish verdicts.** `cleanroom-verify` used to
+    write `verified_ed25519_seal=true` for *any* file (verified with a bundle containing random
+    text); `notary-verify` printed `SIGNATURE VALID` for the placeholder keys `1111…`/`2222…`
+    without decoding a signature; `polyglot-verify` reported 6/6 parity by comparing six copies
+    of one constant. `cleanroom-verify` and `notary-verify` were rewritten to do the real work
+    (bundle replay with Ed25519, and a real witness quorum over a roster file); the remaining
+    simulated commands are listed in `compiler/lin_attestation_guard.zig`, refuse to run
+    (exit 3, no artifacts) unless `--allow-simulated` is passed, and are covered by
+    `make attestation-gate`.
 
 Remaining honest caveats:
 

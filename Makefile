@@ -1,4 +1,4 @@
-.PHONY: all build build-gpu build-cpu test test-cpu lint clean
+.PHONY: all build build-gpu build-cpu test test-cpu attestation-gate guard-unit lint clean
 
 # LIN build/test Makefile (2026-08-31)
 #
@@ -9,6 +9,10 @@
 #                         GPU commands fail gracefully)
 #   make test         -> GPU build + check all src/examples .lin + receipt round-trip
 #   make test-cpu     -> CPU-only build + same checks (no OpenCL needed)
+#   make attestation-gate
+#                     -> asserts the attestation guard fails closed on commands
+#                        that have no computed evidence, and that the real
+#                        receipt/Merkle and Ed25519 notary paths still pass
 
 BUILD_GPU := zig build -Doptimize=ReleaseFast
 BUILD_CPU := zig build -Dgpu=false -Doptimize=ReleaseFast
@@ -39,6 +43,8 @@ test: build-gpu
 	@echo; echo "== receipt round-trip =="
 	@$(BIN) receipt create --source "return x * x;" --input 9 > /tmp/lin_rec.rulel
 	@$(BIN) receipt verify --receipt /tmp/lin_rec.rulel
+	@echo; echo "== attestation honesty gate =="
+	@$(MAKE) --no-print-directory attestation-gate
 
 # Same checks but with the CPU-only build (no OpenCL toolchain needed).
 test-cpu: build-cpu
@@ -53,6 +59,16 @@ test-cpu: build-cpu
 	@echo; echo "== receipt round-trip (cpu) =="
 	@$(BIN) receipt create --source "return x * x;" --input 9 > /tmp/lin_rec.rulel
 	@$(BIN) receipt verify --receipt /tmp/lin_rec.rulel
+	@echo; echo "== attestation honesty gate (cpu) =="
+	@$(MAKE) --no-print-directory attestation-gate
+
+# Unit tests for the guard table itself (no build required).
+guard-unit:
+	zig test compiler/lin_attestation_guard.zig
+
+# Standalone run of the attestation honesty specification.
+attestation-gate: guard-unit
+	@./test/attestation_honesty.sh $(BIN)
 
 clean:
-	@rm -rf zig-out zig-cache .zig-cache bin/lin_native /tmp/lin_rec.rulel
+	@rm -rf zig-out zig-cache .zig-cache bin/lin_native /tmp/lin_rec.rulel simulated_attestations.log

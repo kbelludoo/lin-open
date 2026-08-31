@@ -17,6 +17,7 @@
 !LICENSE
 !LICENSE.rulel
 !docs/**
+!test/**
 !examples/**
 !stubs/**
 !redteam/**
@@ -36,3 +37,13 @@ zig-cache/
 zig-out/
 repos/
 *.key
+
+# Attestation runtime artifacts — produced by `lin` at run time, never evidence,
+# never committed.
+simulated_attestations.log
+witness_roster.rulel
+*_receipt.rulel
+*_report.rulel
+audit_report.rulel
+conformance_report.rulel
+verification_api_response.json

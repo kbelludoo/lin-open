@@ -115,3 +115,105 @@ revisão reclassificam a comunicação para "execução determinística com rece
 removem os `[PASS]` falsos, tiram o hash do próprio binário da "prova", e reparam o caminho
 GPU. O ponto estratégico remanescente (prova à prova de adversário via TEE/ZK) permanece
 aberto para quem quiser vender "prova" de verdade.
+
+---
+
+## 7. Auditoria dos comandos de atestação — "criptografia real vs. mock" (2026-08-31)
+
+Segunda passada de red-team, agora sobre os sub-comandos `lin *-verify`. A pergunta
+foi a mesma da seção 1: **o que este binário computa de verdade e o que ele apenas
+imprime?** Cada linha abaixo foi verificada lendo o código e executando o binário
+compilado (`zig build -Dgpu=false -O ReleaseFast`), não por inspeção visual.
+
+### 7.1 O que é criptografia real (manter)
+
+| Caminho | Evidência executada |
+|---|---|
+| `receipt create` / `receipt verify` | Árvore Merkle SHA-256 sobre (fonte, entrada, saída, passos, pilha). Determinística: `sha256:b96fecee…` reproduzido em toda execução. Verificado por `make test-cpu`. |
+| `bundle-pack` / `bundle-verify` | `BundleVerifier.verify` recomputa o Git blob OID da fonte embutida, o hash semântico MIR e o hash de lowering de cada kernel, reexecuta o oráculo de CPU sobre 262.144 entradas, reconstrói as árvores Merkle de 8 folhas e a raiz do ledger, e **verifica a assinatura Ed25519** sobre a mensagem canônica (`sig.verify(canonical_msg, pubkey)`). Qualquer divergência é erro. |
+| `attest-issue` / `ledger-issue` / `*-verify` correspondentes | Ed25519 real + Merkle real. **Ressalva:** a chave de autoridade é derivada de uma semente fixa no repositório, então a assinatura autentica o formato, não uma autoridade externa. |
+| `integrity` / `hypo --all` | Hashes reais das 20 fontes; `confirmed=20, refuted=0`. |
+| Suíte `test_lin_selfhost_compat_001.zig` | As 17 subgates são asserções computadas (parser, wrapping, determinismo de IR, execução na LinVM, paridade CPU/GPU/oracle). Não são `print`s. |
+
+### 7.2 O que era teatro (agora bloqueado)
+
+Executado antes da correção, com `bundle_attestation.rulel` contendo **texto
+qualquer**:
+
+```
+$ lin cleanroom-verify        # bundle de lixo
+  [4/4] MERKLE ROOT & DIGITAL SEAL ... [PASS] (Cryptographic verification successful)
+CLEANROOM REPRODUCTION CERTIFIED
+$ cat cleanroom_receipt.rulel
+  verified_ed25519_seal=true
+  cleanroom_reproduction="BIT_EXACT_REPRODUCED"
+  zero_trust_passed=true
+```
+
+Nenhuma linha de verificação foi executada: o comando abria o arquivo e escrevia o
+recibo. `notary-verify` imprimia `[SIGNATURE VALID]` para as chaves-fantasma
+`1111…`/`2222…`/`3333…` sem jamais decodificar uma assinatura. `polyglot-verify`
+comparava seis "implementações" cujo `calculated_audit_digest` era a **mesma
+constante**, garantindo 6/6 por construção — e citava verificadores Rust/Go/Python/C
+e o diretório `test/conformance_vectors` que não existem no repositório.
+
+Levantamento completo (todos com `exit=0` e recibo gravado antes da correção):
+`cleanroom-verify`, `notary-verify`/`transparency-verify`, `verify-all`/`audit`,
+`polyglot-verify`/`test-vectors`/`conformance-verify`, `cross-verify`/`multi-verify`,
+`n-version-verify`/`common-mode-verify`, `federation-verify`, `global-ledger-verify`,
+`temporal-ledger-verify`, `roster-transition-verify`, `pkg-distribute`/`pkg-verify`/
+`enterprise-verify`, `consistency-verify`/`e2e-trust-verify`/`verify-003r`,
+`protocol-evolution-verify`/`longterm-verify`/`verify-004`,
+`federation-governance-verify`/`fed-verify`/`verify-fed-001`, `mir-ssa-verify`,
+`nanopass-benchmark`.
+
+Dois detalhes agravantes encontrados na leitura:
+
+- `n-version-verify` anunciava três verificadores independentes, mas o Verifier A e
+  o Verifier B chamam **exatamente o mesmo** `BundleVerifier.verify` sobre duas
+  cópias dos mesmos bytes; o Verifier C conferia constantes fixas de um único bundle
+  e validava a assinatura apenas por comprimento (`sig.len != 128`).
+- `verify-all` imprimia dez campos de evidência `VERIFIED` a partir de zero
+  computação, e o "corpus adversarial REJECTED (3/3)" não submetia bundle nenhum.
+
+### 7.3 Correção aplicada
+
+1. **`compiler/lin_attestation_guard.zig`** — tabela única e auditável dos comandos
+   sem evidência. Cada entrada lista, em texto, as afirmações que o comando faria
+   sem computar e o que seria preciso implementar. O despacho da CLI consulta a
+   tabela antes de executar: sem `--allow-simulated`, o comando **não roda**, não
+   escreve arquivo e termina com `error.NotImplemented` (exit 3). Com a flag, roda
+   anunciando em stderr que a saída **não é evidência** e registra a execução em
+   `simulated_attestations.log`.
+2. **`cleanroom-verify` reescrito para verificar de verdade** — chama
+   `BundleVerifier.verify` (blob OID, Merkle de kernels, raiz do ledger, oráculo de
+   CPU e selo Ed25519). Falha ⇒ nada é gravado e o exit é não-zero. O recibo passou
+   a carregar apenas valores computados (`recomputed_git_blob_oid`,
+   `recomputed_ledger_merkle_root`, `ed25519_signed_message`, …) e declara
+   explicitamente o que **não** faz: `gpu_parity_checked=false`,
+   `independent_implementation=false`, `isolation_boundary_enforced=false`.
+3. **`notary-verify` com quórum Ed25519 real** — lê um roster
+   (`@RULEL:LIN_WITNESS_ROSTER:1.0.0`), recalcula o digest do *signed tree head* a
+   partir dos campos do arquivo, verifica cada co-assinatura com
+   `Ed25519.verify`, recusa quórum não-majoritário, testemunha duplicada e
+   assinatura inválida. As provas de consistência/inclusão do log passaram a ser
+   declaradas `false` / "não avaliadas" em vez de `[PASS]`. O comando novo
+   `lin notary-sign` gera um roster com chaves e assinaturas reais (rotulado como
+   fixture de auto-teste, não como raiz de confiança).
+4. **`bundle-verify`** passou a emitir o recibo com os valores do `Report` retornado
+   pela verificação, e não com literais.
+5. **Testes** — `test/attestation_honesty.sh` (19 asserções: recusa dos 35 nomes de
+   comando, ausência de artefatos, caminho simulado, fail-closed do cleanroom,
+   quórum real, tamper, corpus adversarial 7/7 e round-trip do receipt) mais 5
+   testes unitários em `lin_attestation_guard.zig`. Rodados por
+   `make attestation-gate`, acoplado a `make test`/`make test-cpu` e ao CI.
+
+### 7.4 O que continua em aberto
+
+- **N-Version real (C × Zig):** `transpile/c/` tem um parser/VM independente em C,
+  mas nada ainda o executa como segundo verificador do mesmo bytecode. `cross-verify`
+  e `n-version-verify` seguem bloqueados até isso existir.
+- **LIN Parity de 5 linguagens:** inexistente. `polyglot-verify` continua bloqueado
+  e nenhuma promessa de paridade multi-linguagem deve ser feita.
+- **Prova de execução à prova de adversário:** o PoC da seção 1 segue válido —
+  paridade OpenCL é conformidade, não prova. TEE/ZK continuam sendo o único caminho.

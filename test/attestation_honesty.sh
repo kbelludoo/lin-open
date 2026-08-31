@@ -1,0 +1,201 @@
+#!/usr/bin/env bash
+# test/attestation_honesty.sh — executable specification of the attestation guard.
+#
+# Asserts that:
+#   1. every command listed in compiler/lin_attestation_guard.zig refuses to run
+#      (exit 3) and writes no receipt unless --allow-simulated is given;
+#   2. a simulated run is announced on stderr and logged to
+#      simulated_attestations.log;
+#   3. cleanroom-verify fails closed on a bundle that does not verify;
+#   4. notary-verify verifies real Ed25519 co-signatures, refuses a roster that
+#      cannot reach quorum, and rejects every mutation in its adversarial corpus;
+#   5. the genuine compute-receipt Merkle round-trip still passes.
+#
+# Usage: test/attestation_honesty.sh [path/to/lin_native]
+set -u
+
+BIN_ARG="${1:-zig-out/bin/lin_native}"
+case "$BIN_ARG" in
+  /*) BIN="$BIN_ARG" ;;
+  *)  BIN="$PWD/$BIN_ARG" ;;
+esac
+
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+
+[ -x "$BIN" ] || { echo "attestation-honesty: cannot execute $BIN"; exit 1; }
+
+fails=0
+checks=0
+
+ok()   { checks=$((checks + 1)); printf '  ok   %s\n' "$1"; }
+bad()  { checks=$((checks + 1)); fails=$((fails + 1)); printf '  FAIL %s\n' "$1"; }
+group() { # group <name> — runs the following block in a fresh cwd
+  rm -rf "$WORK/$1" && mkdir -p "$WORK/$1"
+  cd "$WORK/$1" || exit 1
+}
+
+echo "== attestation honesty: $BIN =="
+"$BIN" version >/dev/null 2>&1 || { echo "cannot run $BIN"; exit 1; }
+
+# ── 1. gated commands fail closed and write nothing ───────────────────────────
+echo "-- gated commands must refuse (exit 3) and write nothing --"
+GATED="verify-all audit polyglot-verify test-vectors conformance-verify
+pkg-distribute pkg-verify enterprise-verify consistency-verify e2e-trust-verify
+verify-003r protocol-evolution-verify longterm-verify verify-004
+federation-governance-verify fed-verify verify-fed-001 mir-ssa-verify mir-verify
+transpiler-verify nanopass-benchmark nanopass-verify rewrite-benchmark
+federation-verify federated-attest global-ledger-verify scale-ledger-verify
+temporal-ledger-verify temporal-verify roster-transition-verify recovery-verify
+cross-verify multi-verify n-version-verify common-mode-verify"
+
+group gated
+refused=0
+for cmd in $GATED; do
+  "$BIN" "$cmd" >/dev/null 2>&1
+  got=$?
+  if [ "$got" = 3 ]; then
+    refused=$((refused + 1))
+  else
+    bad "lin $cmd: expected exit 3, got $got"
+  fi
+done
+[ "$refused" != 0 ] && ok "$refused gated command names refused with exit 3"
+written=$(ls -A | grep -vc '^simulated_attestations\.log$')
+if [ "$written" = 0 ]; then
+  ok "no receipt or report file written by any refused command"
+else
+  bad "refused commands wrote files: $(ls -A | tr '\n' ' ')"
+fi
+
+# ── 2. --allow-simulated runs, warns and logs ─────────────────────────────────
+echo "-- --allow-simulated must warn and append to simulated_attestations.log --"
+group simulated
+printf 'garbage\n' > bundle_attestation.rulel
+"$BIN" verify-all --allow-simulated >/dev/null 2>err.txt
+if grep -q 'SIMULATED ATTESTATION' err.txt; then
+  ok "simulated run announces itself on stderr"
+else
+  bad "no simulation warning on stderr"
+fi
+if grep -q 'cmd="verify-all" mode="SIMULATED"' simulated_attestations.log 2>/dev/null; then
+  ok "simulated run recorded in simulated_attestations.log"
+else
+  bad "no audit-log entry for the simulated run"
+fi
+
+# ── 3. cleanroom-verify fails closed on a bundle that does not verify ─────────
+echo "-- cleanroom-verify must fail closed on an unverifiable bundle --"
+group cleanroom
+printf 'this is not a LIN bundle\n' > bundle_attestation.rulel
+"$BIN" cleanroom-verify >/dev/null 2>&1
+got=$?
+if [ "$got" != 0 ]; then
+  ok "garbage bundle refused (exit $got)"
+else
+  bad "garbage bundle was accepted by cleanroom-verify"
+fi
+if [ ! -e cleanroom_receipt.rulel ]; then
+  ok "no cleanroom receipt written for an unverifiable bundle"
+else
+  bad "cleanroom receipt written for an unverifiable bundle"
+fi
+
+# ── 4. notary quorum: real Ed25519 verification ───────────────────────────────
+echo "-- notary-verify must verify real Ed25519 co-signatures --"
+group notary
+
+"$BIN" notary-verify >/dev/null 2>&1
+if [ $? = 3 ]; then ok "no roster -> NotImplemented (exit 3)"; else bad "missing roster did not fail closed"; fi
+
+if "$BIN" notary-sign -o roster.rulel >/dev/null 2>&1; then
+  ok "notary-sign minted a roster with real keys"
+else
+  bad "notary-sign failed"
+fi
+
+if grep -q '1111111111111111' roster.rulel 2>/dev/null; then
+  bad "roster still contains placeholder 1111... keys"
+else
+  ok "roster contains no placeholder 1111... keys"
+fi
+
+"$BIN" notary-verify --roster roster.rulel >out.txt 2>&1
+if [ $? = 0 ]; then ok "valid roster reaches quorum (exit 0)"; else bad "valid roster rejected"; cat out.txt; fi
+
+n_valid=$(grep -c 'SIGNATURE VALID' out.txt 2>/dev/null)
+n_witness=$(grep -c 'PubKey' out.txt 2>/dev/null)
+if [ "${n_valid:-0}" = "${n_witness:-1}" ] && [ "${n_valid:-0}" -ge 3 ]; then
+  ok "$n_valid/$n_witness co-signatures verified with Ed25519"
+else
+  bad "expected all $n_witness signatures valid, got ${n_valid:-0}"
+fi
+
+if grep -q 'signature_verified=true' transparency_checkpoint_receipt.rulel 2>/dev/null; then
+  ok "receipt records per-witness signature verification"
+else
+  bad "receipt missing signature_verified fields"
+fi
+
+# Tamper the notarised state root: every co-signature must become invalid.
+sed 's/state_root="sha256:[0-9a-f]\{4\}/state_root="sha256:dead/' roster.rulel > tampered.rulel
+"$BIN" notary-verify --roster tampered.rulel >tampered.txt 2>&1
+if [ $? != 0 ]; then ok "tampered state root -> quorum refused"; else bad "tampered roster still passed"; fi
+if grep -q 'SIGNATURE VALID' tampered.txt 2>/dev/null; then
+  bad "a tampered roster produced a valid signature"
+else
+  ok "zero valid co-signatures after tampering the state root"
+fi
+
+# Corrupt two of four co-signatures: a 3-of-4 quorum must fail.
+python3 - <<'PY'
+lines = open('roster.rulel').read().split('\n')
+seen, out = 0, []
+for line in lines:
+    if line.strip().startswith('.witness_'):
+        seen += 1
+        if seen >= 3:
+            i = line.index('signature_hex="') + len('signature_hex="')
+            line = line[:i] + ('1' if line[i] == '0' else '0') + line[i + 1:]
+    out.append(line)
+open('weak.rulel', 'w').write('\n'.join(out))
+PY
+"$BIN" notary-verify --roster weak.rulel >weak.txt 2>&1
+if [ $? != 0 ]; then
+  ok "2-of-4 valid signatures cannot satisfy a 3-of-4 quorum"
+else
+  bad "quorum satisfied with too few valid signatures"
+fi
+
+"$BIN" notary-verify --roster roster.rulel --adversarial >adv.txt 2>&1
+if [ $? = 0 ]; then ok "adversarial corpus rejected every mutation"; else bad "adversarial corpus leaked a mutation"; cat adv.txt; fi
+if grep -q 'accepted: 0' adv.txt 2>/dev/null; then
+  ok "adversarial summary reports 0 accepted mutations"
+else
+  bad "adversarial summary shows accepted mutations"
+fi
+
+# ── 5. the genuine Merkle receipt still round-trips ───────────────────────────
+echo "-- real compute receipt (the asset that must keep working) --"
+group receipt
+"$BIN" receipt create --source "return x * x;" --input 9 > receipt.rulel 2>/dev/null
+"$BIN" receipt verify --receipt receipt.rulel >verify.txt 2>&1
+if grep -q '^PASS' verify.txt; then
+  ok "receipt create -> verify round-trip passes"
+else
+  bad "receipt round-trip broke"; cat verify.txt
+fi
+root=$(grep -o 'sha256:[0-9a-f]\{64\}' verify.txt | head -1)
+if [ -n "$root" ] && "$BIN" receipt create --source "return x * x;" --input 9 2>/dev/null | grep -q "$root"; then
+  ok "Merkle root is deterministic across runs ($root)"
+else
+  bad "Merkle root is not reproducible"
+fi
+
+echo
+if [ "$fails" = 0 ]; then
+  echo "attestation-honesty: PASS ($checks checks)"
+  exit 0
+fi
+echo "attestation-honesty: FAIL ($fails of $checks checks failed)"
+exit 1

@@ -25,6 +25,30 @@ zig run -lc -I/usr/include -L/usr/lib/x86_64-linux-gnu -lOpenCL test_lin_selfhos
 | `lin lint` | ✅ sem erros |
 | **full self-hosted suite** | ✅ `PASS_FULL_SELF_HOSTED_LIN`, bit-exact, Merkle `62b7d202…` |
 | **compat suite** | ✅ `PASS_FULL_LEGACY_COMPATIBILITY`, 17/17 subgates, 1000/1000 fuzz, 0 mismatches |
+| `make attestation-gate` | ✅ **PASS** — 5 testes unitários do guard + 19 asserções de honestidade |
+
+### Attestation honesty gate (destaques)
+
+Executado com o build CPU-only (`zig build -Dgpu=false -O ReleaseFast`):
+
+```
+  ok   35 gated command names refused with exit 3
+  ok   no receipt or report file written by any refused command
+  ok   simulated run announces itself on stderr
+  ok   simulated run recorded in simulated_attestations.log
+  ok   garbage bundle refused (exit 1)          # cleanroom-verify fail-closed
+  ok   no cleanroom receipt written for an unverifiable bundle
+  ok   no roster -> NotImplemented (exit 3)
+  ok   4/4 co-signatures verified with Ed25519
+  ok   tampered state root -> quorum refused
+  ok   2-of-4 valid signatures cannot satisfy a 3-of-4 quorum
+  ok   adversarial corpus rejected every mutation   # 7/7
+  ok   Merkle root is deterministic across runs (sha256:b96fecee…)
+```
+
+Rodar isoladamente: `make attestation-gate` (ou `./test/attestation_honesty.sh
+zig-out/bin/lin_native`). O alvo também é chamado por `make test` e `make test-cpu`
+e pelo workflow de CI.
 
 ### Full self-hosted suite (destaques)
 - `Silicon Parity: R_cpu == R_gpu == R_oracle` → **Bit-Exact: true**
