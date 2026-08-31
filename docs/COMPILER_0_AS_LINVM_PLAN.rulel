@@ -1,0 +1,198 @@
+@RULEL:DOC_COMPILER0_AS_LINVM_PLAN:1.0.0
+~MARKDOWN_SPEC
+# Plano — `compiler_0` executado pela LinVM
+
+> **Objetivo preciso:** substituir o caminho de produção do bootstrap
+> `compiler/lin.zig` por um compilador escrito em LIN, baixado para bytecode e executado
+> pela LinVM. A LinVM continua sendo a máquina de execução; ela não passa a ser chamada de
+> compilador. O Stage0 Zig permanece congelado como oráculo de transição até o gate final.
+
+## 0. Execução disponível agora
+
+Sim: já é possível executar o pipeline que baixa expressões para bytecode e as roda na
+LinVM independente em C, sem Zig e sem GPU:
+
+    make -C transpile/c xver
+    ./transpile/c/bin/lin_c_receipt --expr "2 * 3 + 4 * 5"
+
+A execução deve reportar `status="EVALUATED"`, `ast_val=26`, `result=26`, `steps=8` e
+`sp_at_ret=1`. Para validar a VM, incluindo aritmética wrapping e SHA-256:
+
+    make -C transpile/c test test-edges test-sha256
+
+Esse caminho é um **oráculo independente executável**, não o destino self-hosted: ele usa o
+port C11 existente. O interpretador escrito em LIN está em `src/linvm_embedded.lin` e expõe
+`sq_demo`, `fact_demo` e `linvm_selftest`; o self-test retorna `3` somente quando os dois
+programas de bytecode retornam, respectivamente, `64` e `24`. Executá-lo diretamente ainda
+depende de um host LIN; remover essa dependência é precisamente o trabalho B1–B3 abaixo.
+
+## 1. Estado-alvo
+
+O fluxo final deve ser:
+
+    fonte .lin
+      -> compiler_0.lin
+      -> bytecode LinVM canônico
+      -> LinVM
+      -> AST tipada / MIR / GPU IR / receipts
+
+O bootstrap fica dividido em três artefatos com responsabilidades inequívocas:
+
+| Artefato | Responsabilidade | Estado final |
+|---|---|---|
+| Stage0 Zig (`compiler/lin.zig`) | oráculo bit-exact e construtor inicial | congelado e arquivado |
+| `compiler_0.lin` modular | lexer, parser, tipos, lowering, CLI e receipts | implementação de produção |
+| LinVM | carregar e executar o bytecode canônico do compilador | runtime mínimo e determinístico |
+
+**Não é objetivo:** renomear o interpretador como compilador, acrescentar uma nova linguagem
+de bootstrap, modificar a semântica do núcleo LIN ou apagar o Stage0 histórico.
+
+## 2. Contrato mínimo da LinVM para hospedar o compilador
+
+Antes do port completo, a LinVM hospedante precisa provar estes recursos no perfil
+`compiler-host-v1`:
+
+1. inteiros i64 com wrap e os mesmos casos de divisão, módulo e shifts do Stage0;
+2. chamadas, retornos, branches, loops e limite determinístico de passos;
+3. memória linear por arena, com offsets estáveis e sem identidade de ponteiro no output;
+4. slices de bytes para fonte, tokens, diagnósticos e IR;
+5. módulos e imports resolvidos em ordem canônica;
+6. I/O por capacidades explícitas: `stdin`, `stdout`, leitura de fonte e backend OpenCL;
+7. SHA-256 e Merkle com domain separation, sem relógio, endereço ou dado do host;
+8. rastro canônico `(opcode, pc, profundidade_da_pilha)` para o gate de paridade.
+
+Qualquer recurso ausente é implementado em `.lin`. O Stage0 Zig só pode receber a
+instrumentação read-only já autorizada por R2a; não recebe semântica nova para facilitar o
+port.
+
+## 3. Estratégia de bootstrap
+
+### B0 — Congelar entradas e formatos
+
+- Fixar o corpus, a ordem de módulos, a codificação de tokens/AST/MIR, os diagnósticos e o
+  formato do bytecode.
+- Registrar SHA-256 de cada entrada e um manifesto `I_canon` recomputável.
+- Rodar `selfhost parity` antes de iniciar qualquer fatia funcional.
+
+**Gate B0:** as raízes estáveis do Stage0 coincidem com as raízes pinadas; duas execuções
+limpas geram bytes idênticos.
+
+### B1 — LinVM hospedante
+
+- Evoluir `src/linvm_embedded.lin` de mini-intérprete experimental para o perfil
+  `compiler-host-v1`, sem alegar produção antes dos gates.
+- Implementar os 33 opcodes, frames, arena e trace no lado LIN.
+- Medir os mesmos vetores usados por `selfhost p1ref`.
+
+**Gate B1:** resultado, erro, passos e rastro são bit-exact para todos os vetores; limites
+de memória e passos falham fechados.
+
+### B2 — Front-end vertical mínimo
+
+- Portar primeiro bytes -> tokens -> AST -> typecheck para um subset fechado de LIN.
+- Fazer esse subset compilar o próprio módulo de lexer, evitando um port horizontal que só
+  funcione quando todo o compilador estiver pronto.
+- Acrescentar construções ao subset somente com fixture positiva e negativa.
+
+**Gate B2:** o front-end LIN recompila seu lexer e reproduz tokens, AST, códigos de erro,
+linha e coluna do Stage0.
+
+### B3 — Bytecode e ciclo autoaplicável
+
+- Portar lowering AST -> bytecode LinVM e serialização canônica.
+- Produzir `compiler_0.lbc` a partir das fontes do compilador LIN.
+- Executar `compiler_0.lbc` na LinVM para recompilar as mesmas fontes.
+
+Definições do ciclo:
+
+    C0 = Stage0_Zig(compiler_LIN_sources)
+    C1 = LinVM(C0, compiler_LIN_sources)
+    C2 = LinVM(C1, compiler_LIN_sources)
+
+**Gate B3:** `SHA-256(C0) == SHA-256(C1) == SHA-256(C2)` e os três passam o mesmo corpus.
+Igualdade só de comportamento não substitui a igualdade dos bytes do bytecode.
+
+### B4 — Back-end e serviços do compilador
+
+- Portar, nesta ordem, MIR/SSA, GPU IR/OpenCL, lint/format, CLI/transpiladores e receipts.
+- Manter receipts por último, porque eles vinculam os artefatos anteriores.
+- Expor I/O e GPU como capacidades da máquina, fora da semântica pura do compilador.
+
+**Gate B4:** cada módulo tem raiz própria e a raiz acumulada LIN é igual à referência Zig
+sobre a mesma entrada; emissão OpenCL é comparada por bytes, sem exigir GPU no gate.
+
+### B5 — Troca controlada
+
+- Tornar `LinVM + compiler_0.lbc` o caminho padrão somente após B0..B4 passarem.
+- Rodar a suíte completa e compatibilidade sem Zig no caminho de produção.
+- Publicar Stage0, fontes LIN, bytecode, manifesto e roots juntos.
+- Manter um job de auditoria que reconstrói C0; uso normal começa em C1 verificado.
+
+**Gate B5:** build limpo reproduz C1/C2, `run_suite` e `run_compat` passam, certificados são
+reverificados independentemente e rollback ao Stage0 continua possível.
+
+## 4. Organização proposta em LIN
+
+Os nomes são entregas planejadas, não alegação de implementação atual:
+
+| Módulo | Conteúdo |
+|---|---|
+| `src/linvm_selfhost.lin` | runtime `compiler-host-v1` e trace |
+| `src/lin_lexer_selfhost.lin` | bytes e tokens |
+| `src/lin_parser_selfhost.lin` | AST em arena |
+| `src/lin_typecheck_selfhost.lin` | tipos e diagnósticos |
+| `src/lin_bytecode_selfhost.lin` | lowering e serialização `.lbc` |
+| `src/lin_mir_selfhost.lin` | MIR/SSA |
+| `src/lin_gpu_emit_selfhost.lin` | GPU IR e OpenCL |
+| `src/lin_cli_selfhost.lin` | comandos e capacidades de I/O |
+| `src/lin_receipts_selfhost.lin` | certificados, ledger e Merkle |
+
+Cada módulo precisa de um manifesto de inputs, limite de recursos, hash de output e hash de
+trace. Um módulo sem esses quatro itens continua **experimental**, mesmo que execute exemplos.
+
+## 5. Gates e regra de promoção
+
+Para toda fase `k`:
+
+    PASS(k) = same_inputs
+           && same_status
+           && same_output_bytes
+           && same_diagnostics
+           && same_resource_limits
+           && same_trace_root
+           && reproducible_twice
+
+- Falhou: corrigir a implementação LIN; nunca corrigir o oráculo ou reduzir o corpus.
+- Mudou um formato: criar versão e domínio de hash novos; um digest conserva um significado.
+- Passou localmente, não em CI: fase continua `awaiting_ci`, não `done`.
+- Exemplo isolado ou mini-VM: rotular `toy`/`experimental`; somente B5 é `real_world`.
+
+## 6. Ordem prática de entregas
+
+1. especificar `compiler-host-v1` e fixtures de opcodes;
+2. concluir B1 e pinar a raiz P1 medida em CI;
+3. entregar lexer autoaplicável;
+4. entregar parser + arena e corpus de rejeições;
+5. entregar typecheck + diagnósticos;
+6. entregar serializer `.lbc` e provar C0=C1=C2;
+7. portar MIR/GPU e serviços de CLI;
+8. portar receipts, executar B4 e só então promover B5.
+
+O primeiro marco útil não é “todo o compilador portado”: é **o lexer LIN recompilando a si
+mesmo dentro da LinVM com trace bit-exact**. O marco de conclusão é C0=C1=C2 mais a suíte
+completa sem Zig no caminho de produção.
+
+## 7. Riscos que impedem promoção
+
+| Risco | Resposta obrigatória |
+|---|---|
+| bytecode depende de ordem de mapa ou host | ordenar explicitamente e adicionar fixture de reprodução |
+| VM não tem memória suficiente para o parser | arena linear limitada e erro determinístico; não usar heap implícito |
+| transpilador Zig -> LIN é lossy | portar módulos em LIN e usar o transpilador apenas como auxílio auditável |
+| igualdade de output esconde execução divergente | comparar também trace root e limites |
+| receipts congelados cedo | só portar e pinar após back-ends estabilizarem |
+| swap irreversível | publicar Stage0 e manter rollback verificado |
+
+Este plano especializa `docs/SELF_HOSTING_PLAN.rulel`: o destino é um compilador LIN
+**hospedado pela LinVM**, não “a VM fingindo ser compilador”. Até B5, todo resultado deve ser
+descrito como transição experimental, sem sobredeclaração.
