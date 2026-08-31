@@ -1,0 +1,73 @@
+@LIN:L1c:0.2
+@RSA_CRACK{version=1.0 attack=pollards_rho_factorization}
+
+!gcd(a: int, b: int) -> int {
+  x = a;
+  y = b;
+  while (y != 0) {
+    t = y;
+    y = x % y;
+    x = t;
+  };
+  ^x;
+}
+
+!pollard_step(x: int, c: int, n: int) -> int {
+  v = (x * x + c) % n;
+  ^v;
+}
+
+!find_factor_step(n: int, max_steps: int) -> int {
+  x = 2;
+  y = 2;
+  d = 1;
+  c = 1;
+  steps = 0;
+  
+  while (d == 1) {
+    x = pollard_step(x, c, n);
+    y = pollard_step(pollard_step(y, c, n), c, n);
+    
+    diff = x - y;
+    ?(diff < 0) { diff = 0 - diff; };
+    
+    d = gcd(diff, n);
+    ?(d == n) {
+      x = 2;
+      y = 2;
+      c = c + 1;
+      d = 1;
+    };
+    
+    steps = steps + 1;
+    ?(steps >= max_steps) {
+      d = 0; // abort if exceeded
+    };
+  };
+  ^d;
+}
+
+!mod_inverse_step(e: int, phi: int) -> int {
+  t = 0;
+  newt = 1;
+  r = phi;
+  newr = e;
+  
+  while (newr != 0) {
+    q = r / newr;
+    temp_t = t - q * newt;
+    t = newt;
+    newt = temp_t;
+    
+    temp_r = r - q * newr;
+    r = newr;
+    newr = temp_r;
+  };
+  
+  ?(t < 0) {
+    t = t + phi;
+  };
+  ^t;
+}
+
+=ex{gcd, pollard_step, find_factor_step, mod_inverse_step}

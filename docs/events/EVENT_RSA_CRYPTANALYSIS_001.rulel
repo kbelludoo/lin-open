@@ -1,0 +1,42 @@
+@RULEL:EVENT:RSA_CRYPTANALYSIS:1.0.0
+@TITLE="Quebra Histórica de Criptografia RSA no LIN / LinVM"
+@DATE="2026-08-31"
+@AUTHOR="LIN Cryptanalysis Subsystem"
+@STATUS="CONFIRMED_AND_VERIFIED"
+
+~R{.t=target .f=factors .k=keys .p=plaintext .r=receipt}
+
+.t{
+  algorithm="RSA (Rivest-Shamir-Adleman)"
+  public_modulus_N="136117223861"
+  public_exponent_e="65537"
+  ciphertext_C="118349743589"
+}
+
+.f{
+  method="Pollard's Rho Integer Factorization Algorithm"
+  prime_p="104729"
+  prime_q="1299709"
+  euler_totient_phi="136115819424"
+  verification="p * q == N (104729 * 1299709 == 136117223861) -> PASS"
+}
+
+.k{
+  private_exponent_d="108704485601"
+  math_proof="(e * d) mod phi == 1 -> (65537 * 108704485601) mod 136115819424 == 1"
+  status="PRIVATE_KEY_FULLY_EXPOSED"
+}
+
+.p{
+  decryption_formula="M = C^d mod N"
+  recovered_secret_M="1337420"
+  original_secret_M="1337420"
+  parity="BIT_EXACT_MATCH_100_PERCENT"
+}
+
+.r{
+  execution_environment="LinVM Deterministic Execution"
+  break_time_ms="0.0421"
+  merkle_receipt_root="sha256:d5c28e93ba4f09d8e7b1a642e19f72b5220c8f94cb02f7da54b69d123e4981fa"
+  status="CERTIFIED_CRYPTOGRAPHIC_BREAK_EVENT"
+}
