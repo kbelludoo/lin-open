@@ -15240,6 +15240,7 @@ pub fn main() !void {
                 var input_val: i64 = 7;
                 var target_dev_opt: []const u8 = "linvm_cpu";
                 var bind_var_name: []const u8 = "x";
+                var export_json = false;
                 var i_arg: usize = 2;
                 while (i_arg < args.len) : (i_arg += 1) {
                     if (std.mem.eql(u8, args[i_arg], "--source") and i_arg + 1 < args.len) {
@@ -15253,6 +15254,16 @@ pub fn main() !void {
                         i_arg += 1;
                     } else if (std.mem.eql(u8, args[i_arg], "--bind") and i_arg + 1 < args.len) {
                         bind_var_name = args[i_arg + 1];
+                        i_arg += 1;
+                    } else if (std.mem.eql(u8, args[i_arg], "--format") and i_arg + 1 < args.len) {
+                        if (std.mem.eql(u8, args[i_arg + 1], "json")) {
+                            export_json = true;
+                        }
+                        i_arg += 1;
+                    } else if (std.mem.eql(u8, args[i_arg], "--export") and i_arg + 1 < args.len) {
+                        if (std.mem.eql(u8, args[i_arg + 1], "json")) {
+                            export_json = true;
+                        }
                         i_arg += 1;
                     }
                 }
@@ -15338,19 +15349,35 @@ pub fn main() !void {
                 }
 
                 const stdout_w = std.io.getStdOut().writer();
-                try stdout_w.writeAll("{\n");
-                try stdout_w.print("  \"schema\": \"LIN_COMPUTE_RECEIPT_1.0\",\n", .{});
-                try stdout_w.print("  \"status\": \"INTEGRITY_RECEIPT_LOCAL\",\n", .{});
-                try stdout_w.print("  \"verification_level\": 0,\n", .{});
-                try stdout_w.print("  \"artifact\": \"sha256:{s}\",\n", .{std.fmt.fmtSliceHexLower(&code_digest)});
-                try stdout_w.print("  \"input\": \"{d}\",\n", .{input_val});
-                try stdout_w.print("  \"output\": \"{d}\",\n", .{res.val});
-                try stdout_w.print("  \"steps\": {d},\n", .{steps});
-                try stdout_w.print("  \"sp_at_ret\": {d},\n", .{res.sp_at_ret});
-                try stdout_w.print("  \"target_device\": \"{s}\",\n", .{target_dev_opt});
-                try stdout_w.print("  \"host_arch\": \"{s}\",\n", .{detected_host_arch});
-                try stdout_w.print("  \"merkle_root\": \"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&merkle_root)});
-                try stdout_w.writeAll("}\n");
+                if (export_json) {
+                    try stdout_w.writeAll("{\n");
+                    try stdout_w.print("  \"schema\": \"LIN_COMPUTE_RECEIPT_1.0\",\n", .{});
+                    try stdout_w.print("  \"status\": \"INTEGRITY_RECEIPT_LOCAL\",\n", .{});
+                    try stdout_w.print("  \"verification_level\": 0,\n", .{});
+                    try stdout_w.print("  \"artifact\": \"sha256:{s}\",\n", .{std.fmt.fmtSliceHexLower(&code_digest)});
+                    try stdout_w.print("  \"input\": \"{d}\",\n", .{input_val});
+                    try stdout_w.print("  \"output\": \"{d}\",\n", .{res.val});
+                    try stdout_w.print("  \"steps\": {d},\n", .{steps});
+                    try stdout_w.print("  \"sp_at_ret\": {d},\n", .{res.sp_at_ret});
+                    try stdout_w.print("  \"target_device\": \"{s}\",\n", .{target_dev_opt});
+                    try stdout_w.print("  \"host_arch\": \"{s}\",\n", .{detected_host_arch});
+                    try stdout_w.print("  \"merkle_root\": \"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&merkle_root)});
+                    try stdout_w.writeAll("}\n");
+                } else {
+                    // Default native RULEL format
+                    try stdout_w.print("@LIN:RECEIPT:1.0.0\n", .{});
+                    try stdout_w.print("~R{{.a=artifact .i=input .o=output .s=steps .p=sp .d=device .h=host .m=merkle .v=level}}\n", .{});
+                    try stdout_w.print(".status=\"INTEGRITY_RECEIPT_LOCAL\"\n", .{});
+                    try stdout_w.print(".level=0\n", .{});
+                    try stdout_w.print(".a=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&code_digest)});
+                    try stdout_w.print(".i={d}\n", .{input_val});
+                    try stdout_w.print(".o={d}\n", .{res.val});
+                    try stdout_w.print(".s={d}\n", .{steps});
+                    try stdout_w.print(".p={d}\n", .{res.sp_at_ret});
+                    try stdout_w.print(".d=\"{s}\"\n", .{target_dev_opt});
+                    try stdout_w.print(".h=\"{s}\"\n", .{detected_host_arch});
+                    try stdout_w.print(".m=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&merkle_root)});
+                }
                 return;
             }
 
@@ -15374,26 +15401,59 @@ pub fn main() !void {
                     const content = try f.readToEndAlloc(LIA_ALLOC, 64 * 1024);
                     defer LIA_ALLOC.free(content);
 
-                    const parsed = std.json.parseFromSlice(std.json.Value, LIA_ALLOC, content, .{}) catch {
-                        try stderr.print("FAIL: Compute Receipt is not valid JSON\n", .{});
+                    var art_hex: []const u8 = "";
+                    var inp_num: i64 = 0;
+                    var out_num: i64 = 0;
+                    var steps_val: u64 = 0;
+                    var sp_val: u64 = 0;
+                    var stored_merkle: []const u8 = "";
+
+                    if (std.mem.startsWith(u8, content, "{") or std.mem.indexOf(u8, content, "\"schema\"") != null) {
+                        // Parse JSON
+                        const parsed = std.json.parseFromSlice(std.json.Value, LIA_ALLOC, content, .{}) catch {
+                            try stderr.print("FAIL: Compute Receipt is not valid JSON\n", .{});
+                            std.process.exit(1);
+                        };
+                        defer parsed.deinit();
+
+                        const root_obj = parsed.value.object;
+                        const art_str = root_obj.get("artifact").?.string;
+                        const inp_str = root_obj.get("input").?.string;
+                        const out_str = root_obj.get("output").?.string;
+                        steps_val = @intCast(root_obj.get("steps").?.integer);
+                        sp_val = @intCast(root_obj.get("sp_at_ret").?.integer);
+                        stored_merkle = root_obj.get("merkle_root").?.string;
+
+                        inp_num = std.fmt.parseInt(i64, inp_str, 10) catch 0;
+                        out_num = std.fmt.parseInt(i64, out_str, 10) catch 0;
+                        art_hex = if (std.mem.startsWith(u8, art_str, "sha256:")) art_str[7..] else art_str;
+                    } else if (std.mem.indexOf(u8, content, "@LIN:RECEIPT") != null or std.mem.indexOf(u8, content, ".m=") != null) {
+                        // Parse native RULEL receipt
+                        var lines = std.mem.splitScalar(u8, content, '\n');
+                        while (lines.next()) |line| {
+                            const trimmed = std.mem.trim(u8, line, " \t\r");
+                            if (std.mem.startsWith(u8, trimmed, ".a=")) {
+                                const val_raw = std.mem.trim(u8, trimmed[3..], "\"");
+                                art_hex = if (std.mem.startsWith(u8, val_raw, "sha256:")) val_raw[7..] else val_raw;
+                            } else if (std.mem.startsWith(u8, trimmed, ".i=")) {
+                                inp_num = std.fmt.parseInt(i64, std.mem.trim(u8, trimmed[3..], "\""), 10) catch 0;
+                            } else if (std.mem.startsWith(u8, trimmed, ".o=")) {
+                                out_num = std.fmt.parseInt(i64, std.mem.trim(u8, trimmed[3..], "\""), 10) catch 0;
+                            } else if (std.mem.startsWith(u8, trimmed, ".s=")) {
+                                steps_val = std.fmt.parseInt(u64, std.mem.trim(u8, trimmed[3..], "\""), 10) catch 0;
+                            } else if (std.mem.startsWith(u8, trimmed, ".p=")) {
+                                sp_val = std.fmt.parseInt(u64, std.mem.trim(u8, trimmed[3..], "\""), 10) catch 0;
+                            } else if (std.mem.startsWith(u8, trimmed, ".m=")) {
+                                stored_merkle = std.mem.trim(u8, trimmed[3..], "\"");
+                            }
+                        }
+                    } else {
+                        try stderr.print("FAIL: Compute Receipt is neither valid RULEL nor JSON\n", .{});
                         std.process.exit(1);
-                    };
-                    defer parsed.deinit();
-
-                    const root_obj = parsed.value.object;
-                    const art_str = root_obj.get("artifact").?.string;
-                    const inp_str = root_obj.get("input").?.string;
-                    const out_str = root_obj.get("output").?.string;
-                    const steps_val = root_obj.get("steps").?.integer;
-                    const sp_val = root_obj.get("sp_at_ret").?.integer;
-                    const stored_merkle = root_obj.get("merkle_root").?.string;
-
-                    const inp_num = std.fmt.parseInt(i64, inp_str, 10) catch 0;
-                    const out_num = std.fmt.parseInt(i64, out_str, 10) catch 0;
+                    }
 
                     var code_digest: [32]u8 = undefined;
-                    const hex_part = if (std.mem.startsWith(u8, art_str, "sha256:")) art_str[7..] else art_str;
-                    _ = std.fmt.hexToBytes(&code_digest, hex_part) catch {
+                    _ = std.fmt.hexToBytes(&code_digest, art_hex) catch {
                         try stderr.print("FAIL: Invalid artifact hex in receipt\n", .{});
                         std.process.exit(1);
                     };
@@ -15401,8 +15461,8 @@ pub fn main() !void {
                     var merkle_leaf: [64]u8 = undefined;
                     std.mem.copyForwards(u8, merkle_leaf[0..32], &code_digest);
                     std.mem.writeInt(i64, merkle_leaf[32..40], out_num, .little);
-                    std.mem.writeInt(u64, merkle_leaf[40..48], @intCast(steps_val), .little);
-                    std.mem.writeInt(u64, merkle_leaf[48..56], @intCast(sp_val), .little);
+                    std.mem.writeInt(u64, merkle_leaf[40..48], steps_val, .little);
+                    std.mem.writeInt(u64, merkle_leaf[48..56], sp_val, .little);
                     std.mem.writeInt(i64, merkle_leaf[56..64], inp_num, .little);
 
                     var recalculated_merkle: [32]u8 = undefined;

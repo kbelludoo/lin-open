@@ -37,11 +37,14 @@ make build
 
 ### Creating & Verifying Compute Receipts
 ```bash
-# Generate execution receipt for sqr(7)
-./bin/lin_native receipt create --source "sqr(7)" --input 7
+# Generate native RULEL execution receipt for sqr(9)
+./bin/lin_native receipt create --source "return x * x;" --input 9
 
-# Verify execution receipt
-./bin/lin_native receipt verify
+# Export execution receipt as JSON
+./bin/lin_native receipt create --source "return x * x;" --input 9 --export json
+
+# Cryptographically verify a receipt file (.rulel or .json)
+./bin/lin_native receipt verify --receipt receipt.rulel
 ```
 
 ### Running Comprehensive Self-Hosted Test Suite
