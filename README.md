@@ -78,6 +78,30 @@ and runs on any machine with just Zig 0.13 — no OpenCL headers, ICD, or GPU. A
 functionality works; GPU/attestation commands fail gracefully with a clear "no OpenCL
 platform" message instead of crashing.
 
+### Pre-compiled Stage0 (no Zig needed)
+
+If you just want to **run** `lin` (you are not developing the compiler), you don't need to
+install Zig. Pre-compiled `Stage0` binaries are published as GitHub Release assets whenever a
+`v*` tag is pushed (and as an artifact on every CI run):
+
+- `lin_native-cpu` — CPU-only build (`zig build -Dgpu=false`). No OpenCL required; GPU
+  commands fail gracefully with a clear "no OpenCL platform" message.
+- `lin_native-gpu` — OpenCL build (needs an OpenCL runtime, e.g. PoCL/ROCm).
+
+Download the asset for your platform, make it executable, and run it exactly like the built
+binary:
+
+```bash
+chmod +x lin_native-cpu
+./lin_native-cpu version
+./lin_native-cpu check src/lin_crypto.lin
+./lin_native-cpu receipt create --source "return x * x;" --input 9
+```
+
+The asset is built from the exact same `compiler/lin.zig` source that CI verifies, in
+`ReleaseFast`, so the reproducible-Merkle-root behavior is identical. SHA-256 of each asset
+is printed in the release notes so you can verify the download.
+
 ### Run the checks and tests
 
 ```bash
