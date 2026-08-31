@@ -1,0 +1,183 @@
+@RULEL:LIN_AI_BORROW_CHECKER_SPEC:1.0.0
+// Especificação estável do protocolo de borrow para código gerado por IA.
+// Referência canônica para o módulo src/lin_ai_borrow_checker.lin.
+// Não modifique códigos de erro — eles devem permanecer estáveis para que
+// agentes possam mapear código -> ação de reparo sem ambiguidade.
+
+~R{
+  .module   = "src/lin_ai_borrow_checker.lin"
+  .version  = 1
+  .status   = experimental
+  .scope    = single_resource_deterministic
+}
+
+// ────────────────────────────────────────────────────────────
+// TABELA DE EVENTOS
+// Cada caractere na string de entrada é um evento:
+// ────────────────────────────────────────────────────────────
+~events{
+  O = { code=79  name=own_create         desc="cria o recurso e assume ownership" }
+  R = { code=82  name=shared_borrow      desc="inicia borrow compartilhado (imutável)" }
+  r = { code=114 name=shared_release     desc="encerra borrow compartilhado" }
+  W = { code=87  name=mutable_borrow     desc="inicia borrow mutável exclusivo" }
+  w = { code=119 name=mutable_release    desc="encerra borrow mutável" }
+  U = { code=85  name=use_read           desc="leitura direta pelo owner" }
+  M = { code=77  name=move               desc="transfere ownership; invalida usos futuros" }
+  D = { code=68  name=drop               desc="libera o recurso; invalida usos futuros" }
+}
+
+// ────────────────────────────────────────────────────────────
+// TABELA DE ERROS ESTÁVEIS
+// Formato de diagnóstico orientado a reparo (para agentes IA):
+//   @RULEL:LIN_AI_BORROW_ERROR:1.0.0
+//   .status=REJECT
+//   .code=<name>
+//   .resource=<id>
+//   .event=<position>
+//   .repair=<action>
+// ────────────────────────────────────────────────────────────
+~errors{
+  E1  = {
+    code   = E_DOUBLE_CREATE
+    desc   = "recurso criado duas vezes"
+    repair = "remova o segundo evento O"
+  }
+  E2  = {
+    code   = E_SHARED_BORROW_NO_OWNER
+    desc   = "borrow compartilhado sem owner vivo (moved ou dropped)"
+    repair = "garanta ownership ativo antes de R"
+  }
+  E3  = {
+    code   = E_SHARED_DURING_MUTABLE
+    desc   = "borrow compartilhado solicitado enquanto borrow mutável está ativo"
+    repair = "encerre o borrow mutável (w) antes de R"
+  }
+  E4  = {
+    code   = E_RELEASE_WITHOUT_BORROW
+    desc   = "tentativa de encerrar borrow compartilhado quando nenhum está ativo"
+    repair = "remova o r sem par correspondente"
+  }
+  E5  = {
+    code   = E_MUTABLE_BORROW_NO_OWNER
+    desc   = "borrow mutável sem owner vivo"
+    repair = "garanta ownership ativo antes de W"
+  }
+  E6  = {
+    code   = E_MUTABLE_NOT_EXCLUSIVE
+    desc   = "borrow mutável solicitado quando já existe outro borrow (mutável ou compartilhado)"
+    repair = "encerre todos os borrows ativos antes de W"
+  }
+  E7  = {
+    code   = E_MUTABLE_RELEASE_WITHOUT_BORROW
+    desc   = "tentativa de encerrar borrow mutável quando nenhum está ativo"
+    repair = "remova o w sem par correspondente"
+  }
+  E8  = {
+    code   = E_USE_AFTER_MOVE_OR_DROP
+    desc   = "uso (U) de recurso já movido ou liberado"
+    repair = "não acesse o recurso após M ou D"
+  }
+  E9  = {
+    code   = E_USE_DURING_MUTABLE_BORROW
+    desc   = "leitura direta pelo owner durante borrow mutável ativo"
+    repair = "encerre o borrow mutável (w) antes de usar (U)"
+  }
+  E10 = {
+    code   = E_MOVE_NOT_OWNED
+    desc   = "move (M) de recurso que não está em estado owned"
+    repair = "não mova recurso já movido ou liberado"
+  }
+  E11 = {
+    code   = E_MOVE_WHILE_BORROWED
+    desc   = "move (M) enquanto existem borrows ativos"
+    repair = "encerre todos os borrows antes de M"
+  }
+  E12 = {
+    code   = E_DROP_NOT_OWNED
+    desc   = "drop (D) de recurso que não está em estado owned"
+    repair = "não libere recurso já movido ou liberado"
+  }
+  E13 = {
+    code   = E_DROP_WHILE_BORROWED
+    desc   = "drop (D) enquanto existem borrows ativos"
+    repair = "encerre todos os borrows antes de D"
+  }
+  E14 = {
+    code   = E_UNKNOWN_EVENT
+    desc   = "caractere de evento não reconhecido na sequência"
+    repair = "use apenas os eventos O R r W w U M D"
+  }
+  E15 = {
+    code   = E_SHARED_BORROW_LEAKED
+    desc   = "sequência terminou com borrow(s) compartilhado(s) ainda ativos"
+    repair = "adicione r para cada R sem par antes do fim"
+  }
+  E16 = {
+    code   = E_MUTABLE_BORROW_LEAKED
+    desc   = "sequência terminou com borrow mutável ainda ativo"
+    repair = "adicione w para encerrar o borrow mutável antes do fim"
+  }
+  E17 = {
+    code   = E_RESOURCE_LEAKED
+    desc   = "sequência terminou com recurso vivo sem M ou D"
+    repair = "adicione M ou D ao final da sequência"
+  }
+  E18 = {
+    code   = E_NO_CREATE
+    desc   = "sequência processada sem nenhum evento O (criação)"
+    repair = "inicie a sequência com O"
+  }
+}
+
+// ────────────────────────────────────────────────────────────
+// EXEMPLOS CANÔNICOS (PASS)
+// ────────────────────────────────────────────────────────────
+~pass_examples{
+  ex1 = { seq="OUD"   desc="criar, usar, liberar" }
+  ex2 = { seq="ORrD"  desc="criar, emprestar (shared), liberar borrow, drop" }
+  ex3 = { seq="OWwM"  desc="criar, emprestar (mutable), liberar borrow, mover" }
+  ex4 = { seq="ORRrrD" desc="dois borrows compartilhados simultâneos" }
+  ex5 = { seq="OUUUwD" desc="múltiplos usos antes do drop (w sem W é erro; use OUUUd)" }
+}
+
+// ────────────────────────────────────────────────────────────
+// EXEMPLOS CANÔNICOS (REJECT)
+// ────────────────────────────────────────────────────────────
+~reject_examples{
+  ex1  = { seq="OWR"  error=E3  desc="shared borrow durante mutable borrow" }
+  ex2  = { seq="ORM"  error=E11 desc="move enquanto shared borrow ativo" }
+  ex3  = { seq="OMU"  error=E8  desc="uso depois de move" }
+  ex4  = { seq="ODU"  error=E8  desc="uso depois de drop" }
+  ex5  = { seq="OR"   error=E15 desc="shared borrow não encerrado" }
+  ex6  = { seq="OX"   error=E14 desc="evento desconhecido" }
+  ex7  = { seq="OO"   error=E1  desc="recurso criado duas vezes" }
+  ex8  = { seq="OWwWwM" error=E6 desc="segundo mutable borrow sem encerrar o primeiro" }
+}
+
+// ────────────────────────────────────────────────────────────
+// ROADMAP DE EVOLUÇÃO
+// (não altera semântica do protótipo atual)
+// ────────────────────────────────────────────────────────────
+~roadmap{
+  step1 = "IDs de recursos (multi-recurso simultâneo)"
+  step2 = "escopos lexicais (mapeamento de { } do AST)"
+  step3 = "branches (análise de caminhos if/else)"
+  step4 = "loops (invariantes de borrow por iteração)"
+  step5 = "chamadas de função (borrows retornados, lifetimes)"
+  step6 = "aliases de slices"
+  step7 = "análise de caminhos de controle completa"
+}
+
+// ────────────────────────────────────────────────────────────
+// MAPEAMENTO AST -> EVENTOS (referência para integração futura)
+// ────────────────────────────────────────────────────────────
+~ast_mapping{
+  creation           = O
+  immutable_ref      = R
+  end_of_ref_scope   = r
+  mutable_ref        = W
+  end_of_mut_scope   = w
+  read_access        = U
+  ownership_transfer = M
+  end_of_lifetime    = D
+}
