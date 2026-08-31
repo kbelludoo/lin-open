@@ -1,5 +1,0 @@
-@LIN:L1c:0.2
-^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
-~G{?=if #=for ^=ret :else}
-!randomUuid(){c=(((__c)=>{?(__c){return(globalThis.crypto)}return(undefined)})(typeof globalThis!='undefined'));?(c&&c.randomUUID){^c.randomUUID()};^'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,~(ch){; const r = (Math.random() * 16) | 0;; const v = (((__c)=>{if(__c){return(r);}return((r & 0x3) | 0x8);})(ch === 'x'));; return v.toString(16);})}
-=ex{randomUuid}

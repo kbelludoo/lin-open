@@ -1,6 +1,0 @@
-@LIN:L1c:0.2
-^schema_once ^lossy=true ^ops=emit_from_js
-~G{?=if #=for ^=ret :else}
-!log(msg){LOG_FILE=path.join(ROOT,'autonomy_3h.log');t=new Date().toISOString();line="["+(t)+"] "+(msg)+"\\n";process.stdout.write(line);fs.appendFileSync(LOG_FILE,line,'utf8')}
-!runCmd(cmd,args,timeoutMs){res=spawnSync(cmd,args,{cwd:ROOT,encoding:'utf8',timeout:timeoutMs,maxBuffer:20*1024*1024,shell:true});return{status:res.status??1,out:((res.stdout||'')+(res.stderr||'')).slice(-4000)}}
-=ex{log,runCmd}

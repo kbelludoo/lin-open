@@ -1,8 +1,0 @@
-@RULEL:LIN_INDEX:1.4.0
-~R{.m=meta .c=commands .p=path .g=gate .a=allow .f=forbid}
-.m{name=lin-lang path="C:/Users/k/Documents/lia" role=canonical_LIN_repo formerly=lia|ail compile=LIN_multi_emit dicel=legacy_archive_only}
-.c{test="npm test" test_multi="npm run test:multi" emit="node bin/lin.mjs emit" compile="node bin/lin.mjs compile <lin> --target js|ts|py|go|rust" clone_lin="node bin/lin.mjs clone-lin --source <url|path>"}
-.g{clone=full_repo_100_hash_eq skip_eq_fail=true LIA_gate=ge_Dicel}
-.a{code=.lin|.lia rules=.rulel|.md(RULEL)}
-.f{hand_TS hand_JS Dicel_as_working_surface mutate_lin_nucleus}
-.p{clone_spec=spec/LIN_CLONE_LIN_LOOP.rulel gate_lin=src/clone_lin_full_repo_gate.lin clone_script=scripts/clone_lin_loop.mjs autonomy=spec/LIA_AUTONOMY.dicel}

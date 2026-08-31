@@ -1,7 +1,0 @@
-@LIN:L1c:0.2
-^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only
-~G{?=if #=for ^=ret :else}
-!identLenAt(s,i){;m=/^[A-Za-z_$][A-Za-z0-9_$]*/.exec(s.slice(i));?(!m){^0};^(m[0].length)}
-!wsRunAt(s,i){;m=/^[ \t\r]+/.exec(s.slice(i));?(!m){^0};^(m[0].length)}
-!numLenAt(s,i){;c=s.charAt(i);nxt=s.charAt(i+1);?( !(/[0-9]/.test(c)) && !(c=='.'&&/[0-9]/.test(nxt)) ){^0};m=/^(?:0[xXbBoO][0-9a-fA-F_]*|(?:[0-9][0-9_]*)?(?:\.[0-9_]*)?(?:[eE][0-9+\-][0-9_]*)?)n?/.exec(s.slice(i));?(!m){^0};?( m[0].length==0 ){^0};^(m[0].length)}
-=ex{identLenAt,wsRunAt,numLenAt}

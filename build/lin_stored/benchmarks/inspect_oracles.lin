@@ -1,8 +1,0 @@
-@LIN:L1c:0.2
-^schema_once ^lossy=true ^ops=emit_from_js
-~G{?=if #=for ^=ret :else}
-!moduleMain(){spec = JSON.parse(fs.readFileSync('spec/B9_AGENT_REAL_SPEC_V1.json', 'utf8'));
-for (ep of spec.scenarios_spec.episodes) {
-  console.log((ep.episode_id)+":", JSON.stringify(ep.task_oracle.required_state_assertions));
-}}
-=ex{moduleMain}

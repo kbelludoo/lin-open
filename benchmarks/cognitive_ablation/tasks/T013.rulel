@@ -1,9 +1,0 @@
-@RULEL:T013:1.0.0
-~DATA
-.test_cases{
-    .input=[3,1,4,2] expected=[1,2,3,4]
-}
-.oracle{
-  .type="deterministic_unit" entrypoint="oracles/oracle_T013.mjs"
-}
-.id="T013" family="effects_contracts" difficulty="easy" specification="Ordenação pura de números. Entrada: array de números. Saída: novo array ordenado crescente SEM alterar o array de entrada." allowed_effects=[] forbidden_effects=["input.sort","globalState","mut"]

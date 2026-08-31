@@ -1,3 +1,0 @@
-@RULEL:TRANSPOSED_SOURCE:1.0
-~METADATA{original="benchmarks/LIN_SIGIL_005/build/prog_023.mjs" lang="mjs"}
-.source{content="// Auto-generated Generic TypeScript from LIN IR\n\nexport function flawed_sum_23(a, b) {\n  if (!(a > 0 && b > 0)) throw new Error(\"PRECONDITION_VIOLATED\");\n  const __old = (typeof self !== 'undefined' && self) ? JSON.parse(JSON.stringify(self)) : {};\n  const __exec = () => {\n    return (a + b + 10)\n  };\n  const result = __exec();\n  if (!(result == a + b)) throw new Error(\"POSTCONDITION_VIOLATED\");\n  return result;\n}\n\n"}

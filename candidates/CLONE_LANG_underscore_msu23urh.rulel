@@ -1,7 +1,0 @@
-@RULEL:LIN_CANDIDATE:1.0.0
-~R{.m=meta .h=harvest .f=forbid}
-.m{from_clone=clone-lin-underscore stage=LEARN_NEW_LANG}
-.f{mutate_nucleus=true}
-.h{fail{target=ts fn=allKeys emit=FAIL run=n/a reason="LIA_AST_FOR_HEAD"} fail{target=py fn=allKeys emit=FAIL run=n/a reason="LIA_AST_FOR_HEAD"} fail{target=go fn=allKeys emit=FAIL run=n/a reason="LIA_AST_FOR_HEAD"} fail{target=rust fn=allKeys emit=FAIL run=n/a reason="LIA_AST_FOR_HEAD"} fail{target=c fn=allKeys emit=FAIL run=n/a reason="LIA_AST_FOR_HEAD"} fail{target=java fn=allKeys emit=FAIL run=n/a reason="LIA_AST_FOR_HEAD"} fail{target=go fn=chain emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_underscore_9lHEVw\go\linmoduleschainlin.go:120:13: undefined: _u
-"} fail{target=rust fn=chain emit=ok run=FAIL reason="error[E0425]: cannot find function `_u` in this scope
-  --> C:\Users\k\AppData\Local\Temp\lin_multi_underscore_9lHEVw\ru"} fix=emit_peripheral}

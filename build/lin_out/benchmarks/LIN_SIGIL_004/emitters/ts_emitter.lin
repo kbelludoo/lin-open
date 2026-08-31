@@ -1,5 +1,0 @@
-@LIN:L1c:0.2
-^schema_once ^lossy=true ^ops=emit_from_js
-~G{?=if #=for ^=ret :else}
-!emitTypeScript(ast){let code="// Auto-generated JavaScript/TypeScript from LIN IR\\n\\n";for(const fn of ast.functions){if(fn.name==="main") {continue;}const paramsDecl=fn.params.join(', ');code+="export function "+(fn.name)+"("+(paramsDecl)+") {\\n";for(const c of fn.contracts){if(c.startsWith('pre:')){const cond=c.slice(4).trim();code+="  if (!("+(cond)+")) throw new Error(\"PRECONDITION_VIOLATED\");\\n";}}if(fn.name==="push"||fn.name==="corruptPush"){code+="  const old_size = self ? self.size : 0;\\n";}if(fn.body){code+="  const __exec = () => {\\n    "+(fn.body)+"\\n  };\\n";code+="  const result = __exec();\\n";}:{code+="  const result = null;\\n"}if(fn.name==="push"||fn.name==="corruptPush"){code+="  if (self && !(self.size >= 0 && self.size <= self.capacity)) throw new Error(\"INVARIANT_VIOLATED\");\\n";}for(const c of fn.contracts){if(c.startsWith('post:')){const cond=c.slice(5).trim().replace(/old\(self\.size\)/g,'old_size');code+="  if (!("+(cond)+")) throw new Error(\"POSTCONDITION_VIOLATED\");\\n";}}code+="  ^result;\\n}\\n\\n";}^code}
-=ex{emitTypeScript}

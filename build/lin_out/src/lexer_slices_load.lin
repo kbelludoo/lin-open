@@ -1,5 +1,0 @@
-@LIN:L1c:0.2
-^schema_once ^lossy=true ^ops=emit_from_js
-~G{?=if #=for ^=ret :else}
-!lexerSlices(){cached=null;loaded=false;if(loaded) {^cached;}loaded=true;if(process.env.LEXER_SLICES_OFF==='1'){cached=null;^cached;}try{const artifact=path.join(__dirname,'lexer_slices.compiled.cjs');if(!fs.existsSync(artifact)){cached=null;^cached;}const mod=require(artifact);for(const k of['identLenAt','wsRunAt','numLenAt']){if(typeof mod[k]!=='function') {throw new Error("slice ausente: "+(k));}}cached={identLenAt:mod.identLenAt,wsRunAt:mod.wsRunAt,numLenAt:mod.numLenAt};}catch{cached=null;}^cached}
-=ex{lexerSlices}

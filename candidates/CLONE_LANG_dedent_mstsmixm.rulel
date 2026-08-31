@@ -1,7 +1,0 @@
-@RULEL:LIN_CANDIDATE:1.0.0
-~R{.m=meta .h=harvest .f=forbid}
-.m{from_clone=clone-lin-dedent stage=LEARN_NEW_LANG}
-.f{mutate_nucleus=true}
-.h{fail{target=go fn=asTag emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_dedent_uN99uG\go\linmacrolin.go:117:44: _lia_get(quasiPath, 'parentPath').get un"} fail{target=go fn=asFunction emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_dedent_uN99uG\go\linmacrolin.go:117:44: _lia_get(quasiPath, 'parentPath').get un"} fail{target=rust fn=asTag emit=ok run=FAIL reason="error: `mut` must be followed by a named binding
-  --> C:\Users\k\AppData\Local\Temp\lin_multi_dedent_uN99uG\rust\linmac"} fail{target=rust fn=asFunction emit=ok run=FAIL reason="error: `mut` must be followed by a named binding
-  --> C:\Users\k\AppData\Local\Temp\lin_multi_dedent_uN99uG\rust\linmac"} fail{target=java fn=asTag emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_dedent_uN99uG\java\linmacrolin.java:24: error: as of release 9, '_' is a keyword"} fail{target=java fn=asFunction emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_dedent_uN99uG\java\linmacrolin.java:24: error: as of release 9, '_' is a keyword"} fail{target=ts fn=alignValue emit=FAIL run=n/a reason="LIA_PARSE_FN: !createDedent(options){dedent.withOptions=~(newOptions){^createDedent({ ...optio"} fail{target=py fn=alignValue emit=FAIL run=n/a reason="LIA_PARSE_FN: !createDedent(options){dedent.withOptions=~(newOptions){^createDedent({ ...optio"} fix=emit_peripheral}

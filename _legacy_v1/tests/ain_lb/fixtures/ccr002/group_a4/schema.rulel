@@ -1,8 +1,0 @@
-@RULEL:SCHEMA:1.0.0
-~DATA
-.Storage.write{
-  .requires{
-    .encrypted=true audit=true
-  }
-  .forbidden=["remove_validation_for_performance","rawWrite","bypass"]
-}

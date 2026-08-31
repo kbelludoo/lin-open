@@ -1,7 +1,0 @@
-@LIN:L1c:0.2
-^schema_once ^lossy=true ^ops=emit_from_js
-~G{?=if #=for ^=ret :else}
-!constructor(routerUrl,apiKey,primaryModel,secondaryModel){this.routerUrl=routerUrl;this.apiKey=apiKey;this.primaryModel=primaryModel;this.secondaryModel=secondaryModel;this.substrate=new SemanticSubstrate();this.trauma=new TraumaLedger();this.verifier=new VerifierGate(this.substrate);this.localizer=new SemanticLocalizer(this.substrate,this.trauma)}
-!extractFileAndPatch(llmResponse,availableFiles){let targetFile=null;for(const f of availableFiles){if(llmResponse.includes(f)||llmResponse.includes(path.basename(f))){targetFile=f;break;}}if(!targetFile) {targetFile=availableFiles[0];}const match=llmResponse.match(/```(?:javascript|js)?\s*([\s\S]*?)```/i);const code=match?match[1].trim():null;return{targetFile,code}}
-!runTests(repoDir){try{const out=execSync("node "+(path.join(repoDir, 'tests/test_runner.js')),{encoding:'utf8',timeout:5000});return{passed:out.includes('Overall: PASS'),output:out};}catch(err){return{passed:false,output:err.stdout||err.message};}}
-=ex{constructor,extractFileAndPatch,runTests}

@@ -1,5 +1,0 @@
-@LIN:L1c:0.2
-^schema_once ^lossy=true ^ops=emit_from_js
-~G{?=if #=for ^=ret :else}
-!check(cond,name){uriPath=path.join(vscodeDir,'src/vs/base/common/uri.ts');posPath=path.join(vscodeDir,'src/vs/editor/common/core/position.ts');rangePath=path.join(vscodeDir,'src/vs/editor/common/core/range.ts');genDir=path.resolve('clones_lin_generated');targetLin=path.join(genDir,'vscode_core.lin');passedVectors=0;totalVectors=0;totalVectors++;if(!cond){console.error("  ❌ FAIL: "+(name));throw new Error("Assertion failed: "+(name));}passedVectors++}
-=ex{check}

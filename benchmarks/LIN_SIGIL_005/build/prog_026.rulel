@@ -1,3 +1,0 @@
-@RULEL:TRANSPOSED_SOURCE:1.0
-~METADATA{original="benchmarks/LIN_SIGIL_005/build/prog_026.mjs" lang="mjs"}
-.source{content="// Auto-generated Generic TypeScript from LIN IR\n\nexport function clamp_val_26(x, min, max) {\n  if (!(min <= max)) throw new Error(\"PRECONDITION_VIOLATED\");\n  const __old = (typeof self !== 'undefined' && self) ? JSON.parse(JSON.stringify(self)) : {};\n  const __exec = () => {\n    return (Math.max(min, Math.min(max, x)))\n  };\n  const result = __exec();\n  if (!(result >= min && result <= max)) throw new Error(\"POSTCONDITION_VIOLATED\");\n  return result;\n}\n\n"}

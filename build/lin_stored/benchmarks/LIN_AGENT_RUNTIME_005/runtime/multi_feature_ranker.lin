@@ -1,6 +1,0 @@
-@LIN:L1c:0.2
-^schema_once ^lossy=true ^ops=emit_from_js
-~G{?=if #=for ^=ret :else}
-!constructor(substrate,historyTracker){this.substrate=substrate;this.historyTracker=historyTracker}
-!computeScore(symbol,module,role,entrySymbol,testErrorOutput,invariants){sGraph=0.50;if(role==='callee') {sGraph=0.95;}:( role==='entry' ){sGraph=0.85}:( role==='leaf' ){sGraph=0.70}:( role==='caller' ){sGraph=0.60}sError=0.0;if(testErrorOutput.includes(symbol)) {sError+=0.60;}if(testErrorOutput.includes(module)||testErrorOutput.includes(module.replace('src/',''))) {sError+=0.40;}sError=Math.min(1.0,sError);sInvariant=0.50;if(invariants.length>0) {sInvariant=0.85;}histHits=this.historyTracker.get(symbol)||0;sHistory=Math.min(1.0,0.40+(histHits*0.20));node=this.substrate.symbolIndex.get(symbol);sEffect=(node&&node.effect==='Pure')?0.90:0.60;finalScore=(0.30*sGraph+0.25*sError+0.20*sInvariant+0.15*sHistory+0.10*sEffect);^Number(finalScore.toFixed(3))}
-=ex{constructor,computeScore}

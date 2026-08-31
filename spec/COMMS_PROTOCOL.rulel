@@ -1,9 +1,0 @@
-@RULEL:COMMS_PROTOCOL:1.4.0
-~R{.m=meta .r=rule .f=forbid .a=allow .c=channel .s=schema .p=policy}
-.m{spec="LIN-COMMS-PROTOCOL" version="1.4.0"}
-.r{R20="dicel_only" dicel_inter_agent=true no_plain_text=true artifact_first=true}
-.f{unverified_assertions=true}
-.a{structured_evidence=true}
-.c{primary="dicel" fallback="none"}
-.s{version="1.4.0" format="rulel_plus_dicel"}
-.p{policy="artifact_first" audit="mandatory"}

@@ -1,8 +1,0 @@
-@RULEL:LIN_CANDIDATE:1.0.0
-~R{.m=meta .h=harvest .f=forbid}
-.m{from_clone=clone-lin-underscore stage=LEARN_NEW_LANG}
-.f{mutate_nucleus=true}
-.h{fail{target=java fn=clone emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_underscore_Trnr8k\java\linmodulesclonelin.java:28: error: clone() in linmodulesc"} fail{target=go fn=map emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_underscore_Trnr8k\go\linmodulesmaplin.go:117:6: syntax error: unexpected keyword"} fail{target=go fn=random emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_underscore_Trnr8k\go\linmodulesrandomlin.go:122:36: invalid operation: operator "} fail{target=rust fn=random emit=ok run=FAIL reason="error[E0277]: can't compare `String` with `Option<_>`
-  --> C:\Users\k\AppData\Local\Temp\lin_multi_underscore_Trnr8k\ru"} fail{target=java fn=random emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_underscore_Trnr8k\java\linmodulesrandomlin.java:33: error: ';' expected
-       "} fail{target=go fn=range emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_underscore_Trnr8k\go\linmodulesrangelin.go:117:6: syntax error: unexpected keywo"} fail{target=rust fn=_ emit=ok run=FAIL reason="error: expected identifier, found reserved identifier `_`
-  --> C:\Users\k\AppData\Local\Temp\lin_multi_underscore_Trnr8"} fail{target=java fn=_ emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_underscore_Trnr8k\java\linmodulesunderscorelin.java:28: error: as of release 9, "} fix=emit_peripheral}

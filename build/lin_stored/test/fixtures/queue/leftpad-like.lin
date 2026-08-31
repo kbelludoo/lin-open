@@ -1,7 +1,0 @@
-@LIN:L1c:0.2
-^schema_once ^lossy=true ^ops=emit_from_js
-~G{?=if #=for ^=ret :else}
-!pad(num,size){s='000000000'+num;^s.substr(s.length-size)}
-!leftpad(str,len,ch){str=String(str);if(!ch&&ch!==0) {ch=' ';}ch=String(ch);i=-1;pl=len-str.length;if(pl<1) {^str;}while(++i<pl){str=ch+str;};^str}
-!rjust(str,len,ch){^leftpad(str,len,ch||' ')}
-=ex{pad,leftpad,rjust}

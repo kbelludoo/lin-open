@@ -1,7 +1,0 @@
-@LIN:L1c:0.2
-^schema_once ^lossy=true ^ops=emit_from_js
-~G{?=if #=for ^=ret :else}
-!constructor(substrate,trauma){this.substrate=substrate;this.trauma=trauma}
-!identifyEntrySymbol(testErrorOutput){for(const[symbolName] of  this.substrate.symbolIndex.entries()){if(testErrorOutput.includes(symbolName)){^symbolName;}}^'satisfiesRange'}
-!localizeCandidates(entrySymbol){const callers=this.substrate.getAffectedSubtree(entrySymbol);const callees=this.substrate.dependencyGraph.get(entrySymbol)||new Set();const candidateSymbols=new Set([entrySymbol,...callees,...callers]);const refutedSymbols=new Set(this.trauma.records.map(r=>r.targetSymbol));const ranked=[];for(const sym of candidateSymbols){const node=this.substrate.symbolIndex.get(sym);if(node){const isRefuted=refutedSymbols.has(sym);ranked.push({symbol:sym,module:node.module,effect:node.effect,isRefuted,priority:isRefuted?0:1});}}ranked.sort((a,b)=>b.priority-a.priority);^ranked}
-=ex{constructor,identifyEntrySymbol,localizeCandidates}

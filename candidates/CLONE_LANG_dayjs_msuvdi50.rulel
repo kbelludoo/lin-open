@@ -1,8 +1,0 @@
-@RULEL:LIN_CANDIDATE:1.0.0
-~R{.m=meta .h=harvest .f=forbid}
-.m{from_clone=clone-lin-dayjs stage=LEARN_NEW_LANG}
-.f{mutate_nucleus=true}
-.h{fail{target=go fn=dayjs emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_dayjs_LhZxwj\go\linsrcindexlin.go:135:47: invalid operation: cannot take address"} fail{target=go fn=isDayjs emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_dayjs_LhZxwj\go\linsrcindexlin.go:135:47: invalid operation: cannot take address"} fail{target=go fn=parseLocale emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_dayjs_LhZxwj\go\linsrcindexlin.go:135:47: invalid operation: cannot take address"} fail{target=go fn=wrapper emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_dayjs_LhZxwj\go\linsrcindexlin.go:135:47: invalid operation: cannot take address"} fail{target=go fn=parseDate emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_dayjs_LhZxwj\go\linsrcindexlin.go:135:47: invalid operation: cannot take address"} fail{target=rust fn=dayjs emit=ok run=FAIL reason="error: expected `{`, found `(`
-   --> C:\Users\k\AppData\Local\Temp\lin_multi_dayjs_LhZxwj\rust\linsrcindexlin.rs:111:23"} fail{target=rust fn=isDayjs emit=ok run=FAIL reason="error: expected `{`, found `(`
-   --> C:\Users\k\AppData\Local\Temp\lin_multi_dayjs_LhZxwj\rust\linsrcindexlin.rs:111:23"} fail{target=rust fn=parseLocale emit=ok run=FAIL reason="error: expected `{`, found `(`
-   --> C:\Users\k\AppData\Local\Temp\lin_multi_dayjs_LhZxwj\rust\linsrcindexlin.rs:111:23"} fix=emit_peripheral}

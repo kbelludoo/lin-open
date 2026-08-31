@@ -1,8 +1,0 @@
-@LIN:L1c:0.2
-^schema_once ^lossy=true ^ops=strip_tests+sigil_ops+named_only+const_table
-~G{?=if #=for ^=ret :else}
-!resolveTzName(){tz=os.getenv('HERMES_TIMEZONE','').strip();?(tz){^tz}^''}
-!getZoneInfo(name){?(!name){^null}try:{^ZoneInfo(name)}except:{log.warning('Invalid timezone');^null}}
-!resetCache(){}
-!now(){name=resolveTzName();z=getZoneInfo(name);?(z!=null){^datetime.now(z)}^datetime.now().astimezone()}
-=ex{now,get_timezone,reset_cache}

@@ -1,3 +1,0 @@
-@LIN:L1c:0.2
-!moduleMain(){^"extern crate m006a_gate;\n\nfn main() {\n    let div = m006a_gate::run_tests();\n    assert_eq!(div, 5, \"safeDiv(10,2) should be 5\");\n    assert_eq!(m006a_gate::safe_div(10, 2), 5);\n    assert_eq!(m006a_gate::classify(1), 10);\n    assert_eq!(m006a_gate::classify(2), 20);\n    assert_eq!(m006a_gate::classify(9), 0, \"wildcard arm should match\");\n    println!(\"M006_A_ALL_TESTS_PASS\");\n}\n"}
-=ex{moduleMain}

@@ -1,3 +1,0 @@
-@RULEL:TRANSPOSED_SOURCE:1.0
-~METADATA{original="benchmarks/inspect_oracles.mjs" lang="mjs"}
-.source{content="// Helper script to inspect oracle assertions matching in B9\nimport fs from 'node:fs';\nconst spec = JSON.parse(fs.readFileSync('spec/B9_AGENT_REAL_SPEC_V1.json', 'utf8'));\nfor (const ep of spec.scenarios_spec.episodes) {\n  console.log(`${ep.episode_id}:`, JSON.stringify(ep.task_oracle.required_state_assertions));\n}\n"}

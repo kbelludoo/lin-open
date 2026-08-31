@@ -1,8 +1,0 @@
-@LIN:L1c:0.2
-^schema_once ^lossy=true ^ops=emit_from_js
-~G{?=if #=for ^=ret :else}
-!constructor(routerUrl,apiKey,primaryModel,secondaryModel,ollamaUrl,ollamaModel){this.routerUrl=routerUrl;this.apiKey=apiKey;this.primaryModel=primaryModel;this.secondaryModel=secondaryModel;this.ollamaUrl=ollamaUrl;this.ollamaModel=ollamaModel;this.substrate=new SemanticSubstrate();this.ledger=new HypothesisLedger();this.verifier=new VerifierGate(this.substrate);this.cumulativeReRanker=new CumulativeStateReRanker(this.substrate,this.ledger);this.frontierEngine=new CausalFrontierEngine(this.substrate,this.ledger)}
-!extractFileAndPatch(llmResponse,defaultFile,availableFiles){let targetFile=defaultFile;for(const f of availableFiles){if(llmResponse.includes(f)||llmResponse.includes("FILE: "+(f))){targetFile=f;break;}}const match=llmResponse.match(/```(?:javascript|js)?\s*([\s\S]*?)```/i);let code=match?match[1].trim():null;if(code){code=code.replace(/^FILE:[^\n]*\n+/i,'').trim();}return{targetFile,code}}
-!runTests(repoDir){try{const out=execSync("node "+(path.join(repoDir, 'tests/test_runner.js')),{encoding:'utf8',timeout:5000});return{passed:out.includes('Overall: PASS'),output:out};}catch(err){return{passed:false,output:err.stdout||err.message};}}
-!identifyEntrySymbol(testErrorOutput){for(const[symbolName] of  this.substrate.symbolIndex.entries()){if(testErrorOutput.includes(symbolName)) {^symbolName;}}^'satisfiesRange'}
-=ex{constructor,extractFileAndPatch,runTests,identifyEntrySymbol}

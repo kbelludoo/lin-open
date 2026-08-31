@@ -1,6 +1,0 @@
-@LIN:L1c:0.2
-^schema_once ^lossy=true ^ops=emit_from_js
-~G{?=if #=for ^=ret :else}
-!firstUseIsRead(body,id){s,re,m,j,before,after;s=String(body||"");re=new RegExp("\\b"+id+"\\b","g");m=null;while((m=re.exec(s))){j=m.index+id.length;while(j<s.length&&/\s/.test(s[j])){j++;};if(s[j]==="="&&s[j+1]!=="="){^false;};before=s.slice(Math.max(0,m.index-48),m.index);after=s.slice(m.index+id.length,m.index+id.length+48);if(/\{[^{}]*$/.test(before)&&/\}\s*=/.test(after)){^false;};^true;};^false}
-!collectAssignedIds(body){ids,re,m,reserved,id,forInit,im;ids=[];re=/(?:^|[;{,}])\s*([A-Za-z_$][\w$]*)\s*=(?!=)/g;m=null;s=";"+body;reserved=["return","if","for","else","function","var","let","const"];while((m=re.exec(s))!==null){id=m[1];if(!reserved.includes(id)&&!ids.includes(id)){ids.push(id);}};forInit=/for\(([^;]*);/g;while((m=forInit.exec(body))!==null){im=m[1].match(/^([A-Za-z_$][\w$]*)\s*=/);if(im&&!ids.includes(im[1])){ids.push(im[1]);}};^ids}
-=ex{firstUseIsRead,collectAssignedIds}

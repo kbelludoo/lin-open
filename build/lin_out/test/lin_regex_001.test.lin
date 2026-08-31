@@ -1,7 +1,0 @@
-@LIN:L1c:0.2
-^schema_once ^lossy=true ^ops=emit_from_js
-~G{?=if #=for ^=ret :else}
-!ok(name,cond,detail){passed=0;failed=0;failures=[];FLAGS=['','i'];cases=[];bi=0,ti=0,fi=0;if(cond) {passed++;}:{failed++;failures.push((name)+(detail ? ': ' + detail : ''))}}
-!runLin(src){passed=0;failed=0;failures=[];FLAGS=['','i'];cases=[];bi=0,ti=0,fi=0;const r=compile(src,{target:'js'});const f=path.join(tmp,"p"+(passed + failed)+".cjs");fs.writeFileSync(f,r.code);^require(f)}
-!_anon2(f){passed=0;failed=0;failures=[];FLAGS=['','i'];cases=[];bi=0,ti=0,fi=0;^"  ✗ "+(f)}
-=ex{ok,runLin,_anon2}

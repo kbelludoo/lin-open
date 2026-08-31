@@ -1,3 +1,0 @@
-@RULEL:TRANSPOSED_SOURCE:1.0
-~METADATA{original="benchmarks/LIN_SIGIL_005/build/run_prog_008.mjs" lang="mjs"}
-.source{content="\n        import { clamp_val_8 } from './prog_008.mjs';\n        try {\n          const args = {\"x\":50,\"min\":10,\"max\":100};\n          const res = clamp_val_8(...Object.values(args));\n          console.log(JSON.stringify({ status: 'ACCEPTED', reason: 'OK', res }));\n        } catch(err) {\n          console.log(JSON.stringify({ status: 'REJECTED', reason: err.message, res: null }));\n        }\n      "}

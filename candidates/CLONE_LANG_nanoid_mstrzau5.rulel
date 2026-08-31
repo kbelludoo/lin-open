@@ -1,9 +1,0 @@
-@RULEL:LIN_CANDIDATE:1.0.0
-~R{.m=meta .h=harvest .f=forbid}
-.m{from_clone=clone-lin-nanoid stage=LEARN_NEW_LANG}
-.f{mutate_nucleus=true}
-.h{fail{target=go fn=random emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_nanoid_luiPeA\go\linindexbrowserlin.go:123:48: syntax error: unexpected = in par"} fail{target=go fn=customRandom emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_nanoid_luiPeA\go\linindexbrowserlin.go:123:48: syntax error: unexpected = in par"} fail{target=go fn=customAlphabet emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_nanoid_luiPeA\go\linindexbrowserlin.go:123:48: syntax error: unexpected = in par"} fail{target=go fn=nanoid emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_nanoid_luiPeA\go\linindexbrowserlin.go:123:48: syntax error: unexpected = in par"} fail{target=rust fn=random emit=ok run=FAIL reason="error: expected one of `:`, `@`, or `|`, found `=`
-  --> C:\Users\k\AppData\Local\Temp\lin_multi_nanoid_luiPeA\rust\lini"} fail{target=rust fn=customRandom emit=ok run=FAIL reason="error: expected one of `:`, `@`, or `|`, found `=`
-  --> C:\Users\k\AppData\Local\Temp\lin_multi_nanoid_luiPeA\rust\lini"} fail{target=rust fn=customAlphabet emit=ok run=FAIL reason="error: expected one of `:`, `@`, or `|`, found `=`
-  --> C:\Users\k\AppData\Local\Temp\lin_multi_nanoid_luiPeA\rust\lini"} fail{target=rust fn=nanoid emit=ok run=FAIL reason="error: expected one of `:`, `@`, or `|`, found `=`
-  --> C:\Users\k\AppData\Local\Temp\lin_multi_nanoid_luiPeA\rust\lini"} fix=emit_peripheral}

@@ -1,5 +1,0 @@
-@LIN:L1c:0.2
-^schema_once ^lossy=true ^ops=emit_from_js
-~G{?=if #=for ^=ret :else}
-!executeLinCandidate(code){BASE_DIR='/home/k/Downloads/lin-master/benchmarks/cognitive_ablation';allPassed=true;let clean=code.replace(/@LIN:[^\n]+\n/g,'').replace(/=ex\{[^\}]+\}/g,'').trim();clean=clean.replace(/!([a-zA-Z0-9_]+)\(([^)]*)\)\{/g,'function $1($2){').replace(/\$([a-zA-Z0-9_]+)\s*=/g,'let $1 =').replace(/\?\(([^)]+)\)\{/g,'if ($1) {').replace(/\:\(([^)]+)\)\{/g,'} :( $1 ){').replace(/\:\{/g,'} else {').replace(/\#\(([^;]*);([^;]*);([^)]*)\)\{/g,'for (let $1; $2; $3) {').replace(/\^([^\n;\}]+)/g,'^$1');const fn=new Function('input',"\n    "+(clean)+"\n    ^solve(input);\n  ");^fn}
-=ex{executeLinCandidate}

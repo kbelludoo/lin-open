@@ -1,8 +1,0 @@
-@LIN:L1c:0.2
-^schema_once ^lossy=true ^ops=emit_from_js
-~G{?=if #=for ^=ret :else}
-!rng(){seed=20260825;seed^=seed<<13;seed^=seed>>17;seed^=seed<<5;return(seed>>>0)/4294967296}
-!randomChoice(arr){^arr[Math.floor(rng()*arr.length)]}
-!generateRandomDoc(depth){if(depth>3||rng()<0.3){prims=[42,-10,0,'hello','world',true,false,null,'100'];^randomChoice(prims);};if(rng()<0.5){len=Math.floor(rng()*4)+1;arr=[];for(i=0;i<len;i++) {arr.push(generateRandomDoc(depth+1));}^arr;}:{keys=['a','b','c','foo','bar','val','item'];obj={};count=Math.floor(rng()*3)+1;for(i=0;i<count;i++){obj[randomChoice(keys)]=generateRandomDoc(depth+1);};^obj}}
-!generateRandomPatch(doc){ops=['add','replace','remove','move','copy','test'];patch=[];patchCount=Math.floor(rng()*3)+1;for(i=0;i<patchCount;i++){op=randomChoice(ops);paths=['/a','/b','/0','/1','/foo','/bar','/val/a','/item',''];p=randomChoice(paths);pItem={op,path:p};if(op==='add'||op==='replace'||op==='test'){pItem.value=generateRandomDoc(2);};if(op==='move'||op==='copy'){pItem.from=randomChoice(paths);};patch.push(pItem);};^patch}
-=ex{rng,randomChoice,generateRandomDoc,generateRandomPatch}

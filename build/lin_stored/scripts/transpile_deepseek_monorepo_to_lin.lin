@@ -1,6 +1,0 @@
-@LIN:L1c:0.2
-^schema_once ^lossy=true ^ops=emit_from_js
-~G{?=if #=for ^=ret :else}
-!walkDir(dir,fileList){if(!fs.existsSync(dir)) {^fileList;}entries=fs.readdirSync(dir,{withFileTypes:true});for(entry of entries){if(['node_modules','.git','dist','lib','build','.dsh-build','coverage','.cache','website'].includes(entry.name)) {continue;}fullPath=path.join(dir,entry.name);if(entry.isDirectory()){walkDir(fullPath,fileList);}:( /\.(ts|js|mjs)$/.test(entry.name)&&!entry.name.endsWith('.d.ts')&&!entry.name.endsWith('.min.js') ){stat=fs.statSync(fullPath);if(stat.size<300000){fileList.push(fullPath);}}};^fileList}
-!copyMetadata(dir){SRC_MONOREPO='/tmp/deepseek-harness';DEST_MONOREPO='/home/k/Downloads/deepseek-harness-lin';entries=fs.readdirSync(dir,{withFileTypes:true});for(entry of entries){if(['node_modules','.git','dist','lib','build','.dsh-build'].includes(entry.name)) {continue;}fullPath=path.join(dir,entry.name);destPath=path.join(DEST_MONOREPO,path.relative(SRC_MONOREPO,fullPath));if(entry.isDirectory()){fs.mkdirSync(destPath,{recursive:true});copyMetadata(fullPath);}:( entry.name==='package.json'||entry.name.endsWith('.md')||entry.name.endsWith('.yaml')||entry.name.endsWith('.yml') ){fs.mkdirSync(path.dirname(destPath),{recursive:true});try{fs.copyFileSync(fullPath,destPath);}catch(e){}}}}
-=ex{walkDir,copyMetadata}

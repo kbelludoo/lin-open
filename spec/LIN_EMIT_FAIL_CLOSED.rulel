@@ -1,8 +1,0 @@
-@RULEL:LIN_EMIT_FAIL_CLOSED:1.0.0
-~R{.m=meta .r=rule .f=forbid .a=allow .g=gate .c=contract}
-.m{lang=LIN status=ACTIVE repo="C:/Users/k/Documents/lia" why=never_write_illegal_JS parent=spec/LIN_CLONE_LIN_LOOP.rulel}
-.r{R_CHK=after_JS_emit=node_--check R_LOSSY=lossy_may_warn_never_write_illegal R_K=merge_all_$K_tables R_ELSE=colon_else_only_as_:{_or_:(cond) R_EX=refuse_=ex_name_without_!fn R_RET=^({k:v})_survives;mid_body_^_then_#(_gets_stmt_sep}
-.f{write_illegal_js report_compile_ok_on_parse_fail rewrite_colon_inside_object_or_string keep_only_last_$K export_missing_fn return_expr_glued_to_for}
-.a{check=src/js_syntax_check.mjs compiler=src/compiler.mjs emit_js=src/emit_js.mjs tests=tests/emit_fail_closed.test.mjs}
-.g{pass=node_--check_ok AND no_dest_write_on_fail}
-.c{illegal_js=FAIL_not_OK lossy=warn+FAIL merge_$K=Object.assign else=prev_is_}_or_;}

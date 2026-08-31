@@ -1,8 +1,0 @@
-@RULEL:LIN_CANDIDATE:1.0.0
-~R{.m=meta .h=harvest .f=forbid}
-.m{from_clone=clone-lin-gstack stage=LEARN_NEW_LANG}
-.f{mutate_nucleus=true}
-.h{fail{target=go fn=parseV emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_gstack_Qf0mBM\go\linscriptscompareprversionlin.go:128:11: invalid operation: ope"} fail{target=go fn=cmp emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_gstack_Qf0mBM\go\linscriptscompareprversionlin.go:128:11: invalid operation: ope"} fail{target=rust fn=parseV emit=ok run=FAIL reason="error[E0369]: cannot subtract `String` from `String`
-  --> C:\Users\k\AppData\Local\Temp\lin_multi_gstack_Qf0mBM\rust\li"} fail{target=rust fn=cmp emit=ok run=FAIL reason="error[E0369]: cannot subtract `String` from `String`
-  --> C:\Users\k\AppData\Local\Temp\lin_multi_gstack_Qf0mBM\rust\li"} fail{target=java fn=parseV emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_gstack_Qf0mBM\java\linscriptscompareprversionlin.java:37: error: bad operand typ"} fail{target=java fn=cmp emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_gstack_Qf0mBM\java\linscriptscompareprversionlin.java:37: error: bad operand typ"} fail{target=py fn=detect emit=ok run=FAIL reason="  File 'C:\Users\k\AppData\Local\Temp\lin_multi_gstack_Qf0mBM\py\linscriptsdetectbumplin.py', line 58
-    ([,a1,a2,a3,a"} fail{target=go fn=detect emit=ok run=FAIL reason="C:\Users\k\AppData\Local\Temp\lin_multi_gstack_Qf0mBM\go\linscriptsdetectbumplin.go:127:4: syntax error: unexpected comm"} fix=emit_peripheral}

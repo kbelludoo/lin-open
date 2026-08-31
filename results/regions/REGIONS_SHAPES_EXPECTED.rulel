@@ -1,8 +1,0 @@
-@RULEL:LIN_REGIONS:1.0.0
-.policy{ states=PROVED|FALSE|UNKNOWN default=UNKNOWN fail_closed=true }
-.regions{
-  .R1{ fn=rs_readonly kind=while induction="i" reads="" writes="" calls="" parallel_safe=PROVED reason=read_only_region_no_write_conflict }
-  .R2{ fn=rs_reduction kind=while induction="i" reads="sum,s" writes="sum" calls="" parallel_safe=FALSE reason=loop_carried_dependency }
-  .R3{ fn=rs_with_call kind=while induction="i" reads="s" writes="t" calls="rs_readonly" parallel_safe=UNKNOWN reason=calls_with_unproven_effects }
-}
-.summary{ total=3 proved=1 dependent=1 unknown=1 }

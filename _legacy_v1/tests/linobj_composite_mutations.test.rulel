@@ -1,3 +1,0 @@
-@RULEL:TRANSPOSED_SOURCE:1.0
-~METADATA{original="_legacy_v1/tests/linobj_composite_mutations.test.mjs" lang="mjs"}
-.source{content="import assert from 'node:assert/strict';\nimport { runCompositeBenchmark } from '../scripts/bench_linobj_composite_mutations.mjs';\n\nconsole.log('=== Running Composite Combinatorial Mutation Gate ===\\n');\n\nconst res = await runCompositeBenchmark();\n\nassert.equal(res.passed, res.total, 'All composite mutation scenarios must pass with 100% precision');\n\nconsole.log('\\n============================================================');\nconsole.log('Composite Combinatorial Mutation Gate PASSED (100%).');\nconsole.log('============================================================\\n');\n"}
