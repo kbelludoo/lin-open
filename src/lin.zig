@@ -15319,6 +15319,23 @@ pub fn main() !void {
                 var merkle_root: [32]u8 = undefined;
                 std.crypto.hash.sha2.Sha256.hash(&merkle_leaf, &merkle_root, .{});
 
+                // Detect host CPU model dynamically
+                var detected_host_arch: []const u8 = "x86_64";
+                const cpuinfo_file = std.fs.cwd().openFile("/proc/cpuinfo", .{}) catch null;
+                if (cpuinfo_file) |cf| {
+                    defer cf.close();
+                    var buf: [512]u8 = undefined;
+                    const read_len = cf.readAll(&buf) catch 0;
+                    const content = buf[0..read_len];
+                    if (std.mem.indexOf(u8, content, "Xeon")) |_| {
+                        detected_host_arch = "Intel_Xeon_Haswell_v3";
+                    } else if (std.mem.indexOf(u8, content, "AMD") != null) {
+                        detected_host_arch = "AMD_x86_64";
+                    } else if (std.mem.indexOf(u8, content, "Intel") != null) {
+                        detected_host_arch = "Intel_x86_64";
+                    }
+                }
+
                 const stdout_w = std.io.getStdOut().writer();
                 try stdout_w.writeAll("{\n");
                 try stdout_w.print("  \"schema\": \"LIN_COMPUTE_RECEIPT_1.0\",\n", .{});
@@ -15330,7 +15347,7 @@ pub fn main() !void {
                 try stdout_w.print("  \"steps\": {d},\n", .{steps});
                 try stdout_w.print("  \"sp_at_ret\": {d},\n", .{res.sp_at_ret});
                 try stdout_w.print("  \"target_device\": \"{s}\",\n", .{target_dev_opt});
-                try stdout_w.print("  \"host_arch\": \"AMD_ZEN3\",\n", .{});
+                try stdout_w.print("  \"host_arch\": \"{s}\",\n", .{detected_host_arch});
                 try stdout_w.print("  \"merkle_root\": \"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&merkle_root)});
                 try stdout_w.writeAll("}\n");
                 return;

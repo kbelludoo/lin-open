@@ -1694,11 +1694,28 @@ pub fn main() !void {
     try stdout.print("[7/7] Full Self-Hosted Provenance Certificate Ledger Report\n", .{});
     total += 1;
 
+    // Detect host CPU model dynamically
+    var host_cpu_name: []const u8 = "CPU_x86_64";
+    const cpuinfo_f = std.fs.cwd().openFile("/proc/cpuinfo", .{}) catch null;
+    if (cpuinfo_f) |cf| {
+        defer cf.close();
+        var buf: [512]u8 = undefined;
+        const rlen = cf.readAll(&buf) catch 0;
+        const cont = buf[0..rlen];
+        if (std.mem.indexOf(u8, cont, "Xeon")) |_| {
+            host_cpu_name = "Intel_Xeon_v3_Haswell";
+        } else if (std.mem.indexOf(u8, cont, "AMD") != null) {
+            host_cpu_name = "AMD_Zen_x86_64";
+        } else if (std.mem.indexOf(u8, cont, "Intel") != null) {
+            host_cpu_name = "Intel_Core_x86_64";
+        }
+    }
+
     try stdout.print("================================================================================\n", .{});
     try stdout.print("@LIN:FULL_SELF_HOSTED_SUITE_CERTIFICATE:1.4.0\n", .{});
     try stdout.print(".status=\"PASS_FULL_SELF_HOSTED_LIN\"\n", .{});
     try stdout.print(".target_device=\"{s}\"\n", .{dev_name});
-    try stdout.print(".host_device=\"CPU_ZEN3\"\n", .{});
+    try stdout.print(".host_device=\"{s}\"\n", .{host_cpu_name});
     try stdout.print(".compiler_0_runtime=\"ZIG_BOOTSTRAP_STAGE_0_MINIMAL\"\n", .{});
     try stdout.print(".zig_to_lin_transpiler_active=true\n", .{});
     try stdout.print(".c_expr_pratt_parser_active=true\n", .{});
