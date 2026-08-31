@@ -1,0 +1,45 @@
+@LIN:L1c:0.2
+@PQC_MLKEM_KYBER{version=1.0 standard=NIST_FIPS_203 modulus=3329 degree=256}
+
+!montgomery_reduce(a: int) -> int {
+  // QINV = -3327 (0xF2FF), KYBER_Q = 3329
+  t = (a * -3327) & 65535;
+  ?(t >= 32768) { t = t - 65536; };
+  u = _lia_shr(a - (t * 3329), 16);
+  ^u;
+}
+
+!barrett_reduce(a: int) -> int {
+  // Reducao barrett para modulo 3329
+  t = _lia_shr(a * 20159 + 33554432, 26);
+  t = t * 3329;
+  ^a - t;
+}
+
+!ntt_butterfly_ct(r_j: int, r_j_len: int, zeta: int) -> int {
+  // Cooley-Tukey NTT Butterfly Step:
+  // t = montgomery_reduce(zeta * r[j+len])
+  // r[j+len] = r[j] - t; r[j] = r[j] + t
+  t = montgomery_reduce(zeta * r_j_len);
+  next_low = r_j + t;
+  next_high = r_j - t;
+  
+  // Empacota os dois coeficientes resultantes em um escalar de 32-bit
+  packed = ((next_high & 65535) * 65536) | (next_low & 65535);
+  ^packed;
+}
+
+!kyber_basemul_step(a0: int, a1: int, b0: int, b1: int, zeta: int) -> int {
+  // Multiplicacao base no dominio NTT:
+  // r0 = a1*b1*zeta + a0*b0
+  // r1 = a0*b1 + a1*b0
+  term1 = montgomery_reduce(a1 * b1);
+  term1_zeta = montgomery_reduce(term1 * zeta);
+  r0 = term1_zeta + montgomery_reduce(a0 * b0);
+  
+  r1 = montgomery_reduce(a0 * b1) + montgomery_reduce(a1 * b0);
+  
+  ^((r1 & 65535) * 65536) | (r0 & 65535);
+}
+
+=ex{montgomery_reduce, barrett_reduce, ntt_butterfly_ct, kyber_basemul_step}
