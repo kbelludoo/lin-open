@@ -14122,22 +14122,22 @@ pub fn main() !void {
                     },
                     .unary_neg => {
                         const v = try self.eval(self.lhs[node_idx], env);
-                        return -v;
+                        return 0 -% v;
                     },
                     .add => {
                         const l = try self.eval(self.lhs[node_idx], env);
                         const r = try self.eval(self.rhs[node_idx], env);
-                        return l + r;
+                        return l +% r;
                     },
                     .sub => {
                         const l = try self.eval(self.lhs[node_idx], env);
                         const r = try self.eval(self.rhs[node_idx], env);
-                        return l - r;
+                        return l -% r;
                     },
                     .mul => {
                         const l = try self.eval(self.lhs[node_idx], env);
                         const r = try self.eval(self.rhs[node_idx], env);
-                        return l * r;
+                        return l *% r;
                     },
                     .div => {
                         const l = try self.eval(self.lhs[node_idx], env);

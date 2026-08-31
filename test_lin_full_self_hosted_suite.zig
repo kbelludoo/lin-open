@@ -413,22 +413,22 @@ pub fn main() !void {
                 },
                 .unary_neg => {
                     const v = try self.eval(self.lhs[node_idx], env);
-                    return -v;
+                    return 0 -% v;
                 },
                 .add => {
                     const l = try self.eval(self.lhs[node_idx], env);
                     const r = try self.eval(self.rhs[node_idx], env);
-                    return l + r;
+                    return l +% r;
                 },
                 .sub => {
                     const l = try self.eval(self.lhs[node_idx], env);
                     const r = try self.eval(self.rhs[node_idx], env);
-                    return l - r;
+                    return l -% r;
                 },
                 .mul => {
                     const l = try self.eval(self.lhs[node_idx], env);
                     const r = try self.eval(self.rhs[node_idx], env);
-                    return l * r;
+                    return l *% r;
                 },
                 .div => {
                     const l = try self.eval(self.lhs[node_idx], env);
@@ -812,7 +812,17 @@ pub fn main() !void {
                 defer vm_lowerer.deinit();
                 const lower_res = vm_lowerer.lower(&parser.arena, root, &suite_env);
 
-                if (eval_res) |_| {
+                if (std.mem.eql(u8, tc.input, "5 / 0") or std.mem.eql(u8, tc.input, "5 % 0")) {
+                    if (eval_res) |_| {
+                        try stdout.print("  [FAIL] Vector \"{s}\" expected DivisionByZero in AST eval\n", .{tc.input});
+                        return error.CParserVerificationFailed;
+                    } else |ast_err| {
+                        if (ast_err != error.DivisionByZero) {
+                            try stdout.print("  [FAIL] Vector \"{s}\" got wrong AST error: {any}\n", .{ tc.input, ast_err });
+                            return error.CParserVerificationFailed;
+                        }
+                    }
+
                     if (lower_res) |bytecode| {
                         var fn_mock = VmFn{
                             .name = "test_expr",
@@ -826,11 +836,39 @@ pub fn main() !void {
                         const vm_args = [_]i64{ 10, 20, 5, 15 };
                         var steps: u64 = 0;
                         if (vmExec(&mod_mock, 0, &vm_args, 0, &steps)) |_| {
-                            try stdout.print("  [FAIL] Vector \"{s}\" expected failure but succeeded in AST & VM\n", .{tc.input});
+                            try stdout.print("  [FAIL] Vector \"{s}\" expected VmDivisionByZero in LinVM execution\n", .{tc.input});
                             return error.CParserVerificationFailed;
-                        } else |_| {}
-                    } else |_| {}
-                } else |_| {}
+                        } else |vm_err| {
+                            if (vm_err != error.VmDivisionByZero) {
+                                try stdout.print("  [FAIL] Vector \"{s}\" got wrong LinVM error: {any}\n", .{ tc.input, vm_err });
+                                return error.CParserVerificationFailed;
+                            }
+                        }
+                    } else |_| {
+                        try stdout.print("  [FAIL] Vector \"{s}\" failed lower unexpectedly\n", .{tc.input});
+                        return error.CParserVerificationFailed;
+                    }
+                } else if (std.mem.eql(u8, tc.input, "unknown_var + 1")) {
+                    if (eval_res) |_| {
+                        try stdout.print("  [FAIL] Vector \"{s}\" expected UndefinedVariable in AST eval\n", .{tc.input});
+                        return error.CParserVerificationFailed;
+                    } else |ast_err| {
+                        if (ast_err != error.UndefinedVariable) {
+                            try stdout.print("  [FAIL] Vector \"{s}\" got wrong AST error: {any}\n", .{ tc.input, ast_err });
+                            return error.CParserVerificationFailed;
+                        }
+                    }
+
+                    if (lower_res) |_| {
+                        try stdout.print("  [FAIL] Vector \"{s}\" expected UndefinedVariable in lowerer\n", .{tc.input});
+                        return error.CParserVerificationFailed;
+                    } else |low_err| {
+                        if (low_err != error.UndefinedVariable) {
+                            try stdout.print("  [FAIL] Vector \"{s}\" got wrong Lowerer error: {any}\n", .{ tc.input, low_err });
+                            return error.CParserVerificationFailed;
+                        }
+                    }
+                }
             } else |_| {}
         } else {
             if (root_res) |root| {
@@ -884,7 +922,7 @@ pub fn main() !void {
     total += 1;
 
     try stdout.print("================================================================================\n", .{});
-    try stdout.print("@LIN:FULL_SELF_HOSTED_SUITE_CERTIFICATE:1.1.0\n", .{});
+    try stdout.print("@LIN:FULL_SELF_HOSTED_SUITE_CERTIFICATE:1.2.0\n", .{});
     try stdout.print(".status=\"PASS_FULL_SELF_HOSTED_LIN\"\n", .{});
     try stdout.print(".target_device=\"{s}\"\n", .{dev_name});
     try stdout.print(".host_device=\"CPU_ZEN3\"\n", .{});
@@ -892,6 +930,9 @@ pub fn main() !void {
     try stdout.print(".zig_to_lin_transpiler_active=true\n", .{});
     try stdout.print(".c_expr_pratt_parser_active=true\n", .{});
     try stdout.print(".c_expr_vectors=29\n", .{});
+    try stdout.print(".linvm_div_supported=true\n", .{});
+    try stdout.print(".ast_to_vm_lowerer_active=true\n", .{});
+    try stdout.print(".ast_vm_parity_vectors=29\n", .{});
     try stdout.print(".flat_ast_arena_active=true\n", .{});
     try stdout.print(".self_hosted_lin_modules_active={d}\n", .{lin_module_files.len});
     try stdout.print(".total_self_hosted_lin_bytes={d}\n", .{total_lin_bytes});
