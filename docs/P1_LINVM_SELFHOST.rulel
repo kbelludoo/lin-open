@@ -1,0 +1,180 @@
+@RULEL:DOC_P1_LINVM_SELFHOST:1.0.0
+~MARKDOWN_SPEC
+# P1 — LinVM auto-hospedado em LIN (`src/linvm_selfhost.lin`)
+
+> **Veredito:** P1 entrega um interpretador LinVM completo e auto-hospedado, escrito 100% em
+> LIN, cobrindo os **33 opcodes** de `VmOp` (`compiler/lin.zig:5585`) com semântica i64 exata
+> (wrapping, shifts `_lia_*`, `div`/`mod` nos casos-limite, `VM_STEP_LIMIT`, traço determinístico)
+> e um gate de golden values que roda no **LinVM Zig real** via `lin vm`. Zero edições em Zig
+> neste PR (R0/R1 respeitadas). O módulo é **fora do corpus de 20 arquivos** (rito Q3): entra no
+> corpus apenas após o gate da fase — até lá vive como módulo com cobertura e goldens próprios.
+
+---
+
+## 1. O que é
+
+`src/linvm_selfhost.lin` (598 linhas, 21 funções) contém:
+
+| Peça | Descrição |
+|---|---|
+| `vms_core(sel, fn_idx, depth, steps_in, mode, h_in, x0..x3)` | o interpretador: loop fetch/decode/execute dos 33 opcodes sobre tabelas de bytecode embutidas |
+| `oc0/oc1` (256+256) · `ag0/ag1` (256+256) | código plano: opcode + operando de cada instrução dos 31 programas embutidos (477 instruções no total) |
+| `ft` (128 células, 4 palavras/fn) | tabela de funções: `nparams\|(start<<6)`, `len\|(narrs<<10)`, pares de arrays `(li\|arrn<<6)<<(15*s)` |
+| `vms_value/steps/status/trace/sp` | runners dos 5 modos (valor, passos, status, traço, sp-at-ret) |
+| `vms_*_sweep` + `vms_sweep_sel` | execução com argumento varrido (`sel = 100000+fi`, `x0 = sel - 100000`) |
+| `vms_expect` / `vms_expect_sweep` | asserções por golden (status≠0 só asserta status) |
+| `vms_gate` | gate da fase: 1 verificação de 33 opcodes + 32 sels + 88 sweeps; retorna 1 sse tudo casa |
+| `vms_vectors_total` / `vms_ops_total` | 32 vetores / 33 opcodes — cobertura declarada no header `@LINVM_SELFHOST{ops=33 sels=32 sweep_sels=88}` |
+| `vms_div` / `vms_udiv` / `vms_uge` / `vms_i64min` | helpers escalares puros (o fonte não usa `/` — R-VM `VM_REJ_INT_DIVISION`) |
+
+**Programas embutidos** (31): 21 funções reais do corpus (bithacks, crypto, compatibility,
+array_kernel, `lin_add` sintético do subgate 001D) + 3 kernels unários de
+`examples/map_kernels.lin` + 7 vetores montados à mão cobrindo os 33 opcodes e os casos-limite
+(`vm_full_ops`, `vm_arr_ops`, `vm_jumps`, `vm_div_edges`, `vm_mod_edges`, `vm_div_zero`,
+`vm_mod_zero`, `vm_shift_edges`, `vm_fallthrough`).
+
+O bytecode embutido é uma transcrição 1:1 de `vmTokenize` + `VmComp` (`compiler/lin.zig:5660–6350`)
+incluindo os quirks reais do compilador: literais apenas decimais, `;` obrigatório após toda
+atribuição (mesmo antes de `}`), `||`/`&&` proibidos dentro de literais de array, sem `for`,
+sem `/` no fonte, offsets de jump absolutos dentro da função achatados para a tabela plana.
+
+## 2. Semântica (bit-exact com `vmExec`, `compiler/lin.zig:6431–6605`)
+
+| Aspecto | Comportamento implementado |
+|---|---|
+| Aritmética | i64 com wrapping em `+ - *` e em `div/mod` via helpers sem `/` |
+| `shl/shr/ushr` | `_lia_shl/_lia_shr/_lia_ushr` (opcodes VM 13/14/15): deslocamento fora de 0..63 → 0 |
+| `div` | `@divTrunc`: `y==0` → status 7; `INT64_MIN / -1` → `INT64_MIN` |
+| `mod` | `@rem`: `y==0` → status 7; `INT64_MIN mod -1` → 0 |
+| `VM_STEP_LIMIT` | `steps > 200_000_000` → status 1 (contador compartilhado na cadeia de calls: o pai acumula os passos do filho em todos os modos) |
+| Pilha | push/load conferem 256; pop/store_index conferem sp≥1/≥2; estouro → status 2, underflow → status 3 |
+| `ret` | devolve `st[sp-1]` **sem pop**; `sp_at_ret = sp` (subgate 001D: `lin_add(20,22)=42, sp=1` ✓) |
+| `jump_if_false` | **faz pop** da condição e pula se 0; `*_keep` espia sem pop |
+| `call` | pop de `n` args da pilha → args entram nos **locals** do filho (pilha do filho começa vazia, como no Zig) → resultado empilhado |
+| Arrays | pool multi-slot (≤8 slots sobre 256 células; `loc[56+s]` = len do slot; base = soma de prefixo) — modela `pool[VM_MAX_ARRS][VM_MAX_ARR_LEN]i64` dentro do teto de 256 de LIN |
+| `load_index`/`store_index` | fora dos limites → 0 / no-op silencioso |
+| `arr_len` | len do slot; array sem slot → 0 |
+| Fallthrough | sem `ret` no fim → valor 0, `sp_at_ret = sp` |
+| Traço | após cada instrução concluída (incl. fallthrough): `h = ((h + opcode) * 31) + sp` — determinístico, independente de valores |
+| Status | 0 ok · 1 VmStepLimit · 2 VmStackOverflow · 3 VmStackUnderflow · 4 VmBadFunction · 5 VmDepth · 7 VmDivisionByZero |
+
+**Convenção de falha (exata nos 5 modos, no ponto da falha):**
+
+| Modo | Sucesso | Falha |
+|---|---|---|
+| 0 (valor) | valor | `0` (canal de valor nunca é assertado em execuções que falham) |
+| 1 (passos) | passos da subárvore | `-(passos reais consumidos)` — pai detecta e aborta com `-(total real)` |
+| 2 (status) | `0` | código do `VmError` |
+| 3 (traço) | fold | `h` no ponto da falha |
+| 4 (sp) | `sp_at_ret` | `sp` no ponto da falha |
+
+Ex.: `sel28 vm_div_zero` → `status=7, steps=-3, trace=33, sp=0` — idêntico ao modelo de
+referência (3 instruções consumidas; fold após a 2ª; sp após o pop do `div`).
+
+## 3. Gate e evidência
+
+```sh
+lin vm src/linvm_selfhost.lin vms_gate      # -> .result{ fn="vms_gate" value=1 ... }
+lin check src/linvm_selfhost.lin            # -> .typecheck=passed
+lin lint  src/linvm_selfhost.lin            # -> .summary{ errors=0 }
+lin vm src/linvm_selfhost.lin               # -> 21/21 fns status=OK (cobertura 100%)
+```
+
+**Evidência funcional (medida em sandbox local com o LinVM Zig real — `lin vm`):**
+
+| Check | Resultado |
+|---|---|
+| `vms_gate` (33 opcodes + 32 sels + 88 sweeps, golden values bit-exact) | **1** (8.511.500 passos do interpretador no host) |
+| 32 sels: status/valor/passos/traço/sp vs manifest | **32/32 PASS** |
+| 18 funções de corpus embutidas vs `lin selfhost p1ref` (result E steps) | **18/18 concordam** |
+| 88 sweeps (11 fns unárias × 8 args) | **88/88 PASS** |
+| 8 fns unárias vs `lin vm-sweep` (checksum fold `*31+valor` + passos totais) | **8/8 bit-exact** |
+| `lin check` / `lin lint` do módulo | passed / 0 erros |
+
+Tabela dos 32 sels (goldens; o LinVM real reproduz todos):
+
+| sel | fn | args | status | valor | steps | traço | sp |
+|---|---|---|---|---|---|---|---|
+| 0 | lin_add | (20,22) | 0 | 42 | 4 | 988839 | 1 |
+| 1 | lin_add | (1,2) | 0 | 3 | 4 | 988839 | 1 |
+| 2 | bh_u32 | (1) | 0 | 1 | 4 | 963853 | 1 |
+| 3 | bh_i32 | (1) | 0 | 1 | 10 | 854680295478697 | 1 |
+| 4 | bh_ushr | (1,2) | 0 | 0 | 8 | 889338137714 | 1 |
+| 5 | bh_ashr | (1,2) | 0 | 0 | 17 | 1169670066260102701 | 1 |
+| 6 | bh_xor | (1,2) | 0 | 3 | 13 | 8361686386772929636 | 1 |
+| 7 | bh_abs | (1) | 0 | 1 | 64 | -2861315703802202392 | 1 |
+| 8 | bh_popcount | (1) | 0 | 1 | 71 | -6729777881597534858 | 1 |
+| 9 | k_scale | (1) | 0 | 3 | 6 | 922633006 | 1 |
+| 10 | k_neg | (1) | 0 | -1 | 4 | 66279 | 1 |
+| 11 | k_square | (1) | 0 | 1 | 4 | 990761 | 1 |
+| 12 | mask32 | (1) | 0 | 1 | 4 | 963853 | 1 |
+| 13 | rotl32 | (1,2) | 0 | 4 | 16 | 1810248058045487679 | 1 |
+| 14 | rotr32 | (1,2) | 0 | 1073741824 | 16 | 1811067686303839329 | 1 |
+| 15 | sigma0_32 | (1) | 0 | 1074267136 | 62 | 3240862913118107907 | 1 |
+| 16 | verify_behavior_equivalence | (1,2) | 0 | 0 | 8 | 83499974361 | 1 |
+| 17 | evaluate_fuzz_differential_pass | (1,2,3,4) | 0 | 66051 | 18 | 7070097502273590045 | 1 |
+| 18 | audit_17_subgates_closure | (1) | 0 | 0 | 8 | 83471345210 | 1 |
+| 19 | ak_sum4 | () | 0 | 10 | 24 | 439475180243214858 | 1 |
+| 20 | ak_index | (1) | 0 | 20 | 15 | -5197825257595921311 | 1 |
+| 21 | ak_len | () | 0 | 4 | 5 | 1938307 | 1 |
+| 22 | ak_pop4 | () | 0 | 10 | 260 | -7872435695621186695 | 1 |
+| 23 | vm_full_ops | () | 0 | 0 | 54 | -6956605808180686904 | 1 |
+| 24 | vm_arr_ops | () | 0 | 2 | 25 | 3325523172874222789 | 1 |
+| 25 | vm_jumps | () | 0 | 3 | 7 | 22210681974 | 2 |
+| 26 | vm_div_edges | () | 0 | 1 | 10 | 344734172830512 | 1 |
+| 27 | vm_mod_edges | () | 0 | 0 | 7 | 11571757501 | 1 |
+| 28 | vm_div_zero | () | 7 | 0 | 3 | 33 | 0 |
+| 29 | vm_mod_zero | () | 7 | 0 | 3 | 33 | 0 |
+| 30 | vm_shift_edges | () | 0 | 1 | 16 | -49592379531246514 | 2 |
+| 31 | vm_fallthrough | () | 0 | 0 | 1 | 1 | 1 |
+
+Paridade `lin vm-sweep` (checksum = fold `(c*31+valor)`; passos = soma) — 8 fns unárias × args 0..7:
+
+| fn | host `vm-sweep` | self-hosted | 
+|---|---|---|
+| ak_index | checksum=293772030100 steps=120 | idem |
+| bh_abs | 947656708 / 512 | idem |
+| bh_i32 | 947656708 / 80 | idem |
+| bh_popcount | 918011652 / 568 | idem |
+| bh_u32 | 947656708 / 32 | idem |
+| audit_17_subgates_closure | 0 / 64 | idem |
+| mask32 | 947656708 / 32 | idem |
+| sigma0_32 | 1017904241341139008 / 496 | idem |
+
+## 4. Transparência de toolchain (obrigatória para o rito Q3)
+
+- O repo declara **Zig 0.13.0** (`.github/workflows/ci.yml`); porém o master **não compila**
+  com o Zig 0.13.0 oficial: erros pré-existentes em `compiler/lin.zig:16018`
+  (capture `pidx` não usado em `for`) e `compiler/lin.zig:16238–16243`
+  (`std.fmt.fmtSliceHexLower` usado como string; a API retorna `Formatter`).
+- O GitHub deste repo registra **0 execuções de CI** (`total_count=0` em `actions/runs`) —
+  o rito "valores medidos em CI" depende de CI funcional como pré-requisito.
+- Validação local deste documento: Zig 0.13.0 oficial (distribuição PyPI `ziglang`, projeto
+  oficial ZSF `zig-pypi`) + **2 patches locais zero-semânticos** (não commitados, revertidos
+  após o build): remoção do capture não usado e `bufPrint` nos 6 pontos de hex. Os patches não
+  tocam em semântica de VM; a evidência acima é sobre o comportamento do LinVM.
+- `lin selfhost p1ref` medido localmente: `.selfhost_root_zig_1=sha256:406df72b…d6c01` —
+  **reportado, não pinado** (`.pin=AWAITING_FIRST_CI_MEASUREMENT`, como já está no próprio
+  comando). O pin entra apenas via PR com valor medido em CI (rito Q3, emenda `AGENTS.md@1.5.0`).
+
+## 5. Fronteiras documentadas (honestidade)
+
+- O canal de **valor** (modo 0) não propaga falha: em execução que falha, `vms_value` retorna 0
+  e o status é reportado por `vms_status` (modo 2). O gate nunca asserta valor em sel com
+  status≠0. (No Zig, a execução abortaria com erro — o canal de status é o equivalente fiel.)
+- Traço/sp de falha são bit-exact **no ponto da falha**; para falha aninhada (filho falha dentro
+  de pai), o modo 3 do pai continua o fold após o call — caminho não exercitado pelo gate
+  (nenhum sel tem filho que falha) e documentado como fronteira.
+- Falhas de prólogo (depth>192, fn_idx fora da tabela, arity) devolvem no modo 1 o negativo
+  do **status** (não dos passos) — caminho não exercitado pelo gate (todos os sels usam fns
+  válidas com aridade correta).
+- O gate verifica passos/traço/sp apenas quando `status==0` (para status≠0, só o status é
+  assertado — mesma política do `vms_expect` no Zig).
+
+## 6. Regeneração
+
+As tabelas `oc/ag/ft` e o gate são gerados por uma transcrição de desenvolvimento de
+`vmTokenize`+`VmComp`+`vmExec` (fora do repo; o módulo `.lin` é auto-contido e não depende
+dela). Golden values ficam **pinados dentro do próprio módulo** (`vms_expect*`), então o gate
+roda em qualquer checkout com `lin vm`. Alterar vetores montados à mão exige regenerar gate e
+goldens juntos — nunca editar um sem o outro.
