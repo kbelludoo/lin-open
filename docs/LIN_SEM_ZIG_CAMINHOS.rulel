@@ -1,0 +1,67 @@
+@RULEL:DOC_LIN_SEM_ZIG_CAMINHOS:1.0.0
+~MARKDOWN_SPEC
+# "Compilar/rodar LIN sem Zig" — três perguntas diferentes, três respostas medidas (2026-08-31)
+
+> **Status (R5): fatos medidos neste sandbox; a disponibilização pública dos
+> binários depende do patch de workflow em `docs/CI_RELEASE_E_V1_GATES_PATCH.rulel`
+> (aguardando aplicação — push de workflows exige escopo que esta sessão não tem)
+> e de uma tag `v*`. Até lá, a faixa 1 é "provado localmente, publicação pendente".**
+
+A pergunta "dá pra compilar o lin sem o Zig?" mistura três coisas. Resposta
+correta exige separá-las:
+
+## Faixa 1 — USAR o compilador LIN sem instalar Zig: **SIM (via binário pré-compilado)**
+
+Hoje, neste branch, medido em ambiente sem Zig (`env -i`, PATH sem zig):
+
+```
+ldd zig-out/bin/lin_native          → apenas libc (vdso/libc/ld-linux)
+lin_native vm src/linvm_selfhost.lin vms_gate   → value=1 steps=8511500
+lin_native selfhost parity                     → status="PASS"
+```
+
+O binário CPU (`zig build -Dgpu=false`) depende só de libc em runtime. **Antes
+deste PR, porém, o README §2 prometia assets de release que a CI nunca publicava**
+(workflow só subia logs). Este PR fecha essa divergência: a CI agora sobe os
+artifacts `lin_native-cpu`/`lin_native-gpu` em toda execução e publica os dois
+como assets de Release ao empurrar tag `v*` (job `release`, `--verify-tag`).
+Ou seja: para um usuário final, "rodar LIN sem Zig" passa a ser literalmente
+baixar o binário. Quem constrói da fonte ainda precisa do Zig 0.13.0 (Stage0).
+
+## Faixa 2 — EXECUTAR programas LIN empacotados (LINBC1) sem nenhum artefato Zig: **SIM, com escopo V1**
+
+A rota `transpile/c` (host C11) não toca Zig em nenhum estágio — medido em
+ambiente `env -i` com apenas `cc`:
+
+```
+make -C transpile/c test-linbc1   → LINBC1 SUITE: ALL PASSED (33/33)
+./bin/test_linbc1 --print-fold    → -178321285347216732  (== do emissor LIN)
+./bin/lin_bc1_run --hex <img> tri 7 2 → result=51 steps=13 sp_at_ret=1
+```
+
+Escopo honesto: o host C11 executa **imagens LINBC1** (bytecode) e o oráculo de
+expressões C. Os 6 intrínsecos de string (HOST-ABI-1) e o loader fail-closed já
+existem (V1); os 3 de I/O (`host_read/write/exit`) virão com o compilador que os
+usa (V2+ — não há consumidor ainda).
+
+## Faixa 3 — COMPILAR uma fonte `.lin` arbitrária sem artefato Zig: **AINDA NÃO**
+
+Compilar = lexer → parser → typecheck → lowering → imagem LINBC1. Hoje essa
+cadeia completa existe APENAS dentro do Stage0 Zig (`compiler/lin.zig`):
+
+- o emissor LIN de V1 (`src/lin_linbc_emit.lin`) empacota **tabelas transcritas**
+  da fixture e prova self-hash em LIN — ele não *deriva* bytecode de texto `.lin`;
+- isso começa em **V2** (`src/linvm0_compiler/*.lin`: lexer+parser+lowerer do
+  subset, `compiler0-mvp.linbc`) e vira cadeia de produção em **V5** (ponto fixo
+  C0=C1=C2 + suítes rodando sob a imagem), conforme `docs/LINVM_COMPILER0_PLAN.rulel`.
+
+## Resumo em uma linha
+
+| Pergunta | Hoje | Caminho |
+|---|---|---|
+| "Rodo a toolchain LIN sem instalar Zig?" | ✅ binário pré-compilado (CI publica a partir deste PR + tag) | 4A da análise de migração |
+| "Rodo programa LIN em imagem sem nada de Zig?" | ✅ rota C11/LINBC1 (V1, medido) | `make -C transpile/c` |
+| "Compilo `.lin` arbitrário sem Zig em algum lugar da cadeia?" | ❌ | V2 (`compiler0-mvp`) → V5 |
+
+Tudo verificável na CI deste PR: os passos V1 (`test-linbc1`, `roundtrip-linbc1`)
+entram no workflow — primeira prova em CI dos gates G(V1), conforme o rito Q3.
