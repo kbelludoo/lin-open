@@ -1,0 +1,41 @@
+@LIN:L1c:0.2
+@LIN_SELFHOST_PLAN{version=1 purpose=self_hosting_plan_progress_marker_phases_gates_anchors emits=RULEL}
+
+!shp_nl(): string { ^String.fromCharCode(10) }
+
+!shp_tag(i: int): string {
+  ?(i == 0){ ^"P0_instrumentation_parity" }
+  : (i == 1){ ^"P1_linvm_33_ops" }
+  : (i == 2){ ^"P2_lexer_parser" }
+  : (i == 3){ ^"P3_typecheck_lint" }
+  : (i == 4){ ^"P4_mir_gpu" }
+  : (i == 5){ ^"P5_receipts_frozen_last" }
+  : (i == 6){ ^"P6_cli_transpilers" }
+  : { ^"P7_bootstrap_swap" };
+}
+
+!shp_status(i: int): string {
+  ?(i == 0){ ^"plan_written_gate_pending" }
+  : { ^"blocked_on_previous" };
+}
+
+!shp_line(i: int): string {
+  l = "  .phase{ tag=";
+  l = l + shp_tag(i);
+  l = l + " status=";
+  l = l + shp_status(i);
+  l = l + " }";
+  ^l;
+}
+
+!shp_report(): string {
+  out = "@RULEL:SELFHOST_PLAN_PROGRESS:1.0.0" + shp_nl() + ".plan=docs/SELF_HOSTING_PLAN.rulel" + shp_nl();
+  out = out + ".gate=H_selfhost_root(LIN)_eq_H_selfhost_root(Zig)_bit_exact_or_no_advance" + shp_nl();
+  k = 0;
+  while (k < 8) {
+    out = out + shp_line(k) + shp_nl();
+    k = k + 1;
+  };
+  out = out + ".status=WAITING_P0_BASELINE";
+  ^out;
+}
