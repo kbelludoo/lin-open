@@ -911,7 +911,298 @@ pub fn main() !void {
         }
     }
 
+    // =====================================================================
+    // FATIA C1: STATEMENTS, ASSIGNMENTS & BLOCK SEQUENCING
+    // =====================================================================
+    const c_stmt_suite = [_]struct {
+        input: []const u8,
+        expected: i64,
+        desc: []const u8,
+    }{
+        .{ .input = "x = 10; y = 20; return x + y;", .expected = 30, .desc = "Sequential variable assignment and return" },
+        .{ .input = "a = 5; b = a * 2; c = b + a; return c;", .expected = 15, .desc = "Chained variable dependencies" },
+        .{ .input = "x = 1; x = x + 10; return x;", .expected = 11, .desc = "Variable mutation / reassignment" },
+        .{ .input = "x = 5; x + 100; return x;", .expected = 5, .desc = "Expression-statement with clean stack pop" },
+        .{ .input = "x = 2; { y = 3; x = x * y; } return x;", .expected = 6, .desc = "Nested block scope execution" },
+    };
+
+    const StmtKind = enum {
+        assign,
+        expr_stmt,
+        return_stmt,
+        block,
+    };
+
+    const StmtNode = struct {
+        const Self = @This();
+        kind: StmtKind,
+        var_name: []const u8 = "",
+        expr_root: u16 = 0,
+        stmts: []const Self = &[_]Self{},
+    };
+
+    const StmtParser = struct {
+        const Self = @This();
+        src: []const u8,
+        pos: usize,
+        arena: AstArena,
+        allocator: std.mem.Allocator,
+
+        pub fn init(allocator: std.mem.Allocator, source: []const u8) Self {
+            return .{
+                .src = source,
+                .pos = 0,
+                .arena = AstArena.init(),
+                .allocator = allocator,
+            };
+        }
+
+        fn skipWs(self: *Self) void {
+            while (self.pos < self.src.len and (self.src[self.pos] == ' ' or self.src[self.pos] == '\t' or self.src[self.pos] == '\r' or self.src[self.pos] == '\n')) {
+                self.pos += 1;
+            }
+        }
+
+        fn matchIdent(self: *Self) ?[]const u8 {
+            self.skipWs();
+            if (self.pos >= self.src.len) return null;
+            const c = self.src[self.pos];
+            if ((c >= 'a' and c <= 'z') or (c >= 'A' and c <= 'Z') or c == '_') {
+                const start = self.pos;
+                while (self.pos < self.src.len and ((self.src[self.pos] >= 'a' and self.src[self.pos] <= 'z') or (self.src[self.pos] >= 'A' and self.src[self.pos] <= 'Z') or (self.src[self.pos] >= '0' and self.src[self.pos] <= '9') or self.src[self.pos] == '_')) {
+                    self.pos += 1;
+                }
+                return self.src[start..self.pos];
+            }
+            return null;
+        }
+
+        fn matchChar(self: *Self, ch: u8) bool {
+            self.skipWs();
+            if (self.pos < self.src.len and self.src[self.pos] == ch) {
+                self.pos += 1;
+                return true;
+            }
+            return false;
+        }
+
+        fn parseExpr(self: *Self) anyerror!u16 {
+            var p = Parser{
+                .src = self.src,
+                .pos = self.pos,
+                .arena = self.arena,
+            };
+            const root = try p.parseExpression(0);
+            self.pos = p.pos;
+            self.arena = p.arena;
+            return root;
+        }
+
+        pub fn parseBlock(self: *Self) anyerror![]StmtNode {
+            var list = std.ArrayList(StmtNode).init(self.allocator);
+            while (true) {
+                self.skipWs();
+                if (self.pos >= self.src.len or (self.pos < self.src.len and self.src[self.pos] == '}')) break;
+
+                if (self.matchChar('{')) {
+                    const inner = try self.parseBlock();
+                    if (!self.matchChar('}')) return error.MissingClosingBrace;
+                    try list.append(.{ .kind = .block, .stmts = inner });
+                    continue;
+                }
+
+                const saved_pos = self.pos;
+                if (self.matchIdent()) |id| {
+                    if (std.mem.eql(u8, id, "return")) {
+                        const root = try self.parseExpr();
+                        if (!self.matchChar(';')) return error.MissingSemicolon;
+                        try list.append(.{ .kind = .return_stmt, .expr_root = root });
+                        continue;
+                    }
+                    if (self.matchChar('=')) {
+                        const root = try self.parseExpr();
+                        if (!self.matchChar(';')) return error.MissingSemicolon;
+                        try list.append(.{ .kind = .assign, .var_name = id, .expr_root = root });
+                        continue;
+                    }
+                }
+
+                self.pos = saved_pos;
+                const expr_root = try self.parseExpr();
+                if (!self.matchChar(';')) return error.MissingSemicolon;
+                try list.append(.{ .kind = .expr_stmt, .expr_root = expr_root });
+            }
+            return list.toOwnedSlice();
+        }
+    };
+
+    const StmtLowerer = struct {
+        const Self = @This();
+        code: std.ArrayList(VmIns),
+        locals_map: std.ArrayList([]const u8),
+        allocator: std.mem.Allocator,
+
+        pub fn init(allocator: std.mem.Allocator) Self {
+            return .{
+                .code = std.ArrayList(VmIns).init(allocator),
+                .locals_map = std.ArrayList([]const u8).init(allocator),
+                .allocator = allocator,
+            };
+        }
+
+        pub fn deinit(self: *Self) void {
+            self.code.deinit();
+            self.locals_map.deinit();
+        }
+
+        fn getOrAllocLocal(self: *Self, name: []const u8) !usize {
+            for (self.locals_map.items, 0..) |loc, idx| {
+                if (std.mem.eql(u8, loc, name)) return idx;
+            }
+            const idx = self.locals_map.items.len;
+            try self.locals_map.append(name);
+            return idx;
+        }
+
+        pub fn emitExpr(self: *Self, ast_arena: *const AstArena, node_idx: u16) anyerror!void {
+            if (node_idx >= ast_arena.len) return error.InvalidNodeIndex;
+            const tag = ast_arena.tags[node_idx];
+            switch (tag) {
+                .lit => {
+                    try self.code.append(.{ .op = .push_const, .a = ast_arena.vals[node_idx] });
+                },
+                .var_ref => {
+                    const name = ast_arena.names[node_idx];
+                    const loc_idx = try self.getOrAllocLocal(name);
+                    try self.code.append(.{ .op = .load_local, .a = @intCast(loc_idx) });
+                },
+                .unary_pos => {
+                    try self.emitExpr(ast_arena, ast_arena.lhs[node_idx]);
+                },
+                .unary_neg => {
+                    try self.emitExpr(ast_arena, ast_arena.lhs[node_idx]);
+                    try self.code.append(.{ .op = .neg, .a = 0 });
+                },
+                .add => {
+                    try self.emitExpr(ast_arena, ast_arena.lhs[node_idx]);
+                    try self.emitExpr(ast_arena, ast_arena.rhs[node_idx]);
+                    try self.code.append(.{ .op = .add, .a = 0 });
+                },
+                .sub => {
+                    try self.emitExpr(ast_arena, ast_arena.lhs[node_idx]);
+                    try self.emitExpr(ast_arena, ast_arena.rhs[node_idx]);
+                    try self.code.append(.{ .op = .sub, .a = 0 });
+                },
+                .mul => {
+                    try self.emitExpr(ast_arena, ast_arena.lhs[node_idx]);
+                    try self.emitExpr(ast_arena, ast_arena.rhs[node_idx]);
+                    try self.code.append(.{ .op = .mul, .a = 0 });
+                },
+                .div => {
+                    try self.emitExpr(ast_arena, ast_arena.lhs[node_idx]);
+                    try self.emitExpr(ast_arena, ast_arena.rhs[node_idx]);
+                    try self.code.append(.{ .op = .div, .a = 0 });
+                },
+                .mod => {
+                    try self.emitExpr(ast_arena, ast_arena.lhs[node_idx]);
+                    try self.emitExpr(ast_arena, ast_arena.rhs[node_idx]);
+                    try self.code.append(.{ .op = .mod, .a = 0 });
+                },
+                .eq => {
+                    try self.emitExpr(ast_arena, ast_arena.lhs[node_idx]);
+                    try self.emitExpr(ast_arena, ast_arena.rhs[node_idx]);
+                    try self.code.append(.{ .op = .cmp_eq, .a = 0 });
+                },
+                .neq => {
+                    try self.emitExpr(ast_arena, ast_arena.lhs[node_idx]);
+                    try self.emitExpr(ast_arena, ast_arena.rhs[node_idx]);
+                    try self.code.append(.{ .op = .cmp_ne, .a = 0 });
+                },
+                .lt => {
+                    try self.emitExpr(ast_arena, ast_arena.lhs[node_idx]);
+                    try self.emitExpr(ast_arena, ast_arena.rhs[node_idx]);
+                    try self.code.append(.{ .op = .cmp_lt, .a = 0 });
+                },
+                .lte => {
+                    try self.emitExpr(ast_arena, ast_arena.lhs[node_idx]);
+                    try self.emitExpr(ast_arena, ast_arena.rhs[node_idx]);
+                    try self.code.append(.{ .op = .cmp_le, .a = 0 });
+                },
+                .gt => {
+                    try self.emitExpr(ast_arena, ast_arena.lhs[node_idx]);
+                    try self.emitExpr(ast_arena, ast_arena.rhs[node_idx]);
+                    try self.code.append(.{ .op = .cmp_gt, .a = 0 });
+                },
+                .gte => {
+                    try self.emitExpr(ast_arena, ast_arena.lhs[node_idx]);
+                    try self.emitExpr(ast_arena, ast_arena.rhs[node_idx]);
+                    try self.code.append(.{ .op = .cmp_ge, .a = 0 });
+                },
+            }
+        }
+
+        pub fn emitStmts(self: *Self, ast_arena: *const AstArena, stmts: []const StmtNode) anyerror!void {
+            for (stmts) |s| {
+                switch (s.kind) {
+                    .assign => {
+                        try self.emitExpr(ast_arena, s.expr_root);
+                        const loc_idx = try self.getOrAllocLocal(s.var_name);
+                        try self.code.append(.{ .op = .store_local, .a = @intCast(loc_idx) });
+                    },
+                    .expr_stmt => {
+                        try self.emitExpr(ast_arena, s.expr_root);
+                        try self.code.append(.{ .op = .pop, .a = 0 });
+                    },
+                    .return_stmt => {
+                        try self.emitExpr(ast_arena, s.expr_root);
+                        try self.code.append(.{ .op = .ret, .a = 0 });
+                    },
+                    .block => {
+                        try self.emitStmts(ast_arena, s.stmts);
+                    },
+                }
+            }
+        }
+    };
+
+    for (c_stmt_suite) |tc| {
+        var s_parser = StmtParser.init(alloc, tc.input);
+        const stmts = s_parser.parseBlock() catch {
+            try stdout.print("  [FAIL] Statement parse failed for: \"{s}\"\n", .{tc.input});
+            return error.CParserVerificationFailed;
+        };
+
+        var s_lowerer = StmtLowerer.init(alloc);
+        defer s_lowerer.deinit();
+        s_lowerer.emitStmts(&s_parser.arena, stmts) catch {
+            try stdout.print("  [FAIL] Statement lowering failed for: \"{s}\"\n", .{tc.input});
+            return error.CParserVerificationFailed;
+        };
+
+        var fn_mock = VmFn{
+            .name = "test_stmt",
+            .nparams = 0,
+            .nlocals = s_lowerer.locals_map.items.len,
+            .code = s_lowerer.code.items,
+            .ok = true,
+            .sig_ok = true,
+        };
+        var mod_mock = VmModule{ .fns = (&fn_mock)[0..1] };
+        const vm_args = [_]i64{};
+        var steps: u64 = 0;
+        const vm_val = vmExec(&mod_mock, 0, &vm_args, 0, &steps) catch {
+            try stdout.print("  [FAIL] LinVM statement execution failed for: \"{s}\"\n", .{tc.input});
+            return error.CParserVerificationFailed;
+        };
+
+        if (vm_val != tc.expected) {
+            try stdout.print("  [FAIL] Statement \"{s}\" => VM:{d}, expected {d}\n", .{ tc.input, vm_val, tc.expected });
+            return error.CParserVerificationFailed;
+        }
+    }
+
     try stdout.print("  .Exercised {d} Deterministic C Expression Parsing & LinVM Execution Vectors (29/29 PASS)\n", .{c_parser_test_vectors.len});
+    try stdout.print("  .Exercised {d} Deterministic C Statement Sequencing & Block Execution Vectors (5/5 PASS)\n", .{c_stmt_suite.len});
     try stdout.print("  [PASS] Phase 6: Stage-0 C expression Pratt parser, Flat AST Arena and LinVM Lowerer verified\n\n", .{});
     passed += 1;
 
@@ -930,6 +1221,7 @@ pub fn main() !void {
     try stdout.print(".zig_to_lin_transpiler_active=true\n", .{});
     try stdout.print(".c_expr_pratt_parser_active=true\n", .{});
     try stdout.print(".c_expr_vectors=29\n", .{});
+    try stdout.print(".c_stmt_vectors=5\n", .{});
     try stdout.print(".linvm_div_supported=true\n", .{});
     try stdout.print(".ast_to_vm_lowerer_active=true\n", .{});
     try stdout.print(".ast_vm_parity_vectors=29\n", .{});
