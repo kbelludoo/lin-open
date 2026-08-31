@@ -101,6 +101,8 @@ fn _lia_ushr(a: i64, b: i64) i64 {
 }
 fn _lia_mod(a: i64, b: i64) i64 {
     if (b == 0) return 0;
+    // Guard INT64_MIN % -1: signed division overflow would trap/UB in Zig.
+    if (a == std.math.minInt(i64) and b == -1) return 0;
     return @rem(a, b);
 }
 fn _lia_len(x: anytype) i64 {
@@ -5619,6 +5621,8 @@ pub const VmOp = enum(u8) {
     arr_len,
 };
 
+pub const VM_OPCODE_COUNT: usize = @typeInfo(VmOp).Enum.fields.len;
+
 pub const VmIns = struct {
     op: VmOp,
     a: i64 = 0,
@@ -6406,7 +6410,7 @@ fn certFieldValue(cert: []const u8, tag: []const u8) ?[]const u8 {
     needle[tag.len + 1] = '=';
     const n = needle[0 .. tag.len + 2];
     const start = std.mem.indexOf(u8, cert, n) orelse return null;
-    const val_start = start + n.len;
+    const val_start = start + n.len + 1; // skip the opening quote: .tag="value"
     const val_end = std.mem.indexOfPos(u8, cert, val_start, "\"") orelse return null;
     return cert[val_start..val_end];
 }
@@ -6587,11 +6591,13 @@ pub fn vmExecWithSp(mod: *const VmModule, fi: usize, args: []const i64, depth: u
                     .mul => r = x *% y,
                     .div => {
                         if (y == 0) return error.VmDivisionByZero;
-                        r = @divTrunc(x, y);
+                        // Guard INT64_MIN / -1: signed division overflow would
+                        // trap in Zig; the wrapping convention keeps the VM total.
+                        r = if (x == std.math.minInt(i64) and y == -1) x else @divTrunc(x, y);
                     },
                     .mod => {
                         if (y == 0) return error.VmDivisionByZero;
-                        r = @rem(x, y);
+                        r = if (x == std.math.minInt(i64) and y == -1) 0 else @rem(x, y);
                     },
                     .bit_and => r = x & y,
                     .bit_or => r = x | y,
@@ -6980,9 +6986,12 @@ fn runLinTestFile(path: []const u8) !std.process.Child.RunResult {
     if (lin_valid_strict(src) == 0) return error.LinParse;
     const names = lin_check(src);
     const fns = lin_to_zig(src);
-    const host = try std.fs.cwd().readFileAlloc(LIA_ALLOC, "src/lin.zig", 10 * 1024 * 1024);
-    defer LIA_ALLOC.free(host);
-    const m_fn = std.mem.indexOf(u8, host, "\npub fn slice2(") orelse return error.MissingRuntime;
+    // The legacy self-hosted bootstrap (src/lin.zig) was removed in the
+    // 2026-08-31 cleanup, which broke `lin test` with FileNotFound. The
+    // ZIG_RUNTIME_PRELUDE embedded in the compiler (the same prelude used by
+    // `lin compile`) provides the full Zig runtime for transpiled functions.
+    const host = ZIG_RUNTIME_PRELUDE;
+    const m_fn: usize = host.len;
     var main_body = std.ArrayList(u8).init(LIA_ALLOC);
     defer main_body.deinit();
     const mw = main_body.writer();
@@ -7001,14 +7010,14 @@ fn runLinTestFile(path: []const u8) !std.process.Child.RunResult {
     try mw.writeAll("\\n\", .{});\n}\n");
     const zig_src = try std.mem.concat(LIA_ALLOC, u8, &.{ host[0..m_fn], "\n", fns, "\n", main_body.items });
     defer LIA_ALLOC.free(zig_src);
-    const tmp_path = "src/lin_test_run.zig";
+    const tmp_path = ".zig-cache/lin_test_run.zig";
+    std.fs.cwd().makePath(".zig-cache") catch {};
     const tf = try std.fs.cwd().createFile(tmp_path, .{});
     defer tf.close();
     try tf.writeAll(zig_src);
     var zb: []const u8 = "zig";
-    if (std.fs.openFileAbsolute("/home/k/.local/bin/zig", .{})) |zf| {
-        zf.close();
-        zb = "/home/k/.local/bin/zig";
+    if (std.process.getEnvVarOwned(LIA_ALLOC, "LIN_ZIG")) |p| {
+        zb = p;
     } else |_| {}
     return std.process.Child.run(.{
         .allocator = LIA_ALLOC,
@@ -7088,6 +7097,7 @@ const ZIG_RUNTIME_PRELUDE =
     \\}
     \\fn _lia_mod(a: i64, b: i64) i64 {
     \\    if (b == 0) return 0;
+    \\    if (a == std.math.minInt(i64) and b == -1) return 0;
     \\    return @rem(a, b);
     \\}
     \\fn _lia_len(x: anytype) i64 {
@@ -7474,6 +7484,17 @@ fn runCli() !void {
         return;
     }
     if (argEq(cmd, "rebuild")) {
+        // The self-hosted bootstrap modules (src/lin_zig_bootstrap.lin,
+        // src/lin_zig_emit.lin, src/lin_zig_match.lin, src/lin_js_expr.lin,
+        // src/lin_js_driver.lin) were removed in the 2026-08-31 cleanup, so
+        // rebuild cannot run. Fail with a clear message instead of a raw
+        // FileNotFound trace.
+        if (std.fs.cwd().openFile("src/lin_zig_bootstrap.lin", .{})) |f| {
+            f.close();
+        } else |_| {
+            try stderr.print("rebuild: bootstrap sources (src/lin_zig_bootstrap.lin, src/lin_zig_emit.lin, src/lin_zig_match.lin, src/lin_js_expr.lin, src/lin_js_driver.lin) were removed in the 2026-08-31 cleanup; rebuild is unavailable. See docs/REVIEW_SUGESTOES_E_CORRECOES.md.\n", .{});
+            std.process.exit(1);
+        }
         const boot = try std.fs.cwd().readFileAlloc(LIA_ALLOC, "src/lin_zig_bootstrap.lin", 10 * 1024 * 1024);
         defer LIA_ALLOC.free(boot);
         const arr = try std.fs.cwd().readFileAlloc(LIA_ALLOC, "src/lin_array.lin", 10 * 1024 * 1024);
@@ -14860,13 +14881,14 @@ fn runCli() !void {
                         const l = try self.eval(self.lhs[node_idx], env);
                         const r = try self.eval(self.rhs[node_idx], env);
                         if (r == 0) return error.DivisionByZero;
-                        return @divTrunc(l, r); // Semântica C de truncating division
+                        // Guard INT64_MIN / -1 (signed division overflow traps in Zig).
+                        return if (l == std.math.minInt(i64) and r == -1) l else @divTrunc(l, r); // Semântica C de truncating division
                     },
                     .mod => {
                         const l = try self.eval(self.lhs[node_idx], env);
                         const r = try self.eval(self.rhs[node_idx], env);
                         if (r == 0) return error.DivisionByZero;
-                        return @rem(l, r);
+                        return if (l == std.math.minInt(i64) and r == -1) 0 else @rem(l, r);
                     },
                     .eq => {
                         const l = try self.eval(self.lhs[node_idx], env);
@@ -16855,7 +16877,10 @@ fn runCli() !void {
                         source_code = args[i_arg + 1];
                         i_arg += 1;
                     } else if (std.mem.eql(u8, args[i_arg], "--input") and i_arg + 1 < args.len) {
-                        input_val = std.fmt.parseInt(i64, args[i_arg + 1], 10) catch 7;
+                        input_val = std.fmt.parseInt(i64, args[i_arg + 1], 10) catch {
+                            try stderr.print("receipt error: invalid --input value: {s}\n", .{args[i_arg + 1]});
+                            std.process.exit(1);
+                        };
                         i_arg += 1;
                     } else if (std.mem.eql(u8, args[i_arg], "--device") and i_arg + 1 < args.len) {
                         target_dev_opt = args[i_arg + 1];
@@ -17024,13 +17049,55 @@ fn runCli() !void {
                         };
                         defer parsed.deinit();
 
+                        if (parsed.value != .object) {
+                            try stderr.print("FAIL: Compute Receipt JSON root must be an object\n", .{});
+                            std.process.exit(1);
+                        }
                         const root_obj = parsed.value.object;
-                        const art_str = root_obj.get("artifact").?.string;
-                        const inp_str = root_obj.get("input").?.string;
-                        const out_str = root_obj.get("output").?.string;
-                        steps_val = @intCast(root_obj.get("steps").?.integer);
-                        sp_val = @intCast(root_obj.get("sp_at_ret").?.integer);
-                        stored_merkle = root_obj.get("merkle_root").?.string;
+                        const art_node = root_obj.get("artifact") orelse {
+                            try stderr.print("FAIL: Compute Receipt JSON missing field \"artifact\"\n", .{});
+                            std.process.exit(1);
+                        };
+                        const inp_node = root_obj.get("input") orelse {
+                            try stderr.print("FAIL: Compute Receipt JSON missing field \"input\"\n", .{});
+                            std.process.exit(1);
+                        };
+                        const out_node = root_obj.get("output") orelse {
+                            try stderr.print("FAIL: Compute Receipt JSON missing field \"output\"\n", .{});
+                            std.process.exit(1);
+                        };
+                        const steps_node = root_obj.get("steps") orelse {
+                            try stderr.print("FAIL: Compute Receipt JSON missing field \"steps\"\n", .{});
+                            std.process.exit(1);
+                        };
+                        const sp_node = root_obj.get("sp_at_ret") orelse {
+                            try stderr.print("FAIL: Compute Receipt JSON missing field \"sp_at_ret\"\n", .{});
+                            std.process.exit(1);
+                        };
+                        const merkle_node = root_obj.get("merkle_root") orelse {
+                            try stderr.print("FAIL: Compute Receipt JSON missing field \"merkle_root\"\n", .{});
+                            std.process.exit(1);
+                        };
+                        if (art_node != .string or inp_node != .string or out_node != .string or merkle_node != .string) {
+                            try stderr.print("FAIL: Compute Receipt JSON field type error (expected strings)\n", .{});
+                            std.process.exit(1);
+                        }
+                        if (steps_node != .integer or sp_node != .integer) {
+                            try stderr.print("FAIL: Compute Receipt JSON field type error (expected integers)\n", .{});
+                            std.process.exit(1);
+                        }
+                        const art_str = art_node.string;
+                        const inp_str = inp_node.string;
+                        const out_str = out_node.string;
+                        steps_val = std.math.cast(u64, steps_node.integer) orelse {
+                            try stderr.print("FAIL: Compute Receipt JSON field \"steps\" out of range\n", .{});
+                            std.process.exit(1);
+                        };
+                        sp_val = std.math.cast(u64, sp_node.integer) orelse {
+                            try stderr.print("FAIL: Compute Receipt JSON field \"sp_at_ret\" out of range\n", .{});
+                            std.process.exit(1);
+                        };
+                        stored_merkle = merkle_node.string;
 
                         inp_num = std.fmt.parseInt(i64, inp_str, 10) catch 0;
                         out_num = std.fmt.parseInt(i64, out_str, 10) catch 0;
@@ -17087,7 +17154,8 @@ fn runCli() !void {
                         std.process.exit(1);
                     }
                 } else {
-                    try stdout_w.print("PASS: Compute Receipt verified with bit-exact local Merkle Root valid.\n", .{});
+                    try stderr.print("receipt verify error: no receipt file given (use --receipt <file>)\n", .{});
+                    std.process.exit(1);
                 }
                 return;
             }
@@ -17482,6 +17550,319 @@ fn runCli() !void {
         if (!pass) std.process.exit(1);
         return;
     }
+    if (argEq(cmd, "selfhost")) {
+        // P0 instrumentation (R2a, docs/SELF_HOSTING_PLAN.rulel): read-only
+        // parity measurement. Recomputes the baseline anchors, emits the
+        // I_canon manifest and H_selfhost_root(Zig, 0). Zero semantic change
+        // to the compiler pipeline — this block only reads files and hashes
+        // bytes; it feeds no result back into compile/verify of .lin code.
+        if (args.len < 3) {
+            try stderr.print("usage: lin selfhost [parity|p1ref]\n", .{});
+            std.process.exit(1);
+        }
+        const sh_sub = args[2];
+        if (argEq(sh_sub, "p1ref")) {
+            // P0b (first slice) — P1 reference measurement (docs/SELF_HOSTING_PLAN.rulel
+            // §3.1/§3.2). I_canon(P1) = every VM-eligible function of the 20-file
+            // corpus (itself pinned by corpus_sha256), executed with canonical args
+            // [1, 2, ..., nparams]. Read-only: no semantic change to the pipeline.
+            //   H_F = SHA-256("selfhost:func:P1:" ‖ path ‖ "::" ‖ fn ‖ 0x00 ‖
+            //            args(8B little-endian each) ‖ 0x00 ‖
+            //            result(8B LE, or @errorName on VM error) ‖ 0x00 ‖ steps(8B LE))
+            //   H_selfhost_root(Zig,1) = SHA-256("selfhost:root:P1:" ‖ Merkle_top)
+            // where Merkle_top is the balanced pairwise tree (odd node promoted)
+            // over the H_F values in corpus/fn declaration order.
+            // MEASURED, not yet asserted: the first CI run pins the value in
+            // AGENTS.md (.h{selfhost_root_zig_1}); a later commit turns this into
+            // an assertion. Anti-gate: pinning requires a CI-verified value.
+            const p1_targets = [_][]const u8{
+                "src/zig_to_lin_transpiler.lin",
+                "src/lin_discovery_engine.lin",
+                "src/lin_merkle_tree.lin",
+                "src/lin_workload_planner.lin",
+                "src/lin_adaptive_replanning.lin",
+                "src/lin_autonomous_discovery.lin",
+                "src/lin_blind_generalization.lin",
+                "src/lin_binary_merkle_provenance.lin",
+                "src/lin_compatibility_matrix.lin",
+                "src/lin_c_expr_parser.lin",
+                "src/lin_array.lin",
+                "src/lin_array_kernel.lin",
+                "src/lin_bithacks.lin",
+                "src/lin_crypto.lin",
+                "src/lin_from_c.lin",
+                "src/lin_from_js.lin",
+                "src/lin_lint.lin",
+                "src/lin_regions.lin",
+                "examples/bytes.lin",
+                "examples/safe-compare.lin",
+            };
+            var hf_list = std.ArrayList([32]u8).init(LIA_ALLOC);
+            defer hf_list.deinit();
+            var fn_lines = std.ArrayList(u8).init(LIA_ALLOC);
+            defer fn_lines.deinit();
+            var files_ok: usize = 0;
+            var fns_total: usize = 0;
+            var fns_eligible: usize = 0;
+            var fns_executed: usize = 0;
+            var steps_total: u64 = 0;
+            for (p1_targets, 0..) |path, pidx| {
+                const src = std.fs.cwd().readFileAlloc(LIA_ALLOC, path, 10 * 1024 * 1024) catch continue;
+                defer LIA_ALLOC.free(src);
+                const mod = vmBuild(LIA_ALLOC, src) catch continue;
+                files_ok += 1;
+                for (mod.fns, 0..) |f, fi| {
+                    fns_total += 1;
+                    if (!f.ok) continue;
+                    if (f.nparams > 32) continue;
+                    fns_eligible += 1;
+                    var arg_buf: [32]i64 = undefined;
+                    var ai: usize = 0;
+                    while (ai < f.nparams) : (ai += 1) {
+                        arg_buf[ai] = @as(i64, @intCast(ai + 1));
+                    }
+                    var steps: u64 = 0;
+                    var hf = std.crypto.hash.sha2.Sha256.init(.{});
+                    hf.update("selfhost:func:P1:");
+                    hf.update(path);
+                    hf.update("::");
+                    hf.update(f.name);
+                    hf.update(&[_]u8{0});
+                    var b8: [8]u8 = undefined;
+                    for (arg_buf[0..f.nparams]) |a| {
+                        std.mem.writeInt(i64, &b8, a, .little);
+                        hf.update(&b8);
+                    }
+                    hf.update(&[_]u8{0});
+                    const res = vmExec(&mod, fi, arg_buf[0..f.nparams], 0, &steps);
+                    fns_executed += 1;
+                    steps_total += steps;
+                    if (res) |val| {
+                        std.mem.writeInt(i64, &b8, val, .little);
+                        hf.update(&b8);
+                        try fn_lines.writer().print("  .fn{{ path=\"{s}\" fn=\"{s}\" params={d} result={d} steps={d} }}\n", .{ path, f.name, f.nparams, val, steps });
+                    } else |err| {
+                        hf.update(@errorName(err));
+                        try fn_lines.writer().print("  .fn{{ path=\"{s}\" fn=\"{s}\" params={d} error=\"{s}\" steps={d} }}\n", .{ path, f.name, f.nparams, @errorName(err), steps });
+                    }
+                    hf.update(&[_]u8{0});
+                    std.mem.writeInt(u64, &b8, steps, .little);
+                    hf.update(&b8);
+                    var leaf: [32]u8 = undefined;
+                    hf.final(&leaf);
+                    try hf_list.append(leaf);
+                }
+            }
+            if (files_ok != 20 or hf_list.items.len == 0) {
+                try stdout.print("@RULEL:SELFHOST_P1REF:1.0.0\n.files_ok={d}/20\n.fns_total={d}\n.fns_eligible={d}\n.status=\"FAIL\"\n.reason=\"corpus_not_measured\"\n", .{ files_ok, fns_total, fns_eligible });
+                std.process.exit(1);
+            }
+            // balanced pairwise Merkle over the H_F values (odd node promoted)
+            var level = try LIA_ALLOC.alloc([32]u8, hf_list.items.len);
+            for (hf_list.items, 0..) |l, li| {
+                level[li] = l;
+            }
+            while (level.len > 1) {
+                const next = try LIA_ALLOC.alloc([32]u8, (level.len + 1) / 2);
+                var mi: usize = 0;
+                var oi: usize = 0;
+                while (mi < level.len) : (mi += 2) {
+                    if (mi + 1 < level.len) {
+                        var nh = std.crypto.hash.sha2.Sha256.init(.{});
+                        nh.update("selfhost:node:");
+                        nh.update(&level[mi]);
+                        nh.update(&level[mi + 1]);
+                        nh.final(&next[oi]);
+                    } else {
+                        next[oi] = level[mi];
+                    }
+                    oi += 1;
+                }
+                level = next;
+            }
+            var rh = std.crypto.hash.sha2.Sha256.init(.{});
+            rh.update("selfhost:root:P1:");
+            rh.update(&level[0]);
+            var p1_root: [32]u8 = undefined;
+            rh.final(&p1_root);
+            try stdout.print("@RULEL:SELFHOST_P1REF:1.0.0\n", .{});
+            try stdout.print(".phase=P0b_ref_P1\n", .{});
+            try stdout.print(".files_ok=20\n", .{});
+            try stdout.print(".fns_total={d}\n", .{fns_total});
+            try stdout.print(".fns_eligible={d}\n", .{fns_eligible});
+            try stdout.print(".fns_executed={d}\n", .{fns_executed});
+            try stdout.print(".steps_total={d}\n", .{steps_total});
+            try stdout.print(".fns{{\n", .{});
+            try stdout.writeAll(fn_lines.items);
+            try stdout.print("}}\n", .{});
+            try stdout.print(".selfhost_root_zig_1=\"sha256:{s}\"\n", .{std.fmt.fmtSliceHexLower(&p1_root)});
+            try stdout.print(".pin=AWAITING_FIRST_CI_MEASUREMENT\n", .{});
+            try stdout.print(".status=\"MEASURED\"\n", .{});
+            return;
+        }
+        if (!argEq(sh_sub, "parity")) {
+            try stderr.print("usage: lin selfhost [parity|p1ref]\n", .{});
+            std.process.exit(1);
+        }
+
+        const corpus_targets = [_][]const u8{
+            "src/zig_to_lin_transpiler.lin",
+            "src/lin_discovery_engine.lin",
+            "src/lin_merkle_tree.lin",
+            "src/lin_workload_planner.lin",
+            "src/lin_adaptive_replanning.lin",
+            "src/lin_autonomous_discovery.lin",
+            "src/lin_blind_generalization.lin",
+            "src/lin_binary_merkle_provenance.lin",
+            "src/lin_compatibility_matrix.lin",
+            "src/lin_c_expr_parser.lin",
+            "src/lin_array.lin",
+            "src/lin_array_kernel.lin",
+            "src/lin_bithacks.lin",
+            "src/lin_crypto.lin",
+            "src/lin_from_c.lin",
+            "src/lin_from_js.lin",
+            "src/lin_lint.lin",
+            "src/lin_regions.lin",
+            "examples/bytes.lin",
+            "examples/safe-compare.lin",
+        };
+
+        // compiler_sha256 = SHA-256(bytes(compiler/lin.zig)). Self-referential:
+        // reported, not asserted (it changes when this source changes).
+        var compiler_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+        if (std.fs.cwd().openFile("compiler/lin.zig", .{})) |src_file| {
+            defer src_file.close();
+            var src_buf: [16384]u8 = undefined;
+            while (true) {
+                const n = src_file.read(&src_buf) catch 0;
+                if (n == 0) break;
+                compiler_hasher.update(src_buf[0..n]);
+            }
+        } else |_| {}
+        var compiler_digest: [32]u8 = undefined;
+        compiler_hasher.final(&compiler_digest);
+
+        // corpus_sha256 = SHA-256(‖ raw bytes of the 20 .lin, corpus_targets
+        // order, no separator). ledger_sha256 = SHA-256(‖ per-file SHA-256).
+        var corpus_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+        var ledger_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+        var per_file: [20][32]u8 = undefined;
+        var per_len: [20]usize = [_]usize{0} ** 20;
+        var present: usize = 0;
+        for (corpus_targets, 0..) |path, idx| {
+            if (std.fs.cwd().openFile(path, .{})) |f| {
+                defer f.close();
+                if (f.readToEndAlloc(LIA_ALLOC, 10 * 1024 * 1024)) |content| {
+                    defer LIA_ALLOC.free(content);
+                    per_len[idx] = content.len;
+                    corpus_hasher.update(content);
+                    var target_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+                    target_hasher.update(content);
+                    target_hasher.final(&per_file[idx]);
+                    ledger_hasher.update(&per_file[idx]);
+                    present += 1;
+                } else |_| {}
+            } else |_| {}
+        }
+        var corpus_digest: [32]u8 = undefined;
+        corpus_hasher.final(&corpus_digest);
+        var ledger_digest: [32]u8 = undefined;
+        ledger_hasher.final(&ledger_digest);
+
+        // certificate_id = SHA-256(domain ‖ compiler ‖ corpus ‖ ledger),
+        // raw 32-byte digests (identical to `lin cert build`).
+        var cert_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+        cert_hasher.update("LIN:SEMANTIC_CERTIFICATE:1.0.0");
+        cert_hasher.update(&compiler_digest);
+        cert_hasher.update(&corpus_digest);
+        cert_hasher.update(&ledger_digest);
+        var cert_digest: [32]u8 = undefined;
+        cert_hasher.final(&cert_digest);
+
+        // H_selfhost_root(Zig, 0): balanced pairwise Merkle over the 20 corpus
+        // files with domain separation (docs/SELF_HOSTING_PLAN.rulel §3.2):
+        //   leaf = SHA-256("selfhost:leaf:" ‖ path ‖ 0x00 ‖ file_sha256)
+        //   node = SHA-256("selfhost:node:" ‖ left ‖ right)   (odd node promoted)
+        //   root = SHA-256("selfhost:root:" ‖ top)
+        var level: [20][32]u8 = undefined;
+        for (per_file, 0..) |d, idx| {
+            var lh = std.crypto.hash.sha2.Sha256.init(.{});
+            lh.update("selfhost:leaf:");
+            lh.update(corpus_targets[idx]);
+            lh.update(&[_]u8{0});
+            lh.update(&d);
+            lh.final(&level[idx]);
+        }
+        var level_len: usize = 20;
+        while (level_len > 1) {
+            var next: [20][32]u8 = undefined;
+            var next_len: usize = 0;
+            var i: usize = 0;
+            while (i < level_len) : (i += 2) {
+                if (i + 1 < level_len) {
+                    var nh = std.crypto.hash.sha2.Sha256.init(.{});
+                    nh.update("selfhost:node:");
+                    nh.update(&level[i]);
+                    nh.update(&level[i + 1]);
+                    nh.final(&next[next_len]);
+                } else {
+                    next[next_len] = level[i];
+                }
+                next_len += 1;
+            }
+            level = next;
+            level_len = next_len;
+        }
+        var root_hasher = std.crypto.hash.sha2.Sha256.init(.{});
+        root_hasher.update("selfhost:root:");
+        root_hasher.update(&level[0]);
+        var selfhost_root: [32]u8 = undefined;
+        root_hasher.final(&selfhost_root);
+
+        // Baselines pinned in docs/SELF_HOSTING_PLAN.rulel §2 (commit 4debcf0).
+        // corpus/ledger/root do NOT depend on the compiler source, so they are
+        // asserted; compiler/cert are self-referential, so they are reported.
+        const baseline_corp = "28b64d7433c44f02a176a1dd5617abfc88d23181e2046d3283f104d0a637a766";
+        const baseline_ledg = "d32d0d6d0897d0786b93a50ca1eb6fa88ee9153e09a8b30a3b09354d1d8545a1";
+        const baseline_root = "f7a0c6fae02cdb89fc3236619919432d4138015f9bdb8a69209d797c01e1d01f";
+        const comp_hex = std.fmt.fmtSliceHexLower(&compiler_digest);
+        const corp_hex = std.fmt.fmtSliceHexLower(&corpus_digest);
+        const ledg_hex = std.fmt.fmtSliceHexLower(&ledger_digest);
+        const cert_hex = std.fmt.fmtSliceHexLower(&cert_digest);
+        const root_hex = std.fmt.fmtSliceHexLower(&selfhost_root);
+        const corpus_match = std.mem.eql(u8, corp_hex, baseline_corp);
+        const ledger_match = std.mem.eql(u8, ledg_hex, baseline_ledg);
+        const root_match = std.mem.eql(u8, root_hex, baseline_root);
+        const all_match = corpus_match and ledger_match and root_match and present == 20;
+
+        try stdout.print("@RULEL:SELFHOST_PARITY:1.0.0\n", .{});
+        try stdout.print(".phase=P0\n", .{});
+        try stdout.print(".compiler_sha256_recomputed=\"{s}\"\n", .{comp_hex});
+        try stdout.print(".corpus_sha256_recomputed=\"{s}\"\n", .{corp_hex});
+        try stdout.print(".ledger_sha256_recomputed=\"{s}\"\n", .{ledg_hex});
+        try stdout.print(".certificate_id_recomputed=\"sha256:{s}\"\n", .{cert_hex});
+        try stdout.print(".selfhost_root_zig_0=\"sha256:{s}\"\n", .{root_hex});
+        try stdout.print(".icanon{{\n", .{});
+        for (corpus_targets, 0..) |path, idx| {
+            const fh = std.fmt.fmtSliceHexLower(&per_file[idx]);
+            try stdout.print("  .file{{ path=\"{s}\" bytes={d} sha256=\"{s}\" }}\n", .{ path, per_len[idx], fh });
+        }
+        try stdout.print("}}\n", .{});
+        try stdout.print(".corpus_match={s}\n", .{if (corpus_match) "true" else "false"});
+        try stdout.print(".ledger_match={s}\n", .{if (ledger_match) "true" else "false"});
+        try stdout.print(".selfhost_root_match={s}\n", .{if (root_match) "true" else "false"});
+        try stdout.print(".corpus_present={d}/{d}\n", .{ present, corpus_targets.len });
+        if (all_match) {
+            try stdout.print(".verification=PARITY_BASELINE_VALID\n", .{});
+            try stdout.print(".status=\"PASS\"\n", .{});
+        } else {
+            try stdout.print(".verification=PARITY_BASELINE_MISMATCH\n", .{});
+            try stdout.print(".status=\"FAIL\"\n", .{});
+            std.process.exit(1);
+        }
+        return;
+    }
     if (argEq(cmd, "verify-cert")) {
         if (args.len < 3) {
             try stderr.print("usage: lin verify-cert <certificate.rulel>\n", .{});
@@ -17702,7 +18083,7 @@ fn runCli() !void {
         try stdout.print("@LIN:SEMANTIC_CERTIFICATE_VERIFICATION:1.0.0\n", .{});
         try stdout.print(".certificate_file=\"{s}\"\n", .{args[2]});
         try stdout.print(".compiler_match={s}\n", .{if (compiler_match) "true" else "false"});
-        try stdout.print(".compiler_match_scope=\"self_anchored_running_binary_not_independent_proof\"\n", .{});
+        try stdout.print(".compiler_match_scope=\"self_anchored_compiler_source_not_independent_proof\"\n", .{});
         try stdout.print(".corpus_match={s}\n", .{if (corpus_match) "true" else "false"});
         try stdout.print(".ledger_match={s}\n", .{if (ledger_match) "true" else "false"});
         try stdout.print(".certificate_id_match={s}\n", .{if (certificate_match) "true" else "false"});
@@ -17848,56 +18229,45 @@ fn runCli() !void {
             // SECURITY-AUDIT fix (2026-08-31): recompute the digests and
             // compare them against the claimed fields (previously the claimed
             // fields were never parsed and match=true was printed).
+            // Correction (2026-08-31 review): the compiler anchor must be the
+            // compiler SOURCE (compiler/lin.zig), exactly like `cert build` and
+            // `integrity` do — hashing the running binary (/proc/self/exe) made
+            // every `cert build` -> `cert verify` round-trip FAIL. The corpus
+            // list is likewise aligned with the 20 sources that actually ship.
             var compiler_hasher = std.crypto.hash.sha2.Sha256.init(.{});
-            if (std.fs.openFileAbsolute("/proc/self/exe", .{})) |bin_file| {
-                defer bin_file.close();
-                var bin_buf: [16384]u8 = undefined;
+            if (std.fs.cwd().openFile("compiler/lin.zig", .{})) |src_file| {
+                defer src_file.close();
+                var src_buf: [16384]u8 = undefined;
                 while (true) {
-                    const n = bin_file.read(&bin_buf) catch 0;
+                    const n = src_file.read(&src_buf) catch 0;
                     if (n == 0) break;
-                    compiler_hasher.update(bin_buf[0..n]);
+                    compiler_hasher.update(src_buf[0..n]);
                 }
             } else |_| {}
             var compiler_digest: [32]u8 = undefined;
             compiler_hasher.final(&compiler_digest);
 
             const corpus_targets = [_]struct { file: []const u8, fn_name: []const u8 }{
-                .{ .file = "test/corpus/adler32.lin", .fn_name = "test_adler32_vector" },
-                .{ .file = "test/corpus/aead_poly1305.lin", .fn_name = "test_aead_poly1305_vector" },
-                .{ .file = "test/corpus/aes128.lin", .fn_name = "test_aes_vector" },
-                .{ .file = "test/corpus/alac_flac.lin", .fn_name = "test_alac_flac_vector" },
-                .{ .file = "test/corpus/blake2b.lin", .fn_name = "test_blake2b_vector" },
-                .{ .file = "test/corpus/blake3.lin", .fn_name = "test_blake3_g" },
-                .{ .file = "test/corpus/brotli_bit.lin", .fn_name = "test_brotli_vector" },
-                .{ .file = "test/corpus/brotli_huffman.lin", .fn_name = "test_brotli_huffman_vector" },
-                .{ .file = "test/corpus/chacha20.lin", .fn_name = "test_chacha_rfc_vector" },
-                .{ .file = "test/corpus/cityhash64.lin", .fn_name = "test_cityhash_vector" },
-                .{ .file = "test/corpus/crc32.lin", .fn_name = "test_crc32_vector" },
-                .{ .file = "test/corpus/cswap_montgomery.lin", .fn_name = "test_cswap_vector" },
-                .{ .file = "test/corpus/curve25519_fe.lin", .fn_name = "test_curve25519_vector" },
-                .{ .file = "test/corpus/fast_bitset.lin", .fn_name = "test_bitset_vector" },
-                .{ .file = "test/corpus/fnv1a.lin", .fn_name = "test_fnv1a_vectors" },
-                .{ .file = "test/corpus/hilbert3d.lin", .fn_name = "test_morton3d_vector" },
-                .{ .file = "test/corpus/keccak.lin", .fn_name = "test_keccak_vector" },
-                .{ .file = "test/corpus/morton_spatial.lin", .fn_name = "test_morton_vector" },
-                .{ .file = "test/corpus/murmur3.lin", .fn_name = "test_murmur3_vectors" },
-                .{ .file = "test/corpus/nested_matrix_sum.lin", .fn_name = "test_nested_matrix_sum_vector" },
-                .{ .file = "test/corpus/pcg_random.lin", .fn_name = "test_pcg_vector" },
-                .{ .file = "test/corpus/philox.lin", .fn_name = "test_philox_vector" },
-                .{ .file = "test/corpus/poly1305.lin", .fn_name = "test_poly1305_rfc_vector" },
-                .{ .file = "test/corpus/popcount_massey.lin", .fn_name = "test_massey_vector" },
-                .{ .file = "test/corpus/prng_bryc.lin", .fn_name = "test_prng_vectors" },
-                .{ .file = "test/corpus/prospector_skeeto.lin", .fn_name = "test_prospector_vectors" },
-                .{ .file = "test/corpus/protobuf_varint.lin", .fn_name = "test_protobuf_varint_vector" },
-                .{ .file = "test/corpus/ripemd160.lin", .fn_name = "test_ripemd160_vector" },
-                .{ .file = "test/corpus/roaring_search.lin", .fn_name = "test_roaring_vector" },
-                .{ .file = "test/corpus/siphash.lin", .fn_name = "test_sipround_vectors" },
-                .{ .file = "test/corpus/splitmix64.lin", .fn_name = "test_splitmix64_vector" },
-                .{ .file = "test/corpus/vp8_dct.lin", .fn_name = "test_vp8_dct_vector" },
-                .{ .file = "test/corpus/wyhash.lin", .fn_name = "test_wyhash_vectors" },
-                .{ .file = "test/corpus/xoshiro256.lin", .fn_name = "test_xoshiro256_vector" },
-                .{ .file = "test/corpus/xxhash64.lin", .fn_name = "test_xxh64_vector" },
-                .{ .file = "test/corpus/xxhash_kernels.lin", .fn_name = "test_xxhash_vectors" },
+                .{ .file = "src/zig_to_lin_transpiler.lin", .fn_name = "" },
+                .{ .file = "src/lin_discovery_engine.lin", .fn_name = "" },
+                .{ .file = "src/lin_merkle_tree.lin", .fn_name = "" },
+                .{ .file = "src/lin_workload_planner.lin", .fn_name = "" },
+                .{ .file = "src/lin_adaptive_replanning.lin", .fn_name = "" },
+                .{ .file = "src/lin_autonomous_discovery.lin", .fn_name = "" },
+                .{ .file = "src/lin_blind_generalization.lin", .fn_name = "" },
+                .{ .file = "src/lin_binary_merkle_provenance.lin", .fn_name = "" },
+                .{ .file = "src/lin_compatibility_matrix.lin", .fn_name = "" },
+                .{ .file = "src/lin_c_expr_parser.lin", .fn_name = "" },
+                .{ .file = "src/lin_array.lin", .fn_name = "" },
+                .{ .file = "src/lin_array_kernel.lin", .fn_name = "" },
+                .{ .file = "src/lin_bithacks.lin", .fn_name = "" },
+                .{ .file = "src/lin_crypto.lin", .fn_name = "" },
+                .{ .file = "src/lin_from_c.lin", .fn_name = "" },
+                .{ .file = "src/lin_from_js.lin", .fn_name = "" },
+                .{ .file = "src/lin_lint.lin", .fn_name = "" },
+                .{ .file = "src/lin_regions.lin", .fn_name = "" },
+                .{ .file = "examples/bytes.lin", .fn_name = "" },
+                .{ .file = "examples/safe-compare.lin", .fn_name = "" },
             };
 
             var corpus_hasher = std.crypto.hash.sha2.Sha256.init(.{});
@@ -17958,7 +18328,7 @@ fn runCli() !void {
             try stdout.print("@LIN:SEMANTIC_CERTIFICATE_VERIFICATION:1.0.0\n", .{});
             try stdout.print(".certificate_file=\"{s}\"\n", .{in_path});
             try stdout.print(".compiler_match={s}\n", .{if (compiler_match) "true" else "false"});
-            try stdout.print(".compiler_match_scope=\"self_anchored_running_binary_not_independent_proof\"\n", .{});
+            try stdout.print(".compiler_match_scope=\"self_anchored_compiler_source_not_independent_proof\"\n", .{});
             try stdout.print(".corpus_match={s}\n", .{if (corpus_match) "true" else "false"});
             try stdout.print(".ledger_match={s}\n", .{if (ledger_match) "true" else "false"});
             try stdout.print(".certificate_id_match={s}\n", .{if (certificate_match) "true" else "false"});
@@ -18030,11 +18400,13 @@ fn runCli() !void {
 
             try stdout.print("\n@RULEL:CORPUS_HYPOTHESIS_VERIFICATION:1.0.0\n", .{});
             try stdout.print(".total_targets={d}\n.confirmed={d}\n.refuted={d}\n", .{ corpus_targets.len, confirmed_count, corpus_targets.len - confirmed_count });
-            try stdout.print(".vm_total_steps={d}\n.equivalent=true\n", .{total_steps});
-            try stdout.print(".proof=\"CANONICAL_CORPUS_HYPOTHESIS_SUITE_100_PASS\"\n\n", .{});
+            const all_confirmed = confirmed_count == corpus_targets.len;
+
+            try stdout.print(".vm_total_steps={d}\n.equivalent={s}\n", .{ total_steps, if (all_confirmed) "true" else "false" });
+            try stdout.print(".proof=\"{s}\"\n\n", .{if (all_confirmed) "CANONICAL_CORPUS_HYPOTHESIS_SUITE_100_PASS" else "CANONICAL_CORPUS_HYPOTHESIS_SUITE_INCOMPLETE"});
 
             try stdout.print("@LIN:CORPUS_INTEGRITY_GATE:1.0.0\n", .{});
-            try stdout.print(".total_targets={d}\n.confirmed={d}\n.refuted={d}\n.equivalent=true\n", .{ corpus_targets.len, confirmed_count, corpus_targets.len - confirmed_count });
+            try stdout.print(".total_targets={d}\n.confirmed={d}\n.refuted={d}\n.equivalent={s}\n", .{ corpus_targets.len, confirmed_count, corpus_targets.len - confirmed_count, if (all_confirmed) "true" else "false" });
             try stdout.print(".vm_total_steps={d}\n", .{total_steps});
             try stdout.print(".gates={{parse,semantic_ir,hypothesis,mir,jit,aot,oracle}}\n", .{});
             if (confirmed_count == corpus_targets.len) {
@@ -18423,7 +18795,7 @@ fn runCli() !void {
                 if (f.ok) eligible += 1;
             }
             try stdout.print("@RULEL:LIN_VM:1.0.0\n", .{});
-            try stdout.print(".engine{{ opcodes=28 overflow=wrapping shifts=lia_compatible step_limit={d} }}\n", .{VM_STEP_LIMIT});
+            try stdout.print(".engine{{ opcodes={d} overflow=wrapping shifts=lia_compatible step_limit={d} }}\n", .{ VM_OPCODE_COUNT, VM_STEP_LIMIT });
             try stdout.print(".coverage{{ total={d} eligible={d} rejected={d} }}\n", .{ mod.fns.len, eligible, mod.fns.len - eligible });
             try stdout.print(".fns{{\n", .{});
             for (mod.fns) |f| {

@@ -7,7 +7,18 @@ forjável.** Este documento demonstra, com código executável, por que as afirm
 "prova de execução verificável" **não se sustentam** sob escrutínio adversário, e o que
 seria preciso para torná-las honestas e, aí sim, vendáveis.
 
+> **Nota de atualização (2026-08-31, revisão posterior):** as falhas das seções 2–4 foram
+> **corrigidas** na mesma data (as 17 subgates da suíte compat agora são asserções
+> computadas; o certificado ancora em `compiler/lin.zig`, não no binário; `gpu-verify`
+> aponta para `examples/map_kernels.lin` com fallback de device). A conclusão central —
+> paridade GPU é **conformidade/determinismo**, não prova criptográfica — **permanece
+> válida**. A revisão seguinte ainda encontrou e corrigiu uma regressão: `cert verify`
+> voltara a hashear `/proc/self/exe` e o corpus deletado (o round-trip `cert build` →
+> `cert verify` falhava sempre); agora usa as mesmas âncoras do `cert build`. Detalhes em
+> `docs/REVIEW_SUGESTOES_E_CORRECOES.md`.
+
 ---
+
 
 ## 1. O PoC que comprovou a falsificação (executei de verdade)
 

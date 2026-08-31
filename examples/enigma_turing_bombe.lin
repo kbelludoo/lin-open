@@ -1,0 +1,33 @@
+@LIN:L1c:0.2
+@ENIGMA_BOMBE{version=1.0 attack=turing_crib_search}
+
+!step_rotor_position(r1: int, r2: int, r3: int) -> int {
+  // Avanco dos rotores mecanicos com notches (W=22, F=5)
+  next_r3 = (r3 + 1) % 26;
+  next_r2 = r2;
+  next_r1 = r1;
+  
+  ?(next_r3 == 22) {
+    next_r2 = (r2 + 1) % 26;
+    ?(next_r2 == 5) {
+      next_r1 = (r1 + 1) % 26;
+    };
+  };
+  
+  // Empacota estado dos 3 rotores em um unico inteiro de 32 bits
+  ^((next_r1 * 676) + (next_r2 * 26) + next_r3);
+}
+
+!check_crib_match(r1: int, r2: int, r3: int, target_c: int, crib_p: int) -> int {
+  // Simula avaliacao de passagem pelo refletor e rotores
+  rotor_pack = (r1 * 676) + (r2 * 26) + r3;
+  sim_c = ((crib_p + rotor_pack) ^ 13) % 26;
+  
+  is_match = 0;
+  ?(sim_c == (target_c % 26)) {
+    is_match = 1;
+  };
+  ^is_match;
+}
+
+=ex{step_rotor_position, check_crib_match}

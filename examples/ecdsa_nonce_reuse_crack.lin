@@ -1,0 +1,48 @@
+@LIN:L1c:0.2
+@ECDSA_REUSE_CRACK{version=1.0 attack=sony_ps3_fail0verflow}
+
+!mod_inv(a: int, m: int) -> int {
+  t = 0;
+  newt = 1;
+  r = m;
+  newr = a;
+  
+  while (newr != 0) {
+    q = r / newr;
+    temp_t = t - q * newt;
+    t = newt;
+    newt = temp_t;
+    
+    temp_r = r - q * newr;
+    r = newr;
+    newr = temp_r;
+  };
+  
+  ?(t < 0) {
+    t = t + m;
+  };
+  ^t;
+}
+
+!extract_private_key(z1: int, r: int, s1: int, z2: int, s2: int, n: int) -> int {
+  // 1. Recuperar o nonce repetido k = (z1 - z2) / (s1 - s2) mod n
+  num = (z1 - z2) % n;
+  ?(num < 0) { num = num + n; };
+  
+  den = (s1 - s2) % n;
+  ?(den < 0) { den = den + n; };
+  
+  k = (num * mod_inv(den, n)) % n;
+  
+  // 2. Extrair a chave privada d = (s1 * k - z1) / r mod n
+  s1_k = (s1 * k) % n;
+  top = (s1_k - z1) % n;
+  ?(top < 0) { top = top + n; };
+  
+  r_inv = mod_inv(r, n);
+  priv_d = (top * r_inv) % n;
+  
+  ^priv_d;
+}
+
+=ex{mod_inv, extract_private_key}

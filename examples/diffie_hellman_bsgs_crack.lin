@@ -1,0 +1,28 @@
+@LIN:L1c:0.2
+@DH_BSGS_CRACK{version=1.0 attack=shanks_baby_step_giant_step group=Z_p}
+
+!power_mod(base: int, exp: int, mod: int) -> int {
+  res = 1;
+  b = base % mod;
+  e = exp;
+  while (e > 0) {
+    ?( (e & 1) == 1 ) {
+      res = (res * b) % mod;
+    };
+    b = (b * b) % mod;
+    e = _lia_shr(e, 1);
+  };
+  ^res;
+}
+
+!find_giant_step_collision(gamma: int, gm_inv: int, p: int, target_val: int) -> int {
+  // Executa o passo gigante: gamma_next = (gamma * gm_inv) mod p
+  next_val = (gamma * gm_inv) % p;
+  is_match = 0;
+  ?(next_val == target_val) {
+    is_match = 1;
+  };
+  ^is_match;
+}
+
+=ex{power_mod, find_giant_step_collision}

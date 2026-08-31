@@ -1,0 +1,33 @@
+@LIN:L1c:0.2
+@LIN_CRYPTO_ULTIMATE{framework=TRI_PILLAR_FRONTIER target="Symmetric + Asymmetric + PostQuantum"}
+
+!evaluate_attack_boundary_300(security_bits: int) -> int {
+  // 1 = SOLVED, 2 = BOUNDARY, 3 = INFEASIBLE
+  result_code = 3;
+  ?(security_bits <= 160) {
+    result_code = 1;
+  } : {
+    ?(security_bits <= 224) {
+      result_code = 2;
+    } : {
+      result_code = 3;
+    };
+  };
+  ^result_code;
+}
+
+!compute_lattice_core_svp(bkz_beta: int) -> int {
+  // Core-SVP Classical Sieve Work: ~ 0.292 * beta bits (scaled x 1000)
+  scaled_bits = (bkz_beta * 292) / 1000;
+  ^scaled_bits;
+}
+
+!unify_pillar_merkle_root(sym_digest: int, asym_digest: int, pqc_digest: int) -> int {
+  acc = 1779033703;
+  acc = ((acc * 2146129197) ^ sym_digest) & 4294967295;
+  acc = ((acc * 2221712011) ^ asym_digest) & 4294967295;
+  acc = ((acc * 16843009)   ^ pqc_digest) & 4294967295;
+  ^acc;
+}
+
+=ex{evaluate_attack_boundary_300, compute_lattice_core_svp, unify_pillar_merkle_root}

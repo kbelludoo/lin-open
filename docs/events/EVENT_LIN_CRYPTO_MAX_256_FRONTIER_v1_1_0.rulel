@@ -1,0 +1,71 @@
+@RULEL:LIN_CRYPTO_256_RECEIPT:1.1.0
+@CHALLENGE_ID="LIN-CRYPTO-MAX-256"
+@TITLE="256-Bit Classical Exhaustive-Search Cost Frontier (audited restatement)"
+@STATUS="PASS_WITH_SCOPE_LIMITS"
+@DATE="2026-08-31"
+@SUPERSEDES="EVENT_LIN_CRYPTO_MAX_256_FRONTIER.rulel (1.0.0, retained unchanged as history)"
+
+~R{.s=spec .i=identity .r=results .x=state_register .e=extrapolation .b=binding .v=verdict}
+
+.s{
+  challenge_id="LIN-CRYPTO-MAX-256"
+  security_target_bits=256
+  computation_model="CLASSICAL"
+  workload="LIN 64-bit key-evaluation function (AES S-box + two multiplicative mixers)"
+  workload_is_not="AES-256 as specified in FIPS-197"
+  parameter_class="EXPERIMENTAL (benchmark-specific evaluation function, not a standard primitive)"
+}
+
+.i{
+  hardware_identity="Intel(R) Xeon(R) Processor @ 2.60GHz | 2 cores | x86_64 | linux | gcc"
+  hardware_identity_rule="free-text descriptor; NOT a digest, so it must never be cited as one"
+  execution_artifact_digest="sha256:c02803bc4111eabc166ffee37958fc9972d3a11f0fb0b3e78cf19a3cc013ac4d"
+  execution_artifact_digest_rule="sha256 of test/test_lin_crypto_max_256.c as committed; recompute with sha256sum"
+  run_receipt_digest="RECOMPUTED_PER_RUN"
+  run_receipt_digest_rule="sha256 over the canonical 176-byte run-config record emitted by the harness"
+  benchmark_result_digest="RECOMPUTED_PER_RESULTS"
+  benchmark_result_digest_rule="sha256 over the canonical deterministic-outcome half of the result record; MUST change when measured outcomes change; timings live in a separate run_timing_digest so a reproducer on other hardware is never asked to match a clock"
+}
+
+.r{
+  largest_exhaustive_test_bits=28
+  searched_states=268435456
+  coverage_percent="100% of the N=28 space, for the executed levels only"
+  measured_rate_per_sec="136510000 (136.51 Mops/s, rerun value)"
+  prior_reported_rate_per_sec="132660000 (132.66 Mops/s, v1.0.0 receipt)"
+  rate_change_note="v1.0.0 extrapolations were derived from the older rate and were not recomputed"
+  workers_evaluated="1, 2, 4, 8, 16 workers"
+  independent_verifier=true
+}
+
+.x{
+  EMPIRICALLY_EXECUTED="N=20, N=24, N=28 (28 is the largest fully executed level)"
+  EXTRAPOLATED_FROM_MEASURED_RATE="N=32, N=36, N=40, N=256"
+  NOT_MEASURED="observed_time_sec for N>=32 was filled from the closed-form prediction"
+  integrity_suite_status="DEFECTIVE_IN_v1_0_0: subgates printed a literal [PASS] and two fixtures asserted the opposite of their name"
+}
+
+.e{
+  cardinality_2_256="115792089237316195423570985008687907853269984665640564039457584007913129639936"
+  estimated_full_256_seconds="8.482e+68 s"
+  estimated_full_256_years="2.688e+61 years"
+  universe_age_years="1.38e+10 years"
+  infeasibility_factor="10^58.8 times the age of the observable universe"
+  feasibility_class="COMPUTATIONALLY_INFEASIBLE_FOR_CLASSICAL_EXHAUSTIVE_SEARCH"
+  method="2^256 / 136.51e6 ops/s; single-thread rate, no parallel speedup assumed"
+}
+
+.b{
+  covers="artifact source bytes, run configuration record, measured result record"
+  does_not_cover="any AES-256 claim; any non-exhaustive attack; any security proof; the v1.0.0 execution_digest (which bound nothing)"
+  rule="a change to the benchmark source changes execution_artifact_digest; a change to the measurements changes benchmark_result_digest; neither can be self-attested by the binary"
+}
+
+.v{
+  verdict="PASS_WITH_SCOPE_LIMITS"
+  claim_scope="classical exhaustive-search infeasibility at 2^256 on this hardware class only"
+  NOT_claimed="break of AES-256; break of any cipher; proof of security; quantum resistance"
+  NOT_claimed_reason="cost of exhaustive search is a lower bound on one attack family, not an upper bound on all attacks"
+  receipt_integrity="see .b: recomputed by examples/verify_digest_binding.py, not asserted here"
+  security_frontier_certified="REMOVED -- v1.0.0 wording 'CLASSICAL_256BIT_SECURITY_IS_UNBREAKABLE' was an over-claim"
+}

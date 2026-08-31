@@ -1,0 +1,16 @@
+@LIN:L1c:0.2
+@AMM_ENGINE{version=1.0 model=constant_product_xy_k}
+
+!calculate_swap_out(reserve_in: int, reserve_out: int, amount_in: int, fee_bps: int) -> int {
+  // fee_bps = 30 (0.30% de taxa) -> multiplicador = 9970
+  fee_mult = 10000 - fee_bps;
+  in_com_taxa = amount_in * fee_mult;
+  
+  numerador = in_com_taxa * reserve_out;
+  denominador = (reserve_in * 10000) + in_com_taxa;
+  
+  tokens_saida = numerador / denominador;
+  ^tokens_saida;
+}
+
+=ex{calculate_swap_out}

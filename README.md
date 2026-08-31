@@ -89,6 +89,30 @@ and runs on any machine with just Zig 0.13 — no OpenCL headers, ICD, or GPU. A
 functionality works; GPU/attestation commands fail gracefully with a clear "no OpenCL
 platform" message instead of crashing.
 
+### Pre-compiled Stage0 (no Zig needed)
+
+If you just want to **run** `lin` (you are not developing the compiler), you don't need to
+install Zig. Pre-compiled `Stage0` binaries are published as GitHub Release assets whenever a
+`v*` tag is pushed (and as an artifact on every CI run):
+
+- `lin_native-cpu` — CPU-only build (`zig build -Dgpu=false`). No OpenCL required; GPU
+  commands fail gracefully with a clear "no OpenCL platform" message.
+- `lin_native-gpu` — OpenCL build (needs an OpenCL runtime, e.g. PoCL/ROCm).
+
+Download the asset for your platform, make it executable, and run it exactly like the built
+binary:
+
+```bash
+chmod +x lin_native-cpu
+./lin_native-cpu version
+./lin_native-cpu check src/lin_crypto.lin
+./lin_native-cpu receipt create --source "return x * x;" --input 9
+```
+
+The asset is built from the exact same `compiler/lin.zig` source that CI verifies, in
+`ReleaseFast`, so the reproducible-Merkle-root behavior is identical. SHA-256 of each asset
+is printed in the release notes so you can verify the download.
+
 ### Run the checks and tests
 
 ```bash
@@ -136,6 +160,43 @@ canonical reference to verify receipts on your own machine.
 ./bin/lin_native receipt create --source "return x * x;" --input 9 --export json > receipt.json
 ./bin/lin_native receipt verify --receipt receipt.json
 ```
+
+### Independent verification — no LIN binary needed (zero-trust)
+
+The receipt is an **open format**: any third-party tool can validate it with only a
+SHA-256 implementation (NIST FIPS 180-4). The 64-byte leaf is built as:
+
+| Bytes  | Field       | Encoding                    |
+|--------|-------------|-----------------------------|
+| 0..32  | source hash | SHA-256 of source (raw)     |
+| 32..40 | output      | i64, little-endian          |
+| 40..48 | steps       | u64, little-endian          |
+| 48..56 | sp_at_ret   | u64, little-endian          |
+| 56..64 | input       | i64, little-endian          |
+
+`merkle_root = SHA-256(leaf)`
+
+Shipped independent verifiers (Python stdlib / Bash+OpenSSL / Node / WebCrypto —
+`benchmarks/`), none of them touch the LIN compiler:
+
+```bash
+python3 benchmarks/verify_receipt.py receipt.json              # Python 3 stdlib
+bash benchmarks/verify_receipt.sh receipt.rulel                # Bash + OpenSSL
+node benchmarks/verify_receipt.js receipt.json                 # Node.js crypto
+python3 benchmarks/verify_receipt.py receipt.json --source "return x * x;"  # also binds artifact to source
+# benchmarks/verify_receipt.html → static page, browser WebCrypto, works offline
+```
+
+`benchmarks/fixtures/receipt_sqr9.json` / `.rulel` are **real receipts emitted by
+this compiler** (`return x * x;`, input 9 → output 81, merkle
+`sha256:b96fecee…`). `make verify-receipt` runs all three verifiers plus a tamper
+check (a receipt with `output` changed to 82 must FAIL) — and CI runs it too.
+
+Honest scope: this verifies the receipt fields are **self-consistent** and that the
+artifact hash binds to the source. It does **not** re-execute the code — a receipt
+with arbitrary fields and a recomputed Merkle root still verifies. For execution
+proof, re-run the source with an independent runner (the `--source` flag is the
+bridge) or use TEE/ZK (see `SECURITY_AUDIT.md`).
 
 ---
 
@@ -219,6 +280,58 @@ Remaining honest caveats:
 10. ℹ️ **Broken sources were removed** earlier: `src/lin_selfhost.lin`, `src/lin_refine_div.lin`,
     `src/lin_pow_simd.lin` failed the project's own `check` and were not referenced by tests.
     Restore via git history if needed.
+
+Additional corrections in the 2026-08-31 review pass (see `docs/REVIEW_SUGESTOES_E_CORRECOES.md`):
+
+11. ✅ **`cert build` → `cert verify` round-trip fixed.** `cert verify` was still hashing the
+    running binary (`/proc/self/exe`) and the deleted `test/corpus/*.lin` set, so it failed
+    against every freshly built certificate. It now anchors on `compiler/lin.zig` and the 20
+    shipped sources, exactly like `cert build`/`integrity`.
+12. ✅ **`receipt verify` without `--receipt` now fails** (it previously printed an
+    unconditional `PASS` — a verifier that cannot fail).
+13. ✅ **`receipt create --input` rejects invalid values** instead of silently falling back to 7.
+14. ✅ **Malformed JSON receipts are rejected gracefully** (missing/wrong-typed fields no
+    longer crash with a Zig panic).
+15. ✅ **`INT64_MIN / -1` and `INT64_MIN % -1` no longer trap** in the LinVM, the `_lia_mod`
+    helper, the Zig runtime prelude, and the C-expression evaluator (wrapping convention:
+    `div → INT64_MIN`, `mod → 0`).
+16. ✅ **`opcodes=28` hardcoded replaced** with the computed count (33) in `lin vm`.
+17. ✅ **`lin test` no longer probes `/home/k/.local/bin/zig`** — uses `$LIN_ZIG` or `zig`
+    from PATH.
+18. ✅ **`integrity` computes `.equivalent`/`.proof`** from the actual confirmed/refuted
+    counts instead of printing `equivalent=true` / `…100_PASS` unconditionally.
+19. ✅ **`cert verify` actually parses certificate fields now.** The `certFieldValue`
+    helper was returning an empty string for every claimed field (it did not skip the
+    opening quote), so `cert build` → `cert verify` still failed after the anchor fix.
+    Round-trip now passes: `CERTIFICATE_VALID`, all `*_match=true` (verified by running).
+20. ✅ **`lin test` repaired.** It referenced `src/lin.zig` (removed in the cleanup) and
+    wrote `src/lin_test_run.zig` into the working tree. It now uses the embedded
+    `ZIG_RUNTIME_PRELUDE` and writes to `.zig-cache/` — runs to `ok N`, exit 0.
+21. ✅ **`lin rebuild` fails with a clear message** (its bootstrap modules were removed
+    in the cleanup) instead of a raw `FileNotFound` trace.
+
+Remaining review caveats (not fixed, see report):
+
+22. ⚠️ **`receipt verify` is self-consistent but does not re-execute** the source; a
+    consistent tamper (input+output+steps+merkle) still verifies. A `--execute` mode is
+    recommended before claiming "proved execution" in marketing.
+23. ⚠️ **`storage/dynamic_rules.rulel` in the CWD silently rewrites sources** before
+    `check`/`compile`/`test` (`apply_dynamic_rules_if_present`). Recommend removing the hook
+    or gating it behind an explicit flag.
+24. ⚠️ **Duplicate `verify-cert` handlers**: the hash-based verifier is only reachable via
+    the `verify-certificate` alias; the `verify-cert` name hits an older 32-basis-case
+    verifier. Merge into one command.
+25. ⚠️ **Corpus is 20 sources while the repo ships 21 `.lin` files**
+    (`examples/map_kernels.lin` is not in the corpus list). Either add it or document the
+    exclusion.
+26. ⚠️ **`test/corpus/gpu_parallel_map_kernels.lin` is an orphan**: the README says the
+    corpus was removed, but this file remains and fails `check` (`LIN_TYPE_ERROR`),
+    breaking `lin test test/`. Remove it or fix its types.
+27. ⚠️ **`lin rebuild` is unavailable**: its bootstrap modules (`src/lin_zig_bootstrap.lin`,
+    `src/lin_zig_emit.lin`, `src/lin_zig_match.lin`, `src/lin_js_expr.lin`,
+    `src/lin_js_driver.lin`) were removed and the repo is shallow — no history to restore.
+28. ⚠️ **`lin test` harness**: only calls parameterless `test_*()` functions and requires
+    them to return exactly `1`.
 
 ---
 
