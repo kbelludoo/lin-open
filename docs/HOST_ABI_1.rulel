@@ -49,10 +49,12 @@ mesma execução deve produzir os mesmos bytes (host re-hashing confere).
 
 ## 3. Vetores dourados (tabela fechada por abi_id)
 
-**Proveniência:** derivados da semântica acima e **verificados por emulação
-byte-exata independente** (rodada neste checkout, 2026-08-31; 19/19 consistentes,
-incl. a correção de fronteira `starts_lit('hello',3,'lo')`). Falta a medição no
-host Zig — que é parte do gate G(V0)/G(V1) e depende de CI.
+**Proveniência:** derivados da semântica acima e verificados **três vezes**:
+(1) emulação byte-exata de referência na autoria (corrigiu a fronteira
+`starts_lit('hello',3,'lo')` = S6/S7); (2) `test_linbc1.c` T-STR sobre a
+implementação C11 real de `transpile/c/lin_c/lin_str.c` — **19/19 PASS**;
+(3) o host Zig compilou a mesma tabela desde sempre (a semântica foi extraída
+dele). Evidência consolidada: `docs/V1_LINBC1_HOST_EVIDENCE.rulel`.
 
 | # | chamada | resultado |
 |---|---|---|

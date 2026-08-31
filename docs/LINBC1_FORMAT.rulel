@@ -121,10 +121,13 @@ fix como `compat_root` e os fixtures de receipt (`sha256:b96fecee…`,
 | Superfície nativa nova (loader) | conta no orçamento do TCB C11 (meta ≤ 2 500 linhas — medido em V1, §6.2 do plano) |
 | Emissor escrito à mão fora de LIN | proibido por R0/R1: `src/lin_linbc_emit.lin` roda no Stage0; o canal de saída é o de artefatos já existente |
 
-## 7. Gates que ativam este documento (hoje: nenhum PASS registrado)
+## 7. Gates que ativam este documento
 
 - G(V1): serializador LIN round-trip + fuzz de imagens corrompidas (100% rejeição,
   sem crash) + vetores dourados de `LINVM_ISA_V1.rulel` no loader C11.
+  **→ RODADO em sandbox 2026-08-31 (4440 rejeições/4440 + round-trip
+  emitter-LIN↔loader-C11 CONSENSUS): evidência em `docs/V1_LINBC1_HOST_EVIDENCE.rulel`;
+  confirmação em CI pendente (rito Q3).**
 - G(V2): `compiler0-mvp.linbc` neste formato compilando o corpus fechado com roots
-  idênticos ao Stage0.
-- Sem esses gates, este formato é **proposta de papel** — label EXPERIMENTAL.
+  idênticos ao Stage0 — **pendente**.
+- Label deste formato: EXPERIMENTAL até G(V2).
