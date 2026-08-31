@@ -1,0 +1,55 @@
+@LIN:L1c:0.2
+@LIN_GPU_CORPUS{version=1.0 purpose=parallel_map_kernels_for_gpu_verify}
+
+// ============================================================================
+// GPU PARALLEL MAP KERNEL CORPUS — reconstructed 2026-08-31
+// ============================================================================
+// The original corpus was never committed to git (verified: `git log --all --
+// test/corpus/` is empty), which left `gpu-verify` / `attest-issue` /
+// `cert build` / `integrity` pointing at a missing file (see
+// SECURITY-AUDIT.md, finding 4). This file reconstructs the corpus with the
+// semantics the pipeline expects:
+//
+//   gpu-verify  -> vmBuild(src) -> unary fns (nparams == 1, name !~ "test_")
+//                 -> VM bytecode -> MIR -> OpenCL kernel `lin_gpu_kernel`
+//                 -> differential test vs per-element VM evaluation, 7 sizes
+//
+// Hard constraints imposed by the pipeline:
+//   - kernels must be UNARY (gpu-verify filter: nparams == 1)
+//   - only ops that exist in the MIR opcode set can be lowered to OpenCL:
+//       + - * & | ^ << >> == <
+//   - NO div/mod (no MIR lowering), NO unary-minus constants (no MIR neg),
+//     NO calls or control flow inside kernel bodies
+//   - inputs are sign-extended i32 -> i64 on both sides (VM i64 / OpenCL
+//     `long`), so wrapping arithmetic matches bit-exact at every size
+//
+// The `test_*` functions are skipped by gpu-verify and are the known-vector
+// self-checks used by test_lin_selfhost_compat_001.zig (subgate 001O) and
+// by `lin integrity` — they must return 1.
+// ============================================================================
+
+// Affine map (the canonical parallel map; out[i] = in[i]*2 + 1)
+!gpu_map_affine(x: int) -> int {
+  ^x * 2 + 1
+}
+
+// Affine map with subtraction (exercises MIR .sub lowering)
+!gpu_map_mix(x: int) -> int {
+  ^x * 3 - 7
+}
+
+// Bitwise fold (exercises MIR and/xor/or/shl/shr lowering)
+!gpu_map_bitfold(x: int) -> int {
+  ^((x & 2147483647) ^ (x << 3)) | (x >> 5)
+}
+
+// Known-vector self-check (zero params; arithmetic only — no control flow —
+// so it stays inside the VmComp statement subset the corpus is guaranteed
+// to support). Returns 1 iff all known vectors hold, 0 otherwise.
+!test_gpu_known_vectors {
+  ok = 1;
+  ok = ok * (gpu_map_affine(21) == 43);
+  ok = ok * (gpu_map_mix(5) == 8);
+  ok = ok * (gpu_map_bitfold(8) == 72);
+  ^ok;
+}

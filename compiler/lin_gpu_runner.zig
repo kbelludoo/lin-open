@@ -204,11 +204,21 @@ pub fn runGpuVerificationSuite(
     try stdout.print(".refuted={d}\n", .{(kernel_funcs.len * 7) - total_confirmed});
     try stdout.print(".oracle=\"LIN_SOURCE_SEMANTICS_VM\"\n", .{});
     try stdout.print(".prng=\"fibonacci_hashing(i+1)*0x9e3779b9\"\n", .{});
-    try stdout.print(".equivalence=\"BIT_EXACT\"\n", .{});
+    // SECURITY-AUDIT (2026-08-31): the OpenCL backend is a driver-reported
+    // black box — this is an implementation-agreement check between the LIN
+    // VM and the OpenCL backend, NOT an execution attestation. The
+    // equivalence field is now computed (it previously printed BIT_EXACT
+    // unconditionally, even on FAIL).
+    const pass = (total_confirmed == kernel_funcs.len * 7);
+    if (pass) {
+        try stdout.print(".equivalence=\"BIT_EXACT\"\n", .{});
+    } else {
+        try stdout.print(".equivalence=\"DIVERGENT\"\n", .{});
+    }
+    try stdout.print(".trust_model=\"driver_reported_output_agreement_not_attestation\"\n", .{});
     try stdout.print(".hand_written=false\n", .{});
     try stdout.print(".all_lowered_from_lin_source=true\n", .{});
 
-    const pass = (total_confirmed == kernel_funcs.len * 7);
     if (pass) {
         try stdout.print(".status=\"PASS\"\n", .{});
     } else {
