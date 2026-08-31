@@ -1,0 +1,39 @@
+@LIN:L1c:0.2
+@LIN_CRYPTO_MAX_256{challenge=256_BIT_SECURITY_FRONTIER target=AES_256_EVALUATION}
+
+!verify_range_partition(w_start: int, w_end: int, prev_end: int, w_id: int) -> int {
+  is_valid = 1;
+  ?(w_id > 0) {
+    // Verifica sobreposicao (overlap)
+    ?(w_start <= prev_end) {
+      is_valid = 0;
+    };
+    // Verifica lacunas (gaps)
+    ?(w_start != (prev_end + 1)) {
+      is_valid = 0;
+    };
+  };
+  ^is_valid;
+}
+
+!aggregate_worker_digest(acc_merkle: int, worker_digest: int, cardinality: int) -> int {
+  next_merkle = ((acc_merkle * 2221712011) ^ worker_digest ^ cardinality) & 4294967295;
+  ^next_merkle;
+}
+
+!classify_security_frontier(bits_n: int) -> int {
+  // 1 = SOLVABLE, 2 = VERY_HARD, 3 = COMPUTATIONALLY_INFEASIBLE
+  class_id = 3;
+  ?(bits_n <= 32) {
+    class_id = 1;
+  } : {
+    ?(bits_n <= 48) {
+      class_id = 2;
+    } : {
+      class_id = 3;
+    };
+  };
+  ^class_id;
+}
+
+=ex{verify_range_partition, aggregate_worker_digest, classify_security_frontier}
