@@ -18,6 +18,7 @@
 !LICENSE.rulel
 !docs/**
 !test/**
+!transpile/**
 !examples/**
 !stubs/**
 !redteam/**
@@ -47,3 +48,5 @@ witness_roster.rulel
 audit_report.rulel
 conformance_report.rulel
 verification_api_response.json
+# Build artifacts of the C port (the sources are tracked, the binaries are not).
+transpile/c/bin/

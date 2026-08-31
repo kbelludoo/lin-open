@@ -60,7 +60,7 @@ pub const registry = [_]SimulatedCommand{
             "ED25519 VERIFICATION CONSENSUS (3/3) — Verifier C only checks that the signature field is 128 hex chars",
             "ground-truth oracle digest is a hardcoded constant (OracleExpectation.expected_digest)",
         },
-        .required_evidence = "Ship the second implementation, verify the Ed25519 seal in every verifier, and derive the oracle expectation from an artifact outside this binary.",
+        .required_evidence = "A second implementation now exists (transpile/c, cross-checked by `lin crosscheck-c`). This command still has to verify the bundle with it instead of pinning one fixture's constants, verify the Ed25519 seal in every verifier, and take the oracle expectation from an artifact outside this binary.",
     },
     .{
         .cmd = "federation-verify",

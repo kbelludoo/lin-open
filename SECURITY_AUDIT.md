@@ -217,3 +217,69 @@ Dois detalhes agravantes encontrados na leitura:
   e nenhuma promessa de paridade multi-linguagem deve ser feita.
 - **Prova de execução à prova de adversário:** o PoC da seção 1 segue válido —
   paridade OpenCL é conformidade, não prova. TEE/ZK continuam sendo o único caminho.
+
+---
+
+## 8. N-Version real: Zig × C (2026-08-31)
+
+O item 2 do plano de correção pedia que a suíte C de `transpile/c/` fosse integrada
+à verificação cruzada — "o mesmo bytecode executado pela VM Zig e pela VM C deve
+gerar a mesma raiz Merkle". Está feito e é executável.
+
+### O que foi construído
+
+| Peça | Onde | Estado |
+|---|---|---|
+| SHA-256 próprio em C (sem OpenSSL) | `transpile/c/lin_c/lin_sha256.{h,c}` | validado contra vetores **publicados** (FIPS 180-4 + NIST CAVP 1 MiB): 5/5 |
+| Emissor de recibo do lado C | `transpile/c/tool/lin_c_receipt.c` | parse → AST eval → lower → LinVM C → raiz Merkle |
+| Comando de verificação cruzada | `lin crosscheck-c` (em `compiler/lin.zig`) | executa o mesmo corpus nas duas implementações e compara as raízes |
+| Alvo de build | `make xver` (raiz) e `make -C transpile/c xver` | exit 0 |
+
+### Canonicalização (especificação única, implementada duas vezes)
+
+```
+bytecode_image = por instrução: 1 byte (ordinal do opcode) + operando i64 little-endian
+leaf_source = SHA256("lin:xver:source:" || expr)
+leaf_env    = SHA256("lin:xver:env:"    || env_spec)
+leaf_code   = SHA256("lin:xver:code:"   || bytecode_image)
+leaf_exec   = SHA256("lin:xver:exec:"   || result ":" steps ":" sp_at_ret)
+root        = node(node(leaf_source, leaf_env), node(leaf_code, leaf_exec))
+```
+
+### Resultado executado
+
+```
+$ make xver
+N-VERSION CONSENSUS: 34 vectors | agreements 34 | divergences 0
+Independent implementations compared: 2 (Zig, C11)
+```
+
+Corpus = 29 vetores do oráculo compartilhado (23 avaliados + 6 que ambos os lados
+rejeitam, com o mesmo nome de erro) + 5 vetores de fronteira INT64
+(`9223372036854775807+1` → `INT64_MIN`, `-9223372036854775807-2` → `INT64_MAX`,
+`9223372036854775807*2` → `-2`, `(0-9223372036854775807)-1` → `INT64_MIN`,
+`x*x*x*x` → 10000). São exatamente os casos em que um port de aritmética com
+wrapping diverge — e não divergiu.
+
+O recibo fixa a segunda implementação por hash: `engine_b_sha256="sha256:238fe8a7…"`.
+"Concordaram" é auditável porque se sabe *qual* binário concordou.
+
+### Por que isso é evidência e não teatro
+
+- As duas implementações são fontes separadas (`compiler/lin.zig` vs.
+  `transpile/c/lin_c/*.c`), escritas contra a mesma especificação, e a comparação é
+  feita sobre **dados observáveis** (bytecode emitido, resultado, passos, pilha).
+- **Injeção de falha:** `test/attestation_honesty.sh` troca a segunda implementação
+  por um script que mente (`result=999`, raiz falsa). O comando reporta
+  `DIVERGENCE DETECTED`, **não escreve recibo** e sai não-zero.
+- **Fail-closed:** sem a segunda implementação compilada, `crosscheck-c` devolve
+  `error.NotImplemented` (exit 3) em vez de relatar um cross-check que não rodou.
+
+### O que isto **não** cobre
+
+- É N-Version do **pipeline de expressões** (o slice que o port C implementa). Não
+  cobre funções com corpo, `if/while/for`, arrays nem o caminho GPU — o port C ainda
+  não tem esses slices (ver "Próximos slices" em `transpile/c/README.md`).
+- `n-version-verify` (nível de *bundle*) continua bloqueado pelo guard: ele precisa
+  passar a usar esta segunda implementação e deixar de fixar as constantes de um
+  único bundle.

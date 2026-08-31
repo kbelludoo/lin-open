@@ -25,7 +25,9 @@ zig run -lc -I/usr/include -L/usr/lib/x86_64-linux-gnu -lOpenCL test_lin_selfhos
 | `lin lint` | ✅ sem erros |
 | **full self-hosted suite** | ✅ `PASS_FULL_SELF_HOSTED_LIN`, bit-exact, Merkle `62b7d202…` |
 | **compat suite** | ✅ `PASS_FULL_LEGACY_COMPATIBILITY`, 17/17 subgates, 1000/1000 fuzz, 0 mismatches |
-| `make attestation-gate` | ✅ **PASS** — 5 testes unitários do guard + 19 asserções de honestidade |
+| `make attestation-gate` | ✅ **PASS** — 5 testes unitários do guard + 27 asserções de honestidade |
+| `make xver` (N-Version Zig × C) | ✅ **34/34 vectors, 0 divergences** — mesmas raízes Merkle nas duas implementações |
+| `make -C transpile/c test` / `test-edges` / `test-sha256` | ✅ 29/29, 17/17, 5/5 (vetores FIPS/NIST publicados) |
 
 ### Attestation honesty gate (destaques)
 
@@ -44,7 +46,28 @@ Executado com o build CPU-only (`zig build -Dgpu=false -O ReleaseFast`):
   ok   2-of-4 valid signatures cannot satisfy a 3-of-4 quorum
   ok   adversarial corpus rejected every mutation   # 7/7
   ok   Merkle root is deterministic across runs (sha256:b96fecee…)
+  ok   C11 second implementation built (transpile/c/bin/lin_c_receipt)
+  ok   crosscheck-c reached consensus (exit 0)
+  ok   34 vectors agreed across two implementations, 0 divergences
+  ok   receipt records independent_implementations=2
+  ok   receipt pins the C binary by SHA-256
+  ok   a lying second implementation is detected (divergence, no receipt)
+  ok   missing second implementation -> NotImplemented (exit 3)
 ```
+
+### N-Version Zig × C (`make xver`)
+
+```
+$ make xver
+N-VERSION CONSENSUS: 34 vectors | agreements 34 | divergences 0
+Independent implementations compared: 2 (Zig, C11)
+RESULT: CONSENSUS — receipt written to xver_receipt.rulel
+```
+
+Corpus: os 29 vetores do oráculo compartilhado (23 avaliados + 6 rejeitados por
+ambos os lados, com o mesmo nome de erro) mais 5 vetores de fronteira INT64.
+Canonicalização `LIN_XVER_CANONICAL_v1` (4 folhas: fonte, ambiente, bytecode
+emitido, execução). O recibo fixa o binário C por SHA-256 (`engine_b_sha256`).
 
 Rodar isoladamente: `make attestation-gate` (ou `./test/attestation_honesty.sh
 zig-out/bin/lin_native`). O alvo também é chamado por `make test` e `make test-cpu`

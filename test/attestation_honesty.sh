@@ -22,6 +22,7 @@ esac
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 [ -x "$BIN" ] || { echo "attestation-honesty: cannot execute $BIN"; exit 1; }
 
@@ -190,6 +191,70 @@ if [ -n "$root" ] && "$BIN" receipt create --source "return x * x;" --input 9 2>
   ok "Merkle root is deterministic across runs ($root)"
 else
   bad "Merkle root is not reproducible"
+fi
+
+# ── 6. N-Version: Zig LinVM vs the independent C11 port ───────────────────────
+echo "-- N-Version cross-check (Zig LinVM vs transpile/c C11 port) --"
+if ! command -v cc >/dev/null 2>&1 && ! command -v gcc >/dev/null 2>&1; then
+  echo "  SKIP no C compiler available; cannot build the second implementation"
+else
+  group xver
+  if make -C "$REPO_ROOT/transpile/c" xver >build.log 2>&1; then
+    ok "C11 second implementation built (transpile/c/bin/lin_c_receipt)"
+  else
+    bad "could not build the C11 implementation"; tail -5 build.log
+  fi
+
+  CBIN="$REPO_ROOT/transpile/c/bin/lin_c_receipt"
+  "$BIN" crosscheck-c --c-bin "$CBIN" -o "$WORK/xver/xver_receipt.rulel" >xver.txt 2>&1
+  xrc=$?
+  if [ "$xrc" = 0 ]; then
+    ok "crosscheck-c reached consensus (exit 0)"
+  else
+    bad "crosscheck-c did not reach consensus (exit $xrc)"; tail -20 xver.txt
+  fi
+  if grep -q 'divergences 0' xver.txt; then
+    vectors=$(grep -o 'CONSENSUS: [0-9]* vectors' xver.txt | grep -o '[0-9]*')
+    ok "$vectors vectors agreed across two implementations, 0 divergences"
+  else
+    bad "divergences reported between Zig and C"
+  fi
+  if grep -q 'DIVERGE' xver.txt; then
+    bad "a vector diverged between the two implementations"
+  else
+    ok "no per-vector divergence lines"
+  fi
+  if grep -q 'independent_implementations=2' xver_receipt.rulel 2>/dev/null; then
+    ok "receipt records independent_implementations=2"
+  else
+    bad "receipt missing independent_implementations=2"
+  fi
+  if grep -q 'engine_b_sha256="sha256:[0-9a-f]\{64\}"' xver_receipt.rulel 2>/dev/null; then
+    ok "receipt pins the C binary by SHA-256"
+  else
+    bad "receipt does not pin the C binary digest"
+  fi
+
+  # Fault injection: a "second implementation" that lies must be caught.
+  cat > liar.sh <<'EOF'
+#!/bin/sh
+echo '@LIN:XVER:1.0 engine="C" status="EVALUATED" expr="x" env="x=10" ast_val=999 result=999 steps=1 sp_at_ret=1 insts=1 code_sha256="0000000000000000000000000000000000000000000000000000000000000000" root="sha256:deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"'
+EOF
+  chmod +x liar.sh
+  "$BIN" crosscheck-c --c-bin ./liar.sh --expr "x + 1" -o "$WORK/xver/liar_receipt.rulel" >liar.txt 2>&1
+  if [ $? != 0 ] && [ ! -e liar_receipt.rulel ]; then
+    ok "a lying second implementation is detected (divergence, no receipt)"
+  else
+    bad "a lying second implementation was accepted"
+  fi
+
+  # Missing second implementation must fail closed, not silently pass.
+  "$BIN" crosscheck-c --c-bin ./does_not_exist >/dev/null 2>&1
+  if [ $? = 3 ]; then
+    ok "missing second implementation -> NotImplemented (exit 3)"
+  else
+    bad "missing second implementation did not fail closed"
+  fi
 fi
 
 echo

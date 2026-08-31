@@ -14629,7 +14629,7 @@ fn runCli() !void {
         return;
     }
 
-    if (argEq(cmd, "c-expr-test") or argEq(cmd, "c-expr-eval") or argEq(cmd, "c-ast-verify") or argEq(cmd, "receipt") or argEq(cmd, "receipt-create") or argEq(cmd, "receipt-verify")) {
+    if (argEq(cmd, "c-expr-test") or argEq(cmd, "c-expr-eval") or argEq(cmd, "c-ast-verify") or argEq(cmd, "receipt") or argEq(cmd, "receipt-create") or argEq(cmd, "receipt-verify") or argEq(cmd, "crosscheck-c") or argEq(cmd, "xver-c") or argEq(cmd, "nversion-c")) {
         var ai_feedback_mode = false;
         for (args) |arg| {
             if (std.mem.eql(u8, arg, "--ai-feedback")) {
@@ -15275,6 +15275,380 @@ fn runCli() !void {
             .{ .input = "1x + 2", .expected = null, .should_fail = true, .desc = "Invalid identifier starting with digit" },
             .{ .input = "unknown_var + 1", .expected = null, .should_fail = true, .desc = "Undefined variable reference" },
         };
+
+        // ─────────────────────────────────────────────────────────────────────
+        // N-VERSION CROSS-CHECK: Zig LinVM vs the independent C11 port.
+        //
+        // The same expression is pushed through two implementations written
+        // against the same specification — this file's Pratt parser / flat AST
+        // arena / bytecode lowerer / LinVM, and transpile/c/lin_c/* — and each
+        // side commits what it computed to a canonical SHA-256 Merkle root:
+        //
+        //   leaf_source = SHA256("lin:xver:source:" || expr)
+        //   leaf_env    = SHA256("lin:xver:env:"    || env_spec)
+        //   leaf_code   = SHA256("lin:xver:code:"   || bytecode_image)
+        //   leaf_exec   = SHA256("lin:xver:exec:"   || result ":" steps ":" sp_at_ret)
+        //   root        = node(node(leaf_source, leaf_env), node(leaf_code, leaf_exec))
+        //
+        //   bytecode_image = for each instruction: 1 byte opcode ordinal followed
+        //                    by the signed 64-bit operand, little-endian.
+        //
+        // Equal roots mean both implementations agree on the source, the
+        // environment, every emitted instruction, the result, the step count and
+        // the final stack depth. Any difference is a divergence and fails closed.
+        // ─────────────────────────────────────────────────────────────────────
+        if (argEq(cmd, "crosscheck-c") or argEq(cmd, "xver-c") or argEq(cmd, "nversion-c")) {
+            const XverHash = struct {
+                fn leaf(domain: []const u8, data: []const u8) [32]u8 {
+                    var h = std.crypto.hash.sha2.Sha256.init(.{});
+                    h.update(domain);
+                    h.update(data);
+                    var out: [32]u8 = undefined;
+                    h.final(&out);
+                    return out;
+                }
+                fn node(a: [32]u8, b: [32]u8) [32]u8 {
+                    var h = std.crypto.hash.sha2.Sha256.init(.{});
+                    h.update("node:");
+                    h.update(&a);
+                    h.update(&b);
+                    var out: [32]u8 = undefined;
+                    h.final(&out);
+                    return out;
+                }
+                fn hex(d: [32]u8) [64]u8 {
+                    var out: [64]u8 = undefined;
+                    _ = std.fmt.bufPrint(&out, "{s}", .{std.fmt.fmtSliceHexLower(&d)}) catch unreachable;
+                    return out;
+                }
+            };
+
+            // Reads `key="value"` out of the C tool's single-line output.
+            const fieldStr = struct {
+                fn f(hay: []const u8, key: []const u8) ?[]const u8 {
+                    var buf: [64]u8 = undefined;
+                    const needle = std.fmt.bufPrint(&buf, "{s}=\"", .{key}) catch return null;
+                    const start = std.mem.indexOf(u8, hay, needle) orelse return null;
+                    const vs = start + needle.len;
+                    const end = std.mem.indexOfScalarPos(u8, hay, vs, '"') orelse return null;
+                    return hay[vs..end];
+                }
+            }.f;
+
+            // Reads `key=<integer>` (optionally negative) out of that same line.
+            const fieldInt = struct {
+                fn f(hay: []const u8, key: []const u8) ?i64 {
+                    var buf: [64]u8 = undefined;
+                    const needle = std.fmt.bufPrint(&buf, "{s}=", .{key}) catch return null;
+                    var pos: usize = 0;
+                    while (std.mem.indexOfPos(u8, hay, pos, needle)) |start| {
+                        pos = start + needle.len;
+                        if (start > 0) {
+                            const prev = hay[start - 1];
+                            const ident = (prev >= 'a' and prev <= 'z') or (prev >= 'A' and prev <= 'Z') or
+                                (prev >= '0' and prev <= '9') or prev == '_';
+                            if (ident) continue;
+                        }
+                        var end = pos;
+                        if (end < hay.len and hay[end] == '-') end += 1;
+                        const digits_start = end;
+                        while (end < hay.len and hay[end] >= '0' and hay[end] <= '9') : (end += 1) {}
+                        if (end == digits_start) return null;
+                        return std.fmt.parseInt(i64, hay[pos..end], 10) catch null;
+                    }
+                    return null;
+                }
+            }.f;
+
+            var c_bin: []const u8 = "transpile/c/bin/lin_c_receipt";
+            var env_spec: []const u8 = "x=10,y=20,z=5,x1=15";
+            var only_expr: ?[]const u8 = null;
+            var out_receipt: []const u8 = "xver_receipt.rulel";
+
+            var ai: usize = 2;
+            while (ai < args.len) : (ai += 1) {
+                if (argEq(args[ai], "--c-bin") and ai + 1 < args.len) {
+                    ai += 1;
+                    c_bin = args[ai];
+                } else if (argEq(args[ai], "--env") and ai + 1 < args.len) {
+                    ai += 1;
+                    env_spec = args[ai];
+                } else if (argEq(args[ai], "--expr") and ai + 1 < args.len) {
+                    ai += 1;
+                    only_expr = args[ai];
+                } else if ((argEq(args[ai], "-o") or argEq(args[ai], "--output")) and ai + 1 < args.len) {
+                    ai += 1;
+                    out_receipt = args[ai];
+                }
+            }
+
+            // The second implementation must exist. Fail closed instead of
+            // reporting a cross-check that never ran.
+            var c_file = std.fs.cwd().openFile(c_bin, .{}) catch {
+                try stderr.print("crosscheck-c: cannot open the C implementation at \"{s}\".\n", .{c_bin});
+                try stderr.print("  Build it first:  make -C transpile/c xver\n", .{});
+                try stderr.print("  Without a second implementation there is no N-Version evidence to report.\n", .{});
+                return error.NotImplemented;
+            };
+            defer c_file.close();
+            const c_bytes = try c_file.readToEndAlloc(LIA_ALLOC, 64 * 1024 * 1024);
+            defer LIA_ALLOC.free(c_bytes);
+            var c_digest: [32]u8 = undefined;
+            std.crypto.hash.sha2.Sha256.hash(c_bytes, &c_digest, .{});
+
+            // Parse the environment spec into bindings (identical on both sides).
+            var env_bindings = std.ArrayList(VarBinding).init(LIA_ALLOC);
+            defer env_bindings.deinit();
+            var env_vals = std.ArrayList(i64).init(LIA_ALLOC);
+            defer env_vals.deinit();
+            {
+                var it = std.mem.splitScalar(u8, env_spec, ',');
+                while (it.next()) |pair| {
+                    const eq = std.mem.indexOfScalar(u8, pair, '=') orelse continue;
+                    const name = std.mem.trim(u8, pair[0..eq], " \t");
+                    const val = std.fmt.parseInt(i64, std.mem.trim(u8, pair[eq + 1 ..], " \t"), 10) catch continue;
+                    try env_bindings.append(.{ .name = name, .val = val });
+                    try env_vals.append(val);
+                }
+            }
+            if (env_bindings.items.len == 0) {
+                try stderr.print("crosscheck-c: empty or malformed --env \"{s}\"\n", .{env_spec});
+                return error.MalformedEnvironment;
+            }
+
+            // Corpus: the shared oracle suite plus INT64 boundary vectors, which
+            // are exactly where a wrapping-arithmetic port diverges.
+            const XverCase = struct { expr: []const u8, expect_reject: bool };
+            var cases = std.ArrayList(XverCase).init(LIA_ALLOC);
+            defer cases.deinit();
+            if (only_expr) |e| {
+                try cases.append(.{ .expr = e, .expect_reject = false });
+            } else {
+                for (test_suite) |tc| try cases.append(.{ .expr = tc.input, .expect_reject = tc.should_fail });
+                const edge_vectors = [_][]const u8{
+                    "9223372036854775807 + 1",
+                    "-9223372036854775807 - 2",
+                    "9223372036854775807 * 2",
+                    "(0 - 9223372036854775807) - 1",
+                    "x * x * x * x",
+                };
+                for (edge_vectors) |e| try cases.append(.{ .expr = e, .expect_reject = false });
+            }
+
+            try stdout.print("\n================================================================================\n", .{});
+            try stdout.print("=== LIN-XVER-001: N-VERSION CROSS-CHECK — ZIG LinVM vs C11 PORT             ===\n", .{});
+            try stdout.print("================================================================================\n\n", .{});
+            try stdout.print("Implementation A:      compiler/lin.zig (Zig Pratt parser + flat AST + LinVM)\n", .{});
+            try stdout.print("Implementation B:      {s} (C11 port, transpile/c/lin_c)\n", .{c_bin});
+            try stdout.print("B binary SHA-256:      sha256:{s}\n", .{XverHash.hex(c_digest)});
+            try stdout.print("Environment:           {s}\n", .{env_spec});
+            try stdout.print("Canonicalisation:      LIN_XVER_CANONICAL_v1 (4-leaf Merkle)\n\n", .{});
+
+            const Row = struct {
+                expr: []const u8,
+                status: []const u8,
+                detail: []const u8,
+                root: [64]u8,
+                agreement: bool,
+            };
+            var rows = std.ArrayList(Row).init(LIA_ALLOC);
+            defer rows.deinit();
+
+            var agreements: usize = 0;
+            var divergences: usize = 0;
+
+            for (cases.items) |xc| {
+                const expr = xc.expr;
+
+                // ── Implementation A: this compiler ─────────────────────────
+                var a_status: []const u8 = "EVALUATED";
+                var a_detail: []const u8 = "";
+                var a_root: [64]u8 = [_]u8{'0'} ** 64;
+                var a_result: i64 = 0;
+                var a_steps: u64 = 0;
+                var a_sp: usize = 0;
+                var a_insts: usize = 0;
+
+                zig_side: {
+                    var parser = Parser.init(expr);
+                    const root_idx = parser.parseFull() catch |err| {
+                        a_status = "REJECTED";
+                        a_detail = try std.fmt.allocPrint(LIA_ALLOC, "parse:{any}", .{err});
+                        break :zig_side;
+                    };
+                    _ = parser.arena.eval(root_idx, env_bindings.items) catch |err| {
+                        a_status = "REJECTED";
+                        a_detail = try std.fmt.allocPrint(LIA_ALLOC, "eval:{any}", .{err});
+                        break :zig_side;
+                    };
+                    var lowerer = AstToVmLowerer.init(LIA_ALLOC);
+                    defer lowerer.deinit();
+                    const code = lowerer.lower(&parser.arena, root_idx, env_bindings.items) catch |err| {
+                        a_status = "REJECTED";
+                        a_detail = try std.fmt.allocPrint(LIA_ALLOC, "lower:{any}", .{err});
+                        break :zig_side;
+                    };
+
+                    var fn_mock = VmFn{
+                        .name = "xver_expr",
+                        .nparams = env_bindings.items.len,
+                        .nlocals = env_bindings.items.len,
+                        .code = code,
+                        .ok = true,
+                        .sig_ok = true,
+                    };
+                    var mod_mock = VmModule{ .fns = (&fn_mock)[0..1] };
+                    var steps: u64 = 0;
+                    const res = vmExecWithSp(&mod_mock, 0, env_vals.items, 0, &steps) catch |err| {
+                        a_status = "REJECTED";
+                        a_detail = try std.fmt.allocPrint(LIA_ALLOC, "vm:{any}", .{err});
+                        break :zig_side;
+                    };
+
+                    a_result = res.val;
+                    a_steps = steps;
+                    a_sp = res.sp_at_ret;
+                    a_insts = code.len;
+
+                    var code_img = std.ArrayList(u8).init(LIA_ALLOC);
+                    for (code) |ins| {
+                        try code_img.append(@intFromEnum(ins.op));
+                        var b: [8]u8 = undefined;
+                        std.mem.writeInt(i64, &b, ins.a, .little);
+                        try code_img.appendSlice(&b);
+                    }
+
+                    var exec_buf: [96]u8 = undefined;
+                    const exec_str = try std.fmt.bufPrint(&exec_buf, "{d}:{d}:{d}", .{ a_result, a_steps, a_sp });
+
+                    const l_src = XverHash.leaf("lin:xver:source:", expr);
+                    const l_env = XverHash.leaf("lin:xver:env:", env_spec);
+                    const l_code = XverHash.leaf("lin:xver:code:", code_img.items);
+                    const l_exec = XverHash.leaf("lin:xver:exec:", exec_str);
+                    a_root = XverHash.hex(XverHash.node(XverHash.node(l_src, l_env), XverHash.node(l_code, l_exec)));
+                    a_detail = try std.fmt.allocPrint(LIA_ALLOC, "result={d} steps={d} sp={d} insts={d}", .{ a_result, a_steps, a_sp, a_insts });
+                }
+
+                // ── Implementation B: the C11 port ──────────────────────────
+                const run = std.process.Child.run(.{
+                    .allocator = LIA_ALLOC,
+                    .argv = &.{ c_bin, "--expr", expr, "--env", env_spec },
+                }) catch |err| {
+                    try stderr.print("crosscheck-c: cannot run {s}: {any}\n", .{ c_bin, err });
+                    return error.SecondImplementationUnavailable;
+                };
+                defer LIA_ALLOC.free(run.stdout);
+                defer LIA_ALLOC.free(run.stderr);
+
+                const b_status = fieldStr(run.stdout, "status") orelse "UNPARSABLE";
+                var b_root: [64]u8 = [_]u8{'0'} ** 64;
+                var b_detail: []const u8 = "";
+                if (std.mem.eql(u8, b_status, "EVALUATED")) {
+                    if (fieldStr(run.stdout, "root")) |r| {
+                        const bare = if (std.mem.startsWith(u8, r, "sha256:")) r[7..] else r;
+                        if (bare.len == 64) @memcpy(&b_root, bare);
+                    }
+                    b_detail = try std.fmt.allocPrint(LIA_ALLOC, "result={d} steps={d} sp={d} insts={d}", .{
+                        fieldInt(run.stdout, "result") orelse 0,
+                        @as(i64, fieldInt(run.stdout, "steps") orelse 0),
+                        @as(i64, fieldInt(run.stdout, "sp_at_ret") orelse 0),
+                        @as(i64, fieldInt(run.stdout, "insts") orelse 0),
+                    });
+                } else {
+                    const stage = fieldStr(run.stdout, "stage") orelse "?";
+                    const err_name = fieldStr(run.stdout, "error") orelse "?";
+                    b_detail = try std.fmt.allocPrint(LIA_ALLOC, "{s}:{s}", .{ stage, err_name });
+                }
+
+                // ── Compare ─────────────────────────────────────────────────
+                const same_status = std.mem.eql(u8, a_status, b_status);
+                const agree = if (std.mem.eql(u8, a_status, "EVALUATED"))
+                    same_status and std.mem.eql(u8, &a_root, &b_root)
+                else
+                    same_status and std.mem.eql(u8, a_detail, b_detail);
+
+                if (agree) {
+                    agreements += 1;
+                } else {
+                    divergences += 1;
+                }
+
+                try rows.append(.{
+                    .expr = expr,
+                    .status = a_status,
+                    .detail = if (agree) a_detail else try std.fmt.allocPrint(LIA_ALLOC, "A[{s}] B[{s}]", .{ a_detail, b_detail }),
+                    .root = a_root,
+                    .agreement = agree,
+                });
+
+                try stdout.print("  [{s}] {s: <30} A={s: <9} B={s: <9} root sha256:{s}..{s}\n", .{
+                    if (agree) " AGREE " else "DIVERGE",
+                    if (expr.len > 30) expr[0..30] else expr,
+                    a_status,
+                    b_status,
+                    a_root[0..12],
+                    if (agree) "" else " vs B",
+                });
+                if (!agree) {
+                    try stdout.print("           A: {s}\n           B: {s}\n", .{ a_detail, b_detail });
+                }
+            }
+
+            try stdout.print("\n--------------------------------------------------------------------------------\n", .{});
+            try stdout.print("N-VERSION CONSENSUS: {d} vectors | agreements {d} | divergences {d}\n", .{
+                cases.items.len, agreements, divergences,
+            });
+            try stdout.print("Independent implementations compared: 2 (Zig, C11)\n", .{});
+
+            if (divergences != 0) {
+                try stdout.print("RESULT: DIVERGENCE DETECTED — no receipt written.\n", .{});
+                try stdout.print("================================================================================\n\n", .{});
+                return error.NVersionDivergence;
+            }
+
+            var doc = std.ArrayList(u8).init(LIA_ALLOC);
+            defer doc.deinit();
+            try doc.writer().print(
+                \\@RULEL:LIN_N_VERSION_XVER:1.0.0
+                \\~R{{.s=subject .c=cases .v=verdict}}
+                \\.s{{
+                \\  engine_a="ZIG_LIN_VM(compiler/lin.zig)"
+                \\  engine_b="C11_LIN_VM(transpile/c/lin_c)"
+                \\  engine_b_binary="{s}"
+                \\  engine_b_sha256="sha256:{s}"
+                \\  environment="{s}"
+                \\  canonicalization="LIN_XVER_CANONICAL_v1"
+                \\  audit_timestamp_unix={d}
+                \\}}
+                \\.c{{
+            , .{ c_bin, XverHash.hex(c_digest), env_spec, std.time.timestamp() });
+            for (rows.items, 0..) |r, i| {
+                try doc.writer().print(
+                    \\  .case_{d:0>2}{{ expr="{s}" status="{s}" detail="{s}" root="sha256:{s}" agreement=true }}
+                , .{ i, r.expr, r.status, r.detail, r.root });
+                try doc.writer().print("\n", .{});
+            }
+            try doc.writer().print(
+                \\}}
+                \\.v{{
+                \\  vectors={d}
+                \\  agreements={d}
+                \\  divergences=0
+                \\  independent_implementations=2
+                \\  status="N_VERSION_CONSENSUS"
+                \\  evidence_status="COMPUTED"
+                \\}}
+                \\
+            , .{ cases.items.len, agreements });
+
+            const rf = try std.fs.cwd().createFile(out_receipt, .{});
+            defer rf.close();
+            try rf.writeAll(doc.items);
+
+            try stdout.print("RESULT: CONSENSUS — receipt written to {s}\n", .{out_receipt});
+            try stdout.print("================================================================================\n\n", .{});
+            return;
+        }
 
         if (!argEq(cmd, "receipt") and !argEq(cmd, "receipt-create") and !argEq(cmd, "receipt-verify")) {
             try stdout.print("\n================================================================================\n", .{});

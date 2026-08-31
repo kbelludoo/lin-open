@@ -28,7 +28,8 @@ These were verified by building and running the compiled binary:
 | `bundle-pack` / `bundle-verify` attestation bundle | ✅ real: Git blob OID, MIR + lowering hashes, CPU oracle replay, 8-leaf kernel Merkle trees, ledger root, **Ed25519 seal verified** |
 | `cleanroom-verify` | ✅ real: CPU-only cryptographic replay of a signed bundle; fails closed and writes nothing when the bundle does not verify |
 | `notary-sign` / `notary-verify` witness quorum | ✅ real Ed25519 M-of-N co-signature verification over a signed tree head (roster file required) |
-| Attestation honesty gate (`make attestation-gate`) | ✅ 19 assertions + 5 unit tests; refuses any command that would publish an uncomputed verdict |
+| N-Version cross-check (`make xver` / `lin crosscheck-c`) | ✅ real: the same 34 vectors through the Zig LinVM and the independent C11 port in `transpile/c/`, comparing canonical Merkle roots — 34/34 agreement, 0 divergences |
+| Attestation honesty gate (`make attestation-gate`) | ✅ 27 assertions + 5 unit tests; refuses any command that would publish an uncomputed verdict |
 | `from-js` transpile | ⚠️ narrow subset only (arrow/expr fns match 0) |
 
 `receipt create --source "return x * x;" --input 9` produces a deterministic root
@@ -177,6 +178,14 @@ Fixed in the attestation-honesty pass (2026-08-31):
     simulated commands are listed in `compiler/lin_attestation_guard.zig`, refuse to run
     (exit 3, no artifacts) unless `--allow-simulated` is passed, and are covered by
     `make attestation-gate`.
+
+12. ✅ **Real N-Version cross-check (Zig × C).** `lin crosscheck-c` runs the shared
+    oracle corpus plus INT64 boundary vectors through this compiler's Pratt parser /
+    flat AST / bytecode lowerer / LinVM **and** through the independent C11 port in
+    `transpile/c/lin_c`, and compares a canonical 4-leaf SHA-256 Merkle root over
+    (source, environment, emitted bytecode, result, steps, final stack depth).
+    34/34 vectors agree; a lying second implementation is detected and no receipt is
+    written; a missing second implementation fails closed with `error.NotImplemented`.
 
 Remaining honest caveats:
 

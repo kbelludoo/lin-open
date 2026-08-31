@@ -1,4 +1,4 @@
-.PHONY: all build build-gpu build-cpu test test-cpu attestation-gate guard-unit lint clean
+.PHONY: all build build-gpu build-cpu test test-cpu attestation-gate guard-unit xver lint clean
 
 # LIN build/test Makefile (2026-08-31)
 #
@@ -12,7 +12,9 @@
 #   make attestation-gate
 #                     -> asserts the attestation guard fails closed on commands
 #                        that have no computed evidence, and that the real
-#                        receipt/Merkle and Ed25519 notary paths still pass
+#                        receipt/Merkle, Ed25519 notary and N-Version paths pass
+#   make xver         -> build the C11 port and cross-check it against the Zig
+#                        LinVM (same expression, same bytecode, same Merkle root)
 
 BUILD_GPU := zig build -Doptimize=ReleaseFast
 BUILD_CPU := zig build -Dgpu=false -Doptimize=ReleaseFast
@@ -66,9 +68,16 @@ test-cpu: build-cpu
 guard-unit:
 	zig test compiler/lin_attestation_guard.zig
 
-# Standalone run of the attestation honesty specification.
+# Standalone run of the attestation honesty specification (includes the
+# N-Version cross-check, which builds transpile/c itself).
 attestation-gate: guard-unit
 	@./test/attestation_honesty.sh $(BIN)
+
+# N-Version: run the shared oracle corpus through the Zig LinVM and through the
+# independent C11 port, and compare their canonical Merkle roots.
+xver: build-cpu
+	@$(MAKE) -C transpile/c xver
+	@$(BIN) crosscheck-c
 
 clean:
 	@rm -rf zig-out zig-cache .zig-cache bin/lin_native /tmp/lin_rec.rulel simulated_attestations.log
