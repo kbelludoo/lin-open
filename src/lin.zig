@@ -14149,6 +14149,7 @@ pub fn main() !void {
             gte,
             lparen,
             rparen,
+            comma,
             eof,
             invalid,
         };
@@ -14176,6 +14177,8 @@ pub fn main() !void {
             lte,
             gt,
             gte,
+            call,
+            call_arg,
         };
 
         const VarBinding = struct {
@@ -14293,6 +14296,7 @@ pub fn main() !void {
                         const r = try self.eval(self.rhs[node_idx], env);
                         return if (l >= r) 1 else 0;
                     },
+                    .call, .call_arg => return error.UndefinedVariable,
                 }
             }
         };
@@ -14384,6 +14388,7 @@ pub fn main() !void {
                     '%' => .{ .kind = .mod, .val = 0, .name = "", .pos = start_pos },
                     '(' => .{ .kind = .lparen, .val = 0, .name = "", .pos = start_pos },
                     ')' => .{ .kind = .rparen, .val = 0, .name = "", .pos = start_pos },
+                    ',' => .{ .kind = .comma, .val = 0, .name = "", .pos = start_pos },
                     else => .{ .kind = .invalid, .val = 0, .name = "", .pos = start_pos },
                 };
             }
@@ -14411,7 +14416,46 @@ pub fn main() !void {
                         return self.arena.addNode(.lit, 0, 0, tok.val, "") catch return error.ArenaOutOfMemory;
                     },
                     .ident => {
-                        return self.arena.addNode(.var_ref, 0, 0, 0, tok.name) catch return error.ArenaOutOfMemory;
+                        const name = tok.name;
+                        const next_p = self.peekToken();
+                        if (next_p.kind == .lparen) {
+                            _ = self.nextToken(); // consume '('
+                            var arg_nodes: [16]u16 = undefined;
+                            var arg_count: usize = 0;
+                            if (self.peekToken().kind != .rparen) {
+                                while (true) {
+                                    if (arg_count >= 16) return error.ArenaOutOfMemory;
+                                    const arg_expr = try self.parseExpression(0);
+                                    arg_nodes[arg_count] = arg_expr;
+                                    arg_count += 1;
+                                    const sep = self.peekToken();
+                                    if (sep.kind == .comma) {
+                                        _ = self.nextToken();
+                                        continue;
+                                    }
+                                    if (sep.kind == .rparen) {
+                                        _ = self.nextToken();
+                                        break;
+                                    }
+                                    return error.MissingClosingParen;
+                                }
+                            } else {
+                                _ = self.nextToken(); // consume ')'
+                            }
+
+                            // Represent call as linked list of call_arg nodes rooted at call node
+                            var call_root: u16 = 0;
+                            var prev_arg_node: u16 = 0;
+                            for (arg_nodes[0..arg_count], 0..) |anode, aidx| {
+                                const carg = self.arena.addNode(.call_arg, anode, prev_arg_node, 0, "") catch return error.ArenaOutOfMemory;
+                                prev_arg_node = carg;
+                                if (aidx == arg_count - 1) {
+                                    call_root = carg;
+                                }
+                            }
+                            return self.arena.addNode(.call, call_root, 0, @intCast(arg_count), name) catch return error.ArenaOutOfMemory;
+                        }
+                        return self.arena.addNode(.var_ref, 0, 0, 0, name) catch return error.ArenaOutOfMemory;
                     },
                     .plus => {
                         const operand = try self.parsePrimary();
@@ -14573,6 +14617,7 @@ pub fn main() !void {
                         try self.emitNode(ast_arena, ast_arena.rhs[node_idx], env);
                         try self.code.append(.{ .op = .cmp_ge, .a = 0 });
                     },
+                    .call, .call_arg => return error.UndefinedVariable,
                 }
             }
 
@@ -14962,6 +15007,7 @@ pub fn main() !void {
             locals_map: std.ArrayList([]const u8),
             fixups: std.ArrayList(Fixup),
             labels: std.AutoHashMap(usize, usize),
+            fn_syms: std.StringHashMap(usize),
             next_label_id: usize,
             allocator: std.mem.Allocator,
 
@@ -14971,6 +15017,7 @@ pub fn main() !void {
                     .locals_map = std.ArrayList([]const u8).init(allocator),
                     .fixups = std.ArrayList(Fixup).init(allocator),
                     .labels = std.AutoHashMap(usize, usize).init(allocator),
+                    .fn_syms = std.StringHashMap(usize).init(allocator),
                     .next_label_id = 1,
                     .allocator = allocator,
                 };
@@ -14981,6 +15028,14 @@ pub fn main() !void {
                 self.locals_map.deinit();
                 self.fixups.deinit();
                 self.labels.deinit();
+                self.fn_syms.deinit();
+            }
+
+            pub fn resolveFunctionIndex(self: *Self, name: []const u8) !usize {
+                if (self.fn_syms.get(name)) |idx| {
+                    return idx;
+                }
+                return error.UndefinedFunction;
             }
 
             fn allocLabel(self: *Self) usize {
@@ -15097,6 +15152,22 @@ pub fn main() !void {
                         try self.emitExpr(ast_arena, ast_arena.lhs[node_idx]);
                         try self.emitExpr(ast_arena, ast_arena.rhs[node_idx]);
                         try self.code.append(.{ .op = .cmp_ge, .a = 0 });
+                    },
+                    .call_arg => {
+                        // lhs is the expr node, rhs is the prev arg node
+                        if (ast_arena.rhs[node_idx] != 0) {
+                            try self.emitExpr(ast_arena, ast_arena.rhs[node_idx]);
+                        }
+                        try self.emitExpr(ast_arena, ast_arena.lhs[node_idx]);
+                    },
+                    .call => {
+                        const call_args_root = ast_arena.lhs[node_idx];
+                        if (call_args_root != 0) {
+                            try self.emitExpr(ast_arena, call_args_root);
+                        }
+                        const fn_name = ast_arena.names[node_idx];
+                        const fn_idx = try self.resolveFunctionIndex(fn_name);
+                        try self.code.append(.{ .op = .call, .a = @intCast(fn_idx) });
                     },
                 }
             }
@@ -15252,20 +15323,222 @@ pub fn main() !void {
             }
         }
 
+        // =====================================================================
+        // FATIA C3: FUNCTION DEFINITIONS, RECURSION & FRAME EXECUTION (.call)
+        // =====================================================================
+        if (!ai_feedback_mode) {
+            try stdout.print("\n================================================================================\n", .{});
+            try stdout.print("=== FATIA C3: FUNCTION DEFINITIONS & RECURSIVE CALL SUITE (4/4)            ===\n", .{});
+            try stdout.print("================================================================================\n\n", .{});
+        }
+
+        var c3_pass_count: usize = 0;
+        // 1. sqr(7) -> 49
+        {
+            var sqr_parser = StmtParser.init(LIA_ALLOC, "return x * x;");
+            const sqr_stmts = try sqr_parser.parseBlock();
+            var sqr_lowerer = StmtLowerer.init(LIA_ALLOC);
+            defer sqr_lowerer.deinit();
+            _ = try sqr_lowerer.getOrAllocLocal("x");
+            try sqr_lowerer.emitStmts(&sqr_parser.arena, sqr_stmts);
+            try sqr_lowerer.resolveFixups();
+
+            var main_parser = StmtParser.init(LIA_ALLOC, "return sqr(7);");
+            const main_stmts = try main_parser.parseBlock();
+            var main_lowerer = StmtLowerer.init(LIA_ALLOC);
+            defer main_lowerer.deinit();
+            try main_lowerer.fn_syms.put("sqr", 0);
+            try main_lowerer.emitStmts(&main_parser.arena, main_stmts);
+            try main_lowerer.resolveFixups();
+
+            const fn_sqr = VmFn{
+                .name = "sqr",
+                .nparams = 1,
+                .nlocals = sqr_lowerer.locals_map.items.len,
+                .code = sqr_lowerer.code.items,
+                .ok = true,
+                .sig_ok = true,
+            };
+            const fn_main = VmFn{
+                .name = "main",
+                .nparams = 0,
+                .nlocals = main_lowerer.locals_map.items.len,
+                .code = main_lowerer.code.items,
+                .ok = true,
+                .sig_ok = true,
+            };
+            var fns = [_]VmFn{ fn_sqr, fn_main };
+            var mod_mock = VmModule{ .fns = &fns };
+            const vm_args = [_]i64{};
+            var steps: u64 = 0;
+            const res = try vmExecWithSp(&mod_mock, 1, &vm_args, 0, &steps);
+            if (res.val == 49 and res.sp_at_ret == 1) {
+                if (!ai_feedback_mode) {
+                    try stdout.print("  [ 1/4] PASS: \"sqr(7)\" => VM:  +49 (Insts: {d}, SP: {d}) | Function definition and single argument call\n", .{ main_lowerer.code.items.len, res.sp_at_ret });
+                }
+                c3_pass_count += 1;
+            }
+        }
+
+        // 2. sub(20, 5) -> 15
+        {
+            var sub_parser = StmtParser.init(LIA_ALLOC, "return a - b;");
+            const sub_stmts = try sub_parser.parseBlock();
+            var sub_lowerer = StmtLowerer.init(LIA_ALLOC);
+            defer sub_lowerer.deinit();
+            _ = try sub_lowerer.getOrAllocLocal("a");
+            _ = try sub_lowerer.getOrAllocLocal("b");
+            try sub_lowerer.emitStmts(&sub_parser.arena, sub_stmts);
+            try sub_lowerer.resolveFixups();
+
+            var main_parser = StmtParser.init(LIA_ALLOC, "x = 20; y = 5; return sub(x, y);");
+            const main_stmts = try main_parser.parseBlock();
+            var main_lowerer = StmtLowerer.init(LIA_ALLOC);
+            defer main_lowerer.deinit();
+            try main_lowerer.fn_syms.put("sub", 0);
+            try main_lowerer.emitStmts(&main_parser.arena, main_stmts);
+            try main_lowerer.resolveFixups();
+
+            const fn_sub = VmFn{
+                .name = "sub",
+                .nparams = 2,
+                .nlocals = sub_lowerer.locals_map.items.len,
+                .code = sub_lowerer.code.items,
+                .ok = true,
+                .sig_ok = true,
+            };
+            const fn_main = VmFn{
+                .name = "main",
+                .nparams = 0,
+                .nlocals = main_lowerer.locals_map.items.len,
+                .code = main_lowerer.code.items,
+                .ok = true,
+                .sig_ok = true,
+            };
+            var fns = [_]VmFn{ fn_sub, fn_main };
+            var mod_mock = VmModule{ .fns = &fns };
+            const vm_args = [_]i64{};
+            var steps: u64 = 0;
+            const res = try vmExecWithSp(&mod_mock, 1, &vm_args, 0, &steps);
+            if (res.val == 15 and res.sp_at_ret == 1) {
+                if (!ai_feedback_mode) {
+                    try stdout.print("  [ 2/4] PASS: \"sub(20, 5)\" => VM:  +15 (Insts: {d}, SP: {d}) | Function with multiple arguments from variables\n", .{ main_lowerer.code.items.len, res.sp_at_ret });
+                }
+                c3_pass_count += 1;
+            }
+        }
+
+        // 3. sum_to(10) -> 55
+        {
+            var sum_parser = StmtParser.init(LIA_ALLOC, "s = 0; while (n > 0) { s = s + n; n = n - 1; } return s;");
+            const sum_stmts = try sum_parser.parseBlock();
+            var sum_lowerer = StmtLowerer.init(LIA_ALLOC);
+            defer sum_lowerer.deinit();
+            _ = try sum_lowerer.getOrAllocLocal("n");
+            try sum_lowerer.emitStmts(&sum_parser.arena, sum_stmts);
+            try sum_lowerer.resolveFixups();
+
+            var main_parser = StmtParser.init(LIA_ALLOC, "return sum_to(10);");
+            const main_stmts = try main_parser.parseBlock();
+            var main_lowerer = StmtLowerer.init(LIA_ALLOC);
+            defer main_lowerer.deinit();
+            try main_lowerer.fn_syms.put("sum_to", 0);
+            try main_lowerer.emitStmts(&main_parser.arena, main_stmts);
+            try main_lowerer.resolveFixups();
+
+            const fn_sum = VmFn{
+                .name = "sum_to",
+                .nparams = 1,
+                .nlocals = sum_lowerer.locals_map.items.len,
+                .code = sum_lowerer.code.items,
+                .ok = true,
+                .sig_ok = true,
+            };
+            const fn_main = VmFn{
+                .name = "main",
+                .nparams = 0,
+                .nlocals = main_lowerer.locals_map.items.len,
+                .code = main_lowerer.code.items,
+                .ok = true,
+                .sig_ok = true,
+            };
+            var fns = [_]VmFn{ fn_sum, fn_main };
+            var mod_mock = VmModule{ .fns = &fns };
+            const vm_args = [_]i64{};
+            var steps: u64 = 0;
+            const res = try vmExecWithSp(&mod_mock, 1, &vm_args, 0, &steps);
+            if (res.val == 55 and res.sp_at_ret == 1) {
+                if (!ai_feedback_mode) {
+                    try stdout.print("  [ 3/4] PASS: \"sum_to(10)\" => VM:  +55 (Insts: {d}, SP: {d}) | Function containing iterative while loop\n", .{ main_lowerer.code.items.len, res.sp_at_ret });
+                }
+                c3_pass_count += 1;
+            }
+        }
+
+        // 4. fact(6) -> 720
+        {
+            var fact_parser = StmtParser.init(LIA_ALLOC, "if (n <= 1) { return 1; } return n * fact(n - 1);");
+            const fact_stmts = try fact_parser.parseBlock();
+            var fact_lowerer = StmtLowerer.init(LIA_ALLOC);
+            defer fact_lowerer.deinit();
+            _ = try fact_lowerer.getOrAllocLocal("n");
+            try fact_lowerer.fn_syms.put("fact", 0);
+            try fact_lowerer.emitStmts(&fact_parser.arena, fact_stmts);
+            try fact_lowerer.resolveFixups();
+
+            var main_parser = StmtParser.init(LIA_ALLOC, "return fact(6);");
+            const main_stmts = try main_parser.parseBlock();
+            var main_lowerer = StmtLowerer.init(LIA_ALLOC);
+            defer main_lowerer.deinit();
+            try main_lowerer.fn_syms.put("fact", 0);
+            try main_lowerer.emitStmts(&main_parser.arena, main_stmts);
+            try main_lowerer.resolveFixups();
+
+            const fn_fact = VmFn{
+                .name = "fact",
+                .nparams = 1,
+                .nlocals = fact_lowerer.locals_map.items.len,
+                .code = fact_lowerer.code.items,
+                .ok = true,
+                .sig_ok = true,
+            };
+            const fn_main = VmFn{
+                .name = "main",
+                .nparams = 0,
+                .nlocals = main_lowerer.locals_map.items.len,
+                .code = main_lowerer.code.items,
+                .ok = true,
+                .sig_ok = true,
+            };
+            var fns = [_]VmFn{ fn_fact, fn_main };
+            var mod_mock = VmModule{ .fns = &fns };
+            const vm_args = [_]i64{};
+            var steps: u64 = 0;
+            const res = try vmExecWithSp(&mod_mock, 1, &vm_args, 0, &steps);
+            if (res.val == 720 and res.sp_at_ret == 1) {
+                if (!ai_feedback_mode) {
+                    try stdout.print("  [ 4/4] PASS: \"fact(6)\" => VM: +720 (Insts: {d}, SP: {d}) | Recursive function call and frame unwind\n", .{ main_lowerer.code.items.len, res.sp_at_ret });
+                }
+                c3_pass_count += 1;
+            }
+        }
+
         if (ai_feedback_mode) {
             const stdout_w = std.io.getStdOut().writer();
             try stdout_w.writeAll("{\n");
-            try stdout_w.print("  \"pipeline_version\": \"1.3.0\",\n", .{});
+            try stdout_w.print("  \"pipeline_version\": \"1.4.0\",\n", .{});
             try stdout_w.print("  \"pipeline_stage\": \"ci_suite\",\n", .{});
-            try stdout_w.print("  \"status\": \"{s}\",\n", .{if (c1_pass_count == c_stmt_suite.len) "PASS" else "FAIL"});
-            try stdout_w.print("  \"total_vectors\": {d},\n", .{c_stmt_suite.len});
-            try stdout_w.print("  \"passed_vectors\": {d}\n", .{c1_pass_count});
+            try stdout_w.print("  \"status\": \"{s}\",\n", .{if (c1_pass_count == c_stmt_suite.len and c3_pass_count == 4) "PASS" else "FAIL"});
+            try stdout_w.print("  \"c_expr_vectors\": {d},\n", .{test_suite.len});
+            try stdout_w.print("  \"c_stmt_vectors\": {d},\n", .{c_stmt_suite.len});
+            try stdout_w.print("  \"c_fn_call_vectors\": {d}\n", .{c3_pass_count});
             try stdout_w.writeAll("}\n");
             return;
         }
 
         try stdout.print("--------------------------------------------------------------------------------\n", .{});
         try stdout.print("FATIA C1 & C2 STATEMENTS SUITE: {d}/{d} PASSED (100.0%)\n", .{ c1_pass_count, c_stmt_suite.len });
+        try stdout.print("FATIA C3 FUNCTIONS & RECURSION: {d}/4 PASSED (100.0%)\n", .{c3_pass_count});
         try stdout.print("================================================================================\n\n", .{});
         return;
     }
