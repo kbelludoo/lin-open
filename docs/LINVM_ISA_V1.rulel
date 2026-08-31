@@ -1,0 +1,288 @@
+@RULEL:DOC_LINVM_ISA_V1:1.0.0
+~MARKDOWN_SPEC
+# LINVM ISA v1 — Especificação dos 33 opcodes, perfis `LINVM-1`/`LINVM-C0` e vetores dourados
+
+> **Status (R5): PROPOSED — não congelado.** Conforme `docs/LINVM_COMPILER0_PLAN.rulel`
+> §6.4, V0 permanece `proposed` até o V3 (ponto fixo + DDC) passar; só então vira `frozen`.
+> **Proveniência dos fatos:** semântica extraída linha a linha de `compiler/lin.zig`
+> (`VmOp` em ~5585–5629, `vmExec`/`vmExecWithSp` em 6435–6620, `vmShift`/`vmShiftU` em
+> 6412–6430) e cruzada com a implementação independente C11 (`transpile/c/lin_c/lin_vm.*`,
+> mesma ordem de enum, verificado nesta data). **Vetores dourados §7: medidos no host C11
+> deste checkout em 2026-08-31** (`make -C transpile/c xver test test-edges test-sha256`
+> → 29/29, 17/17, ALL PASSED; receita `@LIN:XVER` por vetor reproduzida duas vezes com
+> bytes idênticos). A reprodução no host Zig é o gate G(V0) e depende de CI — o master
+> hoje não compila com o Zig 0.13.0 declarado (`docs/P1_LINVM_SELFHOST.rulel` §4).
+> Até lá este documento é **EXPERIMENTAL** como âncora de conformidade, não como gate.
+
+Dependência de plano: V0 de `LINVM_COMPILER0_PLAN.rulel`. Documentos irmãos:
+`docs/LINBC1_FORMAT.rulel` (imagem) e `docs/HOST_ABI_1.rulel` (fronteira de host).
+Spec executável de conformidade já existente: `src/linvm_selfhost.lin` (P1 — goldens
+bit-exact medidos no LinVM Zig; ver §8).
+
+---
+
+## 1. Modelo de máquina
+
+A LinVM é uma máquina de pilha sobre inteiros **i64 com wrap**, heap-free, com memória
+por função inteiramente estática: vetores de tamanho fixo para pilha, locais e pool de
+arrays. Uma imagem (`VmModule`) é uma lista de funções; cada função (`VmFn`) tem
+`nparams`, `nlocals`, `arr_n` (arrays literais declarados) e código linear de
+instruções `VmIns = { op: u8, a: i64 }`.
+
+Estado de execução por frame:
+
+| Componente | Descrição |
+|---|---|
+| `pc` | índice absoluto dentro do código da função |
+| `stack[256]`, `sp` | pilha de operandos i64 |
+| `locals[64]` | locais i64; parâmetros copiados para `locals[0..nparams]` |
+| `pool[8][256]i64`, `pool_len[8]`, `pool_used` | arrays literais (slots sequenciais) |
+| `steps` (compartilhado) | contador único da árvore de chamadas: o pai acumula os passos do filho |
+
+Prólogo de `exec(fi, args, depth)` — nesta ordem, fail-closed:
+
+1. `depth > 192` → `VmDepth`
+2. `fi >= n_fns` ou `fn.ok == false` → `VmBadFunction`
+3. `args.len != nparams` → `VmArity`
+4. Para cada `li` com `arr_n[li] > 0`: se `pool_used >= 8` → `VmBadFunction`;
+   senão aloca slot sequencial, zera `arr_n[li]` células, `pool_len[slot] = arr_n[li]`,
+   `locals[li] = slot`.
+5. `locals[i] = args[i]` para parâmetros que **não** são arrays (parâmetro array é
+   ignorado, pois o slot já ocupa o local).
+
+Contagem de passos: `steps += 1` **antes** de buscar cada instrução; se
+`steps > 200_000_000` → `VmStepLimit`. Uma execução de exatamente 200 000 000
+passos **termina com sucesso**; a 200 000 001ª instrução falha.
+
+Término: `ret` devolve `stack[sp-1]` **sem pop** (`sp_at_ret = sp`). Se `pc` ultrapassa
+o fim do código **sem `ret`** (fallthrough), o valor devolvido é `0` e
+`sp_at_ret = sp`. `sp_at_ret` é sempre o `sp` no ponto de saída e entra no receipt.
+
+## 2. Codificação canônica (base do LINBC1)
+
+Imagem canônica de uma função (fonte: comentário do `crosscheck-c`, `lin.zig:15315`):
+
+    por instrução: [opcode_ordinal: u8] [operando a: i64 little-endian]
+
+Domínios de hash já existentes (R4 — um digest, um significado):
+
+    leaf_source = SHA256("lin:xver:source:" || expr)
+    leaf_env    = SHA256("lin:xver:env:"    || env_spec)
+    leaf_code   = SHA256("lin:xver:code:"   || bytecode_image)
+    leaf_exec   = SHA256("lin:xver:exec:"   || result ":" steps ":" sp_at_ret)
+    node(a,b)   = SHA256("node:" || a || b)
+    root        = node(node(leaf_source, leaf_env), node(leaf_code, leaf_exec))
+
+Domínio novo proposto nesta fase (registro em `AGENTS.md` fica para a emenda 1.5.0):
+`linvm:c0:` (identidade do perfil C0) e `linbc1:img:` (self-hash de imagem) — ver
+`docs/LINBC1_FORMAT.rulel`.
+
+## 3. Tabela de opcodes (33)
+
+Stack effect = variação líquida de `sp`. Erros: SO=`VmStackOverflow`,
+SU=`VmStackUnderflow`, DZ=`VmDivisionByZero`, BF=`VmBadFunction`. Toda instrução pode
+ainda falhar com `VmStepLimit` (global) e `call` propaga erros do filho (`try`).
+
+| # | Opcode | Operando `a` | Efeito pilha | Semântica | Erros |
+|---|---|---|---|---|---|
+| 0 | `push_const` | constante i64 | +1 | push `a` | SO |
+| 1 | `load_local` | índice local `li` | +1 | push `locals[li]` | SO |
+| 2 | `store_local` | `li` | −1 | `locals[li]` = pop | SU |
+| 3 | `add` | — | −1 | `x +% y` (wrap) | SU(2) |
+| 4 | `sub` | — | −1 | `x -% y` | SU(2) |
+| 5 | `mul` | — | −1 | `x *% y` | SU(2) |
+| 6 | `div` | — | −1 | ver §4.2 | SU(2), DZ |
+| 7 | `mod` | — | −1 | ver §4.2 | SU(2), DZ |
+| 8 | `bit_and` | — | −1 | `x & y` | SU(2) |
+| 9 | `bit_or` | — | −1 | `x \| y` | SU(2) |
+| 10 | `bit_xor` | — | −1 | `x ^ y` | SU(2) |
+| 11 | `bit_not` | — | 0 | `st[sp-1] = ~st[sp-1]` | SU |
+| 12 | `neg` | — | 0 | `st[sp-1] = 0 -% st[sp-1]` | SU |
+| 13 | `shl` | — | −1 | ver §4.3 | SU(2) |
+| 14 | `shr` | — | −1 | shift aritmético, §4.3 | SU(2) |
+| 15 | `ushr` | — | −1 | shift lógico, §4.3 | SU(2) |
+| 16 | `cmp_eq` | — | −1 | `x == y ? 1 : 0` | SU(2) |
+| 17 | `cmp_ne` | — | −1 | `x != y ? 1 : 0` | SU(2) |
+| 18 | `cmp_lt` | — | −1 | `x < y` (signed) | SU(2) |
+| 19 | `cmp_gt` | — | −1 | `x > y` | SU(2) |
+| 20 | `cmp_le` | — | −1 | `x <= y` | SU(2) |
+| 21 | `cmp_ge` | — | −1 | `x >= y` | SU(2) |
+| 22 | `log_not` | — | 0 | `st[sp-1] = (st[sp-1]==0) ? 1 : 0` | SU |
+| 23 | `jump` | alvo `pc` | 0 | `pc = a` (absoluto na função) | — |
+| 24 | `jump_if_false` | alvo | −1 | pop cond; `cond==0` → `pc=a` | SU |
+| 25 | `jump_if_false_keep` | alvo | 0 | peek; `cond==0` → `pc=a` | SU |
+| 26 | `jump_if_true_keep` | alvo | 0 | peek; `cond!=0` → `pc=a` | SU |
+| 27 | `pop` | — | −1 | descarta topo | SU |
+| 28 | `call` | índice fn `ti` | −n+1 | §4.4 | SU(n), BF |
+| 29 | `ret` | — | 0 | devolve `st[sp-1]` **sem pop** | SU |
+| 30 | `load_index` | `li` | 0 | §4.5 | SU, SO |
+| 31 | `store_index` | `li` | −2 | §4.5 | SU(2) |
+| 32 | `arr_len` | `li` | +1 | push `pool_len[locals[li]]` ou 0 | SO |
+
+Ordem de operandos: `x` é o mais fundo (empilhado primeiro), `y` o topo. `SU(2)`
+exige `sp >= 2`; `SU(n)` exige `sp >= n` parâmetros no topo.
+
+## 4. Convenções de borda (o que faz um port divergir)
+
+### 4.1 Aritmética
+`+`, `-`, `*` são i64 com wrap total (`+% -% *%` do Zig, `int64_t` wrap explícito no
+C11). `neg` é `0 -% x` com wrap: `neg(INT64_MIN) = INT64_MIN`. Comparações são signed.
+
+### 4.2 Divisão e módulo
+`div` = truncação para zero (`@divTrunc`); `mod` = resto com sinal do dividendo
+(`@rem`). Casos-limite **totais** (a VM nunca trapa):
+
+| Caso | `div` | `mod` |
+|---|---|---|
+| `y == 0` | erro `VmDivisionByZero` (status 7) | idem |
+| `INT64_MIN op -1` | `INT64_MIN` | `0` |
+| demais | `@divTrunc(x,y)` | `@rem(x,y)` |
+
+### 4.3 Shifts (`_lia_shl/_lia_shr/_lia_ushr`)
+Deslocamento `b` fora de `0..63` (incl. negativo) → resultado `0`, sem erro.
+Dentro do intervalo: `shl` = shift sobre a representação `u64` com wrap de bits;
+`shr` = aritmético (estende sinal); `ushr` = lógico (preenche com zero).
+
+### 4.4 `call`
+Pop de `n = fns[ti].nparams` argumentos (ordem: `stack[sp..sp+n]` vira
+`args[0..n]`). Filho executa com **pilha própria vazia**, `depth+1` e o **mesmo**
+contador `steps`. Resultado do filho é empilhado no pai. Erros do filho abortam a
+cadeia inteira com o mesmo código.
+
+### 4.5 Arrays (`load_index`/`store_index`/`arr_len`)
+`slot = locals[li]`. Índice fora de `0..pool_len[slot)-1` ou slot ≥ 8:
+`load_index` devolve **0** (silencioso), `store_index` é **no-op** (silencioso),
+`arr_len` devolve **0**. Nenhum acesso a array gera erro — exceção: os erros de
+pilha normais (SU/SO).
+
+## 5. Mapa de erros → status (para receipts e goldens)
+
+Posição no enum `VmError` (`lin.zig:5658`):
+
+| status | erro | status | erro |
+|---|---|---|---|
+| 0 | ok | 4 | `VmBadFunction` |
+| 1 | `VmStepLimit` | 5 | `VmDepth` |
+| 2 | `VmStackOverflow` | 6 | `VmArity` |
+| 3 | `VmStackUnderflow` | 7 | `VmDivisionByZero` |
+
+Nota de cobertura: os 32 goldens publicados do P1 (`P1_LINVM_SELFHOST.rulel` §3)
+exercitam 0,1,2,3,4,5,7; o caminho 6 (`VmArity`) existe no prólogo mas **nenhum
+golden atual o exerce** — dever de vetor para V1 (`redteam/` + goldens; regra Q5:
+mudança de semântica exige vetor novo).
+
+## 6. Perfis
+
+| Limite | `LINVM-1` (escalar) | `LINVM-C0` (compiler host) |
+|---|---|---|
+| status | **congelado para sempre** | **PROPOSED** — congela só após V3 (§6.4 do plano) |
+| locais | 64 | ≥ 64 (alvo a medir em V2) |
+| pilha | 256 | ≥ 256 (alvo a medir em V2) |
+| profundidade | 192 | ≥ 192 (parser recursivo: a medir em V2) |
+| `step_limit` | 200 000 000 | a medir em V2; o teto pode subir, **o contador permanece parte do receipt** (§6.1) |
+| arrays | 8 × 256 | regiões flat declaradas na imagem LINBC1, teto fixo, estouro = erro determinístico (`docs/LINBC1_FORMAT.rulel` §4) |
+| opcodes | 33 (esta tabela) | **os mesmos 33** — perfil muda limites, nunca semântica de opcode |
+| domínio de hash | existentes (`lin:xver:*`) | + `linvm:c0:` (R4) |
+
+Justificativa do perfil separado (plano §4.1): elevar constantes no perfil único
+mudaria a semântica de **rejeição** (programas hoje falhos passariam) e quebraria
+roots pinados (`compat_root`). Opção descartada. 8×256 = 2 KiB/função não comporta
+um lexer sobre fonte de 20 KB — daí o perfil C0.
+
+## 7. Vetores dourados (34 vetores do `crosscheck-c`)
+
+Ambiente canônico `env = "x=10,y=20,z=5,x1=15"`. **Medidos no host C11 deste
+checkout em 2026-08-31**; o vetor v11 confere com o valor documentado em
+`docs/COMPILER_0_AS_LINVM_PLAN.rulel` §0 (`result=26, steps=8, sp_at_ret=1`) —
+âncora cruzada documento↔mediação ✓. Reprodução dupla com bytes idênticos ✓.
+Reprodução no host Zig: pendente CI (gate G(V0)). Colunas:
+`result | steps | sp | code_sha256 (16 hex) | root (16 hex do lin:xver root)`.
+
+| v | expr | result | steps | sp | code_sha256 | root |
+|---|---|---|---|---|---|---|
+| 0 | `42` | 42 | 2 | 1 | 94bed62a21a6622c | ac0f3bc2b732188d |
+| 1 | `-5` | -5 | 3 | 1 | 691867a56d04a7c7 | 5eeaa042d0485196 |
+| 2 | `+12` | 12 | 2 | 1 | 259bd8451fb733ed | 5133f90a7010200e |
+| 3 | `1 + -2` | -1 | 5 | 1 | f57b9a91d92f992c | 3c97fac69b804538 |
+| 4 | `1 - -2` | 3 | 5 | 1 | c67ea690d0e666c7 | 70fc3163838efaba |
+| 5 | `1 - +2` | -1 | 4 | 1 | a4015a900b4071f2 | 0be1e26f9dba4fa6 |
+| 6 | `-(1 + 2) * 3` | -9 | 7 | 1 | 87b6a4588d303920 | 3181bb895e580481 |
+| 7 | `10 % 3` | 1 | 4 | 1 | 7a87d5012585067d | 44bd745ef385bf67 |
+| 8 | `1 + 2 * 3` | 7 | 6 | 1 | c6ddd2de2ca12ac0 | 3a4ab1bcdad82089 |
+| 9 | `(1 + 2) * 3` | 9 | 6 | 1 | 51080ade01ec3cb9 | 943391daf577fd8a |
+| 10 | `100 - 20 - 10` | 70 | 6 | 1 | 885c1a50262e4c40 | b417359015dada4de |
+| 11 | `2 * 3 + 4 * 5` | 26 | 8 | 1 | fb10ce577eb15188 | cbac92eeda68d6aa |
+| 12 | `1 < 2` | 1 | 4 | 1 | ba17738aac3b0cc5 | 896ef599c818693d |
+| 13 | `1 < 2 < 3` | 1 | 6 | 1 | e9b3a83b4432d5c1 | 1347a7b51c635241 |
+| 14 | `3 == 3` | 1 | 4 | 1 | 4365c62be72f65c1 | bdcb80040b620aa6 |
+| 15 | `5 != 5` | 0 | 4 | 1 | 38bbcad6fee0b421 | dbd9e63a185596f2 |
+| 16 | `10 >= 10` | 1 | 4 | 1 | 34cb2d5a5d6a865e | 15bfdbdb79ffbde2 |
+| 17 | `1 + 2 == 3` | 1 | 6 | 1 | 674d644e9c6a5fbe | 3b9d3ebb9c058334 |
+| 18 | `x + 1` | 11 | 4 | 1 | f0ad404d4e4ce96a | d485701be0a2ca76 |
+| 19 | `x1 + 2` | 17 | 4 | 1 | ba2139ac9c4545b6 | 0e429339d83975f1 |
+| 20 | `x * y + z` | 205 | 6 | 1 | 174e03eefd227a71 | 732c413e3d186fcf |
+| 21 | `(x + y) / z` | 6 | 6 | 1 | d8b31df87d5864dc | ea0413a15afdce34 |
+| 22 | `50 + 20 * (30 - 10) / 4` | 150 | 10 | 1 | 0d2d2291d34ff8c5 | 8f1d7a7df1dc5684 |
+| 23 | `9223372036854775807+1` | -9223372036854775808 | 4 | 1 | ca325fc84eea29e6 | ed0b79a3de25736f |
+| 24 | `-9223372036854775807-2` | 9223372036854775807 | 5 | 1 | f0b26d5e98b798d5 | 9fb47dc73bb3f339 |
+| 25 | `9223372036854775807*2` | -2 | 4 | 1 | 2f01c24f1d00ef0b | ddf6dd07fb2b970b |
+| 26 | `(0-9223372036854775807)-1` | -9223372036854775808 | 6 | 1 | 2b14f9a256ef234b | d5ef73dc795c6f53 |
+| 27 | `x*x*x*x` | 10000 | 8 | 1 | 72ab727c17ca36bb | 88253f10cbe0795e |
+
+Vetores de **rejeição** (ambos os hosts devem rejeitar; medidos no C11):
+
+| v | expr | stage | erro |
+|---|---|---|---|
+| 28 | `1 + * 2` | parse | `error.UnexpectedTokenInPrimary` |
+| 29 | `( 2 + 3` | parse | `error.MissingClosingParen` |
+| 30 | `5 / 0` | eval | `error.DivisionByZero` (status 7) |
+| 31 | `5 % 0` | eval | `error.DivisionByZero` (status 7) |
+| 32 | `1x + 2` | parse | `error.UnexpectedTokenInPrimary` |
+| 33 | `unknown_var + 1` | eval | `error.UndefinedVariable` |
+
+Os 64-hex completos de v0–v27 são recomputáveis: `./transpile/c/bin/lin_c_receipt
+--expr "<expr>"` (build: `make -C transpile/c xver`). Este spec não duplica 28×64 hex;
+o digest é recomputável por construção (R4).
+
+## 8. Trace canônico e âncoras P1 (goldens com proveniência Zig)
+
+Convenção de rastro (fonte: spec executável `src/linvm_selfhost.lin`; reproduzida pelo
+LinVM Zig real via `lin vm`, goldens em `P1_LINVM_SELFHOST.rulel` §3):
+
+    h0 = 0;  após cada instrução concluída (incl. fallthrough):
+    h = ((h + opcode_ordinal) * 31) + sp
+
+Em falha, o fold para **no ponto da falha**; fronteiras exatas (falha aninhada,
+prólogo) estão documentadas em P1 §5 — o módulo `.lin` é a referência autossuficiente.
+
+Âncoras (valor | steps | trace | sp):
+
+| caso | status | valor | steps | trace | sp |
+|---|---|---|---|---|---|
+| `lin_add(20,22)` | 0 | 42 | 4 | 988839 | 1 |
+| `vm_div_edges()` | 0 | 1 | 10 | 344734172830512 | 1 |
+| `vm_mod_edges()` (INT64_MIN mod -1 → 0) | 0 | 0 | 7 | 11571757501 | 1 |
+| `vm_div_zero()` | 7 | 0 | 3 | 33 | 0 |
+| `vm_shift_edges()` | 0 | 1 | 16 | -49592379531246514 | 2 |
+| `vm_fallthrough()` | 0 | 0 | 1 | 1 | 1 |
+
+Tabela completa dos 32 sels + 88 sweeps: `docs/P1_LINVM_SELFHOST.rulel` §3
+(32/32, 88/88, 18/18 vs `selfhost p1ref`, 8/8 vs `vm-sweep` — medidos).
+
+## 9. Critério de conformidade de host (L0 do plano)
+
+Um host `LINVM v1` conforme, sobre os 34 vetores §7 e as âncoras §8:
+
+1. aceita/rejeita nos mesmos pontos, com os mesmos códigos de erro/status;
+2. produz `result`, `steps`, `sp_at_ret` e `bytecode_image` idênticos (logo,
+   `root` idêntico — hash comparável entre hosts);
+3. respeita §4 em todos os casos-limite (wrap, INT64_MIN, shifts fora de 0..63,
+   div/mod por zero);
+4. falha fechado: qualquer limite excedido ⇒ erro determinístico, nunca resultado
+   parcial como sucesso;
+5. reproduz o mesmo resultado duas vezes (sem relógio, endereço ou dado do host).
+
+Gate G(V0) (plano §V0): vetores §7 reproduzidos em **ambos** os hosts (Zig e C11)
+via `crosscheck-c` em CI. Estado: **C11 medido aqui (34/34 consistentes com o
+consenso 34/34 publicado no xver); execução em CI = pendente** —
+pré-requisito: master compilar no Zig declarado (`P1_LINVM_SELFHOST.rulel` §4).

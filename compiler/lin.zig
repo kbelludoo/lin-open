@@ -17606,7 +17606,7 @@ fn runCli() !void {
             var fns_eligible: usize = 0;
             var fns_executed: usize = 0;
             var steps_total: u64 = 0;
-            for (p1_targets, 0..) |path, pidx| {
+            for (p1_targets) |path| {
                 const src = std.fs.cwd().readFileAlloc(LIA_ALLOC, path, 10 * 1024 * 1024) catch continue;
                 defer LIA_ALLOC.free(src);
                 const mod = vmBuild(LIA_ALLOC, src) catch continue;
@@ -17827,10 +17827,13 @@ fn runCli() !void {
         const baseline_ledg = "d32d0d6d0897d0786b93a50ca1eb6fa88ee9153e09a8b30a3b09354d1d8545a1";
         const baseline_root = "f7a0c6fae02cdb89fc3236619919432d4138015f9bdb8a69209d797c01e1d01f";
         const comp_hex = std.fmt.fmtSliceHexLower(&compiler_digest);
-        const corp_hex = std.fmt.fmtSliceHexLower(&corpus_digest);
-        const ledg_hex = std.fmt.fmtSliceHexLower(&ledger_digest);
+        var corp_buf: [64]u8 = undefined;
+        var ledg_buf: [64]u8 = undefined;
+        var root_buf: [64]u8 = undefined;
+        const corp_hex = std.fmt.bufPrint(&corp_buf, "{s}", .{std.fmt.fmtSliceHexLower(&corpus_digest)}) catch unreachable;
+        const ledg_hex = std.fmt.bufPrint(&ledg_buf, "{s}", .{std.fmt.fmtSliceHexLower(&ledger_digest)}) catch unreachable;
+        const root_hex = std.fmt.bufPrint(&root_buf, "{s}", .{std.fmt.fmtSliceHexLower(&selfhost_root)}) catch unreachable;
         const cert_hex = std.fmt.fmtSliceHexLower(&cert_digest);
-        const root_hex = std.fmt.fmtSliceHexLower(&selfhost_root);
         const corpus_match = std.mem.eql(u8, corp_hex, baseline_corp);
         const ledger_match = std.mem.eql(u8, ledg_hex, baseline_ledg);
         const root_match = std.mem.eql(u8, root_hex, baseline_root);

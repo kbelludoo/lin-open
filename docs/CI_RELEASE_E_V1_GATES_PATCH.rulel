@@ -1,0 +1,105 @@
+@RULEL:DOC_CI_RELEASE_E_V1_GATES_PATCH:1.0.0
+~MARKDOWN_SPEC
+# PATCH pendente — `.github/workflows/ci.yml` (publicar Stage0 + gates V1 em CI)
+
+> **Por que pendente:** o token da App deste sandbox **não tem o escopo
+> `workflows`**, então o git recusa push de alterações em `.github/workflows/`
+> ("refusing to allow a GitHub App to create or update workflow without
+> `workflows` permission"). As mudanças abaixo foram escritas e validadas
+> (YAML parse OK, jobs `verify`+`release`); para aplicar: (a) alguém com token
+> de escopo `workflows` aplica o diff abaixo, ou (b) reconecte a integração com
+> esse escopo. **Nada aqui é efeito ainda** — até o patch entrar, a faixa 1 de
+> `docs/LIN_SEM_ZIG_CAMINHOS.rulel` é "habilitada pelo binário local", não
+> "publicada".
+
+## O que o patch faz
+
+1. **Trigger em tags:** `on.push.tags: ['v*']` (hoje só branches).
+2. **Artifacts de binário em todo run** (passo após os builds): `lin_native-cpu`
+   e `lin_native-gpu` sobem como artifact `lin-stage0-binaries` — implementa a
+   promessa do README §2 ("artifact on every CI run").
+3. **Gates V1 em CI** (rito Q3 — primeira medição em CI), três passos no job
+   `verify` após `make test-cpu`:
+   - `make -C transpile/c test test-edges test-sha256`  (oráculo C11)
+   - `make -C transpile/c test-linbc1`                   (S0–S18, goldens, fuzz)
+   - `make -C transpile/c roundtrip-linbc1`              (CONSENSUS cross-host)
+4. **Job `release`** (só em `refs/tags/v*`, `needs: verify`, permissão
+   `contents: write`): baixa o artifact, `chmod +x`, e `gh release create
+   $GITHUB_REF_NAME lin_native-cpu lin_native-gpu --verify-tag` com notas sobre
+   dependências de runtime (libc-only / OpenCL).
+
+## Diff exato (contra `ci.yml` do commit 5fef3ec)
+
+```diff
+@@ on:
+   push:
+     branches: [master, main]
++    tags: ['v*']
+   pull_request:
+   workflow_dispatch:
+```
+
+```diff
+       - name: Build (GPU mode, links OpenCL)
+-        run: zig build -Doptimize=ReleaseFast
++        run: |
++          zig build -Doptimize=ReleaseFast
++          cp zig-out/bin/lin_native lin_native-gpu
+```
+
+```diff
+       - name: Build (CPU-only mode, no OpenCL)
+-        run: zig build -Dgpu=false -Doptimize=ReleaseFast
++        run: |
++          zig build -Dgpu=false -Doptimize=ReleaseFast
++          cp zig-out/bin/lin_native lin_native-cpu
+```
+
+```diff
+       - name: integrity (CPU-only)
+         run: ${{ env.BIN }} integrity
++
++      - name: C11 N-Version oracle suites (no Zig needed)
++        run: make -C transpile/c test test-edges test-sha256
++
++      - name: V1 LINBC1 host gate — intrinsics S0-S18 + exec goldens + image fuzz
++        run: make -C transpile/c test-linbc1
++
++      - name: V1 cross-host round-trip — LIN emitter (on Zig LinVM) vs C11 loader
++        run: make -C transpile/c roundtrip-linbc1
++
++      - name: Upload Stage0 binaries (CPU + GPU)
++        uses: actions/upload-artifact@v4
++        with:
++          name: lin-stage0-binaries
++          path: |
++            lin_native-cpu
++            lin_native-gpu
++          if-no-files-found: error
+```
+
+```diff
+           if-no-files-found: ignore
++
++  release:
++    if: startsWith(github.ref, 'refs/tags/v')
++    needs: verify
++    runs-on: ubuntu-latest
++    permissions:
++      contents: write
++    steps:
++      - uses: actions/download-artifact@v4
++        with: { name: lin-stage0-binaries }
++      - run: chmod +x lin_native-cpu lin_native-gpu
++      - env: { GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} }
++        run: >-
++          gh release create "$GITHUB_REF_NAME" lin_native-cpu lin_native-gpu
++          --title "LIN Stage0 $GITHUB_REF_NAME" --verify-tag
++          --notes "Pre-compiled Stage0. lin_native-cpu: libc-only, no Zig/OpenCL
++          needed to run. lin_native-gpu: needs an OpenCL runtime (e.g. PoCL)."
+```
+
+Nota de higiene: o repo já declara o pin `goto-bus-stop/setup-zig@v2` +
+`ZIG_VERSION: 0.13.0`; nada disso muda. Este patch **não altera nenhum gate
+existente** — só adiciona passos; se `test-linbc1`/`roundtrip` falharem o CI
+fica vermelho (fail-closed é o comportamento desejado).
