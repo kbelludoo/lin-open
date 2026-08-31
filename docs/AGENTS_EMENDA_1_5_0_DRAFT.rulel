@@ -1,0 +1,81 @@
+@RULEL:DOC_AGENTS_EMENDA_1_5_0_DRAFT:1.0.0
+~MARKDOWN_SPEC
+# Emenda `AGENTS.md@1.5.0` — DRAFT aberto no PR (rito Q3: valores medidos em CI, nunca locais)
+
+> **Status:** draft. **Nada aqui é aplicado ao `AGENTS.md` neste PR.** Os valores com
+> `AWAITING_CI_MEASUREMENT` serão preenchidos pela primeira execução verde de CI e pinados num
+> commit de follow-up, conforme o rito aprovado (Q3): re-pin de hashes só via PR + emenda +
+> valores medidos em CI — nunca medidos localmente. Hoje o CI do repo tem **0 execuções
+> registradas** e o master não compila com o Zig 0.13.0 declarado
+> (`compiler/lin.zig:16018` e `16238–16243`) — pré-requisitos documentados em
+> `docs/P1_LINVM_SELFHOST.rulel` §4.
+
+---
+
+## 1. O que esta emenda propõe (quando CI estiver verde)
+
+### 1.1 Cabeçalho
+
+```
+@RULEL:AGENTS:1.5.0
+```
+
+### 1.2 `.p{...}` — novos paths
+
+```
+  p1_vm_selfhost="src/linvm_selfhost.lin"
+  gpu_corpus="test/corpus/gpu_parallel_map_kernels.lin"
+```
+
+### 1.3 `.u{...}` — novos comandos
+
+```
+  p1_gate="lin vm src/linvm_selfhost.lin vms_gate"
+  p1_check="lin check src/linvm_selfhost.lin"
+```
+
+### 1.4 `.h{...}` — novos pinos (MEDIDOS EM CI — nunca locais)
+
+```
+  selfhost_root_zig_1="sha256:AWAITING_CI_MEASUREMENT"   ← lin selfhost p1ref
+  p1_module_sha256="sha256:AWAITING_CI_MEASUREMENT"      ← SHA-256 de src/linvm_selfhost.lin
+  p1_gate_expected=1                                      ← vms_gate deve retornar 1
+  gpu_corpus_sha256="sha256:AWAITING_CI_MEASUREMENT"     ← SHA-256 do corpus GPU corrigido
+```
+
+_Nota de transparência: `lin selfhost p1ref` já emite `.pin=AWAITING_FIRST_CI_MEASUREMENT`
+hoje (comportamento existente do comando); esta emenda transforma esse valor em pino
+assertado após a primeira medição em CI._
+
+### 1.5 `.r{...}` — regras inalteradas
+
+`R0/R1/R2/R2a/R3` permanecem. **R2b** ("bugfixes fail-closed", lista fechada = caveats 22–28,
+um gate de paridade antes/depois por fix) foi aprovada (Q1) mas **não é exercida neste PR**:
+P1 e P2 não exigem nenhum edit em Zig. R2b só entra no `AGENTS.md` no PR que de fato abrir um
+fix em `compiler/lin.zig`.
+
+### 1.6 README — caveats a atualizar no mesmo commit de follow-up
+
+| Caveat | Proposta |
+|---|---|
+| 25 — corpus 20 vs 21 `.lin` | ✅ **fechado por documentação**: exclusão de `examples/map_kernels.lin` registrada em `docs/P2_CORPUS_HYGIENE.rulel` §3 (exemplo GPU, fora do núcleo self-host; seus 3 kernels unários são vetores do P1). |
+| 26 — `test/corpus/gpu_parallel_map_kernels.lin` órfão | ✅ **fechado**: tipos corrigidos (`_lia_shl/_lia_shr`, assinatura `(): int`), `lin check` passa, vetores conhecidos = 1, `lin vm` cobre 4/4 fns. Evidência em `docs/P2_CORPUS_HYGIENE.rulel` §2. |
+
+## 2. Rito de aplicação (obrigatório)
+
+1. PR de infraestrutura primeiro: tornar o build verde no Zig 0.13.0 declarado (os dois erros
+   de `compiler/lin.zig` acima) e fazer a **primeira** execução de CI funcionar.
+2. Na primeira execução verde, o CI mede `lin selfhost p1ref` (`selfhost_root_zig_1`),
+   `sha256sum src/linvm_selfhost.lin` e `sha256sum test/corpus/gpu_parallel_map_kernels.lin`
+   e imprime os valores no log.
+3. Follow-up PR: substituir `AWAITING_CI_MEASUREMENT` pelos valores do log de CI, aplicar esta
+   emenda ao `AGENTS.md` (1.5.0) e marcar os caveats 25/26 como ✅ no README.
+4. **Nunca** preencher esses pinos com valores medidos localmente.
+
+## 3. Por que `corpus_sha256`/`ledger_sha256` NÃO mudam neste PR
+
+Os 20 arquivos de `corpus_targets` não foram tocados (o fix de P2 está em `test/corpus/…`,
+fora da lista; `src/linvm_selfhost.lin` é módulo novo fora do corpus — rito Q3). Portanto
+`corpus_sha256` e `ledger_sha256` permanecem idênticos; nenhum re-pin é necessário nem
+permitido agora. Quando o módulo P1 passar o gate da fase e for promovido ao corpus (futuro),
+aí sim o re-pin ocorre, por PR, com valores CI.
