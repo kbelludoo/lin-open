@@ -25,6 +25,95 @@ zig run -lc -I/usr/include -L/usr/lib/x86_64-linux-gnu -lOpenCL test_lin_selfhos
 | `lin lint` | ✅ sem erros |
 | **full self-hosted suite** | ✅ `PASS_FULL_SELF_HOSTED_LIN`, bit-exact, Merkle `62b7d202…` |
 | **compat suite** | ✅ `PASS_FULL_LEGACY_COMPATIBILITY`, 17/17 subgates, 1000/1000 fuzz, 0 mismatches |
+| `make attestation-gate` | ✅ **PASS** — 5 testes unitários do guard + 43 asserções de honestidade |
+| `make gate` (LIN Gate, Merkle do toolchain) | ✅ **GATE OPEN** — 31 arquivos, 6 níveis, raiz = atestada |
+| `make xver` (N-Version Zig × C) | ✅ **34/34 vectors, 0 divergences** — mesmas raízes Merkle nas duas implementações |
+| `make -C transpile/c test` / `test-edges` / `test-sha256` | ✅ 29/29, 17/17, 5/5 (vetores FIPS/NIST publicados) |
+
+### Attestation honesty gate (destaques)
+
+Executado com o build CPU-only (`zig build -Dgpu=false -O ReleaseFast`):
+
+```
+  ok   35 gated command names refused with exit 3
+  ok   no receipt or report file written by any refused command
+  ok   simulated run announces itself on stderr
+  ok   simulated run recorded in simulated_attestations.log
+  ok   garbage bundle refused (exit 1)          # cleanroom-verify fail-closed
+  ok   no cleanroom receipt written for an unverifiable bundle
+  ok   no roster -> NotImplemented (exit 3)
+  ok   4/4 co-signatures verified with Ed25519
+  ok   tampered state root -> quorum refused
+  ok   2-of-4 valid signatures cannot satisfy a 3-of-4 quorum
+  ok   adversarial corpus rejected every mutation   # 7/7
+  ok   Merkle root is deterministic across runs (sha256:b96fecee…)
+  ok   C11 second implementation built (transpile/c/bin/lin_c_receipt)
+  ok   crosscheck-c reached consensus (exit 0)
+  ok   34 vectors agreed across two implementations, 0 divergences
+  ok   receipt records independent_implementations=2
+  ok   receipt pins the C binary by SHA-256
+  ok   a lying second implementation is detected (divergence, no receipt)
+  ok   missing second implementation -> NotImplemented (exit 3)
+  ok   gate without a manifest is not evaluable (exit 3)
+  ok   gate-attest writes a manifest with the recomputed root
+  ok   gate opens on an attested tree
+  ok   gate Merkle root is deterministic across runs
+  ok   a modified compiler file blocks the gate (exit 1)
+  ok   a new unattested file blocks the gate (exit 1)
+  ok   deleting an attested file blocks the gate (exit 1)
+  ok   committed manifest matches the tracked toolchain at the repo root
+  ok   gate-keygen writes the private seed with mode 0600
+  ok   gate-attest --key signs the manifest body with Ed25519
+  ok   gate-check verifies the Ed25519 attestation against the roster
+  ok   an attestation signed by a non-roster key is rejected
+  ok   a tampered signature fails Ed25519 verification
+  ok   quorum 2 with a single valid signature blocks the gate
+  ok   an unsigned attestation fails closed when a roster is required
+  ok   without a roster the gate discloses that it skipped signature verification
+```
+
+### N-Version Zig × C (`make xver`)
+
+```
+$ make xver
+N-VERSION CONSENSUS: 34 vectors | agreements 34 | divergences 0
+Independent implementations compared: 2 (Zig, C11)
+RESULT: CONSENSUS — receipt written to xver_receipt.rulel
+```
+
+Corpus: os 29 vetores do oráculo compartilhado (23 avaliados + 6 rejeitados por
+ambos os lados, com o mesmo nome de erro) mais 5 vetores de fronteira INT64.
+Canonicalização `LIN_XVER_CANONICAL_v1` (4 folhas: fonte, ambiente, bytecode
+emitido, execução). O recibo fixa o binário C por SHA-256 (`engine_b_sha256`).
+
+### LIN Gate (`make gate`) — verificador de integridade do CI
+
+```
+$ make gate
+  scope ........... compiler,transpile/c/lin_c,transpile/c/tool,transpile/c/test
+  tracked files ... 31
+  merkle levels ... 6
+  recomputed root . sha256:948850d1abcad93752d49bccb0d97b20738640fd8d318a73dbf314cb26b2f0e0
+  merkle root (attested) ... sha256:948850d1…
+  merkle root (recomputed) . sha256:948850d1…
+GATE OPEN — Merkle root matches the attested manifest (31 files).
+```
+
+Códigos de saída: **0** = gate aberto, **1** = bloqueado (mudança não atestada ou
+assinatura não verificada), **3** = não avaliável (manifesto/roster ausente ou
+malformado, escopo vazio).
+
+A atestação pode ser assinada com Ed25519 real: `lin gate-keygen` gera a chave
+(semente aleatória, arquivo 0600) e o roster público; `gate-attest --key` assina o
+corpo do manifesto; `gate-check --roster` exige quórum M-de-N. Sem `--roster` a
+saída declara `signature NOT VERIFIED` — nunca sugere que verificou. Os caminhos de
+bloqueio (MODIFIED / ADDED / DELETED) são testados dentro de um sandbox temporário
+pela suíte de honestidade; o manifesto commitado é conferido contra a árvore real
+na raiz do repositório. Re-atestação humana: `make gate-attest`.
+
+Rodar isoladamente: `make attestation-gate` (ou `./test/attestation_honesty.sh
+zig-out/bin/lin_native`). O alvo também é chamado por `make test` e `make test-cpu`
+e pelo workflow de CI.
 
 ### Full self-hosted suite (destaques)
 - `Silicon Parity: R_cpu == R_gpu == R_oracle` → **Bit-Exact: true**

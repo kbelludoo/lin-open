@@ -25,6 +25,13 @@ These were verified by building and running the compiled binary:
 | OpenCL execution & CPU/GPU/oracle parity | ✅ bit-exact on an OpenCL device (conformance, not proof) |
 | `gpu-verify` | ✅ PASS (21/21 bit-exact) on any OpenCL device |
 | Full self-hosted + compat test suites | ✅ both **PASS**; all 17 compat subgates are computed assertions |
+| `bundle-pack` / `bundle-verify` attestation bundle | ✅ real: Git blob OID, MIR + lowering hashes, CPU oracle replay, 8-leaf kernel Merkle trees, ledger root, **Ed25519 seal verified** |
+| `cleanroom-verify` | ✅ real: CPU-only cryptographic replay of a signed bundle; fails closed and writes nothing when the bundle does not verify |
+| `notary-sign` / `notary-verify` witness quorum | ✅ real Ed25519 M-of-N co-signature verification over a signed tree head (roster file required) |
+| N-Version cross-check (`make xver` / `lin crosscheck-c`) | ✅ real: the same 34 vectors through the Zig LinVM and the independent C11 port in `transpile/c/`, comparing canonical Merkle roots — 34/34 agreement, 0 divergences |
+| **LIN Gate** (`make gate` / `lin gate-check`) | ✅ real: recomputes the Merkle root of the tracked toolchain (`compiler/**`, `transpile/c/{lin_c,tool,test}/**`) and blocks the PR unless it matches the root attested in `lin_gate_manifest.rulel` |
+| Gate attestation signature (`lin gate-keygen` / `gate-attest --key` / `gate-check --roster`) | ✅ real Ed25519: keys generated from `std.crypto.random` (seed written 0600), signature over the manifest body, M-of-N roster quorum, and an explicit "signature NOT VERIFIED" line when no roster is supplied |
+| Attestation honesty gate (`make attestation-gate`) | ✅ 35 assertions + 5 unit tests; refuses any command that would publish an uncomputed verdict |
 | `from-js` transpile | ⚠️ narrow subset only (arrow/expr fns match 0) |
 
 `receipt create --source "return x * x;" --input 9` produces a deterministic root
@@ -41,6 +48,10 @@ The two self-hosted suites (`test_lin_full_self_hosted_suite.zig` and
   subset to LIN; JS support is experimental and limited. Do not market it as a 5-language compiler.
 - **No** strings, floats (`f32`/`f64`), dynamic structs, heap `malloc`, OS file I/O, or OOP.
 - **Target domain:** deterministic integer kernels, hashing/bit-manipulation, small math, receipts.
+- **No 5-language polyglot parity, no federation, no transparency log.** The sub-commands that
+  used to claim those (`polyglot-verify`, `federation-verify`, `verify-all`, …) are refused by
+  `compiler/lin_attestation_guard.zig` with `error.NotImplemented` until real evidence exists.
+  See `SECURITY_AUDIT.md` section 7.
 
 ---
 
@@ -218,6 +229,42 @@ Also fixed in this revision (2026-08-31, "all corrections" pass):
    `test/corpus/gpu_parallel_map_kernels.lin`. It now defaults to `examples/map_kernels.lin`
    (real scalar unary kernels) and runs to `PASS` (21/21 bit-exact) on any OpenCL device,
    with device discovery falling back to CPU.
+
+Fixed in the attestation-honesty pass (2026-08-31):
+
+11. ✅ **Mock attestation commands can no longer publish verdicts.** `cleanroom-verify` used to
+    write `verified_ed25519_seal=true` for *any* file (verified with a bundle containing random
+    text); `notary-verify` printed `SIGNATURE VALID` for the placeholder keys `1111…`/`2222…`
+    without decoding a signature; `polyglot-verify` reported 6/6 parity by comparing six copies
+    of one constant. `cleanroom-verify` and `notary-verify` were rewritten to do the real work
+    (bundle replay with Ed25519, and a real witness quorum over a roster file); the remaining
+    simulated commands are listed in `compiler/lin_attestation_guard.zig`, refuse to run
+    (exit 3, no artifacts) unless `--allow-simulated` is passed, and are covered by
+    `make attestation-gate`.
+
+12. ✅ **Real N-Version cross-check (Zig × C).** `lin crosscheck-c` runs the shared
+    oracle corpus plus INT64 boundary vectors through this compiler's Pratt parser /
+    flat AST / bytecode lowerer / LinVM **and** through the independent C11 port in
+    `transpile/c/lin_c`, and compares a canonical 4-leaf SHA-256 Merkle root over
+    (source, environment, emitted bytecode, result, steps, final stack depth).
+    34/34 vectors agree; a lying second implementation is detected and no receipt is
+    written; a missing second implementation fails closed with `error.NotImplemented`.
+
+13. ✅ **LIN Gate — CI integrity checker (the first functional product).** `lin gate-check`
+    hashes every tracked file of the toolchain (`compiler/**`, `transpile/c/lin_c|tool|test/**`),
+    folds the digests into a real SHA-256 Merkle tree (`LIN_GATE_MANIFEST_v1`) and compares the
+    root with the one attested in `lin_gate_manifest.rulel`. Any unattested change — a modified
+    compiler file, an injected file, a deletion — reports the exact file and exits 1; a missing
+    manifest exits 3; an attested tree exits 0 (GATE OPEN). `.github/workflows/lin_gate.yml` runs
+    it on every pull request, together with the honesty suite and the N-Version cross-check, so a
+    PR (AI-authored or not) cannot merge with an unattested toolchain. Re-attestation is an
+    explicit human act: `make gate-attest`, then commit the new root with the change.
+    The attestation can be signed with real Ed25519 (`lin gate-keygen` mints a key from
+    `std.crypto.random` and a public roster; `gate-attest --key` signs the manifest body;
+    `gate-check --roster` requires an M-of-N quorum). Tampering with a digest, tampering
+    with the signature, signing from a non-roster key, missing the quorum or omitting the
+    signature all fail closed; with no roster the gate prints `signature NOT VERIFIED`
+    instead of implying it checked.
 
 Remaining honest caveats:
 

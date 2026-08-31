@@ -17,6 +17,8 @@
 !LICENSE
 !LICENSE.rulel
 !docs/**
+!test/**
+!transpile/**
 !examples/**
 !stubs/**
 !redteam/**
@@ -37,3 +39,19 @@ zig-cache/
 zig-out/
 repos/
 *.key
+
+# Attestation runtime artifacts — produced by `lin` at run time, never evidence,
+# never committed.
+simulated_attestations.log
+witness_roster.rulel
+*_receipt.rulel
+*_report.rulel
+audit_report.rulel
+conformance_report.rulel
+verification_api_response.json
+# Build artifacts of the C port (the sources are tracked, the binaries are not).
+transpile/c/bin/
+# Private Ed25519 seeds for the LIN Gate must never be committed; only the
+# public roster (lin_gate_roster.rulel) is a repository artifact.
+*.seed
+lin_gate_key*
