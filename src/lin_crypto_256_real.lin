@@ -1,0 +1,145 @@
+@LIN:L1c:0.2
+@LIN_CRYPTO_256_REAL{gate=CRYPTO_256_REAL_ACCEPTANCE_POLICY spec="Franklin-Reiter IPL 18(3):123-125 (1985) + Hastad broadcast (CRYPTO'92 LNCS 638) + RSA-Lab published moduli"}
+//
+// LIN-CRYPTO-256-REAL policy gate.
+//
+// LIN here carries POLICY ONLY: which run may be called a real cryptanalysis
+// result. The bignum and polynomial arithmetic that actually recovers a secret
+// lives in test/test_lin_crypto_256_real.c (C), and the non-circular check of
+// its output lives in examples/verify_crypto256_real_cleanroom.py (independent
+// implementation, fed only public parameters plus an ALLEGED secret).
+//
+// Design rules encoded below, each traceable to a defect we found in earlier
+// gates of this repository:
+//   R1 no self-attestation: a binary may never certify its own artifact digest.
+//   R2 one field, one meaning: hardware / artifact / run / result digests are
+//      four separate quantities (the LIN-CRYPTO-MAX-256 `execution_digest`
+//      carried all four meanings and bound none of them).
+//   R3 an acceptance decision must be a FUNCTION OF MEASURED FLAGS, never a
+//      literal printed next to a label (the MAX-256 adversarial suite printed
+//      "[PASS]" inside its printf format string and returned 0 regardless).
+//   R4 reduced parameters must be classified; a synthetic reduction may never
+//      be presented as a published attack.
+//   R5 absence of a negative control means the gate has tested nothing.
+//
+// Parameter classes (hard-coded, no fourth option):
+//   1 = TOY           (sizes chosen for teaching; no security statement)
+//   2 = EXPERIMENTAL  (published real constants, deliberately vulnerable config)
+//   3 = REAL_WORLD    (as deployed; attacks are expected to fail and that is the result)
+
+// The three admissible parameter classes, as a classifier rather than as named
+// constants: only the constructs used by src/lin_crypto_001_a51.lin are used
+// here, because that is the subset of LIN whose syntax this repository has
+// actually executed.
+!valid_class(c: int) -> int {
+  ok = 0;
+  ?(c == 1) { ok = 1; };
+  ?(c == 2) { ok = 1; };
+  ?(c == 3) { ok = 1; };
+  ^ok;
+}
+
+// A gate result is only trusted when every independent witness agrees.
+!all_agree(p1: int, p2: int, p3: int, p4: int) -> int {
+  n_ok = 0;
+  ?(p1 == 1) { n_ok = n_ok + 1; };
+  ?(p2 == 1) { n_ok = n_ok + 1; };
+  ?(p3 == 1) { n_ok = n_ok + 1; };
+  ?(p4 == 1) { n_ok = n_ok + 1; };
+  is_full = 0;
+  ?(n_ok == 4) { is_full = 1; };
+  ^is_full;
+}
+
+// R1/R2: a record is acceptable only when its tag is present and its digest was
+// recomputed by an external verifier (verify_digest -> 1 means "recomputed and
+// equal"). A self-reported digest is rejected by construction.
+//   tag      : 0 missing, otherwise the record identifier is present
+//   size_ok  : fixed-size canonical record, no schema drift
+//   recomputed: external verifier agrees
+//   separated: run digest != result digest (distinct meanings)
+!record_valid(tag: int, size_ok: int, recomputed: int, separated: int) -> int {
+  ok = 0;
+  ?(tag == 1) {
+    ?(size_ok == 1) {
+      ?(recomputed == 1) {
+        ?(separated == 1) { ok = 1; };
+      };
+    };
+  };
+  ^ok;
+}
+
+// R4: which claim may this parameter class carry?
+//   0 = none, 1 = "didactic only", 2 = "published attack reproduced",
+//   3 = "real-world configuration measured to resist this attack"
+!claim_level(param_class: int, attack_succeeded: int, negative_control_ok: int) -> int {
+  lvl = 0;
+  ?(negative_control_ok == 0) { lvl = 0; };
+  ?(param_class == 1) {
+    ?(negative_control_ok == 1) { lvl = 1; };
+  };
+  ?(param_class == 2) {
+    ?(negative_control_ok == 1) {
+      ?(attack_succeeded == 1) { lvl = 2; };
+    };
+  };
+  ?(param_class == 3) {
+    ?(negative_control_ok == 1) {
+      ?(attack_succeeded == 0) { lvl = 3; };
+    };
+  };
+  ^lvl;
+}
+
+// The acceptance function. Inputs are the flags printed by the C harness and
+// re-checked by the cleanroom verifier; the gate never reads a verdict string.
+//   selftest_ok      : bignum/SHA primitives pass published vectors
+//   fr_deg           : polynomial gcd degree (1 == unique common root)
+//   fr_reencrypt_ok  : recovered secret re-encrypts to BOTH public ciphertexts
+//   ha_agrees        : a second, mechanistically different attack agrees
+//   holdout_ok       : fresh affine relation drawn after the attack re-derives it
+//   neg_ok           : mutated public parameter was REJECTED
+//   ctl_declined     : REAL_WORLD exponent run declined (reported, not faked)
+//   run_rec_ok       : record_valid(...) over the canonical run-config record
+//   result_rec_ok    : record_valid(...) over the canonical result record
+//   artifact_external: execution_artifact_digest came from outside the binary
+//   param_class      : 1 TOY / 2 EXPERIMENTAL / 3 REAL_WORLD
+!accept_run(selftest_ok: int, fr_deg: int, fr_reencrypt_ok: int, ha_agrees: int, holdout_ok: int, neg_ok: int, ctl_declined: int, run_rec_ok: int, result_rec_ok: int, artifact_external: int, param_class: int) -> int {
+  // every input to all_agree must already be a 0/1 flag; fr_deg is a degree,
+  // so it is normalised here rather than trusted.
+  deg_is_one = 0;
+  ?(fr_deg == 1) { deg_is_one = 1; };
+  cls_ok = valid_class(param_class);
+  root_ok = all_agree(deg_is_one, fr_reencrypt_ok, ha_agrees, holdout_ok);
+  hygiene_ok = all_agree(selftest_ok, neg_ok, run_rec_ok, result_rec_ok);
+  honest_ok = all_agree(ctl_declined, artifact_external, cls_ok, 1);
+  accepted = 0;
+  ?(root_ok == 1) {
+    ?(hygiene_ok == 1) {
+      ?(honest_ok == 1) { accepted = 1; };
+    };
+  };
+  ^accepted;
+}
+
+// Infeasibility framing guard: an exhaustive-search cost may be reported, but a
+// "unbreakable"/"certified security" verdict must never be emitted from a cost
+// number. bitlen is the searched width; the return value is the maximum claim
+// level the measurement may support (0 forbids any security claim).
+!max_claim_from_search(bitlen: int, executed_levels: int, extrapolated_levels: int) -> int {
+  // A frontier statement needs at least one fully executed level, and every
+  // extrapolated level must be labelled as extrapolation (counted separately).
+  claim = 0;
+  ?(executed_levels >= 1) {
+    ?(bitlen >= 20) {
+      ?(bitlen <= 28) { claim = 1; };
+      ?(bitlen == 256) { claim = 2; };
+    };
+  };
+  // Extrapolated points can never raise the claim on their own.
+  ?(executed_levels == 0) { claim = 0; };
+  ^claim;
+}
+
+=ex{valid_class, all_agree, record_valid, claim_level, accept_run, max_claim_from_search}
