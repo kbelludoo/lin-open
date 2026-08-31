@@ -77,7 +77,11 @@ pub fn main() !void {
     defer alloc.free(platforms);
     _ = cl.clGetPlatformIDs(num_platforms, platforms.ptr, null);
 
-    var ocl_platform = platforms[0];
+    if (platforms.len == 0) {
+        try stdout.print("  [SKIP] No OpenCL platform found; hardware phases skipped.\n\n", .{});
+        return;
+    }
+    var ocl_platform: cl.cl_platform_id = platforms[0];
     for (platforms) |p| {
         var pbuf: [256]u8 = undefined;
         _ = cl.clGetPlatformInfo(p, cl.CL_PLATFORM_NAME, pbuf.len, &pbuf, null);
@@ -86,13 +90,25 @@ pub fn main() !void {
             ocl_platform = p;
             break;
         }
+        ocl_platform = p;
     }
 
+    // Device discovery: prefer a GPU, but fall back to any device (e.g. a
+    // PoCL CPU device) instead of crashing on machines without a discrete GPU.
+    var device_type: cl.cl_device_type = cl.CL_DEVICE_TYPE_GPU;
     var num_devices: cl.cl_uint = 0;
-    _ = cl.clGetDeviceIDs(ocl_platform, cl.CL_DEVICE_TYPE_GPU, 0, null, &num_devices);
+    _ = cl.clGetDeviceIDs(ocl_platform, device_type, 0, null, &num_devices);
+    if (num_devices == 0) {
+        device_type = cl.CL_DEVICE_TYPE_ALL;
+        _ = cl.clGetDeviceIDs(ocl_platform, device_type, 0, null, &num_devices);
+    }
+    if (num_devices == 0) {
+        try stdout.print("  [SKIP] No OpenCL device found; hardware phases skipped.\n\n", .{});
+        return;
+    }
     const devices = try alloc.alloc(cl.cl_device_id, num_devices);
     defer alloc.free(devices);
-    _ = cl.clGetDeviceIDs(ocl_platform, cl.CL_DEVICE_TYPE_GPU, num_devices, devices.ptr, null);
+    _ = cl.clGetDeviceIDs(ocl_platform, device_type, num_devices, devices.ptr, null);
     const device = devices[0];
 
     var dev_name_buf: [256]u8 = undefined;
@@ -167,7 +183,7 @@ pub fn main() !void {
     const prog = cl.clCreateProgramWithSource(ctx, 1, @ptrCast(@constCast(&src_ptr)), &src_len, &err);
     try cl_check(err, "clCreateProgramWithSource");
     defer _ = cl.clReleaseProgram(prog);
-    try cl_check(cl.clBuildProgram(prog, 1, &device, "-cl-std=CL2.0", null, null), "clBuildProgram");
+    try cl_check(cl.clBuildProgram(prog, 1, &device, null, null, null), "clBuildProgram");
 
     const k1 = cl.clCreateKernel(prog, "compat_matrix_mod_pass1_tree", &err);
     try cl_check(err, "create k1");

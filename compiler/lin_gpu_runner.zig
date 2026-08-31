@@ -110,7 +110,7 @@ pub fn runGpuVerificationSuite(
         if (err != cl.CL_SUCCESS) return error.OpenCLBuildFailed;
         defer _ = cl.clReleaseProgram(prog);
 
-        err = cl.clBuildProgram(prog, 1, &dev, "-cl-std=CL2.0", null, null);
+        err = cl.clBuildProgram(prog, 1, &dev, null, null, null);
         if (err != cl.CL_SUCCESS) {
             var log_size: usize = 0;
             _ = cl.clGetProgramBuildInfo(prog, dev, cl.CL_PROGRAM_BUILD_LOG, 0, null, &log_size);
