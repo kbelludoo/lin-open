@@ -1,0 +1,37 @@
+@LIN:L1c:0.2
+@GSM_A51_ATTACK{version=1.0 scope=cellular_encryption_break target=gsm_a51_keystream}
+
+!majority_clock_rule(b1: int, b2: int, b3: int) -> int {
+  // Regra de maioria para o avanco de clock dos 3 LFSRs do GSM
+  maj = (b1 & b2) | (b1 & b3) | (b2 & b3);
+  ^maj & 1;
+}
+
+!step_lfsr_r1(r: int) -> int {
+  // Polinomio de retroalimentacao R1 (19 bits): x^19 + x^18 + x^17 + x^14 + 1
+  fb = (_lia_shr(r, 18) ^ _lia_shr(r, 17) ^ _lia_shr(r, 16) ^ _lia_shr(r, 13)) & 1;
+  next_r = (_lia_shl(r, 1) & 524287) | fb;
+  ^next_r;
+}
+
+!step_lfsr_r2(r: int) -> int {
+  // Polinomio de retroalimentacao R2 (22 bits): x^22 + x^21 + 1
+  fb = (_lia_shr(r, 21) ^ _lia_shr(r, 20)) & 1;
+  next_r = (_lia_shl(r, 1) & 4194303) | fb;
+  ^next_r;
+}
+
+!step_lfsr_r3(r: int) -> int {
+  // Polinomio de retroalimentacao R3 (23 bits): x^23 + x^22 + x^21 + x^8 + 1
+  fb = (_lia_shr(r, 22) ^ _lia_shr(r, 21) ^ _lia_shr(r, 20) ^ _lia_shr(r, 7)) & 1;
+  next_r = (_lia_shl(r, 1) & 8388607) | fb;
+  ^next_r;
+}
+
+!generate_a51_bit(r1: int, r2: int, r3: int) -> int {
+  // Bit de saida e o XOR dos bits mais significativos dos 3 registradores
+  bit = (_lia_shr(r1, 18) ^ _lia_shr(r2, 21) ^ _lia_shr(r3, 22)) & 1;
+  ^bit;
+}
+
+=ex{majority_clock_rule, step_lfsr_r1, step_lfsr_r2, step_lfsr_r3, generate_a51_bit}
