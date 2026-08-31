@@ -136,8 +136,15 @@
     ^0;
 }
 
-// Exportáveis (esperado: sq_demo -> 64, fact_demo -> 24)
+// Exportáveis (esperado: sq_demo -> 64, fact_demo -> 24).
+// O self-test retorna uma máscara estável: bit 0 = quadrado, bit 1 = fatorial.
 !sq_demo(): int { ^vm_run(0, 7, 15); }
 !fact_demo(): int { ^vm_run(1, 4, 0); }
+!linvm_selftest(): int {
+    mask = 0;
+    ?(sq_demo() == 64) { mask = mask + 1 };
+    ?(fact_demo() == 24) { mask = mask + 2 };
+    ^mask;
+}
 
-=ex{soma_quadrado_com_offset, fatorial, vm_run, sq_demo, fact_demo}
+=ex{soma_quadrado_com_offset, fatorial, vm_run, sq_demo, fact_demo, linvm_selftest}
