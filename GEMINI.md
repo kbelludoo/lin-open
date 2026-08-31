@@ -5,7 +5,7 @@
 .a{code=.lin rules=.rulel Stage0_Zig=minimal_rocm_opencl_runtime_only}
 .g{fn="!name(param: int) -> int { ... }" locals="untyped_only (x = 0;)" branch="?(cond) { ... }" return="^expr;" export="=ex{fn1, fn2}"}
 .p{
-  compiler_0="src/lin.zig"
+  compiler_0="compiler/lin.zig"
   transpiler="src/zig_to_lin_transpiler.lin"
   c_transpiler="src/lin_from_c.lin"
   js_transpiler="src/lin_from_js.lin"
@@ -18,8 +18,8 @@
   compat_test="test_lin_selfhost_compat_001.zig"
 }
 .u{
-  verify_syntax="zig run -I/opt/rocm/include -lc -L/opt/rocm/lib -lOpenCL src/lin.zig -- verify <file.lin>"
-  compile_run="zig run -I/opt/rocm/include -lc -L/opt/rocm/lib -lOpenCL src/lin.zig"
+  verify_syntax="zig run -I/opt/rocm/include -lc -L/opt/rocm/lib -lOpenCL compiler/lin.zig -- verify <file.lin>"
+  compile_run="zig run -I/opt/rocm/include -lc -L/opt/rocm/lib -lOpenCL compiler/lin.zig"
   run_suite="zig run -I/opt/rocm/include -lc -L/opt/rocm/lib -lOpenCL test_lin_full_self_hosted_suite.zig"
   run_compat="zig run -I/opt/rocm/include -lc -L/opt/rocm/lib -lOpenCL test_lin_selfhost_compat_001.zig"
 }

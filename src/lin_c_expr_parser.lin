@@ -1,0 +1,71 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=c_expr_parser_helpers_v100
+~G{?=if #=for ^=ret :else}
+
+// ============================================================================
+// LIN MIRROR HELPERS (LIMITAÇÕES CONHECIDAS E CONTRATO EXPLÍCITO)
+//
+// NOTA DE TRANSPARÊNCIA ARQUITETURAL:
+//   1. Este arquivo NÃO é o parser completo. O parser real reside em
+//      Stage-0 (src/lin.zig) executado via 'lin c-expr-test'.
+//   2. eval_flat_ast_node é um ALU escalar de 1 nó. Não percorre árvore recursiva
+//      no dialecto L1c:0.2.
+//   3. DIV (tag 23): Retorna sentinel de erro explícito (-1) pois o LinVM
+//      ainda não possui instrução de divisão não-linear nativa.
+// ============================================================================
+
+!eval_flat_ast_node(tag: int, left_val: int, right_val: int, lit_val: int) -> int {
+    res = 0;
+    // 10: LITERAL
+    ?(tag == 10) {
+        res = lit_val;
+    }
+    // 20: ADD (+)
+    ?(tag == 20) {
+        res = left_val + right_val;
+    }
+    // 21: SUB (-)
+    ?(tag == 21) {
+        res = left_val - right_val;
+    }
+    // 22: MUL (*)
+    ?(tag == 22) {
+        res = left_val * right_val;
+    }
+    // 23: DIV (/) - Não suportado no LinVM L1c escalar; retorna erro formal -1
+    ?(tag == 23) {
+        res = 0 - 1;
+    }
+    ^res;
+}
+
+!get_operator_precedence(char_ascii: int) -> int {
+    prec = 0;
+    // + (43) ou - (45) -> Precedência 1
+    ?(char_ascii == 43) {
+        prec = 1;
+    }
+    ?(char_ascii == 45) {
+        prec = 1;
+    }
+    // * (42) ou / (47) -> Precedência 2
+    ?(char_ascii == 42) {
+        prec = 2;
+    }
+    ?(char_ascii == 47) {
+        prec = 2;
+    }
+    ^prec;
+}
+
+!verify_ast_tree_bounds(node_count: int, max_capacity: int) -> int {
+    valid = 0;
+    ?(node_count > 0) {
+        ?(node_count <= max_capacity) {
+            valid = 1;
+        }
+    }
+    ^valid;
+}
+
+=ex{eval_flat_ast_node, get_operator_precedence, verify_ast_tree_bounds}

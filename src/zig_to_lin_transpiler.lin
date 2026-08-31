@@ -1,0 +1,42 @@
+@LIN:L1c:0.2
+^schema_once ^lossy=false ^ops=zig_transpiler
+~G{?=if #=for ^=ret :else}
+
+!transpile_zig_binary_op(op_code, left, right) {
+    res = 0;
+    ?(op_code == 1) { // ADD (+% or +)
+        res = left + right;
+    } : {
+        ?(op_code == 2) { // SUB (-% or -)
+            res = left - right;
+        } : {
+            ?(op_code == 3) { // MUL (*% or *)
+                res = left * right;
+            } : {
+                ?(op_code == 4) { // XOR (^)
+                    res = left ^ right;
+                } : {
+                    res = left + right;
+                }
+            }
+        }
+    }
+    ^res;
+}
+
+!transpile_zig_condition(cond_val, true_branch_val, false_branch_val) {
+    res = 0;
+    ?(cond_val > 0) {
+        res = true_branch_val;
+    } : {
+        res = false_branch_val;
+    }
+    ^res;
+}
+
+!transpile_zig_function_signature(fn_id, param_count, returns_val) {
+    sig_hash = (fn_id * 65537) + (param_count * 257) + returns_val;
+    ^sig_hash;
+}
+
+=ex{transpile_zig_binary_op, transpile_zig_condition, transpile_zig_function_signature}

@@ -9,13 +9,13 @@
 //! Status Target: PASS_FULL_LEGACY_COMPATIBILITY
 
 const std = @import("std");
-const ir = @import("src/lin_gpu_ir.zig");
-const lowerer = @import("src/lin_mir_to_gpu_ir.zig");
-const emitter = @import("src/lin_gpu_ir_to_opencl.zig");
-const oracle = @import("src/lin_gpu_execution_oracle.zig");
-const planner = @import("src/lin_workload_planner.zig");
-const verifier = @import("src/lin_heterogeneous_verifier.zig");
-const obs = @import("src/lin_physical_observer.zig");
+const ir = @import("compiler/lin_gpu_ir.zig");
+const lowerer = @import("compiler/lin_mir_to_gpu_ir.zig");
+const emitter = @import("compiler/lin_gpu_ir_to_opencl.zig");
+const oracle = @import("compiler/lin_gpu_execution_oracle.zig");
+const planner = @import("compiler/lin_workload_planner.zig");
+const verifier = @import("compiler/lin_heterogeneous_verifier.zig");
+const obs = @import("compiler/lin_physical_observer.zig");
 
 const GpuModule = ir.GpuModule;
 const MirToGpuIrLowerer = lowerer.MirToGpuIrLowerer;

@@ -7,7 +7,7 @@ ROCM_LIB := $(shell [ -d /opt/rocm/lib ] && echo "-L/opt/rocm/lib" || echo "")
 
 build:
 	@mkdir -p bin
-	zig build-exe src/lin.zig -O ReleaseFast -I/usr/include -L/usr/lib $(ROCM_INC) $(ROCM_LIB) -lOpenCL --library c -femit-bin=bin/lin_native
+	zig build-exe compiler/lin.zig -O ReleaseFast -I/usr/include -L/usr/lib $(ROCM_INC) $(ROCM_LIB) -lOpenCL --library c -femit-bin=bin/lin_native
 
 test: build
 	./bin/lin_native test
