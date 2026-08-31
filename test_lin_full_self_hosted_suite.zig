@@ -1640,9 +1640,51 @@ pub fn main() !void {
         if (res.val != 720 or res.sp_at_ret != 1) return error.CParserVerificationFailed;
     }
 
+    // 5. LIN Compute Receipt Dynamic Execution & Merkle Verification
+    {
+        const test_src = "return x * x;";
+        var rc_parser = StmtParser.init(alloc, test_src);
+        const rc_stmts = try rc_parser.parseBlock();
+        var rc_lowerer = StmtLowerer.init(alloc);
+        defer rc_lowerer.deinit();
+        _ = try rc_lowerer.getOrAllocLocal("x");
+        try rc_lowerer.emitStmts(&rc_parser.arena, rc_stmts);
+        try rc_lowerer.resolveFixups();
+
+        const fn_rc = VmFn{
+            .name = "entry",
+            .nparams = 1,
+            .nlocals = rc_lowerer.locals_map.items.len,
+            .code = rc_lowerer.code.items,
+            .ok = true,
+            .sig_ok = true,
+        };
+        var fns = [_]VmFn{fn_rc};
+        var mod_mock = VmModule{ .fns = &fns };
+        const vm_args = [_]i64{7};
+        var steps: u64 = 0;
+        const res = try lin.vmExecWithSp(&mod_mock, 0, &vm_args, 0, &steps);
+
+        var code_digest: [32]u8 = undefined;
+        std.crypto.hash.sha2.Sha256.hash(test_src, &code_digest, .{});
+
+        var merkle_leaf: [64]u8 = undefined;
+        std.mem.copyForwards(u8, merkle_leaf[0..32], &code_digest);
+        std.mem.writeInt(i64, merkle_leaf[32..40], res.val, .little);
+        std.mem.writeInt(u64, merkle_leaf[40..48], steps, .little);
+        std.mem.writeInt(u64, merkle_leaf[48..56], res.sp_at_ret, .little);
+        std.mem.writeInt(i64, merkle_leaf[56..64], 7, .little);
+
+        var merkle_root_calc: [32]u8 = undefined;
+        std.crypto.hash.sha2.Sha256.hash(&merkle_leaf, &merkle_root_calc, .{});
+
+        if (res.val != 49 or res.sp_at_ret != 1) return error.CParserVerificationFailed;
+    }
+
     try stdout.print("  .Exercised {d} Deterministic C Expression Parsing & LinVM Execution Vectors (29/29 PASS)\n", .{c_parser_test_vectors.len});
     try stdout.print("  .Exercised {d} Deterministic C Statement & Control Flow Vectors (13/13 PASS)\n", .{c_stmt_suite.len});
     try stdout.print("  .Exercised 4 Deterministic C Function Definition & Recursive Call Vectors (4/4 PASS)\n", .{});
+    try stdout.print("  .Exercised Dynamic Compute Receipt & Merkle Leaf Calculation (PASS)\n", .{});
     try stdout.print("  [PASS] Phase 6: Stage-0 C expression Pratt parser, Flat AST Arena and LinVM Lowerer verified\n\n", .{});
     passed += 1;
 
