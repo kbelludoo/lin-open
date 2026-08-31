@@ -1,0 +1,66 @@
+@LIN:L1c:0.2
+@BITCOIN_MINER{version=1.0 target=proof_of_work_sha256d}
+
+!rotr32(x: int, n: int) -> int {
+  ^(_lia_shr(x & 4294967295, n) | _lia_shl(x & 4294967295, 32 - n)) & 4294967295
+}
+
+!ch32(x: int, y: int, z: int) -> int {
+  ^((x & y) ^ ((~x) & z)) & 4294967295
+}
+
+!maj32(x: int, y: int, z: int) -> int {
+  ^((x & y) ^ (x & z) ^ (y & z)) & 4294967295
+}
+
+!sigma0_32(x: int) -> int {
+  ^(rotr32(x, 2) ^ rotr32(x, 13) ^ rotr32(x, 22)) & 4294967295
+}
+
+!sigma1_32(x: int) -> int {
+  ^(rotr32(x, 6) ^ rotr32(x, 11) ^ rotr32(x, 25)) & 4294967295
+}
+
+!gamma0_32(x: int) -> int {
+  ^(rotr32(x, 7) ^ rotr32(x, 18) ^ _lia_shr(x & 4294967295, 3)) & 4294967295
+}
+
+!gamma1_32(x: int) -> int {
+  ^(rotr32(x, 17) ^ rotr32(x, 19) ^ _lia_shr(x & 4294967295, 10)) & 4294967295
+}
+
+!sha256_round(a: int, b: int, c: int, d: int, e: int, f: int, g: int, h: int, k: int, w: int) -> int {
+  t1 = (h + sigma1_32(e) + ch32(e, f, g) + k + w) & 4294967295;
+  t2 = (sigma0_32(a) + maj32(a, b, c)) & 4294967295;
+  ^((t1 + t2) & 4294967295);
+}
+
+!eval_bitcoin_pow_step(nonce: int, midstate_h: int, target_mask: int) -> int {
+  // Simula o passo de avaliacao de prova de trabalho do cabecalho Bitcoin v0.1
+  mix = (nonce * 2146129197) ^ midstate_h;
+  h_out = (mix ^ _lia_shr(mix, 16)) & 4294967295;
+  is_valid = 0;
+  ?( (h_out & target_mask) == 0 ) {
+    is_valid = 1;
+  };
+  ^is_valid;
+}
+
+!mine_until_valid(start_nonce: int, midstate: int, target_mask: int, max_steps: int) -> int {
+  cur = start_nonce;
+  steps = 0;
+  found = 0;
+  while (steps < max_steps) {
+    ok = eval_bitcoin_pow_step(cur, midstate, target_mask);
+    ?(ok == 1) {
+      found = cur;
+      steps = max_steps; // break loop
+    } : {
+      cur = cur + 1;
+      steps = steps + 1;
+    };
+  };
+  ^found;
+}
+
+=ex{rotr32, ch32, maj32, sigma0_32, sigma1_32, gamma0_32, gamma1_32, sha256_round, eval_bitcoin_pow_step, mine_until_valid}

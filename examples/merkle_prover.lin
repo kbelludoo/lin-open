@@ -1,0 +1,39 @@
+@LIN:L1c:0.2
+@MERKLE_PROVER{version=1.0 target=cryptographic_inclusion_proof}
+
+!hash_pair(left: int, right: int) -> int {
+  v = (left * 2146129197) ^ (right * 2221712011);
+  v = (v ^ _lia_shr(v, 16)) * 16843009;
+  ^(v ^ _lia_shr(v, 15)) & 4294967295;
+}
+
+!verify_inclusion_3(leaf: int, s0: int, s1: int, s2: int, path_bits: int, expected_root: int) -> int {
+  curr = leaf;
+
+  // Passo 1: Nivel 0
+  ?( (path_bits & 1) == 0 ) {
+    curr = hash_pair(curr, s0);
+  } : {
+    curr = hash_pair(s0, curr);
+  };
+
+  // Passo 2: Nivel 1
+  ?( (_lia_shr(path_bits, 1) & 1) == 0 ) {
+    curr = hash_pair(curr, s1);
+  } : {
+    curr = hash_pair(s1, curr);
+  };
+
+  // Passo 3: Nivel 2
+  ?( (_lia_shr(path_bits, 2) & 1) == 0 ) {
+    curr = hash_pair(curr, s2);
+  } : {
+    curr = hash_pair(s2, curr);
+  };
+
+  is_valid = 0;
+  ?(curr == expected_root) { is_valid = 1; };
+  ^is_valid;
+}
+
+=ex{hash_pair, verify_inclusion_3}

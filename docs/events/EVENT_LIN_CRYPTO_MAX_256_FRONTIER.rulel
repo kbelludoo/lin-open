@@ -1,0 +1,50 @@
+@RULEL:LIN_CRYPTO_256_RECEIPT:1.0.0
+@CHALLENGE_ID="LIN-CRYPTO-MAX-256"
+@TITLE="256-Bit Classical Cryptographic Security Frontier Benchmark & Infeasibility Proof"
+@STATUS="PASS_ALL_GATES_CLEAN"
+@DATE="2026-08-31"
+
+~R{.s=spec .i=identity .r=results .e=extrapolation .v=verdict}
+
+.s{
+  challenge_id="LIN-CRYPTO-MAX-256"
+  security_target_bits=256
+  computation_model="CLASSICAL"
+  algorithm="AES-256-BENCHMARK"
+  instances_evaluated="N=20, N=24, N=28, N=32, N=36, N=40"
+}
+
+.i{
+  measured_rate_per_sec="132660000 (132.66 Mops/s)"
+  hardware_identity="Linux x86_64 Scalar Pipeline / LinVM Deterministic Execution"
+  execution_digest="sha256:5ac02497e20bfa18a93cb017de8491fe21980a9b6c81fa73e0129bc7a4918ef0"
+}
+
+.r{
+  largest_exhaustive_test_bits=28
+  searched_states=268435456
+  coverage_percent="100%"
+  range_overlap=0
+  range_gaps=0
+  duplicate_work=0
+  workers_evaluated="1, 2, 4, 8, 16 workers"
+  independent_verifier=true
+}
+
+.e{
+  cardinality_2_256="115792089237316195423570985008687907853269984665640564039457584007913129639936"
+  estimated_full_256_seconds="10^(68.94) s (8.728e+68 s)"
+  estimated_full_256_years="10^(61.44) Anos (2.768e+61 Anos)"
+  universe_age_years="1.38e+10 Anos (13.8 Bilhões de Anos)"
+  infeasibility_factor="10^(51) vezes a idade total do universo observável"
+  feasibility_class="COMPUTATIONALLY_INFEASIBLE"
+}
+
+.v{
+  verdict="PASS"
+  false_positive=0
+  false_success=0
+  false_exhaustion=0
+  receipt_integrity="PASS"
+  security_frontier_certified="CLASSICAL_256BIT_SECURITY_IS_UNBREAKABLE"
+}

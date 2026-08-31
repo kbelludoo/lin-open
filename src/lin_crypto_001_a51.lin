@@ -1,0 +1,55 @@
+@LIN:L1c:0.2
+@LIN_CRYPTO_001{challenge=A51_FULL_STATE_RECOVERY spec="GSM 03.20 / ETSI TS 100 920"}
+
+!majority(b1: int, b2: int, b3: int) -> int {
+  maj = (b1 & b2) | (b1 & b3) | (b2 & b3);
+  ^maj & 1;
+}
+
+!step_r1(r: int) -> int {
+  // Feedback polynomial R1 (19-bit): x^19 + x^18 + x^17 + x^14 + 1
+  fb = (_lia_shr(r, 18) ^ _lia_shr(r, 17) ^ _lia_shr(r, 16) ^ _lia_shr(r, 13)) & 1;
+  ^((_lia_shl(r, 1) & 524287) | fb);
+}
+
+!step_r2(r: int) -> int {
+  // Feedback polynomial R2 (22-bit): x^22 + x^21 + 1
+  fb = (_lia_shr(r, 21) ^ _lia_shr(r, 20)) & 1;
+  ^((_lia_shl(r, 1) & 4194303) | fb);
+}
+
+!step_r3(r: int) -> int {
+  // Feedback polynomial R3 (23-bit): x^23 + x^22 + x^21 + x^8 + 1
+  fb = (_lia_shr(r, 22) ^ _lia_shr(r, 21) ^ _lia_shr(r, 20) ^ _lia_shr(r, 7)) & 1;
+  ^((_lia_shl(r, 1) & 8388607) | fb);
+}
+
+!a51_clock_bit(r1: int, r2: int, r3: int) -> int {
+  b1 = _lia_shr(r1, 8) & 1;
+  b2 = _lia_shr(r2, 10) & 1;
+  b3 = _lia_shr(r3, 10) & 1;
+  maj = majority(b1, b2, b3);
+
+  next_r1 = r1;
+  next_r2 = r2;
+  next_r3 = r3;
+
+  ?(b1 == maj) { next_r1 = step_r1(r1); };
+  ?(b2 == maj) { next_r2 = step_r2(r2); };
+  ?(b3 == maj) { next_r3 = step_r3(r3); };
+
+  out_bit = (_lia_shr(next_r1, 18) ^ _lia_shr(next_r2, 21) ^ _lia_shr(next_r3, 22)) & 1;
+  ^out_bit;
+}
+
+!verify_128bit_confirmation(search_matches: int, val_matches: int) -> int {
+  is_pass = 0;
+  ?(search_matches == 64) {
+    ?(val_matches == 64) {
+      is_pass = 1;
+    };
+  };
+  ^is_pass;
+}
+
+=ex{majority, step_r1, step_r2, step_r3, a51_clock_bit, verify_128bit_confirmation}
