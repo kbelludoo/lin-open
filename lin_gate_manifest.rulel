@@ -1,0 +1,49 @@
+@RULEL:LIN_GATE_MANIFEST:1.0.0
+~R{.s=subject .f=tracked_files .v=verdict}
+.s{
+  scope="compiler,transpile/c/lin_c,transpile/c/tool,transpile/c/test"
+  canonicalization="LIN_GATE_MANIFEST_v1"
+  merkle_root="sha256:672b5d11af5672b306f9e7af918d445cc326596053ec7f9178080de17efa8733"
+  attested_by="user"
+  audit_timestamp_unix=1788158291
+}
+.f{
+  .f{ path="compiler/lin.zig" bytes=819982 sha256="sha256:5a25cfffb49628b84bb71dd7cecd2b0d4cb7642f4b04f9e49b1b2b64ee39950e" }
+  .f{ path="compiler/lin_attestation_guard.zig" bytes=17161 sha256="sha256:cc9039bcc5be1639a4144d9a08d3b053d10921e24a725fba83ad97cc657b407b" }
+  .f{ path="compiler/lin_gpu_execution_oracle.zig" bytes=2631 sha256="sha256:35ebb4380e924b94b1d8adf33b539a4ff6892e0a3127c064db1fcb05b250fb60" }
+  .f{ path="compiler/lin_gpu_ir.zig" bytes=4395 sha256="sha256:a3616cc30eb5805f57cdab244dd138f0bc8af85fb4e617447ae5ab1420a3c578" }
+  .f{ path="compiler/lin_gpu_ir_to_opencl.zig" bytes=8059 sha256="sha256:9cd5e98f20eacebe198a918e0d88c11bb5d8d97ca63c21cd7ca8672799d6b24a" }
+  .f{ path="compiler/lin_gpu_runner.zig" bytes=10554 sha256="sha256:71818ec87661cf6dfca02d948068d23fbfdb660f642353de40755421c432e21e" }
+  .f{ path="compiler/lin_heterogeneous_verifier.zig" bytes=3617 sha256="sha256:dda0e5efecee3787df864201ca1be9a55a7af0b0f4c0e097078a00882ae34577" }
+  .f{ path="compiler/lin_jit.zig" bytes=2662 sha256="sha256:fe9b482ea3e92f47d48edae914c3f9c8354ef8bedb7f6115c963bcc063e85b9a" }
+  .f{ path="compiler/lin_mir_engine.zig" bytes=12529 sha256="sha256:06a6b034ae738e3ce683fc632b9e73701cfa8cf4b7b82ef5347f2bc1a40ca865" }
+  .f{ path="compiler/lin_mir_gpu_lowerer.zig" bytes=7602 sha256="sha256:48f7708179566051f5516ff6c9b9c95b3798fa60d8b47f76ecaff5e658048e51" }
+  .f{ path="compiler/lin_mir_to_gpu_ir.zig" bytes=11270 sha256="sha256:801e8727a776edc0409e7a8638a2a799afd5a3ad1c86e387a5af43d82d52d39c" }
+  .f{ path="compiler/lin_physical_observer.zig" bytes=6424 sha256="sha256:f08a5431629afb95ca746b70758145c5dd6c2e60a4e95c1812fb998a65ba53af" }
+  .f{ path="compiler/lin_reduction_analyzer.zig" bytes=13578 sha256="sha256:8381dad467f8ad9a7035624a0968dd45bc4c7ab6f088f7f3f5d1720c00da6c6d" }
+  .f{ path="compiler/lin_vm_to_mir.zig" bytes=9729 sha256="sha256:035bc6cbdd15d827768f232fbf7b38941f2d4b1d2035d6c9d796008ef52354f2" }
+  .f{ path="compiler/lin_workload_planner.zig" bytes=15650 sha256="sha256:71cbb8ab9f4887e64ec78f5fd29480976c32d232b6ed1fbfee0bfd227bf8be17" }
+  .f{ path="transpile/c/lin_c/lin_ast.c" bytes=5276 sha256="sha256:27c156179b49d1906882de63a5c69217cb345433ec5476bcaff24df9a7bf995a" }
+  .f{ path="transpile/c/lin_c/lin_ast.h" bytes=1967 sha256="sha256:7ac2c613f4c5c08e0b6ae75ab8cc8c568443b843b0762bde42137b36911ba92e" }
+  .f{ path="transpile/c/lin_c/lin_common.c" bytes=1358 sha256="sha256:2f82bfd9cb7ec9a6baa38ffe39274e66d4921af066638f2fd2c8d1b25553aeda" }
+  .f{ path="transpile/c/lin_c/lin_common.h" bytes=4368 sha256="sha256:678ac066339fb73f6c92d9433cd00cb75e7957463acec4f040ea6dc549568575" }
+  .f{ path="transpile/c/lin_c/lin_parse.c" bytes=6113 sha256="sha256:d20f0d451b27f437f3a8b20aec18932f467dd64748ef98c3613b0330e2dc8702" }
+  .f{ path="transpile/c/lin_c/lin_parse.h" bytes=869 sha256="sha256:cbe2309f74e6f1ba126117d286e7c9cfe5180c671ff00093525a189978940cd2" }
+  .f{ path="transpile/c/lin_c/lin_sha256.c" bytes=4546 sha256="sha256:45d92051d4b8073b7258c7b8a6ce9c903121a00f8bed5352d81804bda83105dd" }
+  .f{ path="transpile/c/lin_c/lin_sha256.h" bytes=1099 sha256="sha256:1eab995374c7db3f33a3acc33ecd0546544d55682b1139d472df8aef808f5b6c" }
+  .f{ path="transpile/c/lin_c/lin_token.c" bytes=3897 sha256="sha256:b2a6096c472c57777787136c0f6adc3249cffdb7ca2373bd4a3830caffe21a41" }
+  .f{ path="transpile/c/lin_c/lin_token.h" bytes=1531 sha256="sha256:50bd1bc8457945aaa2312e951aa38fd8713a41d5d868b75eed8a517fccdcdacf" }
+  .f{ path="transpile/c/lin_c/lin_vm.c" bytes=13215 sha256="sha256:3716e8fb44d4799f99862f8c90592ea42ddd68c362618d159eea4f6c64968586" }
+  .f{ path="transpile/c/lin_c/lin_vm.h" bytes=2449 sha256="sha256:30b76b578de129f8792c2c587957c65ce704ae4172c18fb1a754960fb09682ea" }
+  .f{ path="transpile/c/test/test_c_expr.c" bytes=8234 sha256="sha256:16cde2cf48601b5da6b7ee451f6e825dffb610455c2b0097cb8d15a66e1f1b3c" }
+  .f{ path="transpile/c/test/test_overflow_edges.c" bytes=4711 sha256="sha256:6f6bba2a66ca990cfdc8ed9ec893f43cdabce7eae9c46c236bd3f22dad3688e4" }
+  .f{ path="transpile/c/test/test_sha256.c" bytes=2878 sha256="sha256:b55872456ee62f5eff3e6e12a4292432d775d310fd68e8a2fa82549114cea767" }
+  .f{ path="transpile/c/tool/lin_c_receipt.c" bytes=7353 sha256="sha256:c1d5fd0bdf03bd51449d7da3eca8bcc5344ad3aa577ec4b45dffd058ceba6689" }
+}
+.v{
+  files=31
+  merkle_levels=6
+  merkle_root="sha256:672b5d11af5672b306f9e7af918d445cc326596053ec7f9178080de17efa8733"
+  status="GATE_ATTESTED"
+  evidence_status="COMPUTED"
+}

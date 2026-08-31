@@ -7,6 +7,9 @@ pub const mir_engine = @import("lin_mir_engine.zig");
 pub const gpu_lowerer = @import("lin_mir_gpu_lowerer.zig");
 pub const vm_to_mir = @import("lin_vm_to_mir.zig");
 pub const gpu_runner = @import("lin_gpu_runner.zig");
+/// Fail-closed gate for attestation sub-commands that would publish verdicts
+/// without computing them. See SECURITY_AUDIT.md section 7.
+pub const attestation_guard = @import("lin_attestation_guard.zig");
 pub var LIA_ALLOC: std.mem.Allocator = undefined;
 
 const SINGLE_BYTE_TABLE: [256][1]u8 = blk: {
@@ -7180,7 +7183,232 @@ fn lin_lint(src: []const u8) []const u8 {
     return cks_lint(src);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Transparency-log witness roster — real Ed25519 M-of-N quorum verification.
+//
+// Replaces the previous hardcoded witness table (pubkeys 1111…/2222…/3333…) whose
+// signatures were printed as "SIGNATURE VALID" without ever being checked. The
+// roster now comes from a file, the signed-tree-head digest is recomputed from
+// that file's log fields, and every co-signature is verified with Ed25519.
+// ─────────────────────────────────────────────────────────────────────────────
+pub const NotaryRoster = struct {
+    pub const Witness = struct {
+        id: []const u8,
+        pubkey_hex: []const u8,
+        signature_hex: []const u8,
+    };
+
+    pub const LogHead = struct {
+        log_id: []const u8,
+        tree_size: u64,
+        epoch: u64,
+        state_root: []const u8,
+        prev_hash: []const u8,
+        timestamp: []const u8,
+        quorum_threshold: usize,
+    };
+
+    pub const Parsed = struct {
+        head: LogHead,
+        witnesses: []Witness,
+        sth_digest: [32]u8,
+        sth_digest_hex: [64]u8,
+        /// The exact byte string each witness signature is verified over.
+        canonical_message: []const u8,
+    };
+
+    pub const VerifyResult = struct {
+        valid_signatures: usize,
+        total_witnesses: usize,
+        quorum_threshold: usize,
+        quorum_ok: bool,
+        per_witness: []bool,
+    };
+
+    fn findQuotedField(data: []const u8, key: []const u8) ?[]const u8 {
+        var buf: [64]u8 = undefined;
+        const needle = std.fmt.bufPrint(&buf, "{s}=\"", .{key}) catch return null;
+        var pos: usize = 0;
+        while (std.mem.indexOfPos(u8, data, pos, needle)) |start| {
+            pos = start + needle.len;
+            // Word-boundary check: `id="` must not match inside `log_id="`.
+            if (start > 0) {
+                const prev = data[start - 1];
+                const prev_is_ident = (prev >= 'a' and prev <= 'z') or (prev >= 'A' and prev <= 'Z') or
+                    (prev >= '0' and prev <= '9') or prev == '_';
+                if (prev_is_ident) continue;
+            }
+            const val_start = start + needle.len;
+            const end = std.mem.indexOfScalarPos(u8, data, val_start, '"') orelse return null;
+            return data[val_start..end];
+        }
+        return null;
+    }
+
+    fn findIntField(data: []const u8, key: []const u8) ?u64 {
+        var buf: [64]u8 = undefined;
+        const needle = std.fmt.bufPrint(&buf, "{s}=", .{key}) catch return null;
+        var pos: usize = 0;
+        while (std.mem.indexOfPos(u8, data, pos, needle)) |start| {
+            pos = start + needle.len;
+            if (start > 0) {
+                const prev = data[start - 1];
+                const prev_is_ident = (prev >= 'a' and prev <= 'z') or (prev >= 'A' and prev <= 'Z') or
+                    (prev >= '0' and prev <= '9') or prev == '_';
+                if (prev_is_ident) continue;
+            }
+            const val_start = start + needle.len;
+            var end = val_start;
+            while (end < data.len and data[end] >= '0' and data[end] <= '9') : (end += 1) {}
+            if (end == val_start) return null;
+            return std.fmt.parseInt(u64, data[val_start..end], 10) catch null;
+        }
+        return null;
+    }
+
+    /// SHA256("transparency:sth:v1:" || log_id || ":" || tree_size || ":" || epoch
+    ///        || ":" || state_root || ":" || prev_hash || ":" || timestamp)
+    pub fn computeSthDigest(head: LogHead) [32]u8 {
+        var h = std.crypto.hash.sha2.Sha256.init(.{});
+        h.update("transparency:sth:v1:");
+        h.update(head.log_id);
+        h.update(":");
+        var size_buf: [24]u8 = undefined;
+        h.update(std.fmt.bufPrint(&size_buf, "{d}", .{head.tree_size}) catch "");
+        h.update(":");
+        var epoch_buf: [24]u8 = undefined;
+        h.update(std.fmt.bufPrint(&epoch_buf, "{d}", .{head.epoch}) catch "");
+        h.update(":");
+        h.update(head.state_root);
+        h.update(":");
+        h.update(head.prev_hash);
+        h.update(":");
+        h.update(head.timestamp);
+        var digest: [32]u8 = undefined;
+        h.final(&digest);
+        return digest;
+    }
+
+    pub fn parse(alloc: std.mem.Allocator, bytes: []const u8) !Parsed {
+        if (!std.mem.startsWith(u8, bytes, "@RULEL:LIN_WITNESS_ROSTER:1.0.0")) {
+            return error.NotARosterDocument;
+        }
+        const head = LogHead{
+            .log_id = findQuotedField(bytes, "log_id") orelse return error.MissingLogId,
+            .tree_size = findIntField(bytes, "tree_size") orelse return error.MissingTreeSize,
+            .epoch = findIntField(bytes, "epoch") orelse return error.MissingEpoch,
+            .state_root = findQuotedField(bytes, "state_root") orelse return error.MissingStateRoot,
+            .prev_hash = findQuotedField(bytes, "prev_hash") orelse return error.MissingPrevHash,
+            .timestamp = findQuotedField(bytes, "timestamp") orelse return error.MissingTimestamp,
+            .quorum_threshold = findIntField(bytes, "quorum_threshold") orelse return error.MissingQuorumThreshold,
+        };
+
+        var witnesses = std.ArrayList(Witness).init(alloc);
+        var it = std.mem.splitScalar(u8, bytes, '\n');
+        while (it.next()) |raw_line| {
+            const line = std.mem.trim(u8, raw_line, " \t\r");
+            if (!std.mem.startsWith(u8, line, ".witness_")) continue;
+            const id = findQuotedField(line, "id") orelse return error.MissingWitnessId;
+            const pk = findQuotedField(line, "pubkey_hex") orelse return error.MissingWitnessPubkey;
+            const sg = findQuotedField(line, "signature_hex") orelse return error.MissingWitnessSignature;
+            try witnesses.append(.{ .id = id, .pubkey_hex = pk, .signature_hex = sg });
+        }
+        if (witnesses.items.len == 0) return error.NoWitnessesInRoster;
+
+        const sth = computeSthDigest(head);
+        var sth_hex: [64]u8 = undefined;
+        _ = try std.fmt.bufPrint(&sth_hex, "{s}", .{std.fmt.fmtSliceHexLower(&sth)});
+
+        return .{
+            .head = head,
+            .witnesses = try witnesses.toOwnedSlice(),
+            .sth_digest = sth,
+            .sth_digest_hex = sth_hex,
+            .canonical_message = try std.fmt.allocPrint(alloc, "lin:transparency:sth:v1:{s}", .{sth_hex}),
+        };
+    }
+
+    /// Verifies every co-signature and evaluates the quorum policy.
+    /// Fails closed on structural problems: no witnesses, duplicate witnesses
+    /// (id or key reuse = equivocation risk) and an unsafe threshold (M <= N/2).
+    pub fn verify(alloc: std.mem.Allocator, parsed: Parsed) !VerifyResult {
+        const n = parsed.witnesses.len;
+        if (parsed.head.quorum_threshold == 0) return error.QuorumThresholdZero;
+        if (parsed.head.quorum_threshold > n) return error.QuorumThresholdExceedsRoster;
+        if (parsed.head.quorum_threshold * 2 <= n) return error.QuorumThresholdNotMajority;
+
+        for (parsed.witnesses, 0..) |w, i| {
+            for (parsed.witnesses[i + 1 ..]) |other| {
+                if (std.mem.eql(u8, w.id, other.id)) return error.DuplicateWitnessId;
+                if (std.mem.eql(u8, w.pubkey_hex, other.pubkey_hex)) return error.DuplicateWitnessKey;
+            }
+        }
+
+        var per = try alloc.alloc(bool, n);
+        var valid: usize = 0;
+        for (parsed.witnesses, 0..) |w, i| {
+            per[i] = verifyOne(w, parsed.canonical_message);
+            if (per[i]) valid += 1;
+        }
+        return .{
+            .valid_signatures = valid,
+            .total_witnesses = n,
+            .quorum_threshold = parsed.head.quorum_threshold,
+            .quorum_ok = valid >= parsed.head.quorum_threshold,
+            .per_witness = per,
+        };
+    }
+
+    /// True only when the witness key decodes to a valid Ed25519 point and the
+    /// signature verifies over the canonical STH message.
+    pub fn verifyOne(w: Witness, canonical_message: []const u8) bool {
+        if (w.pubkey_hex.len != 64 or w.signature_hex.len != 128) return false;
+        var pk_raw: [32]u8 = undefined;
+        _ = std.fmt.hexToBytes(&pk_raw, w.pubkey_hex) catch return false;
+        var sig_raw: [64]u8 = undefined;
+        _ = std.fmt.hexToBytes(&sig_raw, w.signature_hex) catch return false;
+        const pk = std.crypto.sign.Ed25519.PublicKey.fromBytes(pk_raw) catch return false;
+        const sig = std.crypto.sign.Ed25519.Signature.fromBytes(sig_raw);
+        sig.verify(canonical_message, pk) catch return false;
+        return true;
+    }
+
+    /// Split-view / equivocation check: the same epoch committed to two different
+    /// state roots is a conflict. Returns true when a conflict is detected.
+    pub fn detectEquivocation(epoch_a: u64, root_a: []const u8, epoch_b: u64, root_b: []const u8) bool {
+        return epoch_a == epoch_b and !std.mem.eql(u8, root_a, root_b);
+    }
+
+    /// Deterministic witness key derivation, used by `lin notary-sign` to mint a
+    /// roster that can actually be verified. NOT a root of trust: anyone with the
+    /// seed prefix can regenerate these keys, so a real deployment must import
+    /// witness public keys published out of band.
+    pub fn deriveKeypair(seed_prefix: []const u8, index: usize) !std.crypto.sign.Ed25519.KeyPair {
+        var h = std.crypto.hash.sha2.Sha256.init(.{});
+        h.update("lin:transparency:witness-key:v1:");
+        h.update(seed_prefix);
+        h.update(":");
+        var idx_buf: [24]u8 = undefined;
+        h.update(try std.fmt.bufPrint(&idx_buf, "{d}", .{index}));
+        var seed: [32]u8 = undefined;
+        h.final(&seed);
+        return std.crypto.sign.Ed25519.KeyPair.create(seed);
+    }
+};
+
 pub fn main() !void {
+    runCli() catch |err| switch (err) {
+        // Raised by the attestation guard when a command would publish a verdict
+        // it never computed. The guard has already printed the diagnosis and
+        // written nothing; exit 3 keeps it distinguishable from a normal failure.
+        error.NotImplemented => std.process.exit(3),
+        else => return err,
+    };
+}
+
+/// CLI entry point. Split out of `main` so `error.NotImplemented` becomes a clean
+/// exit code instead of a Zig error trace.
+fn runCli() !void {
     @setEvalBranchQuota(100000);
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -7194,6 +7422,9 @@ pub fn main() !void {
         return;
     }
     const cmd = args[1];
+    // Fail-closed gate: refuses commands whose published verdicts are not backed
+    // by a computation (see compiler/lin_attestation_guard.zig).
+    _ = try attestation_guard.enforce(cmd, args, stderr);
     if (argEq(cmd, "version") or argEq(cmd, "-v") or argEq(cmd, "--version")) {
         try stdout.print("2.0.0\n", .{});
         return;
@@ -10002,7 +10233,28 @@ pub fn main() !void {
     }
 
     const BundleVerifier = struct {
-        pub fn verify(bytes: []const u8, verbose: bool, airgap_mode: bool) !void {
+        /// Everything `verify` recomputed and checked. Callers quote these values in
+        /// their receipts instead of asserting booleans that nothing computed.
+        pub const Report = struct {
+            /// Git blob OID recomputed from the base64 source embedded in the bundle.
+            blob_oid_hex: [40]u8,
+            /// Kernel entries whose MIR hash, lowering hash, CPU result and 8-leaf
+            /// Merkle root were each recomputed and compared against the ledger.
+            num_kernels: usize,
+            /// Ledger Merkle root recomputed from those kernel entries.
+            ledger_merkle_hex: [64]u8,
+            /// SHA-256 commitment of the deterministic input vector actually replayed.
+            input_commitment_hex: []const u8,
+            oracle_inputs: usize,
+            /// Authority public key taken from the ledger and used for the check below.
+            pubkey_hex: []const u8,
+            /// The exact canonical message the Ed25519 signature was verified over.
+            signed_message: []const u8,
+            /// Always true when `verify` returns: a bad signature returns an error.
+            ed25519_signature_valid: bool,
+        };
+
+        pub fn verify(bytes: []const u8, verbose: bool, airgap_mode: bool) !Report {
             // 1. Extract embedded source Base64
             const b64_marker = "content_b64=\"";
             const b64_start = std.mem.indexOf(u8, bytes, b64_marker) orelse return error.MissingBundleSource;
@@ -10390,6 +10642,17 @@ pub fn main() !void {
                 try out.print("  [7/8] CRYPTO SEAL ........... [PASS] (Ed25519 Authority Digital Seal Verified)\n", .{});
                 try out.print("  [8/8] REPLAY CAPABILITY ..... [PASS] (Mode: {s} | Independent Verification Verified)\n", .{if (airgap_mode) "AIR-GAPPED CRYPTOGRAPHIC REPLAY" else "PHYSICAL SILICON REPLICATION"});
             }
+
+            return .{
+                .blob_oid_hex = blob_oid_hex,
+                .num_kernels = num_kernels,
+                .ledger_merkle_hex = ledger_merkle_hex,
+                .input_commitment_hex = try LIA_ALLOC.dupe(u8, inp_hex),
+                .oracle_inputs = n_elements,
+                .pubkey_hex = pubkey_hex,
+                .signed_message = try LIA_ALLOC.dupe(u8, canonical_msg),
+                .ed25519_signature_valid = true,
+            };
         }
     };
 
@@ -10431,7 +10694,7 @@ pub fn main() !void {
         try stdout.print("Target Audit Bundle:   {s} ({d} B)\n", .{ bundle_path, bundle_bytes.len });
         try stdout.print("Audit Mode:            {s}\n\n", .{if (is_airgap) "AIR-GAPPED CRYPTOGRAPHIC REPLAY (No GPU/Driver Trust Required)" else "PHYSICAL SILICON REPLICATION"});
 
-        try BundleVerifier.verify(bundle_bytes, true, is_airgap);
+        const report = try BundleVerifier.verify(bundle_bytes, true, is_airgap);
 
         // Generate Third-Party Audit Receipt
         if (out_receipt_path) |rp| {
@@ -10443,23 +10706,37 @@ pub fn main() !void {
                 \\~R{{.s=subject .a=audit .v=verdict}}
                 \\.s{{
                 \\  bundle_file="{s}"
-                \\  audit_timestamp="2026-08-30T12:12:00Z"
-                \\  verifier_type="INDEPENDENT_AIRGAPPED_REPLAY_ENGINE"
+                \\  audit_timestamp_unix={d}
+                \\  verifier_type="LIN_BUNDLE_VERIFIER_{s}"
                 \\}}
                 \\.a{{
-                \\  recomputed_mir=true
-                \\  recomputed_lowering=true
-                \\  recomputed_merkle_ledger=true
+                \\  recomputed_git_blob_oid="{s}"
+                \\  recomputed_kernel_count={d}
+                \\  recomputed_ledger_merkle_root="sha256:{s}"
+                \\  input_commitment="{s}"
+                \\  oracle_inputs_replayed={d}
+                \\  ed25519_pubkey="{s}"
+                \\  ed25519_signed_message="{s}"
                 \\  verified_ed25519_seal=true
-                \\  oracle_parity=true
                 \\}}
                 \\.v{{
                 \\  replay_status="INDEPENDENT_REPLAY_PASS"
-                \\  external_audit_status="CAPABILITY_ESTABLISHED_PENDING_EXTERNAL_OPERATOR"
-                \\  zero_trust_passed=true
+                \\  gpu_parity_checked=false
+                \\  evidence_status="COMPUTED"
                 \\}}
                 \\
-            , .{bundle_path});
+            , .{
+                bundle_path,
+                std.time.timestamp(),
+                if (is_airgap) "AIRGAPPED_REPLAY" else "SILICON_REPLICATION",
+                report.blob_oid_hex,
+                report.num_kernels,
+                report.ledger_merkle_hex,
+                report.input_commitment_hex,
+                report.oracle_inputs,
+                report.pubkey_hex,
+                report.signed_message,
+            });
 
             const rf = try std.fs.cwd().createFile(rp, .{});
             defer rf.close();
@@ -10548,19 +10825,44 @@ pub fn main() !void {
         }
 
         try stdout.print("\n================================================================================\n", .{});
-        try stdout.print("=== LIN-ATTEST-008: AIR-GAPPED CLEANROOM VERIFICATION HARNESS               ===\n", .{});
+        try stdout.print("=== LIN-ATTEST-008: CPU-ONLY CLEANROOM REPLAY OF A SIGNED BUNDLE               ===\n", .{});
         try stdout.print("================================================================================\n\n", .{});
         try stdout.print("Auditing Bundle:       {s}\n", .{bundle_path});
         try stdout.print("Cleanroom Receipt:     {s}\n", .{out_receipt_path});
-        try stdout.print("Cleanroom Isolation:   ZERO_GPU_DRIVER_DEPENDENCY + ENVIRONMENT_SANITIZED\n\n", .{});
+        try stdout.print("Isolation Scope:       THIS PROCESS ONLY (no container / OCI boundary is created)\n\n", .{});
 
-        // Delegate to bundle-verify in airgap mode
         const bundle_file = try std.fs.cwd().openFile(bundle_path, .{});
         defer bundle_file.close();
         const bundle_bytes = try bundle_file.readToEndAlloc(LIA_ALLOC, 20 * 1024 * 1024);
         defer LIA_ALLOC.free(bundle_bytes);
 
-        // Run verification
+        // Real verification. This recomputes the Git blob OID of the embedded
+        // source, every kernel's MIR semantic hash, OpenCL lowering hash and CPU
+        // oracle result, the 8-leaf kernel Merkle trees, the ledger Merkle root,
+        // and finally verifies the Ed25519 seal over the canonical ledger message.
+        // Any mismatch is a hard error: nothing is written and the exit code is
+        // non-zero. This is the same verifier `bundle-verify` uses, run CPU-only;
+        // it is NOT an independent second implementation (see SECURITY_AUDIT.md).
+        const report = BundleVerifier.verify(bundle_bytes, false, true) catch |err| {
+            try stdout.print("  [1/4] BUNDLE UNPACK ......... [FAIL] ({s})\n", .{@errorName(err)});
+            try stdout.print("  [2/4] MERKLE RECOMPUTATION .. [FAIL]\n", .{});
+            try stdout.print("  [3/4] CPU ORACLE REPLAY ..... [FAIL]\n", .{});
+            try stdout.print("  [4/4] ED25519 SEAL .......... [FAIL]\n\n", .{});
+            try stdout.print("--------------------------------------------------------------------------------\n", .{});
+            try stdout.print("CLEANROOM REPRODUCTION REFUSED: the bundle did not verify ({s}).\n", .{@errorName(err)});
+            try stdout.print("No receipt was written to {s}.\n", .{out_receipt_path});
+            try stdout.print("================================================================================\n\n", .{});
+            return err;
+        };
+
+        try stdout.print("  [1/4] BUNDLE UNPACK ......... [PASS] ({d} B, GitBlobOID {s})\n", .{ bundle_bytes.len, report.blob_oid_hex });
+        try stdout.print("  [2/4] MERKLE RECOMPUTATION .. [PASS] ({d} kernels recomputed, ledger root sha256:{s})\n", .{ report.num_kernels, report.ledger_merkle_hex });
+        try stdout.print("  [3/4] CPU ORACLE REPLAY ..... [PASS] ({d} deterministic inputs replayed per kernel)\n", .{report.oracle_inputs});
+        try stdout.print("  [4/4] ED25519 SEAL .......... [PASS] (signature verified over the canonical ledger message)\n\n", .{});
+
+        // Every field below is a value this run actually computed. Fields this
+        // harness does not establish (GPU parity, an independent implementation,
+        // a real isolation boundary) are stated as false rather than omitted.
         var receipt = std.ArrayList(u8).init(LIA_ALLOC);
         defer receipt.deinit();
 
@@ -10569,34 +10871,50 @@ pub fn main() !void {
             \\~R{{.s=subject .a=audit .v=verdict}}
             \\.s{{
             \\  bundle_file="{s}"
-            \\  audit_timestamp="2026-08-30T12:20:00Z"
-            \\  verifier_type="HERMETIC_CLEANROOM_OCI_REPLAY_ENGINE"
-            \\  isolation_mode="ENV_SANITIZED_CPU_ONLY"
+            \\  bundle_size_bytes={d}
+            \\  audit_timestamp_unix={d}
+            \\  verifier_type="LIN_BUNDLE_VERIFIER_CPU_REPLAY"
+            \\  isolation_mode="SAME_PROCESS_CPU_ONLY"
             \\}}
             \\.a{{
-            \\  recomputed_mir=true
-            \\  recomputed_lowering=true
-            \\  recomputed_merkle_ledger=true
+            \\  recomputed_git_blob_oid="{s}"
+            \\  recomputed_kernel_count={d}
+            \\  recomputed_ledger_merkle_root="sha256:{s}"
+            \\  input_commitment="{s}"
+            \\  oracle_inputs_replayed={d}
+            \\  ed25519_pubkey="{s}"
+            \\  ed25519_signed_message="{s}"
             \\  verified_ed25519_seal=true
-            \\  oracle_parity=true
             \\}}
             \\.v{{
-            \\  cleanroom_reproduction="BIT_EXACT_REPRODUCED"
-            \\  zero_trust_passed=true
+            \\  cleanroom_reproduction="CRYPTOGRAPHICALLY_VERIFIED"
+            \\  gpu_parity_checked=false
+            \\  independent_implementation=false
+            \\  isolation_boundary_enforced=false
+            \\  evidence_status="COMPUTED"
             \\}}
             \\
-        , .{bundle_path});
+        , .{
+            bundle_path,
+            bundle_bytes.len,
+            std.time.timestamp(),
+            report.blob_oid_hex,
+            report.num_kernels,
+            report.ledger_merkle_hex,
+            report.input_commitment_hex,
+            report.oracle_inputs,
+            report.pubkey_hex,
+            report.signed_message,
+        });
 
         const rf = try std.fs.cwd().createFile(out_receipt_path, .{});
         defer rf.close();
         try rf.writeAll(receipt.items);
 
-        try stdout.print("  [1/4] ENVIRONMENT SANITIZATION ..... [PASS] (Purged host GPU/ROCm runtime dependencies)\n", .{});
-        try stdout.print("  [2/4] HERMETIC COMPILER DAG ........ [PASS] (Independent MIR SSA & Lowering Recomputed)\n", .{});
-        try stdout.print("  [3/4] DETERMINISTIC CPU ORACLE ..... [PASS] (Bit-exact match across 262k inputs)\n", .{});
-        try stdout.print("  [4/4] MERKLE ROOT & DIGITAL SEAL ... [PASS] (Cryptographic verification successful)\n\n", .{});
         try stdout.print("--------------------------------------------------------------------------------\n", .{});
-        try stdout.print("CLEANROOM REPRODUCTION CERTIFIED: Written to {s}\n", .{out_receipt_path});
+        try stdout.print("CLEANROOM REPLAY VERIFIED: receipt written to {s}\n", .{out_receipt_path});
+        try stdout.print("Scope of this receipt: CPU-only cryptographic replay of a signed bundle by this\n", .{});
+        try stdout.print("binary. It is not an OCI/container boundary and not a second implementation.\n", .{});
         try stdout.print("================================================================================\n\n", .{});
         return;
     }
@@ -10668,7 +10986,7 @@ pub fn main() !void {
         };
 
         // 1. Runtime 1 (Native Host Execution)
-        try BundleVerifier.verify(bundle_bytes, false, true);
+        _ = try BundleVerifier.verify(bundle_bytes, false, true);
         const receipt_native = try CanonicalBuilder.build(LIA_ALLOC, &bundle_digest_hex);
         defer LIA_ALLOC.free(receipt_native);
         var h_native = std.crypto.hash.sha2.Sha256.init(.{});
@@ -10681,7 +10999,7 @@ pub fn main() !void {
         // 2. Runtime 2 (Hermetic Cleanroom Execution)
         const cleanroom_bytes = try LIA_ALLOC.dupe(u8, bundle_bytes);
         defer LIA_ALLOC.free(cleanroom_bytes);
-        try BundleVerifier.verify(cleanroom_bytes, false, true);
+        _ = try BundleVerifier.verify(cleanroom_bytes, false, true);
         const receipt_cleanroom = try CanonicalBuilder.build(LIA_ALLOC, &bundle_digest_hex);
         defer LIA_ALLOC.free(receipt_cleanroom);
         var h_cleanroom = std.crypto.hash.sha2.Sha256.init(.{});
@@ -10694,7 +11012,7 @@ pub fn main() !void {
         // 3. Runtime 3 (Sandboxed Process Jail Execution)
         const jail_bytes = try LIA_ALLOC.dupe(u8, bundle_bytes);
         defer LIA_ALLOC.free(jail_bytes);
-        try BundleVerifier.verify(jail_bytes, false, true);
+        _ = try BundleVerifier.verify(jail_bytes, false, true);
         const receipt_jail = try CanonicalBuilder.build(LIA_ALLOC, &bundle_digest_hex);
         defer LIA_ALLOC.free(receipt_jail);
         var h_jail = std.crypto.hash.sha2.Sha256.init(.{});
@@ -11002,7 +11320,7 @@ pub fn main() !void {
         };
 
         // 1. Verifier A (LIN Core / Stage-0)
-        try BundleVerifier.verify(bundle_bytes, false, true);
+        _ = try BundleVerifier.verify(bundle_bytes, false, true);
         const receipt_a = try CanonicalBuilder.build(LIA_ALLOC, &bundle_digest_hex);
         defer LIA_ALLOC.free(receipt_a);
         var h_a = std.crypto.hash.sha2.Sha256.init(.{});
@@ -11015,7 +11333,7 @@ pub fn main() !void {
         // 2. Verifier B (LIN Cleanroom / .lin Independent Spec)
         const cleanroom_bytes = try LIA_ALLOC.dupe(u8, bundle_bytes);
         defer LIA_ALLOC.free(cleanroom_bytes);
-        try BundleVerifier.verify(cleanroom_bytes, false, true);
+        _ = try BundleVerifier.verify(cleanroom_bytes, false, true);
         const receipt_b = try CanonicalBuilder.build(LIA_ALLOC, &bundle_digest_hex);
         defer LIA_ALLOC.free(receipt_b);
         var h_b = std.crypto.hash.sha2.Sha256.init(.{});
@@ -12134,8 +12452,174 @@ pub fn main() !void {
         try stdout.print("================================================================================\n\n", .{});
         return;
     }
+    if (argEq(cmd, "notary-sign")) {
+        var out_roster_path: []const u8 = "witness_roster.rulel";
+        var seed_prefix: []const u8 = "lin-transparency-selftest";
+        var n_witnesses: usize = 4;
+        var threshold: usize = 3;
+        var log_id: []const u8 = "urn:lin:transparency_log:mainnet:v1";
+        var tree_size: u64 = 1000;
+        var epoch: u64 = 2;
+        var state_root: ?[]const u8 = null;
+        var prev_hash: ?[]const u8 = null;
+        var timestamp: []const u8 = "1970-01-01T00:00:00Z";
+
+        var ai: usize = 2;
+        while (ai < args.len) : (ai += 1) {
+            if (argEq(args[ai], "-o") or argEq(args[ai], "--output")) {
+                if (ai + 1 < args.len) {
+                    ai += 1;
+                    out_roster_path = args[ai];
+                }
+            } else if (argEq(args[ai], "--seed-prefix")) {
+                if (ai + 1 < args.len) {
+                    ai += 1;
+                    seed_prefix = args[ai];
+                }
+            } else if (argEq(args[ai], "--witnesses")) {
+                if (ai + 1 < args.len) {
+                    ai += 1;
+                    n_witnesses = try std.fmt.parseInt(usize, args[ai], 10);
+                }
+            } else if (argEq(args[ai], "--threshold")) {
+                if (ai + 1 < args.len) {
+                    ai += 1;
+                    threshold = try std.fmt.parseInt(usize, args[ai], 10);
+                }
+            } else if (argEq(args[ai], "--log-id")) {
+                if (ai + 1 < args.len) {
+                    ai += 1;
+                    log_id = args[ai];
+                }
+            } else if (argEq(args[ai], "--tree-size")) {
+                if (ai + 1 < args.len) {
+                    ai += 1;
+                    tree_size = try std.fmt.parseInt(u64, args[ai], 10);
+                }
+            } else if (argEq(args[ai], "--epoch")) {
+                if (ai + 1 < args.len) {
+                    ai += 1;
+                    epoch = try std.fmt.parseInt(u64, args[ai], 10);
+                }
+            } else if (argEq(args[ai], "--state-root")) {
+                if (ai + 1 < args.len) {
+                    ai += 1;
+                    state_root = args[ai];
+                }
+            } else if (argEq(args[ai], "--prev-hash")) {
+                if (ai + 1 < args.len) {
+                    ai += 1;
+                    prev_hash = args[ai];
+                }
+            } else if (argEq(args[ai], "--timestamp")) {
+                if (ai + 1 < args.len) {
+                    ai += 1;
+                    timestamp = args[ai];
+                }
+            }
+        }
+
+        if (n_witnesses == 0 or threshold == 0 or threshold > n_witnesses) {
+            try stderr.print("notary-sign: need 1 <= threshold <= witnesses (got {d}-of-{d})\n", .{ threshold, n_witnesses });
+            std.process.exit(1);
+        }
+
+        // Default log heads are real SHA-256 digests of the self-test label, so the
+        // roster never contains placeholder values like "1111...".
+        var sr_hex_buf: [71]u8 = undefined;
+        var ph_hex_buf: [71]u8 = undefined;
+        if (state_root == null) {
+            var h_sr = std.crypto.hash.sha2.Sha256.init(.{});
+            h_sr.update("lin:transparency:selftest:state_root:");
+            h_sr.update(timestamp);
+            var sr: [32]u8 = undefined;
+            h_sr.final(&sr);
+            state_root = try std.fmt.bufPrint(&sr_hex_buf, "sha256:{s}", .{std.fmt.fmtSliceHexLower(&sr)});
+        }
+        if (prev_hash == null) {
+            var h_ph = std.crypto.hash.sha2.Sha256.init(.{});
+            h_ph.update("lin:transparency:selftest:prev_hash:");
+            h_ph.update(timestamp);
+            var ph: [32]u8 = undefined;
+            h_ph.final(&ph);
+            prev_hash = try std.fmt.bufPrint(&ph_hex_buf, "sha256:{s}", .{std.fmt.fmtSliceHexLower(&ph)});
+        }
+
+        const head = NotaryRoster.LogHead{
+            .log_id = log_id,
+            .tree_size = tree_size,
+            .epoch = epoch,
+            .state_root = state_root.?,
+            .prev_hash = prev_hash.?,
+            .timestamp = timestamp,
+            .quorum_threshold = threshold,
+        };
+        const sth = NotaryRoster.computeSthDigest(head);
+        var sth_hex: [64]u8 = undefined;
+        _ = try std.fmt.bufPrint(&sth_hex, "{s}", .{std.fmt.fmtSliceHexLower(&sth)});
+        const canonical_msg = try std.fmt.allocPrint(LIA_ALLOC, "lin:transparency:sth:v1:{s}", .{sth_hex});
+
+        try stdout.print("\n================================================================================\n", .{});
+        try stdout.print("=== LIN-NOTARY-SIGN: MINT A WITNESS ROSTER WITH REAL ED25519 CO-SIGNATURES  ===\n", .{});
+        try stdout.print("================================================================================\n\n", .{});
+        try stdout.print("Log ID:              {s}\n", .{log_id});
+        try stdout.print("Tree Size / Epoch:   {d} / {d}\n", .{ tree_size, epoch });
+        try stdout.print("State Root:          {s}\n", .{head.state_root});
+        try stdout.print("STH Digest:          sha256:{s}\n", .{sth_hex});
+        try stdout.print("Signed Message:      {s}\n", .{canonical_msg});
+        try stdout.print("Quorum Policy:       M={d}-of-N={d}\n\n", .{ threshold, n_witnesses });
+
+        var doc = std.ArrayList(u8).init(LIA_ALLOC);
+        defer doc.deinit();
+        try doc.writer().print(
+            \\@RULEL:LIN_WITNESS_ROSTER:1.0.0
+            \\~R{{.l=log .w=witnesses}}
+            \\.l{{
+            \\  log_id="{s}"
+            \\  tree_size={d}
+            \\  epoch={d}
+            \\  state_root="{s}"
+            \\  prev_hash="{s}"
+            \\  timestamp="{s}"
+            \\  quorum_threshold={d}
+            \\}}
+            \\.w{{
+            \\
+        , .{ log_id, tree_size, epoch, head.state_root, head.prev_hash, timestamp, threshold });
+
+        for (0..n_witnesses) |i| {
+            const kp = try NotaryRoster.deriveKeypair(seed_prefix, i);
+            const sig = try kp.sign(canonical_msg, null);
+            const witness_id = try std.fmt.allocPrint(LIA_ALLOC, "witness:{d}:{s}", .{ i, seed_prefix });
+            try doc.writer().print(
+                \\  .witness_{d}{{ id="{s}" pubkey_hex="{s}" signature_hex="{s}" }}
+            , .{
+                i,
+                witness_id,
+                std.fmt.fmtSliceHexLower(&kp.public_key.bytes),
+                std.fmt.fmtSliceHexLower(&sig.toBytes()),
+            });
+            try doc.writer().print("\n", .{});
+            try stdout.print("  witness_{d} {s: <44} pubkey {s}\n", .{ i, witness_id, std.fmt.fmtSliceHexLower(&kp.public_key.bytes) });
+        }
+        try doc.writer().print("}}\n", .{});
+
+        const rf = try std.fs.cwd().createFile(out_roster_path, .{});
+        defer rf.close();
+        try rf.writeAll(doc.items);
+
+        try stdout.print("\n--------------------------------------------------------------------------------\n", .{});
+        try stdout.print("Roster written to {s}.\n", .{out_roster_path});
+        try stdout.print("WARNING: keys are derived from the seed prefix \"{s}\". Anyone with that\n", .{seed_prefix});
+        try stdout.print("prefix can regenerate them, so this roster proves the verification path works —\n", .{});
+        try stdout.print("it is NOT a root of trust. Import real notary public keys for production use.\n", .{});
+        try stdout.print("================================================================================\n\n", .{});
+        return;
+    }
     if (argEq(cmd, "transparency-verify") or argEq(cmd, "notary-verify")) {
         var out_notary_path: []const u8 = "transparency_checkpoint_receipt.rulel";
+        var roster_path: []const u8 = "witness_roster.rulel";
+        var alt_root: ?[]const u8 = null;
         var run_adversarial: bool = false;
 
         var ai: usize = 2;
@@ -12145,124 +12629,97 @@ pub fn main() !void {
                     ai += 1;
                     out_notary_path = args[ai];
                 }
+            } else if (argEq(args[ai], "--roster") or argEq(args[ai], "-r")) {
+                if (ai + 1 < args.len) {
+                    ai += 1;
+                    roster_path = args[ai];
+                }
+            } else if (argEq(args[ai], "--alt-root")) {
+                if (ai + 1 < args.len) {
+                    ai += 1;
+                    alt_root = args[ai];
+                }
             } else if (argEq(args[ai], "--adversarial")) {
                 run_adversarial = true;
             }
         }
 
         try stdout.print("\n================================================================================\n", .{});
-        try stdout.print("=== LIN-ATTEST-014: EXTERNAL CHECKPOINT, TRANSPARENCY & ANTI-EQUIVOCATION   ===\n", .{});
+        try stdout.print("=== LIN-ATTEST-014: TRANSPARENCY CHECKPOINT — ED25519 WITNESS QUORUM        ===\n", .{});
         try stdout.print("================================================================================\n\n", .{});
-        try stdout.print("Notarization Strategy:    MULTI-PARTY WITNESS NOTARIZATION (M-of-N Quorum)\n", .{});
-        try stdout.print("Quorum Policy:            M=3-of-N=4 SOVEREIGN WITNESSES REQUIRED\n", .{});
-        try stdout.print("Transparency Log Model:   STRICT APPEND-ONLY CONSISTENCY & INCLUSION PROOFS\n", .{});
-        try stdout.print("Anti-Equivocation Gate:   SPLIT-VIEW CONFLICT DETECTION + CONFLICT EVIDENCE EXPORT\n", .{});
-        try stdout.print("Notarization Receipt:     {s}\n\n", .{out_notary_path});
 
-        const WitnessDescriptor = struct {
-            witness_id: []const u8,
-            pubkey_hex: []const u8,
-            notary_role: []const u8,
+        const roster_file = std.fs.cwd().openFile(roster_path, .{}) catch {
+            try stderr.print("notary-verify: no witness roster at \"{s}\".\n", .{roster_path});
+            try stderr.print("  This command verifies Ed25519 co-signatures over a signed tree head; it does\n", .{});
+            try stderr.print("  not invent witnesses. Mint a roster with:\n", .{});
+            try stderr.print("      lin notary-sign -o {s}\n", .{roster_path});
+            try stderr.print("  (self-test keys) or supply a roster signed by real notaries.\n", .{});
+            return error.NotImplemented;
         };
+        defer roster_file.close();
+        const roster_bytes = try roster_file.readToEndAlloc(LIA_ALLOC, 10 * 1024 * 1024);
+        defer LIA_ALLOC.free(roster_bytes);
 
-        const witness_roster = [_]WitnessDescriptor{
-            .{
-                .witness_id = "witness:eu:notary_alpha_01",
-                .pubkey_hex = "1111111111111111111111111111111111111111111111111111111111111111",
-                .notary_role = "PUBLIC_AUDIT_NOTARY_ALPHA",
-            },
-            .{
-                .witness_id = "witness:us:notary_beta_02",
-                .pubkey_hex = "2222222222222222222222222222222222222222222222222222222222222222",
-                .notary_role = "PUBLIC_AUDIT_NOTARY_BETA",
-            },
-            .{
-                .witness_id = "witness:ap:notary_gamma_03",
-                .pubkey_hex = "3333333333333333333333333333333333333333333333333333333333333333",
-                .notary_role = "PUBLIC_AUDIT_NOTARY_GAMMA",
-            },
-            .{
-                .witness_id = "witness:ch:notary_delta_04",
-                .pubkey_hex = "4444444444444444444444444444444444444444444444444444444444444444",
-                .notary_role = "PUBLIC_AUDIT_NOTARY_DELTA",
-            },
-        };
+        var h_roster = std.crypto.hash.sha2.Sha256.init(.{});
+        h_roster.update(roster_bytes);
+        var roster_digest: [32]u8 = undefined;
+        h_roster.final(&roster_digest);
+        var roster_digest_hex: [64]u8 = undefined;
+        _ = try std.fmt.bufPrint(&roster_digest_hex, "{s}", .{std.fmt.fmtSliceHexLower(&roster_digest)});
 
-        const quorum_threshold: usize = 3;
-        const total_witnesses: usize = witness_roster.len;
+        const parsed = try NotaryRoster.parse(LIA_ALLOC, roster_bytes);
+        const result = try NotaryRoster.verify(LIA_ALLOC, parsed);
 
-        // 1. Signed Tree Head (STH) Payload & Commitments
-        const sth_log_id = "urn:lin:transparency_log:mainnet:v1";
-        const sth_tree_size: usize = 1000;
-        const sth_epoch: usize = 2;
-        const sth_state_root = "sha256:45d5a98abd498cf4a5de9cae89325dce05aca801c17ccc678386761e02b6b57f";
-        const sth_prev_hash = "sha256:072e0f22be2731067194137f4125c81d0732a9a50cdfef34b08ef1f3a1282fe6";
-        const sth_timestamp = "2026-08-30T13:58:00Z";
+        try stdout.print("Witness Roster:           {s} ({d} B, sha256:{s})\n", .{ roster_path, roster_bytes.len, roster_digest_hex });
+        try stdout.print("Log ID:                   {s}\n", .{parsed.head.log_id});
+        try stdout.print("Tree Size / Epoch:        {d} / {d}\n", .{ parsed.head.tree_size, parsed.head.epoch });
+        try stdout.print("State Root:               {s}\n", .{parsed.head.state_root});
+        try stdout.print("STH Canonical Digest:     sha256:{s}\n", .{parsed.sth_digest_hex});
+        try stdout.print("Signed Message:           {s}\n\n", .{parsed.canonical_message});
 
-        // Canonical STH Digest
-        var h_sth = std.crypto.hash.sha2.Sha256.init(.{});
-        h_sth.update("transparency:sth:v1:");
-        h_sth.update(sth_log_id);
-        h_sth.update(":");
-        var size_buf: [16]u8 = undefined;
-        h_sth.update(try std.fmt.bufPrint(&size_buf, "{d}", .{sth_tree_size}));
-        h_sth.update(":");
-        var epoch_buf: [16]u8 = undefined;
-        h_sth.update(try std.fmt.bufPrint(&epoch_buf, "{d}", .{sth_epoch}));
-        h_sth.update(":");
-        h_sth.update(sth_state_root);
-        h_sth.update(":");
-        h_sth.update(sth_prev_hash);
-        h_sth.update(":");
-        h_sth.update(sth_timestamp);
-        var sth_digest: [32]u8 = undefined;
-        h_sth.final(&sth_digest);
-
-        var sth_digest_hex: [64]u8 = undefined;
-        _ = try std.fmt.bufPrint(&sth_digest_hex, "{s}", .{std.fmt.fmtSliceHexLower(&sth_digest)});
-
-        try stdout.print("SIGNED TREE HEAD (STH) CANONICAL COMMITMENT:\n", .{});
-        try stdout.print("  .Log ID:                 {s}\n", .{sth_log_id});
-        try stdout.print("  .Tree Size:              {d} entries (Append-only)\n", .{sth_tree_size});
-        try stdout.print("  .Epoch:                  {d}\n", .{sth_epoch});
-        try stdout.print("  .Notarized State Root:   {s}\n", .{sth_state_root});
-        try stdout.print("  .STH Canonical Digest:   sha256:{s}\n\n", .{sth_digest_hex});
-
-        // 2. Witness Quorum Verification (3 of 4 signed)
-        try stdout.print("WITNESS CO-SIGNATURE QUORUM EVALUATION ({d}-of-{d}):\n", .{ quorum_threshold, total_witnesses });
-        var valid_signatures: usize = 0;
-        for (witness_roster[0..3], 0..) |w, wi| {
-            try stdout.print("  [{d}/3] {s: <30} | PubKey: {s: <16}... -> [SIGNATURE VALID]\n", .{
-                wi + 1, w.witness_id, w.pubkey_hex[0..16],
+        try stdout.print("WITNESS CO-SIGNATURE VERIFICATION (Ed25519, {d} witnesses):\n", .{result.total_witnesses});
+        for (parsed.witnesses, 0..) |w, wi| {
+            try stdout.print("  [{d}/{d}] {s: <44} | PubKey {s}... -> [{s}]\n", .{
+                wi + 1,
+                result.total_witnesses,
+                w.id,
+                w.pubkey_hex[0..16],
+                if (result.per_witness[wi]) "SIGNATURE VALID" else "SIGNATURE INVALID",
             });
-            valid_signatures += 1;
+        }
+        try stdout.print("  Valid Signatures:       {d}/{d}\n", .{ result.valid_signatures, result.total_witnesses });
+        try stdout.print("  Quorum Status:          M={d} threshold={d} -> [{s}]\n\n", .{
+            result.valid_signatures,
+            result.quorum_threshold,
+            if (result.quorum_ok) "QUORUM SATISFIED" else "QUORUM NOT SATISFIED",
+        });
+
+        // Split-view / equivocation: only evaluated when a conflicting view is
+        // supplied. Without one there is nothing to compare and we say so.
+        var conflict_detected = false;
+        if (alt_root) |ar| {
+            conflict_detected = NotaryRoster.detectEquivocation(parsed.head.epoch, parsed.head.state_root, parsed.head.epoch, ar);
+            try stdout.print("ANTI-EQUIVOCATION / SPLIT-VIEW ENGINE:\n", .{});
+            try stdout.print("  .Alternative root at epoch {d}: {s}\n", .{ parsed.head.epoch, ar });
+            try stdout.print("  .Equivocation Detected:        {s}\n\n", .{if (conflict_detected) "YES (CONFLICT PROOF)" else "NO"});
+        } else {
+            try stdout.print("ANTI-EQUIVOCATION / SPLIT-VIEW ENGINE:\n", .{});
+            try stdout.print("  .Not evaluated: no alternative tree head supplied (--alt-root <sha256:...>).\n\n", .{});
         }
 
-        const quorum_ok = (valid_signatures >= quorum_threshold);
-        try stdout.print("  Quorum Status:           M={d} >= Threshold={d} -> [QUORUM SATISFIED]\n\n", .{ valid_signatures, quorum_threshold });
-
-        // 3. Append-Only Consistency & Inclusion Proof Verification
         try stdout.print("APPEND-ONLY CONSISTENCY & INCLUSION PROOFS:\n", .{});
-        try stdout.print("  .Consistency Proof (Size: 100 -> 1000):  [PASS] (Strict monotonic tree extension)\n", .{});
-        try stdout.print("  .Leaf Inclusion Proof (Bundle 008 in Log):[PASS] (Cryptographically bound to STH)\n\n", .{});
+        try stdout.print("  .Not evaluated: this command holds no Merkle log, only the signed tree head.\n\n", .{});
 
-        // 4. Split-View Equivocation Detection & Structured Conflict Proof
-        const EquivocationDetector = struct {
-            pub fn checkEquivocation(e_a: usize, root_a: []const u8, e_b: usize, root_b: []const u8) ?[]const u8 {
-                if (e_a == e_b and !std.mem.eql(u8, root_a, root_b)) {
-                    return "CONFLICT_PROOF: SPLIT_VIEW_EQUIVOCATION_DETECTED (Same epoch, divergent roots)";
-                }
-                return null;
-            }
-        };
+        if (!result.quorum_ok) {
+            try stdout.print("--------------------------------------------------------------------------------\n", .{});
+            try stdout.print("NOTARISATION REFUSED: only {d} valid co-signatures for a {d}-of-{d} quorum.\n", .{
+                result.valid_signatures, result.quorum_threshold, result.total_witnesses,
+            });
+            try stdout.print("No receipt was written to {s}.\n", .{out_notary_path});
+            try stdout.print("================================================================================\n\n", .{});
+            return error.QuorumNotSatisfied;
+        }
 
-        const conflict_check = EquivocationDetector.checkEquivocation(2, sth_state_root, 2, "sha256:forged_alternative_root_9999");
-        try stdout.print("ANTI-EQUIVOCATION / SPLIT-VIEW ENGINE:\n", .{});
-        try stdout.print("  .Equivocation Conflict Detection Test:   {s} -> [CONFIRMED]\n\n", .{conflict_check.?});
-
-        if (!quorum_ok or conflict_check == null) return error.TransparencyVerificationFailed;
-
-        // Generate Canonical Transparency Checkpoint Receipt
         var not_doc = std.ArrayList(u8).init(LIA_ALLOC);
         defer not_doc.deinit();
 
@@ -12270,41 +12727,59 @@ pub fn main() !void {
             \\@RULEL:LIN_TRANSPARENCY_CHECKPOINT:1.0.0
             \\~R{{.s=subject .w=witnesses .p=proofs .v=verdict}}
             \\.s{{
+            \\  roster_file="{s}"
+            \\  roster_digest="sha256:{s}"
             \\  log_id="{s}"
             \\  tree_size={d}
             \\  epoch={d}
             \\  state_root="{s}"
             \\  sth_digest="sha256:{s}"
-            \\  quorum_policy="M=3_OF_N=4"
-            \\  audit_timestamp="{s}"
+            \\  signed_message="{s}"
+            \\  quorum_policy="M={d}_OF_N={d}"
+            \\  audit_timestamp_unix={d}
             \\}}
-            \\.w{{
-            \\  .witness_0{{ id="{s}" role="{s}" signature="VALID" }}
-            \\  .witness_1{{ id="{s}" role="{s}" signature="VALID" }}
-            \\  .witness_2{{ id="{s}" role="{s}" signature="VALID" }}
-            \\}}
+        , .{
+            roster_path,
+            roster_digest_hex,
+            parsed.head.log_id,
+            parsed.head.tree_size,
+            parsed.head.epoch,
+            parsed.head.state_root,
+            parsed.sth_digest_hex,
+            parsed.canonical_message,
+            result.quorum_threshold,
+            result.total_witnesses,
+            std.time.timestamp(),
+        });
+
+        try not_doc.writer().print(".w{{\n", .{});
+        for (parsed.witnesses, 0..) |w, wi| {
+            try not_doc.writer().print(
+                \\  .witness_{d}{{ id="{s}" pubkey_hex="{s}" signature_verified={s} }}
+            , .{ wi, w.id, w.pubkey_hex, if (result.per_witness[wi]) "true" else "false" });
+            try not_doc.writer().print("\n", .{});
+        }
+        try not_doc.writer().print("}}\n", .{});
+
+        try not_doc.writer().print(
             \\.p{{
-            \\  append_only_consistency_verified=true
-            \\  inclusion_proof_verified=true
-            \\  split_view_equivocation_detected=false
-            \\  conflict_evidence_generator_ready=true
+            \\  valid_signatures={d}
+            \\  total_witnesses={d}
+            \\  quorum_satisfied=true
+            \\  append_only_consistency_verified=false
+            \\  inclusion_proof_verified=false
+            \\  split_view_equivocation_detected={s}
             \\}}
             \\.v{{
-            \\  notarization_status="EXTERNAL_CHECKPOINT_SEALED"
-            \\  anti_equivocation_status="SPLIT_VIEW_RESISTANT"
-            \\  common_mode_divergence_observed=0
+            \\  notarization_status="QUORUM_VERIFIED_FROM_ROSTER"
+            \\  signature_algorithm="ED25519"
+            \\  evidence_status="COMPUTED"
             \\}}
             \\
         , .{
-            sth_log_id,
-            sth_tree_size,
-            sth_epoch,
-            sth_state_root,
-            sth_digest_hex,
-            sth_timestamp,
-            witness_roster[0].witness_id, witness_roster[0].notary_role,
-            witness_roster[1].witness_id, witness_roster[1].notary_role,
-            witness_roster[2].witness_id, witness_roster[2].notary_role,
+            result.valid_signatures,
+            result.total_witnesses,
+            if (conflict_detected) "true" else "false",
         });
 
         const out_nf = try std.fs.cwd().createFile(out_notary_path, .{});
@@ -12312,52 +12787,161 @@ pub fn main() !void {
         try out_nf.writeAll(not_doc.items);
 
         try stdout.print("--------------------------------------------------------------------------------\n", .{});
-        try stdout.print("TRANSPARENCY CHECKPOINT SEALED: Multi-party witness quorum & anti-equivocation verified.\n", .{});
-        try stdout.print("Transparency Receipt: Written to {s}\n", .{out_notary_path});
+        try stdout.print("TRANSPARENCY CHECKPOINT VERIFIED: {d} of {d} co-signatures valid (threshold {d}).\n", .{
+            result.valid_signatures, result.total_witnesses, result.quorum_threshold,
+        });
+        try stdout.print("Receipt written to {s}\n", .{out_notary_path});
 
-        // ──────────────────────────────────────────────────────────────────────────
-        // ADVERSARIAL TRANSPARENCY & ANTI-EQUIVOCATION CHALLENGE SUITE (13 VECTORS)
-        // ──────────────────────────────────────────────────────────────────────────
         if (run_adversarial) {
             try stdout.print("\n--------------------------------------------------------------------------------\n", .{});
-            try stdout.print("=== ADVERSARIAL TRANSPARENCY CORPUS: 13 EQUIVOCATION & QUORUM CHALLENGES     ===\n", .{});
+            try stdout.print("=== ADVERSARIAL NOTARY CORPUS: REAL MUTATIONS AGAINST THE PARSER & VERIFIER ===\n", .{});
             try stdout.print("--------------------------------------------------------------------------------\n", .{});
 
-            const NotaryAdversarialCase = struct {
+            const Case = struct {
                 name: []const u8,
-                oracle_expectation: []const u8,
+                rejected: bool,
             };
+            var cases = std.ArrayList(Case).init(LIA_ALLOC);
+            defer cases.deinit();
 
-            const notary_cases = [_]NotaryAdversarialCase{
-                .{ .name = "EQUIVOCATION_SAME_EPOCH_DIFFERENT_ROOT", .oracle_expectation = "REJECT" },
-                .{ .name = "EQUIVOCATION_SAME_SEQUENCE_DIFFERENT_ROOT", .oracle_expectation = "REJECT" },
-                .{ .name = "WITNESS_SIGNATURE_MISMATCH", .oracle_expectation = "REJECT" },
-                .{ .name = "QUORUM_BELOW_THRESHOLD_M_LESS_THAN_3", .oracle_expectation = "REJECT" },
-                .{ .name = "DUPLICATE_WITNESS_SIGNATURE_INJECTION", .oracle_expectation = "REJECT" },
-                .{ .name = "UNKNOWN_UNTRUSTED_WITNESS_SUBMISSION", .oracle_expectation = "REJECT" },
-                .{ .name = "STALE_STH_PRESENTATION", .oracle_expectation = "REJECT" },
-                .{ .name = "NON_APPEND_ONLY_TREE_GROWTH", .oracle_expectation = "REJECT" },
-                .{ .name = "INVALID_CONSISTENCY_PROOF_SUBMISSION", .oracle_expectation = "REJECT" },
-                .{ .name = "INVALID_INCLUSION_PROOF_SUBMISSION", .oracle_expectation = "REJECT" },
-                .{ .name = "LOG_TRUNCATION_MUTATION", .oracle_expectation = "REJECT" },
-                .{ .name = "CHECKPOINT_REPLAY_MUTATION", .oracle_expectation = "REJECT" },
-                .{ .name = "TIMESTAMP_ROLLBACK_MUTATION", .oracle_expectation = "REJECT" },
-            };
+            const first_sig_key = "signature_hex=\"";
+            const sig_pos = std.mem.indexOf(u8, roster_bytes, first_sig_key);
+            const first_sr_key = "state_root=\"";
+            const sr_pos = std.mem.indexOf(u8, roster_bytes, first_sr_key);
 
-            var adv_passes: usize = 0;
-            for (notary_cases, 0..) |nc, ni| {
-                try stdout.print("  [{d}/13] {s: <46} -> Oracle=REJECT ... [REJECTED (3/3)]\n", .{ ni + 1, nc.name });
-                adv_passes += 1;
+            // 1. Flip one hex digit of the first co-signature. Expectation: that
+            // witness's signature becomes invalid (the quorum may still hold if the
+            // roster has spare witnesses — that is policy, not a crypto failure).
+            if (sig_pos) |sp| {
+                const digit = sp + first_sig_key.len;
+                var mutated = try LIA_ALLOC.dupe(u8, roster_bytes);
+                mutated[digit] = if (mutated[digit] == '0') '1' else '0';
+                const ok = blk: {
+                    const p = NotaryRoster.parse(LIA_ALLOC, mutated) catch break :blk false;
+                    const r = NotaryRoster.verify(LIA_ALLOC, p) catch break :blk true;
+                    break :blk !r.per_witness[0] and r.valid_signatures + 1 == result.valid_signatures;
+                };
+                try cases.append(.{ .name = "NOTARY_SIGNATURE_BYTE_FLIP", .rejected = ok });
             }
 
+            // 2. Tamper the notarised state root (every signature must fail).
+            if (sr_pos) |sp| {
+                const val = sp + first_sr_key.len;
+                var mutated = try LIA_ALLOC.dupe(u8, roster_bytes);
+                var i: usize = 0;
+                while (i < 64 and val + i < mutated.len) : (i += 1) {
+                    mutated[val + i] = if (mutated[val + i] == 'a') 'b' else 'a';
+                }
+                const ok = blk: {
+                    const p = NotaryRoster.parse(LIA_ALLOC, mutated) catch break :blk false;
+                    const r = NotaryRoster.verify(LIA_ALLOC, p) catch break :blk true;
+                    break :blk r.valid_signatures == 0;
+                };
+                try cases.append(.{ .name = "NOTARY_STATE_ROOT_TAMPER", .rejected = ok });
+            }
+
+            // 3. Downgrade the quorum threshold below a majority.
+            {
+                var thr_buf: [64]u8 = undefined;
+                const needle = try std.fmt.bufPrint(&thr_buf, "quorum_threshold={d}", .{parsed.head.quorum_threshold});
+                if (std.mem.indexOf(u8, roster_bytes, needle)) |tp| {
+                    var mutated = std.ArrayList(u8).init(LIA_ALLOC);
+                    try mutated.appendSlice(roster_bytes[0..tp]);
+                    try mutated.appendSlice("quorum_threshold=1");
+                    try mutated.appendSlice(roster_bytes[tp + needle.len ..]);
+                    const ok = blk: {
+                        const p = NotaryRoster.parse(LIA_ALLOC, mutated.items) catch break :blk true;
+                        _ = NotaryRoster.verify(LIA_ALLOC, p) catch break :blk true;
+                        break :blk false;
+                    };
+                    try cases.append(.{ .name = "NOTARY_QUORUM_THRESHOLD_DOWNGRADE", .rejected = ok });
+                }
+            }
+
+            // 4. Duplicate a witness line (id + key reuse).
+            {
+                var wit_it = std.mem.splitScalar(u8, roster_bytes, '\n');
+                var witness_line: ?[]const u8 = null;
+                while (wit_it.next()) |line| {
+                    const t = std.mem.trim(u8, line, " \t\r");
+                    if (std.mem.startsWith(u8, t, ".witness_")) {
+                        witness_line = t;
+                        break;
+                    }
+                }
+                if (witness_line) |wl| {
+                    const mutated = try std.fmt.allocPrint(LIA_ALLOC, "{s}\n  {s}\n", .{ roster_bytes, wl });
+                    const ok = blk: {
+                        const p = NotaryRoster.parse(LIA_ALLOC, mutated) catch break :blk true;
+                        _ = NotaryRoster.verify(LIA_ALLOC, p) catch break :blk true;
+                        break :blk false;
+                    };
+                    try cases.append(.{ .name = "NOTARY_DUPLICATE_WITNESS_INJECTION", .rejected = ok });
+                }
+            }
+
+            // 5. Truncate a co-signature to 32 bytes.
+            if (sig_pos) |sp| {
+                const val = sp + first_sig_key.len;
+                var mutated = std.ArrayList(u8).init(LIA_ALLOC);
+                try mutated.appendSlice(roster_bytes[0..val]);
+                try mutated.appendSlice(roster_bytes[val .. val + 64]);
+                try mutated.appendSlice("\"");
+                const rest = std.mem.indexOfScalarPos(u8, roster_bytes, val + 64, '"') orelse roster_bytes.len;
+                try mutated.appendSlice(roster_bytes[rest..]);
+                const ok = blk: {
+                    const p = NotaryRoster.parse(LIA_ALLOC, mutated.items) catch break :blk true;
+                    const r = NotaryRoster.verify(LIA_ALLOC, p) catch break :blk true;
+                    break :blk r.valid_signatures < result.valid_signatures;
+                };
+                try cases.append(.{ .name = "NOTARY_TRUNCATED_SIGNATURE", .rejected = ok });
+            }
+
+            // 6. Verify a genuine signature against the wrong message.
+            {
+                const ok = !NotaryRoster.verifyOne(parsed.witnesses[0], "lin:transparency:sth:v1:wrong-message");
+                try cases.append(.{ .name = "NOTARY_WRONG_SIGNED_MESSAGE", .rejected = ok });
+            }
+
+            // 7. Raise the threshold to N and break one signature: the quorum must
+            // now fail even though most co-signatures are still valid.
+            {
+                var thr_buf: [64]u8 = undefined;
+                const needle = try std.fmt.bufPrint(&thr_buf, "quorum_threshold={d}", .{parsed.head.quorum_threshold});
+                var need_buf: [64]u8 = undefined;
+                const replacement = try std.fmt.bufPrint(&need_buf, "quorum_threshold={d}", .{result.total_witnesses});
+                if (sig_pos != null) {
+                    if (std.mem.indexOf(u8, roster_bytes, needle)) |tp| {
+                        var mutated = std.ArrayList(u8).init(LIA_ALLOC);
+                        try mutated.appendSlice(roster_bytes[0..tp]);
+                        try mutated.appendSlice(replacement);
+                        try mutated.appendSlice(roster_bytes[tp + needle.len ..]);
+                        const sp2 = std.mem.indexOf(u8, mutated.items, first_sig_key).?;
+                        const digit = sp2 + first_sig_key.len;
+                        mutated.items[digit] = if (mutated.items[digit] == '0') '1' else '0';
+                        const ok = blk: {
+                            const p = NotaryRoster.parse(LIA_ALLOC, mutated.items) catch break :blk false;
+                            const r = NotaryRoster.verify(LIA_ALLOC, p) catch break :blk true;
+                            break :blk !r.quorum_ok;
+                        };
+                        try cases.append(.{ .name = "NOTARY_BELOW_QUORUM_AFTER_KEY_LOSS", .rejected = ok });
+                    }
+                }
+            }
+
+            var rejected: usize = 0;
+            for (cases.items, 0..) |c, ci| {
+                try stdout.print("  [{d}/{d}] {s: <40} -> [{s}]\n", .{
+                    ci + 1, cases.items.len, c.name, if (c.rejected) "REJECTED" else "ACCEPTED (BUG)",
+                });
+                if (c.rejected) rejected += 1;
+            }
             try stdout.print("--------------------------------------------------------------------------------\n", .{});
-            try stdout.print("ADVERSARIAL TRANSPARENCY ACCOUNTING:\n", .{});
-            try stdout.print("  .Targeted Notary Mutation Vectors:  {d}\n", .{notary_cases.len});
-            try stdout.print("  .Oracle Expectations Respected:     {d}/{d} (100.0%)\n", .{ adv_passes, notary_cases.len });
-            try stdout.print("  .Divergent Outcomes:                0\n", .{});
-            try stdout.print("  .Common-Mode Divergence Observed:   0\n", .{});
-            try stdout.print("--------------------------------------------------------------------------------\n", .{});
-            try stdout.print("NOTARIAL INTEGRITY CERTIFIED: 0 divergences observed under adversarial corpus.\n", .{});
+            try stdout.print("  Mutations submitted: {d} | rejected: {d} | accepted: {d}\n", .{
+                cases.items.len, rejected, cases.items.len - rejected,
+            });
+            try stdout.print("================================================================================\n\n", .{});
+            if (rejected != cases.items.len) return error.AdversarialChallengeFailed;
         }
 
         try stdout.print("================================================================================\n\n", .{});
@@ -14066,7 +14650,7 @@ pub fn main() !void {
         return;
     }
 
-    if (argEq(cmd, "c-expr-test") or argEq(cmd, "c-expr-eval") or argEq(cmd, "c-ast-verify") or argEq(cmd, "receipt") or argEq(cmd, "receipt-create") or argEq(cmd, "receipt-verify")) {
+    if (argEq(cmd, "c-expr-test") or argEq(cmd, "c-expr-eval") or argEq(cmd, "c-ast-verify") or argEq(cmd, "receipt") or argEq(cmd, "receipt-create") or argEq(cmd, "receipt-verify") or argEq(cmd, "crosscheck-c") or argEq(cmd, "xver-c") or argEq(cmd, "nversion-c") or argEq(cmd, "gate") or argEq(cmd, "gate-check") or argEq(cmd, "gate-attest") or argEq(cmd, "lin-gate") or argEq(cmd, "gate-keygen")) {
         var ai_feedback_mode = false;
         for (args) |arg| {
             if (std.mem.eql(u8, arg, "--ai-feedback")) {
@@ -14713,6 +15297,1013 @@ pub fn main() !void {
             .{ .input = "1x + 2", .expected = null, .should_fail = true, .desc = "Invalid identifier starting with digit" },
             .{ .input = "unknown_var + 1", .expected = null, .should_fail = true, .desc = "Undefined variable reference" },
         };
+
+        // ─────────────────────────────────────────────────────────────────────
+        // N-VERSION CROSS-CHECK: Zig LinVM vs the independent C11 port.
+        //
+        // The same expression is pushed through two implementations written
+        // against the same specification — this file's Pratt parser / flat AST
+        // arena / bytecode lowerer / LinVM, and transpile/c/lin_c/* — and each
+        // side commits what it computed to a canonical SHA-256 Merkle root:
+        //
+        //   leaf_source = SHA256("lin:xver:source:" || expr)
+        //   leaf_env    = SHA256("lin:xver:env:"    || env_spec)
+        //   leaf_code   = SHA256("lin:xver:code:"   || bytecode_image)
+        //   leaf_exec   = SHA256("lin:xver:exec:"   || result ":" steps ":" sp_at_ret)
+        //   root        = node(node(leaf_source, leaf_env), node(leaf_code, leaf_exec))
+        //
+        //   bytecode_image = for each instruction: 1 byte opcode ordinal followed
+        //                    by the signed 64-bit operand, little-endian.
+        //
+        // Equal roots mean both implementations agree on the source, the
+        // environment, every emitted instruction, the result, the step count and
+        // the final stack depth. Any difference is a divergence and fails closed.
+        // ─────────────────────────────────────────────────────────────────────
+        if (argEq(cmd, "crosscheck-c") or argEq(cmd, "xver-c") or argEq(cmd, "nversion-c")) {
+            const XverHash = struct {
+                fn leaf(domain: []const u8, data: []const u8) [32]u8 {
+                    var h = std.crypto.hash.sha2.Sha256.init(.{});
+                    h.update(domain);
+                    h.update(data);
+                    var out: [32]u8 = undefined;
+                    h.final(&out);
+                    return out;
+                }
+                fn node(a: [32]u8, b: [32]u8) [32]u8 {
+                    var h = std.crypto.hash.sha2.Sha256.init(.{});
+                    h.update("node:");
+                    h.update(&a);
+                    h.update(&b);
+                    var out: [32]u8 = undefined;
+                    h.final(&out);
+                    return out;
+                }
+                fn hex(d: [32]u8) [64]u8 {
+                    var out: [64]u8 = undefined;
+                    _ = std.fmt.bufPrint(&out, "{s}", .{std.fmt.fmtSliceHexLower(&d)}) catch unreachable;
+                    return out;
+                }
+            };
+
+            // Reads `key="value"` out of the C tool's single-line output.
+            const fieldStr = struct {
+                fn f(hay: []const u8, key: []const u8) ?[]const u8 {
+                    var buf: [64]u8 = undefined;
+                    const needle = std.fmt.bufPrint(&buf, "{s}=\"", .{key}) catch return null;
+                    const start = std.mem.indexOf(u8, hay, needle) orelse return null;
+                    const vs = start + needle.len;
+                    const end = std.mem.indexOfScalarPos(u8, hay, vs, '"') orelse return null;
+                    return hay[vs..end];
+                }
+            }.f;
+
+            // Reads `key=<integer>` (optionally negative) out of that same line.
+            const fieldInt = struct {
+                fn f(hay: []const u8, key: []const u8) ?i64 {
+                    var buf: [64]u8 = undefined;
+                    const needle = std.fmt.bufPrint(&buf, "{s}=", .{key}) catch return null;
+                    var pos: usize = 0;
+                    while (std.mem.indexOfPos(u8, hay, pos, needle)) |start| {
+                        pos = start + needle.len;
+                        if (start > 0) {
+                            const prev = hay[start - 1];
+                            const ident = (prev >= 'a' and prev <= 'z') or (prev >= 'A' and prev <= 'Z') or
+                                (prev >= '0' and prev <= '9') or prev == '_';
+                            if (ident) continue;
+                        }
+                        var end = pos;
+                        if (end < hay.len and hay[end] == '-') end += 1;
+                        const digits_start = end;
+                        while (end < hay.len and hay[end] >= '0' and hay[end] <= '9') : (end += 1) {}
+                        if (end == digits_start) return null;
+                        return std.fmt.parseInt(i64, hay[pos..end], 10) catch null;
+                    }
+                    return null;
+                }
+            }.f;
+
+            var c_bin: []const u8 = "transpile/c/bin/lin_c_receipt";
+            var env_spec: []const u8 = "x=10,y=20,z=5,x1=15";
+            var only_expr: ?[]const u8 = null;
+            var out_receipt: []const u8 = "xver_receipt.rulel";
+
+            var ai: usize = 2;
+            while (ai < args.len) : (ai += 1) {
+                if (argEq(args[ai], "--c-bin") and ai + 1 < args.len) {
+                    ai += 1;
+                    c_bin = args[ai];
+                } else if (argEq(args[ai], "--env") and ai + 1 < args.len) {
+                    ai += 1;
+                    env_spec = args[ai];
+                } else if (argEq(args[ai], "--expr") and ai + 1 < args.len) {
+                    ai += 1;
+                    only_expr = args[ai];
+                } else if ((argEq(args[ai], "-o") or argEq(args[ai], "--output")) and ai + 1 < args.len) {
+                    ai += 1;
+                    out_receipt = args[ai];
+                }
+            }
+
+            // The second implementation must exist. Fail closed instead of
+            // reporting a cross-check that never ran.
+            var c_file = std.fs.cwd().openFile(c_bin, .{}) catch {
+                try stderr.print("crosscheck-c: cannot open the C implementation at \"{s}\".\n", .{c_bin});
+                try stderr.print("  Build it first:  make -C transpile/c xver\n", .{});
+                try stderr.print("  Without a second implementation there is no N-Version evidence to report.\n", .{});
+                return error.NotImplemented;
+            };
+            defer c_file.close();
+            const c_bytes = try c_file.readToEndAlloc(LIA_ALLOC, 64 * 1024 * 1024);
+            defer LIA_ALLOC.free(c_bytes);
+            var c_digest: [32]u8 = undefined;
+            std.crypto.hash.sha2.Sha256.hash(c_bytes, &c_digest, .{});
+
+            // Parse the environment spec into bindings (identical on both sides).
+            var env_bindings = std.ArrayList(VarBinding).init(LIA_ALLOC);
+            defer env_bindings.deinit();
+            var env_vals = std.ArrayList(i64).init(LIA_ALLOC);
+            defer env_vals.deinit();
+            {
+                var it = std.mem.splitScalar(u8, env_spec, ',');
+                while (it.next()) |pair| {
+                    const eq = std.mem.indexOfScalar(u8, pair, '=') orelse continue;
+                    const name = std.mem.trim(u8, pair[0..eq], " \t");
+                    const val = std.fmt.parseInt(i64, std.mem.trim(u8, pair[eq + 1 ..], " \t"), 10) catch continue;
+                    try env_bindings.append(.{ .name = name, .val = val });
+                    try env_vals.append(val);
+                }
+            }
+            if (env_bindings.items.len == 0) {
+                try stderr.print("crosscheck-c: empty or malformed --env \"{s}\"\n", .{env_spec});
+                return error.MalformedEnvironment;
+            }
+
+            // Corpus: the shared oracle suite plus INT64 boundary vectors, which
+            // are exactly where a wrapping-arithmetic port diverges.
+            const XverCase = struct { expr: []const u8, expect_reject: bool };
+            var cases = std.ArrayList(XverCase).init(LIA_ALLOC);
+            defer cases.deinit();
+            if (only_expr) |e| {
+                try cases.append(.{ .expr = e, .expect_reject = false });
+            } else {
+                for (test_suite) |tc| try cases.append(.{ .expr = tc.input, .expect_reject = tc.should_fail });
+                const edge_vectors = [_][]const u8{
+                    "9223372036854775807 + 1",
+                    "-9223372036854775807 - 2",
+                    "9223372036854775807 * 2",
+                    "(0 - 9223372036854775807) - 1",
+                    "x * x * x * x",
+                };
+                for (edge_vectors) |e| try cases.append(.{ .expr = e, .expect_reject = false });
+            }
+
+            try stdout.print("\n================================================================================\n", .{});
+            try stdout.print("=== LIN-XVER-001: N-VERSION CROSS-CHECK — ZIG LinVM vs C11 PORT             ===\n", .{});
+            try stdout.print("================================================================================\n\n", .{});
+            try stdout.print("Implementation A:      compiler/lin.zig (Zig Pratt parser + flat AST + LinVM)\n", .{});
+            try stdout.print("Implementation B:      {s} (C11 port, transpile/c/lin_c)\n", .{c_bin});
+            try stdout.print("B binary SHA-256:      sha256:{s}\n", .{XverHash.hex(c_digest)});
+            try stdout.print("Environment:           {s}\n", .{env_spec});
+            try stdout.print("Canonicalisation:      LIN_XVER_CANONICAL_v1 (4-leaf Merkle)\n\n", .{});
+
+            const Row = struct {
+                expr: []const u8,
+                status: []const u8,
+                detail: []const u8,
+                root: [64]u8,
+                agreement: bool,
+            };
+            var rows = std.ArrayList(Row).init(LIA_ALLOC);
+            defer rows.deinit();
+
+            var agreements: usize = 0;
+            var divergences: usize = 0;
+
+            for (cases.items) |xc| {
+                const expr = xc.expr;
+
+                // ── Implementation A: this compiler ─────────────────────────
+                var a_status: []const u8 = "EVALUATED";
+                var a_detail: []const u8 = "";
+                var a_root: [64]u8 = [_]u8{'0'} ** 64;
+                var a_result: i64 = 0;
+                var a_steps: u64 = 0;
+                var a_sp: usize = 0;
+                var a_insts: usize = 0;
+
+                zig_side: {
+                    var parser = Parser.init(expr);
+                    const root_idx = parser.parseFull() catch |err| {
+                        a_status = "REJECTED";
+                        a_detail = try std.fmt.allocPrint(LIA_ALLOC, "parse:{any}", .{err});
+                        break :zig_side;
+                    };
+                    _ = parser.arena.eval(root_idx, env_bindings.items) catch |err| {
+                        a_status = "REJECTED";
+                        a_detail = try std.fmt.allocPrint(LIA_ALLOC, "eval:{any}", .{err});
+                        break :zig_side;
+                    };
+                    var lowerer = AstToVmLowerer.init(LIA_ALLOC);
+                    defer lowerer.deinit();
+                    const code = lowerer.lower(&parser.arena, root_idx, env_bindings.items) catch |err| {
+                        a_status = "REJECTED";
+                        a_detail = try std.fmt.allocPrint(LIA_ALLOC, "lower:{any}", .{err});
+                        break :zig_side;
+                    };
+
+                    var fn_mock = VmFn{
+                        .name = "xver_expr",
+                        .nparams = env_bindings.items.len,
+                        .nlocals = env_bindings.items.len,
+                        .code = code,
+                        .ok = true,
+                        .sig_ok = true,
+                    };
+                    var mod_mock = VmModule{ .fns = (&fn_mock)[0..1] };
+                    var steps: u64 = 0;
+                    const res = vmExecWithSp(&mod_mock, 0, env_vals.items, 0, &steps) catch |err| {
+                        a_status = "REJECTED";
+                        a_detail = try std.fmt.allocPrint(LIA_ALLOC, "vm:{any}", .{err});
+                        break :zig_side;
+                    };
+
+                    a_result = res.val;
+                    a_steps = steps;
+                    a_sp = res.sp_at_ret;
+                    a_insts = code.len;
+
+                    var code_img = std.ArrayList(u8).init(LIA_ALLOC);
+                    for (code) |ins| {
+                        try code_img.append(@intFromEnum(ins.op));
+                        var b: [8]u8 = undefined;
+                        std.mem.writeInt(i64, &b, ins.a, .little);
+                        try code_img.appendSlice(&b);
+                    }
+
+                    var exec_buf: [96]u8 = undefined;
+                    const exec_str = try std.fmt.bufPrint(&exec_buf, "{d}:{d}:{d}", .{ a_result, a_steps, a_sp });
+
+                    const l_src = XverHash.leaf("lin:xver:source:", expr);
+                    const l_env = XverHash.leaf("lin:xver:env:", env_spec);
+                    const l_code = XverHash.leaf("lin:xver:code:", code_img.items);
+                    const l_exec = XverHash.leaf("lin:xver:exec:", exec_str);
+                    a_root = XverHash.hex(XverHash.node(XverHash.node(l_src, l_env), XverHash.node(l_code, l_exec)));
+                    a_detail = try std.fmt.allocPrint(LIA_ALLOC, "result={d} steps={d} sp={d} insts={d}", .{ a_result, a_steps, a_sp, a_insts });
+                }
+
+                // ── Implementation B: the C11 port ──────────────────────────
+                const run = std.process.Child.run(.{
+                    .allocator = LIA_ALLOC,
+                    .argv = &.{ c_bin, "--expr", expr, "--env", env_spec },
+                }) catch |err| {
+                    try stderr.print("crosscheck-c: cannot run {s}: {any}\n", .{ c_bin, err });
+                    return error.SecondImplementationUnavailable;
+                };
+                defer LIA_ALLOC.free(run.stdout);
+                defer LIA_ALLOC.free(run.stderr);
+
+                const b_status = fieldStr(run.stdout, "status") orelse "UNPARSABLE";
+                var b_root: [64]u8 = [_]u8{'0'} ** 64;
+                var b_detail: []const u8 = "";
+                if (std.mem.eql(u8, b_status, "EVALUATED")) {
+                    if (fieldStr(run.stdout, "root")) |r| {
+                        const bare = if (std.mem.startsWith(u8, r, "sha256:")) r[7..] else r;
+                        if (bare.len == 64) @memcpy(&b_root, bare);
+                    }
+                    b_detail = try std.fmt.allocPrint(LIA_ALLOC, "result={d} steps={d} sp={d} insts={d}", .{
+                        fieldInt(run.stdout, "result") orelse 0,
+                        @as(i64, fieldInt(run.stdout, "steps") orelse 0),
+                        @as(i64, fieldInt(run.stdout, "sp_at_ret") orelse 0),
+                        @as(i64, fieldInt(run.stdout, "insts") orelse 0),
+                    });
+                } else {
+                    const stage = fieldStr(run.stdout, "stage") orelse "?";
+                    const err_name = fieldStr(run.stdout, "error") orelse "?";
+                    b_detail = try std.fmt.allocPrint(LIA_ALLOC, "{s}:{s}", .{ stage, err_name });
+                }
+
+                // ── Compare ─────────────────────────────────────────────────
+                const same_status = std.mem.eql(u8, a_status, b_status);
+                const agree = if (std.mem.eql(u8, a_status, "EVALUATED"))
+                    same_status and std.mem.eql(u8, &a_root, &b_root)
+                else
+                    same_status and std.mem.eql(u8, a_detail, b_detail);
+
+                if (agree) {
+                    agreements += 1;
+                } else {
+                    divergences += 1;
+                }
+
+                try rows.append(.{
+                    .expr = expr,
+                    .status = a_status,
+                    .detail = if (agree) a_detail else try std.fmt.allocPrint(LIA_ALLOC, "A[{s}] B[{s}]", .{ a_detail, b_detail }),
+                    .root = a_root,
+                    .agreement = agree,
+                });
+
+                try stdout.print("  [{s}] {s: <30} A={s: <9} B={s: <9} root sha256:{s}..{s}\n", .{
+                    if (agree) " AGREE " else "DIVERGE",
+                    if (expr.len > 30) expr[0..30] else expr,
+                    a_status,
+                    b_status,
+                    a_root[0..12],
+                    if (agree) "" else " vs B",
+                });
+                if (!agree) {
+                    try stdout.print("           A: {s}\n           B: {s}\n", .{ a_detail, b_detail });
+                }
+            }
+
+            try stdout.print("\n--------------------------------------------------------------------------------\n", .{});
+            try stdout.print("N-VERSION CONSENSUS: {d} vectors | agreements {d} | divergences {d}\n", .{
+                cases.items.len, agreements, divergences,
+            });
+            try stdout.print("Independent implementations compared: 2 (Zig, C11)\n", .{});
+
+            if (divergences != 0) {
+                try stdout.print("RESULT: DIVERGENCE DETECTED — no receipt written.\n", .{});
+                try stdout.print("================================================================================\n\n", .{});
+                return error.NVersionDivergence;
+            }
+
+            var doc = std.ArrayList(u8).init(LIA_ALLOC);
+            defer doc.deinit();
+            try doc.writer().print(
+                \\@RULEL:LIN_N_VERSION_XVER:1.0.0
+                \\~R{{.s=subject .c=cases .v=verdict}}
+                \\.s{{
+                \\  engine_a="ZIG_LIN_VM(compiler/lin.zig)"
+                \\  engine_b="C11_LIN_VM(transpile/c/lin_c)"
+                \\  engine_b_binary="{s}"
+                \\  engine_b_sha256="sha256:{s}"
+                \\  environment="{s}"
+                \\  canonicalization="LIN_XVER_CANONICAL_v1"
+                \\  audit_timestamp_unix={d}
+                \\}}
+                \\.c{{
+            , .{ c_bin, XverHash.hex(c_digest), env_spec, std.time.timestamp() });
+            for (rows.items, 0..) |r, i| {
+                try doc.writer().print(
+                    \\  .case_{d:0>2}{{ expr="{s}" status="{s}" detail="{s}" root="sha256:{s}" agreement=true }}
+                , .{ i, r.expr, r.status, r.detail, r.root });
+                try doc.writer().print("\n", .{});
+            }
+            try doc.writer().print(
+                \\}}
+                \\.v{{
+                \\  vectors={d}
+                \\  agreements={d}
+                \\  divergences=0
+                \\  independent_implementations=2
+                \\  status="N_VERSION_CONSENSUS"
+                \\  evidence_status="COMPUTED"
+                \\}}
+                \\
+            , .{ cases.items.len, agreements });
+
+            const rf = try std.fs.cwd().createFile(out_receipt, .{});
+            defer rf.close();
+            try rf.writeAll(doc.items);
+
+            try stdout.print("RESULT: CONSENSUS — receipt written to {s}\n", .{out_receipt});
+            try stdout.print("================================================================================\n\n", .{});
+            return;
+        }
+
+        // ==================================================================
+        // === LIN GATE — CI INTEGRITY CHECKER ==============================
+        //
+        // The first functional product: a gate that blocks a pull request —
+        // AI-authored or not — whose tracked toolchain sources no longer hash
+        // to the Merkle root recorded in the gate manifest. Nothing here is
+        // simulated: every digest is computed over the bytes on disk with
+        // SHA-256 by this same binary and folded into a real Merkle tree.
+        //
+        //   lin gate-check  [--manifest PATH] [--roster R] [--quorum N]
+        //                       exit 0 OPEN / 1 BLOCKED / 3 not evaluable
+        //   lin gate-attest [--manifest PATH] [--key SEEDFILE] [--key-id ID]
+        //                       recompute + rewrite the manifest, optionally
+        //                       signing it with a real Ed25519 key
+        //   lin gate-keygen [--key SEEDFILE] [--roster R] [--key-id ID] [--quorum N]
+        //                       mint a signing key; only the public key is a
+        //                       repository artifact
+        //
+        // With --roster the attestation must carry >= quorum valid Ed25519
+        // signatures over the manifest body, or the gate blocks. Without it the
+        // gate says plainly that the signature was not verified.
+        //
+        // A PR that touches the compiler or the independent C implementation
+        // changes the root, so the gate fails until a human re-attests by
+        // committing a new manifest root together with the change.
+        //
+        // Canonicalization LIN_GATE_MANIFEST_v1:
+        //   leaf_i = SHA256("lin:gate:leaf:" || path || ":" || bytes || ":" || hex(sha256))
+        //   node(l,r) = SHA256("lin:gate:node:" || l || r)   (unpaired node promoted)
+        //   root = fold over the leaves sorted by path (lexicographic)
+        // ==================================================================
+        if (argEq(cmd, "gate") or argEq(cmd, "gate-check") or argEq(cmd, "gate-attest") or argEq(cmd, "gate-keygen") or argEq(cmd, "lin-gate")) {
+            const attesting = argEq(cmd, "gate-attest");
+            var manifest_path: []const u8 = "lin_gate_manifest.rulel";
+            var sign_key_path: ?[]const u8 = null;
+            var sign_key_id: []const u8 = "gate-maintainer";
+            var roster_path: ?[]const u8 = null;
+            var quorum_override: ?usize = null;
+            var i_gate: usize = 2;
+            while (i_gate < args.len) : (i_gate += 1) {
+                if (std.mem.eql(u8, args[i_gate], "--manifest") and i_gate + 1 < args.len) {
+                    manifest_path = args[i_gate + 1];
+                    i_gate += 1;
+                } else if (std.mem.eql(u8, args[i_gate], "--key") and i_gate + 1 < args.len) {
+                    sign_key_path = args[i_gate + 1];
+                    i_gate += 1;
+                } else if (std.mem.eql(u8, args[i_gate], "--key-id") and i_gate + 1 < args.len) {
+                    sign_key_id = args[i_gate + 1];
+                    i_gate += 1;
+                } else if (std.mem.eql(u8, args[i_gate], "--roster") and i_gate + 1 < args.len) {
+                    roster_path = args[i_gate + 1];
+                    i_gate += 1;
+                } else if (std.mem.eql(u8, args[i_gate], "--quorum") and i_gate + 1 < args.len) {
+                    quorum_override = std.fmt.parseInt(usize, args[i_gate + 1], 10) catch null;
+                    i_gate += 1;
+                }
+            }
+
+            // ---- gate-keygen: mint a real Ed25519 signing key for the gate ----
+            // The private seed is written 0600 and is NOT a repository artifact;
+            // only the public key goes into the roster, which can be committed.
+            if (argEq(cmd, "gate-keygen")) {
+                var key_out: []const u8 = "lin_gate_key.seed";
+                var roster_out: []const u8 = "lin_gate_roster.rulel";
+                var kg_quorum: usize = 1;
+                var k_i: usize = 2;
+                while (k_i < args.len) : (k_i += 1) {
+                    if (argEq(args[k_i], "--key") and k_i + 1 < args.len) {
+                        key_out = args[k_i + 1];
+                        k_i += 1;
+                    } else if (argEq(args[k_i], "--roster") and k_i + 1 < args.len) {
+                        roster_out = args[k_i + 1];
+                        k_i += 1;
+                    } else if (argEq(args[k_i], "--key-id") and k_i + 1 < args.len) {
+                        sign_key_id = args[k_i + 1];
+                        k_i += 1;
+                    } else if (argEq(args[k_i], "--quorum") and k_i + 1 < args.len) {
+                        kg_quorum = std.fmt.parseInt(usize, args[k_i + 1], 10) catch 1;
+                        k_i += 1;
+                    }
+                }
+
+                var seed: [32]u8 = undefined;
+                std.crypto.random.bytes(&seed);
+                const kp = try std.crypto.sign.Ed25519.KeyPair.create(seed);
+
+                const kf = try std.fs.cwd().createFile(key_out, .{ .truncate = true, .mode = 0o600 });
+                defer kf.close();
+                try kf.writer().print("{s}\n", .{std.fmt.fmtSliceHexLower(&seed)});
+
+                // Keep every other roster entry; replace a previous one for this key_id.
+                const kgStr = struct {
+                    fn f(line: []const u8, key: []const u8) ?[]const u8 {
+                        var kb: [128]u8 = undefined;
+                        const k = std.fmt.bufPrint(&kb, "{s}=\"", .{key}) catch return null;
+                        const st = std.mem.indexOf(u8, line, k) orelse return null;
+                        const rest = line[st + k.len ..];
+                        const en = std.mem.indexOfScalar(u8, rest, '"') orelse return null;
+                        return rest[0..en];
+                    }
+                }.f;
+                var kept = std.ArrayList([]const u8).init(LIA_ALLOC);
+                defer kept.deinit();
+                if (std.fs.cwd().openFile(roster_out, .{})) |rf| {
+                    defer rf.close();
+                    var rb = std.ArrayList(u8).init(LIA_ALLOC);
+                    defer rb.deinit();
+                    try rf.reader().readAllArrayList(&rb, 1 << 20);
+                    const owned = try LIA_ALLOC.dupe(u8, rb.items);
+                    var rit = std.mem.tokenizeAny(u8, owned, "\n");
+                    while (rit.next()) |line| {
+                        const t = std.mem.trim(u8, line, " \r\t");
+                        if (!std.mem.startsWith(u8, t, ".k{")) continue;
+                        if (kgStr(t, "key_id")) |id| {
+                            if (std.mem.eql(u8, id, sign_key_id)) continue;
+                        }
+                        try kept.append(t);
+                    }
+                } else |_| {}
+
+                var rdoc = std.ArrayList(u8).init(LIA_ALLOC);
+                defer rdoc.deinit();
+                try rdoc.writer().print(
+                    \\@RULEL:LIN_GATE_ROSTER:1.0.0
+                    \\~R{{.s=subject .k=signer_keys .v=verdict}}
+                    \\.s{{
+                    \\  quorum={d}
+                    \\  note="public keys only; the matching private seeds are not a repository artifact"
+                    \\}}
+                    \\.k{{
+                    \\
+                , .{kg_quorum});
+                try rdoc.writer().print(
+                    \\  .k{{ key_id="{s}" pubkey="ed25519:{s}" }}
+                , .{ sign_key_id, std.fmt.fmtSliceHexLower(&kp.public_key.toBytes()) });
+                try rdoc.writer().print("\n", .{});
+                for (kept.items) |kline| {
+                    try rdoc.writer().print("{s}\n", .{kline});
+                }
+                try rdoc.writer().print(
+                    \\}}
+                    \\.v{{
+                    \\  signers={d}
+                    \\  quorum={d}
+                    \\  evidence_status="COMPUTED"
+                    \\}}
+                    \\
+                , .{ kept.items.len + 1, kg_quorum });
+
+                const rfile = try std.fs.cwd().createFile(roster_out, .{});
+                defer rfile.close();
+                try rfile.writeAll(rdoc.items);
+
+                try stdout.print("\n================================================================================\n", .{});
+                try stdout.print("=== LIN GATE — KEYGEN (Ed25519)                                               ===\n", .{});
+                try stdout.print("================================================================================\n", .{});
+                try stdout.print("  key id ......... {s}\n", .{sign_key_id});
+                try stdout.print("  public key ..... ed25519:{s}\n", .{std.fmt.fmtSliceHexLower(&kp.public_key.toBytes())});
+                try stdout.print("  private seed ... {s}  (mode 0600 — keep it out of the repository)\n", .{key_out});
+                try stdout.print("  roster ......... {s}  ({d} signer(s), quorum {d})\n", .{ roster_out, kept.items.len + 1, kg_quorum });
+                try stdout.print("Sign an attestation with:  lin gate-attest --key {s} --key-id {s}\n", .{ key_out, sign_key_id });
+                try stdout.print("Verify it with:            lin gate-check --roster {s}\n", .{roster_out});
+                try stdout.print("================================================================================\n\n", .{});
+                return;
+            }
+
+            const GateFile = struct { path: []const u8, bytes: u64, sha: [32]u8 };
+            const GateHash = struct {
+                fn leafOf(path: []const u8, bytes: u64, sha: []const u8) [32]u8 {
+                    var h = std.crypto.hash.sha2.Sha256.init(.{});
+                    h.update("lin:gate:leaf:");
+                    h.update(path);
+                    h.update(":");
+                    var nb: [32]u8 = undefined;
+                    const ns = std.fmt.bufPrint(&nb, "{d}", .{bytes}) catch "0";
+                    h.update(ns);
+                    h.update(":");
+                    h.update(sha);
+                    var out: [32]u8 = undefined;
+                    h.final(&out);
+                    return out;
+                }
+                fn nodeOf(l: [32]u8, r: [32]u8) [32]u8 {
+                    var h = std.crypto.hash.sha2.Sha256.init(.{});
+                    h.update("lin:gate:node:");
+                    h.update(&l);
+                    h.update(&r);
+                    var out: [32]u8 = undefined;
+                    h.final(&out);
+                    return out;
+                }
+                fn rootOf(leaves: []const [32]u8, alloc: std.mem.Allocator) anyerror![32]u8 {
+                    if (leaves.len == 0) return error.EmptyMerkleTree;
+                    var level = try std.ArrayList([32]u8).initCapacity(alloc, leaves.len);
+                    defer level.deinit();
+                    level.appendSliceAssumeCapacity(leaves);
+                    while (level.items.len > 1) {
+                        var next = try std.ArrayList([32]u8).initCapacity(alloc, level.items.len / 2 + 1);
+                        defer next.deinit();
+                        var i: usize = 0;
+                        while (i < level.items.len) : (i += 2) {
+                            if (i + 1 < level.items.len) {
+                                try next.append(nodeOf(level.items[i], level.items[i + 1]));
+                            } else {
+                                try next.append(level.items[i]);
+                            }
+                        }
+                        level.clearRetainingCapacity();
+                        try level.appendSlice(next.items);
+                    }
+                    return level.items[0];
+                }
+                fn levelsOf(n_in: usize) usize {
+                    var n = n_in;
+                    var lv: usize = 1;
+                    while (n > 1) {
+                        n = (n + 1) / 2;
+                        lv += 1;
+                    }
+                    return lv;
+                }
+                fn hex(alloc: std.mem.Allocator, d: []const u8) anyerror![]const u8 {
+                    return std.fmt.allocPrint(alloc, "{s}", .{std.fmt.fmtSliceHexLower(d)});
+                }
+            };
+
+            // ---- 1. Hash every tracked file on disk, in a stable order ----
+            const gate_scopes = [_][]const u8{ "compiler", "transpile/c/lin_c", "transpile/c/tool", "transpile/c/test" };
+            var disk = std.ArrayList(GateFile).init(LIA_ALLOC);
+            defer disk.deinit();
+            var scopes_used: usize = 0;
+            var scope_desc = std.ArrayList(u8).init(LIA_ALLOC);
+            defer scope_desc.deinit();
+            for (gate_scopes, 0..) |sc, sc_i| {
+                var d = std.fs.cwd().openDir(sc, .{ .iterate = true }) catch |e| {
+                    try stdout.print("  [warn] scope not readable: {s} ({s})\n", .{ sc, @errorName(e) });
+                    continue;
+                };
+                defer d.close();
+                scopes_used += 1;
+                if (sc_i > 0) try scope_desc.append(',');
+                try scope_desc.appendSlice(sc);
+                var walker = d.walk(LIA_ALLOC) catch |e| {
+                    try stdout.print("  [warn] cannot walk {s}: {s}\n", .{ sc, @errorName(e) });
+                    continue;
+                };
+                defer walker.deinit();
+                while (walker.next() catch null) |ent| {
+                    if (ent.kind != .file) continue;
+                    const full = try std.fs.path.join(LIA_ALLOC, &[_][]const u8{ sc, ent.path });
+                    var f = std.fs.cwd().openFile(full, .{}) catch { continue; };
+                    defer f.close();
+                    const sz = try f.getEndPos();
+                    var h = std.crypto.hash.sha2.Sha256.init(.{});
+                    var rbuf: [16384]u8 = undefined;
+                    while (true) {
+                        const n = try f.read(&rbuf);
+                        if (n == 0) break;
+                        h.update(rbuf[0..n]);
+                    }
+                    var dg: [32]u8 = undefined;
+                    h.final(&dg);
+                    try disk.append(.{ .path = full, .bytes = sz, .sha = dg });
+                }
+            }
+            const gateLess = struct {
+                fn f(_: void, a: GateFile, b: GateFile) bool {
+                    return std.mem.order(u8, a.path, b.path) == .lt;
+                }
+            }.f;
+            std.mem.sort(GateFile, disk.items, {}, gateLess);
+
+            if (disk.items.len == 0) {
+                try stdout.print("GATE BLOCKED — no tracked files found under the gate scope.\n", .{});
+                try stdout.print("Run the gate from the repository root (scope: {s}).\n", .{scope_desc.items});
+                std.process.exit(3);
+            }
+
+            var leaves = try std.ArrayList([32]u8).initCapacity(LIA_ALLOC, disk.items.len);
+            defer leaves.deinit();
+            for (disk.items) |gf| {
+                var hx: [64]u8 = undefined;
+                _ = try std.fmt.bufPrint(&hx, "{s}", .{std.fmt.fmtSliceHexLower(&gf.sha)});
+                try leaves.append(GateHash.leafOf(gf.path, gf.bytes, &hx));
+            }
+            const recomputed_root = try GateHash.rootOf(leaves.items, LIA_ALLOC);
+            var root_hex: [64]u8 = undefined;
+            _ = try std.fmt.bufPrint(&root_hex, "{s}", .{std.fmt.fmtSliceHexLower(&recomputed_root)});
+
+            try stdout.print("\n================================================================================\n", .{});
+            try stdout.print("=== LIN GATE — CI INTEGRITY CHECKER (LIN_GATE_MANIFEST_v1)                    ===\n", .{});
+            try stdout.print("================================================================================\n", .{});
+            try stdout.print("  scope ........... {s}\n", .{scope_desc.items});
+            try stdout.print("  tracked files ... {d}\n", .{disk.items.len});
+            try stdout.print("  merkle levels ... {d}\n", .{GateHash.levelsOf(disk.items.len)});
+            if (std.process.Child.run(.{ .allocator = LIA_ALLOC, .argv = &[_][]const u8{ "git", "rev-parse", "--short", "HEAD" } })) |gres| {
+                if (gres.term == .Exited and gres.term.Exited == 0) {
+                    try stdout.print("  git HEAD ........ {s}\n", .{std.mem.trimRight(u8, gres.stdout, " \r\n\t")});
+                }
+            } else |_| {}
+            try stdout.print("  recomputed root . sha256:{s}\n\n", .{root_hex});
+
+            // ---- 2. Attest mode: write the manifest with this root ----
+            if (attesting) {
+                var attest_by: []const u8 = "unknown";
+                if (std.process.getEnvVarOwned(LIA_ALLOC, "USER")) |u| attest_by = u else |_| {}
+                var doc = std.ArrayList(u8).init(LIA_ALLOC);
+                defer doc.deinit();
+                try doc.writer().print(
+                    \\@RULEL:LIN_GATE_MANIFEST:1.0.0
+                    \\~R{{.s=subject .f=tracked_files .v=verdict}}
+                    \\.s{{
+                    \\  scope="{s}"
+                    \\  canonicalization="LIN_GATE_MANIFEST_v1"
+                    \\  merkle_root="sha256:{s}"
+                    \\  attested_by="{s}"
+                    \\  audit_timestamp_unix={d}
+                    \\}}
+                    \\.f{{
+                    \\
+                , .{ scope_desc.items, root_hex, attest_by, std.time.timestamp() });
+                for (disk.items) |gf| {
+                    try doc.writer().print(
+                        \\  .f{{ path="{s}" bytes={d} sha256="sha256:{s}" }}
+                    , .{ gf.path, gf.bytes, std.fmt.fmtSliceHexLower(&gf.sha) });
+                    try doc.writer().print("\n", .{});
+                }
+                try doc.writer().print(
+                    \\}}
+                    \\.v{{
+                    \\  files={d}
+                    \\  merkle_levels={d}
+                    \\  merkle_root="sha256:{s}"
+                    \\  status="GATE_ATTESTED"
+                    \\  evidence_status="COMPUTED"
+                    \\}}
+                    \\
+                , .{ disk.items.len, GateHash.levelsOf(disk.items.len), root_hex });
+
+                // ---- Ed25519 signature over the unsigned manifest body ----
+                // The signature covers exactly the bytes written so far: subject
+                // + per-file records + verdict. The .g{} block appended after it
+                // is outside the signed region by construction.
+                if (sign_key_path) |kpath| {
+                    var kbuf: [256]u8 = undefined;
+                    const kfile = std.fs.cwd().openFile(kpath, .{}) catch {
+                        try stdout.print("GATE BLOCKED — cannot read the signing key at {s}\n", .{kpath});
+                        std.process.exit(3);
+                    };
+                    defer kfile.close();
+                    const kn = try kfile.readAll(&kbuf);
+                    const khex = std.mem.trim(u8, kbuf[0..kn], " \r\n\t");
+                    if (khex.len != 64) {
+                        try stdout.print("GATE BLOCKED — {s} is not a 32-byte hex Ed25519 seed\n", .{kpath});
+                        std.process.exit(3);
+                    }
+                    var kseed: [32]u8 = undefined;
+                    _ = std.fmt.hexToBytes(&kseed, khex) catch {
+                        try stdout.print("GATE BLOCKED — {s} is not a 32-byte hex Ed25519 seed\n", .{kpath});
+                        std.process.exit(3);
+                    };
+                    const skp = try std.crypto.sign.Ed25519.KeyPair.create(kseed);
+                    const sig = try skp.sign(doc.items, null);
+                    const sig_bytes = sig.toBytes();
+                    var sig_hex: [128]u8 = undefined;
+                    _ = try std.fmt.bufPrint(&sig_hex, "{s}", .{std.fmt.fmtSliceHexLower(&sig_bytes)});
+                    var pk_hex: [64]u8 = undefined;
+                    _ = try std.fmt.bufPrint(&pk_hex, "{s}", .{std.fmt.fmtSliceHexLower(&skp.public_key.toBytes())});
+                    var body_digest: [32]u8 = undefined;
+                    std.crypto.hash.sha2.Sha256.hash(doc.items, &body_digest, .{});
+                    try doc.writer().print(
+                        \\.g{{
+                        \\
+                    , .{});
+                    try doc.writer().print(
+                        \\  signed_at={d}
+                        \\  key_id="{s}"
+                        \\  pubkey="ed25519:{s}"
+                        \\  body_sha256="sha256:{s}"
+                        \\  signature="ed25519:{s}"
+                        \\}}
+                        \\
+                    , .{ std.time.timestamp(), sign_key_id, pk_hex, std.fmt.fmtSliceHexLower(&body_digest), sig_hex });
+                    try stdout.print("  signature ...... ed25519:{s}… (key_id={s})\n", .{ sig_hex[0..16], sign_key_id });
+                } else {
+                    try stdout.print("  signature ...... NONE — pass --key SEEDFILE to sign this attestation\n", .{});
+                }
+
+                const mf = try std.fs.cwd().createFile(manifest_path, .{});
+                defer mf.close();
+                try mf.writeAll(doc.items);
+                try stdout.print("  manifest written: {s}\n", .{manifest_path});
+                try stdout.print("GATE ATTESTED — root sha256:{s} over {d} files.\n", .{ root_hex, disk.items.len });
+                try stdout.print("Commit the manifest together with the change it attests.\n", .{});
+                try stdout.print("================================================================================\n\n", .{});
+                return;
+            }
+
+            // ---- 3. Check mode: compare against the attested manifest ----
+            const ManiFile = struct { path: []const u8, bytes: u64, sha_hex: []const u8 };
+            const gateStr = struct {
+                fn f(line: []const u8, key: []const u8) ?[]const u8 {
+                    var kb: [128]u8 = undefined;
+                    const k = std.fmt.bufPrint(&kb, "{s}=\"", .{key}) catch return null;
+                    const st = std.mem.indexOf(u8, line, k) orelse return null;
+                    const rest = line[st + k.len ..];
+                    const en = std.mem.indexOfScalar(u8, rest, '"') orelse return null;
+                    return rest[0..en];
+                }
+            }.f;
+            const gateInt = struct {
+                fn f(line: []const u8, key: []const u8) ?u64 {
+                    var kb: [64]u8 = undefined;
+                    const k = std.fmt.bufPrint(&kb, "{s}=", .{key}) catch return null;
+                    const st = std.mem.indexOf(u8, line, k) orelse return null;
+                    const rest = line[st + k.len ..];
+                    var e: usize = 0;
+                    while (e < rest.len and rest[e] >= '0' and rest[e] <= '9') e += 1;
+                    return std.fmt.parseInt(u64, rest[0..e], 10) catch null;
+                }
+            }.f;
+
+            const man_file = std.fs.cwd().openFile(manifest_path, .{}) catch {
+                try stdout.print("GATE BLOCKED — no gate manifest at {s}\n", .{manifest_path});
+                try stdout.print("Attest the toolchain first:  lin gate-attest --manifest {s}\n", .{manifest_path});
+                try stdout.print("================================================================================\n\n", .{});
+                std.process.exit(3);
+            };
+            defer man_file.close();
+            var mbuf = std.ArrayList(u8).init(LIA_ALLOC);
+            defer mbuf.deinit();
+            try man_file.reader().readAllArrayList(&mbuf, 16 << 20);
+
+            var expected_root: []const u8 = "";
+            var listed = std.ArrayList(ManiFile).init(LIA_ALLOC);
+            defer listed.deinit();
+            var it = std.mem.tokenizeAny(u8, mbuf.items, "\n");
+            while (it.next()) |raw| {
+                const line = std.mem.trim(u8, raw, " \r\t");
+                if (gateStr(line, "merkle_root")) |r| {
+                    if (expected_root.len == 0 and std.mem.startsWith(u8, r, "sha256:")) expected_root = r["sha256:".len..];
+                }
+                if (!std.mem.startsWith(u8, line, ".f{")) continue;
+                const p = gateStr(line, "path") orelse continue;
+                const b = gateInt(line, "bytes") orelse 0;
+                const s = gateStr(line, "sha256") orelse continue;
+                const s_hex = if (std.mem.startsWith(u8, s, "sha256:")) s["sha256:".len..] else s;
+                try listed.append(.{ .path = p, .bytes = b, .sha_hex = s_hex });
+            }
+
+            if (expected_root.len != 64 or listed.items.len == 0) {
+                try stdout.print("GATE BLOCKED — manifest {s} is malformed or empty.\n", .{manifest_path});
+                try stdout.print("  merkle_root found: {s}   tracked files listed: {d}\n", .{ if (expected_root.len != 0) expected_root else "(none)", listed.items.len });
+                try stdout.print("================================================================================\n\n", .{});
+                std.process.exit(3);
+            }
+
+            var changes: usize = 0;
+            var modified: usize = 0;
+            var added: usize = 0;
+            var deleted: usize = 0;
+            for (disk.items) |gf| {
+                var hx: [64]u8 = undefined;
+                _ = try std.fmt.bufPrint(&hx, "{s}", .{std.fmt.fmtSliceHexLower(&gf.sha)});
+                var found = false;
+                for (listed.items) |lf| {
+                    if (!std.mem.eql(u8, lf.path, gf.path)) continue;
+                    found = true;
+                    if (!std.mem.eql(u8, lf.sha_hex, &hx) or lf.bytes != gf.bytes) {
+                        modified += 1;
+                        changes += 1;
+                        try stdout.print("  MODIFIED  {s}\n", .{gf.path});
+                        try stdout.print("            attested sha256:{s} ({d} B)\n", .{ lf.sha_hex[0..16], lf.bytes });
+                        try stdout.print("            on-disk  sha256:{s} ({d} B)\n", .{ hx[0..16], gf.bytes });
+                    }
+                    break;
+                }
+                if (!found) {
+                    added += 1;
+                    changes += 1;
+                    try stdout.print("  ADDED     {s}  sha256:{s}\n", .{ gf.path, hx[0..16] });
+                }
+            }
+            for (listed.items) |lf| {
+                var found = false;
+                for (disk.items) |gf| {
+                    if (std.mem.eql(u8, gf.path, lf.path)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    deleted += 1;
+                    changes += 1;
+                    try stdout.print("  DELETED   {s}\n", .{lf.path});
+                }
+            }
+
+            const root_matches = std.mem.eql(u8, expected_root, &root_hex);
+            try stdout.print("  merkle root (attested) ... sha256:{s}\n", .{expected_root});
+            try stdout.print("  merkle root (recomputed) . sha256:{s}\n\n", .{root_hex});
+
+            // ---- 4. Attestation signature (Ed25519), fail closed with --roster ----
+            var sig_valid: usize = 0;
+            var sig_total: usize = 0;
+            var sig_quorum: usize = 1;
+            if (roster_path) |rpath| {
+                const rfile = std.fs.cwd().openFile(rpath, .{}) catch {
+                    try stdout.print("GATE BLOCKED — cannot read the signer roster at {s}\n", .{rpath});
+                    std.process.exit(3);
+                };
+                defer rfile.close();
+                var rbuf = std.ArrayList(u8).init(LIA_ALLOC);
+                defer rbuf.deinit();
+                try rfile.reader().readAllArrayList(&rbuf, 1 << 20);
+
+                const RKey = struct { pubkey: []const u8 };
+                var rkeys = std.ArrayList(RKey).init(LIA_ALLOC);
+                defer rkeys.deinit();
+                var quorum_found = false;
+                var rit = std.mem.tokenizeAny(u8, rbuf.items, "\n");
+                while (rit.next()) |raw| {
+                    const line = std.mem.trim(u8, raw, " \r\t");
+                    if (std.mem.startsWith(u8, line, ".k{")) {
+                        const pk = gateStr(line, "pubkey") orelse continue;
+                        const pk_h = if (std.mem.startsWith(u8, pk, "ed25519:")) pk["ed25519:".len..] else pk;
+                        try rkeys.append(.{ .pubkey = pk_h });
+                    } else if (!quorum_found) {
+                        if (gateInt(line, "quorum")) |qr| {
+                            if (qr > 0) {
+                                sig_quorum = @intCast(qr);
+                                quorum_found = true;
+                            }
+                        }
+                    }
+                }
+                if (quorum_override) |qo| sig_quorum = qo;
+                if (rkeys.items.len == 0) {
+                    try stdout.print("GATE BLOCKED — roster {s} lists no signer keys\n", .{rpath});
+                    std.process.exit(3);
+                }
+
+                // The signed body is every byte before the first ".g{" line.
+                const g_mark = "\n.g{\n";
+                const g_off = std.mem.indexOf(u8, mbuf.items, g_mark);
+                const body = if (g_off) |o| mbuf.items[0 .. o + 1] else mbuf.items;
+                var body_digest: [32]u8 = undefined;
+                std.crypto.hash.sha2.Sha256.hash(body, &body_digest, .{});
+                var body_hex: [64]u8 = undefined;
+                _ = try std.fmt.bufPrint(&body_hex, "{s}", .{std.fmt.fmtSliceHexLower(&body_digest)});
+
+                var pos: usize = 0;
+                while (std.mem.indexOfPos(u8, mbuf.items, pos, g_mark)) |found| {
+                    pos = found + g_mark.len;
+                    const blk_end = std.mem.indexOfScalarPos(u8, mbuf.items, pos, '}') orelse mbuf.items.len;
+                    const blk = mbuf.items[pos..blk_end];
+                    sig_total += 1;
+                    const s_id = gateStr(blk, "key_id") orelse "unknown";
+                    const s_pk = gateStr(blk, "pubkey") orelse continue;
+                    const s_pk_h = if (std.mem.startsWith(u8, s_pk, "ed25519:")) s_pk["ed25519:".len..] else s_pk;
+                    const s_sig = gateStr(blk, "signature") orelse continue;
+                    const s_sig_h = if (std.mem.startsWith(u8, s_sig, "ed25519:")) s_sig["ed25519:".len..] else s_sig;
+                    const s_body = gateStr(blk, "body_sha256") orelse continue;
+                    const s_body_h = if (std.mem.startsWith(u8, s_body, "sha256:")) s_body["sha256:".len..] else s_body;
+
+                    if (!std.mem.eql(u8, s_body_h, &body_hex)) {
+                        try stdout.print("  signature [{s}] .. REJECTED — body_sha256 does not match the manifest body\n", .{s_id});
+                        continue;
+                    }
+                    var in_roster = false;
+                    for (rkeys.items) |rk| {
+                        if (std.mem.eql(u8, rk.pubkey, s_pk_h)) in_roster = true;
+                    }
+                    if (!in_roster) {
+                        try stdout.print("  signature [{s}] .. REJECTED — signer is not in the roster\n", .{s_id});
+                        continue;
+                    }
+                    if (s_pk_h.len != 64 or s_sig_h.len != 128) {
+                        try stdout.print("  signature [{s}] .. REJECTED — malformed key or signature\n", .{s_id});
+                        continue;
+                    }
+                    var pk_raw: [32]u8 = undefined;
+                    _ = std.fmt.hexToBytes(&pk_raw, s_pk_h) catch continue;
+                    var sig_raw: [64]u8 = undefined;
+                    _ = std.fmt.hexToBytes(&sig_raw, s_sig_h) catch continue;
+                    const pk = std.crypto.sign.Ed25519.PublicKey.fromBytes(pk_raw) catch {
+                        try stdout.print("  signature [{s}] .. REJECTED — public key is not a curve point\n", .{s_id});
+                        continue;
+                    };
+                    const sg = std.crypto.sign.Ed25519.Signature.fromBytes(sig_raw);
+                    sg.verify(body, pk) catch {
+                        try stdout.print("  signature [{s}] .. REJECTED — Ed25519 verification failed\n", .{s_id});
+                        continue;
+                    };
+                    sig_valid += 1;
+                    try stdout.print("  signature [{s}] .. VALID (Ed25519 over {d} manifest bytes)\n", .{ s_id, body.len });
+                }
+
+                try stdout.print("  roster ......... {s} ({d} signer(s), quorum {d})\n", .{ rpath, rkeys.items.len, sig_quorum });
+                if (sig_total == 0) {
+                    try stdout.print("  attestation .... UNSIGNED — the manifest carries no signature block\n", .{});
+                }
+                try stdout.print("  signatures ..... {d} valid of {d} present, {d} required\n\n", .{ sig_valid, sig_total, sig_quorum });
+            } else {
+                try stdout.print("  attestation .... signature NOT VERIFIED (no --roster supplied)\n\n", .{});
+            }
+
+            const root_ok = changes == 0 and root_matches;
+            const sig_ok = (roster_path == null) or (sig_valid >= sig_quorum);
+            if (!root_ok or !sig_ok) {
+                if (!root_ok) {
+                    try stdout.print("GATE BLOCKED — {d} unattested change(s): {d} modified, {d} added, {d} deleted.\n", .{ changes, modified, added, deleted });
+                    try stdout.print("The Merkle root of the tracked toolchain differs from the attested root in {s}.\n", .{manifest_path});
+                }
+                if (!sig_ok) {
+                    try stdout.print("GATE BLOCKED — attestation signature not verified: {d} valid signature(s), {d} required by the roster.\n", .{ sig_valid, sig_quorum });
+                }
+                try stdout.print("A human must review the change and re-attest it:\n", .{});
+                try stdout.print("  lin gate-attest --manifest {s} --key SEEDFILE   # then commit the manifest with the change\n", .{manifest_path});
+                try stdout.print("================================================================================\n\n", .{});
+                return error.GateBlocked;
+            }
+
+            try stdout.print("GATE OPEN — Merkle root matches the attested manifest ({d} files).\n", .{disk.items.len});
+            if (roster_path != null) {
+                try stdout.print("Attestation signed by {d} roster key(s) — Ed25519 verified.\n", .{sig_valid});
+            } else {
+                try stdout.print("Attestation signature NOT verified in this run (no --roster).\n", .{});
+            }
+            try stdout.print("================================================================================\n\n", .{});
+            return;
+        }
 
         if (!argEq(cmd, "receipt") and !argEq(cmd, "receipt-create") and !argEq(cmd, "receipt-verify")) {
             try stdout.print("\n================================================================================\n", .{});
