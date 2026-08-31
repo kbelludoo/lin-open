@@ -98,6 +98,8 @@ fn _lia_ushr(a: i64, b: i64) i64 {
 }
 fn _lia_mod(a: i64, b: i64) i64 {
     if (b == 0) return 0;
+    // Guard INT64_MIN % -1: signed division overflow would trap/UB in Zig.
+    if (a == std.math.minInt(i64) and b == -1) return 0;
     return @rem(a, b);
 }
 fn _lia_len(x: anytype) i64 {
@@ -5616,6 +5618,8 @@ pub const VmOp = enum(u8) {
     arr_len,
 };
 
+pub const VM_OPCODE_COUNT: usize = @typeInfo(VmOp).Enum.fields.len;
+
 pub const VmIns = struct {
     op: VmOp,
     a: i64 = 0,
@@ -6403,7 +6407,7 @@ fn certFieldValue(cert: []const u8, tag: []const u8) ?[]const u8 {
     needle[tag.len + 1] = '=';
     const n = needle[0 .. tag.len + 2];
     const start = std.mem.indexOf(u8, cert, n) orelse return null;
-    const val_start = start + n.len;
+    const val_start = start + n.len + 1; // skip the opening quote: .tag="value"
     const val_end = std.mem.indexOfPos(u8, cert, val_start, "\"") orelse return null;
     return cert[val_start..val_end];
 }
@@ -6584,11 +6588,13 @@ pub fn vmExecWithSp(mod: *const VmModule, fi: usize, args: []const i64, depth: u
                     .mul => r = x *% y,
                     .div => {
                         if (y == 0) return error.VmDivisionByZero;
-                        r = @divTrunc(x, y);
+                        // Guard INT64_MIN / -1: signed division overflow would
+                        // trap in Zig; the wrapping convention keeps the VM total.
+                        r = if (x == std.math.minInt(i64) and y == -1) x else @divTrunc(x, y);
                     },
                     .mod => {
                         if (y == 0) return error.VmDivisionByZero;
-                        r = @rem(x, y);
+                        r = if (x == std.math.minInt(i64) and y == -1) 0 else @rem(x, y);
                     },
                     .bit_and => r = x & y,
                     .bit_or => r = x | y,
@@ -6977,9 +6983,12 @@ fn runLinTestFile(path: []const u8) !std.process.Child.RunResult {
     if (lin_valid_strict(src) == 0) return error.LinParse;
     const names = lin_check(src);
     const fns = lin_to_zig(src);
-    const host = try std.fs.cwd().readFileAlloc(LIA_ALLOC, "src/lin.zig", 10 * 1024 * 1024);
-    defer LIA_ALLOC.free(host);
-    const m_fn = std.mem.indexOf(u8, host, "\npub fn slice2(") orelse return error.MissingRuntime;
+    // The legacy self-hosted bootstrap (src/lin.zig) was removed in the
+    // 2026-08-31 cleanup, which broke `lin test` with FileNotFound. The
+    // ZIG_RUNTIME_PRELUDE embedded in the compiler (the same prelude used by
+    // `lin compile`) provides the full Zig runtime for transpiled functions.
+    const host = ZIG_RUNTIME_PRELUDE;
+    const m_fn: usize = host.len;
     var main_body = std.ArrayList(u8).init(LIA_ALLOC);
     defer main_body.deinit();
     const mw = main_body.writer();
@@ -6998,14 +7007,14 @@ fn runLinTestFile(path: []const u8) !std.process.Child.RunResult {
     try mw.writeAll("\\n\", .{});\n}\n");
     const zig_src = try std.mem.concat(LIA_ALLOC, u8, &.{ host[0..m_fn], "\n", fns, "\n", main_body.items });
     defer LIA_ALLOC.free(zig_src);
-    const tmp_path = "src/lin_test_run.zig";
+    const tmp_path = ".zig-cache/lin_test_run.zig";
+    std.fs.cwd().makePath(".zig-cache") catch {};
     const tf = try std.fs.cwd().createFile(tmp_path, .{});
     defer tf.close();
     try tf.writeAll(zig_src);
     var zb: []const u8 = "zig";
-    if (std.fs.openFileAbsolute("/home/k/.local/bin/zig", .{})) |zf| {
-        zf.close();
-        zb = "/home/k/.local/bin/zig";
+    if (std.process.getEnvVarOwned(LIA_ALLOC, "LIN_ZIG")) |p| {
+        zb = p;
     } else |_| {}
     return std.process.Child.run(.{
         .allocator = LIA_ALLOC,
@@ -7085,6 +7094,7 @@ const ZIG_RUNTIME_PRELUDE =
     \\}
     \\fn _lia_mod(a: i64, b: i64) i64 {
     \\    if (b == 0) return 0;
+    \\    if (a == std.math.minInt(i64) and b == -1) return 0;
     \\    return @rem(a, b);
     \\}
     \\fn _lia_len(x: anytype) i64 {
@@ -7243,6 +7253,17 @@ pub fn main() !void {
         return;
     }
     if (argEq(cmd, "rebuild")) {
+        // The self-hosted bootstrap modules (src/lin_zig_bootstrap.lin,
+        // src/lin_zig_emit.lin, src/lin_zig_match.lin, src/lin_js_expr.lin,
+        // src/lin_js_driver.lin) were removed in the 2026-08-31 cleanup, so
+        // rebuild cannot run. Fail with a clear message instead of a raw
+        // FileNotFound trace.
+        if (std.fs.cwd().openFile("src/lin_zig_bootstrap.lin", .{})) |f| {
+            f.close();
+        } else |_| {
+            try stderr.print("rebuild: bootstrap sources (src/lin_zig_bootstrap.lin, src/lin_zig_emit.lin, src/lin_zig_match.lin, src/lin_js_expr.lin, src/lin_js_driver.lin) were removed in the 2026-08-31 cleanup; rebuild is unavailable. See docs/REVIEW_SUGESTOES_E_CORRECOES.md.\n", .{});
+            std.process.exit(1);
+        }
         const boot = try std.fs.cwd().readFileAlloc(LIA_ALLOC, "src/lin_zig_bootstrap.lin", 10 * 1024 * 1024);
         defer LIA_ALLOC.free(boot);
         const arr = try std.fs.cwd().readFileAlloc(LIA_ALLOC, "src/lin_array.lin", 10 * 1024 * 1024);
@@ -14276,13 +14297,14 @@ pub fn main() !void {
                         const l = try self.eval(self.lhs[node_idx], env);
                         const r = try self.eval(self.rhs[node_idx], env);
                         if (r == 0) return error.DivisionByZero;
-                        return @divTrunc(l, r); // Semântica C de truncating division
+                        // Guard INT64_MIN / -1 (signed division overflow traps in Zig).
+                        return if (l == std.math.minInt(i64) and r == -1) l else @divTrunc(l, r); // Semântica C de truncating division
                     },
                     .mod => {
                         const l = try self.eval(self.lhs[node_idx], env);
                         const r = try self.eval(self.rhs[node_idx], env);
                         if (r == 0) return error.DivisionByZero;
-                        return @rem(l, r);
+                        return if (l == std.math.minInt(i64) and r == -1) 0 else @rem(l, r);
                     },
                     .eq => {
                         const l = try self.eval(self.lhs[node_idx], env);
@@ -15264,7 +15286,10 @@ pub fn main() !void {
                         source_code = args[i_arg + 1];
                         i_arg += 1;
                     } else if (std.mem.eql(u8, args[i_arg], "--input") and i_arg + 1 < args.len) {
-                        input_val = std.fmt.parseInt(i64, args[i_arg + 1], 10) catch 7;
+                        input_val = std.fmt.parseInt(i64, args[i_arg + 1], 10) catch {
+                            try stderr.print("receipt error: invalid --input value: {s}\n", .{args[i_arg + 1]});
+                            std.process.exit(1);
+                        };
                         i_arg += 1;
                     } else if (std.mem.eql(u8, args[i_arg], "--device") and i_arg + 1 < args.len) {
                         target_dev_opt = args[i_arg + 1];
@@ -15433,13 +15458,55 @@ pub fn main() !void {
                         };
                         defer parsed.deinit();
 
+                        if (parsed.value != .object) {
+                            try stderr.print("FAIL: Compute Receipt JSON root must be an object\n", .{});
+                            std.process.exit(1);
+                        }
                         const root_obj = parsed.value.object;
-                        const art_str = root_obj.get("artifact").?.string;
-                        const inp_str = root_obj.get("input").?.string;
-                        const out_str = root_obj.get("output").?.string;
-                        steps_val = @intCast(root_obj.get("steps").?.integer);
-                        sp_val = @intCast(root_obj.get("sp_at_ret").?.integer);
-                        stored_merkle = root_obj.get("merkle_root").?.string;
+                        const art_node = root_obj.get("artifact") orelse {
+                            try stderr.print("FAIL: Compute Receipt JSON missing field \"artifact\"\n", .{});
+                            std.process.exit(1);
+                        };
+                        const inp_node = root_obj.get("input") orelse {
+                            try stderr.print("FAIL: Compute Receipt JSON missing field \"input\"\n", .{});
+                            std.process.exit(1);
+                        };
+                        const out_node = root_obj.get("output") orelse {
+                            try stderr.print("FAIL: Compute Receipt JSON missing field \"output\"\n", .{});
+                            std.process.exit(1);
+                        };
+                        const steps_node = root_obj.get("steps") orelse {
+                            try stderr.print("FAIL: Compute Receipt JSON missing field \"steps\"\n", .{});
+                            std.process.exit(1);
+                        };
+                        const sp_node = root_obj.get("sp_at_ret") orelse {
+                            try stderr.print("FAIL: Compute Receipt JSON missing field \"sp_at_ret\"\n", .{});
+                            std.process.exit(1);
+                        };
+                        const merkle_node = root_obj.get("merkle_root") orelse {
+                            try stderr.print("FAIL: Compute Receipt JSON missing field \"merkle_root\"\n", .{});
+                            std.process.exit(1);
+                        };
+                        if (art_node != .string or inp_node != .string or out_node != .string or merkle_node != .string) {
+                            try stderr.print("FAIL: Compute Receipt JSON field type error (expected strings)\n", .{});
+                            std.process.exit(1);
+                        }
+                        if (steps_node != .integer or sp_node != .integer) {
+                            try stderr.print("FAIL: Compute Receipt JSON field type error (expected integers)\n", .{});
+                            std.process.exit(1);
+                        }
+                        const art_str = art_node.string;
+                        const inp_str = inp_node.string;
+                        const out_str = out_node.string;
+                        steps_val = std.math.cast(u64, steps_node.integer) orelse {
+                            try stderr.print("FAIL: Compute Receipt JSON field \"steps\" out of range\n", .{});
+                            std.process.exit(1);
+                        };
+                        sp_val = std.math.cast(u64, sp_node.integer) orelse {
+                            try stderr.print("FAIL: Compute Receipt JSON field \"sp_at_ret\" out of range\n", .{});
+                            std.process.exit(1);
+                        };
+                        stored_merkle = merkle_node.string;
 
                         inp_num = std.fmt.parseInt(i64, inp_str, 10) catch 0;
                         out_num = std.fmt.parseInt(i64, out_str, 10) catch 0;
@@ -15496,7 +15563,8 @@ pub fn main() !void {
                         std.process.exit(1);
                     }
                 } else {
-                    try stdout_w.print("PASS: Compute Receipt verified with bit-exact local Merkle Root valid.\n", .{});
+                    try stderr.print("receipt verify error: no receipt file given (use --receipt <file>)\n", .{});
+                    std.process.exit(1);
                 }
                 return;
             }
@@ -16111,7 +16179,7 @@ pub fn main() !void {
         try stdout.print("@LIN:SEMANTIC_CERTIFICATE_VERIFICATION:1.0.0\n", .{});
         try stdout.print(".certificate_file=\"{s}\"\n", .{args[2]});
         try stdout.print(".compiler_match={s}\n", .{if (compiler_match) "true" else "false"});
-        try stdout.print(".compiler_match_scope=\"self_anchored_running_binary_not_independent_proof\"\n", .{});
+        try stdout.print(".compiler_match_scope=\"self_anchored_compiler_source_not_independent_proof\"\n", .{});
         try stdout.print(".corpus_match={s}\n", .{if (corpus_match) "true" else "false"});
         try stdout.print(".ledger_match={s}\n", .{if (ledger_match) "true" else "false"});
         try stdout.print(".certificate_id_match={s}\n", .{if (certificate_match) "true" else "false"});
@@ -16257,56 +16325,45 @@ pub fn main() !void {
             // SECURITY-AUDIT fix (2026-08-31): recompute the digests and
             // compare them against the claimed fields (previously the claimed
             // fields were never parsed and match=true was printed).
+            // Correction (2026-08-31 review): the compiler anchor must be the
+            // compiler SOURCE (compiler/lin.zig), exactly like `cert build` and
+            // `integrity` do — hashing the running binary (/proc/self/exe) made
+            // every `cert build` -> `cert verify` round-trip FAIL. The corpus
+            // list is likewise aligned with the 20 sources that actually ship.
             var compiler_hasher = std.crypto.hash.sha2.Sha256.init(.{});
-            if (std.fs.openFileAbsolute("/proc/self/exe", .{})) |bin_file| {
-                defer bin_file.close();
-                var bin_buf: [16384]u8 = undefined;
+            if (std.fs.cwd().openFile("compiler/lin.zig", .{})) |src_file| {
+                defer src_file.close();
+                var src_buf: [16384]u8 = undefined;
                 while (true) {
-                    const n = bin_file.read(&bin_buf) catch 0;
+                    const n = src_file.read(&src_buf) catch 0;
                     if (n == 0) break;
-                    compiler_hasher.update(bin_buf[0..n]);
+                    compiler_hasher.update(src_buf[0..n]);
                 }
             } else |_| {}
             var compiler_digest: [32]u8 = undefined;
             compiler_hasher.final(&compiler_digest);
 
             const corpus_targets = [_]struct { file: []const u8, fn_name: []const u8 }{
-                .{ .file = "test/corpus/adler32.lin", .fn_name = "test_adler32_vector" },
-                .{ .file = "test/corpus/aead_poly1305.lin", .fn_name = "test_aead_poly1305_vector" },
-                .{ .file = "test/corpus/aes128.lin", .fn_name = "test_aes_vector" },
-                .{ .file = "test/corpus/alac_flac.lin", .fn_name = "test_alac_flac_vector" },
-                .{ .file = "test/corpus/blake2b.lin", .fn_name = "test_blake2b_vector" },
-                .{ .file = "test/corpus/blake3.lin", .fn_name = "test_blake3_g" },
-                .{ .file = "test/corpus/brotli_bit.lin", .fn_name = "test_brotli_vector" },
-                .{ .file = "test/corpus/brotli_huffman.lin", .fn_name = "test_brotli_huffman_vector" },
-                .{ .file = "test/corpus/chacha20.lin", .fn_name = "test_chacha_rfc_vector" },
-                .{ .file = "test/corpus/cityhash64.lin", .fn_name = "test_cityhash_vector" },
-                .{ .file = "test/corpus/crc32.lin", .fn_name = "test_crc32_vector" },
-                .{ .file = "test/corpus/cswap_montgomery.lin", .fn_name = "test_cswap_vector" },
-                .{ .file = "test/corpus/curve25519_fe.lin", .fn_name = "test_curve25519_vector" },
-                .{ .file = "test/corpus/fast_bitset.lin", .fn_name = "test_bitset_vector" },
-                .{ .file = "test/corpus/fnv1a.lin", .fn_name = "test_fnv1a_vectors" },
-                .{ .file = "test/corpus/hilbert3d.lin", .fn_name = "test_morton3d_vector" },
-                .{ .file = "test/corpus/keccak.lin", .fn_name = "test_keccak_vector" },
-                .{ .file = "test/corpus/morton_spatial.lin", .fn_name = "test_morton_vector" },
-                .{ .file = "test/corpus/murmur3.lin", .fn_name = "test_murmur3_vectors" },
-                .{ .file = "test/corpus/nested_matrix_sum.lin", .fn_name = "test_nested_matrix_sum_vector" },
-                .{ .file = "test/corpus/pcg_random.lin", .fn_name = "test_pcg_vector" },
-                .{ .file = "test/corpus/philox.lin", .fn_name = "test_philox_vector" },
-                .{ .file = "test/corpus/poly1305.lin", .fn_name = "test_poly1305_rfc_vector" },
-                .{ .file = "test/corpus/popcount_massey.lin", .fn_name = "test_massey_vector" },
-                .{ .file = "test/corpus/prng_bryc.lin", .fn_name = "test_prng_vectors" },
-                .{ .file = "test/corpus/prospector_skeeto.lin", .fn_name = "test_prospector_vectors" },
-                .{ .file = "test/corpus/protobuf_varint.lin", .fn_name = "test_protobuf_varint_vector" },
-                .{ .file = "test/corpus/ripemd160.lin", .fn_name = "test_ripemd160_vector" },
-                .{ .file = "test/corpus/roaring_search.lin", .fn_name = "test_roaring_vector" },
-                .{ .file = "test/corpus/siphash.lin", .fn_name = "test_sipround_vectors" },
-                .{ .file = "test/corpus/splitmix64.lin", .fn_name = "test_splitmix64_vector" },
-                .{ .file = "test/corpus/vp8_dct.lin", .fn_name = "test_vp8_dct_vector" },
-                .{ .file = "test/corpus/wyhash.lin", .fn_name = "test_wyhash_vectors" },
-                .{ .file = "test/corpus/xoshiro256.lin", .fn_name = "test_xoshiro256_vector" },
-                .{ .file = "test/corpus/xxhash64.lin", .fn_name = "test_xxh64_vector" },
-                .{ .file = "test/corpus/xxhash_kernels.lin", .fn_name = "test_xxhash_vectors" },
+                .{ .file = "src/zig_to_lin_transpiler.lin", .fn_name = "" },
+                .{ .file = "src/lin_discovery_engine.lin", .fn_name = "" },
+                .{ .file = "src/lin_merkle_tree.lin", .fn_name = "" },
+                .{ .file = "src/lin_workload_planner.lin", .fn_name = "" },
+                .{ .file = "src/lin_adaptive_replanning.lin", .fn_name = "" },
+                .{ .file = "src/lin_autonomous_discovery.lin", .fn_name = "" },
+                .{ .file = "src/lin_blind_generalization.lin", .fn_name = "" },
+                .{ .file = "src/lin_binary_merkle_provenance.lin", .fn_name = "" },
+                .{ .file = "src/lin_compatibility_matrix.lin", .fn_name = "" },
+                .{ .file = "src/lin_c_expr_parser.lin", .fn_name = "" },
+                .{ .file = "src/lin_array.lin", .fn_name = "" },
+                .{ .file = "src/lin_array_kernel.lin", .fn_name = "" },
+                .{ .file = "src/lin_bithacks.lin", .fn_name = "" },
+                .{ .file = "src/lin_crypto.lin", .fn_name = "" },
+                .{ .file = "src/lin_from_c.lin", .fn_name = "" },
+                .{ .file = "src/lin_from_js.lin", .fn_name = "" },
+                .{ .file = "src/lin_lint.lin", .fn_name = "" },
+                .{ .file = "src/lin_regions.lin", .fn_name = "" },
+                .{ .file = "examples/bytes.lin", .fn_name = "" },
+                .{ .file = "examples/safe-compare.lin", .fn_name = "" },
             };
 
             var corpus_hasher = std.crypto.hash.sha2.Sha256.init(.{});
@@ -16367,7 +16424,7 @@ pub fn main() !void {
             try stdout.print("@LIN:SEMANTIC_CERTIFICATE_VERIFICATION:1.0.0\n", .{});
             try stdout.print(".certificate_file=\"{s}\"\n", .{in_path});
             try stdout.print(".compiler_match={s}\n", .{if (compiler_match) "true" else "false"});
-            try stdout.print(".compiler_match_scope=\"self_anchored_running_binary_not_independent_proof\"\n", .{});
+            try stdout.print(".compiler_match_scope=\"self_anchored_compiler_source_not_independent_proof\"\n", .{});
             try stdout.print(".corpus_match={s}\n", .{if (corpus_match) "true" else "false"});
             try stdout.print(".ledger_match={s}\n", .{if (ledger_match) "true" else "false"});
             try stdout.print(".certificate_id_match={s}\n", .{if (certificate_match) "true" else "false"});
@@ -16439,11 +16496,13 @@ pub fn main() !void {
 
             try stdout.print("\n@RULEL:CORPUS_HYPOTHESIS_VERIFICATION:1.0.0\n", .{});
             try stdout.print(".total_targets={d}\n.confirmed={d}\n.refuted={d}\n", .{ corpus_targets.len, confirmed_count, corpus_targets.len - confirmed_count });
-            try stdout.print(".vm_total_steps={d}\n.equivalent=true\n", .{total_steps});
-            try stdout.print(".proof=\"CANONICAL_CORPUS_HYPOTHESIS_SUITE_100_PASS\"\n\n", .{});
+            const all_confirmed = confirmed_count == corpus_targets.len;
+
+            try stdout.print(".vm_total_steps={d}\n.equivalent={s}\n", .{ total_steps, if (all_confirmed) "true" else "false" });
+            try stdout.print(".proof=\"{s}\"\n\n", .{if (all_confirmed) "CANONICAL_CORPUS_HYPOTHESIS_SUITE_100_PASS" else "CANONICAL_CORPUS_HYPOTHESIS_SUITE_INCOMPLETE"});
 
             try stdout.print("@LIN:CORPUS_INTEGRITY_GATE:1.0.0\n", .{});
-            try stdout.print(".total_targets={d}\n.confirmed={d}\n.refuted={d}\n.equivalent=true\n", .{ corpus_targets.len, confirmed_count, corpus_targets.len - confirmed_count });
+            try stdout.print(".total_targets={d}\n.confirmed={d}\n.refuted={d}\n.equivalent={s}\n", .{ corpus_targets.len, confirmed_count, corpus_targets.len - confirmed_count, if (all_confirmed) "true" else "false" });
             try stdout.print(".vm_total_steps={d}\n", .{total_steps});
             try stdout.print(".gates={{parse,semantic_ir,hypothesis,mir,jit,aot,oracle}}\n", .{});
             if (confirmed_count == corpus_targets.len) {
@@ -16832,7 +16891,7 @@ pub fn main() !void {
                 if (f.ok) eligible += 1;
             }
             try stdout.print("@RULEL:LIN_VM:1.0.0\n", .{});
-            try stdout.print(".engine{{ opcodes=28 overflow=wrapping shifts=lia_compatible step_limit={d} }}\n", .{VM_STEP_LIMIT});
+            try stdout.print(".engine{{ opcodes={d} overflow=wrapping shifts=lia_compatible step_limit={d} }}\n", .{ VM_OPCODE_COUNT, VM_STEP_LIMIT });
             try stdout.print(".coverage{{ total={d} eligible={d} rejected={d} }}\n", .{ mod.fns.len, eligible, mod.fns.len - eligible });
             try stdout.print(".fns{{\n", .{});
             for (mod.fns) |f| {

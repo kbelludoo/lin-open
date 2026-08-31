@@ -54,5 +54,26 @@ test-cpu: build-cpu
 	@$(BIN) receipt create --source "return x * x;" --input 9 > /tmp/lin_rec.rulel
 	@$(BIN) receipt verify --receipt /tmp/lin_rec.rulel
 
+# Independent zero-trust receipt verification: recomputes the Merkle root
+# with python3 / bash+openssl / node — no LIN binary involved. Requires
+# python3, openssl and node (all present on ubuntu-latest CI runners).
+.PHONY: verify-receipt
+verify-receipt: build-cpu
+	@echo "== independent receipt verification (python3) =="
+	@python3 benchmarks/verify_receipt.py benchmarks/fixtures/receipt_sqr9.json
+	@python3 benchmarks/verify_receipt.py benchmarks/fixtures/receipt_sqr9.rulel
+	@echo "== independent receipt verification (bash + openssl) =="
+	@bash benchmarks/verify_receipt.sh benchmarks/fixtures/receipt_sqr9.json
+	@bash benchmarks/verify_receipt.sh benchmarks/fixtures/receipt_sqr9.rulel
+	@echo "== independent receipt verification (node) =="
+	@node benchmarks/verify_receipt.js benchmarks/fixtures/receipt_sqr9.json
+	@node benchmarks/verify_receipt.js benchmarks/fixtures/receipt_sqr9.rulel
+	@echo "== tamper must FAIL =="
+	@sed 's/"output": "81"/"output": "82"/' benchmarks/fixtures/receipt_sqr9.json > /tmp/lin_tampered.json
+	@if python3 benchmarks/verify_receipt.py /tmp/lin_tampered.json > /dev/null 2>&1; then \
+	  echo "verify-receipt: tampered receipt PASSED (BUG)"; exit 1; \
+	else echo "tampered receipt correctly rejected"; fi
+	@rm -f /tmp/lin_tampered.json
+
 clean:
 	@rm -rf zig-out zig-cache .zig-cache bin/lin_native /tmp/lin_rec.rulel
