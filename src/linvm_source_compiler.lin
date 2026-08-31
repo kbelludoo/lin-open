@@ -1,0 +1,139 @@
+@LIN:L1c:0.2
+@LINVM_SOURCE_COMPILER{version=1 status=experimental scope=zero_arg_single_return_integer_expression purpose=first_source_to_bytecode_to_linvm_vertical_slice}
+
+// Primeiro slice vertical real do compiler em LIN:
+//   fonte LIN -> lexer -> shunting-yard -> bytecode LinVM -> execução.
+// Subset deliberado: primeira função sem argumentos, um único retorno, literais,
+// parênteses e + - * %. Não aceita variáveis, statements, calls ou unary minus.
+// O sentinel -9000000000000000000 identifica fonte rejeitada neste protótipo.
+
+!lvsc_error(): int { ^0 - 9000000000000000000; }
+
+!lvsc_prec(op: int): int {
+  ?(op == 42 || op == 37) { ^2 }; // * %
+  ?(op == 43 || op == 45) { ^1 }; // + -
+  ^0;
+}
+
+!lvsc_vmop(op: int): int {
+  ?(op == 43) { ^3 }; // add
+  ?(op == 45) { ^4 }; // sub
+  ?(op == 42) { ^5 }; // mul
+  ?(op == 37) { ^7 }; // mod
+  ^0 - 1;
+}
+
+!lvsc_compile_run(src: string): int {
+  code_op: [128]int;
+  code_arg: [128]int;
+  ops: [64]int;
+  stack: [128]int;
+  code_n = 0;
+  ops_n = 0;
+  i = 0;
+  n = src.length;
+
+  // Acha o primeiro retorno canônico ^expr ou a palavra return.
+  found = 0;
+  while (i < n && found == 0) {
+    c = src.charCodeAt(i);
+    ?(c == 94) { found = 1; i = i + 1 } : {
+      ?(i + 6 <= n && src.charCodeAt(i) == 114 && src.charCodeAt(i + 1) == 101 && src.charCodeAt(i + 2) == 116 && src.charCodeAt(i + 3) == 117 && src.charCodeAt(i + 4) == 114 && src.charCodeAt(i + 5) == 110) {
+        found = 1; i = i + 6;
+      } : { i = i + 1 };
+    };
+  };
+  ?(found == 0) { ^lvsc_error() };
+
+  need_value = 1;
+  done = 0;
+  while (i < n && done == 0) {
+    c = src.charCodeAt(i);
+    ?(c == 32 || c == 9 || c == 10 || c == 13) {
+      i = i + 1;
+    } : (c >= 48 && c <= 57) {
+      ?(need_value == 0 || code_n >= 127) { ^lvsc_error() };
+      v = 0;
+      while (i < n && src.charCodeAt(i) >= 48 && src.charCodeAt(i) <= 57) {
+        v = (v * 10) + (src.charCodeAt(i) - 48);
+        i = i + 1;
+      };
+      code_op[code_n] = 0; code_arg[code_n] = v; code_n = code_n + 1;
+      need_value = 0;
+    } : (c == 40) {
+      ?(need_value == 0 || ops_n >= 64) { ^lvsc_error() };
+      ops[ops_n] = c; ops_n = ops_n + 1; i = i + 1;
+    } : (c == 41) {
+      ?(need_value == 1) { ^lvsc_error() };
+      matched = 0;
+      while (ops_n > 0 && matched == 0) {
+        ops_n = ops_n - 1; top = ops[ops_n];
+        ?(top == 40) { matched = 1 } : {
+          code_op[code_n] = lvsc_vmop(top); code_arg[code_n] = 0; code_n = code_n + 1;
+        };
+      };
+      ?(matched == 0) { ^lvsc_error() };
+      i = i + 1;
+    } : (c == 43 || c == 45 || c == 42 || c == 37) {
+      ?(need_value == 1) { ^lvsc_error() };
+      while (ops_n > 0 && ops[ops_n - 1] != 40 && lvsc_prec(ops[ops_n - 1]) >= lvsc_prec(c)) {
+        ops_n = ops_n - 1; top = ops[ops_n];
+        code_op[code_n] = lvsc_vmop(top); code_arg[code_n] = 0; code_n = code_n + 1;
+      };
+      ops[ops_n] = c; ops_n = ops_n + 1;
+      need_value = 1; i = i + 1;
+    } : (c == 59 || c == 125) {
+      done = 1;
+    } : {
+      ^lvsc_error();
+    };
+  };
+  ?(need_value == 1) { ^lvsc_error() };
+  while (ops_n > 0) {
+    ops_n = ops_n - 1; top = ops[ops_n];
+    ?(top == 40) { ^lvsc_error() };
+    code_op[code_n] = lvsc_vmop(top); code_arg[code_n] = 0; code_n = code_n + 1;
+  };
+  code_op[code_n] = 29; code_arg[code_n] = 0; code_n = code_n + 1;
+
+  // Executa o bytecode produzido, não a AST nem a expressão original.
+  pc = 0;
+  sp = 0;
+  while (pc < code_n) {
+    op = code_op[pc]; a = code_arg[pc]; pc = pc + 1;
+    ?(op == 0) {
+      stack[sp] = a; sp = sp + 1;
+    } : (op == 29) {
+      ?(sp != 1) { ^lvsc_error() };
+      ^stack[0];
+    } : {
+      ?(sp < 2) { ^lvsc_error() };
+      sp = sp - 1; r = stack[sp];
+      sp = sp - 1; l = stack[sp];
+      ?(op == 3) { stack[sp] = l + r } : (op == 4) { stack[sp] = l - r } : (op == 5) { stack[sp] = l * r } : (op == 7) {
+        ?(r == 0) { ^lvsc_error() };
+        stack[sp] = _lia_mod(l, r);
+      } : { ^lvsc_error() };
+      sp = sp + 1;
+    };
+  };
+  ^lvsc_error();
+}
+
+!lvsc_self_check(): int {
+  err = 0;
+  ?(lvsc_compile_run("!main(): int { ^2 + 3 * 4; }") != 14) { err = err + 1 };
+  ?(lvsc_compile_run("!main(): int { ^(2 + 3) * 4; }") != 20) { err = err + 2 };
+  ?(lvsc_compile_run("!main(): int { return 20 % 6 + 1; }") != 3) { err = err + 4 };
+  ?(lvsc_compile_run("!main(): int { ^10 - 3 - 2; }") != 5) { err = err + 8 };
+  ?(lvsc_compile_run("!main(): int { ^2 + * 3; }") != lvsc_error()) { err = err + 16 };
+  ?(lvsc_compile_run("!main(): int { ^5 % 0; }") != lvsc_error()) { err = err + 32 };
+  ^err;
+}
+
+!test_lvsc_source_to_bytecode(): int {
+  ?(lvsc_self_check() == 0) { ^1 };
+  ^0;
+}
+
+=ex{lvsc_error, lvsc_prec, lvsc_vmop, lvsc_compile_run, lvsc_self_check, test_lvsc_source_to_bytecode}

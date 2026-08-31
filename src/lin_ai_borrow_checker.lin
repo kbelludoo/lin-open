@@ -1,0 +1,117 @@
+@LIN:L1c:0.2
+@LIN_AI_BORROW_CHECKER{version=2 status=experimental purpose=deterministic_hash_bound_single_resource_borrow_protocol_for_ai_generated_code}
+
+// Borrow protocol pequeno e explícito para agentes de IA.
+// Cada caractere é um evento sobre um recurso:
+//   O own/create       R shared-borrow     r shared-release
+//   W mutable-borrow   w mutable-release   U use/read
+//   M move             D drop
+// Retorno: 0=PASS; os demais valores são códigos estáveis da primeira violação.
+// Este módulo é um protótipo executável. Integrá-lo ao AST/typecheck do compilador
+// exige uma fase posterior e não altera a semântica atual do núcleo LIN.
+
+// Commitment recomputável do trace, separado pelo domínio "AIBC_TRACE_V1:".
+// É FNV-1a/32 para caber no subset inteiro atual: detecta análise stale/acidental,
+// mas NÃO é autenticador e NÃO substitui SHA-256 no receipt externo.
+!aibc_trace_hash32(events: string): int {
+  domain = "AIBC_TRACE_V1:";
+  h = 2166136261;
+  i = 0;
+  while (i < domain.length) {
+    h = ((h ^ domain.charCodeAt(i)) * 16777619) & 4294967295;
+    i = i + 1;
+  };
+  i = 0;
+  while (i < events.length) {
+    h = ((h ^ events.charCodeAt(i)) * 16777619) & 4294967295;
+    i = i + 1;
+  };
+  ^h;
+}
+
+!aibc_check(events: string): int {
+  state = 0;       // 0=unborn, 1=owned, 2=moved, 3=dropped
+  shared = 0;
+  mutable = 0;
+  i = 0;
+  while (i < events.length) {
+    op = events.charCodeAt(i);
+
+    // O: só é permitido criar uma vez.
+    ?(op == 79) {
+      ?(state != 0) { ^1 };
+      state = 1;
+    } : (op == 82) {
+      // R: empréstimo compartilhado exige ownership vivo e nenhum mutable.
+      ?(state != 1) { ^2 };
+      ?(mutable != 0) { ^3 };
+      shared = shared + 1;
+    } : (op == 114) {
+      // r: não se pode liberar borrow que não existe.
+      ?(shared == 0) { ^4 };
+      shared = shared - 1;
+    } : (op == 87) {
+      // W: empréstimo mutável é exclusivo.
+      ?(state != 1) { ^5 };
+      ?(mutable != 0 || shared != 0) { ^6 };
+      mutable = 1;
+    } : (op == 119) {
+      ?(mutable == 0) { ^7 };
+      mutable = 0;
+    } : (op == 85) {
+      // U: leitura direta do owner é bloqueada durante borrow mutável.
+      ?(state != 1) { ^8 };
+      ?(mutable != 0) { ^9 };
+    } : (op == 77) {
+      // M: move exige exclusividade e invalida usos futuros.
+      ?(state != 1) { ^10 };
+      ?(mutable != 0 || shared != 0) { ^11 };
+      state = 2;
+    } : (op == 68) {
+      // D: drop também exige que todos os borrows tenham terminado.
+      ?(state != 1) { ^12 };
+      ?(mutable != 0 || shared != 0) { ^13 };
+      state = 3;
+    } : {
+      ^14;
+    };
+    i = i + 1;
+  };
+
+  ?(shared != 0) { ^15 };
+  ?(mutable != 0) { ^16 };
+  ?(state == 1) { ^17 }; // recurso vivo deve ser movido ou liberado explicitamente
+  ?(state == 0) { ^18 };
+  ^0;
+}
+
+// Executa o checker somente para o trace exato que o chamador aprovou.
+// Código 19 significa hash stale/mismatch; códigos 1..18 mantêm o significado
+// exclusivo de violação do protocolo. O hash é sempre recomputado dos eventos.
+!aibc_check_bound(events: string, expected_trace_hash32: int): int {
+  actual = aibc_trace_hash32(events);
+  ?(actual != expected_trace_hash32) { ^19 };
+  ^aibc_check(events);
+}
+
+// 0 significa que todas as expectativas do checker foram satisfeitas.
+!aibc_self_check(): int {
+  err = 0;
+  ?(aibc_check("OUD") != 0) { err = err + 1 };
+  ?(aibc_check("ORrD") != 0) { err = err + 2 };
+  ?(aibc_check("OWwM") != 0) { err = err + 4 };
+  ?(aibc_check("OWR") != 3) { err = err + 8 };
+  ?(aibc_check("ORM") != 11) { err = err + 16 };
+  ?(aibc_check("OMU") != 8) { err = err + 32 };
+  ?(aibc_check("ODU") != 8) { err = err + 64 };
+  ?(aibc_check("OR") != 15) { err = err + 128 };
+  ?(aibc_check("OX") != 14) { err = err + 256 };
+  ?(aibc_trace_hash32("OUD") != 556942496) { err = err + 512 };
+  ?(aibc_trace_hash32("ORrD") != 2876341031) { err = err + 1024 };
+  ?(aibc_check_bound("OUD", 556942496) != 0) { err = err + 2048 };
+  ?(aibc_check_bound("OMU", aibc_trace_hash32("OMU")) != 8) { err = err + 4096 };
+  ?(aibc_check_bound("OUD", 0) != 19) { err = err + 8192 };
+  ^err;
+}
+
+=ex{aibc_trace_hash32, aibc_check, aibc_check_bound, aibc_self_check}

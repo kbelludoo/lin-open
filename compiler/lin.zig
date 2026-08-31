@@ -17606,7 +17606,7 @@ fn runCli() !void {
             var fns_eligible: usize = 0;
             var fns_executed: usize = 0;
             var steps_total: u64 = 0;
-            for (p1_targets, 0..) |path, pidx| {
+            for (p1_targets) |path| {
                 const src = std.fs.cwd().readFileAlloc(LIA_ALLOC, path, 10 * 1024 * 1024) catch continue;
                 defer LIA_ALLOC.free(src);
                 const mod = vmBuild(LIA_ALLOC, src) catch continue;
@@ -17826,11 +17826,16 @@ fn runCli() !void {
         const baseline_corp = "28b64d7433c44f02a176a1dd5617abfc88d23181e2046d3283f104d0a637a766";
         const baseline_ledg = "d32d0d6d0897d0786b93a50ca1eb6fa88ee9153e09a8b30a3b09354d1d8545a1";
         const baseline_root = "f7a0c6fae02cdb89fc3236619919432d4138015f9bdb8a69209d797c01e1d01f";
-        const comp_hex = std.fmt.fmtSliceHexLower(&compiler_digest);
-        const corp_hex = std.fmt.fmtSliceHexLower(&corpus_digest);
-        const ledg_hex = std.fmt.fmtSliceHexLower(&ledger_digest);
-        const cert_hex = std.fmt.fmtSliceHexLower(&cert_digest);
-        const root_hex = std.fmt.fmtSliceHexLower(&selfhost_root);
+        var comp_hex_buf: [64]u8 = undefined;
+        var corp_hex_buf: [64]u8 = undefined;
+        var ledg_hex_buf: [64]u8 = undefined;
+        var cert_hex_buf: [64]u8 = undefined;
+        var root_hex_buf: [64]u8 = undefined;
+        const comp_hex = try std.fmt.bufPrint(&comp_hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&compiler_digest)});
+        const corp_hex = try std.fmt.bufPrint(&corp_hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&corpus_digest)});
+        const ledg_hex = try std.fmt.bufPrint(&ledg_hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&ledger_digest)});
+        const cert_hex = try std.fmt.bufPrint(&cert_hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&cert_digest)});
+        const root_hex = try std.fmt.bufPrint(&root_hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&selfhost_root)});
         const corpus_match = std.mem.eql(u8, corp_hex, baseline_corp);
         const ledger_match = std.mem.eql(u8, ledg_hex, baseline_ledg);
         const root_match = std.mem.eql(u8, root_hex, baseline_root);

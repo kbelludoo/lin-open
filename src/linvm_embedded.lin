@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LINVM_EMBEDDED{version=1 purpose=mini_linvm_interpreter_written_in_lin}
+@LINVM_EMBEDDED{version=5 status=experimental opcode_coverage=33_of_33 conformance=not_yet purpose=linvm_interpreter_written_in_lin_with_bounded_calls_and_arrays}
 
 // ============================================================================
 // SEGUNDA VERSÃO EM LinVM — um mini-intérprete da LinVM escrito em LIN.
@@ -18,6 +18,8 @@
 // Resultados esperados (bit-exact, aritmética i64 com wrap):
 //   sq_demo()   -> 64   (x=7, y=15)
 //   fact_demo() -> 24   (n=4)
+// IMPORTANTE: há dispatch para 33/33 opcodes, mas call/arrays são bounded e ainda
+// faltam a estrutura de módulo, erros e limites do Stage0. Cobertura != conformidade.
 // ============================================================================
 
 // ---------------------------------------------------------------------------
@@ -40,15 +42,54 @@
 
 // ---------------------------------------------------------------------------
 // Interpretador LinVM em LIN.
-// Opcodes usados (subconjunto da enum VmOp de compiler/lin.zig):
-//   0 push_const   1 load_local   2 store_local   3 add   4 sub   5 mul
-//  19 cmp_gt      23 jump         24 jump_if_false 29 ret
+// Opcodes implementados: todos os 33 da enum canônica.
+// call usa o catálogo bounded de programas deste módulo; arrays usam pool flat 8x256.
 // ---------------------------------------------------------------------------
+
+// Comparação unsigned dos mesmos 64 bits, sem coerção de tipo.
+!vm_u_ge(a: int, b: int): int {
+    ?(a < 0 && b >= 0) { ^1 };
+    ?(a >= 0 && b < 0) { ^0 };
+    ?(a >= b) { ^1 };
+    ^0;
+}
+
+// Divisão truncada bit-exact em 64 passos, sem usar o operador / do host.
+// divisor zero retorna 0 neste protótipo; o executor conformante deverá retornar
+// o código estruturado VmDivisionByZero em vez de confundir erro com resultado.
+!vm_div_trunc(x: int, y: int): int {
+    ?(y == 0) { ^0 };
+    neg = 0;
+    ?((x < 0 && y >= 0) || (x >= 0 && y < 0)) { neg = 1 };
+    ux = x;
+    uy = y;
+    ?(x < 0) { ux = 0 - x };
+    ?(y < 0) { uy = 0 - y };
+    q = 0;
+    rem = 0;
+    i = 63;
+    while (i >= 0) {
+        carry = 0;
+        ?(rem < 0) { carry = 1 };
+        bit = _lia_ushr(ux, i) & 1;
+        rem = _lia_shl(rem, 1) | bit;
+        ?(carry == 1 || vm_u_ge(rem, uy) == 1) {
+            rem = rem - uy;
+            q = q | _lia_shl(1, i);
+        };
+        i = i - 1;
+    };
+    ?(neg == 1) { q = 0 - q };
+    ^q;
+}
+
 !vm_run(prog: int, in0: int, in1: int): int {
-    opc: [20]int;
-    arg: [20]int;
+    opc: [32]int;
+    arg: [32]int;
     loc: [8]int;
     st:  [64]int;
+    alen: [8]int;
+    pool: [2048]int;
     n = 0;
     pc = 0;
     sp = 0;
@@ -89,6 +130,58 @@
         opc[15] = 1; arg[15] = 1;  // load_local 1      (acc)   [Fim]
         opc[16] = 29; arg[16] = 0; // ret
         n = 17;
+    } : (prog == 2) {
+        // Exercita xor, shift, igualdade e not lógico: retorna 1.
+        opc[0] = 0;  arg[0] = 5;
+        opc[1] = 0;  arg[1] = 3;
+        opc[2] = 10; arg[2] = 0;   // 5 xor 3 = 6
+        opc[3] = 0;  arg[3] = 1;
+        opc[4] = 13; arg[4] = 0;   // 6 << 1 = 12
+        opc[5] = 0;  arg[5] = 12;
+        opc[6] = 16; arg[6] = 0;   // 12 == 12 = 1
+        opc[7] = 22; arg[7] = 0;   // !1 = 0
+        opc[8] = 0;  arg[8] = 0;
+        opc[9] = 16; arg[9] = 0;   // 0 == 0 = 1
+        opc[10] = 29; arg[10] = 0;
+        n = 11;
+    } : (prog == 3) {
+        // Exercita short-circuit keep e pop: retorna 1.
+        opc[0] = 0;  arg[0] = 0;
+        opc[1] = 25; arg[1] = 3;   // false: preserva 0 e pula
+        opc[2] = 0;  arg[2] = 99;
+        opc[3] = 27; arg[3] = 0;   // remove 0
+        opc[4] = 0;  arg[4] = 1;
+        opc[5] = 26; arg[5] = 7;   // true: preserva 1 e pula
+        opc[6] = 0;  arg[6] = 99;
+        opc[7] = 29; arg[7] = 0;
+        n = 8;
+    } : (prog == 4) {
+        // Array slot 0, len 4: store[2]=40; load[2]+len => 44.
+        loc[0] = 0;
+        alen[0] = 4;
+        opc[0] = 0;  arg[0] = 2;
+        opc[1] = 0;  arg[1] = 40;
+        opc[2] = 31; arg[2] = 0;
+        opc[3] = 0;  arg[3] = 2;
+        opc[4] = 30; arg[4] = 0;
+        opc[5] = 32; arg[5] = 0;
+        opc[6] = 3;  arg[6] = 0;
+        opc[7] = 29; arg[7] = 0;
+        n = 8;
+    } : (prog == 5) {
+        // call prog 0 com (7,15): retorna 64.
+        opc[0] = 0;  arg[0] = 7;
+        opc[1] = 0;  arg[1] = 15;
+        opc[2] = 28; arg[2] = 0;
+        opc[3] = 29; arg[3] = 0;
+        n = 4;
+    } : (prog == 6) {
+        // div truncada: -7 / 2 = -3.
+        opc[0] = 0;  arg[0] = 0 - 7;
+        opc[1] = 0;  arg[1] = 2;
+        opc[2] = 6;  arg[2] = 0;
+        opc[3] = 29; arg[3] = 0;
+        n = 4;
     };
 
     while (pc < n) {
@@ -119,25 +212,130 @@
             sp = sp - 1; l = st[sp];
             st[sp] = l * r;
             sp = sp + 1;
+        } : (o == 6) {           // div truncada
+            sp = sp - 1; r = st[sp];
+            sp = sp - 1; l = st[sp];
+            st[sp] = vm_div_trunc(l, r);
+            sp = sp + 1;
+        } : (o == 7) {           // mod
+            sp = sp - 1; r = st[sp];
+            sp = sp - 1; l = st[sp];
+            ?(r == 0) { ^0 };
+            st[sp] = _lia_mod(l, r);
+            sp = sp + 1;
+        } : (o == 8) {           // bit_and
+            sp = sp - 1; r = st[sp];
+            sp = sp - 1; l = st[sp];
+            st[sp] = l & r; sp = sp + 1;
+        } : (o == 9) {           // bit_or
+            sp = sp - 1; r = st[sp];
+            sp = sp - 1; l = st[sp];
+            st[sp] = l | r; sp = sp + 1;
+        } : (o == 10) {          // bit_xor
+            sp = sp - 1; r = st[sp];
+            sp = sp - 1; l = st[sp];
+            st[sp] = l ^ r; sp = sp + 1;
+        } : (o == 11) {          // bit_not
+            st[sp - 1] = ~st[sp - 1];
+        } : (o == 12) {          // neg wrapping
+            st[sp - 1] = 0 - st[sp - 1];
+        } : (o == 13) {          // shl
+            sp = sp - 1; r = st[sp];
+            sp = sp - 1; l = st[sp];
+            st[sp] = _lia_shl(l, r); sp = sp + 1;
+        } : (o == 14) {          // shr
+            sp = sp - 1; r = st[sp];
+            sp = sp - 1; l = st[sp];
+            st[sp] = _lia_shr(l, r); sp = sp + 1;
+        } : (o == 15) {          // ushr
+            sp = sp - 1; r = st[sp];
+            sp = sp - 1; l = st[sp];
+            st[sp] = _lia_ushr(l, r); sp = sp + 1;
+        } : (o == 16) {          // cmp_eq
+            sp = sp - 1; r = st[sp]; sp = sp - 1; l = st[sp];
+            ?(l == r) { st[sp] = 1 } : { st[sp] = 0 }; sp = sp + 1;
+        } : (o == 17) {          // cmp_ne
+            sp = sp - 1; r = st[sp]; sp = sp - 1; l = st[sp];
+            ?(l != r) { st[sp] = 1 } : { st[sp] = 0 }; sp = sp + 1;
+        } : (o == 18) {          // cmp_lt
+            sp = sp - 1; r = st[sp]; sp = sp - 1; l = st[sp];
+            ?(l < r) { st[sp] = 1 } : { st[sp] = 0 }; sp = sp + 1;
         } : (o == 19) {          // cmp_gt (pop,pop,push 1/0)
             sp = sp - 1; r = st[sp];
             sp = sp - 1; l = st[sp];
             ?(l > r) { st[sp] = 1 } : { st[sp] = 0 };
             sp = sp + 1;
+        } : (o == 20) {          // cmp_le
+            sp = sp - 1; r = st[sp]; sp = sp - 1; l = st[sp];
+            ?(l <= r) { st[sp] = 1 } : { st[sp] = 0 }; sp = sp + 1;
+        } : (o == 21) {          // cmp_ge
+            sp = sp - 1; r = st[sp]; sp = sp - 1; l = st[sp];
+            ?(l >= r) { st[sp] = 1 } : { st[sp] = 0 }; sp = sp + 1;
+        } : (o == 22) {          // log_not
+            ?(st[sp - 1] == 0) { st[sp - 1] = 1 } : { st[sp - 1] = 0 };
         } : (o == 23) {          // jump
             pc = a;
         } : (o == 24) {          // jump_if_false (pop; se 0, pula)
             sp = sp - 1;
             ?(st[sp] == 0) { pc = a };
+        } : (o == 25) {          // jump_if_false_keep
+            ?(st[sp - 1] == 0) { pc = a };
+        } : (o == 26) {          // jump_if_true_keep
+            ?(st[sp - 1] != 0) { pc = a };
+        } : (o == 27) {          // pop
+            sp = sp - 1;
+        } : (o == 28) {          // call bounded: programas 0..3 usam dois inputs
+            sp = sp - 1; call_in1 = st[sp];
+            sp = sp - 1; call_in0 = st[sp];
+            st[sp] = vm_run(a, call_in0, call_in1);
+            sp = sp + 1;
         } : (o == 29) {          // ret -> topo da pilha
             ^st[sp - 1];
+        } : (o == 30) {          // load_index; fora do range retorna 0
+            sp = sp - 1; ix = st[sp];
+            slot = loc[a];
+            v = 0;
+            ?(slot >= 0 && slot < 8 && ix >= 0 && ix < alen[slot]) {
+                v = pool[(slot * 256) + ix];
+            };
+            st[sp] = v; sp = sp + 1;
+        } : (o == 31) {          // store_index; fora do range é ignorado
+            sp = sp - 1; val = st[sp];
+            sp = sp - 1; ix = st[sp];
+            slot = loc[a];
+            ?(slot >= 0 && slot < 8 && ix >= 0 && ix < alen[slot]) {
+                pool[(slot * 256) + ix] = val;
+            };
+        } : (o == 32) {          // arr_len
+            slot = loc[a];
+            v = 0;
+            ?(slot >= 0 && slot < 8) { v = alen[slot] };
+            st[sp] = v; sp = sp + 1;
         };
     };
     ^0;
 }
 
-// Exportáveis (esperado: sq_demo -> 64, fact_demo -> 24)
+// Exportáveis (esperado: sq_demo -> 64, fact_demo -> 24).
+// O self-test retorna uma máscara estável: bit 0 = quadrado, bit 1 = fatorial.
 !sq_demo(): int { ^vm_run(0, 7, 15); }
 !fact_demo(): int { ^vm_run(1, 4, 0); }
+!linvm_opcode_coverage(): int { ^33; }
+!linvm_is_full(): int { ^0; }
+!linvm_selftest(): int {
+    mask = 0;
+    ?(sq_demo() == 64) { mask = mask + 1 };
+    ?(fact_demo() == 24) { mask = mask + 2 };
+    ^mask;
+}
+!linvm_extended_selftest(): int {
+    mask = 0;
+    ?(vm_run(2, 0, 0) == 1) { mask = mask + 1 };
+    ?(vm_run(3, 0, 0) == 1) { mask = mask + 2 };
+    ?(vm_run(4, 0, 0) == 44) { mask = mask + 4 };
+    ?(vm_run(5, 0, 0) == 64) { mask = mask + 8 };
+    ?(vm_run(6, 0, 0) == (0 - 3)) { mask = mask + 16 };
+    ^mask;
+}
 
-=ex{soma_quadrado_com_offset, fatorial, vm_run, sq_demo, fact_demo}
+=ex{soma_quadrado_com_offset, fatorial, vm_u_ge, vm_div_trunc, vm_run, sq_demo, fact_demo, linvm_opcode_coverage, linvm_is_full, linvm_selftest, linvm_extended_selftest}
