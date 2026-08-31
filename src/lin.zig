@@ -6408,6 +6408,16 @@ fn vmShiftU(a: i64, b: i64) i64 {
 }
 
 pub fn vmExec(mod: *const VmModule, fi: usize, args: []const i64, depth: usize, steps: *u64) VmError!i64 {
+    const res = try vmExecWithSp(mod, fi, args, depth, steps);
+    return res.val;
+}
+
+pub const VmExecResult = struct {
+    val: i64,
+    sp_at_ret: usize,
+};
+
+pub fn vmExecWithSp(mod: *const VmModule, fi: usize, args: []const i64, depth: usize, steps: *u64) VmError!VmExecResult {
     if (depth > VM_MAX_DEPTH) return error.VmDepth;
     if (fi >= mod.fns.len) return error.VmBadFunction;
     const f = &mod.fns[fi];
@@ -6493,7 +6503,7 @@ pub fn vmExec(mod: *const VmModule, fi: usize, args: []const i64, depth: usize, 
             },
             .ret => {
                 if (sp == 0) return error.VmStackUnderflow;
-                return stack[sp - 1];
+                return .{ .val = stack[sp - 1], .sp_at_ret = sp };
             },
             .load_index => {
                 if (sp == 0) return error.VmStackUnderflow;
@@ -6582,7 +6592,7 @@ pub fn vmExec(mod: *const VmModule, fi: usize, args: []const i64, depth: usize, 
             },
         }
     }
-    return 0;
+    return .{ .val = 0, .sp_at_ret = sp };
 }
 
 const FnStructuralClass = enum {
@@ -14892,16 +14902,21 @@ pub fn main() !void {
             var mod_mock = VmModule{ .fns = (&fn_mock)[0..1] };
             const vm_args = [_]i64{};
             var steps: u64 = 0;
-            const vm_val = vmExec(&mod_mock, 0, &vm_args, 0, &steps) catch |err| {
+            const res = vmExecWithSp(&mod_mock, 0, &vm_args, 0, &steps) catch |err| {
                 try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" LinVM statement execution error: {any}\n", .{ idx + 1, c_stmt_suite.len, tc.input, err });
                 continue;
             };
 
-            if (vm_val == tc.expected) {
-                try stdout.print("  [{d: >2}/{d}] PASS: \"{s: <38}\" => VM:{d: >4} (Insts: {d: >2}) | {s}\n", .{ idx + 1, c_stmt_suite.len, tc.input, vm_val, s_lowerer.code.items.len, tc.desc });
+            if (res.sp_at_ret != 1) {
+                try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" Stack leak! sp_at_ret={d} (expected 1)\n", .{ idx + 1, c_stmt_suite.len, tc.input, res.sp_at_ret });
+                continue;
+            }
+
+            if (res.val == tc.expected) {
+                try stdout.print("  [{d: >2}/{d}] PASS: \"{s: <38}\" => VM:{d: >4} (Insts: {d: >2}, SP: {d}) | {s}\n", .{ idx + 1, c_stmt_suite.len, tc.input, res.val, s_lowerer.code.items.len, res.sp_at_ret, tc.desc });
                 c1_pass_count += 1;
             } else {
-                try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" => VM:{d}, expected {d}\n", .{ idx + 1, c_stmt_suite.len, tc.input, vm_val, tc.expected });
+                try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" => VM:{d}, expected {d}\n", .{ idx + 1, c_stmt_suite.len, tc.input, res.val, tc.expected });
             }
         }
 

@@ -1190,13 +1190,18 @@ pub fn main() !void {
         var mod_mock = VmModule{ .fns = (&fn_mock)[0..1] };
         const vm_args = [_]i64{};
         var steps: u64 = 0;
-        const vm_val = vmExec(&mod_mock, 0, &vm_args, 0, &steps) catch {
+        const res = lin.vmExecWithSp(&mod_mock, 0, &vm_args, 0, &steps) catch {
             try stdout.print("  [FAIL] LinVM statement execution failed for: \"{s}\"\n", .{tc.input});
             return error.CParserVerificationFailed;
         };
 
-        if (vm_val != tc.expected) {
-            try stdout.print("  [FAIL] Statement \"{s}\" => VM:{d}, expected {d}\n", .{ tc.input, vm_val, tc.expected });
+        if (res.sp_at_ret != 1) {
+            try stdout.print("  [FAIL] Statement \"{s}\" leaked stack! sp_at_ret={d} (expected 1)\n", .{ tc.input, res.sp_at_ret });
+            return error.CParserVerificationFailed;
+        }
+
+        if (res.val != tc.expected) {
+            try stdout.print("  [FAIL] Statement \"{s}\" => VM:{d}, expected {d}\n", .{ tc.input, res.val, tc.expected });
             return error.CParserVerificationFailed;
         }
     }
