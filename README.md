@@ -45,39 +45,67 @@ The two self-hosted suites (`test_lin_full_self_hosted_suite.zig` and
 
 ## 2. Build & run
 
-The compiler links against OpenCL for its execution/parity subsystem, so the build needs
-an OpenCL dev toolchain (`ocl-icd-opencl-dev` + a runtime ICD, or ROCm on AMD):
+There is a `build.zig` (Zig 0.13.0) with a **compile-time `gpu` option**, plus convenience
+Makefile targets.
+
+### GPU mode (default) — needs an OpenCL toolchain
+
+The compiler links OpenCL for its execution/parity subsystem, so this mode needs an OpenCL
+dev toolchain (`ocl-icd-opencl-dev` + a runtime ICD, or ROCm on AMD):
 
 ```bash
-make build           # -> ./bin/lin_native
+zig build -Doptimize=ReleaseFast     # -> zig-out/bin/lin_native
+# or
+make build
 ```
 
-You do **not** need a discrete GPU. Any OpenCL platform works — including a CPU runtime
-like **PoCL** (`pocl-opencl-icd` on Debian/Ubuntu), which is exactly how this repo was
-tested. The device discovery prefers a GPU but falls back to any OpenCL device, so it runs
-on CPU-only machines without crashing.
+You do **not** need a discrete GPU. Any OpenCL platform works — including a CPU runtime like
+**PoCL** (`pocl-opencl-icd` on Debian/Ubuntu), which is exactly how this repo was tested.
+Device discovery prefers a GPU but falls back to any OpenCL device, so it runs on CPU-only
+machines without crashing.
+
+### CPU-only mode — no OpenCL toolchain required
+
+```bash
+zig build -Dgpu=false -Doptimize=ReleaseFast
+# or
+make build-cpu
+```
+
+This compiles the **same source** against a bundled OpenCL stub (`stubs/CL/`), so it builds
+and runs on any machine with just Zig 0.13 — no OpenCL headers, ICD, or GPU. All CPU
+functionality works; GPU/attestation commands fail gracefully with a clear "no OpenCL
+platform" message instead of crashing.
 
 ### Run the checks and tests
 
 ```bash
-make test            # build + check all src/*.lin and examples/*.lin + receipt round-trip
-./bin/lin_native integrity          # self-check over all 20 shipped sources -> PASS
+make test         # GPU build + check all src/*.lin + receipt round-trip
+make test-cpu     # CPU-only build + same checks (no OpenCL needed)
+$BIN integrity    # self-check over all 20 shipped sources -> PASS
 ```
 
 Or manually:
 
 ```bash
-./bin/lin_native version
-./bin/lin_native check src/lin_crypto.lin
-./bin/lin_native lint src/lin_crypto.lin
+$BIN version
+$BIN check src/lin_crypto.lin
+$BIN lint src/lin_crypto.lin
 ```
 
-Run the full self-hosted suites (on any OpenCL platform):
+Run the full self-hosted suites (GPU mode, any OpenCL platform):
 
 ```bash
 zig run -lc -I/usr/include -L/usr/lib/x86_64-linux-gnu -lOpenCL test_lin_full_self_hosted_suite.zig
 zig run -lc -I/usr/include -L/usr/lib/x86_64-linux-gnu -lOpenCL test_lin_selfhost_compat_001.zig
 ```
+
+### Reproducibility & CI
+
+`.github/workflows/ci.yml` pins **Zig 0.13.0**, installs OpenCL + PoCL, builds both modes,
+runs `make test`, both self-hosted suites, and `integrity`, then **captures and publishes the
+Merkle roots** in the run summary and as an artifact. Use those published roots as the
+canonical reference to verify receipts on your own machine.
 
 ---
 
@@ -116,12 +144,17 @@ Fixed in this revision (2026-08-31):
 
 Still open / honest caveats:
 
-4. ⚠️ **`make build` still links OpenCL** (the GPU/parity subsystem is not optional at link
-   time). If you truly have no OpenCL ICD/headers you must install `ocl-icd-opencl-dev` +
-   `pocl-opencl-icd` (or ROCm). Making OpenCL optional is a recommended next refactor.
+4. ℹ️ **OpenCL is now optional at compile time.** `zig build -Dgpu=false` builds a CPU-only
+   binary with no OpenCL toolchain (via the bundled stub). The GPU build still needs OpenCL,
+   and the GPU code is compiled-but-stubbed in CPU-only mode (it reports "no OpenCL platform"
+   at runtime rather than being fully excluded from the binary).
 5. ⚠️ **Several `[PASS]` lines in the GPU suites are hardcoded prints**, not computed
    assertions. Rewriting them as real assertions is the honest next step for credibility.
 6. ⚠️ **`from-js` matches 0 functions** for arrow/expression forms in the current sample.
+7. ⚠️ **The self-hosted certificate hashes the binary itself** (`/proc/self/exe`) into
+   `compiler_sha256`, so the certificate is an auto-consistency proof, not an independent
+   third-party proof. The Merkle roots in `receipt create` / `integrity` / the suites *are*
+   independent of the binary and are the values the CI publishes for verification.
 7. ℹ️ **Broken sources were removed** earlier: `src/lin_selfhost.lin`, `src/lin_refine_div.lin`,
    `src/lin_pow_simd.lin` failed the project's own `check` and were not referenced by tests.
    Restore via git history if needed.

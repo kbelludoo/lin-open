@@ -1,0 +1,92 @@
+name: CI
+
+# Reproducible build & test of LIN, publishing the Merkle roots so the
+# "compute receipt" claims can be verified by a third party.
+#
+#   - GPU mode:  builds with real OpenCL (PoCL CPU device on CI), runs the two
+#                self-hosted suites, captures the roots.
+#   - CPU mode:  builds with -Dgpu=false (no OpenCL toolchain), runs CPU checks.
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  ZIG_VERSION: 0.13.0
+  BIN: zig-out/bin/lin_native
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Zig ${{ env.ZIG_VERSION }}
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: ${{ env.ZIG_VERSION }}
+
+      - name: Install OpenCL dev headers + PoCL (CPU runtime)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ocl-icd-opencl-dev pocl-opencl-icd clinfo
+
+      - name: Show OpenCL platform/device (CI "GPU")
+        run: clinfo
+
+      - name: Build (GPU mode, links OpenCL)
+        run: zig build -Doptimize=ReleaseFast
+
+      - name: make test (GPU build)
+        run: make test
+
+      - name: Full self-hosted suite (GPU mode / PoCL)
+        run: |
+          zig run -lc -I/usr/include -L/usr/lib/x86_64-linux-gnu -lOpenCL \
+            test_lin_full_self_hosted_suite.zig | tee /tmp/suite_full.log
+          echo "full_exit=${PIPESTATUS[0]}"
+          test "${PIPESTATUS[0]}" -eq 0
+
+      - name: Compat suite (GPU mode / PoCL)
+        run: |
+          zig run -lc -I/usr/include -L/usr/lib/x86_64-linux-gnu -lOpenCL \
+            test_lin_selfhost_compat_001.zig | tee /tmp/suite_compat.log
+          echo "compat_exit=${PIPESTATUS[0]}"
+          test "${PIPESTATUS[0]}" -eq 0
+
+      - name: Build (CPU-only mode, no OpenCL)
+        run: zig build -Dgpu=false -Doptimize=ReleaseFast
+
+      - name: make test-cpu (CPU-only)
+        run: make test-cpu
+
+      - name: integrity (CPU-only)
+        run: ${{ env.BIN }} integrity
+
+      - name: Capture reproducible Merkle roots
+        id: roots
+        run: |
+          {
+            echo "### Merkle roots (this run)"
+            echo ""
+            echo "\`\`\`"
+            echo -n "receipt(sqr9)   : "
+            ${{ env.BIN }} receipt create --source "return x * x;" --input 9 2>/dev/null | grep -o '\.m="sha256:[0-9a-f]*"'
+            echo -n "integrity cert : "
+            ${{ env.BIN }} integrity 2>/dev/null | grep 'certificate_id'
+            echo -n "suite full root: "
+            grep -o 'provenance_merkle_root="sha256:[0-9a-f]*"' /tmp/suite_full.log || true
+            echo "\`\`\`"
+            echo ""
+            echo "To reproduce on any machine: install Zig 0.13.0 + an OpenCL runtime"
+            echo "(or use CPU-only \`zig build -Dgpu=false\`) and run the same commands."
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload suite logs as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: lin-test-logs
+          path: /tmp/suite_*.log
+          if-no-files-found: ignore
