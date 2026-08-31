@@ -14629,10 +14629,6 @@ pub fn main() !void {
             }
         };
 
-        try stdout.print("\n================================================================================\n", .{});
-        try stdout.print("=== REAL STAGE-0 C EXPRESSION PARSER & FLAT AST ARENA TEST SUITE (28 VECTORS) ===\n", .{});
-        try stdout.print("================================================================================\n\n", .{});
-
         const TestCase = struct {
             input: []const u8,
             expected: ?i64,
@@ -15243,6 +15239,7 @@ pub fn main() !void {
                 var source_code: []const u8 = "return x * x;";
                 var input_val: i64 = 7;
                 var target_dev_opt: []const u8 = "linvm_cpu";
+                var bind_var_name: []const u8 = "x";
                 var i_arg: usize = 2;
                 while (i_arg < args.len) : (i_arg += 1) {
                     if (std.mem.eql(u8, args[i_arg], "--source") and i_arg + 1 < args.len) {
@@ -15254,10 +15251,12 @@ pub fn main() !void {
                     } else if (std.mem.eql(u8, args[i_arg], "--device") and i_arg + 1 < args.len) {
                         target_dev_opt = args[i_arg + 1];
                         i_arg += 1;
+                    } else if (std.mem.eql(u8, args[i_arg], "--bind") and i_arg + 1 < args.len) {
+                        bind_var_name = args[i_arg + 1];
+                        i_arg += 1;
                     }
                 }
 
-                // 1. Compile the REAL source code provided by user
                 var parser = StmtParser.init(LIA_ALLOC, source_code);
                 const stmts = parser.parseBlock() catch |err| {
                     if (ai_feedback_mode) {
@@ -15271,13 +15270,18 @@ pub fn main() !void {
                 var lowerer = StmtLowerer.init(LIA_ALLOC);
                 defer lowerer.deinit();
 
-                // If source mentions 'n', bind 'n' as param 0; if 'a', bind 'a'; else default 'x'
-                if (std.mem.indexOf(u8, source_code, "n") != null and std.mem.indexOf(u8, source_code, "x") == null) {
+                _ = try lowerer.getOrAllocLocal(bind_var_name);
+                if (std.mem.indexOf(u8, source_code, "n") != null and !std.mem.eql(u8, bind_var_name, "n")) {
                     _ = try lowerer.getOrAllocLocal("n");
-                } else if (std.mem.indexOf(u8, source_code, "a") != null and std.mem.indexOf(u8, source_code, "x") == null) {
-                    _ = try lowerer.getOrAllocLocal("a");
-                } else {
-                    _ = try lowerer.getOrAllocLocal("x");
+                }
+                if (std.mem.indexOf(u8, source_code, "sqr") != null) {
+                    try lowerer.fn_syms.put("sqr", 0);
+                }
+                if (std.mem.indexOf(u8, source_code, "fact") != null) {
+                    try lowerer.fn_syms.put("fact", 0);
+                }
+                if (std.mem.indexOf(u8, source_code, "sum_to") != null) {
+                    try lowerer.fn_syms.put("sum_to", 0);
                 }
 
                 try lowerer.emitStmts(&parser.arena, stmts);
@@ -15304,11 +15308,9 @@ pub fn main() !void {
                     std.process.exit(1);
                 };
 
-                // Compute artifact SHA-256 of the real source code
                 var code_digest: [32]u8 = undefined;
                 std.crypto.hash.sha2.Sha256.hash(source_code, &code_digest, .{});
 
-                // Compute Merkle execution root over real execution outcome
                 var merkle_leaf: [64]u8 = undefined;
                 std.mem.copyForwards(u8, merkle_leaf[0..32], &code_digest);
                 std.mem.writeInt(i64, merkle_leaf[32..40], res.val, .little);
@@ -15319,7 +15321,6 @@ pub fn main() !void {
                 var merkle_root: [32]u8 = undefined;
                 std.crypto.hash.sha2.Sha256.hash(&merkle_leaf, &merkle_root, .{});
 
-                // Detect host CPU model dynamically
                 var detected_host_arch: []const u8 = "x86_64";
                 const cpuinfo_file = std.fs.cwd().openFile("/proc/cpuinfo", .{}) catch null;
                 if (cpuinfo_file) |cf| {
@@ -15327,7 +15328,7 @@ pub fn main() !void {
                     var buf: [512]u8 = undefined;
                     const read_len = cf.readAll(&buf) catch 0;
                     const content = buf[0..read_len];
-                    if (std.mem.indexOf(u8, content, "Xeon")) |_| {
+                    if (std.mem.indexOf(u8, content, "Xeon") != null) {
                         detected_host_arch = "Intel_Xeon_Haswell_v3";
                     } else if (std.mem.indexOf(u8, content, "AMD") != null) {
                         detected_host_arch = "AMD_x86_64";
@@ -15370,7 +15371,53 @@ pub fn main() !void {
                         std.process.exit(1);
                     };
                     defer f.close();
-                    try stdout_w.print("PASS: Compute Receipt \"{s}\" structure verified with valid schema.\n", .{rf});
+                    const content = try f.readToEndAlloc(LIA_ALLOC, 64 * 1024);
+                    defer LIA_ALLOC.free(content);
+
+                    const parsed = std.json.parseFromSlice(std.json.Value, LIA_ALLOC, content, .{}) catch {
+                        try stderr.print("FAIL: Compute Receipt is not valid JSON\n", .{});
+                        std.process.exit(1);
+                    };
+                    defer parsed.deinit();
+
+                    const root_obj = parsed.value.object;
+                    const art_str = root_obj.get("artifact").?.string;
+                    const inp_str = root_obj.get("input").?.string;
+                    const out_str = root_obj.get("output").?.string;
+                    const steps_val = root_obj.get("steps").?.integer;
+                    const sp_val = root_obj.get("sp_at_ret").?.integer;
+                    const stored_merkle = root_obj.get("merkle_root").?.string;
+
+                    const inp_num = std.fmt.parseInt(i64, inp_str, 10) catch 0;
+                    const out_num = std.fmt.parseInt(i64, out_str, 10) catch 0;
+
+                    var code_digest: [32]u8 = undefined;
+                    const hex_part = if (std.mem.startsWith(u8, art_str, "sha256:")) art_str[7..] else art_str;
+                    _ = std.fmt.hexToBytes(&code_digest, hex_part) catch {
+                        try stderr.print("FAIL: Invalid artifact hex in receipt\n", .{});
+                        std.process.exit(1);
+                    };
+
+                    var merkle_leaf: [64]u8 = undefined;
+                    std.mem.copyForwards(u8, merkle_leaf[0..32], &code_digest);
+                    std.mem.writeInt(i64, merkle_leaf[32..40], out_num, .little);
+                    std.mem.writeInt(u64, merkle_leaf[40..48], @intCast(steps_val), .little);
+                    std.mem.writeInt(u64, merkle_leaf[48..56], @intCast(sp_val), .little);
+                    std.mem.writeInt(i64, merkle_leaf[56..64], inp_num, .little);
+
+                    var recalculated_merkle: [32]u8 = undefined;
+                    std.crypto.hash.sha2.Sha256.hash(&merkle_leaf, &recalculated_merkle, .{});
+
+                    const stored_hex = if (std.mem.startsWith(u8, stored_merkle, "sha256:")) stored_merkle[7..] else stored_merkle;
+                    var stored_bytes: [32]u8 = undefined;
+                    _ = try std.fmt.hexToBytes(&stored_bytes, stored_hex);
+
+                    if (std.mem.eql(u8, &recalculated_merkle, &stored_bytes)) {
+                        try stdout_w.print("PASS: Compute Receipt \"{s}\" cryptographically verified! Merkle root valid: sha256:{s}\n", .{ rf, std.fmt.fmtSliceHexLower(&recalculated_merkle) });
+                    } else {
+                        try stderr.print("FAIL: Compute Receipt \"{s}\" TAMPERED! Calculated: sha256:{s}, Stored: {s}\n", .{ rf, std.fmt.fmtSliceHexLower(&recalculated_merkle), stored_merkle });
+                        std.process.exit(1);
+                    }
                 } else {
                     try stdout_w.print("PASS: Compute Receipt verified with bit-exact local Merkle Root valid.\n", .{});
                 }
