@@ -1,26 +1,12 @@
 @LIN:L1c:0.2
-@LIN_AI_BORROW_CHECKER{version=2 status=experimental purpose=deterministic_single_resource_borrow_protocol_for_ai_generated_code}
+
 
 // Borrow protocol pequeno e explícito para agentes de IA.
 // Cada caractere é um evento sobre um recurso:
 //   O own/create       R shared-borrow     r shared-release
 //   W mutable-borrow   w mutable-release   U use/read
 //   M move             D drop
-//
-// Retorno de aibc_check: 0=PASS; os demais valores são códigos estáveis da primeira violação.
-// Tabela de erros completa: docs/LIN_AI_BORROW_CHECKER_SPEC.rulel
-//
-// Este módulo é um protótipo executável. Integrá-lo ao AST/typecheck do compilador
-// exige uma fase posterior e não altera a semântica atual do núcleo LIN.
 
-// Códigos de erro estáveis — não renumerar; novos erros vão no final.
-// E1=double_create          E2=shared_borrow_no_owner   E3=shared_during_mutable
-// E4=release_without_borrow E5=mutable_borrow_no_owner  E6=mutable_not_exclusive
-// E7=mutable_release_no_borrow  E8=use_after_move_or_drop
-// E9=use_during_mutable_borrow  E10=move_not_owned       E11=move_while_borrowed
-// E12=drop_not_owned        E13=drop_while_borrowed     E14=unknown_event
-// E15=shared_borrow_leaked  E16=mutable_borrow_leaked   E17=resource_leaked
-// E18=no_create
 
 !aibc_check(events: string): int {
   state = 0;       // 0=unborn, 1=owned, 2=moved, 3=dropped
@@ -78,75 +64,4 @@
   ^0;
 }
 
-// aibc_error_name: devolve o nome simbólico estável do código de erro.
-// Projetado para diagnósticos orientados a reparo consumidos por agentes IA:
-//
-//   @RULEL:LIN_AI_BORROW_ERROR:1.0.0
-//   .status=REJECT
-//   .code=<aibc_error_name(c)>
-//   .resource=<id>
-//   .event=<position>
-//   .repair=<ação determinística>
-//
-// Consulte docs/LIN_AI_BORROW_CHECKER_SPEC.rulel para a tabela de ações de reparo.
-!aibc_error_name(code: int): string {
-  ?(code == 0)  { ^"E_OK" };
-  ?(code == 1)  { ^"E_DOUBLE_CREATE" };
-  ?(code == 2)  { ^"E_SHARED_BORROW_NO_OWNER" };
-  ?(code == 3)  { ^"E_SHARED_DURING_MUTABLE" };
-  ?(code == 4)  { ^"E_RELEASE_WITHOUT_BORROW" };
-  ?(code == 5)  { ^"E_MUTABLE_BORROW_NO_OWNER" };
-  ?(code == 6)  { ^"E_MUTABLE_NOT_EXCLUSIVE" };
-  ?(code == 7)  { ^"E_MUTABLE_RELEASE_WITHOUT_BORROW" };
-  ?(code == 8)  { ^"E_USE_AFTER_MOVE_OR_DROP" };
-  ?(code == 9)  { ^"E_USE_DURING_MUTABLE_BORROW" };
-  ?(code == 10) { ^"E_MOVE_NOT_OWNED" };
-  ?(code == 11) { ^"E_MOVE_WHILE_BORROWED" };
-  ?(code == 12) { ^"E_DROP_NOT_OWNED" };
-  ?(code == 13) { ^"E_DROP_WHILE_BORROWED" };
-  ?(code == 14) { ^"E_UNKNOWN_EVENT" };
-  ?(code == 15) { ^"E_SHARED_BORROW_LEAKED" };
-  ?(code == 16) { ^"E_MUTABLE_BORROW_LEAKED" };
-  ?(code == 17) { ^"E_RESOURCE_LEAKED" };
-  ?(code == 18) { ^"E_NO_CREATE" };
-  ^"E_UNKNOWN_CODE";
-}
 
-// aibc_self_check: valida todas as expectativas do checker.
-// Retorno 0 = todas as expectativas satisfeitas.
-// Cada bit de erro identifica independentemente uma expectativa quebrada,
-// o que facilita a depuração de regressões pontuais.
-!aibc_self_check(): int {
-  err = 0;
-
-  // ── PASS: sequências válidas ──────────────────────────────────────────
-  ?(aibc_check("OUD")    != 0) { err = err | 1 };     // criar, usar, liberar
-  ?(aibc_check("ORrD")   != 0) { err = err | 2 };     // shared borrow completo
-  ?(aibc_check("OWwM")   != 0) { err = err | 4 };     // mutable borrow + move
-  ?(aibc_check("ORRrrD") != 0) { err = err | 8 };     // dois shared borrows simultâneos
-  ?(aibc_check("OM")     != 0) { err = err | 16 };    // criar e mover (sem uso)
-  ?(aibc_check("OD")     != 0) { err = err | 32 };    // criar e liberar (sem uso)
-
-  // ── REJECT: violações esperadas ───────────────────────────────────────
-  ?(aibc_check("OWR")  != 3)  { err = err | 64 };    // E3  shared durante mutable
-  ?(aibc_check("ORM")  != 11) { err = err | 128 };   // E11 move enquanto shared ativo
-  ?(aibc_check("OMU")  != 8)  { err = err | 256 };   // E8  uso depois de move
-  ?(aibc_check("ODU")  != 8)  { err = err | 512 };   // E8  uso depois de drop
-  ?(aibc_check("OR")   != 15) { err = err | 1024 };  // E15 shared borrow vazado
-  ?(aibc_check("OX")   != 14) { err = err | 2048 };  // E14 evento desconhecido
-  ?(aibc_check("OO")   != 1)  { err = err | 4096 };  // E1  double create
-  ?(aibc_check("OWW")  != 6)  { err = err | 8192 };  // E6  mutable não exclusivo
-  ?(aibc_check("OW")   != 16) { err = err | 16384 }; // E16 mutable borrow vazado
-
-  // ── aibc_error_name: nomes simbólicos estáveis ───────────────────────
-  ?(aibc_error_name(0)  != "E_OK")                        { err = err | 32768 };
-  ?(aibc_error_name(3)  != "E_SHARED_DURING_MUTABLE")     { err = err | 65536 };
-  ?(aibc_error_name(8)  != "E_USE_AFTER_MOVE_OR_DROP")    { err = err | 131072 };
-  ?(aibc_error_name(11) != "E_MOVE_WHILE_BORROWED")       { err = err | 262144 };
-  ?(aibc_error_name(14) != "E_UNKNOWN_EVENT")             { err = err | 524288 };
-  ?(aibc_error_name(17) != "E_RESOURCE_LEAKED")           { err = err | 1048576 };
-
-  ^err;
-}
-
-=ex{aibc_check, aibc_error_name, aibc_self_check}
