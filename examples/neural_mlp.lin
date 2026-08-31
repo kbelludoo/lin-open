@@ -1,0 +1,25 @@
+@LIN:L1c:0.2
+@NEURAL_TINYML{version=1.0 model=mlp_4x4x2 activation=relu}
+
+!relu(x: int) -> int {
+  ?(x > 0) { ^x; } : { ^0; };
+}
+
+!predict_sensor_state(s0: int, s1: int, s2: int, s3: int) -> int {
+  // 1. Camada Oculta: Multiplicacao Matriz-Vetor com Pesos Quantizados (INT8)
+  h0 = _lia_shr(relu((s0 * 12)  + (s1 * -4)  + (s2 * 8)   + (s3 * 15)  + 10), 8);
+  h1 = _lia_shr(relu((s0 * -10) + (s1 * 20)  + (s2 * 5)   + (s3 * -2)  - 5), 8);
+  h2 = _lia_shr(relu((s0 * 6)   + (s1 * 14)  + (s2 * -12) + (s3 * 9)   + 20), 8);
+  h3 = _lia_shr(relu((s0 * -8)  + (s1 * 3)   + (s2 * 16)  + (s3 * -11) + 0), 8);
+
+  // 2. Camada de Saida: 2 Classes (Ex: Anomalia vs Normal)
+  out0 = (h0 * 15)  + (h1 * -12) + (h2 * 18)  + (h3 * 5)   - 50;
+  out1 = (h0 * -10) + (h1 * 16)  + (h2 * -14) + (h3 * 22)  + 40;
+
+  // 3. ArgMax deterministico (Retorna classe vencedora: 0 ou 1)
+  decision = 0;
+  ?(out1 > out0) { decision = 1; };
+  ^decision;
+}
+
+=ex{relu, predict_sensor_state}
