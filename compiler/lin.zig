@@ -14629,7 +14629,7 @@ fn runCli() !void {
         return;
     }
 
-    if (argEq(cmd, "c-expr-test") or argEq(cmd, "c-expr-eval") or argEq(cmd, "c-ast-verify") or argEq(cmd, "receipt") or argEq(cmd, "receipt-create") or argEq(cmd, "receipt-verify") or argEq(cmd, "crosscheck-c") or argEq(cmd, "xver-c") or argEq(cmd, "nversion-c") or argEq(cmd, "gate") or argEq(cmd, "gate-check") or argEq(cmd, "gate-attest") or argEq(cmd, "lin-gate")) {
+    if (argEq(cmd, "c-expr-test") or argEq(cmd, "c-expr-eval") or argEq(cmd, "c-ast-verify") or argEq(cmd, "receipt") or argEq(cmd, "receipt-create") or argEq(cmd, "receipt-verify") or argEq(cmd, "crosscheck-c") or argEq(cmd, "xver-c") or argEq(cmd, "nversion-c") or argEq(cmd, "gate") or argEq(cmd, "gate-check") or argEq(cmd, "gate-attest") or argEq(cmd, "lin-gate") or argEq(cmd, "gate-keygen")) {
         var ai_feedback_mode = false;
         for (args) |arg| {
             if (std.mem.eql(u8, arg, "--ai-feedback")) {
@@ -15659,8 +15659,18 @@ fn runCli() !void {
         // simulated: every digest is computed over the bytes on disk with
         // SHA-256 by this same binary and folded into a real Merkle tree.
         //
-        //   lin gate-check  [--manifest PATH]   exit 0 OPEN / 1 BLOCKED / 3 missing
-        //   lin gate-attest [--manifest PATH]   recompute + rewrite the manifest
+        //   lin gate-check  [--manifest PATH] [--roster R] [--quorum N]
+        //                       exit 0 OPEN / 1 BLOCKED / 3 not evaluable
+        //   lin gate-attest [--manifest PATH] [--key SEEDFILE] [--key-id ID]
+        //                       recompute + rewrite the manifest, optionally
+        //                       signing it with a real Ed25519 key
+        //   lin gate-keygen [--key SEEDFILE] [--roster R] [--key-id ID] [--quorum N]
+        //                       mint a signing key; only the public key is a
+        //                       repository artifact
+        //
+        // With --roster the attestation must carry >= quorum valid Ed25519
+        // signatures over the manifest body, or the gate blocks. Without it the
+        // gate says plainly that the signature was not verified.
         //
         // A PR that touches the compiler or the independent C implementation
         // changes the root, so the gate fails until a human re-attests by
@@ -15671,15 +15681,139 @@ fn runCli() !void {
         //   node(l,r) = SHA256("lin:gate:node:" || l || r)   (unpaired node promoted)
         //   root = fold over the leaves sorted by path (lexicographic)
         // ==================================================================
-        if (argEq(cmd, "gate") or argEq(cmd, "gate-check") or argEq(cmd, "gate-attest") or argEq(cmd, "lin-gate")) {
+        if (argEq(cmd, "gate") or argEq(cmd, "gate-check") or argEq(cmd, "gate-attest") or argEq(cmd, "gate-keygen") or argEq(cmd, "lin-gate")) {
             const attesting = argEq(cmd, "gate-attest");
             var manifest_path: []const u8 = "lin_gate_manifest.rulel";
+            var sign_key_path: ?[]const u8 = null;
+            var sign_key_id: []const u8 = "gate-maintainer";
+            var roster_path: ?[]const u8 = null;
+            var quorum_override: ?usize = null;
             var i_gate: usize = 2;
             while (i_gate < args.len) : (i_gate += 1) {
                 if (std.mem.eql(u8, args[i_gate], "--manifest") and i_gate + 1 < args.len) {
                     manifest_path = args[i_gate + 1];
                     i_gate += 1;
+                } else if (std.mem.eql(u8, args[i_gate], "--key") and i_gate + 1 < args.len) {
+                    sign_key_path = args[i_gate + 1];
+                    i_gate += 1;
+                } else if (std.mem.eql(u8, args[i_gate], "--key-id") and i_gate + 1 < args.len) {
+                    sign_key_id = args[i_gate + 1];
+                    i_gate += 1;
+                } else if (std.mem.eql(u8, args[i_gate], "--roster") and i_gate + 1 < args.len) {
+                    roster_path = args[i_gate + 1];
+                    i_gate += 1;
+                } else if (std.mem.eql(u8, args[i_gate], "--quorum") and i_gate + 1 < args.len) {
+                    quorum_override = std.fmt.parseInt(usize, args[i_gate + 1], 10) catch null;
+                    i_gate += 1;
                 }
+            }
+
+            // ---- gate-keygen: mint a real Ed25519 signing key for the gate ----
+            // The private seed is written 0600 and is NOT a repository artifact;
+            // only the public key goes into the roster, which can be committed.
+            if (argEq(cmd, "gate-keygen")) {
+                var key_out: []const u8 = "lin_gate_key.seed";
+                var roster_out: []const u8 = "lin_gate_roster.rulel";
+                var kg_quorum: usize = 1;
+                var k_i: usize = 2;
+                while (k_i < args.len) : (k_i += 1) {
+                    if (argEq(args[k_i], "--key") and k_i + 1 < args.len) {
+                        key_out = args[k_i + 1];
+                        k_i += 1;
+                    } else if (argEq(args[k_i], "--roster") and k_i + 1 < args.len) {
+                        roster_out = args[k_i + 1];
+                        k_i += 1;
+                    } else if (argEq(args[k_i], "--key-id") and k_i + 1 < args.len) {
+                        sign_key_id = args[k_i + 1];
+                        k_i += 1;
+                    } else if (argEq(args[k_i], "--quorum") and k_i + 1 < args.len) {
+                        kg_quorum = std.fmt.parseInt(usize, args[k_i + 1], 10) catch 1;
+                        k_i += 1;
+                    }
+                }
+
+                var seed: [32]u8 = undefined;
+                std.crypto.random.bytes(&seed);
+                const kp = try std.crypto.sign.Ed25519.KeyPair.create(seed);
+
+                const kf = try std.fs.cwd().createFile(key_out, .{ .truncate = true, .mode = 0o600 });
+                defer kf.close();
+                try kf.writer().print("{s}\n", .{std.fmt.fmtSliceHexLower(&seed)});
+
+                // Keep every other roster entry; replace a previous one for this key_id.
+                const kgStr = struct {
+                    fn f(line: []const u8, key: []const u8) ?[]const u8 {
+                        var kb: [128]u8 = undefined;
+                        const k = std.fmt.bufPrint(&kb, "{s}=\"", .{key}) catch return null;
+                        const st = std.mem.indexOf(u8, line, k) orelse return null;
+                        const rest = line[st + k.len ..];
+                        const en = std.mem.indexOfScalar(u8, rest, '"') orelse return null;
+                        return rest[0..en];
+                    }
+                }.f;
+                var kept = std.ArrayList([]const u8).init(LIA_ALLOC);
+                defer kept.deinit();
+                if (std.fs.cwd().openFile(roster_out, .{})) |rf| {
+                    defer rf.close();
+                    var rb = std.ArrayList(u8).init(LIA_ALLOC);
+                    defer rb.deinit();
+                    try rf.reader().readAllArrayList(&rb, 1 << 20);
+                    const owned = try LIA_ALLOC.dupe(u8, rb.items);
+                    var rit = std.mem.tokenizeAny(u8, owned, "\n");
+                    while (rit.next()) |line| {
+                        const t = std.mem.trim(u8, line, " \r\t");
+                        if (!std.mem.startsWith(u8, t, ".k{")) continue;
+                        if (kgStr(t, "key_id")) |id| {
+                            if (std.mem.eql(u8, id, sign_key_id)) continue;
+                        }
+                        try kept.append(t);
+                    }
+                } else |_| {}
+
+                var rdoc = std.ArrayList(u8).init(LIA_ALLOC);
+                defer rdoc.deinit();
+                try rdoc.writer().print(
+                    \\@RULEL:LIN_GATE_ROSTER:1.0.0
+                    \\~R{{.s=subject .k=signer_keys .v=verdict}}
+                    \\.s{{
+                    \\  quorum={d}
+                    \\  note="public keys only; the matching private seeds are not a repository artifact"
+                    \\}}
+                    \\.k{{
+                    \\
+                , .{kg_quorum});
+                try rdoc.writer().print(
+                    \\  .k{{ key_id="{s}" pubkey="ed25519:{s}" }}
+                , .{ sign_key_id, std.fmt.fmtSliceHexLower(&kp.public_key.toBytes()) });
+                try rdoc.writer().print("\n", .{});
+                for (kept.items) |kline| {
+                    try rdoc.writer().print("{s}\n", .{kline});
+                }
+                try rdoc.writer().print(
+                    \\}}
+                    \\.v{{
+                    \\  signers={d}
+                    \\  quorum={d}
+                    \\  evidence_status="COMPUTED"
+                    \\}}
+                    \\
+                , .{ kept.items.len + 1, kg_quorum });
+
+                const rfile = try std.fs.cwd().createFile(roster_out, .{});
+                defer rfile.close();
+                try rfile.writeAll(rdoc.items);
+
+                try stdout.print("\n================================================================================\n", .{});
+                try stdout.print("=== LIN GATE — KEYGEN (Ed25519)                                               ===\n", .{});
+                try stdout.print("================================================================================\n", .{});
+                try stdout.print("  key id ......... {s}\n", .{sign_key_id});
+                try stdout.print("  public key ..... ed25519:{s}\n", .{std.fmt.fmtSliceHexLower(&kp.public_key.toBytes())});
+                try stdout.print("  private seed ... {s}  (mode 0600 — keep it out of the repository)\n", .{key_out});
+                try stdout.print("  roster ......... {s}  ({d} signer(s), quorum {d})\n", .{ roster_out, kept.items.len + 1, kg_quorum });
+                try stdout.print("Sign an attestation with:  lin gate-attest --key {s} --key-id {s}\n", .{ key_out, sign_key_id });
+                try stdout.print("Verify it with:            lin gate-check --roster {s}\n", .{roster_out});
+                try stdout.print("================================================================================\n\n", .{});
+                return;
             }
 
             const GateFile = struct { path: []const u8, bytes: u64, sha: [32]u8 };
@@ -15855,6 +15989,55 @@ fn runCli() !void {
                     \\
                 , .{ disk.items.len, GateHash.levelsOf(disk.items.len), root_hex });
 
+                // ---- Ed25519 signature over the unsigned manifest body ----
+                // The signature covers exactly the bytes written so far: subject
+                // + per-file records + verdict. The .g{} block appended after it
+                // is outside the signed region by construction.
+                if (sign_key_path) |kpath| {
+                    var kbuf: [256]u8 = undefined;
+                    const kfile = std.fs.cwd().openFile(kpath, .{}) catch {
+                        try stdout.print("GATE BLOCKED — cannot read the signing key at {s}\n", .{kpath});
+                        std.process.exit(3);
+                    };
+                    defer kfile.close();
+                    const kn = try kfile.readAll(&kbuf);
+                    const khex = std.mem.trim(u8, kbuf[0..kn], " \r\n\t");
+                    if (khex.len != 64) {
+                        try stdout.print("GATE BLOCKED — {s} is not a 32-byte hex Ed25519 seed\n", .{kpath});
+                        std.process.exit(3);
+                    }
+                    var kseed: [32]u8 = undefined;
+                    _ = std.fmt.hexToBytes(&kseed, khex) catch {
+                        try stdout.print("GATE BLOCKED — {s} is not a 32-byte hex Ed25519 seed\n", .{kpath});
+                        std.process.exit(3);
+                    };
+                    const skp = try std.crypto.sign.Ed25519.KeyPair.create(kseed);
+                    const sig = try skp.sign(doc.items, null);
+                    const sig_bytes = sig.toBytes();
+                    var sig_hex: [128]u8 = undefined;
+                    _ = try std.fmt.bufPrint(&sig_hex, "{s}", .{std.fmt.fmtSliceHexLower(&sig_bytes)});
+                    var pk_hex: [64]u8 = undefined;
+                    _ = try std.fmt.bufPrint(&pk_hex, "{s}", .{std.fmt.fmtSliceHexLower(&skp.public_key.toBytes())});
+                    var body_digest: [32]u8 = undefined;
+                    std.crypto.hash.sha2.Sha256.hash(doc.items, &body_digest, .{});
+                    try doc.writer().print(
+                        \\.g{{
+                        \\
+                    , .{});
+                    try doc.writer().print(
+                        \\  signed_at={d}
+                        \\  key_id="{s}"
+                        \\  pubkey="ed25519:{s}"
+                        \\  body_sha256="sha256:{s}"
+                        \\  signature="ed25519:{s}"
+                        \\}}
+                        \\
+                    , .{ std.time.timestamp(), sign_key_id, pk_hex, std.fmt.fmtSliceHexLower(&body_digest), sig_hex });
+                    try stdout.print("  signature ...... ed25519:{s}… (key_id={s})\n", .{ sig_hex[0..16], sign_key_id });
+                } else {
+                    try stdout.print("  signature ...... NONE — pass --key SEEDFILE to sign this attestation\n", .{});
+                }
+
                 const mf = try std.fs.cwd().createFile(manifest_path, .{});
                 defer mf.close();
                 try mf.writeAll(doc.items);
@@ -15969,17 +16152,133 @@ fn runCli() !void {
             try stdout.print("  merkle root (attested) ... sha256:{s}\n", .{expected_root});
             try stdout.print("  merkle root (recomputed) . sha256:{s}\n\n", .{root_hex});
 
-            if (changes != 0 or !root_matches) {
-                try stdout.print("GATE BLOCKED — {d} unattested change(s): {d} modified, {d} added, {d} deleted.\n", .{ changes, modified, added, deleted });
-                try stdout.print("The Merkle root of the tracked toolchain differs from the attested root in {s}.\n", .{manifest_path});
+            // ---- 4. Attestation signature (Ed25519), fail closed with --roster ----
+            var sig_valid: usize = 0;
+            var sig_total: usize = 0;
+            var sig_quorum: usize = 1;
+            if (roster_path) |rpath| {
+                const rfile = std.fs.cwd().openFile(rpath, .{}) catch {
+                    try stdout.print("GATE BLOCKED — cannot read the signer roster at {s}\n", .{rpath});
+                    std.process.exit(3);
+                };
+                defer rfile.close();
+                var rbuf = std.ArrayList(u8).init(LIA_ALLOC);
+                defer rbuf.deinit();
+                try rfile.reader().readAllArrayList(&rbuf, 1 << 20);
+
+                const RKey = struct { pubkey: []const u8 };
+                var rkeys = std.ArrayList(RKey).init(LIA_ALLOC);
+                defer rkeys.deinit();
+                var quorum_found = false;
+                var rit = std.mem.tokenizeAny(u8, rbuf.items, "\n");
+                while (rit.next()) |raw| {
+                    const line = std.mem.trim(u8, raw, " \r\t");
+                    if (std.mem.startsWith(u8, line, ".k{")) {
+                        const pk = gateStr(line, "pubkey") orelse continue;
+                        const pk_h = if (std.mem.startsWith(u8, pk, "ed25519:")) pk["ed25519:".len..] else pk;
+                        try rkeys.append(.{ .pubkey = pk_h });
+                    } else if (!quorum_found) {
+                        if (gateInt(line, "quorum")) |qr| {
+                            if (qr > 0) {
+                                sig_quorum = @intCast(qr);
+                                quorum_found = true;
+                            }
+                        }
+                    }
+                }
+                if (quorum_override) |qo| sig_quorum = qo;
+                if (rkeys.items.len == 0) {
+                    try stdout.print("GATE BLOCKED — roster {s} lists no signer keys\n", .{rpath});
+                    std.process.exit(3);
+                }
+
+                // The signed body is every byte before the first ".g{" line.
+                const g_mark = "\n.g{\n";
+                const g_off = std.mem.indexOf(u8, mbuf.items, g_mark);
+                const body = if (g_off) |o| mbuf.items[0 .. o + 1] else mbuf.items;
+                var body_digest: [32]u8 = undefined;
+                std.crypto.hash.sha2.Sha256.hash(body, &body_digest, .{});
+                var body_hex: [64]u8 = undefined;
+                _ = try std.fmt.bufPrint(&body_hex, "{s}", .{std.fmt.fmtSliceHexLower(&body_digest)});
+
+                var pos: usize = 0;
+                while (std.mem.indexOfPos(u8, mbuf.items, pos, g_mark)) |found| {
+                    pos = found + g_mark.len;
+                    const blk_end = std.mem.indexOfScalarPos(u8, mbuf.items, pos, '}') orelse mbuf.items.len;
+                    const blk = mbuf.items[pos..blk_end];
+                    sig_total += 1;
+                    const s_id = gateStr(blk, "key_id") orelse "unknown";
+                    const s_pk = gateStr(blk, "pubkey") orelse continue;
+                    const s_pk_h = if (std.mem.startsWith(u8, s_pk, "ed25519:")) s_pk["ed25519:".len..] else s_pk;
+                    const s_sig = gateStr(blk, "signature") orelse continue;
+                    const s_sig_h = if (std.mem.startsWith(u8, s_sig, "ed25519:")) s_sig["ed25519:".len..] else s_sig;
+                    const s_body = gateStr(blk, "body_sha256") orelse continue;
+                    const s_body_h = if (std.mem.startsWith(u8, s_body, "sha256:")) s_body["sha256:".len..] else s_body;
+
+                    if (!std.mem.eql(u8, s_body_h, &body_hex)) {
+                        try stdout.print("  signature [{s}] .. REJECTED — body_sha256 does not match the manifest body\n", .{s_id});
+                        continue;
+                    }
+                    var in_roster = false;
+                    for (rkeys.items) |rk| {
+                        if (std.mem.eql(u8, rk.pubkey, s_pk_h)) in_roster = true;
+                    }
+                    if (!in_roster) {
+                        try stdout.print("  signature [{s}] .. REJECTED — signer is not in the roster\n", .{s_id});
+                        continue;
+                    }
+                    if (s_pk_h.len != 64 or s_sig_h.len != 128) {
+                        try stdout.print("  signature [{s}] .. REJECTED — malformed key or signature\n", .{s_id});
+                        continue;
+                    }
+                    var pk_raw: [32]u8 = undefined;
+                    _ = std.fmt.hexToBytes(&pk_raw, s_pk_h) catch continue;
+                    var sig_raw: [64]u8 = undefined;
+                    _ = std.fmt.hexToBytes(&sig_raw, s_sig_h) catch continue;
+                    const pk = std.crypto.sign.Ed25519.PublicKey.fromBytes(pk_raw) catch {
+                        try stdout.print("  signature [{s}] .. REJECTED — public key is not a curve point\n", .{s_id});
+                        continue;
+                    };
+                    const sg = std.crypto.sign.Ed25519.Signature.fromBytes(sig_raw);
+                    sg.verify(body, pk) catch {
+                        try stdout.print("  signature [{s}] .. REJECTED — Ed25519 verification failed\n", .{s_id});
+                        continue;
+                    };
+                    sig_valid += 1;
+                    try stdout.print("  signature [{s}] .. VALID (Ed25519 over {d} manifest bytes)\n", .{ s_id, body.len });
+                }
+
+                try stdout.print("  roster ......... {s} ({d} signer(s), quorum {d})\n", .{ rpath, rkeys.items.len, sig_quorum });
+                if (sig_total == 0) {
+                    try stdout.print("  attestation .... UNSIGNED — the manifest carries no signature block\n", .{});
+                }
+                try stdout.print("  signatures ..... {d} valid of {d} present, {d} required\n\n", .{ sig_valid, sig_total, sig_quorum });
+            } else {
+                try stdout.print("  attestation .... signature NOT VERIFIED (no --roster supplied)\n\n", .{});
+            }
+
+            const root_ok = changes == 0 and root_matches;
+            const sig_ok = (roster_path == null) or (sig_valid >= sig_quorum);
+            if (!root_ok or !sig_ok) {
+                if (!root_ok) {
+                    try stdout.print("GATE BLOCKED — {d} unattested change(s): {d} modified, {d} added, {d} deleted.\n", .{ changes, modified, added, deleted });
+                    try stdout.print("The Merkle root of the tracked toolchain differs from the attested root in {s}.\n", .{manifest_path});
+                }
+                if (!sig_ok) {
+                    try stdout.print("GATE BLOCKED — attestation signature not verified: {d} valid signature(s), {d} required by the roster.\n", .{ sig_valid, sig_quorum });
+                }
                 try stdout.print("A human must review the change and re-attest it:\n", .{});
-                try stdout.print("  lin gate-attest --manifest {s}   # then commit the manifest with the change\n", .{manifest_path});
+                try stdout.print("  lin gate-attest --manifest {s} --key SEEDFILE   # then commit the manifest with the change\n", .{manifest_path});
                 try stdout.print("================================================================================\n\n", .{});
                 return error.GateBlocked;
             }
 
             try stdout.print("GATE OPEN — Merkle root matches the attested manifest ({d} files).\n", .{disk.items.len});
-            try stdout.print("No unattested change to the compiler or the independent C implementation.\n", .{});
+            if (roster_path != null) {
+                try stdout.print("Attestation signed by {d} roster key(s) — Ed25519 verified.\n", .{sig_valid});
+            } else {
+                try stdout.print("Attestation signature NOT verified in this run (no --roster).\n", .{});
+            }
             try stdout.print("================================================================================\n\n", .{});
             return;
         }

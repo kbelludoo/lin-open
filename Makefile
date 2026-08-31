@@ -18,6 +18,8 @@
 #   make gate         -> LIN Gate: fail unless the tracked toolchain still hashes
 #                        to the Merkle root attested in lin_gate_manifest.rulel
 #   make gate-attest  -> re-attest that root after a human reviewed the change
+#                        (KEY=<seed> signs it with Ed25519; `lin gate-keygen`
+#                         mints the key and the public roster it verifies against)
 #   make ci-gate      -> the whole PR gate (gate + honesty + N-Version + integrity)
 
 BUILD_GPU := zig build -Doptimize=ReleaseFast
@@ -88,13 +90,24 @@ xver: build-cpu
 # attested in lin_gate_manifest.rulel. A PR that changes any of those files
 # without re-attesting fails here — that is what .github/workflows/lin_gate.yml
 # runs on every pull request.
+GATE_ROSTER := $(wildcard lin_gate_roster.rulel)
+
 gate: build-cpu
+ifeq ($(GATE_ROSTER),)
 	@$(BIN) gate-check
+else
+	@$(BIN) gate-check --roster $(GATE_ROSTER)
+endif
 
 # Human action: accept a reviewed change to the toolchain by committing a new
-# attested root together with the change.
+# attested root together with the change. With KEY=<seed file> the attestation
+# is signed with Ed25519; `lin gate-keygen` mints a key and its public roster.
 gate-attest: build-cpu
+ifeq ($(KEY),)
 	@$(BIN) gate-attest
+else
+	@$(BIN) gate-attest --key $(KEY) --key-id $(or $(KEY_ID),gate-maintainer)
+endif
 
 # The full PR gate, in the order CI runs it.
 ci-gate: gate attestation-gate xver

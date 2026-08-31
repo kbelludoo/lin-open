@@ -25,7 +25,7 @@ zig run -lc -I/usr/include -L/usr/lib/x86_64-linux-gnu -lOpenCL test_lin_selfhos
 | `lin lint` | ✅ sem erros |
 | **full self-hosted suite** | ✅ `PASS_FULL_SELF_HOSTED_LIN`, bit-exact, Merkle `62b7d202…` |
 | **compat suite** | ✅ `PASS_FULL_LEGACY_COMPATIBILITY`, 17/17 subgates, 1000/1000 fuzz, 0 mismatches |
-| `make attestation-gate` | ✅ **PASS** — 5 testes unitários do guard + 35 asserções de honestidade |
+| `make attestation-gate` | ✅ **PASS** — 5 testes unitários do guard + 43 asserções de honestidade |
 | `make gate` (LIN Gate, Merkle do toolchain) | ✅ **GATE OPEN** — 31 arquivos, 6 níveis, raiz = atestada |
 | `make xver` (N-Version Zig × C) | ✅ **34/34 vectors, 0 divergences** — mesmas raízes Merkle nas duas implementações |
 | `make -C transpile/c test` / `test-edges` / `test-sha256` | ✅ 29/29, 17/17, 5/5 (vetores FIPS/NIST publicados) |
@@ -62,6 +62,14 @@ Executado com o build CPU-only (`zig build -Dgpu=false -O ReleaseFast`):
   ok   a new unattested file blocks the gate (exit 1)
   ok   deleting an attested file blocks the gate (exit 1)
   ok   committed manifest matches the tracked toolchain at the repo root
+  ok   gate-keygen writes the private seed with mode 0600
+  ok   gate-attest --key signs the manifest body with Ed25519
+  ok   gate-check verifies the Ed25519 attestation against the roster
+  ok   an attestation signed by a non-roster key is rejected
+  ok   a tampered signature fails Ed25519 verification
+  ok   quorum 2 with a single valid signature blocks the gate
+  ok   an unsigned attestation fails closed when a roster is required
+  ok   without a roster the gate discloses that it skipped signature verification
 ```
 
 ### N-Version Zig × C (`make xver`)
@@ -91,8 +99,14 @@ $ make gate
 GATE OPEN — Merkle root matches the attested manifest (31 files).
 ```
 
-Códigos de saída: **0** = gate aberto, **1** = bloqueado (mudança não atestada),
-**3** = não avaliável (manifesto ausente/malformado, escopo vazio). Os caminhos de
+Códigos de saída: **0** = gate aberto, **1** = bloqueado (mudança não atestada ou
+assinatura não verificada), **3** = não avaliável (manifesto/roster ausente ou
+malformado, escopo vazio).
+
+A atestação pode ser assinada com Ed25519 real: `lin gate-keygen` gera a chave
+(semente aleatória, arquivo 0600) e o roster público; `gate-attest --key` assina o
+corpo do manifesto; `gate-check --roster` exige quórum M-de-N. Sem `--roster` a
+saída declara `signature NOT VERIFIED` — nunca sugere que verificou. Os caminhos de
 bloqueio (MODIFIED / ADDED / DELETED) são testados dentro de um sandbox temporário
 pela suíte de honestidade; o manifesto commitado é conferido contra a árvore real
 na raiz do repositório. Re-atestação humana: `make gate-attest`.

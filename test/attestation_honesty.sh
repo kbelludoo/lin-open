@@ -13,7 +13,10 @@
 #   6. the Zig x C11 N-Version cross-check reaches consensus and rejects a
 #      lying second implementation;
 #   7. the LIN Gate blocks a change whose tracked-toolchain Merkle root
-#      differs from the attested manifest, and opens on an attested tree.
+#      differs from the attested manifest, and opens on an attested tree;
+#   8. gate attestations are signed with real Ed25519 keys and rejected when
+#      the signer is not in the roster, the signature is tampered with, the
+#      quorum is not reached, or the manifest is unsigned.
 #
 # Usage: test/attestation_honesty.sh [path/to/lin_native]
 set -u
@@ -326,6 +329,90 @@ if [ $? = 1 ] && grep -q 'DELETED' del.txt; then
   ok "deleting an attested file blocks the gate (exit 1)"
 else
   bad "deleting an attested file did not block the gate"
+fi
+
+
+# --- 8. Gate attestation signatures: real Ed25519, fail closed --------------
+echo
+echo "-- LIN Gate attestation signatures (Ed25519) --"
+
+group gate_sign
+mkdir -p compiler transpile/c/lin_c transpile/c/tool transpile/c/test
+printf 'const a = 1;\n' > compiler/a.zig
+printf 'int b(void) { return 2; }\n' > transpile/c/lin_c/b.c
+printf 'int c(void) { return 3; }\n' > transpile/c/tool/c.c
+printf 'int t(void) { return 4; }\n' > transpile/c/test/t.c
+
+"$BIN" gate-keygen --key k1.seed --roster r1.rulel --key-id m1 --quorum 1 >/dev/null 2>&1
+if [ $? = 0 ] && [ -f k1.seed ] && [ -f r1.rulel ]; then
+  perm=$(stat -c '%a' k1.seed 2>/dev/null || stat -f '%Lp' k1.seed)
+  if [ "$perm" = 600 ]; then
+    ok "gate-keygen writes the private seed with mode 0600"
+  else
+    bad "private seed is not 0600 (got $perm)"
+  fi
+else
+  bad "gate-keygen did not produce a key and a roster"
+fi
+
+"$BIN" gate-attest --key k1.seed --key-id m1 >/dev/null 2>&1
+if grep -q 'signature="ed25519:[0-9a-f]\{128\}"' lin_gate_manifest.rulel 2>/dev/null; then
+  ok "gate-attest --key signs the manifest body with Ed25519"
+else
+  bad "gate-attest --key produced no signature"
+fi
+
+"$BIN" gate-check --roster r1.rulel >sig_ok.txt 2>&1
+if [ $? = 0 ] && grep -q 'VALID (Ed25519' sig_ok.txt; then
+  ok "gate-check verifies the Ed25519 attestation against the roster"
+else
+  bad "gate-check did not verify a valid attestation"
+fi
+
+"$BIN" gate-keygen --key k2.seed --roster r2.rulel --key-id rogue --quorum 1 >/dev/null 2>&1
+"$BIN" gate-attest --key k2.seed --key-id rogue >/dev/null 2>&1
+"$BIN" gate-check --roster r1.rulel >sig_rogue.txt 2>&1
+if [ $? = 1 ] && grep -q 'not in the roster' sig_rogue.txt; then
+  ok "an attestation signed by a non-roster key is rejected"
+else
+  bad "a non-roster signer was accepted"
+fi
+
+"$BIN" gate-attest --key k1.seed --key-id m1 >/dev/null 2>&1
+python3 - <<'PYEOF'
+s = open('lin_gate_manifest.rulel').read()
+i = s.index('signature="ed25519:') + len('signature="ed25519:')
+c = s[i]
+open('lin_gate_manifest.rulel', 'w').write(s[:i] + ('0' if c != '0' else '1') + s[i + 1:])
+PYEOF
+"$BIN" gate-check --roster r1.rulel >sig_bad.txt 2>&1
+if [ $? = 1 ] && grep -q 'Ed25519 verification failed' sig_bad.txt; then
+  ok "a tampered signature fails Ed25519 verification"
+else
+  bad "a tampered signature was accepted"
+fi
+
+"$BIN" gate-attest --key k1.seed --key-id m1 >/dev/null 2>&1
+"$BIN" gate-check --roster r1.rulel --quorum 2 >sig_q.txt 2>&1
+if [ $? = 1 ] && grep -q '2 required' sig_q.txt; then
+  ok "quorum 2 with a single valid signature blocks the gate"
+else
+  bad "the roster quorum was not enforced"
+fi
+
+"$BIN" gate-attest >/dev/null 2>&1
+"$BIN" gate-check --roster r1.rulel >sig_none.txt 2>&1
+if [ $? = 1 ] && grep -q 'UNSIGNED' sig_none.txt; then
+  ok "an unsigned attestation fails closed when a roster is required"
+else
+  bad "an unsigned attestation passed with a roster required"
+fi
+
+"$BIN" gate-check >sig_skip.txt 2>&1
+if [ $? = 0 ] && grep -q 'signature NOT VERIFIED' sig_skip.txt; then
+  ok "without a roster the gate discloses that it skipped signature verification"
+else
+  bad "the gate did not disclose that it skipped signature verification"
 fi
 
 cd "$REPO_ROOT" || exit 1

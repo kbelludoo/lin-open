@@ -354,12 +354,50 @@ Total: **35 asserções**.
 - A raiz é determinística (atestada duas vezes no teste → mesmo valor), então um
   terceiro pode reproduzi-la em qualquer máquina com `make gate-attest`.
 
+### Assinatura da atestação (Ed25519 real)
+
+O manifesto pode — e deve, em produção — ser assinado. Três comandos:
+
+```
+lin gate-keygen --key k.seed --roster lin_gate_roster.rulel --key-id m1 --quorum 1
+lin gate-attest --key k.seed --key-id m1        # assina o corpo do manifesto
+lin gate-check  --roster lin_gate_roster.rulel  # exige quórum de assinaturas válidas
+```
+
+- `gate-keygen` gera uma semente **aleatória** (`std.crypto.random`), escreve a
+  chave privada com **modo 0600** e publica apenas a chave pública no roster. Não
+  há derivação determinística de chave (diferente do `notary-sign` de autoteste):
+  ninguém consegue regenerar a chave a partir de um prefixo.
+- A assinatura cobre **exatamente os bytes do corpo** do manifesto (sujeito +
+  registros por arquivo + veredito); o bloco `.g{}` fica, por construção, fora da
+  região assinada. `body_sha256` é recalculado e comparado antes de qualquer
+  verificação Ed25519.
+- Com `--roster`, o gate exige `>= quorum` assinaturas válidas de chaves listadas
+  no roster. Sem `--roster`, ele declara explicitamente
+  `signature NOT VERIFIED (no --roster supplied)` — nunca insinua que verificou.
+
+Caminhos negativos executados (todos bloqueados):
+
+| Ataque | Resultado | Exit |
+| :--- | :--- | :--- |
+| trocar um dígito hex de um digest no corpo | `MODIFIED` + `REJECTED — body_sha256 does not match the manifest body` | **1** |
+| trocar um dígito hex **da assinatura** | `REJECTED — Ed25519 verification failed` | **1** |
+| assinar com chave fora do roster | `REJECTED — signer is not in the roster` | **1** |
+| `--quorum 2` com 1 assinatura válida | `1 valid … 2 required` | **1** |
+| manifesto sem assinatura + `--roster` | `UNSIGNED` | **1** |
+| roster inexistente / sem chaves | não avaliável | **3** |
+
+Os oito casos são assertados em `test/attestation_honesty.sh` (seção 8), dentro de
+um sandbox temporário — a suíte agora tem **43 asserções**.
+
 ### O que isto **não** cobre
 
-- **Assinatura da atestação.** O manifesto não é assinado: um autor malicioso com
-  permissão de push pode rodar `make gate-attest` e commitar a raiz nova. O gate
-  impede mudança *silenciosa*, não mudança *autorizada* — a defesa contra isso é o
-  `notary-verify` (quórum Ed25519 real), que ainda exige um roster fora do repositório.
+- **Distribuição do roster.** O gate só é tão forte quanto a confiança no roster.
+  Nenhum roster está commitado neste repositório: sem ele, `make gate` verifica a
+  raiz Merkle e **diz** que não verificou assinatura. Publicar um roster exige
+  decidir quem são os signatários e distribuir as chaves públicas fora de banda.
+- **Revogação / rotação.** Não há CRL nem epoch de chave; remover uma chave do
+  roster é hoje o único mecanismo de revogação.
 - **Conteúdo semântico.** O gate garante que o toolchain é o atestado; não prova que
   ele é correto. A correção vem das suítes (N-Version, honestidade, `integrity`).
 - **Fora do escopo.** `src/**` (corpus `.lin`), `stubs/**`, os testes auto-hospedados

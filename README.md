@@ -30,6 +30,7 @@ These were verified by building and running the compiled binary:
 | `notary-sign` / `notary-verify` witness quorum | ✅ real Ed25519 M-of-N co-signature verification over a signed tree head (roster file required) |
 | N-Version cross-check (`make xver` / `lin crosscheck-c`) | ✅ real: the same 34 vectors through the Zig LinVM and the independent C11 port in `transpile/c/`, comparing canonical Merkle roots — 34/34 agreement, 0 divergences |
 | **LIN Gate** (`make gate` / `lin gate-check`) | ✅ real: recomputes the Merkle root of the tracked toolchain (`compiler/**`, `transpile/c/{lin_c,tool,test}/**`) and blocks the PR unless it matches the root attested in `lin_gate_manifest.rulel` |
+| Gate attestation signature (`lin gate-keygen` / `gate-attest --key` / `gate-check --roster`) | ✅ real Ed25519: keys generated from `std.crypto.random` (seed written 0600), signature over the manifest body, M-of-N roster quorum, and an explicit "signature NOT VERIFIED" line when no roster is supplied |
 | Attestation honesty gate (`make attestation-gate`) | ✅ 35 assertions + 5 unit tests; refuses any command that would publish an uncomputed verdict |
 | `from-js` transpile | ⚠️ narrow subset only (arrow/expr fns match 0) |
 
@@ -197,6 +198,12 @@ Fixed in the attestation-honesty pass (2026-08-31):
     it on every pull request, together with the honesty suite and the N-Version cross-check, so a
     PR (AI-authored or not) cannot merge with an unattested toolchain. Re-attestation is an
     explicit human act: `make gate-attest`, then commit the new root with the change.
+    The attestation can be signed with real Ed25519 (`lin gate-keygen` mints a key from
+    `std.crypto.random` and a public roster; `gate-attest --key` signs the manifest body;
+    `gate-check --roster` requires an M-of-N quorum). Tampering with a digest, tampering
+    with the signature, signing from a non-roster key, missing the quorum or omitting the
+    signature all fail closed; with no roster the gate prints `signature NOT VERIFIED`
+    instead of implying it checked.
 
 Remaining honest caveats:
 
