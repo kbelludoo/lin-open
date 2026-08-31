@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Independent LIN Receipt Verifier (WebCrypto)</title>
+<style>
+  body { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+         max-width: 860px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+  h1 { font-size: 1.25rem; }
+  textarea { width: 100%; height: 220px; font-family: inherit; font-size: 0.85rem; }
+  button { font-size: 1rem; padding: .5rem 1.2rem; margin: .5rem .5rem .5rem 0; cursor: pointer; }
+  pre { background: #f4f4f4; padding: 1rem; white-space: pre-wrap; }
+  .pass { color: #0a7d32; font-weight: bold; }
+  .fail { color: #b00020; font-weight: bold; }
+  .note { color: #555; font-size: .85rem; }
+</style>
+</head>
+<body>
+<h1>Independent LIN Compute-Receipt Verifier</h1>
+<p class="note">
+  Zero-trust: this page verifies a LIN receipt <b>without the LIN compiler</b>, using only the
+  browser's native WebCrypto SHA-256 (NIST FIPS 180-4). Nothing is uploaded — everything runs
+  locally. Accepts the JSON export or the native RULEL format.
+</p>
+<p class="note">
+  Open format: <code>merkle_root = SHA-256( SHA-256(source) ‖ output‖LE ‖ steps‖LE ‖ sp_at_ret‖LE ‖ input‖LE )</code>
+</p>
+
+<textarea id="receipt" spellcheck="false">{
+  "schema": "LIN_COMPUTE_RECEIPT_1.0",
+  "status": "INTEGRITY_RECEIPT_LOCAL",
+  "verification_level": 0,
+  "artifact": "sha256:76f4240464f387aca8aad83ab0c9a04ead52bb19c6ebe84ba256e56a02824945",
+  "input": "9",
+  "output": "81",
+  "steps": 4,
+  "sp_at_ret": 1,
+  "target_device": "linvm_cpu",
+  "host_arch": "Intel_Xeon_Haswell_v3",
+  "merkle_root": "sha256:b96feceed2a4a67a51dd47d3ff3a8bfdf143dcc0fcc3a80ca70a7ae84c2a47d4"
+}</textarea>
+
+<p>
+  <input id="source" placeholder="Optional source code (checks artifact hash): return x * x;" style="width:100%;font-family:inherit;padding:.35rem;">
+</p>
+
+<p>
+  <button id="verify">Verify receipt</button>
+  <button id="load-rulel">Load RULEL example</button>
+</p>
+
+<pre id="out">Paste a receipt (JSON or RULEL) and click "Verify receipt".</pre>
+
+<script>
+'use strict';
+
+const RULEL_EXAMPLE = `@LIN:RECEIPT:1.0.0
+~R{.a=artifact .i=input .o=output .s=steps .p=sp .d=device .h=host .m=merkle .v=level}
+.status="INTEGRITY_RECEIPT_LOCAL"
+.level=0
+.a="sha256:76f4240464f387aca8aad83ab0c9a04ead52bb19c6ebe84ba256e56a02824945"
+.i=9
+.o=81
+.s=4
+.p=1
+.d="linvm_cpu"
+.h="Intel_Xeon_Haswell_v3"
+.m="sha256:b96feceed2a4a67a51dd47d3ff3a8bfdf143dcc0fcc3a80ca70a7ae84c2a47d4"`;
+
+function stripSha256(s) { return s.startsWith('sha256:') ? s.slice(7) : s; }
+
+function parseReceipt(txt) {
+  const t = txt.trim();
+  if (t.startsWith('{')) {
+    const d = JSON.parse(t);
+    if (typeof d !== 'object' || d === null || Array.isArray(d)) throw new Error('JSON root must be an object');
+    for (const k of ['artifact', 'input', 'output', 'steps', 'sp_at_ret', 'merkle_root']) {
+      if (!(k in d)) throw new Error('missing field "' + k + '"');
+    }
+    return { artifact: String(d.artifact), input: String(d.input), output: String(d.output),
+             steps: BigInt(d.steps), sp_at_ret: BigInt(d.sp_at_ret), merkle_root: String(d.merkle_root) };
+  }
+  const get = (tag) => {
+    for (const line of t.split('\n')) {
+      const s = line.trim();
+      if (s.startsWith(tag)) return s.slice(tag.length).trim().replace(/^"|"$/g, '');
+    }
+    return null;
+  };
+  const a = get('.a='), i = get('.i='), o = get('.o='),
+        s = get('.s='), p = get('.p='), m = get('.m=');
+  if ([a, i, o, s, p, m].some((v) => v === null || v === '')) throw new Error('missing RULEL field(s)');
+  return { artifact: a, input: i, output: o, steps: BigInt(s), sp_at_ret: BigInt(p), merkle_root: m };
+}
+
+async function sha256(bytes) {
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function main() {
+  const out = document.getElementById('out');
+  if (!crypto.subtle) {
+    out.textContent = '[FAIL] WebCrypto (crypto.subtle) unavailable — open this page via https:// or localhost.';
+    return;
+  }
+  try {
+    const f = parseReceipt(document.getElementById('receipt').value);
+    const artHex = stripSha256(f.artifact);
+    if (!/^[0-9a-fA-F]{64}$/.test(artHex)) throw new Error('artifact is not a 32-byte SHA-256 hex digest');
+
+    const leaf = new ArrayBuffer(64);
+    const u8 = new Uint8Array(leaf);
+    for (let i = 0; i < 32; i++) u8[i] = parseInt(artHex.substr(i * 2, 2), 16);
+    const view = new DataView(leaf);
+    view.setBigInt64(32, BigInt(f.output), true);
+    view.setBigUint64(40, BigInt(f.steps), true);
+    view.setBigUint64(48, BigInt(f.sp_at_ret), true);
+    view.setBigInt64(56, BigInt(f.input), true);
+
+    const computed = await sha256(leaf);
+    const claimed = stripSha256(f.merkle_root);
+    const source = document.getElementById('source').value.trim();
+
+    let lines = [];
+    lines.push('Artifact      : sha256:' + artHex);
+    lines.push('Input         : ' + f.input);
+    lines.push('Output        : ' + f.output);
+    lines.push('Steps         : ' + f.steps);
+    lines.push('SP at ret     : ' + f.sp_at_ret);
+    lines.push('Merkle (file) : sha256:' + claimed);
+    lines.push('Merkle (calc) : sha256:' + computed);
+
+    let ok = computed === claimed;
+    if (source) {
+      const srcHash = await sha256(new TextEncoder().encode(source));
+      const srcOk = srcHash === artHex.toLowerCase();
+      lines.push('Source check  : ' + (srcOk ? 'PASS' : 'FAIL'));
+      ok = ok && srcOk;
+    }
+    out.textContent = lines.join('\n') + '\n\n' +
+      (ok ? '[PASS] Receipt validated by an independent open-source verifier (WebCrypto)'
+          : '[FAIL] Receipt forged or tampered!');
+    out.className = ok ? 'pass' : 'fail';
+  } catch (e) {
+    out.textContent = '[FAIL] ' + e.message;
+    out.className = 'fail';
+  }
+}
+
+document.getElementById('verify').addEventListener('click', main);
+document.getElementById('load-rulel').addEventListener('click', () => {
+  document.getElementById('receipt').value = RULEL_EXAMPLE;
+});
+</script>
+</body>
+</html>

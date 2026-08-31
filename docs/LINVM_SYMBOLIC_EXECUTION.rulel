@@ -1,0 +1,94 @@
+@RULEL:DOC_LINVM_SYMBOLIC_EXECUTION:1.0.0
+~MARKDOWN_SPEC
+# LinVM — Execução Simbólica (2ª versão, fiel ao opcode real)
+
+> Concordo com a tese: a LinVM é interpretável simbolicamente. Estado = `PC` + pilha +
+> locais; heap-free; sem syscalls; sem ponteiros. Esta é a segunda versão, agora **corrigida
+> e fiel à enum `VmOp` real de `compiler/lin.zig`**, e com uma implementação de referência
+> dogfood em `src/linvm_embedded.lin`.
+
+## 1. Opcodes reais (subconjunto usado)
+
+| idx | op | semântica (compiler/lin.zig) |
+|---|---|---|
+| 0 | `push_const a` | empilha a |
+| 1 | `load_local a` | empilha locais[a] |
+| 2 | `store_local a` | POPA o topo em locais[a] |
+| 3 | `add` | pop pop push (l+r) |
+| 4 | `sub` | pop pop push (l-r) |
+| 5 | `mul` | pop pop push (l*r) |
+| 19 | `cmp_gt` | pop pop push (l>r ? 1 : 0) |
+| 23 | `jump a` | pc = a |
+| 24 | `jump_if_false a` | **POPA**; se valor==0, pc=a |
+| 29 | `ret` | retorna topo da pilha (sp_at_ret) |
+
+Nota: `jump_if_false` **popa** o operando (compiler/lin.zig ~linha 6508). Aritmética wrap em i64.
+
+## 2. `soma_quadrado_com_offset(x=7, y=15) -> 64`
+
+Locais: `loc[0]=x`, `loc[1]=y`, `loc[2]=quadrado`, `loc[3]=resultado`.
+
+| PC | op | arg |
+|---|---|---|
+| 00 | load_local | 0 |
+| 01 | load_local | 0 |
+| 02 | mul | |
+| 03 | store_local | 2 |
+| 04 | load_local | 2 |
+| 05 | load_local | 1 |
+| 06 | add | |
+| 07 | store_local | 3 |
+| 08 | load_local | 3 |
+| 09 | ret | |
+
+Rastreio (soma):
+1. `[7]`
+2. `[7,7]`
+3. `[49]`
+4. `loc[2]=49; []`
+5. `[49]`
+6. `[49,15]`
+7. `[64]`
+8. `loc[3]=64; []`
+9. `[64]`
+10. `ret` -> **64** (sp_at_ret=1) ✅
+
+## 3. `fatorial(n=4) -> 24` — bytecode CORRIGIDO
+
+Locais: `loc[0]=n`, `loc[1]=acc`.
+
+| PC | op | arg | obs |
+|---|---|---|---|
+| 00 | push_const | 1 | acc=1 |
+| 01 | store_local | 1 | |
+| 02 | load_local | 0 | [LoopHead] |
+| 03 | push_const | 1 | |
+| 04 | cmp_gt | | n>1 |
+| 05 | jump_if_false | **15** | CORRIGIDO (era 14) |
+| 06 | load_local | 1 | |
+| 07 | load_local | 0 | |
+| 08 | mul | | |
+| 09 | store_local | 1 | |
+| 10 | load_local | 0 | |
+| 11 | push_const | 1 | |
+| 12 | sub | | |
+| 13 | store_local | 0 | |
+| 14 | jump | 2 | -> LoopHead |
+| 15 | load_local | 1 | [Fim] |
+| 16 | ret | | |
+
+**Por que a correção:** na versão original, `jump_if_false 14` + `14: jump 02` fazia o salto
+falso cair de volta no `jump`, gerando **loop infinito**. O alvo correto é 15.
+
+Rastreio (fatorial, iterações):
+- Iter 1: n=4,acc=1 -> 1*4=4, n=3
+- Iter 2: n=3,acc=4 -> 4*3=12, n=2
+- Iter 3: n=2,acc=12 -> 12*2=24, n=1
+- Condição n=1>1 = 0 (falsa) -> `jump_if_false` popa e pula para PC 15
+- PC15 load_local 1; PC16 ret -> **24** (sp_at_ret=1) ✅
+
+## 4. Como conferir (dogfood)
+
+O mesmo bytecode acima é executado por um interpretador LIN em `src/linvm_embedded.lin`
+(`vm_run(0,7,15)` -> 64; `vm_run(1,4,0)` -> 24). Isso é uma prova de conceito: LIN
+interpretando o próprio bytecode da LinVM, reforçando o self-hosting (AGENTS.md R3).
