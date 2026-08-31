@@ -14028,6 +14028,108 @@ pub fn main() !void {
         return;
     }
     if (argEq(cmd, "c-expr-test") or argEq(cmd, "c-expr-eval") or argEq(cmd, "c-ast-verify")) {
+        var ai_feedback_mode = false;
+        for (args) |arg| {
+            if (std.mem.eql(u8, arg, "--ai-feedback")) {
+                ai_feedback_mode = true;
+            }
+        }
+
+        const AstContext = struct {
+            tag: u8,
+            lhs_idx: u16,
+            rhs_idx: u16,
+            lhs_val: i64,
+            rhs_val: i64,
+        };
+
+        const VmContext = struct {
+            op_before: []const u8,
+            op_at: []const u8,
+            sp: usize,
+        };
+
+        const AiFeedbackPrinter = struct {
+            pub fn printFeedback(
+                stage: []const u8,
+                err: anyerror,
+                input_str: ?[]const u8,
+                ast_ctx: ?AstContext,
+                vm_ctx: ?VmContext,
+                expected: ?i64,
+                actual: ?i64,
+            ) !void {
+                const stdout_w = std.io.getStdOut().writer();
+                try stdout_w.writeAll("{\n");
+                try stdout_w.print("  \"pipeline_version\": \"1.3.0\",\n", .{});
+                try stdout_w.print("  \"pipeline_stage\": \"{s}\",\n", .{stage});
+                try stdout_w.print("  \"status\": \"FAIL\",\n", .{});
+                try stdout_w.print("  \"test_id\": \"c_expr_auto\",\n", .{});
+                if (input_str) |s| try stdout_w.print("  \"input_string\": \"{s}\",\n", .{s});
+                if (expected) |e| try stdout_w.print("  \"expected_result\": {d},\n", .{e});
+                if (actual) |a| try stdout_w.print("  \"actual_result\": {d},\n", .{a});
+                try stdout_w.print("  \"error_class\": \"{s}\",\n", .{errorClassName(err)});
+                try stdout_w.print("  \"error_code\": \"{s}\",\n", .{errorCodeString(err)});
+                if (ast_ctx) |c| {
+                    try stdout_w.print("  \"ast_context\": {{\"node_tag\": {d}, \"lhs_idx\": {d}, \"rhs_idx\": {d}, \"lhs_val\": {d}, \"rhs_val\": {d}}},\n", .{ c.tag, c.lhs_idx, c.rhs_idx, c.lhs_val, c.rhs_val });
+                } else {
+                    try stdout_w.writeAll("  \"ast_context\": null,\n");
+                }
+                if (vm_ctx) |v| {
+                    try stdout_w.print("  \"vm_context\": {{\"opcode_before\": \"{s}\", \"opcode_at_error\": \"{s}\", \"stack_depth\": {d}}},\n", .{ v.op_before, v.op_at, v.sp });
+                } else {
+                    try stdout_w.writeAll("  \"vm_context\": null,\n");
+                }
+                try stdout_w.print("  \"suggestion\": \"{s}\",\n", .{errorSuggestion(err)});
+                try stdout_w.print("  \"reference\": \"docs/LIN_PROMPT_GUIDE.md\"\n", .{});
+                try stdout_w.writeAll("}\n");
+            }
+
+            fn errorClassName(err: anyerror) []const u8 {
+                return switch (err) {
+                    error.MissingClosingParen, error.MissingOpeningParen, error.UnexpectedTokenInPrimary, error.InvalidBinaryOperator, error.TrailingTokens, error.MissingSemicolon, error.MissingClosingBrace, error.InvalidForStep => "ParserError",
+                    error.DivisionByZero, error.ModuloByZero, error.UndefinedVariable => "SemanticError",
+                    error.VmDivisionByZero, error.VmStackOverflow, error.VmStackUnderflow, error.VmStepLimit => "ExecutionError",
+                    error.ArenaOutOfMemory => "ResourceError",
+                    else => "UnknownError",
+                };
+            }
+
+            fn errorCodeString(err: anyerror) []const u8 {
+                return switch (err) {
+                    error.MissingClosingParen => "E_SYNTAX_MISSING_RPAREN",
+                    error.MissingOpeningParen => "E_SYNTAX_MISSING_LPAREN",
+                    error.UnexpectedTokenInPrimary => "E_SYNTAX_UNEXPECTED_TOKEN",
+                    error.InvalidBinaryOperator => "E_SYNTAX_INVALID_BIN_OP",
+                    error.TrailingTokens => "E_SYNTAX_TRAILING_TOKENS",
+                    error.MissingSemicolon => "E_SYNTAX_MISSING_SEMICOLON",
+                    error.MissingClosingBrace => "E_SYNTAX_MISSING_RBRACE",
+                    error.InvalidForStep => "E_SYNTAX_INVALID_FOR_STEP",
+                    error.DivisionByZero => "E_SEMANTIC_DIV_ZERO",
+                    error.ModuloByZero => "E_SEMANTIC_MOD_ZERO",
+                    error.UndefinedVariable => "E_SEMANTIC_UNDEFINED_VAR",
+                    error.VmDivisionByZero => "E_EXEC_DIV_ZERO",
+                    error.VmStackOverflow => "E_EXEC_STACK_OVERFLOW",
+                    error.VmStackUnderflow => "E_EXEC_STACK_UNDERFLOW",
+                    error.ArenaOutOfMemory => "E_RESOURCE_ARENA_FULL",
+                    else => "E_UNKNOWN",
+                };
+            }
+
+            fn errorSuggestion(err: anyerror) []const u8 {
+                return switch (err) {
+                    error.DivisionByZero, error.VmDivisionByZero => "Guard divisor with ?(y != 0) before division.",
+                    error.ModuloByZero => "Guard divisor with ?(y != 0) before modulo remainder.",
+                    error.UndefinedVariable => "Declare and initialize variable before use (e.g. x = 0;).",
+                    error.MissingClosingParen => "Add matching closing parenthesis ')' to expression or condition.",
+                    error.MissingOpeningParen => "Add opening parenthesis '(' after control flow keyword (if/while/for).",
+                    error.MissingSemicolon => "Add terminating semicolon ';' after statement or assignment.",
+                    error.ArenaOutOfMemory => "Flat AST Arena limit exceeded (256 nodes). Split into smaller sub-functions.",
+                    else => "Refer to docs/LIN_PROMPT_GUIDE.md for syntax rules.",
+                };
+            }
+        };
+
         // =====================================================================
         // CONCRETE C EXPRESSION PRATT PARSER & FLAT AST ARENA (STAGE-0 CORE)
         // =====================================================================
@@ -15065,27 +15167,45 @@ pub fn main() !void {
 
             if (tc.should_fail) {
                 if (stmts_res) |_| {
-                    try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" expected parse failure but succeeded\n", .{ idx + 1, c_stmt_suite.len, tc.input });
+                    if (ai_feedback_mode) {
+                        try AiFeedbackPrinter.printFeedback("parser", error.UnexpectedTokenInPrimary, tc.input, null, null, null, null);
+                    } else {
+                        try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" expected parse failure but succeeded\n", .{ idx + 1, c_stmt_suite.len, tc.input });
+                    }
                 } else |_| {
-                    try stdout.print("  [{d: >2}/{d}] PASS: \"{s: <38}\" properly rejected at parse | {s}\n", .{ idx + 1, c_stmt_suite.len, tc.input, tc.desc });
+                    if (!ai_feedback_mode) {
+                        try stdout.print("  [{d: >2}/{d}] PASS: \"{s: <38}\" properly rejected at parse | {s}\n", .{ idx + 1, c_stmt_suite.len, tc.input, tc.desc });
+                    }
                     c1_pass_count += 1;
                 }
                 continue;
             }
 
             const stmts = stmts_res catch |err| {
-                try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" statement parse error: {any}\n", .{ idx + 1, c_stmt_suite.len, tc.input, err });
+                if (ai_feedback_mode) {
+                    try AiFeedbackPrinter.printFeedback("parser", err, tc.input, null, null, null, null);
+                } else {
+                    try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" statement parse error: {any}\n", .{ idx + 1, c_stmt_suite.len, tc.input, err });
+                }
                 continue;
             };
 
             var s_lowerer = StmtLowerer.init(LIA_ALLOC);
             defer s_lowerer.deinit();
             s_lowerer.emitStmts(&s_parser.arena, stmts) catch |err| {
-                try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" statement lowering error: {any}\n", .{ idx + 1, c_stmt_suite.len, tc.input, err });
+                if (ai_feedback_mode) {
+                    try AiFeedbackPrinter.printFeedback("lowerer", err, tc.input, null, null, null, null);
+                } else {
+                    try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" statement lowering error: {any}\n", .{ idx + 1, c_stmt_suite.len, tc.input, err });
+                }
                 continue;
             };
             s_lowerer.resolveFixups() catch |err| {
-                try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" label resolution error: {any}\n", .{ idx + 1, c_stmt_suite.len, tc.input, err });
+                if (ai_feedback_mode) {
+                    try AiFeedbackPrinter.printFeedback("lowerer", err, tc.input, null, null, null, null);
+                } else {
+                    try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" label resolution error: {any}\n", .{ idx + 1, c_stmt_suite.len, tc.input, err });
+                }
                 continue;
             };
 
@@ -15101,21 +15221,47 @@ pub fn main() !void {
             const vm_args = [_]i64{};
             var steps: u64 = 0;
             const res = vmExecWithSp(&mod_mock, 0, &vm_args, 0, &steps) catch |err| {
-                try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" LinVM statement execution error: {any}\n", .{ idx + 1, c_stmt_suite.len, tc.input, err });
+                if (ai_feedback_mode) {
+                    try AiFeedbackPrinter.printFeedback("vm_exec", err, tc.input, null, null, tc.expected, null);
+                } else {
+                    try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" LinVM statement execution error: {any}\n", .{ idx + 1, c_stmt_suite.len, tc.input, err });
+                }
                 continue;
             };
 
             if (res.sp_at_ret != 1) {
-                try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" Stack leak! sp_at_ret={d} (expected 1)\n", .{ idx + 1, c_stmt_suite.len, tc.input, res.sp_at_ret });
+                if (ai_feedback_mode) {
+                    try AiFeedbackPrinter.printFeedback("vm_exec", error.VmStackOverflow, tc.input, null, null, tc.expected, res.val);
+                } else {
+                    try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" Stack leak! sp_at_ret={d} (expected 1)\n", .{ idx + 1, c_stmt_suite.len, tc.input, res.sp_at_ret });
+                }
                 continue;
             }
 
             if (res.val == tc.expected.?) {
-                try stdout.print("  [{d: >2}/{d}] PASS: \"{s: <38}\" => VM:{d: >4} (Insts: {d: >2}, SP: {d}) | {s}\n", .{ idx + 1, c_stmt_suite.len, tc.input, res.val, s_lowerer.code.items.len, res.sp_at_ret, tc.desc });
+                if (!ai_feedback_mode) {
+                    try stdout.print("  [{d: >2}/{d}] PASS: \"{s: <38}\" => VM:{d: >4} (Insts: {d: >2}, SP: {d}) | {s}\n", .{ idx + 1, c_stmt_suite.len, tc.input, res.val, s_lowerer.code.items.len, res.sp_at_ret, tc.desc });
+                }
                 c1_pass_count += 1;
             } else {
-                try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" => VM:{d}, expected {d}\n", .{ idx + 1, c_stmt_suite.len, tc.input, res.val, tc.expected.? });
+                if (ai_feedback_mode) {
+                    try AiFeedbackPrinter.printFeedback("vm_exec", error.VmBadFunction, tc.input, null, null, tc.expected, res.val);
+                } else {
+                    try stdout.print("  [{d: >2}/{d}] FAIL: \"{s}\" => VM:{d}, expected {d}\n", .{ idx + 1, c_stmt_suite.len, tc.input, res.val, tc.expected.? });
+                }
             }
+        }
+
+        if (ai_feedback_mode) {
+            const stdout_w = std.io.getStdOut().writer();
+            try stdout_w.writeAll("{\n");
+            try stdout_w.print("  \"pipeline_version\": \"1.3.0\",\n", .{});
+            try stdout_w.print("  \"pipeline_stage\": \"ci_suite\",\n", .{});
+            try stdout_w.print("  \"status\": \"{s}\",\n", .{if (c1_pass_count == c_stmt_suite.len) "PASS" else "FAIL"});
+            try stdout_w.print("  \"total_vectors\": {d},\n", .{c_stmt_suite.len});
+            try stdout_w.print("  \"passed_vectors\": {d}\n", .{c1_pass_count});
+            try stdout_w.writeAll("}\n");
+            return;
         }
 
         try stdout.print("--------------------------------------------------------------------------------\n", .{});
