@@ -1,0 +1,133 @@
+@RULEL:DOC_LINBC1_FORMAT:1.0.0
+~MARKDOWN_SPEC
+# LINBC1 — Formato de imagem de bytecode da LinVM (v1, proposta)
+
+> **Status (R5): PROPOSED — nenhum emissor/loader deste formato existe ainda.** O
+> serializador em LIN (`src/lin_linbc_emit.lin`) e o loader C11 são entregas de **V1**
+> com gate próprio (round-trip + fuzz de imagens corrompidas — plano §V1). O que
+> **existe e está congelado** é o encoding de instrução do `crosscheck-c`
+> (`LINVM_ISA_V1.rulel` §2); LINBC1 o estende em vez de substituí-lo, para herdar a
+> compatibilidade medida 34/34 entre os hosts Zig e C11.
+>
+> **Conformidade com as regras:** o serializador será escrito em **LIN** (R0), emitido
+> pelo canal de artefato/stdout já existente — **nenhuma linha nova de Zig** (R1/R2
+> intocados, §4.4 do plano). Domínios de hash novos desta spec: `linbc1:img:` (R4 —
+> um digest, um significado); `linvm:c0:` identifica o perfil.
+
+Dependência: `docs/LINVM_COMPILER0_PLAN.rulel` §4.4 · usado por: V2 (primeira imagem
+`compiler0-mvp.linbc`), V3 (ponto fixo), V4 (imagem completa).
+
+---
+
+## 1. Objetivos de design
+
+1. **Determinístico por construção:** mesma fonte de módulo ⇒ mesmos bytes.
+   Sem ordem de mapa de host, sem timestamps, sem ponteiros (plano §7, risco 1).
+2. **Self-hashing:** a imagem carrega o próprio digest, com o algoritmo definido
+   a seguir — o digest não cobre a si mesmo.
+3. **Fail-closed no loader:** imagem malformada, truncada, com opcode/ABI
+   desconhecido ou perfil incompatível ⇒ rejeição total antes de executar um único
+   byte de código; nada é escrito (§4.2 do plano).
+4. **Heap-free auditável:** toda memória que a imagem virá a exigir está
+   **declarada** no cabeçalho/seções — o loader rejeita imagem que exceda o perfil
+   nativo do host, e o host executa com teto fixo.
+5. **Extensível por versão:** `format_version` + perfil; bytes excedentes depois do
+   self-hash são proibidos (uma imagem = um significado, R4).
+
+## 2. Layout (todos os inteiros little-endian)
+
+```
+offset  campo                         bytes   notas
+0       magic = "LINBC1"              6       ASCII fixo
+6       format_version                u8      = 1
+7       profile                       u8      1 = LINVM-1, 2 = LINVM-C0
+8       flags                         u8      = 0 (reservado; != 0 => rejeita)
+9       n_strings                     u32     entradas do pool de strings
+13      n_fns                         u32
+17      n_regions                     u32     regiões flat declaradas (perfil C0)
+21      n_abis                        u32     intrínsecos de host usados
+25      string_pool[n_strings]        var     { len u32 ; bytes[len] } (UTF-8 agnóstico: bytes)
+..      regions[n_regions]            var     { region_id u32 ; n_cells u32 }  (células i64)
+..      abi_table[n_abis]             var     { abi_id u8 }  índice em HOST_ABI_1 §3
+..      functions[n_fns]              var     §3
+..      self_hash                     32      §5
+```
+
+## 3. Seção de funções
+
+Por função, nesta ordem:
+
+```
+name_idx        u32     índice no string_pool (nome canônico = ordem da seção)
+nparams         u8
+nlocals         u8      total de locais (>= nparams)
+n_arrs          u8      pares (local, tamanho) de arrays literais
+code_len        u32     número de instruções
+arr_n[n_arrs]   var     { local_idx u8 ; len u16 }  — len 0 proibido (ausência = sem array)
+code[code_len]  var     por instrução: [op u8][operando i64 LE]   <-- ENCODING XVER, imutável
+```
+
+Invariantes do loader (rejeita se violado; todos fail-closed, antes de executar):
+
+- `nparams <= nlocals <= limite(perfil)`; `code_len > 0`;
+- `local_idx < nlocals`; `len <= limite_arr(perfil)`; soma das células de todos os
+  arrays de todas as funções + regiões `<= teto_mem(perfil)`;
+- todo `op` tem ordinal <= 32; todo `jump*` tem alvo `< code_len`; todo índice de
+  função de `call` `< n_fns`; todo índice de string/pool `< n_strings`;
+- `abi_id` presente na `abi_table` do HOST-ABI-1; intrínseco fora da tabela =
+  rejeição (§4.3 do plano);
+- imagem com bytes após `self_hash` = rejeita.
+
+Garantia de execução: uma imagem aceita nunca referencia memória não declarada;
+estouro de região/array em tempo de execução é erro determinístico do perfil
+(`VmBadFunction` em C0 recebe o código de região — evolução versionada, nunca
+silêncio).
+
+## 4. Perfis e regiões
+
+- **Perfil 1 (LINVM-1):** `n_regions` **deve ser 0**; arrays literais obedecem
+  `8 × 256` do ISA. Imagem de perfil 1 é executável por qualquer host v1 legado que
+  entenda o header — o encoding de `code` é idêntico ao do xver.
+- **Perfil 2 (LINVM-C0):** regiões declaradas aparecem como arrays globais de células
+  i64 acessados por índice estático; o teto de memória total é a soma das células
+  declaradas (imagem inteira) vezes 8 bytes/célula. **Teto exato: PROPOSED, a medir
+  em V2** (plano §6.1 — interpretação dupla do compilador ainda não tem orçamento
+  medido; rotulado EXPERIMENTAL até lá). O contador de steps e o receipt
+  continuam reportando o perfil usado — receipts dizem o perfil (§4.1 do plano).
+
+Compatibilidade retroativa é gate, não aspiração (plano §8): perfil 1 nunca muda;
+fix como `compat_root` e os fixtures de receipt (`sha256:b96fecee…`,
+`sha256:62b7d202…`) continuam verificando.
+
+## 5. Self-hash (domínio `linbc1:img:`)
+
+    self_hash = SHA256("linbc1:img:" || imagem[0 .. offset_do_campo_self_hash])
+
+- O digest cobre **tudo** antes do campo `self_hash` — magic, contagens, pools,
+  regiões, ABI, funções — e nada depois.
+- Loader conforme recomputa e compara; divergência = rejeita (bit flip em qualquer
+  seção detectável antes da execução; alvo do fuzz de V1: 100% rejeitadas sem
+  crash — plano §V1).
+- O ponto fixo do bootstrap (V3) compara imagens por `SHA-256(C0) == SHA-256(C1) ==
+  SHA-256(C2)` sobre os **bytes completos** (incl. self_hash) — igualdade de
+  comportamento não substitui igualdade de bytes (B3 do plano irmão).
+
+## 6. Riscos declarados (R5)
+
+| Risco | Mitigação nesta spec |
+|---|---|
+| Congelamento prematuro do perfil C0 (§6.4 do plano) | perfil 2 fica `proposed` até V3; correção posterior = `LINVM-C1`/`format_version=2`, nunca emenda silenciosa |
+| Não-determinismo de emissor | mesma fonte ⇒ mesmos bytes é gate V1 (round-trip duplo); ordenação de pool/seções é lexical e especificada |
+| Superfície nativa nova (loader) | conta no orçamento do TCB C11 (meta ≤ 2 500 linhas — medido em V1, §6.2 do plano) |
+| Emissor escrito à mão fora de LIN | proibido por R0/R1: `src/lin_linbc_emit.lin` roda no Stage0; o canal de saída é o de artefatos já existente |
+
+## 7. Gates que ativam este documento
+
+- G(V1): serializador LIN round-trip + fuzz de imagens corrompidas (100% rejeição,
+  sem crash) + vetores dourados de `LINVM_ISA_V1.rulel` no loader C11.
+  **→ RODADO em sandbox 2026-08-31 (4440 rejeições/4440 + round-trip
+  emitter-LIN↔loader-C11 CONSENSUS): evidência em `docs/V1_LINBC1_HOST_EVIDENCE.rulel`;
+  confirmação em CI pendente (rito Q3).**
+- G(V2): `compiler0-mvp.linbc` neste formato compilando o corpus fechado com roots
+  idênticos ao Stage0 — **pendente**.
+- Label deste formato: EXPERIMENTAL até G(V2).

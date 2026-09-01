@@ -1,0 +1,317 @@
+@RULEL:DOC_LINVM_COMPILER0_PLAN:1.0.0
+~MARKDOWN_SPEC
+# LinVM como Compilador 0 — Plano de Bootstrap VM-Cêntrico
+
+> **Veredito:** é viável e é o complemento que faltava ao `SELF_HOSTING_PLAN.rulel`. O plano
+> P0..P7 porta o compilador para LIN **módulo a módulo** com gates de hash; este plano muda o
+> *centro de gravidade do bootstrap*: o artefato confiável final deixa de ser um binário de
+> 17 mil linhas e passa ser **(a) uma imagem de bytecode congelada** (`compiler0.linbc`, SHA-256
+> pinado) + **(b) um interpretador LinVM mínimo** (~1–2 mil linhas) do qual já existem **duas
+> implementações independentes** (Zig embutida, C11 em `transpile/c/`) e **uma terceira parcial
+> escrita em LIN** (`src/linvm_embedded.lin`). Zig sai da cadeia de confiança e vira apenas o
+> *construtor da semente* (uma única vez, auditado).
+>
+> **Achado crítico deste levantamento:** os limites atuais da VM (`VM_MAX_ARR_LEN=256`,
+> `VM_MAX_ARRS=8`, `VM_MAX_LOCALS=64`, pilha 256) **não comportam um compilador** — 2 KiB de
+> dados por função no máximo. O plano portanto inclui um **perfil de ISA novo (`LINVM-C0`)**,
+> e isso é tratado como mudança de especificação com domínios de hash separados (R4), não como
+> "ajuste de constante".
+
+---
+
+## 1. Definição do objetivo
+
+Hoje: `compiler_0 = compiler/lin.zig` (Zig, Stage0 congelado — R2). O LinVM é um **componente**
+dele.
+
+Alvo: **Compilador 0 ≡ LinVM** — a cadeia de bootstrap inteira é:
+
+```
+host_vm (único código nativo, N implementações intercambiáveis e cross-checadas)
+   + compiler0.linbc (imagem congelada: lexer→parser→typecheck→lowerer→receipts, compilada
+     das fontes .lin; sha256 pinado e assinado)
+   → todo o resto do ecossistema compila/verifica sobre isso, sem Zig.
+```
+
+O usuário final roda `host_vm compiler0.linbc check foo.lin` sem instalar Zig, sem OpenCL,
+com a raiz da imagem verificável pelo LIN Gate + quorum notarial.
+
+Critério de sucesso (todos, bit-exact, fail-closed):
+
+1. `sha256(compiler_n+1.linbc) == sha256(compiler_n.linbc)` — a imagem compila as próprias
+   fontes e reproduz a si mesma (ponto fixo).
+2. Dois hosts independentes (Zig-VL e C11) executam a imagem inteira com **raízes Merkle de
+   trace idênticas** (extensão do `crosscheck-c` para o corpus completo, não 34 vetores).
+3. Todos os comandos de verificação (`check`, `receipt`, `gate-check`, `cleanroom-verify`,
+   `bundle-verify`, `crosscheck-c`) passam executando **sob a imagem**, com as mesmas saídas
+   e os mesmos roots publicados em CI hoje.
+4. O TCB nativo medido cai de ~17 057 linhas (`compiler/lin.zig`) para o interpretador +
+   ABI de host (a ser medido; meta ≤ 2 500 linhas C11 já auditáveis em `transpile/c/lin_c/`).
+
+---
+
+## 2. Fatos verificados do repo (base factual, 2026-08-31)
+
+| Fato | Onde |
+|---|---|
+| ISA atual: **33 opcodes** (`VmOp`, `enum(u8)`), instrução = `{op:u8, a:i64}` | `compiler/lin.zig:5588`-5629 |
+| Limites: locais 64, pilha 256, profundidade de chamada 192, `step_limit=200M`, **8 arrays/função, 256 elementos/array** | `compiler/lin.zig` ~5640 |
+| Formato canônico de imagem **já existe** p/ hash: por instrução `[opcode:1B][operando:i64 LE]` | comentário do `crosscheck-c`, `lin.zig:15315` |
+| Segunda implementação da VM: **C11** (`transpile/c/lin_c/lin_vm.c`, ~13 KB), já cross-checada 34/34 vetores | `transpile/c/` |
+| Terceira: mini-interpretador LinVM **escrito em LIN**, bit-exact em 2 programas | `src/linvm_embedded.lin` |
+| LIN hospedado **já tem strings** (leitura/literal/concat): `starts_lit`, `charCodeAt`, `.length`, `rg_count_lit`, `_lia_cat` — hoje são **intrínsecos do host**, não da VM | call-sites em `lin.zig:713`+, `src/lin_from_c.lin` |
+| Um parser real já foi escrito em LIN (C→LIN): prova que lexer/parser em LIN é possível na linguagem hospedada | `src/lin_from_c.lin` (20 KB) |
+| LIN **não tem I/O**: o host lê arquivos e injeta sources como string; saída via stdout/artefato do host | design atual do `from-c` |
+| Memória por regiões fixas já existe como módulo LIN | `src/lin_regions.lin` (10 KB) |
+| SHA-256 existe em LIN puro (para receipts emitidos pela imagem sem intrínseco cripto) | `src/lin_crypto.lin`, `lin_crypto_256_real.lin` |
+| Plano de port P0..P7 existente: **Fase 0 FEITA** (`selfhost parity`, `p1ref`); Fase 1 = LinVM; Fase 7 = swap do bootstrap | `docs/SELF_HOSTING_PLAN.rulel` |
+| Regras: R0 escrever em .lin/.rulel · R1 zero .zig novos · R2 Stage0 congelado · R2a instrumentação read-only · R3 dogfooding · R4 um digest um significado · R5 sem overclaim | `AGENTS.md@1.4.2` |
+| Âncoras pinadas: `selfhost_root_zig_0`, `compat_root`, `live_git_root` | `AGENTS.md` `.h{}` |
+
+---
+
+## 3. Arquitetura alvo
+
+```
+┌─ CADEIA DE CONFIANÇA (TCB) ────────────────────────────────────────────┐
+│ L0  LINVM-C0 ISA spec (.rulel)        — 33 opcodes + perfil C0          │
+│ L1  HOST-ABI-1 spec (.rulel)          — intrínsecos + fronteira de I/O  │
+│ L2  host_vm (C11 ref + Zig-VL oracle) — único código nativo             │
+│ L3  compiler0.linbc                   — imagem congelada (L0⊗L1)        │
+│     sha256(compiler0.linbc) pinado em AGENTS.md/.h{} + lin_gate_manifest│
+│     + assinatura Ed25519 (notary quorum)                                │
+└─────────────────────────────────────────────────────────────────────────┘
+┌─ FORA DO TCB (verificáveis pela imagem) ────────────────────────────────┐
+│ personalidade CLI, transpiladores, suites, gate, receipts — tudo .lin   │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+Propriedades:
+
+- **Intercambiabilidade de host:** qualquer host que satisfaça L0+L1 e reproduza as raízes de
+  trace serve. Host não precisa ser "confiável" no sentido clássico — precisa ser *cross-checável*
+  (xver estendido) e reproduzível (DDC, §5.5).
+- **Zig sai do caminho:** após V3 o Stage0 Zig é apenas *oracle de paridade* (igual à Fase 7 do
+  plano P), arquivado read-only com hash medido — nunca removido do histórico.
+- **One-digest-one-meaning (R4):** imagem, manifesto de gate e receipts usam domínios
+  separados: `linbc1:img:`, `LIN_GATE_MANIFEST_v1` (existente), `lin:receipt:` (existente).
+
+---
+
+## 4. Os cinco problemas duros (e a decisão de cada um)
+
+### 4.1 Limites de recursos da VM — decisão: **perfil `LINVM-C0`**
+
+O ISA atual foi calibrado para kernels escalares (8 arrays × 256 = 2 KiB/função). Um lexer
+sobre um fonte de 20 KB já estoura. Opções avaliadas:
+
+| Opção | Consequência | Veredito |
+|---|---|---|
+| (a) Elevar as constantes no ISA único | Muda semântica de rejeição (programas que hoje falham passariam) → quebra receipts antigos e `compat_root` pinado | ❌ |
+| (b) Arrays-de-arrays em userland | Compilador inteiro programado contra workaround; lento e opaco | ❌ |
+| (c) **Dois perfis** sobre os mesmos 33 opcodes: `LINVM-1` (escalar, **congelado para sempre**) e `LINVM-C0` (limites de compilador: arrays maiores, regiões flat, teto explícito e *mensurável* de memória) | Hash domains separados; zero impacto retroativo; receipts dizem o perfil | ✅ |
+
+O perfil C0 mantém o ethos heap-free: toda memória vem de **regiões flatdeclaradas na
+imagem** (teto fixo), estouro = falha fechada com código de erro determinístico.
+
+### 4.2 I/O — decisão: **fronteira de host mínima, conteúdo-endereçado**
+
+LIN não terá I/O. O host fornece exatamente 3 intrínsecos de fronteira (`HOST-ABI-1`):
+
+| Intrínseco | Semântica | Determinismo |
+|---|---|---|
+| `host_read(path)` → bytes | Lê arquivo | O digest do conteúdo entra no receipt da compilação (input-bound, como hoje) |
+| `host_write(path, bytes)` | Emite artefato | Byte-exato; digest reportado |
+| `host_exit(code)` | Código de saída | Fail-closed: qualquer divergência interna ⇒ exit≠0 e nada escrito |
+
+Nada de relógio, random, rede ou env vars dentro da imagem. Tudo que afeta output é input
+hashável — a propriedade de receipt se preserva **por construção**.
+
+### 4.3 Strings — decisão: **sub-strato congelado de intrínsecos**
+
+Strings hoje são intrínsecos do host Zig (`starts_lit`, `charCodeAt`, `.length`,
+`rg_count_lit`, concat). A imagem só pode usar um **conjunto enumerado no HOST-ABI-1** (lista
+fechada, versionada). Todo host (C11, Zig-VL) implementa exatamente esse conjunto — é o maior
+custo do port do host C11 e deve ser medido em V1. *Meta:* ≤ 20 intrínsecos; cada um com
+vetores de teste dourados no spec.
+
+Uso dentro da imagem é auditável: o carregador rejeita imagem com intrínseco fora da tabela
+(fail-closed).
+
+### 4.4 Formato de imagem — decisão: **`LINBC1`, evolução do formato canônico do xver**
+
+Semente já existente: `[opcode:1B][operando:i64 LE]` por instrução (`lin.zig:15315`).
+`LINBC1` = header (magic, versão de perfil, contadores, tabela de strings/constantes — hoje
+as constantes de string moram fora do `bytecode_image` do xver, que só cobre inteiros; V0
+especifica o pool) + seção de funções + regiões declaradas + tabela de intrínsecos usados +
+`sha256` self-hash (domínio `linbc1:img:`).
+
+**Ponto crucial de conformidade com R1/R2:** a imagem é **emitida por código LIN** (o
+serializador é um módulo `.lin` rodando no Stage0, saindo pelo canal de artefato/stdout já
+existente). Nenhuma linha nova de Zig. R2 permanece absoluto; R3 é exercido desde o dia 1.
+
+### 4.5 Ovo-e-galinha / trusting-trust — decisão: **semente única + ponto fixo + DDC**
+
+1. **Semente (uma vez):** o Stage0 Zig hospeda os módulos `.lin` do compilador e emite
+   `compiler0.linbc`. Esse evento é auditável: comando único, log em CI, root publicado.
+2. **Ponto fixo:** host C11 carrega `compiler0.linbc` e recompila as mesmas fontes →
+   `compiler1.linbc`. Gate duro: `sha256(compiler1) == sha256(compiler0)`.
+3. **DDC (Wheeler):** o trace-Merkle-root da compilação completa sob host Zig-VL e sob host
+   C11 devem ser iguais (xver de imagem inteira). Um host "mentiroso" é detectado.
+4. **Assinatura:** a raiz da imagem entra no `lin_gate_manifest.rulel` e recebe selo
+   Ed25519 + quorum notarial (infra já real em `notary-sign`/`gate-attest`).
+
+---
+
+## 5. Fases (V0..V6) — cada uma com gate fail-closed
+
+Mapeamento com o plano P: as V-fases **consomem** os módulos portados em P1..P6; a diferença
+é que aqui o produto de cada fase já é imediatamente *empacotado e exercido como imagem VM*,
+em vez de morar dentro do host Zig até a Fase 7. Se uma P-fase atrasar, a V-fase
+correspondente espera — nunca publica gate parcial como se fosse total (R5).
+
+### V0 — Especificações congeladas (apenas `.rulel`)
+
+- **Entregas:** `docs/LINVM_ISA_V1.rulel` (33 opcodes + perfis 1/C0, tabelas de limites,
+  convenções de wrap/div/mod incl. `INT64_MIN`), `docs/LINBC1_FORMAT.rulel`,
+  `docs/HOST_ABI_1.rulel` (fronteira de I/O + ≤20 intrínsecos com vetores dourados).
+- **Gate G(V0):** os 3 specs são autoportantes — os vetores dourados reproduzem em **ambos**
+  os hosts existentes (Zig e C11) via `crosscheck-c` estendido; CI roda. Nenhum `.zig`/`.c`
+  novo nesta fase (spec pura).
+- **Risco:** baixo. **Depende de:** nada.
+
+### V1 — Host C11 completo + serializador LIN
+
+- **Entregas:** implementação C11 dos intrínsecos do HOST-ABI-1 e dos limites do perfil C0
+  em `transpile/c/lin_c/` (extensão de código nativo **pré-existente** — ver §7, emenda de
+  regra necessária); `src/lin_linbc_emit.lin` (serializador LINBC1 escrito em LIN);
+  loader C11 com rejeição fail-closed (imagem malformada/intrínseco desconhecido ⇒ nada
+  executa).
+- **Gate G(V1):** todos os vetores dourados de V0 no host C11; fuzz de imagens corrompidas
+  (bit flips) ⇒ 100% rejeitadas sem crash; o serializador LIN emitindo bytes cuja
+  re-leitura reproduz o módulo original (round-trip).
+- **Risco:** médio (superfície nativa nova). **Depende de:** V0.
+
+### V2 — MVP de compilador em LIN → primeira imagem
+
+- **Escopo:** subconjunto compilável: inteiros, arrays, strings read-only, funções,
+  `while`/condicionais — sem MIR/GPU/JS. Equivale a antecipar o mínimo de P2+P3 para fechar
+  o laço cedo (a ordem P1→P5 *por gates de módulo* continua valendo para a completude; o MVP
+  existe para destravar o ponto fixo o quanto antes).
+- **Entregas:** `src/linvm0_compiler/*.lin` (lexer, parser, lowerer mínimos);
+  `compiler0-mvp.linbc` emitido pelo serializador de V1 rodando no Stage0.
+- **Gate G(V2):** o MVP compilando um corpus fechado de vetores (inclui os 34 do xver +
+  erros que devem ser rejeitados) ⇒ saídas e roots **idênticos** ao Stage0; orçamento de
+  execução medido e declarado (ver §6.2).
+- **Risco:** alto (é o coração). **Depende de:** V1, P2/P3 (parcial).
+
+### V3 — Ponto fixo + DDC
+
+- **Entregas:** laço de bootstrap: `compiler1-mvp.linbc` produzido pelo host C11 executando
+  a imagem V2 sobre as próprias fontes; script de DDC Zig-VL × C11 com trace-root completo.
+- **Gate G(V3):** `sha256(compiler1-mvp) == sha256(compiler0-mvp)` **e** trace-roots iguais
+  nos dois hosts. Qualquer divergência: fail-closed, nenhum artefato promovido.
+- **Risco:** médio. **Depende de:** V2.
+
+### V4 — Imagem completa (`compiler0.linbc`)
+
+- **Escopo:** typecheck + lint + receipts SHA-256 em LIN (crypto já existe em `src/`), MIR,
+  CLI de verificação (`check`, `receipt`, `gate-check`, `cleanroom-verify`, `bundle-verify`,
+  `crosscheck-c`). MIR/GPU fica **opcional na imagem** (perfil C0 não exige OpenCL; host sem
+  GPU executa tudo que importa — paridade GPU continua sendo teste de conformidade, não
+  prova, conforme `SECURITY_AUDIT.md` §7).
+- **Gate G(V4):** a imagem reproduz, bit-a-bit, as **mesmas saídas e roots** que o CI publica
+  hoje para `make test`, `make xver`, `make gate`, `integrity` e os dois fixtures de receipt
+  (`sha256:b96fecee…` e `sha256:62b7d202…`); ponto fixo da imagem completa (V3 repetido no
+  tamanho real). Suites `run_suite`/`run_compat` do `AGENTS.md` passando **sem Zig no
+  caminho** (exceto Stage0 arquivado como oracle).
+- **Risco:** alto. **Depende de:** V3 + P1..P5 completos.
+
+### V5 — Promoção: a imagem vira o Stage0
+
+- **Entregas:** `AGENTS.md@1.5.0`: R2 liberado (Stage0 Zig arquivado read-only, hash pinado);
+  `compiler0_root` entra em `.h{}`; `lin_gate_manifest.rulel` passa a incluir a raiz
+  `linbc1:img:`; release com selo Ed25519 + quorum notarial sobre a imagem.
+- **Gate G(V5):** tudo de G(V4) rodando **sob dois hosts independentes em máquinas
+  distintas** no CI (ubuntu × C11 e, idealmente, um segundo SO) com roots iguais; gate de
+  honestidade (`attestation-gate`) verde cobrindo os novos comandos.
+- **Risco:** baixo (processo). **Depende de:** V4.
+
+### V6 — Endurecimento (opcional, contínuo)
+
+- Reduzir o conjunto de intrínsecos; host adicional de referência (p.ex. WASM sandbox) como
+  3º votante; mover verificação de receipt da imagem para o verificador independente
+  (`benchmarks/verify_receipt.*`) apontado para imagens; orçamento: refazer `HISTORY.rulel`
+  e docs de segurança para o novo TCB.
+
+---
+
+## 6. Riscos e orçamentos declarados (R5 — sem overclaim)
+
+### 6.1 Performance (risco técnico nº 1)
+
+Compilador-escrito-em-LIN rodando em VM interpretada = **interpretação dupla**. Hoje
+`VM_STEP_LIMIT=200M` e o `check` de um arquivo leva dezenas de milhares de passos; compilar
+o próprio compilador (~20k linhas de fonte) pode estourar a ordem de grandeza. Orçamento a
+medir em V2; se estourar, o perfil C0 eleva o teto **com o contador de steps permanecendo
+parte do receipt** (determinismo preservado; só o teto muda). Labels honestos: até medição,
+V2+ é **EXPERIMENTAL**, não TOY nem REAL.
+
+### 6.2 Superfície nativa mínima ≠ pequena demais para auditar
+
+HOST-ABI-1 com ≤20 intrínsecos + loader + VM ≈ orçamento alvo de ≤2 500 linhas C11 —
+auditável por uma pessoa em dias, vs. 17k do Zig. Esse número é **meta**, não fato; V1 mede.
+
+### 6.3 Divergência sutil de hosts
+
+i64 wrap, `INT64_MIN/-1`, ordem de avaliação, hashing — o xver já caça isso em 34 vetores;
+a extensão para imagem inteira (V3) é onde divergências raras apareceriam. Fail-closed por
+design: divergência nunca vira "paridade assumida".
+
+### 6.4 Congelamento prematuro
+
+Se o perfil C0 for congelado cedo demais, correções posteriores viram `LINVM-C1` (mais um
+perfil, mais domínios). Mitigação: V0 fica "proposed" até V3 passar; só então `frozen`.
+
+---
+
+## 7. Interação com as regras AGENTS.md (emendas necessárias, declaradas)
+
+| Regra | Impacto do plano | Ação |
+|---|---|---|
+| R0/R1 (só .lin/.rulel; zero .zig) | Respeitado por construção: serializador, compilador e suites são `.lin`; specs são `.rulel`. **Nenhum `.zig` novo em nenhuma fase** | nenhuma |
+| R2 (Stage0 congelado) | Respeitado: a imagem sai pelo canal de artefatos existente, sem emenda tipo R2a | nenhuma |
+| R0 vs. host C11 | V1 **estende código nativo** (`transpile/c/lin_c/`). R0 literal permite só .lin/.rulel | **Emenda `R6` proposta:** `HOST_RUNTIME_MINIMO_C11_PERMITIDO`, limitada a `transpile/c/lin_c/`, com todo delta coberto por vetores dourados + xver. Emenda explícita em commit próprio, *antes* de V1 começar |
+| R4 (um digest um significado) | Novos domínios `linbc1:img:`, `linvm:c0:` registrados | V0 |
+| R5 (labels) | V2–V4 marcadas **EXPERIMENTAL** até os gates passarem; nada aqui é "production" ainda | contínuo |
+
+---
+
+## 8. O que explicitamente NÃO muda
+
+- Receipts e verificadores independentes (`benchmarks/`) — formato aberto intocado.
+- `LINVM-1` escalar: congelado para sempre; roots antigos (`compat_root`, fixtures de
+  receipt) continuam verificando — compatibilidade retroativa é gate, não aspiração.
+- A política do attestation-guard: comandos simulados seguem recusados; a imagem herda a
+  mesma lista.
+- GPU/OpenCL: fora do caminho crítico do bootstrap (conformance opcional).
+
+---
+
+## 9. Primeira ação concreta
+
+Escrever `docs/LINVM_ISA_V1.rulel` (V0, item único): enumeração dos 33 opcodes com
+semântica formal, perfis 1/C0, e os vetores dourados extraídos do corpus atual do
+`crosscheck-c`. ~2 dias de trabalho humano, nenhum código, desbloqueia todo o resto e é
+revisável de forma independente.
+
+---
+
+## 10. Crateia de conclusão do objetivo (checklist final)
+
+- [ ] `host_vm compiler0.linbc selftest` → PASS, sem Zig instalado
+- [ ] ponto fixo da imagem completa verificado em 2 hosts × 2 SOs
+- [ ] `compiler0_root` pinado em `AGENTS.md` `.h{}` + `lin_gate_manifest.rulel` + selo notarial
+- [ ] TCB nativo medido e publicado (meta ≤ 2 500 linhas)
+- [ ] `AGENTS.md@1.5.0` com R2 liberado e Stage0 Zig arquivado read-only
+- [ ] README atualizado: "compiler_0 = LinVM (imagem LINBC1 + host mínimo)"

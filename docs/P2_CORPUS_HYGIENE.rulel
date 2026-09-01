@@ -1,0 +1,89 @@
+@RULEL:DOC_P2_CORPUS_HYGIENE:1.0.0
+~MARKDOWN_SPEC
+# P2 — Higiene do corpus GPU: tipos corrigidos + exclusão documentada de `examples/map_kernels.lin`
+
+> **Veredito:** `test/corpus/gpu_parallel_map_kernels.lin` era órfão e **reprovava o próprio
+> `lin check`** (caveat 26 do README). Corrigimos os tipos sem mudar a semântica dos vetores
+> conhecidos e documentamos a exclusão de `examples/map_kernels.lin` do corpus de 20 arquivos
+> (caveat 25). Zero edições em Zig; `corpus_sha256`/`ledger_sha256` **não** foram alterados
+> (nenhum dos 20 arquivos do corpus mudou) — o re-pin segue o rito Q3 via emenda
+> `AGENTS.md@1.5.0` com valores medidos em CI.
+
+---
+
+## 1. Causa raiz (verificada no repositório)
+
+`test/corpus/gpu_parallel_map_kernels.lin` usava `<<` e `>>` como se fossem operadores de
+shift. Em LIN **eles não existem**: o lexer tokeniza `<` e `>` como comparações, então
+`x << 3` vira `(x < 3) < 3` — o typechecker infere `bool` no meio da expressão e emite
+`LIN_TYPE_ERROR: function 'gpu_map_bitfold' return type mismatch: expected int, got bool`.
+
+Alem disso, `!test_gpu_known_vectors {` declarava uma função de 0 parâmetros **sem `()`**,
+rejeitada pelo parser de assinaturas.
+
+Os vetores conhecidos (comentados no próprio arquivo) eram: `gpu_map_affine(21)=43`,
+`gpu_map_mix(5)=8`, `gpu_map_bitfold(8)=72` — e a função `test_gpu_known_vectors` retornava
+`0 * …` por causa do `0` produzido pelo path quebrado, então o subgate 001O e o `lin integrity`
+nunca puderam validar este arquivo.
+
+## 2. Correção aplicada (gate de paridade antes/depois)
+
+| Antes | Depois |
+|---|---|
+| `^((x & 2147483647) ^ (x << 3)) \| (x >> 5)` | `^((x & 2147483647) ^ _lia_shl(x, 3)) \| _lia_shr(x, 5)` |
+| `!test_gpu_known_vectors {` | `!test_gpu_known_vectors(): int {` |
+
+- `_lia_shl`/`_lia_shr` compilam para os **opcodes VM 13/14** (`shl`/`shr`), que têm
+  rebaixamento MIR (a restrição do pipeline GPU continua respeitada: sem `/`, sem `div/mod`,
+  sem calls de usuário, corpo unário).
+- Semântica preservada: `gpu_map_bitfold(8)` continua **72** (o shift aritmético de 8 por 3
+  é 64, idêntico ao pretendido).
+
+**Gate de paridade (antes → depois):**
+
+| Check | Antes | Depois |
+|---|---|---|
+| `lin check test/corpus/gpu_parallel_map_kernels.lin` | `LIN_TYPE_ERROR` (exit ≠ 0) | `.typecheck=passed` |
+| `lin vm … ` (cobertura) | — | `total=4 eligible=4 rejected=0` |
+| `lin vm … test_gpu_known_vectors` | — | `value=1 steps=49` |
+| `lin vm … gpu_map_bitfold 8` | — | `value=72 steps=12` |
+| `lin vm … gpu_map_affine 21` / `gpu_map_mix 5` | — | `43` / `8` |
+
+(`lin gpu-verify` continua exigindo OpenCL; no CI com PoCL ele exercita o arquivo. No sandbox
+sem GPU o comando reporta `no OpenCL platforms found` — esperado.)
+
+## 3. Exclusão documentada: `examples/map_kernels.lin` (caveat 25)
+
+Fato verificado no código: a lista `corpus_targets` (20 arquivos) — usada por `lin integrity`,
+`lin selfhost p1ref` e o certificado — **não inclui** `examples/map_kernels.lin`, embora o repo
+tenha 21 `.lin` fora do corpus. Decisão registrada (rito Q3): **documentar a exclusão**, sem
+mover o arquivo para o corpus (isso alteraria `corpus_sha256`/`ledger_sha256` e exigiria o
+re-pin via emenda — que fica para o momento em que CI estiver funcional e a lista do corpus for
+revisada como um todo).
+
+A exclusão é defensável:
+
+- `examples/map_kernels.lin` é um **exemplo de kernel GPU** (alvo de `gpu-verify`), não um
+  módulo de especificação; os 20 do corpus são módulos `src/` selecionados como núcleo do
+  self-hosting.
+- Seus 3 kernels unários (`k_scale`, `k_neg`, `k_square`) **estão cobertos pelo P1**: são
+  vetores embutidos em `src/linvm_selfhost.lin` (sels 9–11 + sweeps), com valores bit-exact
+  contra o LinVM — a semântica deles permanece verificada mesmo fora do corpus.
+- O arquivo não tem header `@LIN` completo como os módulos do corpus (verificado no fonte),
+  consistente com seu papel de exemplo.
+
+## 4. O que NÃO mudou (e por quê)
+
+- `corpus_sha256` e `ledger_sha256`: **inalterados**. Os 20 arquivos do corpus não mudaram
+  (o fix é em `test/corpus/…`, fora da lista). Nenhum valor foi re-medido localmente para
+  re-pin — o rito Q3 exige medição em CI.
+- `compiler/lin.zig`: zero diffs neste PR.
+- README caveats 25/26: continuam listados até a emenda `AGENTS.md@1.5.0` ser aplicada com
+  os valores medidos em CI — a emenda propõe marcá-los como ✅ com referência a este documento.
+
+## 5. Status dos caveats afetados
+
+| Caveat | Antes | Depois deste PR |
+|---|---|---|
+| 25 — corpus 20 vs 21 `.lin` | aberto | **documentado** (seção 3); exclusão registrada; emenda propõe fechar ✅ |
+| 26 — `test/corpus/gpu_parallel_map_kernels.lin` órfão reprovando `check` | aberto | **corrigido** (seção 2); emenda propõe fechar ✅ |

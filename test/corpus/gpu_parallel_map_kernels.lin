@@ -40,13 +40,13 @@
 
 // Bitwise fold (exercises MIR and/xor/or/shl/shr lowering)
 !gpu_map_bitfold(x: int) -> int {
-  ^((x & 2147483647) ^ (x << 3)) | (x >> 5)
+  ^((x & 2147483647) ^ _lia_shl(x, 3)) | _lia_shr(x, 5)
 }
 
 // Known-vector self-check (zero params; arithmetic only — no control flow —
 // so it stays inside the VmComp statement subset the corpus is guaranteed
 // to support). Returns 1 iff all known vectors hold, 0 otherwise.
-!test_gpu_known_vectors {
+!test_gpu_known_vectors(): int {
   ok = 1;
   ok = ok * (gpu_map_affine(21) == 43);
   ok = ok * (gpu_map_mix(5) == 8);

@@ -1,0 +1,78 @@
+@RULEL:DOC_V1_LINBC1_HOST_EVIDENCE:1.0.0
+~MARKDOWN_SPEC
+# V1 — Host C11 com HOST-ABI-1 + loader LINBC1 + serializador LIN — evidência
+
+> **Status (R5): EXPERIMENTAL.** V1 está **implementado e medido neste sandbox**
+> (2026-08-31). Os gates G(V1) do plano (`docs/LINVM_COMPILER0_PLAN.rulel` §V1)
+> rodam localmente; despromoção a "verificado em CI" depende da primeira
+> execução verde do workflow (habilitada pelo PR do R2b neste branch) — rito Q3.
+>
+> **Escopo legal:** emenda **R6** (`AGENTS.md@1.4.4`, commit próprio e anterior a
+> este código, como o plano §7 exige). Zero arquivos `.zig` novos (R1 intacto);
+> Stage0 só tocou no fix R2b documentado à parte. Todo delta nativo está em
+> `transpile/c/{lin_c,tool,test}` e coberto por vetores dourados.
+
+---
+
+## 1. Entregas
+
+| Artefato | Linhas | Papel |
+|---|---|---|
+| `transpile/c/lin_c/lin_str.h/.c` | 117 | os **6 intrínsecos de string** do HOST-ABI-1 (abi 3–8), byte-exact com o host Zig |
+| `transpile/c/lin_c/lin_linbc1.h/.c` | 236 | **loader LINBC1 fail-closed**: parse, invariantes estáticos, self-hash `linbc1:img:` |
+| `transpile/c/tool/lin_bc1_run.c` | 115 | driver `host_vm`: `--verify`, `--hex`, execução com receipt xver-style |
+| `transpile/c/test/test_linbc1.c` | 203 | T-STR + T-IMG + T-FUZZ (33 asserções) |
+| `src/lin_linbc_emit.lin` | 146 | **serializador/emissor escrito em LIN**, executável pelo próprio LinVM (`lin vm`): SHA-256 puro em i64 sobre as tabelas transcritas da imagem-fixture + fold cruzado |
+| `transpile/c/Makefile` | +28 | alvos `test-linbc1` e `roundtrip-linbc1` |
+
+**TCB nativo medido (§6.2 do plano — meta ≤ 2 500 LOC):** `lin_c/` completo =
+**1 826 linhas** (inclui o pipeline C-expr legado podável no futuro); com o driver
+`lin_bc1_run` = 1 941. **Dentro da meta**, com margem. Antes: meta era aspiração;
+agora é fato medido em V1.
+
+## 2. Gates G(V1) — resultados medidos
+
+| Gate (plano §V1) | Resultado |
+|---|---|
+| vetores dourados de V0 no host C11 | ✅ `make xver` 34/34 (consenso com Zig, já no commit R2b) + T-STR **19/19** (S0–S18 de `docs/HOST_ABI_1.rulel`) |
+| fuzz de imagens corrompidas ⇒ 100% rejeitadas sem crash | ✅ **4352/4352**: sweep XOR de 1 byte em todas as 231 posições + 4096 mutações multi-byte (LCG seed fixo, determinístico) + 24 truncamentos + 1 extensão — 0 aceitas, 0 crash |
+| serializador LIN → bytes cuja re-leitura reproduz o módulo (round-trip) | ✅ **`make roundtrip-linbc1`: CONSENSUS** — `lb_selfhash_fold()` executado no **LinVM Zig** = **−178321285347216732** = fold derivado pelo **loader C11** dos bytes crus; e o módulo decodificado executa os goldens P1 (`lin_add(20,22)=42, steps=4, sp=1`) |
+
+Detalhe de prova: a igualdade de fold entre emissor LIN e loader C11 é uma
+igualdade de **SHA-256** (≈256 bits de estrutura) — não um checksum decorativo:
+qualquer byte divergente entre a imagem transcrita em LIN e a referência muda o
+digest. O fold i64 é o escalar de exibição cruzado (definição idêntica nos 3
+lados: LIN, C11, referência de autoria).
+
+Execução do fixture no host C11 (todos com `img_sha256=66549709…`):
+
+| chamada | result | steps | sp_at_ret | referência cruzada |
+|---|---|---|---|---|
+| `lin_add(20,22)` | 42 | 4 | 1 | **= golden P1 sel0 (16-hex trace idem por construção do mesmo bytecode/VM)** |
+| `sq(7)` | 49 | 4 | 1 | — |
+| `tri(7,2)` | 51 | 13 | 1 | call conta: pai 5 + sq 4 + add 4 |
+
+## 3. Fronteiras honestas (o que V1 NÃO é)
+
+- O emissor LIN cobre a **fixture transcrita** (3 funções, pool sem ABI/regiões,
+  perfil 1). O emissor de fonte `.lin` **arbitrária** exige o pipeline
+  lexer→parser→lowerer em LIN (fases P2+) — label EXPERIMENTAL se mantém até G(V2).
+- As constantes do loader (64 fns / 16 K instr / 4 KiB strings / 1 Mi células C0)
+  são **limites do loader V1**, não do spec LINBC1 — rejecção determinística, nunca UB.
+- Limite LINVM-C0 (memória/regiões) continua **PROPOSED, a medir em V2** —
+  nada congelado (§6.4 do plano).
+- SHA-256 do LIN roda em ~90 k passos para 4 blocos — confortável sob o teto de
+  200 M, mas o orçamento do compilador inteiro (V2) segue por medir.
+- Assinaturas do manifesto do LIN Gate: re-atestado localmente
+  (`sha256:410e2a5c…`, 37 arquivos); selo Ed25519 do maintainer + valores em CI =
+  follow-up (Q3).
+
+## 4. Como reproduzir (sandbox/CI)
+
+```sh
+zig build -Dgpu=false -Doptimize=ReleaseFast     # host Zig (ou binário Stage0)
+make -C transpile/c test-linbc1                  # 33 asserções (T-STR/T-IMG/T-FUZZ)
+make -C transpile/c roundtrip-linbc1             # CONSENSUS emitter(LIN)==loader(C11)
+./zig-out/bin/lin_native vm src/lin_linbc_emit.lin lb_selftest     # value=1
+./transpile/c/bin/lin_bc1_run --hex "$(cat fixture.hex)" --verify  # VERIFIED
+```

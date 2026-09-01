@@ -1,0 +1,124 @@
+@RULEL:DOC_AGENTS_EMENDA_1_5_0_DRAFT:1.0.0
+~MARKDOWN_SPEC
+# Emenda `AGENTS.md@1.5.0` — DRAFT aberto no PR (rito Q3: valores medidos em CI, nunca locais)
+
+> **Status:** draft. **Nada aqui é aplicado ao `AGENTS.md` neste PR.** Os valores com
+> `AWAITING_CI_MEASUREMENT` serão preenchidos pela primeira execução verde de CI e pinados num
+> commit de follow-up, conforme o rito aprovado (Q3): re-pin de hashes só via PR + emenda +
+> valores medidos em CI — nunca medidos localmente. Hoje o CI do repo tem **0 execuções
+> registradas** e o master não compila com o Zig 0.13.0 declarado
+> (`compiler/lin.zig:16018` e `16238–16243`) — pré-requisitos documentados em
+> `docs/P1_LINVM_SELFHOST.rulel` §4.
+
+---
+
+## 0. Decisões do mantenedor registradas (Q1–Q5, aprovadas)
+
+_Registro autoritativo das decisões que este PR e as próximas fases devem respeitar._
+
+- **Q1 → (a) aprovada.** Emenda **R2b "bugfixes fail-closed"** com lista **FECHADA** =
+  exatamente os caveats 22–28 do README. Cada bugfix em `compiler/lin.zig` exige **gate de
+  paridade antes/depois** no mesmo PR. A opção (b) — host intocado com bugs herdados no port
+  LIN — está **REJEITADA**: divergir do Stage0 quebra o `GATE(k)` bit-exact, a moeda do
+  projeto. Precedente citado: three-way match de Thompson (GCC/OCaml aceitam patches no
+  stage0 quando há prova de paridade). **Este PR não exercita R2b**: P1 e P2 não exigem
+  nenhum edit em Zig (zero diffs em `compiler/lin.zig`). R2b entra no `AGENTS.md` no PR que
+  de fato abrir um fix no Stage0.
+- **Q2 → (a) aprovada.** Um único `int` = i64 com máscaras explícitas durante **todas** as
+  fases P1–P6. O rastro determinístico da Fase 1 e os receipts existentes dependem da
+  semântica atual; larguras agora invalidariam `corpus_sha256` e todos os `H_M`. Larguras
+  `u8/u32/u64` ficam como proposta de **Fase 7+** (pós-congelamento de receipts), com emenda
+  própria.
+- **Q3 — ritual aprovado.** PR com emenda `AGENTS.md@1.5.0` + valores medidos **em CI, nunca
+  localmente**. Módulos novos **fora do corpus** (`linvm_selfhost.lin`, `lin_indice_capacidades.lin`,
+  `lin_selftest.lin`) entram no corpus apenas após o gate da fase PASS — até lá vivem como
+  módulos com `^ops=` próprio e golden values, sem alterar `corpus_sha256`.
+- **Q4 → (b) aprovada.** `lin from-js --engine=linvm` é o objetivo, **mas só depois da Fase 6**
+  (CLI+transpiladores no plano). Até lá: CLI no host congelado; espelhos LIN evoluem em
+  paralelo com **matriz de paridade documentada** (P3/P4/P5 validam via `lin vm` direto, não
+  via CLI). Saída do modo linvm marcada com `.engine=linvm`.
+- **Q5 — aprovada.** `receipt verify --execute` vira **requisito da Fase 5**. Frase honesta
+  até lá: **"consistência de campos verificável por terceiros"** — NUNCA "prova de execução"
+  antes do `--execute` existir. **Cada mudança de semântica da VM exige vetor novo em
+  `redteam/` como parte do PR**; sem o vetor, o bugfix não entra. _Aplicabilidade a este PR:
+  nenhuma mudança de semântica de VM (o host ficou intocado) — `redteam/` não é acionado._
+
+## 1. O que esta emenda propõe (quando CI estiver verde)
+
+### 1.1 Cabeçalho
+
+```
+@RULEL:AGENTS:1.5.0
+```
+
+### 1.2 `.p{...}` — novos paths
+
+```
+  p1_vm_selfhost="src/linvm_selfhost.lin"
+  gpu_corpus="test/corpus/gpu_parallel_map_kernels.lin"
+```
+
+### 1.3 `.u{...}` — novos comandos
+
+```
+  p1_gate="lin vm src/linvm_selfhost.lin vms_gate"
+  p1_check="lin check src/linvm_selfhost.lin"
+```
+
+### 1.4 `.h{...}` — novos pinos (MEDIDOS EM CI — nunca locais)
+
+```
+  selfhost_root_zig_1="sha256:AWAITING_CI_MEASUREMENT"   ← lin selfhost p1ref
+  p1_module_sha256="sha256:AWAITING_CI_MEASUREMENT"      ← SHA-256 de src/linvm_selfhost.lin
+  p1_gate_expected=1                                      ← vms_gate deve retornar 1
+  gpu_corpus_sha256="sha256:AWAITING_CI_MEASUREMENT"     ← SHA-256 do corpus GPU corrigido
+```
+
+_Nota de transparência: `lin selfhost p1ref` já emite `.pin=AWAITING_FIRST_CI_MEASUREMENT`
+hoje (comportamento existente do comando); esta emenda transforma esse valor em pino
+assertado após a primeira medição em CI._
+
+### 1.5 `.r{...}` — regras inalteradas + nota R2b
+
+`R0/R1/R2/R2a/R3` permanecem. A regra **R2b** (Q1) entra no `AGENTS.md` apenas no PR que
+abrir um fix no Stage0, com o texto:
+
+```
+R2b=STAGE0_BUGFIX_FAIL_CLOSED(closed_list=README_caveats_22_28;
+     parity_gate_before_after_obrigatorio; redteam_vetor_obrigatorio_por_semantica_mudada)
+```
+
+### 1.6 README — caveats a atualizar no mesmo commit de follow-up
+
+| Caveat | Proposta |
+|---|---|
+| 25 — corpus 20 vs 21 `.lin` | ✅ **fechado por documentação**: exclusão de `examples/map_kernels.lin` registrada em `docs/P2_CORPUS_HYGIENE.rulel` §3 (exemplo GPU, fora do núcleo self-host; seus 3 kernels unários são vetores do P1). |
+| 26 — `test/corpus/gpu_parallel_map_kernels.lin` órfão | ✅ **fechado**: tipos corrigidos (`_lia_shl/_lia_shr`, assinatura `(): int`), `lin check` passa, vetores conhecidos = 1, `lin vm` cobre 4/4 fns. Evidência em `docs/P2_CORPUS_HYGIENE.rulel` §2. |
+
+## 2. Rito de aplicação (obrigatório)
+
+1. PR de infraestrutura primeiro: tornar o build verde no Zig 0.13.0 declarado (os dois erros
+   de `compiler/lin.zig` acima — o fix deles já cai sob R2b, com gate de paridade) e fazer a
+   **primeira** execução de CI funcionar.
+2. Na primeira execução verde, o CI mede `lin selfhost p1ref` (`selfhost_root_zig_1`),
+   `sha256sum src/linvm_selfhost.lin` e `sha256sum test/corpus/gpu_parallel_map_kernels.lin`
+   e imprime os valores no log.
+3. Follow-up PR: substituir `AWAITING_CI_MEASUREMENT` pelos valores do log de CI, aplicar esta
+   emenda ao `AGENTS.md` (1.5.0) e marcar os caveats 25/26 como ✅ no README.
+4. **Nunca** preencher esses pinos com valores medidos localmente.
+
+## 3. Por que `corpus_sha256`/`ledger_sha256` NÃO mudam neste PR
+
+Os 20 arquivos de `corpus_targets` não foram tocados (o fix de P2 está em `test/corpus/…`,
+fora da lista; `src/linvm_selfhost.lin` é módulo novo fora do corpus — rito Q3). Portanto
+`corpus_sha256` e `ledger_sha256` permanecem idênticos; nenhum re-pin é necessário nem
+permitido agora. Quando o módulo P1 passar o gate da fase e for promovido ao corpus (futuro),
+aí sim o re-pin ocorre, por PR, com valores CI.
+
+## 4. Nota sobre "div/mod por zero" (esclarecimento de semântica)
+
+A semântica exata do Zig congelado (`vmExec`, `compiler/lin.zig:6590` div e `:6596` mod): `div` e `mod`
+com `y==0` retornam **`error.VmDivisionByZero` (status 7)** — não 0. O "wrapping convention"
+do README (caveat 15) vale para os **casos-limite de sinal**: `INT64_MIN / -1 → INT64_MIN` e
+`INT64_MIN mod -1 → 0`. O P1 implementa exatamente isso (sels 26–29 do gate: `vm_div_edges`,
+`vm_mod_edges`, `vm_div_zero → status 7`, `vm_mod_zero → status 7`).
