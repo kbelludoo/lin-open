@@ -1,0 +1,72 @@
+@RULEL:DOC_R2B_ZIG013_BUILD_FIX_PARITY:1.0.0
+~MARKDOWN_SPEC
+# R2b — Fix de build Zig 0.13.0 do Stage0 + gate de paridade (antes/depois)
+
+> **Emenda exercida:** `R2b=STAGE0_BUGFIX_FAIL_CLOSED` (`AGENTS.md@1.4.3`), aprovada em
+> Q1 (`docs/AGENTS_EMENDA_1_5_0_DRAFT.rulel` §0), que classifica explicitamente **estes
+> dois erros de build** como cobertos por R2b ("PR de infraestrutura primeiro: tornar o
+> build verde no Zig 0.13.0 declarado (os dois erros de `compiler/lin.zig` acima — o fix
+> deles já cai sob R2b, com gate de paridade)" — draft §2 passo 1). É o **primeiro exercício
+> de R2b**: a regra entra no `AGENTS.md` neste mesmo PR, conforme o rito.
+>
+> **Q5 (redteam): não acionado** — nenhuma semântica de VM ou de linguagem mudou; o patch é
+> compilacional (sintaxe), prova: os dois builds (Debug e ReleaseFast) compilam a mesma
+> fonte e todos os âncoras idempotentes reproduzem (§3).
+>
+> **Proveniência (R5):** todas as medições abaixo foram feitas **neste sandbox**
+> (2026-08-31, Zig 0.13.0 oficial via distribuição PyPI `ziglang`, build `-Dgpu=false`).
+> Não há execução de CI neste repo ainda; os valores NÃO foram pinados em `AGENTS.md` —
+> pinos novos seguem o rito Q3 (medidos em CI). Sem OpenCL no sandbox: suítes GPU
+> (`compat_root`, `62b7d202`, `gpu-verify`) ficaram **[SKIP] no hardware**, documentado.
+
+---
+
+## 1. Os dois erros (reproduzidos no master)
+
+`zig build -Dgpu=false` no commit base `28b41e2`:
+
+| # | local | erro | correção (zero-semântica) |
+|---|---|---|---|
+| 1 | `compiler/lin.zig` (bloco `selfhost p1ref`, loop sobre `p1_targets`) | `error: unused capture` — `for (p1_targets, 0..) \|path, pidx\|` com `pidx` jamais lido no corpo | `for (p1_targets) \|path\|` — remove a captura morta |
+| 2 | `compiler/lin.zig` (bloco `selfhost parity`, comparações de baseline) | `error: expected type '[]const u8', found 'fmt.Formatter(...)'` — `std.mem.eql(u8, …)` recebeu `fmtSliceHexLower(...)` (Formatter, não string) em 3 sítios | `corp_hex`/`ledg_hex`/`root_hex` agora via `std.fmt.bufPrint(&buf,"{s}",.{fmt})` para buffers `[64]u8` — os bytes impressos são idênticos; só muda o *tipo* materializado |
+
+Diff total: **+6/−4 linhas**, nenhum caminho de execução alterado (o dead-code do erro 1
+nunca executava; as strings hex do erro 2 são byte-a-byte as mesmas do Formatter).
+
+## 2. Gate de paridade "antes"
+
+Antes do patch: `zig build` **falha** (2 erros acima) ⇒ nenhum comando mede; CI com 0
+execuções (`docs/P1_LINVM_SELFHOST.rulel` §4). Não há baseline "antes" executável — a
+paridade é medida contra os **âncoras pinados** do repo (AGENTS.md `.h{}`, baselines
+embutidas no próprio `selfhost parity`, fixtures documentadas no README).
+
+## 3. Gate de paridade "depois" (medido neste sandbox)
+
+| # | Verificação | Esperado (pinado/known) | Medido | Resultado |
+|---|---|---|---|---|
+| 1 | `zig build -Dgpu=false` (Debug e ReleaseFast) | compila | compila | ✅ |
+| 2 | `lin selfhost parity` | `corpus=28b64d74…`, `ledger=d32d0d6d…`, `root=sha256:f7a0c6fae02cdb89fc3236619919432d4138015f9bdb8a69209d797c01e1d01f` | `.corpus_match=true .ledger_match=true .selfhost_root_match=true .status="PASS"` | ✅ |
+| 3 | `receipt create --source "return x * x;" --input 9` | root `sha256:b96fecee…` (README §1) | `sha256:b96feceed2a4a67a51dd47d3ff3a8bfdf143dcc0fcc3a80ca70a7ae84c2a47d4` | ✅ |
+| 4 | P1: `lin vm src/linvm_selfhost.lin vms_gate` | `value=1` em **8 511 500** passos (`P1_LINVM_SELFHOST.rulel` §3) | `value=1 steps=8511500` — **bit-exact** | ✅ |
+| 5 | `lin integrity` | PASS | `.status="PASS"` | ✅ |
+| 6 | `make test-cpu` (check 20 corpus + examples, receipt round-trip, guard unit tests) | PASS | PASS | ✅ |
+| 7 | `make attestation-gate` | 35+ asserções + unit tests | `attestation-honesty: PASS (43 checks)` | ✅ |
+| 8 | `make xver` (crosscheck-c: Zig × C11, 34 vetores) | 34/34, 0 divergências | `agreements 34 | divergences 0`, recibo escrito | ✅ |
+| 9 | LIN Gate `make gate` | **bloqueia** o diff (fail-closed), depois abre após re-atestação | `GATE BLOCKED — 1 unattested change` → `gate-attest` → `GATE OPEN (31 files)` | ✅ (efeito desejado) |
+| 10 | suítes GPU (`test_lin_full_self_hosted_suite`, `test_lin_selfhost_compat_001`) | `status=PASS` | `[SKIP] No OpenCL platform found` | ⏭️ pendente CI/PoCL |
+
+Nota necessária (transparência): `.compiler_sha256_recomputed` mudou
+(`16272e2f…`) — auto-referencial por definição (é o hash da fonte editada) e
+**reported, não asserted** no próprio `selfhost parity`; todos os âncoras *asserted*
+permanecem bit-exact. O root do LIN Gate da toolchain foi re-atestado para
+`sha256:cca2f44f3577bdb1ccfd39ab0b303ebc0040704777f2ab3e9a647653c4b89ad3`
+(31 arquivos) — **assinatura pendente do maintainer/CI** (`gate-check` sem roster
+reporta explicitamente `signature NOT VERIFIED`, comportamento fail-open declarado
+existente).
+
+## 4. Conclusão do gate R2b
+
+**same_inputs?** sim (corpus/ledger/root âncoras). **same_output?** sim nos 8 itens
+executáveis; 2 suítes pendentes de hardware. **Reproduzível?** sim — `receipt create`
+e `vms_gate` executados duas vezes com saídas idênticas. O fix habilita o pré-requisito
+de TODOS os gates futuros (build verde no Zig declarado → primeira execução de CI).

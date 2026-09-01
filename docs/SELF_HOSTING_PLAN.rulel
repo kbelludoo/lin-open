@@ -301,3 +301,23 @@ _Documento de análise e decisão (append-only desde 2026-08-31). A instrumenta�
 (emenda `R2a`, `AGENTS.md@1.4.1`) foi a primeira — e, até P7, única autorizada — mudança
 no bootstrap. Todo ajuste posterior a `compiler/lin.zig` exige nova emenda documentada
 aqui, com re-pinning das âncoras autorreferenciais da seção 2.2._
+
+## 8. Registro append-only — compatibilidade de build Zig 0.13.0
+
+Em 2026-08-31, a instrumentação read-only P0/P1 não compilava no Zig 0.13.0 por dois erros
+semântica-neutros: capture de índice não usado e tentativa de comparar diretamente um
+`fmt.Formatter` com bytes. A correção removeu o capture e materializou os cinco formatos hex
+em buffers `[64]u8`; nenhuma entrada, digest ou decisão do gate mudou.
+
+Medição após a correção:
+
+    compiler_sha256 = 6eeddd14fd507ecd9774f055c952843723d59b2e4537d67773f679f99fb6fd9f
+    certificate_id  = sha256:46df1c4cd1e914d74674f03ef1d575b506d5a317f6db65d3e17417a868625e7c
+    corpus_sha256   = 28b64d7433c44f02a176a1dd5617abfc88d23181e2046d3283f104d0a637a766
+    ledger_sha256   = d32d0d6d0897d0786b93a50ca1eb6fa88ee9153e09a8b30a3b09354d1d8545a1
+    selfhost_root   = sha256:f7a0c6fae02cdb89fc3236619919432d4138015f9bdb8a69209d797c01e1d01f
+
+`selfhost parity` retornou `status=PASS`, `corpus_present=20/20` e confirmou as três âncoras
+estáveis. O binário CPU resultante executou `check` sobre os 38 arquivos `.lin` encontrados
+em `src/` e `examples/`: 38 PASS, 0 FAIL. Isso comprova compilação pelo Stage0 Zig; não prova
+ainda que o compiler_0 em LIN seja self-hosted.
