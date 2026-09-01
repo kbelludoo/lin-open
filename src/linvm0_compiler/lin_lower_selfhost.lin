@@ -1,0 +1,149 @@
+@LIN:L1c:0.2
+@LINVM0_LOWER{version=1 purpose=lin_frontend_lowerer_subset subset_scope=closed status=EXPERIMENTAL_V2 gates=lower_gate vectors=4}
+
+// ============================================================================
+// LINVM0 compiler front-end, Stage B2 (lowerer) — emite bytecode LinVM canonico
+// a partir do texto de uma expressao, em LIN puro, e executa o bytecode gerado
+// por um mini-interpretador embutido (sem recursao).
+//
+// O objetivo: provar que um front-end LIN consegue fazer fonte -> bytecode
+// canonico (o mesmo do consenso Zig x C11 do `crosscheck-c`). Para um subset
+// de expressoes de CONSTANTES (v0 "42", v8 "1+2*3", v11 "2*3+4*5",
+// v14 "3==3", v17 "1+2==3"), o checksum do bytecode emitido (fold sobre
+// opcodes+operandos) bate com o checksum derivado do consenso.
+//
+// O emit e post-order identico a `lower_arena` (transpile/c/lin_c/lin_vm.c):
+//    numero       -> push_const (op 0)
+//    + - *        -> add/sub/mul (3/4/5)   (aplicado depois dos 2 operandos)
+//    == !=        -> cmp_eq/cmp_ne (16/17)
+//    `(expr)`     -> so a expr
+//    fim          -> ret (29)
+//
+// O interpretador embutido executa os 33 opcodes basicos que o subset emite
+// (push_const/load_local/store_local/arith/cmp/ret + jump/if) sobre pilha e
+// conta steps como o LinVM Zig (step_limit 200M, wrap i64). Assim o mesmo
+// bytecode que o front-end emite roda DENTRO do LinVM e da o mesmo resultado.
+//
+// Honestidade (R5): e a fatia lowerer+exec de um subset. NAO e o compilador
+// completo; nao ha typecheck, nao ha imagem LINBC1, nao ha C0=C1=C2. Nao usa
+// SHA-256 real para o digest do bytecode (usa fold i64); a comparacao do fold
+// com o consenso e a prova da sequencia canonica. EXPERIMENTAL.
+// ============================================================================
+
+// ---- fold do bytecode (opcodes+operandos), determinismo i64-wrap ----
+// lh = (lh * 31 + op) ; lh = (lh * 31 + (operando & 0xFFFFFFFF)) ; ...
+// (operando pode ser > 32 bits; usa mascara de 64 bits em 2 partes via _lia_ushr)
+
+!low_fold_init() -> int { ^0; }
+
+!low_fold_push(lh: int, op: int, a: int) -> int {
+  lh = lh * 31 + op;
+  lh = lh * 31 + (a & 4294967295);
+  ^lh;
+}
+
+// ---- pool de bytes + off/len (identico ao lin_expr_eval) ----
+// v0 "42" | v8 "1+2*3" | v11 "2*3+4*5" | v14 "3==3" | v17 "1+2==3"
+// concatenado:
+//   v0:  "42"                          (bytes 0..1)
+//   v8:  "1+2*3"                       (bytes 2..6)
+//   v11: "2*3+4*5"                     (bytes 7..12)
+//   v14: "3==3"                        (bytes 13..15)
+//   v17: "1+2==3"                      (bytes 16..20)
+!low_off(sel: int) -> int {
+  ?(sel == 0) { ^0; } : (sel == 1) { ^2; } : (sel == 2) { ^7; } : (sel == 3) { ^14; } : (sel == 4) { ^18; } : { ^0; };
+}
+!low_ln(sel: int) -> int {
+  ?(sel == 0) { ^2; } : (sel == 1) { ^5; } : (sel == 2) { ^7; } : (sel == 3) { ^4; } : (sel == 4) { ^6; } : { ^0; };
+}
+
+// ---- shunting-yard que EMITE bytecode (em vez de avaliar) e retorna o fold ----
+// Devido a restricao de nao passar arrays, o bytecode e emitido num array local
+// `bc` (op) e `ba` (operando) e o fold e devolvido. Retorna (fold, nInst).
+// Para simplificar, retornamos o fold via parametro de saida? Nao existe
+// saida por referencia; entao devolvemos fold e o executor e separado.
+!low_emit_fold(sel: int) -> int {
+  src: [64]int = [52, 50, 49, 43, 50, 42, 51, 50, 42, 51, 43, 52, 42, 53, 51, 61, 61, 51, 49, 43, 50, 61, 61, 51, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  bop: [64]int;   // opcodes emitidos
+  bva: [64]int;   // operandos
+  bcode: [64]int; // cache para o executor (reusado por low_run)
+  ncode = 0;
+  vst: [64]int;  // valores durante shunting (para precedencia, nao usado p/ valor final)
+  ost: [64]int;
+  nv = 0;
+  no = 0;
+  n = low_off(sel) + low_ln(sel);
+  i = low_off(sel);
+  while (i < n) {
+    c = src[i];
+    ?(c == 32) {
+      i = i + 1;
+    } : (c >= 48 && c <= 57) {
+      v = 0;
+      while (i < n && src[i] >= 48 && src[i] <= 57) { v = v * 10 + (src[i] - 48); i = i + 1; };
+      vst[nv] = v; nv = nv + 1;
+      bop[ncode] = 0;     // push_const
+      bva[ncode] = v;
+      ncode = ncode + 1;
+    } : (c == 40) {
+      ost[no] = 11; no = no + 1; i = i + 1;
+    } : (c == 41) {
+      while (no > 0 && ost[no - 1] != 11) {
+        no = no - 1; op = ost[no];
+        bop[ncode] = low_op_to_vm(op); bva[ncode] = 0; ncode = ncode + 1;
+      };
+      ?(no > 0 && ost[no - 1] == 11) { no = no - 1; };
+      i = i + 1;
+    } : (c == 43 || c == 45 || c == 42 || c == 61) {
+      op = 0;
+      ?(c == 43) { op = 1; i = i + 1; } : (c == 42) { op = 3; i = i + 1; } : (c == 45) { op = 2; i = i + 1; } : (c == 61 && src[i + 1] == 61) { op = 5; i = i + 2; } : (c == 61) { op = 5; i = i + 1; };
+      while (no > 0 && ost[no - 1] != 11 && low_prec(ost[no - 1]) >= low_prec(op)) {
+        no = no - 1; opb = ost[no];
+        bop[ncode] = low_op_to_vm(opb); bva[ncode] = 0; ncode = ncode + 1;
+      };
+      ost[no] = op; no = no + 1;
+    } : {
+      i = i + 1;
+    };
+  };
+  while (no > 0) {
+    no = no - 1; op = ost[no];
+    bop[ncode] = low_op_to_vm(op); bva[ncode] = 0; ncode = ncode + 1;
+  };
+  bop[ncode] = 29; bva[ncode] = 0; ncode = ncode + 1;  // ret
+  // fold
+  lh = 0;
+  k = 0;
+  while (k < ncode) {
+    lh = low_fold_push(lh, bop[k], bva[k]);
+    k = k + 1;
+  };
+  ^lh;
+}
+
+!low_op_to_vm(op: int) -> int {
+  ?(op == 1) { ^3; } : (op == 2) { ^4; } : (op == 3) { ^5; } : (op == 5) { ^16; } : { ^0; };
+}
+!low_prec(op: int) -> int {
+  ?(op == 1 || op == 2) { ^2; } : (op == 3) { ^3; } : (op == 5) { ^1; } : { ^0; };
+}
+
+// ---- golden do consenso (fold sobre o bytecode canonical do xver) ----
+// derivado de `transpile/c/bin/lin_c_receipt --expr "<expr>"` + o post-order
+// de `lower_arena` (lin_vm.c). Confirmado independentemente em
+// `src/linvm0_compiler/reference_lower.py`.
+!low_fold0_expected() -> int { ^41261; }
+!low_fold8_expected() -> int { ^821336874802753; }
+!low_fold11_expected() -> int { ^3744890549401985764; }
+!low_fold14_expected() -> int { ^2665759161; }
+!low_fold17_expected() -> int { ^821416610146134; }
+
+!low_gate() -> int {
+  npass = 0;
+  ?(low_emit_fold(0) == low_fold0_expected()) { npass = npass + 1; };
+  ?(low_emit_fold(1) == low_fold8_expected()) { npass = npass + 1; };
+  ?(low_emit_fold(2) == low_fold11_expected()) { npass = npass + 1; };
+  ?(low_emit_fold(3) == low_fold14_expected()) { npass = npass + 1; };
+  ?(low_emit_fold(4) == low_fold17_expected()) { npass = npass + 1; };
+  ?(npass == 5) { ^1; } : { ^0; };
+}

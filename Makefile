@@ -2,7 +2,8 @@
 # gate targets added on this branch.
 .PHONY: all build build-gpu build-cpu test test-cpu lint clean \
         crypto256-real crypto256-audit \
-        attestation-gate guard-unit xver gate gate-attest ci-gate
+        attestation-gate guard-unit xver gate gate-attest ci-gate \
+        linvm0-gate
 
 # LIN build/test Makefile (2026-08-31)
 #
@@ -116,6 +117,13 @@ endif
 # The full PR gate, in the order CI runs it.
 ci-gate: gate attestation-gate xver
 	@$(BIN) integrity
+
+# LINVM0 front-end gate (V2/B2): verifies the LIN lexer and expression evaluator
+# that start the compiler0 self-host. This is EXPERIMENTAL (see
+# docs/LINVM0_V2_FRONTIER.rulel); it does NOT yet build the full compiler or
+# the C0=C1=C2 fixed point.
+linvm0-gate: build-cpu
+	@./verify_linvm0.sh $(BIN)
 
 # Independent zero-trust receipt verification: recomputes the Merkle root
 # with python3 / bash+openssl / node — no LIN binary involved. Requires

@@ -1,0 +1,163 @@
+@LIN:L1c:0.2
+@LINVM0_EXPR_EVAL{version=2 purpose=lin_frontend_expr_eval_subset subset_scope=closed status=EXPERIMENTAL_V2 gates=xver_gate vectors=10}
+
+// ============================================================================
+// LINVM0 compiler front-end, Stage B2: avaliador de expressoes em LIN puro.
+//
+// Subset fechado sobre os vetores de CONSTANTES do `docs/LINVM_ISA_V1.rulel`
+// §7 (aritmetica wrap + comparacoes + parenteses + modulo), com avaliacao
+// i64-wrap: v0, v7, v8, v9, v10, v11, v14, v15, v16, v17.
+//
+// Implementa tokenize-on-the-fly + shunting-yard (iterativo, sem recursao),
+// pois o subconjunto do `lin vm` rejeita passar arrays como argumento (a fonte
+// e um range de um unico array local `src`, e a funcao opera por indices). Um
+// calculo deterministico i64-wrap e comparado com os resultados publicados em
+// §7; um oraculo `reference_tokenize.py` independente transcreve o `vmTokenize`
+// para os ids lexicais (ver docs/LINVM0_V2_FRONTIER).
+//
+// Honestidade (R5): esta e a FATIA de avaliacao de um subset. NAO e o
+// compilador completo (falta typecheck, lowerer -> bytecode canonico, imagem
+// LINBC1 derivada de texto e o lexer a partir de um fonte lida pelo host).
+// Até o gate B2 completo passar, isto e EXPERIMENTAL.
+// ============================================================================
+
+// pool de bytes: nao ha arrays "globais" neste subset; cada funcao que precisa
+// da fonte constroi um pool local. O range `[ee_off(sel), ee_off(sel)+ee_ln(sel))`
+// seleciona o vetor.
+
+!ee_prec(op: int) -> int {
+  ?(op == 1 || op == 2) { ^2; } : (op == 3 || op == 4) { ^3; } : (op == 5 || op == 6 || op == 7 || op == 8 || op == 9 || op == 10) { ^1; } : { ^0; };
+}
+
+!ee_apply(x: int, y: int, op: int) -> int {
+  ?(op == 1) { ^x + y; } : (op == 2) { ^x - y; } : (op == 3) { ^x * y; } : (op == 4) {
+    ?(y == 0) { ^0; } : (x == ee_i64min() && y == -1) { ^0; } : { ^x - ee_div(x, y) * y; };
+  } : (op == 5) { ?(x == y) { ^1; } : { ^0; }; } : (op == 6) { ?(x != y) { ^1; } : { ^0; }; } : (op == 7) { ?(x < y) { ^1; } : { ^0; }; } : (op == 8) { ?(x > y) { ^1; } : { ^0; }; } : (op == 9) { ?(x <= y) { ^1; } : { ^0; }; } : (op == 10) { ?(x >= y) { ^1; } : { ^0; }; } : { ^0; };
+}
+
+!ee_i64min() -> int {
+  ^0 - 9223372036854775807 - 1;
+}
+
+!ee_uge(a: int, b: int) -> int {
+  ?(a == b) { ^1; };
+  sa = _lia_ushr(a, 63);
+  sb = _lia_ushr(b, 63);
+  ?(sa != sb) { ?(sb == 1) { ^0; } : { ^1; } };
+  ?(a > b) { ^1; };
+  ^0;
+}
+
+!ee_udiv(nn: int, dd: int) -> int {
+  q = 0;
+  r = 0;
+  ii = 63;
+  while (ii >= 0) {
+    r = _lia_shl(r, 1);
+    r = r | (_lia_ushr(nn, ii) & 1);
+    ?(ee_uge(r, dd) == 1) {
+      r = r - dd;
+      q = q | _lia_shl(1, ii);
+    };
+    ii = ii - 1;
+  };
+  ^q;
+}
+
+!ee_div(x: int, y: int) -> int {
+  neg = 0;
+  ax = x;
+  ?(x < 0) { ax = 0 - x; neg = 1; };
+  ay = y;
+  ?(y < 0) { ay = 0 - ay; ?(neg == 1) { neg = 0; } : { neg = 1; } };
+  q = ee_udiv(ax, ay);
+  ?(neg == 1) { q = 0 - q; };
+  ^q;
+}
+
+// --- pool local (fonte concatenada) + tabelas off/len ---
+!ee_off(sel: int) -> int {
+  ?(sel == 0) { ^0; } : (sel == 1) { ^2; } : (sel == 2) { ^8; } : (sel == 3) { ^17; } : (sel == 4) { ^28; } : (sel == 5) { ^41; } : (sel == 6) { ^54; } : (sel == 7) { ^60; } : (sel == 8) { ^66; } : (sel == 9) { ^74; } : { ^0; };
+}
+
+!ee_ln(sel: int) -> int {
+  ?(sel == 0) { ^2; } : (sel == 1) { ^6; } : (sel == 2) { ^9; } : (sel == 3) { ^11; } : (sel == 4) { ^13; } : (sel == 5) { ^13; } : (sel == 6) { ^6; } : (sel == 7) { ^6; } : (sel == 8) { ^8; } : (sel == 9) { ^10; } : { ^0; };
+}
+
+!ee_eval(sel: int) -> int {
+  src: [128]int = [52, 50, 49, 48, 32, 37, 32, 51, 49, 32, 43, 32, 50, 32, 42, 32,
+    51, 40, 49, 32, 43, 32, 50, 41, 32, 42, 32, 51, 49, 48, 48, 32,
+    45, 32, 50, 48, 32, 45, 32, 49, 48, 50, 32, 42, 32, 51, 32, 43,
+    32, 52, 32, 42, 32, 53, 51, 32, 61, 61, 32, 51, 53, 32, 33, 61,
+    32, 53, 49, 48, 32, 62, 61, 32, 49, 48, 49, 32, 43, 32, 50, 32,
+    61, 61, 32, 51, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  n = ee_off(sel) + ee_ln(sel);
+  vst: [64]int;
+  ost: [64]int;
+  nv = 0;
+  no = 0;
+  i = ee_off(sel);
+  while (i < n) {
+    c = src[i];
+    ?(c == 32) {
+      i = i + 1;
+    } : (c >= 48 && c <= 57) {
+      v = 0;
+      while (i < n && src[i] >= 48 && src[i] <= 57) {
+        v = v * 10 + (src[i] - 48);
+        i = i + 1;
+      };
+      vst[nv] = v;
+      nv = nv + 1;
+    } : (c == 40) {
+      ost[no] = 11;
+      no = no + 1;
+      i = i + 1;
+    } : (c == 41) {
+      while (no > 0 && ost[no - 1] != 11) {
+        no = no - 1;
+        op = ost[no];
+        vst[nv - 2] = ee_apply(vst[nv - 2], vst[nv - 1], op);
+        nv = nv - 1;
+      };
+      ?(no > 0 && ost[no - 1] == 11) { no = no - 1; };
+      i = i + 1;
+    } : (c == 43 || c == 45 || c == 42 || c == 37 || c == 61 || c == 33) {
+      op = 0;
+      ?(c == 43) { op = 1; i = i + 1; } : (c == 42) { op = 3; i = i + 1; } : (c == 37) { op = 4; i = i + 1; } : (c == 45) { op = 2; i = i + 1; } : (c == 61 && src[i + 1] == 61) { op = 5; i = i + 2; } : (c == 61) { op = 5; i = i + 1; } : (c == 33 && src[i + 1] == 61) { op = 6; i = i + 2; } : (c == 33) { op = 6; i = i + 1; } : (c == 60 && src[i + 1] == 61) { op = 9; i = i + 2; } : (c == 60) { op = 7; i = i + 1; } : (c == 62 && src[i + 1] == 61) { op = 10; i = i + 2; } : (c == 62) { op = 8; i = i + 1; };
+      while (no > 0 && ost[no - 1] != 11 && ee_prec(ost[no - 1]) >= ee_prec(op)) {
+        no = no - 1;
+        opb = ost[no];
+        vst[nv - 2] = ee_apply(vst[nv - 2], vst[nv - 1], opb);
+        nv = nv - 1;
+      };
+      ost[no] = op;
+      no = no + 1;
+    } : {
+      i = i + 1;
+    };
+  };
+  while (no > 0) {
+    no = no - 1;
+    op = ost[no];
+    vst[nv - 2] = ee_apply(vst[nv - 2], vst[nv - 1], op);
+    nv = nv - 1;
+  };
+  ^vst[nv - 1];
+}
+
+!xver_gate() -> int {
+  npass = 0;
+  ?(ee_eval(0) == 42) { npass = npass + 1; };
+  ?(ee_eval(1) == 1) { npass = npass + 1; };
+  ?(ee_eval(2) == 7) { npass = npass + 1; };
+  ?(ee_eval(3) == 9) { npass = npass + 1; };
+  ?(ee_eval(4) == 70) { npass = npass + 1; };
+  ?(ee_eval(5) == 26) { npass = npass + 1; };
+  ?(ee_eval(6) == 1) { npass = npass + 1; };
+  ?(ee_eval(7) == 0) { npass = npass + 1; };
+  ?(ee_eval(8) == 1) { npass = npass + 1; };
+  ?(ee_eval(9) == 1) { npass = npass + 1; };
+  ?(npass == 10) { ^1; } : { ^0; };
+}
