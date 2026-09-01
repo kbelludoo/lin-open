@@ -1,0 +1,173 @@
+@LIN:L1c:0.2
+@LIN_LINBC_EMIT{version=1 purpose=linbc1_fixture_emitter_and_selfhash_pure_int runs_on="lin vm" golden=fold_i64 status=EXPERIMENTAL_V1}
+
+// ============================================================================
+// LINBC1 emitter (V1) — serializador da imagem-fixture escrito 100% em LIN,
+// executável pelo próprio LinVM (`lin vm` — subconjunto i64 puro, sem strings,
+// sem I/O). Dogfooding R3: a imagem é derivada aqui de tabelas transcritas e
+// o self-hash `linbc1:img:` é recomputado com um SHA-256 escrito à mão
+// em i64 (masks 32-bit), sem intrínseco cripto do host.
+//
+// O que este módulo prova (gate G(V1), lado LIN):
+//   lb_selfhash_fold() == -178321285347216732
+// é o mesmo número que o loader C11 (transpile/c/lin_c/lin_linbc1.c) deriva dos
+// bytes crus — cross-host emitter↔loader consensus (`make roundtrip-linbc1`).
+// Estrutura da imagem é verificada pelo digest: qualquer byte divergente
+// carrega o fold junto (propriedade do SHA-256, não assertion decorativa).
+//
+// Fixture (perfil 1 = LINVM-1, 0 regiões, 0 ABIs, 3 strings, 3 fns):
+//   lin_add(a,b) = a+b        — mesmos 4 bytes-instrução do golden P1 sel0
+//   sq(x)        = x*x        — (20,22) → 42, steps=4, sp=1 bit-exact
+//   tri(x,y)     = add(sq(x),y) — (7,2) → 51, steps=13, sp=1
+// body = 199 bytes; imagem = 231 (inclui self-hash 32); msg sha = domínio
+// "linbc1:img:" (11) + body = 210 bytes → 4 blocos de 64.
+//
+// Limites honestos (R5): o emissor completo (fonte .lin arbitrária → imagem)
+// depende do pipeline lexer→parser→lowerer em LIN (fases P2+); este módulo é o
+// estágio de EMPACOTAMENTO + self-hash sobre tabelas transcritas — label
+// EXPERIMENTAL até G(V2). Espec: docs/LINBC1_FORMAT.rulel.
+// ============================================================================
+
+!lb_mask32(x: int) -> int {
+  ^x & 4294967295
+}
+
+!lb_rotr32(x: int, n: int) -> int {
+  m = x & 4294967295;
+  ^(_lia_shr(m, n) | _lia_shl(m, 32 - n)) & 4294967295
+}
+
+!lb_shr32(x: int, n: int) -> int {
+  ^_lia_shr(x & 4294967295, n)
+}
+
+!lb_sig0(x: int) -> int {
+  ^(lb_rotr32(x, 2) ^ lb_rotr32(x, 13) ^ lb_rotr32(x, 22)) & 4294967295
+}
+
+!lb_sig1(x: int) -> int {
+  ^(lb_rotr32(x, 6) ^ lb_rotr32(x, 11) ^ lb_rotr32(x, 25)) & 4294967295
+}
+
+!lb_gam0(x: int) -> int {
+  ^(lb_rotr32(x, 7) ^ lb_rotr32(x, 18) ^ lb_shr32(x, 3)) & 4294967295
+}
+
+!lb_gam1(x: int) -> int {
+  ^(lb_rotr32(x, 17) ^ lb_rotr32(x, 19) ^ lb_shr32(x, 10)) & 4294967295
+}
+
+!lb_ch(x: int, y: int, z: int) -> int {
+  nx = 4294967295 - x;
+  ^((x & y) ^ (nx & z)) & 4294967295
+}
+
+!lb_maj(x: int, y: int, z: int) -> int {
+  ^((x & y) ^ (x & z) ^ (y & z)) & 4294967295
+}
+
+!lb_body_len() -> int {
+  ^199
+}
+
+!lb_selfhash_fold() -> int {
+  dom: [16]int = [108, 105, 110, 98, 99, 49, 58, 105, 109, 103, 58, 0, 0, 0, 0, 0];
+  bd: [256]int = [76, 73, 78, 66, 67, 49, 1, 1, 0, 3, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 108, 105, 110, 95, 97, 100, 100, 2, 0, 0, 0, 115, 113, 3, 0, 0, 0, 116, 114, 105, 0, 0, 0, 0, 2, 2, 0, 4, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 4, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 2, 0, 5, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 28, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 28, 0, 0, 0, 0, 0, 0, 0, 0, 29, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  w: [64]int = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  k64: [64]int = [1116352408, 1899447441, 3049323471, 3921009573, 961987163, 1508970993, 2453635748, 2870763221, 3624381080, 310598401, 607225278, 1426881987, 1925078388, 2162078206, 2614888103, 3248222580, 3835390401, 4022224774, 264347078, 604807628, 770255983, 1249150122, 1555081692, 1996064986, 2554220882, 2821834349, 2952996808, 3210313671, 3336571891, 3584528711, 113926993, 338241895, 666307205, 773529912, 1294757372, 1396182291, 1695183700, 1986661051, 2177026350, 2456956037, 2730485921, 2820302411, 3259730800, 3345764771, 3516065817, 3600352804, 4094571909, 275423344, 430227734, 506948616, 659060556, 883997877, 958139571, 1322822218, 1537002063, 1747873779, 1955562222, 2024104815, 2227730452, 2361852424, 2428436474, 2756734187, 3204031479, 3329325298];
+
+  h0 = 1779033703;
+  h1 = 3144134277;
+  h2 = 1013904242;
+  h3 = 2773480762;
+  h4 = 1359893119;
+  h5 = 2600822924;
+  h6 = 528734635;
+  h7 = 1541459225;
+
+  blk = 0;
+  while (blk < 4) {
+    // schedule: w[0..15] = big-endian words da mensagem
+    t = 0;
+    while (t < 16) {
+      j = 64 * blk + 4 * t;
+      b0 = 0;
+      b1 = 0;
+      b2 = 0;
+      b3 = 0;
+      ?(j < 11) { b0 = dom[j]; } : (j < 210) { b0 = bd[j - 11]; } : (j == 210) { b0 = 128; } : (j == 254) { b0 = 6; } : (j == 255) { b0 = 144; } : { b0 = 0; };
+      j1 = j + 1;
+      ?(j1 < 11) { b1 = dom[j1]; } : (j1 < 210) { b1 = bd[j1 - 11]; } : (j1 == 210) { b1 = 128; } : (j1 == 254) { b1 = 6; } : (j1 == 255) { b1 = 144; } : { b1 = 0; };
+      j2 = j + 2;
+      ?(j2 < 11) { b2 = dom[j2]; } : (j2 < 210) { b2 = bd[j2 - 11]; } : (j2 == 210) { b2 = 128; } : (j2 == 254) { b2 = 6; } : (j2 == 255) { b2 = 144; } : { b2 = 0; };
+      j3 = j + 3;
+      ?(j3 < 11) { b3 = dom[j3]; } : (j3 < 210) { b3 = bd[j3 - 11]; } : (j3 == 210) { b3 = 128; } : (j3 == 254) { b3 = 6; } : (j3 == 255) { b3 = 144; } : { b3 = 0; };
+      w[t] = b0 * 16777216 + b1 * 65536 + b2 * 256 + b3;
+      t = t + 1;
+    };
+    t = 16;
+    while (t < 64) {
+      w[t] = (w[t - 16] + lb_gam0(w[t - 15]) + w[t - 7] + lb_gam1(w[t - 2])) & 4294967295;
+      t = t + 1;
+    };
+
+    // compressão
+    va = h0;
+    vb = h1;
+    vc = h2;
+    vd = h3;
+    ve = h4;
+    vf = h5;
+    vg = h6;
+    vh = h7;
+    t = 0;
+    while (t < 64) {
+      t1v = (vh + lb_sig1(ve) + lb_ch(ve, vf, vg) + k64[t] + w[t]) & 4294967295;
+      t2v = (lb_sig0(va) + lb_maj(va, vb, vc)) & 4294967295;
+      vh = vg;
+      vg = vf;
+      vf = ve;
+      ve = (vd + t1v) & 4294967295;
+      vd = vc;
+      vc = vb;
+      vb = va;
+      va = (t1v + t2v) & 4294967295;
+      t = t + 1;
+    };
+    h0 = (h0 + va) & 4294967295;
+    h1 = (h1 + vb) & 4294967295;
+    h2 = (h2 + vc) & 4294967295;
+    h3 = (h3 + vd) & 4294967295;
+    h4 = (h4 + ve) & 4294967295;
+    h5 = (h5 + vf) & 4294967295;
+    h6 = (h6 + vg) & 4294967295;
+    h7 = (h7 + vh) & 4294967295;
+    blk = blk + 1;
+  };
+
+  // fold display (cross-host scalar): f = Σ h_i · 2^(32·(7-i)) mod 2^64, i64 wrap
+  fold = 0;
+  fold = fold * 4294967296 + h0;
+  fold = fold * 4294967296 + h1;
+  fold = fold * 4294967296 + h2;
+  fold = fold * 4294967296 + h3;
+  fold = fold * 4294967296 + h4;
+  fold = fold * 4294967296 + h5;
+  fold = fold * 4294967296 + h6;
+  fold = fold * 4294967296 + h7;
+  ^fold;
+}
+
+// Golden embutido (mesma convenção dos goldens do P1): medido por 3
+// implementações independentes — este módulo (LinVM Zig), o loader C11
+// (transpile/c, test_linbc1 T-IMG) e a emissão de referência usada na autoria.
+!lb_selfhash_fold_expected() -> int {
+  ^-178321285347216732
+}
+
+!lb_selftest() -> int {
+  ok = 0;
+  ?(lb_selfhash_fold() == lb_selfhash_fold_expected()) { ok = 1; };
+  ?(lb_body_len() == 199) { ok = ok * 1; } : { ok = 0; };
+  ^ok;
+}
