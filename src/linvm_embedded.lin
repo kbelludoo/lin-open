@@ -320,10 +320,21 @@
 // O self-test retorna uma máscara estável: bit 0 = quadrado, bit 1 = fatorial.
 !sq_demo(): int { ^vm_run(0, 7, 15); }
 !fact_demo(): int { ^vm_run(1, 4, 0); }
-
+!linvm_opcode_coverage(): int { ^33; }
+!linvm_is_full(): int { ^0; }
 !linvm_selftest(): int {
     mask = 0;
     ?(sq_demo() == 64) { mask = mask + 1 };
     ?(fact_demo() == 24) { mask = mask + 2 };
     ^mask;
 }
+!linvm_extended_selftest(): int {
+    mask = 0;
+    ?(vm_run(2, 0, 0) == 1) { mask = mask + 1 };
+    ?(vm_run(3, 0, 0) == 1) { mask = mask + 2 };
+    ?(vm_run(4, 0, 0) == 44) { mask = mask + 4 };
+    ?(vm_run(5, 0, 0) == 64) { mask = mask + 8 };
+    ?(vm_run(6, 0, 0) == (0 - 3)) { mask = mask + 16 };
+    ^mask;
+}
+

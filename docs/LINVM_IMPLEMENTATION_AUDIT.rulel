@@ -122,28 +122,3 @@ Com Zig disponível, a referência completa é executada pelos comandos `compile
 
 Esta auditoria corrige qualquer leitura de que os self-tests comprovam a LinVM inteira: eles
 comprovam somente programas selecionados; 33 dispatches ainda não satisfazem o gate FULL.
-
-## 7. Primeiro compilador vertical executável em LIN
-
-`src/linvm_source_compiler.lin` implementa o primeiro caminho que não usa bytecode escrito à
-mão:
-
-    fonte LIN em bytes
-      -> localização do retorno
-      -> lexer inteiro
-      -> shunting-yard com precedência
-      -> bytecode LinVM (`push_const`, `add`, `sub`, `mul`, `mod`, `ret`)
-      -> execução do bytecode produzido
-
-O subset v1 aceita uma função sem argumentos com um único retorno contendo literais inteiros,
-parênteses e `+ - * %`. Rejeita tokens desconhecidos, operador sem operando, parênteses não
-balanceados, módulo por zero, stack inválida e fonte sem retorno usando um sentinel explícito.
-
-O teste executável `test_lvsc_source_to_bytecode` valida seis vetores, incluindo precedência,
-parênteses, associatividade, `return`, rejeição sintática e módulo por zero. Medição com o
-Stage0 Zig 0.13.0: `lin test src/linvm_source_compiler.lin -> ok 1`.
-
-Este marco prova `source -> bytecode -> VM` para o subset, mas ainda não compila os 39 arquivos
-com o compiler LIN. Para isso, o slice deve crescer na ordem: identificadores/locals, múltiplos
-statements, branches/loops, funções/calls, arrays, headers/imports e finalmente os serviços do
-compilador. Até lá, o Stage0 continua sendo o host que compila o próprio módulo do slice.
