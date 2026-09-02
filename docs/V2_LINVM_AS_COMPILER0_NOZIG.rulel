@@ -1,0 +1,192 @@
+@RULEL:DOC_V2_LINVM_AS_COMPILER0_NOZIG:1.0.0
+~MARKDOWN_SPEC
+# V2 — A LinVM como Compiler 0: compilar e executar `.lin` sem Zig (medido)
+
+> **Status (R5): EXPERIMENTAL — front-end completo do subconjunto `vmBuild`, host
+> C11 medido neste checkout; o ponto fixo C0=C1=C2 e `check`/`lint` continuam no
+> Stage0 Zig.** Todas as medições abaixo foram reproduzidas nesta árvore com
+> apenas `cc` (gcc 12.2.0) + `python3` + shell, **sem `zig` no PATH**
+> (`command -v zig` → vazio). Nada aqui é extrapolado.
+
+Dependências de plano: `docs/LINVM_COMPILER0_PLAN.rulel` (V2),
+`docs/COMPILER_0_AS_LINVM_PLAN.rulel` (B2), `docs/LINVM_ISA_V1.rulel` (ISA),
+`docs/LINBC1_FORMAT.rulel` (imagem). Irmãos: `docs/LINVM0_V2_FRONTIER.rulel`
+(front-end **em LIN**), `docs/LIN_SEM_ZIG_CAMINHOS.rulel` (as três faixas).
+
+---
+
+## 1. O que existe agora (e antes não existia)
+
+`test/verify_c0.sh` e `test/verify_c0_selfhost.sh` referenciavam um host
+`transpile/c/bin/lin_c0` construído por `make -C transpile/c c0`. **Nenhum dos
+dois existia**: `transpile/c/tool/` continha apenas `lin_bc1_run.c` e
+`lin_c_receipt.c`, e o alvo `c0` não existia no Makefile (as duas portas saíam
+com `exit 2` — "não existe — construa com `make -C transpile/c c0`").
+
+Este documento registra a implementação que fecha essa lacuna:
+
+| Artefato | Linhas | Papel |
+|---|---|---|
+| `transpile/c/lin_c0_front.h` | 79 | contrato do front-end |
+| `transpile/c/tool/lin_c0_front.c` | 1377 | **port** de `parse_fn_type_infos` (`lin.zig:5287`), `vmTokenize` (`:5678`), `VmComp` (`:5733`), `vmSigEligible`/`vmArrLenOf`/`vmResolveDeps`/`vmBuild` (`:6262–6390`) + emissor LINBC1 |
+| `transpile/c/tool/lin_c0.c` | 503 | CLI `--version` / `info` / `vm` / `image` / `run` / `roundtrip`, fail-closed |
+| `test/lin0_selflex.py` | 307 | gerador do passo B2 de auto-aplicação + oráculo independente |
+| `test/verify_compiler0_manifest.py` | 274 | confere `compiler0_manifest.rulel` (imagens + self-lex + raiz agregada) |
+| `compiler0_manifest.rulel` | — | medições pinadas (3 módulos + raiz) |
+
+Interpretador: **nenhum novo** — é o `vm_exec` já auditado de
+`transpile/c/lin_c/lin_vm.c` (port de `vmExecWithSp`), o mesmo que passa
+29/29 + 17/17 + 33/33 nos gates V1.
+
+TCB C11 medido (`lin_c/*.c|h` + `tool/*.c` + `lin_c0_front.h`): **4103 linhas**,
+acima da meta `≤ 2500` da regra R6 — **reportado, não escondido**; a meta foi
+escrita para o loader V1 (1826 linhas) e precisa ser re-orçada para o
+front-end (emenda `AGENTS.md@1.5.0`).
+
+## 2. Método: port, não reimplementação
+
+O front-end C11 é um port linha a linha do Zig, e não uma reescrita "equivalente":
+mesma ordem de produção de instruções, mesmos códigos `VM_REJ_*` e a mesma
+**ordem** em que eles são escolhidos (o que define qual erro um programa recebe).
+As únicas adaptações são as que C exige:
+
+| Zig | C11 | Por quê |
+|---|---|---|
+| `std.ArrayList` | `realloc` + arena de blocos encadeados | sem `ArrayList` em C; blocos **não se movem** (o `realloc` único invalidava `VmFn*` vivos — bug real encontrado pelo ASan e corrigido) |
+| `[]const u8` | `(const char *, size_t)` / cópias NUL-terminadas na arena | `memcmp` por comprimento, igual a `std.mem.eql` |
+| `std.fmt.parseInt(i64,…)` | `c0_parse_i64` com magnitude em `u64` | `-9223372036854775808` precisa aceitar e `9223372036854775808` precisa recusar (`VM_REJ_LITERAL_RANGE`) sem UB |
+| `try`/error union | `const char *reject` + retorno antecipado | `fail()` guarda **o primeiro** código, como no Zig |
+
+O que isso **não** prova: identidade com o binário Zig **nesta** máquina (ver §5).
+
+## 3. Evidência funcional (medida aqui, sem Zig)
+
+### 3.1 Goldens publicados pelo Stage0 Zig — value **e** steps bit-exact
+
+| alvo | publicado | medido no host C11 |
+|---|---|---|
+| `linvm_selfhost.lin vms_gate` | `value=1 steps=8511500` | `value=1 steps=8511500` |
+| `linvm_selfhost.lin` (cobertura) | `total=21 eligible=21 rejected=0` | idem |
+| `lin_lexer_selfhost.lin lex_gate` | `1 / 10097` | `1 / 10097` |
+| `… lex_scan_embedded` | `1371904279658369433 / 5653` | idem |
+| `… lex_count_embedded` | `20 / 4424` | idem |
+| `lin_expr_eval.lin xver_gate` | `1 / 12445` | idem |
+| `lin_lower_selfhost.lin low_gate` | `1 / 4386` | idem |
+| `lin_linbc_emit.lin lb_selfhash_fold` | `-178321285347216732` | `-178321285347216732` (`steps=89852`) |
+| `lin_linbc_emit.lin lb_selftest` | `1` | `1` (`steps=89877`) |
+| corpus P2 (`test_gpu_known_vectors`) | `1 / 49` | `1 / 49` |
+| corpus P2 (`gpu_map_bitfold 8`) | `72 / 12` | `72 / 12` |
+| corpus P2 (`gpu_map_affine 21`) | `43` | `43` (`steps=6`) |
+| corpus P2 (`gpu_map_mix 5`) | `8` | `8` (`steps=6`) |
+
+Igualdade de **steps** é a parte forte: o contador é compartilhado na árvore de
+chamadas e incrementado antes de cada fetch, então qualquer instrução a mais ou
+a menos no lowerer — um `pop` de curto-circuito, a ordem de um `store_index` de
+literal de array — muda o número.
+
+### 3.2 Portas executadas
+
+```
+$ make -C transpile/c c0            # só `cc`
+$ ./test/verify_c0.sh               → LINVM0-NOZIG: 16 ok, 0 falhas   (exit 0)
+$ SAN=1 ./test/verify_c0.sh         → 16 ok, 0 falhas (varredura de 59 .lin sob ASan+UBSan)
+$ ./test/verify_c0_selfhost.sh      → C0-SELFHOST: PASS (30 verificações, sem Zig)
+$ LIN_C0=<bin ASan+UBSan> ./test/verify_c0_selfhost.sh → PASS (30 verificações)
+$ python3 test/verify_compiler0_manifest.py → COMPILER0-MANIFEST: PASS (3 módulos + raiz)
+```
+
+Varredura de robustez (sem asserts de valor — a maior parte do corpus usa
+construções fora do subconjunto e **deve** ser recusada): **59 arquivos `.lin`,
+379 funções, 216 elegíveis, 24 com cobertura 100%, 0 crashes, 0 saídas
+malformadas**, também sob ASan+UBSan.
+
+### 3.3 Fonte → imagem → loader → execução (round-trip sem Zig)
+
+```
+$ lin_c0 roundtrip src/linvm_selfhost.lin vms_udiv 10 3
+.verdict{ status="CONSENSUS" fn="vms_udiv" value=3 steps=3170 sp=1 image_bytes=79838 img="ec4035c9…" }
+```
+
+Imagens reproduzíveis byte a byte entre duas execuções (determinismo do emissor,
+risco 2 de `docs/LINBC1_FORMAT.rulel`):
+
+| módulo | bytes | sha256 (16) | fold |
+|---|---|---|---|
+| `lin_lexer_selfhost` | 21051 | `c948c6ae63eeeea0` | 273558074902940495 |
+| `lin_expr_eval` | 12922 | `420857aec2cb94c4` | -761350173462640706 |
+| `lin_lower_selfhost` | 7598 | `fe48cdcd24f741fd` | 5410701827864572137 |
+| `linvm_selfhost` | 79838 | `ec4035c91d67d1c5` | — |
+
+Raiz agregada pinada em `compiler0_manifest.rulel`:
+`sha256:086a7ef937f66245f50d99f48e34a1ae735fa00ff1e85c9730c6b64d49ff3d2f`
+(domínio `linvm:c0:manifest:`, R4 — um digest, um significado).
+
+### 3.4 Auto-aplicação (B2) — o lexer LIN sobre o texto do próprio front-end
+
+`test/lin0_selflex.py` recorta os primeiros 256 bytes (teto `VM_MAX_ARR_LEN`) e
+emite um módulo que roda o lexer **em LIN** sobre esse texto; o golden vem do
+oráculo Python independente, e `lex_gate()` é recomputado **dentro da VM**:
+
+| fonte auto-tokenizada | checksum (LIN na LinVM == oráculo) | tokens | `lex_gate()` |
+|---|---|---|---|
+| `lin_lexer_selfhost.lin` | 3045357153765650598 | 30 | 1 (25808 passos) |
+| `lin_expr_eval.lin` | 3683369026950091959 | 30 | 1 (26352 passos) |
+| `lin_lower_selfhost.lin` | 8225996234675508288 | 30 | 1 (25936 passos) |
+
+Cada uma também roda a partir da **imagem congelada** com o mesmo resultado.
+
+### 3.5 Fail-closed (o que o Stage0 recusa continua recusado)
+
+| entrada | saída |
+|---|---|
+| `^a / 2;` | `VM_REJ_INT_DIVISION` (recusada, exit ≠ 0) |
+| `^9223372036854775808;` | `VM_REJ_LITERAL_RANGE` |
+| `!f(x: nope) -> int` | `VM_REJ_PARAM_NOT_INT` |
+| `image` de módulo com fn rejeitada | `C0_REJ_MODULE_NOT_PURE` — **nenhuma imagem é escrita** |
+
+## 4. Escopo do subconjunto (o que este host compila)
+
+Exatamente o que `vmBuild` aceita, porque é o mesmo código: funções
+`!nome(params) -> int|i64 { … }`, parâmetros escalares ou arrays `[N]int`
+(1 ≤ N ≤ 256, ≤ 8 arrays/função), atribuição, `while`, `?(…) {…} : (…) {…}`,
+`^expr`/`return`, `_lia_shl/_lia_shr/_lia_ushr/_lia_mod`, `.len`/`.length`,
+índices `a[i]`, literais decimais i64. Recusas herdadas: `/` inteiro, `for`
+(`#`), literais de string, literais fora de i64, acesso a membro, mais de 64
+locais, arrays como escalares.
+
+## 5. Limitações declaradas (honestidade, R5)
+
+1. **`zig build` continua obrigatório** para o compilador completo: `check`,
+   `lint`, o typechecker, a CLI de receipts/attestation/gate e o OpenCL vivem em
+   `compiler/lin.zig` (19 016 linhas) e **não** foram portados. O README segue
+   declarando Zig 0.13.0 como pré-requisito.
+2. **Paridade Zig×C11 não foi re-medida nesta máquina**: o ambiente não alcança
+   `ziglang.org` (SSL bloqueado), o GitHub distribui apenas
+   `zig-bootstrap-0.13.0.tar.xz` (fonte) e quatro espelhos comunitários falharam.
+   Os goldens acima são os **publicados** (medidos no host Zig e registrados em
+   `docs/P1_LINVM_SELFHOST.rulel` §3 e `docs/LINVM0_V2_FRONTIER.rulel`). O gate
+   `lin vm` × `lin_c0 vm` de `verify_c0_selfhost.sh` §6 roda automaticamente
+   quando `LIN_NATIVE` existir.
+3. **Sem ponto fixo C0=C1=C2** (V3): o compiler0 ainda não compila a si mesmo
+   produzindo digests iguais.
+4. **Imagens com `n_abis=0`**: os intrínsecos HOST-ABI-1 de string existem no
+   loader, mas o emissor ainda não os referencia (não há consumidor no
+   subconjunto).
+5. `test/verify_external_port.sh` **segue não executável**: ele precisa de
+   `test/fixtures/external_port/{mx_stb_lin.lin,mx_stb_lin_boundary.lin,corpus.c,gen_fixture.py,ref_oracle.py}`,
+   que não estão nesta árvore. O host agora satisfaz a parte dele
+   (`.coverage{ total=9 eligible=9 rejected=0 }` e `.host{ engine="C11-lin_c0" zig=false`),
+   mas os fixtures precisam ser adicionados — registrado, não fingido.
+6. Os scripts de gate estavam em modo `644` (`./test/verify_c0.sh` → *Permission
+   denied*); passaram a `755`.
+
+## 6. Reprodução
+
+```bash
+make -C transpile/c c0        # ou: make c0
+make c0-gate                  # test/verify_c0.sh         → 16 ok, 0 falhas
+make c0-selfhost-gate         # test/verify_c0_selfhost.sh → 30 verificações
+SAN=1 ./test/verify_c0.sh     # varredura sob ASan+UBSan
+python3 test/verify_compiler0_manifest.py         # imagens + self-lex + raiz
+python3 test/verify_compiler0_manifest.py --emit  # re-emitir (só com a mudança)
+```

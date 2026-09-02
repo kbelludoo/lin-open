@@ -235,3 +235,52 @@ implementação concordou.
 `test/attestation_honesty.sh` substitui a segunda implementação por um script que
 mente (`result=999`, raiz falsa). O `crosscheck-c` reporta `DIVERGENCE DETECTED`,
 não escreve recibo e sai não-zero — ou seja, a comparação é real, não decorativa.
+
+---
+
+## Compiler 0 host (`lin_c0`) — compilar e executar `.lin` sem Zig (2026-09-02)
+
+Até esta data `transpile/c` cobria **duas** rotas: o oráculo de expressões C
+(slice 1) e o loader LINBC1 (V1). Faltava a terceira — compilar fonte `.lin`.
+Os gates `test/verify_c0.sh` e `test/verify_c0_selfhost.sh` já a exigiam
+(`transpile/c/bin/lin_c0`, alvo `c0`), mas nem o binário nem o alvo existiam:
+as duas portas saíam com `exit 2`.
+
+```bash
+make -C transpile/c c0        # ou, da raiz: make c0        (só `cc`)
+make c0-gate                  # test/verify_c0.sh          → 16 ok, 0 falhas
+make c0-selfhost-gate         # test/verify_c0_selfhost.sh → 30 verificações
+```
+
+| Arquivo | Papel |
+|---|---|
+| `lin_c0_front.h` | contrato do front-end |
+| `tool/lin_c0_front.c` | **port** de `parse_fn_type_infos` (`lin.zig:5287`), `vmTokenize` (`:5678`), `VmComp` (`:5733`) e `vmBuild` (`:6296`) + emissor LINBC1 |
+| `tool/lin_c0.c` | CLI `--version` / `info` / `vm` / `image` / `run` / `roundtrip` |
+
+O interpretador **não é novo**: é o `vm_exec` deste diretório (`lin_c/lin_vm.c`),
+o mesmo dos 29/29. O que é novo é o front-end — e ele é um *port*, não uma
+reimplementação: mesma ordem de emissão, mesmos códigos `VM_REJ_*` e a mesma
+ordem de escolha entre eles.
+
+**Oráculo:** os goldens publicados pelo Stage0 Zig, com `value` **e** `steps`
+(`vms_gate` = `1 / 8511500`; `lex_gate` = `1 / 10097`; `xver_gate` = `1 / 12445`;
+`low_gate` = `1 / 4386`; `lb_selfhash_fold` = `-178321285347216732`). Todos
+reproduzidos aqui sem Zig — evidência completa e limitações declaradas em
+`docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel`.
+
+Duas lições que ficaram do desenvolvimento, no espírito da seção anterior:
+
+1. **O ASan encontrou o que os goldens não encontrariam.** A primeira arena usava
+   um bloco único com `realloc`; ao crescer, ele **movia** os `VmFn*` que
+   `c0_build` ainda estava preenchendo → use-after-free, visível só em módulos
+   grandes (`linvm_selfhost.lin`), invisível nos módulos do front-end que
+   passavam em todos os goldens. Arena de blocos encadeados resolve.
+2. **Formato de registro é contrato.** O `run` imprimia `.result{ … steps=N sp=1 }`;
+   o consumidor (`verify_c0_selfhost.sh`) faz `sed` esperando `steps=N }`, e o
+   campo extra transformava um PASS em string vazia. `sp_at_ret` pertence ao
+   registro do `roundtrip`, que é o dono daquele campo.
+
+**Escopo honesto (R5):** subconjunto `vmBuild`; `check`/`lint` e o ponto fixo
+C0=C1=C2 continuam no Stage0 Zig. TCB C11 total medido: 4103 linhas (a meta
+`≤ 2500` da regra R6 era do loader V1 e precisa ser re-orçada).

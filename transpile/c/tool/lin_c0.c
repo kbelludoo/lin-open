@@ -1,0 +1,503 @@
+/*
+ * lin_c0.c — Compiler 0 host: compile and run `.lin` WITHOUT Zig.
+ *
+ * Commands (records follow the existing @RULEL conventions of the repo):
+ *
+ *   lin_c0 --version
+ *   lin_c0 info      <file.lin>                 coverage record (== Zig `lin vm <file>`)
+ *   lin_c0 vm        <file.lin> [fn] [i64...]   run from SOURCE
+ *   lin_c0 image     <file.lin> [-o out.linbc]  freeze module as a LINBC1 image
+ *   lin_c0 run       <img.linbc> <fn> [i64...]  run from IMAGE (fail-closed loader)
+ *   lin_c0 roundtrip <file.lin> <fn> [i64...]   source route vs image route, must CONSENSUS
+ *
+ * Fail-closed everywhere: a rejected function is reported with its VM_REJ_*
+ * code and nothing executes; a module with any rejected function never becomes
+ * an image (C0_REJ_MODULE_NOT_PURE); a malformed image never executes.
+ *
+ * Scope (R5, no overclaim): this host compiles the LIN subset that
+ * `vmBuild`/`VmComp` of the Stage0 accept — the same subset, byte for byte,
+ * because this file and lin_c0_front.c are a port of that code, not a
+ * reimplementation. `check`/`lint` (the full type checker and linter) remain
+ * Stage0-only, and the fixed point C0=C1=C2 is still open.
+ */
+#include "lin_c0_front.h"
+#include "lin_common.h"
+#include "lin_linbc1.h"
+#include "lin_sha256.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define C0_VERSION "lin_c0 1.0.0 (LINVM-1 host, C11, no Zig)"
+
+static const char *C0_HOST_LINE =
+    ".host{ engine=\"C11-lin_c0\" zig=false profile=LINVM-1 opcodes=33 "
+    "step_limit=200000000 overflow=wrapping }";
+
+static char *read_file(const char *path, size_t *out_len) {
+    FILE *f = fopen(path, "rb");
+    char *buf;
+    size_t cap = 1u << 16, used = 0;
+    if (!f) return NULL;
+    buf = (char *)malloc(cap);
+    if (!buf) { fclose(f); return NULL; }
+    for (;;) {
+        size_t n;
+        if (used == cap) {
+            char *nb;
+            if (cap > (SIZE_MAX / 2)) break;
+            cap *= 2;
+            nb = (char *)realloc(buf, cap);
+            if (!nb) break;
+            buf = nb;
+        }
+        n = fread(buf + used, 1, cap - used, f);
+        used += n;
+        if (n == 0) break;
+    }
+    fclose(f);
+    buf[used < cap ? used : cap - 1] = '\0';
+    *out_len = used;
+    return buf;
+}
+
+static void hex64(const uint8_t d[32], char out[65]) {
+    static const char *H = "0123456789abcdef";
+    for (int i = 0; i < 32; i++) {
+        out[2 * i] = H[(d[i] >> 4) & 0xf];
+        out[2 * i + 1] = H[d[i] & 0xf];
+    }
+    out[64] = '\0';
+}
+
+/* Zig prints `code="VmDivisionByZero"` (@errorName, no "error." prefix). */
+static const char *vm_err_code(LinErr e) {
+    const char *n = lin_err_name(e);
+    if (strncmp(n, "error.", 6) == 0) return n + 6;
+    return n;
+}
+
+static void print_coverage(const VmModule *mod) {
+    size_t eligible = 0;
+    printf("@RULEL:LIN_VM:1.0.0\n");
+    printf("%s\n", C0_HOST_LINE);
+    printf(".engine{ opcodes=%d overflow=wrapping shifts=lia_compatible step_limit=%llu }\n",
+           C0_OPCODE_COUNT, (unsigned long long)LIN_VM_STEP_LIMIT);
+    for (size_t i = 0; i < mod->fns_len; i++) if (mod->fns[i].ok) eligible += 1;
+    printf(".coverage{ total=%zu eligible=%zu rejected=%zu }\n",
+           mod->fns_len, eligible, mod->fns_len - eligible);
+    printf(".fns{\n");
+    for (size_t i = 0; i < mod->fns_len; i++) {
+        const VmFn *f = &mod->fns[i];
+        if (f->ok)
+            printf("  .fn{ name=\"%s\" params=%zu status=OK locals=%zu code=%zu }\n",
+                   f->name, f->nparams, f->nlocals, f->code_len);
+        else
+            printf("  .fn{ name=\"%s\" params=%zu status=REJECTED reason=\"%s\" }\n",
+                   f->name, f->nparams, f->reject);
+    }
+    printf("}\n");
+}
+
+/* Find a function the way `vmFind` does: first exact name match. */
+static int find_fn(const VmModule *mod, const char *name) {
+    for (size_t i = 0; i < mod->fns_len; i++)
+        if (strcmp(mod->fns[i].name, name) == 0) return (int)i;
+    return -1;
+}
+
+static int parse_args(int argc, char **argv, int start, int64_t *out, size_t cap, size_t *n) {
+    *n = 0;
+    for (int i = start; i < argc; i++) {
+        char *end = NULL;
+        long long v;
+        if (*n >= cap) return 0;
+        if (argv[i][0] == '\0') return 0;
+        v = strtoll(argv[i], &end, 10);
+        if (!end || *end != '\0') return 0;
+        out[(*n)++] = (int64_t)v;
+    }
+    return 1;
+}
+
+/* ------------------------------------------------------------------ */
+/* info / vm                                                            */
+/* ------------------------------------------------------------------ */
+
+static int cmd_vm(C0Arena *a, int argc, char **argv) {
+    const char *path;
+    char *src;
+    size_t len = 0;
+    VmModule *mod;
+    int fi;
+    int64_t args[64];
+    size_t nargs = 0;
+    uint64_t steps = 0;
+    VmExecResult res;
+    LinErr e;
+
+    if (argc < 3) {
+        fprintf(stderr, "usage: lin_c0 vm <file.lin> [fn] [int args...]\n");
+        return 1;
+    }
+    path = argv[2];
+    src = read_file(path, &len);
+    if (!src) {
+        /* still a well-formed record: the sweep asserts this on every .lin */
+        printf("@RULEL:LIN_VM:1.0.0\n%s\n.error{ file=\"%s\" code=\"C0_READ_FAILED\" }\n",
+               C0_HOST_LINE, path);
+        return 1;
+    }
+    mod = c0_build(a, src, len);
+    if (!mod) {
+        printf("@RULEL:LIN_VM:1.0.0\n%s\n.error{ file=\"%s\" code=\"C0_BUILD_FAILED\" }\n",
+               C0_HOST_LINE, path);
+        free(src);
+        return 1;
+    }
+    if (argc < 4) {
+        print_coverage(mod);
+        free(src);
+        return 0;
+    }
+    fi = find_fn(mod, argv[3]);
+    if (fi < 0) {
+        fprintf(stderr, "vm: unknown function: %s\n", argv[3]);
+        free(src);
+        return 1;
+    }
+    if (!mod->fns[fi].ok) {
+        printf("@RULEL:LIN_VM_RUN:1.0.0\n.refused{ fn=\"%s\" reason=\"%s\" }\n",
+               mod->fns[fi].name, mod->fns[fi].reject);
+        free(src);
+        return 1;
+    }
+    if (!parse_args(argc, argv, 4, args, 64, &nargs)) {
+        fprintf(stderr, "vm: bad integer argument\n");
+        free(src);
+        return 1;
+    }
+    memset(&res, 0, sizeof(res));
+    e = vm_exec(mod, (size_t)fi, args, nargs, 0, &steps, &res);
+    if (e) {
+        printf("@RULEL:LIN_VM_RUN:1.0.0\n.error{ fn=\"%s\" code=\"%s\" steps=%llu }\n",
+               mod->fns[fi].name, vm_err_code(e), (unsigned long long)steps);
+        free(src);
+        return 1;
+    }
+    printf("@RULEL:LIN_VM_RUN:1.0.0\n.result{ fn=\"%s\" value=%lld steps=%llu }\n",
+           mod->fns[fi].name, (long long)res.val, (unsigned long long)steps);
+    free(src);
+    return 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* image                                                               */
+/* ------------------------------------------------------------------ */
+
+static int cmd_image(C0Arena *a, int argc, char **argv) {
+    const char *path;
+    const char *out_path = NULL;
+    char *src;
+    size_t len = 0;
+    VmModule *mod;
+    uint8_t *img;
+    size_t img_len = 0;
+    const char *err = NULL;
+    char hex[65];
+    LinSha256 h;
+    uint8_t digest[32];
+    size_t ins_total = 0;
+
+    if (argc < 3) {
+        fprintf(stderr, "usage: lin_c0 image <file.lin> [-o out.linbc]\n");
+        return 1;
+    }
+    path = argv[2];
+    for (int i = 3; i < argc; i++) {
+        if (strcmp(argv[i], "-o") == 0 && i + 1 < argc) out_path = argv[++i];
+    }
+    src = read_file(path, &len);
+    if (!src) {
+        printf("@RULEL:LIN_BC1_IMAGE:1.0.0\n.error{ file=\"%s\" code=\"C0_READ_FAILED\" }\n", path);
+        return 1;
+    }
+    mod = c0_build(a, src, len);
+    if (!mod) {
+        printf("@RULEL:LIN_BC1_IMAGE:1.0.0\n.error{ file=\"%s\" code=\"C0_BUILD_FAILED\" }\n", path);
+        free(src);
+        return 1;
+    }
+    img = c0_image_encode(a, mod, &img_len, &err);
+    if (!img) {
+        const char *fn = "";
+        const char *why = "";
+        for (size_t i = 0; i < mod->fns_len; i++)
+            if (!mod->fns[i].ok) { fn = mod->fns[i].name; why = mod->fns[i].reject; break; }
+        printf("@RULEL:LIN_BC1_IMAGE:1.0.0\n"
+               ".refused{ reason=\"%s\" fn=\"%s\" detail=\"%s\" }\n",
+               err ? err : "C0_REJ_ENCODE", fn, why);
+        free(src);
+        return 1;
+    }
+    for (size_t i = 0; i < mod->fns_len; i++) ins_total += mod->fns[i].code_len;
+    lin_sha256_init(&h);
+    lin_sha256_update(&h, img, img_len);
+    lin_sha256_final(&h, digest);
+    hex64(digest, hex);
+
+    printf("@RULEL:LIN_BC1_IMAGE:1.0.0\n"
+           ".image{ bytes=%zu fns=%zu ins=%zu profile=1 fold=%lld sha256=%s img=\"%s\" }\n",
+           img_len, mod->fns_len, ins_total,
+           (long long)lin_bc1_fold_digest(digest), hex, hex);
+
+    if (out_path) {
+        FILE *f = fopen(out_path, "wb");
+        if (!f) {
+            fprintf(stderr, "image: cannot write %s\n", out_path);
+            free(img);
+            free(src);
+            return 1;
+        }
+        if (img_len && fwrite(img, 1, img_len, f) != img_len) {
+            fprintf(stderr, "image: short write %s\n", out_path);
+            fclose(f);
+            free(img);
+            free(src);
+            return 1;
+        }
+        fclose(f);
+    }
+    free(img);
+    free(src);
+    return 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* run (from image)                                                    */
+/* ------------------------------------------------------------------ */
+
+static int cmd_run(int argc, char **argv) {
+    const char *path;
+    uint8_t *img;
+    size_t len = 0;
+    LinBc1Vm vm;
+    LinBc1Err le;
+    int fi;
+    int64_t args[64];
+    size_t nargs = 0;
+    uint64_t steps = 0;
+    VmExecResult res;
+    LinErr e;
+
+    if (argc < 4) {
+        fprintf(stderr, "usage: lin_c0 run <img.linbc> <fn> [int args...]\n");
+        return 1;
+    }
+    path = argv[2];
+    {
+        char *buf = read_file(path, &len);
+        if (!buf) {
+            printf("@RULEL:LIN_VM_RUN:1.0.0\n.error{ file=\"%s\" code=\"C0_READ_FAILED\" }\n", path);
+            return 1;
+        }
+        img = (uint8_t *)buf;
+    }
+    le = lin_bc1_load(img, len, &vm);
+    if (le != LIN_BC1_OK) {
+        printf("@RULEL:LIN_VM_RUN:1.0.0\n.refused{ image=\"%s\" reason=\"LINBC1_%s\" }\n",
+               path, lin_bc1_err_name(le));
+        free(img);
+        return 1;
+    }
+    fi = lin_bc1_find_fn(&vm, argv[3]);
+    if (fi < 0) {
+        fprintf(stderr, "run: unknown function: %s\n", argv[3]);
+        free(img);
+        return 1;
+    }
+    if (!parse_args(argc, argv, 4, args, 64, &nargs)) {
+        fprintf(stderr, "run: bad integer argument\n");
+        free(img);
+        return 1;
+    }
+    memset(&res, 0, sizeof(res));
+    e = vm_exec(&vm.mod, (size_t)fi, args, nargs, 0, &steps, &res);
+    if (e) {
+        printf("@RULEL:LIN_VM_RUN:1.0.0\n.error{ fn=\"%s\" code=\"%s\" steps=%llu }\n",
+               argv[3], vm_err_code(e), (unsigned long long)steps);
+        free(img);
+        return 1;
+    }
+    /* Same record shape as the source route (`lin vm`): consumers parse
+     * `.result{ fn=.. value=.. steps=.. }`, so no extra field may be added
+     * here — sp_at_ret is reported by `roundtrip`, which owns that field. */
+    printf("@RULEL:LIN_VM_RUN:1.0.0\n.result{ fn=\"%s\" value=%lld steps=%llu }\n",
+           argv[3], (long long)res.val, (unsigned long long)steps);
+    (void)res.sp_at_ret;
+    free(img);
+    return 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* roundtrip: source route vs image route                              */
+/* ------------------------------------------------------------------ */
+
+static int cmd_roundtrip(C0Arena *a, int argc, char **argv) {
+    const char *path;
+    char *src;
+    size_t len = 0;
+    VmModule *mod;
+    int fi;
+    int64_t args[64];
+    size_t nargs = 0;
+    uint64_t s_steps = 0, i_steps = 0;
+    VmExecResult s_res, i_res;
+    LinErr e;
+    uint8_t *img;
+    size_t img_len = 0;
+    const char *err = NULL;
+    LinBc1Vm vm;
+    LinBc1Err le;
+    char hex[65];
+    LinSha256 h;
+    uint8_t digest[32];
+    int fi_img;
+
+    if (argc < 4) {
+        fprintf(stderr, "usage: lin_c0 roundtrip <file.lin> <fn> [int args...]\n");
+        return 1;
+    }
+    path = argv[2];
+    src = read_file(path, &len);
+    if (!src) {
+        printf("@RULEL:LIN_ROUNDTRIP:1.0.0\n.error{ file=\"%s\" code=\"C0_READ_FAILED\" }\n", path);
+        return 1;
+    }
+    mod = c0_build(a, src, len);
+    if (!mod) {
+        printf("@RULEL:LIN_ROUNDTRIP:1.0.0\n.error{ file=\"%s\" code=\"C0_BUILD_FAILED\" }\n", path);
+        free(src);
+        return 1;
+    }
+    fi = find_fn(mod, argv[3]);
+    if (fi < 0) {
+        fprintf(stderr, "roundtrip: unknown function: %s\n", argv[3]);
+        free(src);
+        return 1;
+    }
+    if (!mod->fns[fi].ok) {
+        printf("@RULEL:LIN_ROUNDTRIP:1.0.0\n.refused{ fn=\"%s\" reason=\"%s\" }\n",
+               mod->fns[fi].name, mod->fns[fi].reject);
+        free(src);
+        return 1;
+    }
+    if (!parse_args(argc, argv, 4, args, 64, &nargs)) {
+        fprintf(stderr, "roundtrip: bad integer argument\n");
+        free(src);
+        return 1;
+    }
+    memset(&s_res, 0, sizeof(s_res));
+    e = vm_exec(mod, (size_t)fi, args, nargs, 0, &s_steps, &s_res);
+    if (e) {
+        printf("@RULEL:LIN_ROUNDTRIP:1.0.0\n.error{ fn=\"%s\" code=\"%s\" steps=%llu }\n",
+               argv[3], vm_err_code(e), (unsigned long long)s_steps);
+        free(src);
+        return 1;
+    }
+    img = c0_image_encode(a, mod, &img_len, &err);
+    if (!img) {
+        printf("@RULEL:LIN_ROUNDTRIP:1.0.0\n.refused{ reason=\"%s\" }\n",
+               err ? err : "C0_REJ_ENCODE");
+        free(src);
+        return 1;
+    }
+    le = lin_bc1_load(img, img_len, &vm);
+    if (le != LIN_BC1_OK) {
+        printf("@RULEL:LIN_ROUNDTRIP:1.0.0\n"
+               ".verdict{ status=\"DIVERGENCE\" why=\"loader_rejected\" reason=\"LINBC1_%s\" }\n",
+               lin_bc1_err_name(le));
+        free(img);
+        free(src);
+        return 1;
+    }
+    fi_img = lin_bc1_find_fn(&vm, argv[3]);
+    if (fi_img < 0) {
+        printf("@RULEL:LIN_ROUNDTRIP:1.0.0\n.verdict{ status=\"DIVERGENCE\" why=\"fn_missing\" }\n");
+        free(img);
+        free(src);
+        return 1;
+    }
+    memset(&i_res, 0, sizeof(i_res));
+    e = vm_exec(&vm.mod, (size_t)fi_img, args, nargs, 0, &i_steps, &i_res);
+    if (e) {
+        printf("@RULEL:LIN_ROUNDTRIP:1.0.0\n"
+               ".verdict{ status=\"DIVERGENCE\" why=\"image_error\" code=\"%s\" }\n",
+               vm_err_code(e));
+        free(img);
+        free(src);
+        return 1;
+    }
+    lin_sha256_init(&h);
+    lin_sha256_update(&h, img, img_len);
+    lin_sha256_final(&h, digest);
+    hex64(digest, hex);
+
+    if (s_res.val == i_res.val && s_steps == i_steps && s_res.sp_at_ret == i_res.sp_at_ret) {
+        printf("@RULEL:LIN_ROUNDTRIP:1.0.0\n"
+               ".verdict{ status=\"CONSENSUS\" fn=\"%s\" value=%lld steps=%llu sp=%zu "
+               "image_bytes=%zu img=\"%s\" }\n",
+               argv[3], (long long)s_res.val, (unsigned long long)s_steps,
+               s_res.sp_at_ret, img_len, hex);
+        free(img);
+        free(src);
+        return 0;
+    }
+    printf("@RULEL:LIN_ROUNDTRIP:1.0.0\n"
+           ".verdict{ status=\"DIVERGENCE\" fn=\"%s\" source_value=%lld source_steps=%llu "
+           "image_value=%lld image_steps=%llu source_sp=%zu image_sp=%zu }\n",
+           argv[3], (long long)s_res.val, (unsigned long long)s_steps,
+           (long long)i_res.val, (unsigned long long)i_steps,
+           s_res.sp_at_ret, i_res.sp_at_ret);
+    free(img);
+    free(src);
+    return 1;
+}
+
+/* ------------------------------------------------------------------ */
+
+int main(int argc, char **argv) {
+    C0Arena *a;
+    const char *cmd;
+    int rc;
+
+    if (argc < 2) {
+        fprintf(stderr,
+                "usage: lin_c0 --version | info <f.lin> | vm <f.lin> [fn] [args] |\n"
+                "            image <f.lin> [-o out] | run <img> <fn> [args] |\n"
+                "            roundtrip <f.lin> <fn> [args]\n");
+        return 1;
+    }
+    cmd = argv[1];
+    if (strcmp(cmd, "--version") == 0 || strcmp(cmd, "version") == 0) {
+        printf("%s\n", C0_VERSION);
+        return 0;
+    }
+
+    a = c0_arena_new();
+    if (!a) {
+        fprintf(stderr, "lin_c0: out of memory\n");
+        return 1;
+    }
+    if (strcmp(cmd, "info") == 0 || strcmp(cmd, "vm") == 0) rc = cmd_vm(a, argc, argv);
+    else if (strcmp(cmd, "image") == 0) rc = cmd_image(a, argc, argv);
+    else if (strcmp(cmd, "run") == 0) rc = cmd_run(argc, argv);
+    else if (strcmp(cmd, "roundtrip") == 0) rc = cmd_roundtrip(a, argc, argv);
+    else {
+        fprintf(stderr, "lin_c0: unknown command: %s\n", cmd);
+        rc = 1;
+    }
+    c0_arena_free(a);
+    return rc;
+}

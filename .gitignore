@@ -53,6 +53,9 @@ conformance_report.rulel
 verification_api_response.json
 # Build artifacts of the C port (the sources are tracked, the binaries are not).
 transpile/c/bin/
+# Python bytecode caches (test/lin0_selflex.py is imported by the manifest gate).
+__pycache__/
+*.pyc
 # Private Ed25519 seeds for the LIN Gate must never be committed; only the
 # public roster (lin_gate_roster.rulel) is a repository artifact.
 *.seed
