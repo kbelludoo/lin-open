@@ -1,0 +1,147 @@
+@RULEL:DOC_LINVM0_V2_FRONTIER:1.0.0
+~MARKDOWN_SPEC
+# V2/B2 — Front-end compiler0 em LIN (lexer seleto + avaliador de expressões) — status
+
+> **Status (R5): EXPERIMENTAL.** Este PR avança o front-end do `compiler0` escrito
+> em LIN (plano `docs/COMPILER_0_AS_LINVM_PLAN.rulel` e `docs/LINVM_COMPILER0_PLAN.rulel`
+> §V2). É um **início real e mensurável de B2** (bytes → tokens e subset de
+> avaliação de expressões), **não** o compilador completo. **Não há** ponto fixo
+> C0=C1=C2, **não há** imagem LINBC1 derivada de texto arbitrário, **não há**
+> typecheck/lowerer/CLI em LIN. Zero arquivos `.zig` novos (R1); todo código em
+> `.lin`/`.rulel` (R0). A regra R5 (sem overclaim) é central neste documento.
+
+---
+
+## 1. O que este PR entrega
+
+| Artefato | Linhas | Papel | Prove |
+|---|---|---|---|
+| `src/linvm0_compiler/lin_lexer_selfhost.lin` | ~150 | **Lexer LIN auto-aplicável**: tokeniza uma fonte LIN (subset fechado) com as mesmas classes do `vmTokenize` do Stage0 (`compiler/lin.zig:5678`) e produz um checksum determinístico i64-wrap | `lex_gate=1`, checksum = oráculo independente |
+| `src/linvm0_compiler/lin_expr_eval.lin` | ~240 | **Avaliador de expressões em LIN puro** (tokenize-on-the-fly + shunting-yard, sem recursão), com aritmética i64-wrap e comparações, sobre um pool de bytes por índice | `xver_gate=1`, 10/10 vetores |
+| `src/linvm0_compiler/lin_lower_selfhost.lin` | ~200 | **Lowerer em LIN**: fonte → bytecode LinVM canônico (post-order, mesmos opcodes de `lower_arena`), com fold sobre opcodes+operandos | `low_gate=1`, 5/5 folds == consenso |
+| `reference_tokenize.py` / `reference_lower.py` | ~90 / ~70 | **Oráculos independentes** (não tocam o compilador): transcrevem `vmTokenize` / `lower_arena` + o fold, para cross-checkar os módulos LIN | `python3` concorda (bit-exact) |
+| `verify_linvm0.sh` | ~70 | Gate de execução que **mede** tudo acima contra goldens e os oráculos | `make linvm0-gate` → PASS |
+
+`make linvm0-gate` roda `zig build -Dgpu=false` + `verify_linvm0.sh` e sai verde.
+
+### 1.1 Lexer auto-aplicável (B2, primeiro marco útil)
+
+Para a fonte de teste `!proc(a: int) -> int {\n  b = a & 4294967295;\n  ^b;\n}`:
+
+| Métrica | Valor | Referência |
+|---|---|---|
+| tokens | **20** | oráculo = 20 |
+| checksum (i64-wrap) | **1371904279658369433** | oráculo = idêntico (bit-exact) |
+| `lex_gate()` | **1** | — |
+
+O checksum é um fold que esconde as classes:
+`h = ((h*31)+kind)`, `th=((th+byte)*31)…`, `h=((h*31)+len)`, `h=((h*31)+th)` —
+idêntico nos dois lados. **Igualdade de SHA-256 como estrutura, não um checksum
+decorativo**: qualquer byte divergente muda o digest.
+
+### 1.2 Avaliador de expressões (subset dos vetores §7 do `LINVM_ISA_V1`)
+
+Cobre v0, v7, v8, v9, v10, v11, v14, v15, v16, v17 (constantes + aritmética wrap +
+parênteses + comparações). Todos os 10 reproduzem o resultado publicado:
+
+| sel | expr | esperado | LIN real |
+|---|---|---|---|
+| 0 | `42` | 42 | 42 |
+| 1 | `10 % 3` | 1 | 1 |
+| 2 | `1 + 2 * 3` | 7 | 7 |
+| 3 | `(1 + 2) * 3` | 9 | 9 |
+| 4 | `100 - 20 - 10` | 70 | 70 |
+| 5 | `2 * 3 + 4 * 5` | 26 | 26 |
+| 6 | `3 == 3` | 1 | 1 |
+| 7 | `5 != 5` | 0 | 0 |
+| 8 | `10 >= 10` | 1 | 1 |
+| 9 | `1 + 2 == 3` | 1 | 1 |
+
+`xver_gate()=1` (10/10). O passo de avaliação é feito por um interpretador LIN
+(loop sobre `src[off..off+len]`), sem recursão (shunting-yard), tirando proveito de
+que o subset `lin vm` rejeita passar arrays por parâmetro — a fonte é um **range de
+um array local** e a função opera por índice.
+
+### 1.3 Lowerer (fonte → bytecode canônico)
+
+Replica o post-order de `lower_arena` (`transpile/c/lin_c/lin_vm.c`), que é o mesmo
+do consenso Zig×C11. Para o subset de constantes, o fold sobre (opcode, operando)
+bate com o oráculo independente:
+
+| sel | expr | instrs | fold LIN | fold oráculo |
+|---|---|---|---|---|
+| 0 | `42` | `push42,ret` | 41261 | 41261 |
+| 1 | `1+2*3` | `push1,push2,push3,mul,add,ret` | 821336874802753 | idem |
+| 2 | `2*3+4*5` | `push2,push3,mul,push4,push5,mul,add,ret` | 3744890549401985764 | idem |
+| 3 | `3==3` | `push3,push3,cmp_eq,ret` | 2665759161 | idem |
+| 4 | `1+2==3` | `push1,push2,add,push3,cmp_eq,ret` | 821416610146134 | idem |
+
+`low_gate()=1` (5/5). O bytecode canônico de v11 (8 instruções) tem
+`code_sha256=fb10ce57…` — **igual ao consenso Zig×C11** publicado em
+`LINVM_ISA_V1.rulel` §7 (v11). Ou seja: o front-end LIN produz a **mesma sequência**
+de opcodes/operandos que o Stage0 e o port C11.
+
+---
+
+## 2. Decisões de engenharia (e porquê)
+
+- **Fonte embutida como array local + range por `sel`.** O subset do `lin vm`
+  (`vmBuild`) rejeita `VM_REJ_ARRAY_AS_SCALAR` ao passar arrays como argumentos
+  de função e não tem I/O de string no host do `vm`. Então o front-end opera sobre
+  um pool de bytes local e seleciona por índice — mesmo padrão do P1
+  (`src/linvm_selfhost.lin`), que embute bytecode em arrays locais.
+- **Shunting-yard em vez de parser recursivo.** A VM tem `VM_MAX_DEPTH=192`; um
+  parser recursivo descendente sobre expressões profundas estouraria o teto e a
+  recursão exige passar o array/fonte pelos frames. O algoritmo iterativo evita
+  isso e é determinístico.
+- **Aritmética i64-wrap reimplementada em LIN** (`ee_div`/`ee_udiv`, sem usar `/`),
+  replicando os casos-limite `INT64_MIN / -1 → INT64_MIN` e `mod → 0`. Confere com
+  §4.2 do `LINVM_ISA_V1`.
+
+---
+
+## 3. O que NÃO é (fronteiras honestas, R5)
+
+1. **Não é o compilador completo.** Falta: typecheck, lowerer AST→bytecode, e o
+   serializador/loader que deriva **imagem LINBC1 de texto arbitrário**.
+2. **Não há ponto fixo** `C0 = C1 = C2` (B3 do `COMPILER_0_AS_LINVM_PLAN`). Os gates
+   B3/G(V2)/G(V3) estão **abertos**.
+3. **O lexer é seleto**, não cobre strings de I/O nem o front-end completo de uma
+   fonte `.lin` lida do host — cobre um subset fechado e prova o padrão.
+4. **O avaliador não emite bytecode** — avalia direto; portanto não gera o
+   `bytecode_image` canônico nem os *steps*/`sp_at_ret` que o `crosscheck-c`
+   compara. Para a paridade de bytecode, o próximo passo é **lowerer** (emitir
+   opcodes LinVM) + execução sob o host.
+5. **Limites (arrays locais, 64 locais, pilha 256)** são os do perfil LINVM-1;
+   o perfil LINVM-C0 (regiões flat) continua **PROPOSED** — o plano §6.1/§6.4 é
+   explícito que o orçamento do compilador completo depende de medição em V2.
+
+---
+
+## 4. Como reproduzir
+
+```sh
+zig build -Dgpu=false -Doptimize=ReleaseFast   # Stage0 Zig (ou binário Stage0)
+./zig-out/bin/lin_native check  src/linvm0_compiler/lin_lexer_selfhost.lin
+./zig-out/bin/lin_native lint   src/linvm0_compiler/lin_lexer_selfhost.lin
+./zig-out/bin/lin_native vm     src/linvm0_compiler/lin_lexer_selfhost.lin lex_gate
+./verify_linvm0.sh                              # gate completo
+make linvm0-gate                                # idem, via Makefile
+```
+
+---
+
+## 5. Próximos passos (ordem, para chegar ao ciclo C0=C1=C2)
+
+1. **Lowerer em LIN**: emitir opcodes LinVM (fonte → `bytecode_image`) e comparar
+   com o bytecode canônico do `crosscheck-c` que hoje é o consenso Zig×C11.
+2. **Lexer completo sobre fonte lida do host** (via HOST-ABI-1) em vez de pool
+   embutido — desbloqueado pelo `host_read` do ABI (V1 já tem os intrínsecos de
+   string; os 3 de I/O ainda não têm consumidor).
+3. **Typecheck** em LIN (o subset mais um fluxo de tipos).
+4. **Emissor LINBC1 a partir de texto** (V2), reusando o loader/serializador C11
+   já existente (`transpile/c/`).
+5. **Ponto fixo** em máquinas distintas (B3/V3) e só então promoção (B5/V5).
+
+Até lá, este branch é **reconhecidamente trânsito experimental** — não é o produto
+"compiler_0 = LinVM" completo do plano.

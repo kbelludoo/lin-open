@@ -33,6 +33,7 @@ These were verified by building and running the compiled binary:
 | Gate attestation signature (`lin gate-keygen` / `gate-attest --key` / `gate-check --roster`) | ✅ real Ed25519: keys generated from `std.crypto.random` (seed written 0600), signature over the manifest body, M-of-N roster quorum, and an explicit "signature NOT VERIFIED" line when no roster is supplied |
 | Attestation honesty gate (`make attestation-gate`) | ✅ 35 assertions + 5 unit tests; refuses any command that would publish an uncomputed verdict |
 | `from-js` transpile | ⚠️ narrow subset only (arrow/expr fns match 0) |
+| **start of compiler0 in LIN** (V2/B2) | 🚧 **EXPERIMENTAL**: `make linvm0-gate` verifies a LIN self-hosted **lexer** (bit-exact vs `reference_tokenize.py`) + an i64-wrap **expression evaluator** over 10 xver vectors + a **lowerer** (source → canonical LinVM bytecode, folds match the Zig×C11 consensus). **Not** the full compiler — no typecheck/LINBC1-from-text, no C0=C1=C2 fixed point yet. See `docs/LINVM0_V2_FRONTIER.rulel`. |
 
 `receipt create --source "return x * x;" --input 9` produces a deterministic root
 `sha256:b96fecee…` that re-verifies identically on every run — a reproducible CPU receipt.
@@ -118,6 +119,7 @@ is printed in the release notes so you can verify the download.
 ```bash
 make test         # GPU build + check all src/*.lin + receipt round-trip
 make test-cpu     # CPU-only build + same checks (no OpenCL needed)
+make linvm0-gate  # EXPERIMENTAL: LIN self-hosted lexer + expr evaluator gate (V2/B2)
 $BIN integrity    # self-check over all 20 shipped sources -> PASS
 ```
 
