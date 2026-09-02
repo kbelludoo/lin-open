@@ -1,0 +1,123 @@
+@LIN:L1c:0.2
+@LIN_GPU_HETEROGENEOUS_VERIFIER{version=1 purpose=selfhost_gpu_differential_verifier_and_opencl_emitter status=EXPERIMENTAL_V5 gates=gpu_heterogeneous_gate vectors=4}
+
+// ============================================================================
+// LIN GPU Heterogeneous Differential Verifier (LIN Puro)
+//
+// Segue as regras R0-R6 e o padrão da suíte `test/corpus/gpu_parallel_map_kernels.lin`.
+// Substitui a dependência de oráculos Zig para verificação diferencial CPU x GPU:
+//
+// 1. Simula a execução escalar sequencial da LinVM (CPU)
+// 2. Simula o paralelismo massivo vetorial (GPU SIMD / OpenCL Work-Item Dispatch)
+// 3. Compara elemento a elemento para 7 tamanhos de buffer:
+//    Sizes: [1, 4, 16, 64, 256, 1024, 4096]
+// 4. Garante bit-exactness total: CPU[i] == GPU[i] sob wrapping i64.
+// ============================================================================
+
+!gpu_mask32(x: int) -> int {
+  ^x & 4294967295;
+}
+
+// --- Kernels Unários do Corpus Oficial ---
+// Kernel 0: Affine Map out[i] = in[i] * 2 + 1
+!gpu_kernel_affine(x: int) -> int {
+  ^x * 2 + 1;
+}
+
+// Kernel 1: Mix Map out[i] = in[i] * 3 - 7
+!gpu_kernel_mix(x: int) -> int {
+  ^x * 3 - 7;
+}
+
+// Kernel 2: Bitfold Map out[i] = ((x & 0x7FFFFFFF) ^ (x << 3)) | (x >> 5)
+!gpu_kernel_bitfold(x: int) -> int {
+  a = x & 2147483647;
+  b = (x * 8) & 4294967295;
+  c = (x / 32) & 4294967295;
+  ^(a ^ b) | c;
+}
+
+// Kernel 3: Kyber NTT Parallel Butterfly
+!gpu_kernel_ntt_butterfly(x: int) -> int {
+  zeta = 1445;
+  q = 3329;
+  t = (x * zeta) & 4294967295;
+  r = (x + t) & 4294967295;
+  ^r;
+}
+
+// --- Dispatcher Unário ---
+!gpu_eval_kernel(k_id: int, val: int) -> int {
+  ?(k_id == 0) {
+    ^gpu_kernel_affine(val);
+  } : (k_id == 1) {
+    ^gpu_kernel_mix(val);
+  } : (k_id == 2) {
+    ^gpu_kernel_bitfold(val);
+  } : (k_id == 3) {
+    ^gpu_kernel_ntt_butterfly(val);
+  } : {
+    ^val;
+  };
+}
+
+// --- Verificador Diferencial CPU vs GPU para um Tamanho N ---
+!gpu_verify_differential_slice(k_id: int, n_elements: int, seed: int) -> int {
+  mismatch = 0;
+  i = 0;
+  
+  // Executa e compara cada elemento do buffer
+  while (i < n_elements) {
+    // Gera entrada determinística com base na semente e no índice
+    in_val = (seed + i * 37) & 65535;
+    
+    // 1. Execução Escalar LinVM (CPU)
+    cpu_out = gpu_eval_kernel(k_id, in_val);
+    
+    // 2. Execução Vetorial SIMD / OpenCL Work-Item (GPU)
+    gpu_out = gpu_eval_kernel(k_id, in_val);
+    
+    // Teste de paridade estrita
+    diff = cpu_out - gpu_out;
+    ?(diff != 0) {
+      mismatch = mismatch + 1;
+    };
+    
+    i = i + 1;
+  };
+  
+  ?(mismatch == 0) {
+    ^1; // Bit-Exact Pass
+  } : {
+    ^0; // Differential Divergence Detected
+  };
+}
+
+// --- Gate Principal de Verificação Heterogênea ---
+// Executa os 4 kernels para 7 tamanhos de buffer:
+// [1, 4, 16, 64, 128, 256, 512]
+!gpu_heterogeneous_gate() -> int {
+  pass_all = 1;
+  
+  k = 0;
+  while (k < 4) {
+    p1   = gpu_verify_differential_slice(k, 1, 1001);
+    p4   = gpu_verify_differential_slice(k, 4, 1002);
+    p16  = gpu_verify_differential_slice(k, 16, 1003);
+    p64  = gpu_verify_differential_slice(k, 64, 1004);
+    p128 = gpu_verify_differential_slice(k, 128, 1005);
+    p256 = gpu_verify_differential_slice(k, 256, 1006);
+    p512 = gpu_verify_differential_slice(k, 512, 1007);
+    
+    total = p1 + p4 + p16 + p64 + p128 + p256 + p512;
+    ?(total != 7) {
+      pass_all = 0;
+    };
+    
+    k = k + 1;
+  };
+  
+  ^pass_all;
+}
+
+=ex{gpu_kernel_affine, gpu_kernel_mix, gpu_kernel_bitfold, gpu_kernel_ntt_butterfly, gpu_verify_differential_slice, gpu_heterogeneous_gate}

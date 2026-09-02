@@ -1,0 +1,56 @@
+@LIN:L1c:0.2
+@LIN_BUILD_SYSTEM{version=1 purpose=transpiled_build_orchestrator_from_build_zig status=STAGE0_TRANSPILED gates=build_system_gate vectors=3}
+
+// ============================================================================
+// Transpiled Build System (de build.zig)
+//
+// Substitui a dependência do build.zig:
+//   - Alvo 0: lin_native_cpu (CPU-only / C11 Host / zero-OpenCL)
+//   - Alvo 1: lin_native_gpu (OpenCL 2.0+ / ROCm / WebGPU)
+//   - Alvo 2: lin_selfhost_suite (Test runner completo)
+// ============================================================================
+
+!build_resolve_target_flags(target_mode: int, enable_gpu: int) -> int {
+  // flags bitmask:
+  // bit 0: link_libc
+  // bit 1: link_opencl
+  // bit 2: stub_fallback
+  // bit 3: opt_release
+  flags = 1; // Sempre linkLibC()
+  
+  ?(enable_gpu == 1) {
+    flags = flags + 2; // linkSystemLibrary("OpenCL")
+  } : {
+    flags = flags + 4; // stubs/CL/stub.c fallback
+  };
+  
+  ?(target_mode == 1) {
+    flags = flags + 8; // ReleaseFast/Small
+  };
+  
+  ^flags;
+}
+
+!build_artifact_name_hash(target_id: int) -> int {
+  // Gera o hash determinístico da saída do build
+  ?(target_id == 0) {
+    ^1001; // bin/lin_native_cpu
+  } : (target_id == 1) {
+    ^1002; // bin/lin_native_gpu
+  } : {
+    ^1003; // bin/lin_test_suite
+  };
+}
+
+!build_system_gate() -> int {
+  f_cpu = build_resolve_target_flags(0, 0); // 1 + 4 = 5
+  f_gpu = build_resolve_target_flags(1, 1); // 1 + 2 + 8 = 11
+  
+  valid = 1;
+  ?(f_cpu != 5) { valid = 0; };
+  ?(f_gpu != 11) { valid = 0; };
+  
+  ^valid;
+}
+
+=ex{build_resolve_target_flags, build_artifact_name_hash, build_system_gate}

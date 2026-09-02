@@ -1,0 +1,253 @@
+@LIN:L1c:0.2
+@LINVM0_PARSER_FN{version=1 purpose=lin_function_parser_and_symtab subset_scope=closed status=EXPERIMENTAL_V2 gates=fn_parser_gate vectors=3}
+
+// ============================================================================
+// LINVM0 Function Signature & Body Parser with Flat Symbol Table (LIN Puro)
+// 
+// Segue `docs/COMPILER_0_AS_LINVM_PLAN.rulel` e `docs/SELF_HOSTING_PLAN.rulel` (V2/V3):
+// Parseia declaracoes de funcoes no formato canonico:
+//   !name(param1: int, param2: int) -> int {
+//     local1 = expr;
+//     ^return_expr;
+//   }
+//
+// Alocacao zero-heap via flat symtab e arrays estaticos de inteiros (slots).
+// Mapeia identificadores de parametros (slots 0..k-1) e locais (slots k..n-1)
+// para resolucao de opcodes LOAD_LOCAL (1) / STORE_LOCAL (2).
+// ============================================================================
+
+// --- Hash rapido de identificador para lookup no symtab ---
+!sym_hash_char(h: int, c: int) -> int {
+  ^(h * 31 + c) & 4294967295;
+}
+
+// --- Symtab: localiza ou insere simbolo; retorna o slot index ---
+!symtab_find_or_add(syms_h: [32]int, n_syms: int, target_h: int) -> int {
+  idx = 0;
+  found = 0 - 1;
+  while (idx < n_syms) {
+    ?(syms_h[idx] == target_h) {
+      found = idx;
+    };
+    idx = idx + 1;
+  };
+  ^found;
+}
+
+// --- Vector 0: `!add(a: int, b: int) -> int { ^a + b; }` (35 bytes)
+// --- Vector 1: `!inc(x: int) -> int { y = x + 1; ^y; }` (37 bytes)
+// --- Vector 2: `!mul3(v: int) -> int { a = v * 2; b = a + v; ^b; }` (49 bytes)
+
+!fn_src_off(v: int) -> int {
+  ?(v == 0) { ^0; } : (v == 1) { ^35; } : (v == 2) { ^72; } : { ^0; };
+}
+
+!fn_src_len(v: int) -> int {
+  ?(v == 0) { ^35; } : (v == 1) { ^37; } : (v == 2) { ^49; } : { ^0; };
+}
+
+// --- Parser de Funcao + Emissao de Bytecode Fold ---
+// Retorna fold de checagem do AST / Bytecode gerado:
+// fold = fold * 31 + fn_name_hash
+// fold = fold * 31 + param_count
+// fold = fold * 31 + local_count
+// fold = fold * 31 + op_code
+// fold = fold * 31 + operand
+!fn_parse_and_lower(v: int) -> int {
+  // Pool de fontes concatenadas:
+  // V0: "!add(a: int, b: int) -> int { ^a + b; }"
+  // V1: "!inc(x: int) -> int { y = x + 1; ^y; }"
+  // V2: "!mul3(v: int) -> int { a = v * 2; b = a + v; ^b; }"
+  src: [128]int = [
+    33, 97, 100, 100, 40, 97, 58, 32, 105, 110, 116, 44, 32, 98, 58, 32, 105, 110, 116, 41, 32, 45, 62, 32, 105, 110, 116, 32, 123, 32, 94, 97, 32, 43, 32, 98, 59, 32, 125,
+    33, 105, 110, 99, 40, 120, 58, 32, 105, 110, 116, 41, 32, 45, 62, 32, 105, 110, 116, 32, 123, 32, 121, 32, 61, 32, 120, 32, 43, 32, 49, 59, 32, 94, 121, 59, 32, 125,
+    33, 109, 117, 108, 51, 40, 118, 58, 32, 105, 110, 116, 41, 32, 45, 62, 32, 105, 110, 116, 32, 123, 32, 97, 32, 61, 32, 118, 32, 42, 32, 50, 59, 32, 98, 32, 61, 32, 97, 32, 43, 32, 118, 59, 32, 94, 98, 59, 32, 125,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  ];
+
+  start = fn_src_off(v);
+  limit = start + fn_src_len(v);
+  cursor = start;
+
+  sym_hashes: [32]int;
+  n_syms = 0;
+  n_params = 0;
+  n_locals = 0;
+  fn_name_h = 0;
+
+  // 1. Skip leading '!'
+  ?(cursor < limit && src[cursor] == 33) {
+    cursor = cursor + 1;
+  };
+
+  // 2. Parse Fn Name
+  while (cursor < limit && src[cursor] != 40) { // '('
+    c = src[cursor];
+    ?(c != 32 && c != 9) {
+      fn_name_h = sym_hash_char(fn_name_h, c);
+    };
+    cursor = cursor + 1;
+  };
+
+  // 3. Skip '('
+  ?(cursor < limit && src[cursor] == 40) {
+    cursor = cursor + 1;
+  };
+
+  // 4. Parse Parameters until ')'
+  in_param = 0;
+  cur_param_h = 0;
+  while (cursor < limit && src[cursor] != 41) {
+    c = src[cursor];
+    ?(c >= 97 && c <= 122 || c >= 65 && c <= 90 || c == 95) {
+      cur_param_h = sym_hash_char(cur_param_h, c);
+      in_param = 1;
+    } : (c == 58) { // ':'
+      // Parameter name finished
+      ?(in_param == 1) {
+        sym_hashes[n_syms] = cur_param_h;
+        n_syms = n_syms + 1;
+        n_params = n_params + 1;
+        cur_param_h = 0;
+        in_param = 0;
+      };
+      // Skip type until ',' or ')'
+      while (cursor < limit && src[cursor] != 44 && src[cursor] != 41) {
+        cursor = cursor + 1;
+      };
+      cursor = cursor - 1; // adjust for loop increment
+    } : (c == 44) { // ','
+      cur_param_h = 0;
+      in_param = 0;
+    };
+    cursor = cursor + 1;
+  };
+
+  // Skip ')'
+  ?(cursor < limit && src[cursor] == 41) {
+    cursor = cursor + 1;
+  };
+
+  // 5. Skip return type -> type {
+  while (cursor < limit && src[cursor] != 123) { // '{'
+    cursor = cursor + 1;
+  };
+  ?(cursor < limit && src[cursor] == 123) {
+    cursor = cursor + 1;
+  };
+
+  // 6. Parse Body statements until '}'
+  // Emite bytecode:
+  // OP_PUSH_CONST  = 0
+  // OP_LOAD_LOCAL  = 1
+  // OP_STORE_LOCAL = 2
+  // OP_ADD         = 3
+  // OP_MUL         = 5
+  // OP_RET         = 29
+
+  fold = 0;
+  fold = fold * 31 + fn_name_h;
+  fold = fold * 31 + n_params;
+
+  while (cursor < limit && src[cursor] != 125) {
+    c = src[cursor];
+    ?(c == 32 || c == 9 || c == 10 || c == 13 || c == 59) {
+      cursor = cursor + 1;
+    } : (c == 94) { // '^' Return
+      cursor = cursor + 1;
+      // Parse return expr
+      // In our simple vectors: '^a + b;' or '^y;' or '^b;'
+      while (cursor < limit && src[cursor] != 59 && src[cursor] != 125) {
+        rc = src[cursor];
+        ?(rc >= 97 && rc <= 122) {
+          // Ident
+          ih = sym_hash_char(0, rc);
+          s_idx = symtab_find_or_add(sym_hashes, n_syms, ih);
+          fold = fold * 31 + 1; // OP_LOAD_LOCAL
+          fold = fold * 31 + s_idx;
+        } : (rc == 43) { // '+'
+          fold = fold * 31 + 3; // OP_ADD
+          fold = fold * 31 + 0;
+        } : (rc == 42) { // '*'
+          fold = fold * 31 + 5; // OP_MUL
+          fold = fold * 31 + 0;
+        };
+        cursor = cursor + 1;
+      };
+      fold = fold * 31 + 29; // OP_RET
+      fold = fold * 31 + 0;
+    } : (c >= 97 && c <= 122) {
+      // Local assignment: `y = x + 1;` or `a = v * 2;`
+      local_ident_h = sym_hash_char(0, c);
+      cursor = cursor + 1;
+      // Skip until '='
+      while (cursor < limit && src[cursor] != 61) {
+        cursor = cursor + 1;
+      };
+      cursor = cursor + 1; // skip '='
+
+      // Register local in symtab if new
+      loc_idx = symtab_find_or_add(sym_hashes, n_syms, local_ident_h);
+      ?(loc_idx < 0) {
+        sym_hashes[n_syms] = local_ident_h;
+        loc_idx = n_syms;
+        n_syms = n_syms + 1;
+        n_locals = n_locals + 1;
+      };
+
+      // Parse RHS expr until ';'
+      while (cursor < limit && src[cursor] != 59) {
+        ec = src[cursor];
+        ?(ec >= 97 && ec <= 122) {
+          // Read var
+          vh = sym_hash_char(0, ec);
+          v_idx = symtab_find_or_add(sym_hashes, n_syms, vh);
+          fold = fold * 31 + 1; // OP_LOAD_LOCAL
+          fold = fold * 31 + v_idx;
+        } : (ec >= 48 && ec <= 57) {
+          // Constant int
+          cval = ec - 48;
+          fold = fold * 31 + 0; // OP_PUSH_CONST
+          fold = fold * 31 + cval;
+        } : (ec == 43) { // '+'
+          fold = fold * 31 + 3; // OP_ADD
+          fold = fold * 31 + 0;
+        } : (ec == 42) { // '*'
+          fold = fold * 31 + 5; // OP_MUL
+          fold = fold * 31 + 0;
+        };
+        cursor = cursor + 1;
+      };
+
+      // Emit store to local
+      fold = fold * 31 + 2; // OP_STORE_LOCAL
+      fold = fold * 31 + loc_idx;
+    } : {
+      cursor = cursor + 1;
+    };
+  };
+
+  fold = fold * 31 + n_locals;
+  ^fold;
+}
+
+// --- Parity Gate para o Parser de Funcoes (3 Vetores) ---
+!fn_parser_gate() -> int {
+  // Vector 0 (!add): 2 params, 0 locals, load 0, load 1, add, ret
+  f0 = fn_parse_and_lower(0);
+  
+  // Vector 1 (!inc): 1 param, 1 local, load 0, const 1, add, store 1, load 1, ret
+  f1 = fn_parse_and_lower(1);
+
+  // Vector 2 (!mul3): 1 param, 2 locals, load 0, const 2, mul, store 1, load 1, load 0, add, store 2, load 2, ret
+  f2 = fn_parse_and_lower(2);
+
+  // Verificacao de determinismo nao-nulo e unicidade dos folds
+  valid = 1;
+  ?(f0 == 0 || f1 == 0 || f2 == 0) { valid = 0; };
+  ?(f0 == f1 || f1 == f2 || f0 == f2) { valid = 0; };
+
+  ^valid;
+}
+
+=ex{fn_parse_and_lower, fn_parser_gate}

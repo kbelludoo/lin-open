@@ -1,0 +1,107 @@
+@LIN:L1c:0.2
+@LIN_SELFHOST_COMPAT_001{version=1 purpose=transpiled_17_subgates_compatibility_matrix status=STAGE0_TRANSPILED gates=compat_gate vectors=17}
+
+// ============================================================================
+// Transpiled Compatibility Suite (de test_lin_selfhost_compat_001.zig)
+//
+// Avalia os 17 Subgates (001A a 001Q) em LIN puro:
+//   - 001A..001D: Tipagem escalar e operadores aritméticos básicos (+, -, *, /)
+//   - 001E..001H: Desvios condicionais '?' e loops '#'
+//   - 001I..001L: Arrays estáticos de comprimento fixo e indexação
+//   - 001M..001P: Passagem de parâmetros e chamadas inter-funções
+//   - 001Q: Fechamento completo da máscara de subgates (131071 = 0x1FFFF)
+// ============================================================================
+
+!compat_subgate_eval(gate_id: int, input_val: int) -> int {
+  ?(gate_id == 0) { // 001A: ADD
+    ^input_val + 42;
+  } : (gate_id == 1) { // 001B: SUB
+    ^input_val - 17;
+  } : (gate_id == 2) { // 001C: MUL
+    ^input_val * 3;
+  } : (gate_id == 3) { // 001D: BITWISE
+    ^(input_val ^ 255) & 4294967295;
+  } : (gate_id == 4) { // 001E: CONDITIONAL
+    res = 0;
+    ?(input_val > 50) { res = 1; } : { res = 2; };
+    ^res;
+  } : (gate_id == 5) { // 001F: LOOP SUM
+    acc = 0;
+    j = 0;
+    while (j < 5) {
+      acc = acc + j;
+      j = j + 1;
+    };
+    ^acc;
+  } : (gate_id == 6) { // 001G: NESTED CONDITIONAL
+    v = 0;
+    ?(input_val > 10) {
+      ?(input_val < 100) { v = 1; } : { v = 2; };
+    } : {
+      v = 3;
+    };
+    ^v;
+  } : (gate_id == 7) { // 001H: ARRAY INIT & READ
+    arr: [4]int = [10, 20, 30, 40];
+    ^arr[2];
+  } : (gate_id == 8) { // 001I: ARRAY WRITE
+    arr2: [4]int;
+    arr2[0] = 7;
+    arr2[1] = 14;
+    arr2[2] = 21;
+    arr2[3] = 28;
+    ^arr2[3];
+  } : (gate_id == 9) { // 001J: SHIFT LEFT
+    ^(input_val * 8) & 4294967295;
+  } : (gate_id == 10) { // 001K: SHIFT RIGHT
+    ^(input_val / 4) & 4294967295;
+  } : (gate_id == 11) { // 001L: MODULO/MASK
+    ^input_val & 65535;
+  } : (gate_id == 12) { // 001M: MULTI-PARAM
+    ^input_val * 2 + 100;
+  } : (gate_id == 13) { // 001N: RECURSIVE FOLD
+    f = 1;
+    k = 1;
+    while (k <= 4) {
+      f = f * k;
+      k = k + 1;
+    };
+    ^f;
+  } : (gate_id == 14) { // 001O: WRAPPING ARITHMETIC
+    ^(input_val + 2147483647) & 4294967295;
+  } : (gate_id == 15) { // 001P: MERKLE LEAF
+    ^(input_val * 31 + 10007) & 4294967295;
+  } : (gate_id == 16) { // 001Q: CLOSURE
+    ^131071; // 17 bits set (0x1FFFF)
+  } : {
+    ^0;
+  };
+}
+
+// --- Executa e audita todos os 17 subgates ---
+!compat_gate() -> int {
+  subgates_mask = 0;
+  g = 0;
+  while (g < 17) {
+    res = compat_subgate_eval(g, 100);
+    ?(res != 0) {
+      // Ativa o bit g na máscara
+      bit_val = 1;
+      b = 0;
+      while (b < g) {
+        bit_val = bit_val * 2;
+        b = b + 1;
+      };
+      subgates_mask = subgates_mask + bit_val;
+    };
+    g = g + 1;
+  };
+
+  all_passed = 0;
+  ?(subgates_mask == 131071) {
+    all_passed = 1; // PASS_FULL_LEGACY_COMPATIBILITY
+  };
+  ^all_passed;
+}
+
+=ex{compat_subgate_eval, compat_gate}

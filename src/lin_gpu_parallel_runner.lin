@@ -1,0 +1,55 @@
+@LIN:L1c:0.2
+@LIN_GPU_PARALLEL_RUNNER{version=1 purpose=gpu_workgroup_dispatch_and_parallel_reduction status=EXPERIMENTAL_V5 gates=gpu_runner_gate vectors=3}
+
+// ============================================================================
+// LIN GPU Parallel Runner & Work-Group Dispatch Simulator (LIN Puro)
+//
+// Modela o dispatch de Work-Groups (Wavefront/Warp de 64 threads)
+// e redução paralela determinística para aceleradores ROCm/OpenCL.
+// ============================================================================
+
+!wg_mask64(x: int) -> int {
+  ^x & 18446744073709551615;
+}
+
+// Simula execução de 1 Work-Group de 64 Work-Items (Wavefront)
+!gpu_run_workgroup_affine(wg_id: int, base_offset: int) -> int {
+  local_sum = 0;
+  lid = 0;
+  while (lid < 64) {
+    gid = base_offset + lid;
+    val = (gid * 2 + 1) & 65535;
+    local_sum = local_sum + val;
+    lid = lid + 1;
+  };
+  ^local_sum;
+}
+
+// Redução paralela através de M Work-Groups
+!gpu_dispatch_grid(n_workgroups: int) -> int {
+  grid_sum = 0;
+  w = 0;
+  while (w < n_workgroups) {
+    wg_sum = gpu_run_workgroup_affine(w, w * 64);
+    grid_sum = grid_sum + wg_sum;
+    w = w + 1;
+  };
+  ^grid_sum;
+}
+
+// Gate de Teste do Runner GPU
+!gpu_runner_gate() -> int {
+  // Grid com 4 workgroups = 256 threads
+  s4 = gpu_dispatch_grid(4);
+  
+  // Grid com 8 workgroups = 512 threads
+  s8 = gpu_dispatch_grid(8);
+  
+  valid = 1;
+  ?(s4 <= 0 || s8 <= 0) { valid = 0; };
+  ?(s8 <= s4) { valid = 0; };
+  
+  ^valid;
+}
+
+=ex{gpu_run_workgroup_affine, gpu_dispatch_grid, gpu_runner_gate}
