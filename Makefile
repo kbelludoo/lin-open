@@ -116,7 +116,7 @@ guard-unit:
 # substitui `lin vm`. `lin check`, `lin lint`, receipts e o pipeline GPU
 # continuam exigindo o Stage0: o caminho sem Zig NÃO finge ser eles.
 # --------------------------------------------------------------------------
-.PHONY: c0 test-c0 c0-gate gate-nozig
+.PHONY: c0 test-c0 c0-gate c0-external gate-nozig
 c0:
 	@$(MAKE) -C transpile/c c0
 
@@ -140,6 +140,11 @@ c0-gate:
 	@bash test/verify_c0_selfhost.sh
 	@$(MAKE) -C transpile/c roundtrip-linbc1-noc
 	@echo "c0-gate: Compilador 0 (LinVM/C11) verde — nenhum Zig foi executado"
+
+# Port EXTERNO (codigo clonado do GitHub -> LIN) com paridade C11/Zig e oraculo proprio.
+# Opcionalmente compara com o lexer C de terceiro: STB_DIR=/caminho/stb make c0-external
+c0-external: c0
+	@./test/verify_external_port.sh
 
 gate-nozig:
 	@python3 test/verify_gate_manifest.py

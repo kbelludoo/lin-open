@@ -287,3 +287,20 @@ ainda `PROPOSED`); a issue está pronta para colar na seção 6 do documento. `t
 foi corrigido: ele se descrevia como "Slice 1" (pipeline de expressões) e não mencionava o host
 C11 + front do subconjunto que existem desde o corte C0-no-Zig.
 
+## 2026-09-01 — gate do port externo: código clonado do GitHub → LIN (`make c0-external`)
+
+Primeira vez que código de **fora** do repositório percorre a cadeia inteira: clonei
+`github.com/nothings/stb` (`2c980bb59875…`), compilei o `stb_c_lexer.h` upstream com `cc`
+sobre um corpus de 162 bytes, transcrevi o contrato de tokenização para LIN
+(`test/fixtures/external_port/mx_stb_lin.lin`, gerado por `gen_fixture.py`) e executei nos
+dois hosts: C11 (`lin_c0`, zero Zig) e Zig (`lin_native`) deram **o mesmo valor e o mesmo
+`steps`** (fold `899720538059731284`, 43 tokens, `steps=17047`), e a rota congelada
+`.lin → LINBC1 → exec da imagem` fechou em `CONSENSUS`. Um terceiro cálculo independente em
+Python (`ref_oracle.py`) re-deriva os mesmos números sem LIN e sem C. O caso de fronteira
+(`boundary.c`: `0x1f`, `1.5e3`) tem `mx_gate=0` por construção — hex/float/sufixos **não** são
+da fatia — e `test/verify_external_port.sh` exige esse 0, para que cobri-los sem atualizar a
+documentação da fronteira falhe alto. Nada foi vendorizado (o header de terceiro é opt-in via
+`STB_DIR`) e nada tocou os escopos do `lin_gate_manifest.rulel` (`compiler/`,
+`transpile/c/{lin_c,tool,test}`), então a raiz do gate não mudou: `c0-gate` verde,
+`GATE OPEN`, `COMPILER0-MANIFEST: PASS`.
+
