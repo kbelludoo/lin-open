@@ -1,24 +1,5 @@
 # Transpilação LIN (Zig) → C — Slice 1: Parser Pratt + Arena + LinVM
 
-> **Estado atual (2026-09-01): este README descreve a Slice 1, não o estado do diretório.**
-> Além do port da pipeline de expressões, hoje existem o **host C11 sem Zig** e o seu front
-> mínimo: `tool/lin_c0.c` + `tool/lin_c0_front.c` (lexer/parser/lowerer **restritos ao
-> subconjunto `LINVM-1/i64`** do Stage0 `lin vm`), `tool/lin_bc1_run.c` (carrega e executa uma
-> imagem LINBC1 congelada) e `tool/lin_c_receipt.c` (emissor de receipt). O *compilador* em si
-> está em LIN (`src/linvm0_compiler/*`, congelado como `compiler0.linbc`), não em C: C11 é o
-> **host padrão**, LINBC1 é o **contrato**, LIN é o **compilador** — ver
-> `docs/DECISAO_C11_HOST_LIN_COMPILADOR.rulel`.
->
-> **O que o host C11 não é:** não é um compilador LIN completo (não implementa `lin check` /
-> `lin lint`; o próprio `lin_c0` imprime essa fronteira em `tool/lin_c0.c:365`), não é uma
-> segunda implementação do frontend, e não decide nada de semântica que não esteja nos vetores
-> dourados + `xver`. Rodar o port para além disso é a decisão registrada no documento acima.
->
-> ```
-> $ make c0-gate     # 4 comandos (o 1o expande 5 alvos em transpile/c/), nenhum Zig executado
->                    # imagem congelada: raiz 65823d77…, status FROZEN_LOCAL (nao ATTESTED)
-> ```
-
 > **O que é isto:** um port *educacional e verificável* da pipeline de
 > expressões C do compiler do LIN — tokenizer → parser Pratt → arena flat de
 > AST → avaliação → lowerer de bytecode → interprete LinVM — do Zig

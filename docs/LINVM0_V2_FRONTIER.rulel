@@ -24,14 +24,6 @@
 
 `make linvm0-gate` roda `zig build -Dgpu=false` + `verify_linvm0.sh` e sai verde.
 
-> **2026-09-01, sem Zig:** os três módulos acima também rodam pelo host C11 da LinVM
-> (`transpile/c/bin/lin_c0`), sem nenhum passo de Zig — `make c0-selfhost` mede as
-> cinco funções de gate (`lex_gate=1 steps=10097`, `lex_scan_embedded=1371904279658369433`,
-> `lex_count_embedded=20`, `xver_gate=1 steps=12445`, `low_gate=1 steps=4386`), congela cada
-> módulo como imagem LINBC1, reexecuta a imagem e roda o self-lex (o lexer LIN sobre o texto
-> do próprio front-end). O que `verify_linvm0.sh` ainda exige Zig é apenas `check`/`lint` do
-> Stage0 — nenhuma afirmação deste documento muda; ver `docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel` §7.
-
 ### 1.1 Lexer auto-aplicável (B2, primeiro marco útil)
 
 Para a fonte de teste `!proc(a: int) -> int {\n  b = a & 4294967295;\n  ^b;\n}`:

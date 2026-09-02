@@ -33,7 +33,7 @@ These were verified by building and running the compiled binary:
 | Gate attestation signature (`lin gate-keygen` / `gate-attest --key` / `gate-check --roster`) | ✅ real Ed25519: keys generated from `std.crypto.random` (seed written 0600), signature over the manifest body, M-of-N roster quorum, and an explicit "signature NOT VERIFIED" line when no roster is supplied |
 | Attestation honesty gate (`make attestation-gate`) | ✅ 35 assertions + 5 unit tests; refuses any command that would publish an uncomputed verdict |
 | `from-js` transpile | ⚠️ narrow subset only (arrow/expr fns match 0) |
-| **start of compiler0 in LIN** (V2/B2) | 🚧 **EXPERIMENTAL**: `make linvm0-gate` verifies a LIN self-hosted **lexer** (bit-exact vs `reference_tokenize.py`) + an i64-wrap **expression evaluator** over 10 xver vectors + a **lowerer** (source → canonical LinVM bytecode, folds match the Zig×C11 consensus). **Not** the full compiler — no typecheck/LINBC1-from-text, no C0=C1=C2 fixed point yet. It runs **without Zig**: `make c0-selfhost`. See `docs/LINVM0_V2_FRONTIER.rulel` and `docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel` §7. |
+| **start of compiler0 in LIN** (V2/B2) | 🚧 **EXPERIMENTAL**: `make linvm0-gate` verifies a LIN self-hosted **lexer** (bit-exact vs `reference_tokenize.py`) + an i64-wrap **expression evaluator** over 10 xver vectors + a **lowerer** (source → canonical LinVM bytecode, folds match the Zig×C11 consensus). **Not** the full compiler — no typecheck/LINBC1-from-text, no C0=C1=C2 fixed point yet. See `docs/LINVM0_V2_FRONTIER.rulel`. |
 
 `receipt create --source "return x * x;" --input 9` produces a deterministic root
 `sha256:b96fecee…` that re-verifies identically on every run — a reproducible CPU receipt.
@@ -113,40 +113,6 @@ chmod +x lin_native-cpu
 The asset is built from the exact same `compiler/lin.zig` source that CI verifies, in
 `ReleaseFast`, so the reproducible-Merkle-root behavior is identical. SHA-256 of each asset
 is printed in the release notes so you can verify the download.
-
-### No Zig at all: Compiler 0 = the LinVM host (C11)
-
-If the machine has **no Zig and no pre-compiled asset** — a clean container, an audit box, an
-air-gapped verifier — the chain does not stop: the LinVM host built from C11 sources *is*
-Compiler 0 for the `LINVM-1/i64` subset. It needs only `cc`.
-
-```bash
-make c0                                            # build transpile/c/bin/lin_c0
-./transpile/c/bin/lin_c0 vm file.lin [fn args...]  # drop-in for `lin vm file.lin`
-./transpile/c/bin/lin_c0 info file.lin             # per-function eligibility + rejections
-./transpile/c/bin/lin_c0 image file.lin -o a.linbc # freeze a LINBC1 image (self-hashed)
-./transpile/c/bin/lin_c0 run a.linbc fn            # execute the frozen image on the LinVM
-./transpile/c/bin/lin_c0 roundtrip file.lin fn     # source == image, same steps
-make c0-gate                                       # all of the above, measured
-python3 test/verify_gate_manifest.py               # LIN Gate root, without the Zig binary
-```
-
-The same door also hosts a compiler *written in LIN*: the Compiler 0 front-end of
-`src/linvm0_compiler/` (self-hosted lexer, expression evaluator and lowerer, PR #46) compiles and
-runs here with **no Zig anywhere in the loop** — `make c0-selfhost` freezes each module as a
-LINBC1 image, replays it through the image loader, and applies the LIN-written lexer to the
-front-end's own source text (256 bytes, the ISA's array limit). `compiler0_manifest.rulel` pins
-those images. What stays Stage0: `check`/`lint`, and the full C0=C1=C2 fixed point.
-
-It is faithful rather than approximate: the emitted bytecode, the `VM_REJ_*` codes and the
-step counts are transcribed from the frozen Stage0, and the published goldens are reproduced
-bit-exactly — `vms_gate` returns `value=1` in **8 511 500 steps** on the C11 host, the same
-number the Zig Stage0 measured; `lb_selfhash_fold` reproduces `-178321285347216732`.
-
-**Boundary (read this before trusting it):** this path compiles and runs the integer subset
-only. `check` (the full type-checker), `lint`, MIR/GPU lowering, receipts and `integrity`
-remain Stage0 — `make test`/`make build-cpu` refuse with a pointer to `make c0-gate` instead of
-`zig: command not found`. Scope, evidence and honest limits: `docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel`.
 
 ### Run the checks and tests
 

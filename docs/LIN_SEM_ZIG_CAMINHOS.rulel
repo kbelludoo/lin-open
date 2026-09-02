@@ -1,4 +1,4 @@
-@RULEL:DOC_LIN_SEM_ZIG_CAMINHOS:1.2.0
+@RULEL:DOC_LIN_SEM_ZIG_CAMINHOS:1.0.0
 ~MARKDOWN_SPEC
 # "Compilar/rodar LIN sem Zig" — três perguntas diferentes, três respostas medidas (2026-08-31)
 
@@ -44,39 +44,16 @@ expressões C. Os 6 intrínsecos de string (HOST-ABI-1) e o loader fail-closed j
 existem (V1); os 3 de I/O (`host_read/write/exit`) virão com o compilador que os
 usa (V2+ — não há consumidor ainda).
 
-## Faixa 3 — COMPILAR fonte `.lin` sem artefato Zig: **SIM, no subconjunto `LINVM-1/i64`** (medido 2026-09-01)
+## Faixa 3 — COMPILAR uma fonte `.lin` arbitrária sem artefato Zig: **AINDA NÃO**
 
-Compilar = lexer → parser → typecheck → lowering → imagem LINBC1. A cadeia
-*completa* (typecheck, MIR, GPU-IR, receipts) continua existindo APENAS no Stage0
-Zig (`compiler/lin.zig`). O que mudou: o **corte `lin vm`** — fonte → bytecode
-canônico → imagem → execução — agora existe fora do Zig, no host C11, e foi
-medido contra os goldens que o Zig publicou:
+Compilar = lexer → parser → typecheck → lowering → imagem LINBC1. Hoje essa
+cadeia completa existe APENAS dentro do Stage0 Zig (`compiler/lin.zig`):
 
-```
-make c0 && make c0-gate            # só cc; nenhum zig no PATH
-make c0-selfhost                   # o COMPILADOR escrito em LIN na LinVM (ver abaixo)
-./transpile/c/bin/lin_c0 vm src/linvm_selfhost.lin vms_gate
-   → .result{ fn="vms_gate" value=1 steps=8511500 }   (== golden do Stage0)
-./transpile/c/bin/lin_c0 vm src/lin_linbc_emit.lin lb_selfhash_fold
-   → value=-178321285347216732                        (== fold publicado)
-```
-
-Fronteira honesta: é o subconjunto i64 (`VM_REJ_*` idênticos aos do Stage0), sem
-strings, sem I/O, sem `check`/`lint`/receipts — ver
-`docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel` §4.
-
-**2026-09-01 (cont.) — e o compilador escrito *em LIN*?** O front-end do compiler0
-de #46 (`src/linvm0_compiler/lin_lexer_selfhost.lin`, `lin_expr_eval.lin`,
-`lin_lower_selfhost.lin`) tem gate próprio que chama `lin_native`. Ele agora roda
-pelo host C11 sem nenhum passo de Zig (`make c0-selfhost`, 30 verificações):
-`lex_gate=1` (10097 passos), `lex_scan_embedded=1371904279658369433`,
-`lex_count_embedded=20`, `xver_gate=1` (12445), `low_gate=1` (4386) — todos iguais
-aos oráculos. Cada módulo congela como imagem LINBC1 e é reexecutado a partir da
-imagem com `.result` idêntico, e o lexer LIN tokeniza o texto do próprio front-end
-(256 bytes, limite `VM_MAX_ARR_LEN` da ISA). Ver
-`docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel` §7 e `compiler0_manifest.rulel`. Continua
-em aberto: o ponto fixo C0=C1=C2 de V5 — inclusive porque os *bytes* do LINBC1
-ainda são emitidos pelo host, não pelo módulo LIN, e `check`/`lint` seguem Stage0.
+- o emissor LIN de V1 (`src/lin_linbc_emit.lin`) empacota **tabelas transcritas**
+  da fixture e prova self-hash em LIN — ele não *deriva* bytecode de texto `.lin`;
+- isso começa em **V2** (`src/linvm0_compiler/*.lin`: lexer+parser+lowerer do
+  subset, `compiler0-mvp.linbc`) e vira cadeia de produção em **V5** (ponto fixo
+  C0=C1=C2 + suítes rodando sob a imagem), conforme `docs/LINVM_COMPILER0_PLAN.rulel`.
 
 ## Resumo em uma linha
 
@@ -84,9 +61,7 @@ ainda são emitidos pelo host, não pelo módulo LIN, e `check`/`lint` seguem St
 |---|---|---|
 | "Rodo a toolchain LIN sem instalar Zig?" | ✅ binário pré-compilado (CI publica a partir deste PR + tag) | 4A da análise de migração |
 | "Rodo programa LIN em imagem sem nada de Zig?" | ✅ rota C11/LINBC1 (V1, medido) | `make -C transpile/c` |
-| "Compilo o subconjunto `lin vm` de `.lin` sem Zig?" | ✅ host C11 (`make c0-gate`, goldens bit-exact) | `docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel` |
-| "Rodo o **compilador escrito em LIN** (front-end #46) sem Zig?" | ✅ host C11 o compila, executa, congela e reexecuta — `make c0-selfhost` | `docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel` §7 |
-| "Compilo o `.lin` **inteiro** (typecheck, GPU, receipts) sem Zig?" | ❌ | V2 (`compiler0-mvp`) → V5 |
+| "Compilo `.lin` arbitrário sem Zig em algum lugar da cadeia?" | ❌ | V2 (`compiler0-mvp`) → V5 |
 
 Tudo verificável na CI deste PR: os passos V1 (`test-linbc1`, `roundtrip-linbc1`)
 entram no workflow — primeira prova em CI dos gates G(V1), conforme o rito Q3.
