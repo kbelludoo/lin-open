@@ -1,0 +1,168 @@
+@LIN:L1c:0.2
+@LINVM0_LEXER{version=1 purpose=lin_frontend_lexer_selfhost subset_scope=closed status=EXPERIMENTAL_V2 gates=lex_gate vectors=1}
+
+// ============================================================================
+// LINVM0 compiler front-end, Stage B2 (lexer LIN auto-aplicavel).
+//
+// Segue `docs/COMPILER_0_AS_LINVM_PLAN.rulel` B2: portar primeiro
+// bytes -> tokens para um subset fechado de LIN, e provar que o lexer LIN
+// reproduz os tokens do `vmTokenize` do Stage0 (compiler/lin.zig:5678) de
+// forma bit-exact.
+//
+// Este modulo modela a fonte de teste como uma FONTE EMBUTIDA (`src`, array
+// local de bytes), porque o subconjunto do `lin vm` nao aceita arrays como
+// argumentos de funcao (VM_REJ_ARRAY_AS_SCALAR). O calculo de checksum e um
+// fold i64 que casa com o oraculo independente em Python
+// (`linvm0_compiler/reference_tokenize.py`), que e uma transcricao fiel do
+// `vmTokenize` do Stage0. `lex_gate()` devolve 1 sse o checksum e o numero de
+// tokens batem com o oraculo.
+//
+// Honestidade (R5): ISTO e o INICIO de B2 (lexer, sobre uma fonte de teste
+// embutida). NAO e o compilador pronto: nao ha parser, typecheck, lowerer na
+// mesma cadeia, nem imagem LINBC1 derivada de texto arbitrário aqui. O marco
+// B2 completo — "o lexer LIN recompilando a si mesmo com trace bit-exact" —
+// esta em aberto; este modulo e o primeiro fragmento, EXPERIMENTAL.
+// ============================================================================
+
+// ---- checksum fold do oraculo (i64 wrap): 
+//          h = ((h*31)+kind); th=0; th=((th+byte)*31)...; h=((h*31)+len); h=((h*31)+th)
+
+!lex_scan_embedded() -> int {
+  // fonte de teste: `!proc(a: int) -> int {\n  b = a & 4294967295;\n  ^b;\n}\n`
+  src: [256]int = [33, 112, 114, 111, 99, 40, 97, 58, 32, 105, 110, 116, 41, 32, 45, 62,
+    32, 105, 110, 116, 32, 123, 10, 32, 32, 98, 32, 61, 32, 97, 32, 38,
+    32, 52, 50, 57, 52, 57, 54, 55, 50, 57, 53, 59, 10, 32, 32, 94,
+    98, 59, 10, 125, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  i = 0;
+  n = 53;
+  h = 0;
+  while (i < n) {
+    c = src[i];
+    ?(c == 32 || c == 9 || c == 13 || c == 10) {
+      i = i + 1;
+    } : (c == 47 && i + 1 < n && src[i + 1] == 47) {
+      // comment // until newline
+      while (i < n && src[i] != 10) { i = i + 1; };
+    } : (c == 34) {
+      // string literal (token kind 4); text guardado em curs
+      tstart = i;
+      i = i + 1;
+      while (i < n && src[i] != 34) {
+        ?(src[i] == 92 && i + 1 < n) { i = i + 1; };
+        i = i + 1;
+      };
+      ?(i < n) { i = i + 1; };
+      tlen = i - tstart;
+      h = h * 31 + 4;
+      th = 0;
+      k = 0;
+      while (k < tlen) { th = (th + src[tstart + k]) * 31; k = k + 1; };
+      h = h * 31 + tlen;
+      h = h * 31 + th;
+    } : (c >= 48 && c <= 57) {
+      // number (kind 2)
+      tstart = i;
+      while (i < n && src[i] >= 48 && src[i] <= 57) { i = i + 1; };
+      tlen = i - tstart;
+      h = h * 31 + 2;
+      th = 0;
+      k = 0;
+      while (k < tlen) { th = (th + src[tstart + k]) * 31; k = k + 1; };
+      h = h * 31 + tlen;
+      h = h * 31 + th;
+    } : (lex_is_ident_start(c) == 1) {
+      // ident (kind 1)
+      tstart = i;
+      while (i < n && lex_is_ident_part(src[i]) == 1) { i = i + 1; };
+      tlen = i - tstart;
+      h = h * 31 + 1;
+      th = 0;
+      k = 0;
+      while (k < tlen) { th = (th + src[tstart + k]) * 31; k = k + 1; };
+      h = h * 31 + tlen;
+      h = h * 31 + th;
+    } : {
+      // punct; try two-char puncts (kind 3)
+      tstart = i;
+      ?(i + 1 < n && lex_is_two(src[i], src[i + 1]) == 1) {
+        i = i + 2;
+      } : {
+        i = i + 1;
+      };
+      tlen = i - tstart;
+      h = h * 31 + 3;
+      th = 0;
+      k = 0;
+      while (k < tlen) { th = (th + src[tstart + k]) * 31; k = k + 1; };
+      h = h * 31 + tlen;
+      h = h * 31 + th;
+    };
+  };
+  ^h;
+}
+
+!lex_is_ident_start(c: int) -> int {
+  ?((c >= 97 && c <= 122) || (c >= 65 && c <= 90) || c == 95 || c == 36) { ^1; } : { ^0; };
+}
+
+!lex_is_ident_part(c: int) -> int {
+  ?(lex_is_ident_start(c) == 1 || (c >= 48 && c <= 57)) { ^1; } : { ^0; };
+}
+
+!lex_is_two(a: int, b: int) -> int {
+  ?(a == 61 && b == 61) { ^1; } : (a == 33 && b == 61) { ^1; } : (a == 60 && b == 61) { ^1; } : (a == 62 && b == 61) { ^1; } : (a == 38 && b == 38) { ^1; } : (a == 124 && b == 124) { ^1; } : (a == 45 && b == 62) { ^1; } : { ^0; };
+}
+
+// --- golden vs oraculo Python (reference_tokenize.py) ---
+!lex_scan_expected() -> int {
+  ^1371904279658369433;
+}
+
+!lex_count_embedded() -> int {
+  src: [256]int = [33, 112, 114, 111, 99, 40, 97, 58, 32, 105, 110, 116, 41, 32, 45, 62,
+    32, 105, 110, 116, 32, 123, 10, 32, 32, 98, 32, 61, 32, 97, 32, 38,
+    32, 52, 50, 57, 52, 57, 54, 55, 50, 57, 53, 59, 10, 32, 32, 94,
+    98, 59, 10, 125, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  n = 53;
+  cnt = 0;
+  i = 0;
+  while (i < n) {
+    c = src[i];
+    ?(c == 32 || c == 9 || c == 13 || c == 10) {
+      i = i + 1;
+    } : (c == 47 && i + 1 < n && src[i + 1] == 47) {
+      while (i < n && src[i] != 10) { i = i + 1; };
+    } : (c == 34) {
+      i = i + 1;
+      while (i < n && src[i] != 34) { ?(src[i] == 92 && i + 1 < n) { i = i + 1; }; i = i + 1; };
+      ?(i < n) { i = i + 1; };
+      cnt = cnt + 1;
+    } : (c >= 48 && c <= 57) {
+      while (i < n && src[i] >= 48 && src[i] <= 57) { i = i + 1; };
+      cnt = cnt + 1;
+    } : (lex_is_ident_start(c) == 1) {
+      while (i < n && lex_is_ident_part(src[i]) == 1) { i = i + 1; };
+      cnt = cnt + 1;
+    } : {
+      ?(i + 1 < n && lex_is_two(src[i], src[i + 1]) == 1) { i = i + 2; } : { i = i + 1; };
+      cnt = cnt + 1;
+    };
+  };
+  ^cnt;
+}
+
+!lex_count_expected() -> int {
+  ^20;
+}
+
+!lex_gate() -> int {
+  ok = 0;
+  ?(lex_scan_embedded() == lex_scan_expected() && lex_count_embedded() == lex_count_expected()) {
+    ok = 1;
+  };
+  ^ok;
+}
