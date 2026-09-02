@@ -169,3 +169,26 @@ e pelo workflow de CI.
   fallback de device para CPU, roda → PASS 21/21 bit-exact.
 - **Paridade GPU reclassificada** como teste de conformidade (não prova criptográfica) —
   ver SECURITY_AUDIT.md.
+
+## `make c0-external` — gate do port externo (código clonado do GitHub → LIN)
+
+`test/verify_external_port.sh` mede o caminho completo de um port *de fora* para LIN,
+sem rede e sem exigir toolchain de terceiro:
+
+| # | Perna | O que assera |
+|---|---|---|
+| 1–2 | host C11 | `info` publica 9/9 funções elegíveis com `zig=false`; `mx_scan=899720538059731284`, `mx_tokens=43`, `mx_gate=1` |
+| 3 | fronteira | `boundary.c` (hex `0x1f`, float `1.5e3`) tem que dar `mx_gate=0` — o port **não** cobre isso; se alguém cobrir sem atualizar a documentação da fronteira, o gate falha |
+| 4 | paridade | com `zig-out/bin/lin_native` presente: mesmo valor **e mesmo `steps`** nos dois hosts; sem Zig: `SKIP` explícito, nunca `PASS` emprestado |
+| 5 | congelada | `lin_c0 roundtrip` → `status="CONSENSUS"` (fonte == imagem LINBC1) |
+| 6 | oráculo | `test/fixtures/external_port/ref_oracle.py` (Python puro, nem LIN nem C) re-deriva os goldens |
+| 7 | anti-drift | os `.lin` versionados são byte-idênticos aos saídos de `gen_fixture.py` |
+| 8 | terceiro | com `STB_DIR=<clone de nothings/stb>`, compila `mini_lex.c` contra o `stb_c_lexer.h` **real** e exige igualdade bit a bit |
+
+Origem do exercício: `git clone --depth 1 https://github.com/nothings/stb`
+(commit `2c980bb59875b0d32144a71867fbdebb2f77cd20`, MIT/domínio público). O cabeçalho
+**não** é vendorizado no repositório — a perna 8 é a única que depende dele, e é opt-in.
+
+Sonda de integridade aplicada ao próprio gate: trocar um byte do pool embutido em
+`mx_stb_lin.lin` produz 5 `FAIL` (C11, Zig e a perna 7) e exit 1 — o gate não é decorativo.
+

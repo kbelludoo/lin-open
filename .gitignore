@@ -57,3 +57,16 @@ transpile/c/bin/
 # public roster (lin_gate_roster.rulel) is a repository artifact.
 *.seed
 lin_gate_key*
+
+# artefatos de python — o gate usa python3 como verificador independente; os
+# .py de teste são rastreados (!**/*.py), mas o cache de import não deve ser
+__pycache__/
+*.pyc
+
+# artefatos da auditoria de seguranca de 2026-09-01 (PDF + issues geradas + scripts)
+!docs/security-audit/*.pdf
+!docs/security-audit/*.py
+!docs/security-audit/issues/
+!docs/security-audit/issues/*.md
+# graficos intermediarios do relatorio (regerados a cada execucao)
+docs/security-audit/_chart_*.png

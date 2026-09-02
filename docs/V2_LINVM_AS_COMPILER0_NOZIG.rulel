@@ -1,0 +1,212 @@
+@RULEL:DOC_V2_LINVM_AS_COMPILER0_NOZIG:1.1.0
+~MARKDOWN_SPEC
+# V2 (corte C0-no-Zig) — a LinVM como Compilador 0 quando não há Zig no ambiente
+
+> **Status (R5): EXPERIMENTAL, subconjunto medido.** Entregue: um caminho de
+> compilação/verificação que **não executa Zig em nenhum estágio** e que
+> reproduz, bit a bit, os goldens publicados do Stage0. Não entregue: typecheck
+> completo, MIR/GPU, receipts, ponto fixo C0=C1=C2. Isto **não** promove a LinVM
+> a "compilador do LIN inteiro" — ela hospeda o front-end do subconjunto
+> `LINVM-1/i64`, exatamente o que `lin vm` do Stage0 aceita.
+>
+> Pergunta respondida: *"sem Zig, a cadeia para?"* — antes: sim, parava. Agora:
+> `cc` basta para compilar `.lin`, produzir a imagem `LINBC1` e executá-la com o
+> mesmo bytecode, os mesmos passos e as mesmas rejeições. §7 responde a segunda
+> pergunta, a mais dura: *"e o compilador **escrito em LIN** (#46), precisa de
+> Zig?"* — não precisa: ele roda hospedado por esta LinVM, congela em imagem e
+> se aplica ao próprio texto, medido por `make c0-selfhost`.
+
+---
+
+## 1. O que faltava (levantamento nos branches)
+
+| Branch/PR | O que trouxe | Cobria "sem Zig"? |
+|---|---|---|
+| `arena/01a056e9` (#14) | `docs/LINVM_COMPILER0_PLAN.rulel` — plano VM-cêntrico | não (plano) |
+| `codex/criar-plano-...-linvm` (#17/#25/#39/#45) | `COMPILER_0_AS_LINVM_PLAN`, `COMPILER_0_MIGRATION_ANALYSIS`, host C11 ampliado | não (plano + host) |
+| `arena/01a05833` (#40, no master) | R2b build fix + R6 + **V0/V1**: VM C11 de 33 opcodes, loader `LINBC1` fail-closed, `lin_bc1_run`, emissor LIN da fixture | **parcial**: executa *imagens*, não compila fonte `.lin` |
+| `arena/01a059d8` (#46, aberto) | front-end do compiler0 **em LIN** (`src/linvm0_compiler/`: lexer+expr-eval+lowerer, `linvm0-gate`) | **não** — o gate dele chama `./zig-out/bin/lin_native vm …`, logo exige Zig |
+| `docs/LIN_SEM_ZIG_CAMINHOS.rulel` | separava a pergunta em 3 faixas; **faixa 3 = "AINDA NÃO"** | era o buraco exato |
+
+Conclusão da busca: o *host* e o *loader* existiam; **não existia, em nenhum
+branch, um caminho que compile fonte `.lin` arbitrário sem Zig**. Este corte
+entrega essa peça (faixa 3 → "SIM, subconjunto medido").
+
+## 2. Entregas
+
+| Artefato | LOC | Papel |
+|---|---|---|
+| `transpile/c/tool/lin_c0_front.h/.c` | 1 061 | **front-end**: port fiel de `vmTokenize` (lin.zig:5677), `parse_fn_type_infos` (:5287), `vmArrLenOf`/`vmSigEligible` (:6280/:6291), `VmComp` (:5734-6270), `vmBuild`+`vmResolveDeps` (:6298-6360) e **emissor LINBC1** (`docs/LINBC1_FORMAT.rulel`) |
+| `transpile/c/tool/lin_c0.c` | 325 | CLI `vm`/`info`/`image`/`roundtrip` com a **mesma saída** do `lin vm` do Stage0 (`@RULEL:LIN_VM:1.0.0`, `.coverage{}`, `.fn{}`, `.result{}`, `.refused{}`, `.error{}`) + `.host{}` identificando o emissor |
+| `transpile/c/test/test_c0_front.c` | 237 | 100 asserções: valores/steps/code_len derivados do fonte Zig, 18 rejeições canônicas, determinismo de imagem, mutação de 1 byte rejeitada, limites do host |
+| `test/verify_c0.sh` | — | gate medido contra a fonte do repositório (goldens publicados) |
+| `test/verify_gate_manifest.py` | — | recomputação **independente** da raiz `LIN_GATE_MANIFEST_v1` sem o binário Zig (auto-prova: reproduz a raiz atestada anterior, `410e2a5c…`, 37 arquivos) |
+| `Makefile` (alvos) | — | `c0`, `test-c0`, `c0-gate`, `gate-nozig`; alvos de Stage0 agora falham com **mensagem de rota alternativa** em vez de `zig: not found` |
+| `transpile/c/Makefile` | — | `c0`, `test-c0`, `gate-c0`, `roundtrip-linbc1-noc` |
+
+**TCB do host (meta R6 ≤ 2 500 linhas):** `transpile/c/lin_c/` = **1 826 linhas —
+inalterado**. O front-end mora em `tool/` deliberadamente: o núcleo confiável é o
+interpretador+ABI; o que compila é um programa validado por vetores dourados, e
+não passa a ser digno de confiança por vizinhança de diretório.
+
+## 3. Gates medidos (sandbox sem Zig: `cc` + `python3`, nenhum `zig` no PATH)
+
+Reproduzir: `make c0-gate`.
+
+| Check | Golden publicado | Medido no host C11 |
+|---|---|---|
+| `lin_c0 info src/linvm_selfhost.lin` | cobertura 21/21 OK (`P1_LINVM_SELFHOST.rulel` §3) | `total=21 eligible=21 rejected=0` ✅ |
+| `lin_c0 vm src/linvm_selfhost.lin vms_gate` | `value=1`, `steps=8511500` (`P1` §3, `R2B` tabela) | **idêntico** ✅ |
+| `lin_c0 vm src/lin_linbc_emit.lin lb_selfhash_fold` | `-178321285347216732` (`V1` §2) | **idêntico** ✅ |
+| `lin_c0 vm src/lin_linbc_emit.lin lb_selftest` | `value=1` (`V1` §4) | **idêntico** ✅ |
+| corpus GPU (`test/corpus/gpu_parallel_map_kernels.lin`) | `total=4 eligible=4`; `test_gpu_known_vectors=1 steps=49`; `gpu_map_bitfold 8=72 steps=12`; `gpu_map_affine 21=43`; `gpu_map_mix 5=8` (`P2` §2) | **idêntico** ✅ |
+| `roundtrip vms_udiv 10 3` (fonte → imagem → loader → exec) | — | `CONSENSUS` (valor, 3 170 passos e `sp` iguais nos dois caminhos) ✅ |
+| determinismo da imagem | — | `img_sha256` igual em duas emissões (`8088dbe0938809c5…`) ✅ |
+| `test-c0` (vetores do front-end) | transcritos de `compiler/lin.zig` | **100 checks / 0 falhas** ✅ |
+| `test-linbc1` (loader, T-STR/T-IMG/T-FUZZ) | 33 asserções | ✅ (sem mudança) |
+| `roundtrip-linbc1-noc` | emissor LIN == loader C11 | `CONSENSUS` — e agora **sem `lin_native`** ✅ |
+| `gate-nozig` | raiz do LIN Gate | recomputada em python3, batendo com o manifesto ✅ |
+
+**Varredura de robustez** (medida no mesmo gate): os 44 arquivos `.lin` do repo
+(incluindo os três módulos do front-end em LIN de #46) passam pelo front-end — 302
+funções, 174 elegíveis, 21 módulos com 100 % de cobertura — com **zero crash** e saída sempre um registro `LIN_VM` bem-formado
+(o que está fora do subconjunto sai `REJECTED reason=VM_REJ_*`, nunca segfault nem
+aceitação silenciosa). `SAN=1 ./test/verify_c0.sh` refaz a varredura inteira com
+`-fsanitize=address,undefined -f-sanitize-recover=all` (UBSan/ASan limpos).
+
+O `vms_gate` é o que dá peso à prova: ele exercita os **33 opcodes**, 32
+seletores com valor/passos/traço/sp e 88 varreduras, tudo autoconferido dentro
+do LIN. 8 511 500 passos idênticos significa bytecode instrução a instrução
+idêntico — não "mesma resposta por sorte".
+
+## 4. Contrato e fronteiras (o que é negado explicitamente)
+
+1. **Subconjunto.** O aceito é o que o `lin vm` do Stage0 aceita: i64 com wrap,
+   `if/while/return(^)`, arrays locais `≤ 8 × 256`, chamadas com aridade, sem
+   string, sem I/O, sem `/` inteiro. Rejeições usam os **mesmos** códigos
+   `VM_REJ_*` do Stage0 (nenhum código novo de semântica).
+2. **Limites do host** são limites do host: `C0_LIMIT_TOO_MANY_FNS/TOKENS/INS/
+   NAME` (`C0_MAX_*`). Exceder é recusa determinística, nunca truncamento.
+3. **Nada de `check`.** `lin check` (typechecker completo, 17 k linhas),
+   `lint`, MIR/GPU-IR/OpenCL, `receipt`, `integrity` e `gate-attest` continuam
+   sendo Stage0. O caminho sem Zig não finge ser eles; os alvos que exigem Zig
+   falham com uma mensagem que aponta a rota alternativa.
+4. **Imagem só com cobertura total.** `lin_c0 image` recusa módulo com qualquer
+   função rejeitada (`C0_REJ_MODULE_NOT_PURE`): o formato `LINBC1` não tem como
+   expressar "função que não entrou", e produzir uma imagem que esconde a
+   rejeição seria exatamente o tipo de evidência decorativa que o repo expurga.
+5. **Descoberta registrada (R2b/caveats).** `src/linvm_embedded.lin` **não** é
+   elegível para `lin vm` — nem no Zig: seus blocos `?(c) { x = 1 }` omitem o
+   `;` por statement e o Stage0 responde `VM_REJ_PARSE`; `vm_run` idem, e a
+   rejeição contamina `sq_demo`/`fact_demo`/`linvm_selftest`
+   (`VM_REJ_DEP_REJECTED`). O host C11 reproduz isso *exatamente* (mesmos
+   códigos), o que é a prova de que a fidelidade foi medida e não improvisada.
+   Também por isso `^` após expressão é `bit_xor` (o sigil só vale em posição de
+   statement), e `b = 1` sem `;` falha com `VM_REJ_UNBOUND_IDENT` nos dois hosts
+   — vetor dourado no `test_c0_front.c`.
+
+## 5. Como usar
+
+```sh
+make c0-selfhost        # o compilador ESCRITO EM LIN na LinVM, sem Zig (§7)
+make c0                                   # só cc
+./transpile/c/bin/lin_c0 vm a.lin [fn args...]     # drop-in de `lin vm a.lin`
+./transpile/c/bin/lin_c0 info a.lin               # cobertura + rejeições
+./transpile/c/bin/lin_c0 image a.lin -o a.linbc    # fonte -> imagem congelada
+./transpile/c/bin/lin_c0 roundtrip a.lin fn args    # fonte == imagem, no host
+make c0-gate                             # todos os gates acima
+python3 test/verify_gate_manifest.py     # raiz do LIN Gate sem o binário Zig
+```
+
+Com Zig presente, nada muda: os alvos de Stage0 continuam canônicos e o
+`lin_c0` é um verificador independente a mais (é assim que este corte foi
+medido: o host C11 concorda com os números que o Zig publicou).
+
+## 6. Próximos cortes (para não chamar isto de fim)
+
+1. ~~**C0 sobre `src/linvm0_compiler/*` (PR #46):** portar o `linvm0-gate` para o
+   host C11 — falta o gate deles deixar de chamar `lin_native`.~~ **Entregue em
+   2026-09-01:** o `linvm0-gate` com Zig continua existindo; ao lado dele entrou a
+   porta sem Zig `make c0-selfhost` (§7), que mede as mesmas cinco funções de gate,
+   congela cada módulo em LINBC1 e o reexecuta a partir da imagem.
+2. **Ponto fixo (V3/B3):** `compiler0.linbc` — a imagem desta cadeia
+   recompilando as próprias fontes do front-end e reproduzindo o próprio
+   `SHA-256`. Enquanto não existe, todo resultado daqui é transição
+   experimental (`SHA-256(C0) == SHA-256(C1) == SHA-256(C2)` é o gate).
+3. **Reescrita em LIN do front-end C11** (R0/R3): o caminho de produção deve ser
+   LIN sobre `LINBC1`, não C11; o C11 permanece segundo host e oráculo.
+4. **I/O do host (`host_read/write/exit`, abi 0–2)** para que `check`/`lint`
+   operem sobre arquivos sem Stage0 — hoje não há consumidor no subconjunto.
+5. **CI:** job `compiler0-no-zig` escrito e executado passo a passo localmente, mas
+   **não aplicado**: o token da App não tem escopo `workflows` e o git recusa push de
+   `.github/workflows/*`. O diff está pronto em
+   `docs/CI_COMPILER0_NO_ZIG_JOB_PATCH.rulel` (mesma rotina de
+   `docs/CI_RELEASE_E_V1_GATES_PATCH.rulel`). Enquanto não entrar, o status destes
+   gates é "medido localmente", não "verificado em CI" (rito Q3).
+
+## 7. Auto-aplicação: o compilador **escrito em LIN** roda na LinVM, sem Zig (2026-09-01)
+
+§1–§6 deram à LinVM a *materialização* do Compilador 0 em C11. Esta seção fecha o
+elo seguinte — a pergunta difícil: existe um front-end de compilador **escrito em
+LIN** (#46: `src/linvm0_compiler/lin_lexer_selfhost.lin`,
+`lin_expr_eval.lin`, `lin_lower_selfhost.lin`), mas o gate dele (`verify_linvm0.sh`,
+`make linvm0-gate`) chama `zig-out/bin/lin_native` para `check`/`lint` — a mesma
+barreira de ambiente que motivou este corte. Esse front-end agora roda sob o host
+C11 **sem nenhum passo de Zig**, e o que ele produz pode ser congelado e reexecutado.
+
+Gate: `make c0-selfhost` → `test/verify_c0_selfhost.sh` — 30 verificações, verde em <1 s
+(o mesmo gate com `LIN_C0=` apontando para um host reconstruído com
+`-fsanitize=address,undefined -fno-sanitize-recover=all` também passa, sem diagnóstico)
+com o host construído do zero por `cc` num ambiente que **não tem `zig` no PATH**.
+
+| o que a LinVM executa (host C11, zero Zig) | resultado medido |
+|---|---|
+| `lin_c0 vm src/linvm0_compiler/lin_lexer_selfhost.lin lex_gate` | `value=1` `steps=10097` |
+| `… lex_scan_embedded` / `… lex_count_embedded` | `1371904279658369433` / `20` — idênticos a `reference_tokenize.py` |
+| `lin_c0 vm …/lin_expr_eval.lin xver_gate` | `value=1` `steps=12445` (10/10 vetores xver) |
+| `lin_c0 vm …/lin_lower_selfhost.lin low_gate` | `value=1` `steps=4386`; `code_sha256` == consenso Zig×C11 publicado (`fb10ce57…`) |
+| `lin_c0 image <mod> -o <m>.linbc` | LINBC1 perfil 1: 21051 / 12922 / 7598 B, reproduzível byte a byte; `img_sha256` `bb44a06c…` / `ab7126dd…` / `884c9a72…` |
+| `lin_c0 run <m>.linbc <fn>` | `.result` **idêntico à rota-fonte** em valor e passos: a mesma LinVM executa o bytecode congelado |
+| self-lex: o lexer LIN sobre os 256 primeiros bytes do **próprio** front-end | `lex_gate=1`; checksums `3045357153765650598` (lexer), `3683369026950091959` (expr-eval), `8225996234675508288` (lowerer) == oráculo |
+
+Máquina de suporte (tudo na regra; nada toca o oracle):
+
+- `transpile/c/tool/lin_c0.c: cmd_run` / `bc1_find_fn_strict` — executa uma imagem
+  LINBC1 **congelada** na LinVM e imprime as mesmas linhas `@RULEL:LIN_VM_RUN:1.0.0`
+  da rota-fonte, mais `.host{ route="imagem" img_sha256=… img_bytes=… }` para não
+  restar dúvida de qual rota produziu o número. A busca de função usa `name_len[]`,
+  porque a tabela de nomes não é NUL-terminada (o `strlen` do carregador de confiança
+  só acha o último nome — `docs/LINVM_AS_COMPILER0.rulel` §7.1);
+- `test/lin0_selflex.py` — transplantador de corpus: troca o `src: [256]int` embutido
+  do lexer LIN pelos primeiros ≤256 bytes de qualquer `.lin`, ajusta `n` e regrava
+  `lex_scan_expected`/`lex_count_expected` com o que o **oráculo** mede; o módulo
+  gerado é compilado e executado pela LinVM. É auto-aplicação de verdade com o limite
+  declarado: 256 células é `VM_MAX_ARR_LEN`, a ISA de hoje (o subconjunto não tem I/O
+  de arquivo nem parâmetro-array, então o corpus precisa ser literal embutido);
+- `compiler0_manifest.rulel` + `test/verify_compiler0_manifest.py` — as três imagens
+  pinadas (bytes + auto-digest do formato), a raiz agregada
+  (`leaf = SHA-256("lin:compiler0:leaf:" ‖ module ‖ ":" ‖ bytes ‖ ":" ‖ sha)`, fold
+  sequencial sob `lin:compiler0:node:`), hoje `65823d779874dc0e…`, e o pinnado do
+  self-lex. O verificador **recalcula o self-hash em Python** a partir dos bytes do
+  arquivo (`SHA-256("linbc1:img:" ‖ imagem-sem-os-últimos-32-bytes)`, a regra que o
+  `lin_bc1_load` confia), então o digest publicado não é validado pelo mesmo código
+  que o emitiu;
+- `test/verify_c0_selfhost.sh` — o gate: roda cada função **pelas duas rotas** e exige
+  `.result` idênticos, e imprime `check/lint NÃO verificados (Stage0 ausente)` quando
+  não há `zig-out/bin/lin_native`. Com `LIN_NATIVE=<bin>` ele cruza `zig vm` × `lin_c0
+  vm` e roda `check`/`lint` — bônus, nunca precondição.
+
+O que §7 **não** é (R5):
+
+- não é o ponto fixo: `C0 = C1 = C2` pede o compilador completo em LIN (parser +
+  typecheck + lowering + emissão de LINBC1/C11 a partir do LIN). O que roda em LIN aqui é
+  o front-end semântico (#46): lexer, avaliador de expressões e lowerer como **folds
+  bit-exatos** verificados contra o Stage0. Os *bytes* da imagem LINBC1 são emitidos pelo
+  host (C11), não pelo módulo LIN — o `compiler0.linbc` produzido pelo próprio LIN é o
+  próximo corte;
+- `check`/`lint` continuam Stage0 (portanto `compiler0_manifest.rulel` tem
+  `status="FROZEN_LOCAL"`, não `ATTESTED`, e o `not_claimed` do manifesto diz isso);
+- o corpus do self-lex é limitado a 256 bytes por arranjo pela ISA; não é "qualquer
+  arquivo", e o gate não finge que é;
+- as portas acima são **locais**: o job `compiler0-no-zig` do CI continua pronto em
+  `docs/CI_COMPILER0_NO_ZIG_JOB_PATCH.rulel` e ainda não aplicado (rito Q3).

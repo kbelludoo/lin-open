@@ -1,0 +1,57 @@
+@RULEL:COMPILER0_IMAGES:1.0.0
+~R{.s=subject .i=image .x=selflex .v=verdict}
+// compiler0-em-LIN: as imagens LINBC1 congeladas do front-end escrito em LIN e a
+// auto-aplicação (lexer LIN sobre o texto do próprio front-end). Nada aqui exige
+// Zig: as imagens são produzidas e medidas por `transpile/c/bin/lin_c0` (C11).
+//
+// Como reproduzir / conferir:
+//   make -C transpile/c c0
+//   python3 test/verify_compiler0_manifest.py            # confere .i/.x/.v
+//   python3 test/verify_compiler0_manifest.py --attest   # reatesta .i/.v
+//   ./test/verify_c0_selfhost.sh                         # gate completo (LinVM)
+//
+// img_sha256 = auto-digest do FORMATO: SHA-256("linbc1:img:" || imagem-sem-os-
+// últimos-32-bytes), que é exatamente o que o CARREGADOR confia
+// (`lin_bc1_load`); o verificador o recalcula em Python a partir dos bytes.
+//
+// raiz agregada (`.v.merkle_root`), sobre as imagens NA ORDEM declarada:
+//   leaf_i = SHA-256("lin:compiler0:leaf:" || module || ":" || bytes || ":" || sha256)
+//   r_1 = leaf_1 ;  r_i = SHA-256("lin:compiler0:node:" || r_{i-1} || leaf_i)
+.s{
+  compiler_0 = "linvm0 — front-end escrito em LIN, hospedado pela LinVM C11"
+  host = "transpile/c/bin/lin_c0 (vm | image | run)"
+  image_format = "LINBC1 perfil 1 (docs/LINBC1_FORMAT.rulel)"
+  digest_domain = "linbc1:img:"
+  root_domains = "lin:compiler0:leaf: / lin:compiler0:node:"
+  subset = "LINVM-1/i64 (sem slice, sem ptr, sem array como parâmetro; <=256 células por array)"
+  zig_required = "no"
+}
+.i{
+  .i{
+    module="src/linvm0_compiler/lin_lexer_selfhost.lin" bytes=21051 sha256="bb44a06cfa9fde99c1c3a0eee277bf264874751e3fb355cbe7b018c335cbd469"
+    gate="lex_gate" value=1
+  }
+  .i{
+    module="src/linvm0_compiler/lin_expr_eval.lin" bytes=12922 sha256="ab7126dd6d106b731345be871d00b8b43628582873feb65103343bd39c0b8894"
+    gate="xver_gate" value=1
+  }
+  .i{
+    module="src/linvm0_compiler/lin_lower_selfhost.lin" bytes=7598 sha256="884c9a72d55f02db5aca4e12af3522ea98a234d03fc64ae2e700780624d4fc3d"
+    gate="low_gate" value=1
+  }
+}
+// corpus = primeiros 256 bytes do arquivo (limite da ISA: VM_MAX_ARR_LEN = 256);
+// tokens/checksum = o que o ORÁCULO independente (reference_tokenize.py) mede e o
+// que o lexer LIN escrito em LIN produz quando rodado pela LinVM.
+.x{
+  .x{ target = "src/linvm0_compiler/lin_lexer_selfhost.lin" bytes = 256 tokens = 30 checksum = 3045357153765650598 }
+  .x{ target = "src/linvm0_compiler/lin_expr_eval.lin" bytes = 256 tokens = 30 checksum = 3683369026950091959 }
+  .x{ target = "src/linvm0_compiler/lin_lower_selfhost.lin" bytes = 256 tokens = 30 checksum = 8225996234675508288 }
+}
+.v{
+  images = 3
+  merkle_root = "sha256:65823d779874dc0e3a4543d32abdc9818e0e7d90897df90ed5d02a6eb74f0b08"
+  status = "FROZEN_LOCAL"
+  evidence_status = "COMPUTED"
+  not_claimed = "ponta B não fecha aqui: check/lint continuam Stage0; C0=C1=C2 exige o compilador completo em LIN; corpus do self-lex limitado a 256 bytes pela ISA; os bytes do LINBC1 são emitidos pelo HOST (C11), não pelo módulo LIN"
+}

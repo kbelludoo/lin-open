@@ -165,3 +165,142 @@ equivalente funcional ao ACC 261473 do referencial v1 — o que importa e a pari
 
 Suite apos esta etapa: **26 passed / 0 failed**.
 Artefatos: /tmp/opencode/linmem2/ (fontes emitidos + drivers + medicoes).
+
+---
+
+## C0-no-Zig — a LinVM vira Compilador 0 onde não há Zig (2026-09-01)
+
+Levantamento prévio em todos os branches: o host C11 (V1) sabia **executar imagens**
+`LINBC1`, e o PR #46 escreveu o front-end do compiler0 **em LIN** — mas o gate dele
+invoca `zig-out/bin/lin_native`, então nenhum branch fechava a pergunta
+"e se não houver Zig?". `docs/LIN_SEM_ZIG_CAMINHOS.rulel` respondia faixa 3 = "AINDA NÃO".
+
+### O que entrou
+
+- `transpile/c/tool/lin_c0_front.{h,c}` — port fiel de `vmTokenize` + `parse_fn_type_infos`
+  + `VmComp` + `vmBuild` + `vmResolveDeps`: fonte `.lin` → bytecode canônico, com os mesmos
+  códigos `VM_REJ_*` do Stage0, e emissor `LINBC1` (perfil 1) que só produz imagem quando o
+  módulo tem cobertura total.
+- `transpile/c/tool/lin_c0.c` — CLI `vm`/`info`/`image`/`roundtrip`, saída idêntica ao
+  `lin vm` do Stage0 mais uma linha `.host{}` que declara quem emitiu.
+- `transpile/c/test/test_c0_front.c` — 100 asserções transcritas do fonte Zig (valores,
+  passos, code_len, 18 rejeições, determinismo de imagem, mutação de 1 byte, limites do host).
+- `test/verify_c0.sh` — gate medido contra a fonte do repo; `test/verify_gate_manifest.py` —
+  recomputação independente da raiz `LIN_GATE_MANIFEST_v1` em python3 (reproduz a raiz
+  anterior, `410e2a5c…`, antes de ser usada).
+- `Makefile` (+`c0`, `test-c0`, `c0-gate`, `gate-nozig`; alvos de Stage0 agora falham com a
+  rota alternativa impressa) e `transpile/c/Makefile` (`c0`, `test-c0`, `gate-c0`,
+  `roundtrip-linbc1-noc`).
+
+### Medido (sandbox sem nenhum `zig` no PATH; só `cc` + `python3`)
+
+| Golden publicado pelo Zig | Host C11 |
+|---|---|
+| `vms_gate` = 1 em 8 511 500 passos (P1 §3) | idêntico |
+| cobertura `linvm_selfhost` 21/21 OK | idêntico |
+| `lb_selfhash_fold` = -178321285347216732 (V1 §2) | idêntico |
+| corpus GPU: `test_gpu_known_vectors`=1/49, `gpu_map_bitfold 8`=72/12, `gpu_map_affine 21`=43, `gpu_map_mix 5`=8 (P2 §2) | idêntico |
+| round-trip fonte→imagem→loader→exec | `CONSENSUS` (3 170 passos nos dois caminhos) |
+| `test_c0_front` | 100 checks / 0 falhas |
+
+TCB: `transpile/c/lin_c/` continua **1 826 linhas** (meta R6 ≤ 2 500) — o front-end foi para
+`tool/` porque é compilador, não runtime confiável; sua credencial é o vetor dourado, não o
+diretório.
+
+### Descoberta registrada (não é defeito novo; vale para os dois hosts)
+
+`src/linvm_embedded.lin` **não é elegível para `lin vm`**: `?(c) { x = 1 }` sem `;` por
+statement ⇒ `VM_REJ_PARSE`, e a rejeição contamina os chamadores
+(`VM_REJ_DEP_REJECTED`). Idem em Zig. E `b = 1` sem `;` seguido de `^b` falha com
+`VM_REJ_UNBOUND_IDENT` porque `^` ali é `bit_xor`, não o sigil — ambos viraram vetores.
+
+### Não é (R5)
+
+Nada de typecheck completo/`check`, `lint`, MIR/GPU, receipts ou `integrity` sem Zig; nada de
+ponto fixo C0=C1=C2. Caminho marcado **EXPERIMENTAL** até o gate V3
+(`docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel`).
+
+---
+
+## C0-no-Zig (cont.) — o compilador **escrito em LIN** roda na LinVM (2026-09-01)
+
+Pergunta seguinte à seção anterior: o compiler0 que já existe **em LIN** (PR #46,
+`src/linvm0_compiler/`) pode ser compilado pelo LinVM num ambiente sem Zig? Sim — e é o
+que entra aqui. #46 foi trazido por `merge --no-ff` (`293834b3`) e o gate dele, que chamava
+`zig-out/bin/lin_native`, ganhou uma porta sem Zig.
+
+### O que entrou
+
+- `test/verify_c0_selfhost.sh` (`make c0-selfhost`) — 30 verificações: as cinco funções de
+  gate de #46 medidas pela LinVM C11 (`lex_gate=1`/10097 passos,
+  `lex_scan_embedded=1371904279658369433`, `lex_count_embedded=20`, `xver_gate=1`/12445,
+  `low_gate=1`/4386), os oráculos `reference_tokenize.py`/`reference_lower.py` como
+  testemunha, cada módulo congelado em LINBC1 e **reexecutado a partir da imagem**, e o
+  self-lex com as duas rotas batendo.
+- `transpile/c/tool/lin_c0.c` — `image` com parsing de opções consertado (`-o` era
+  silenciosamente ignorado) e o verbo novo `run <imagem.linbc> <fn> [args…]`: executa a
+  imagem congelada na LinVM imprimindo o mesmo `@RULEL:LIN_VM_RUN` da rota-fonte e
+  `.host{ route="imagem" img_sha256=… }`. Busca de função por `name_len[]` (a pool de nomes
+  não é NUL-terminada: o `strlen` do carregador de confiança só acha o último nome).
+- `test/lin0_selflex.py`, `compiler0_manifest.rulel`, `test/verify_compiler0_manifest.py` —
+  auto-aplicação medida e pinada: imagens `21051 / 12922 / 7598 B` (auto-digest
+  `linbc1:img:` **recalculado em Python** a partir dos bytes, não pelo emissor), raiz
+  agregada `lin:compiler0:leaf:`/`lin:compiler0:node:` = `sha256:65823d779874dc0e…`, corpus
+  do self-lex = os 256 primeiros bytes do **próprio** front-end (limite `VM_MAX_ARR_LEN`
+  da ISA, declarado no manifesto e no cabeçalho do módulo gerado).
+- `Makefile`: `c0-selfhost`, `c0-images-attest`, e `c0-gate` passa a rodar a porta
+  self-host. `docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel` v1.1.0 ganha §7;
+  `docs/LINVM0_V2_FRONTIER.rulel` ganha a nota de que o gate de #46 tem porta sem Zig;
+  `docs/LIN_SEM_ZIG_CAMINHOS.rulel` 1.2.0 lista a porta. `lin_gate_manifest.rulel`
+  reatestado: 41 arquivos, raiz `sha256:ee1e54337fd1ba8d…`.
+
+### Medido (sandbox sem nenhum `zig` no PATH)
+
+| Porta | Resultado |
+|---|---|
+| `make c0-selfhost` | **PASS** — 30 verificações, 0 falhas, <1 s |
+| imagens do front-end | reproduzíveis byte a byte; rota imagem ≡ rota fonte em valor **e** passos |
+| self-lex nos 3 módulos | `lex_gate=1`; checksums `3045357153765650598` / `3683369026950091959` / `8225996234675508288` == oráculo |
+| negativo: `sha256` do manifesto trocado / golden do gate trocado | rc=1 e `FAIL` — os pins não são decorativos |
+| `test/verify_c0.sh` | 16 verificações; varredura: 44 arquivos `.lin`, 302 funções, 174 elegíveis, 21 com 100 % |
+
+### Não é (R5)
+
+Não é o ponto fixo `C0=C1=C2`: o que roda em LIN é o front-end semântico de #46 (lexer,
+avaliador de expressões e lowerer como folds bit-exatos verificados contra o Stage0); os
+*bytes* do LINBC1 continuam sendo emitidos pelo host C11, e `check`/`lint` seguem Stage0 —
+por isso o manifesto das imagens declara `status="FROZEN_LOCAL"`, não `ATTESTED`. O PR #55
+carrega os arquivos de #46 até o #46 entrar na master.
+
+## 2026-09-01 — decisão registrada: LINBC1 é o contrato, C11 é o host padrão, LIN é o compilador
+
+Decisão de arquitetura em `docs/DECISAO_C11_HOST_LIN_COMPILADOR.rulel`: **não** se troca Zig por
+um compilador LIN escrito em C agora. O C11 fica como host padrão (executa a imagem congelada e o
+subconjunto `LINVM-1/i64`, com a fronteira impressa pelo próprio CLI em `tool/lin_c0.c:365`), o
+contrato é o formato LINBC1, e as decisões semânticas continuam em LIN. Zig permanece
+semente/oráculo até a conjunção de quatro critérios: frontend completo em LIN, ponto fixo
+**+** DDC com raízes iguais nos dois hosts, `compiler0_manifest` `ATTESTED`, e âncora de
+confiança pinada fora do artefato (achados F-01/F-02 da auditoria de 2026-09-01) — sem o último,
+o ponto fixo é reprodutível mas auto-declarado. O único destravamento real é a entrega V1 do
+plano: `host_read`/`host_write`/`host_exit` do `HOST-ABI-1` no host C11 (`docs/HOST_ABI_1.rulel`,
+ainda `PROPOSED`); a issue está pronta para colar na seção 6 do documento. `transpile/c/README.md`
+foi corrigido: ele se descrevia como "Slice 1" (pipeline de expressões) e não mencionava o host
+C11 + front do subconjunto que existem desde o corte C0-no-Zig.
+
+## 2026-09-01 — gate do port externo: código clonado do GitHub → LIN (`make c0-external`)
+
+Primeira vez que código de **fora** do repositório percorre a cadeia inteira: clonei
+`github.com/nothings/stb` (`2c980bb59875…`), compilei o `stb_c_lexer.h` upstream com `cc`
+sobre um corpus de 162 bytes, transcrevi o contrato de tokenização para LIN
+(`test/fixtures/external_port/mx_stb_lin.lin`, gerado por `gen_fixture.py`) e executei nos
+dois hosts: C11 (`lin_c0`, zero Zig) e Zig (`lin_native`) deram **o mesmo valor e o mesmo
+`steps`** (fold `899720538059731284`, 43 tokens, `steps=17047`), e a rota congelada
+`.lin → LINBC1 → exec da imagem` fechou em `CONSENSUS`. Um terceiro cálculo independente em
+Python (`ref_oracle.py`) re-deriva os mesmos números sem LIN e sem C. O caso de fronteira
+(`boundary.c`: `0x1f`, `1.5e3`) tem `mx_gate=0` por construção — hex/float/sufixos **não** são
+da fatia — e `test/verify_external_port.sh` exige esse 0, para que cobri-los sem atualizar a
+documentação da fronteira falhe alto. Nada foi vendorizado (o header de terceiro é opt-in via
+`STB_DIR`) e nada tocou os escopos do `lin_gate_manifest.rulel` (`compiler/`,
+`transpile/c/{lin_c,tool,test}`), então a raiz do gate não mudou: `c0-gate` verde,
+`GATE OPEN`, `COMPILER0-MANIFEST: PASS`.
+

@@ -1,6 +1,7 @@
 # Union of both sides: master's attestation/gate targets and the cryptanalysis
 # gate targets added on this branch.
-.PHONY: all build build-gpu build-cpu test test-cpu lint clean \
+.PHONY: all build build-gpu build-cpu test test-cpu lint clean c0 test-c0 c0-gate c0-selfhost \
+        c0-images-attest gate-nozig \
         crypto256-real crypto256-audit \
         attestation-gate guard-unit xver gate gate-attest ci-gate \
         linvm0-gate
@@ -27,6 +28,26 @@
 #                         mints the key and the public roster it verifies against)
 #   make ci-gate      -> the whole PR gate (gate + honesty + N-Version + integrity)
 
+# ---- seleção do Compilador 0 -------------------------------------------------
+# Com Zig no ambiente o Compilador 0 é o Stage0 (compiler/lin.zig): verificador
+# de tipos completo, MIR, GPU, receipts. Sem Zig, a cadeia não para — ela cai no
+# Compilador 0 da LinVM: o host C11 (`lin_c0`) compila o subconjunto
+# LINVM-1/i64 e reproduz, bit a bit, os goldens medidos no Stage0.
+#   make c0        -> constrói o host (só precisa de cc)
+#   make c0-gate   -> provas do caminho sem Zig (docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel)
+#   make c0-selfhost -> o COMPILADOR escrito em LIN rodando na LinVM, sem Zig
+#                       (front-end de #46 + imagens LINBC1 congeladas + self-lex)
+#   make gate-nozig -> recomputa a raiz do LIN Gate em python3, sem binário Zig
+ZIG_FOUND := $(shell command -v zig >/dev/null 2>&1 && echo 1 || echo 0)
+ZIG_GUARD = @if [ "$(ZIG_FOUND)" != 1 ]; then \
+  echo "zig não existe neste ambiente — este alvo constrói o Stage0 Zig."; \
+  echo "Sem Zig, o Compilador 0 é a LinVM (host C11, só precisa de cc):"; \
+  echo "  make c0 && make c0-gate"; \
+  echo "Fronteira honesta: subconjunto LINVM-1/i64; nada de typecheck/MIR/GPU/receipts."; \
+  echo "Especificação: docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel"; \
+  exit 127; \
+fi
+
 BUILD_GPU := zig build -Doptimize=ReleaseFast
 BUILD_CPU := zig build -Dgpu=false -Doptimize=ReleaseFast
 BIN := zig-out/bin/lin_native
@@ -36,9 +57,11 @@ all: test
 build: build-gpu
 
 build-gpu:
+	$(ZIG_GUARD)
 	$(BUILD_GPU)
 
 build-cpu:
+	$(ZIG_GUARD)
 	$(BUILD_CPU)
 
 # CPU checks that need no GPU hardware (they only need a linked binary):
@@ -77,7 +100,54 @@ test-cpu: build-cpu
 
 # Unit tests for the guard table itself (no build required).
 guard-unit:
+	$(ZIG_GUARD)
 	zig test compiler/lin_attestation_guard.zig
+
+# --------------------------------------------------------------------------
+# COMPILADOR 0 = LinVM (host C11). Nenhum Zig em parte alguma.
+#
+#   make c0         -> constrói transpile/c/bin/lin_c0 (vm/info/image/roundtrip)
+#   make test-c0    -> vetores dourados transcritos do Stage0
+#   make c0-gate    -> goldens publicados reproduzidos sem Zig + gate do loader
+#                      LINBC1 + round-trip fonte->imagem->host + consenso de fold
+#   make gate-nozig -> recomputa a raiz do LIN Gate (python3) sem o binário Zig
+#
+# Uso diário, sem Zig:  ./transpile/c/bin/lin_c0 vm arquivo.lin [fn args...]
+# substitui `lin vm`. `lin check`, `lin lint`, receipts e o pipeline GPU
+# continuam exigindo o Stage0: o caminho sem Zig NÃO finge ser eles.
+# --------------------------------------------------------------------------
+.PHONY: c0 test-c0 c0-gate c0-external gate-nozig
+c0:
+	@$(MAKE) -C transpile/c c0
+
+test-c0:
+	@$(MAKE) -C transpile/c test-c0
+
+# compiler0-em-LIN, sem Zig: o front-end escrito EM LIN (#46, src/linvm0_compiler/)
+# roda na LinVM hospedada pelo host C11, congela como imagem LINBC1 e se aplica ao
+# próprio texto. A porta COM Zig do mesmo front-end é `make linvm0-gate` (usa
+# check/lint do Stage0); a porta SEM Zig é esta — nenhuma das duas precisa de mim.
+c0-selfhost:
+	@bash test/verify_c0_selfhost.sh
+
+## reatesta o manifesto das imagens do compiler0-em-LIN (compiler0_manifest.rulel)
+c0-images-attest: c0
+	@python3 test/verify_compiler0_manifest.py --attest
+
+c0-gate:
+	@$(MAKE) -C transpile/c c0 test-c0 test-linbc1 test-edges test-sha256
+	@./test/verify_c0.sh transpile/c/bin/lin_c0
+	@bash test/verify_c0_selfhost.sh
+	@$(MAKE) -C transpile/c roundtrip-linbc1-noc
+	@echo "c0-gate: Compilador 0 (LinVM/C11) verde — nenhum Zig foi executado"
+
+# Port EXTERNO (codigo clonado do GitHub -> LIN) com paridade C11/Zig e oraculo proprio.
+# Opcionalmente compara com o lexer C de terceiro: STB_DIR=/caminho/stb make c0-external
+c0-external: c0
+	@./test/verify_external_port.sh
+
+gate-nozig:
+	@python3 test/verify_gate_manifest.py
 
 # Standalone run of the attestation honesty specification (includes the
 # N-Version cross-check, which builds transpile/c itself).

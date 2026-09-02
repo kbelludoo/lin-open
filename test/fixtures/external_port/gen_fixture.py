@@ -1,0 +1,188 @@
+#!/usr/bin/env python3
+"""
+gen_fixture.py — gera os dois modulos LIN do gate externo a partir de um corpus.
+
+O corpus e embutido como pool `src: [256]int` (o `lin vm` nao tem I/O de arquivo
+e o limite de array e 256 — mesmo truque do `lex_scan_embedded` em
+`src/linvm0_compiler/lin_lexer_selfhost.lin`). NADA aqui usa Zig.
+
+Uso:
+    python3 gen_fixture.py corpus.c mx_stb_lin.lin 899720538059731284 43
+    python3 gen_fixture.py boundary.c mx_stb_lin_boundary.lin -1320994109422618346 8
+
+Os dois numeros no final sao o que `mx_gate` vai COMPARAR (nao o que a fatia
+produz). E isso que faz `mx_stb_lin_boundary.lin` devolver 0: ele carrega a
+resposta do lexer C upstream, que a fatia LIN ainda nao reproduz.
+"""
+import sys
+
+LIN = '''@LIN:L1c:0.2
+@LINVM0_EXTPORT{version=1 purpose=poc_clonado_github_stb corpus=@FILE@ status=GENERATED_BY_gen_fixture.py hosts=zig,c11}
+
+// ============================================================================
+// GERADO por `gen_fixture.py` a partir de `@FILE@` (nao edite a mao).
+//
+// Um lexer LIN para uma classe fechada de tokens, escrito a partir do contrato
+// do `stb_c_lexer.h` clonado de github.com/nothings/stb (commit 2c980bb59875b0
+// d32144a71867fbdebb2f77cd20). Fold por token, i64-wrap:
+//     th = ((th + byte) * 31) para cada byte do span;  h = h*31+kind; h = h*31+len; h = h*31+th
+// kinds: 1=identificador, 2=inteiro decimal, 4=string aspas duplas,
+//        9=operador de 2/3 bytes, 100+byte=pontuacao de 1 byte.
+//
+// Honestidade (R5): a fatia cobre @NOTE@ NAO cobre hex (0x1f), float com
+// expoente (1.5e3), sufixos uUlL nem diretivas de preprocessor -- ver
+// `mx_stb_lin_boundary.lin`, cujo `mx_gate` DEVOLVERIA 0 se comparado ao
+// upstream. Nao e um lexer de C, e nao e o compilador LIN.
+// ============================================================================
+
+!mx_is_ws(c: int) -> int { ?(c == 32 || c == 9 || c == 13 || c == 10) { ^1; }; ^0; }
+!mx_is_digit(c: int) -> int { ?(c >= 48 && c <= 57) { ^1; }; ^0; }
+!mx_is_id_start(c: int) -> int { ?(c == 95 || c == 36 || (c >= 65 && c <= 90) || (c >= 97 && c <= 122)) { ^1; }; ^0; }
+!mx_is_id_cont(c: int) -> int { ?(mx_is_id_start(c) == 1 || mx_is_digit(c) == 1) { ^1; }; ^0; }
+!mx_is_ms(a: int, b: int) -> int { ?(a == 42 && b == 47) { ^1; }; ^0; }
+
+// comprimento de operador de 2/3 bytes (kind 9); 0 => pontuacao de 1 byte
+!mx_pair_len(a: int, b: int, c: int) -> int {
+  ?(b < 0) { ^0; };
+  ?(a == 60 && b == 60 && c == 61) { ^3; };
+  ?(a == 62 && b == 62 && c == 61) { ^3; };
+  ?(a == 61 && b == 61) { ^2; };
+  ?(a == 33 && b == 61) { ^2; };
+  ?(a == 60 && (b == 61 || b == 60)) { ^2; };
+  ?(a == 62 && (b == 61 || b == 62)) { ^2; };
+  ?(a == 38 && (b == 38 || b == 61)) { ^2; };
+  ?(a == 124 && (b == 124 || b == 61)) { ^2; };
+  ?(a == 43 && (b == 43 || b == 61)) { ^2; };
+  ?(a == 45 && (b == 45 || b == 62 || b == 61)) { ^2; };
+  ?((a == 94 || a == 37 || a == 42 || a == 47) && b == 61) { ^2; };
+  ^0;
+}
+
+!mx_scan() -> int {
+  src: [256]int = [@POOL@];
+  n = @N@;
+  i = 0; h = 0;
+  while (i < n) {
+    c = src[i]; tstart = i; kind = 0; tlen = 1;
+    ?(mx_is_ws(c) == 1) { i = i + 1; }
+    : (c == 47 && i + 1 < n && src[i + 1] == 47) {
+      while (i < n && src[i] != 10) { i = i + 1; };
+    }
+    : (c == 47 && i + 1 < n && src[i + 1] == 42) {
+      i = i + 2;
+      while (i + 1 < n && mx_is_ms(src[i], src[i + 1]) == 0) { i = i + 1; };
+      i = i + 2;
+    }
+    : (c == 34) {
+      i = i + 1;
+      while (i < n && src[i] != 34) { ?(src[i] == 92 && i + 1 < n) { i = i + 1; }; i = i + 1; };
+      ?(i < n) { i = i + 1; };
+      kind = 4; tlen = i - tstart;
+    }
+    : (mx_is_digit(c) == 1) {
+      while (i < n && mx_is_digit(src[i]) == 1) { i = i + 1; };
+      kind = 2; tlen = i - tstart;
+    }
+    : (mx_is_id_start(c) == 1) {
+      while (i < n && mx_is_id_cont(src[i]) == 1) { i = i + 1; };
+      kind = 1; tlen = i - tstart;
+    }
+    : (1 == 1) {
+      b = -1; cc = -1;
+      ?(i + 1 < n) { b = src[i + 1]; };
+      ?(i + 2 < n) { cc = src[i + 2]; };
+      pl = mx_pair_len(c, b, cc);
+      ?(pl == 0) { kind = 100 + c; tlen = 1; } : (1 == 1) { kind = 9; tlen = pl; };
+      i = tstart + tlen;
+    }
+    ?(kind > 0) {
+      th = 0; k = 0;
+      while (k < tlen) { th = (th + src[tstart + k]) * 31; k = k + 1; };
+      h = h * 31 + kind; h = h * 31 + tlen; h = h * 31 + th;
+    } : (1 == 1) { };
+  };
+  ^h;
+}
+
+!mx_tokens() -> int {
+  src: [256]int = [@POOL@];
+  n = @N@;
+  i = 0; nt = 0;
+  while (i < n) {
+    c = src[i]; kind = 0;
+    ?(mx_is_ws(c) == 1) { i = i + 1; }
+    : (c == 47 && i + 1 < n && src[i + 1] == 47) {
+      while (i < n && src[i] != 10) { i = i + 1; };
+    }
+    : (c == 47 && i + 1 < n && src[i + 1] == 42) {
+      i = i + 2;
+      while (i + 1 < n && mx_is_ms(src[i], src[i + 1]) == 0) { i = i + 1; };
+      i = i + 2;
+    }
+    : (c == 34) {
+      i = i + 1;
+      while (i < n && src[i] != 34) { ?(src[i] == 92 && i + 1 < n) { i = i + 1; }; i = i + 1; };
+      ?(i < n) { i = i + 1; };
+      kind = 4;
+    }
+    : (mx_is_digit(c) == 1) {
+      while (i < n && mx_is_digit(src[i]) == 1) { i = i + 1; };
+      kind = 2;
+    }
+    : (mx_is_id_start(c) == 1) {
+      while (i < n && mx_is_id_cont(src[i]) == 1) { i = i + 1; };
+      kind = 1;
+    }
+    : (1 == 1) {
+      b = -1; cc = -1;
+      ?(i + 1 < n) { b = src[i + 1]; };
+      ?(i + 2 < n) { cc = src[i + 2]; };
+      pl = mx_pair_len(c, b, cc);
+      ?(pl == 0) { kind = 100 + c; } : (1 == 1) { kind = 9; };
+      ?(pl == 0) { i = i + 1; } : (1 == 1) { i = i + pl; };
+    }
+    ?(kind > 0) { nt = nt + 1; } : (1 == 1) { };
+  };
+  ^nt;
+}
+
+// compara o que a fatia produz com a EXPECTATIVA PUBLICADA (value/tokens do
+// arquivo @EXPECT@). Para `corpus.c` a expectativa e o que o C upstream mediu
+// => 1. Para `boundary.c` a expectativa tambem e a do upstream, que a fatia nao
+// reproduz => 0, e o gate abaixo EXIGE 0.
+!mx_gate() -> int {
+  ok = 0;
+  ?(mx_scan() == @EXPECT_VAL@ && mx_tokens() == @EXPECT_TOK@) { ok = 1; };
+  ^ok;
+}
+
+=ex{mx_scan, mx_tokens, mx_gate, mx_is_ws, mx_is_digit, mx_is_id_start, mx_is_id_cont, mx_is_ms, mx_pair_len}
+'''
+
+
+def pool_of(data):
+    vals = list(data) + [0] * (256 - len(data))
+    lines = []
+    for j in range(0, 256, 16):
+        lines.append('    ' + ', '.join(str(v) for v in vals[j:j + 16]) + ',')
+    return '\n'.join(lines).rstrip(',')
+
+
+def main():
+    src_path, out_path, expect_val, expect_tok = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+    data = open(src_path, 'rb').read()
+    if len(data) > 256:
+        raise SystemExit('gen_fixture: corpus com %d bytes excede o array de 256' % len(data))
+    note = 'identificadores, inteiros decimais, strings com escape, comentario // e /* */,' \
+           ' operadores de 2/3 bytes e pontuacao de 1 byte.'
+    txt = (LIN.replace('@POOL@', pool_of(data)).replace('@N@', str(len(data)))
+              .replace('@FILE@', src_path.split('/')[-1]).replace('@NOTE@', note)
+              .replace('@EXPECT_VAL@', expect_val).replace('@EXPECT_TOK@', expect_tok)
+              .replace('@EXPECT@', src_path.split('/')[-1]))
+    open(out_path, 'w').write(txt)
+    print('gerado %s (%d bytes de corpus, expectativa %s/%s)'
+          % (out_path.split('/')[-1], len(data), expect_val, expect_tok))
+
+
+if __name__ == '__main__':
+    main()
