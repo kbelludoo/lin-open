@@ -152,6 +152,63 @@ static int cmd_vm(int argc, char **argv) {
     return 0;
 }
 
+
+/* Busca exata pelo nome usando name_len[] do loader: o pool LINBC1 não é
+ * NUL-terminado, então `strlen` (como faz lin_bc1_find_fn) só é seguro no
+ * último nome da seção. Aqui é comparação por comprimento — correta sempre. */
+static int bc1_find_fn_strict(const LinBc1Vm *m, const char *name) {
+    size_t want = strlen(name), i;
+    for (i = 0; i < m->mod.fns_len; i++)
+        if ((size_t)m->name_len[i] == want && memcmp(m->mod.fns[i].name, name, want) == 0)
+            return (int)i;
+    return -1;
+}
+
+/* `lin_c0 run <imagem.linbc> <fn> [args]` — executa a IMAGEM congelada na LinVM.
+ * Mesmas linhas de saída de `vm`, para que o gate compare as duas rotas byte a
+ * byte sem depender do nome do emissor. */
+static int cmd_run(int argc, char **argv) {
+    static uint8_t img[C0_IMG_CAP];
+    static LinBc1Vm vm;
+    FILE *f;
+    size_t len, i, nargs = 0;
+    int64_t args64[64];
+    int fi;
+    uint64_t steps = 0;
+    VmExecResult r;
+    LinErr e;
+    LinBc1Err le;
+    uint8_t hex[65];
+
+    if (argc < 4) { fprintf(stderr, "usage: lin_c0 run <image.linbc> <fn> [int args...]\n"); return 2; }
+    f = fopen(argv[2], "rb");
+    if (!f) { fprintf(stderr, "lin_c0: cannot read image: %s\n", argv[2]); return 1; }
+    len = fread(img, 1, sizeof img, f);
+    fclose(f);
+    if (len == 0 || len == sizeof img) { fprintf(stderr, "lin_c0: bad image size\n"); return 1; }
+    le = lin_bc1_load(img, len, &vm);
+    if (le != LIN_BC1_OK) {
+        printf("@RULEL:LIN_VM_RUN:1.0.0\n.error{ code=\"linbc1.%s\" }\n", lin_bc1_err_name(le));
+        return 1;
+    }
+    fi = bc1_find_fn_strict(&vm, argv[3]);
+    if (fi < 0) { fprintf(stderr, "run: unknown function: %s\n", argv[3]); return 1; }
+    for (i = 4; i < (size_t)argc && nargs < 64; i++) args64[nargs++] = strtoll(argv[i], 0, 10);
+    e = vm_exec(&vm.mod, (size_t)fi, args64, nargs, 0, &steps, &r);
+    lin_sha256_hex(vm.img_sha256, (char *)hex);
+    printf("@RULEL:LIN_VM_RUN:1.0.0\n");
+    if (e != LIN_OK) {
+        printf(".error{ fn=\"%s\" code=\"%s\" steps=%llu }\n", argv[3], c0_err_name(e),
+               (unsigned long long)steps);
+    } else {
+        printf(".result{ fn=\"%s\" value=%lld steps=%llu }\n", argv[3],
+               (long long)r.val, (unsigned long long)steps);
+    }
+    printf(".host{ engine=\"C11-lin_c0\" route=\"imagem\" img_sha256=\"%s\" img_bytes=%zu }\n",
+           (char *)hex, len);
+    return e == LIN_OK ? 0 : 1;
+}
+
 /* ---- imagem LINBC1 ------------------------------------------------------- */
 static int build_image(C0Module *mod, uint8_t *img, size_t *img_len) {
     C0Image ci;
@@ -173,6 +230,7 @@ static int cmd_image(int argc, char **argv) {
     size_t len, img_len = 0;
     const char *out_path = 0;
     int want_hex = 0, k;
+    const char *path = 0;
     uint8_t hex[65];
     LinBc1Err le;
     static LinBc1Vm vm;
@@ -180,13 +238,17 @@ static int cmd_image(int argc, char **argv) {
     for (k = 2; k < argc; k++) {
         if (strcmp(argv[k], "-o") == 0 && k + 1 < argc) { out_path = argv[++k]; continue; }
         if (strcmp(argv[k], "--hex") == 0) { want_hex = 1; continue; }
-        break;
+        if (argv[k][0] == '-') {
+            fprintf(stderr, "lin_c0 image: opção desconhecida: %s\n", argv[k]);
+            return 2;
+        }
+        if (!path) path = argv[k];
     }
-    if (k >= argc || strcmp(argv[1], "image") != 0) {
+    if (!path) {
         fprintf(stderr, "usage: lin_c0 image <file.lin> [-o out.bin] [--hex]\n");
         return 2;
     }
-    if (!read_file(argv[k], &src, &len)) { fprintf(stderr, "lin_c0: cannot read %s\n", argv[k]); return 1; }
+    if (!read_file(path, &src, &len)) { fprintf(stderr, "lin_c0: cannot read %s\n", path); return 1; }
     c0_build(src, len, &mod);
     if (mod.fatal) { printf("@RULEL:LIN_C0_IMAGE:1.0.0\n.fatal{ reason=\"%s\" }\n", mod.fatal); return 1; }
     {
@@ -315,6 +377,7 @@ int main(int argc, char **argv) {
         return mod.fatal ? 1 : 0;
     }
     if (strcmp(argv[1], "image") == 0) return cmd_image(argc, argv);
+    if (strcmp(argv[1], "run") == 0) return cmd_run(argc, argv);
     if (strcmp(argv[1], "roundtrip") == 0) return cmd_roundtrip(argc, argv);
     if (strcmp(argv[1], "--version") == 0) {
         printf("@RULEL:LIN_C0:1.0.0\n.engine{ name=\"C11-lin_c0\" compiler_0=\"linvm\" zig=false }\n");

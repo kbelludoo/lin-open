@@ -1,4 +1,4 @@
-@RULEL:DOC_V2_LINVM_AS_COMPILER0_NOZIG:1.0.0
+@RULEL:DOC_V2_LINVM_AS_COMPILER0_NOZIG:1.1.0
 ~MARKDOWN_SPEC
 # V2 (corte C0-no-Zig) — a LinVM como Compilador 0 quando não há Zig no ambiente
 
@@ -11,7 +11,10 @@
 >
 > Pergunta respondida: *"sem Zig, a cadeia para?"* — antes: sim, parava. Agora:
 > `cc` basta para compilar `.lin`, produzir a imagem `LINBC1` e executá-la com o
-> mesmo bytecode, os mesmos passos e as mesmas rejeições.
+> mesmo bytecode, os mesmos passos e as mesmas rejeições. §7 responde a segunda
+> pergunta, a mais dura: *"e o compilador **escrito em LIN** (#46), precisa de
+> Zig?"* — não precisa: ele roda hospedado por esta LinVM, congela em imagem e
+> se aplica ao próprio texto, medido por `make c0-selfhost`.
 
 ---
 
@@ -64,9 +67,9 @@ Reproduzir: `make c0-gate`.
 | `roundtrip-linbc1-noc` | emissor LIN == loader C11 | `CONSENSUS` — e agora **sem `lin_native`** ✅ |
 | `gate-nozig` | raiz do LIN Gate | recomputada em python3, batendo com o manifesto ✅ |
 
-**Varredura de robustez** (medida no mesmo gate): os 41 arquivos `.lin` do repo
-passam pelo front-end — 271 funções, 143 elegíveis, 18 módulos com 100 % de
-cobertura — com **zero crash** e saída sempre um registro `LIN_VM` bem-formado
+**Varredura de robustez** (medida no mesmo gate): os 44 arquivos `.lin` do repo
+(incluindo os três módulos do front-end em LIN de #46) passam pelo front-end — 302
+funções, 174 elegíveis, 21 módulos com 100 % de cobertura — com **zero crash** e saída sempre um registro `LIN_VM` bem-formado
 (o que está fora do subconjunto sai `REJECTED reason=VM_REJ_*`, nunca segfault nem
 aceitação silenciosa). `SAN=1 ./test/verify_c0.sh` refaz a varredura inteira com
 `-fsanitize=address,undefined -f-sanitize-recover=all` (UBSan/ASan limpos).
@@ -105,6 +108,7 @@ idêntico — não "mesma resposta por sorte".
 ## 5. Como usar
 
 ```sh
+make c0-selfhost        # o compilador ESCRITO EM LIN na LinVM, sem Zig (§7)
 make c0                                   # só cc
 ./transpile/c/bin/lin_c0 vm a.lin [fn args...]     # drop-in de `lin vm a.lin`
 ./transpile/c/bin/lin_c0 info a.lin               # cobertura + rejeições
@@ -120,9 +124,11 @@ medido: o host C11 concorda com os números que o Zig publicou).
 
 ## 6. Próximos cortes (para não chamar isto de fim)
 
-1. **C0 sobre `src/linvm0_compiler/*` (PR #46):** portar o `linvm0-gate` para o
-   host C11 — `lin_c0 vm` já executa esses módulos; falta o gate deles deixar
-   de chamar `lin_native`.
+1. ~~**C0 sobre `src/linvm0_compiler/*` (PR #46):** portar o `linvm0-gate` para o
+   host C11 — falta o gate deles deixar de chamar `lin_native`.~~ **Entregue em
+   2026-09-01:** o `linvm0-gate` com Zig continua existindo; ao lado dele entrou a
+   porta sem Zig `make c0-selfhost` (§7), que mede as mesmas cinco funções de gate,
+   congela cada módulo em LINBC1 e o reexecuta a partir da imagem.
 2. **Ponto fixo (V3/B3):** `compiler0.linbc` — a imagem desta cadeia
    recompilando as próprias fontes do front-end e reproduzindo o próprio
    `SHA-256`. Enquanto não existe, todo resultado daqui é transição
@@ -137,3 +143,70 @@ medido: o host C11 concorda com os números que o Zig publicou).
    `docs/CI_COMPILER0_NO_ZIG_JOB_PATCH.rulel` (mesma rotina de
    `docs/CI_RELEASE_E_V1_GATES_PATCH.rulel`). Enquanto não entrar, o status destes
    gates é "medido localmente", não "verificado em CI" (rito Q3).
+
+## 7. Auto-aplicação: o compilador **escrito em LIN** roda na LinVM, sem Zig (2026-09-01)
+
+§1–§6 deram à LinVM a *materialização* do Compilador 0 em C11. Esta seção fecha o
+elo seguinte, o que a pergunta do usuário realmente pedia: existe um front-end de
+compilador **escrito em LIN** (#46: `src/linvm0_compiler/lin_lexer_selfhost.lin`,
+`lin_expr_eval.lin`, `lin_lower_selfhost.lin`), mas o gate dele (`verify_linvm0.sh`,
+`make linvm0-gate`) chama `zig-out/bin/lin_native` para `check`/`lint` — a mesma
+barreira de ambiente que motivou este corte. Esse front-end agora roda sob o host
+C11 **sem nenhum passo de Zig**, e o que ele produz pode ser congelado e reexecutado.
+
+Gate: `make c0-selfhost` → `test/verify_c0_selfhost.sh` — 30 verificações, verde em <1 s
+(o mesmo gate com `LIN_C0=` apontando para um host reconstruído com
+`-fsanitize=address,undefined -fno-sanitize-recover=all` também passa, sem diagnóstico)
+com o host construído do zero por `cc` num ambiente que **não tem `zig` no PATH**.
+
+| o que a LinVM executa (host C11, zero Zig) | resultado medido |
+|---|---|
+| `lin_c0 vm src/linvm0_compiler/lin_lexer_selfhost.lin lex_gate` | `value=1` `steps=10097` |
+| `… lex_scan_embedded` / `… lex_count_embedded` | `1371904279658369433` / `20` — idênticos a `reference_tokenize.py` |
+| `lin_c0 vm …/lin_expr_eval.lin xver_gate` | `value=1` `steps=12445` (10/10 vetores xver) |
+| `lin_c0 vm …/lin_lower_selfhost.lin low_gate` | `value=1` `steps=4386`; `code_sha256` == consenso Zig×C11 publicado (`fb10ce57…`) |
+| `lin_c0 image <mod> -o <m>.linbc` | LINBC1 perfil 1: 21051 / 12922 / 7598 B, reproduzível byte a byte; `img_sha256` `bb44a06c…` / `ab7126dd…` / `884c9a72…` |
+| `lin_c0 run <m>.linbc <fn>` | `.result` **idêntico à rota-fonte** em valor e passos: a mesma LinVM executa o bytecode congelado |
+| self-lex: o lexer LIN sobre os 256 primeiros bytes do **próprio** front-end | `lex_gate=1`; checksums `3045357153765650598` (lexer), `3683369026950091959` (expr-eval), `8225996234675508288` (lowerer) == oráculo |
+
+Máquina de suporte (tudo na regra; nada toca o oracle):
+
+- `transpile/c/tool/lin_c0.c: cmd_run` / `bc1_find_fn_strict` — executa uma imagem
+  LINBC1 **congelada** na LinVM e imprime as mesmas linhas `@RULEL:LIN_VM_RUN:1.0.0`
+  da rota-fonte, mais `.host{ route="imagem" img_sha256=… img_bytes=… }` para não
+  restar dúvida de qual rota produziu o número. A busca de função usa `name_len[]`,
+  porque a tabela de nomes não é NUL-terminada (o `strlen` do carregador de confiança
+  só acha o último nome — `docs/LINVM_AS_COMPILER0.rulel` §7.1);
+- `test/lin0_selflex.py` — transplantador de corpus: troca o `src: [256]int` embutido
+  do lexer LIN pelos primeiros ≤256 bytes de qualquer `.lin`, ajusta `n` e regrava
+  `lex_scan_expected`/`lex_count_expected` com o que o **oráculo** mede; o módulo
+  gerado é compilado e executado pela LinVM. É auto-aplicação de verdade com o limite
+  declarado: 256 células é `VM_MAX_ARR_LEN`, a ISA de hoje (o subconjunto não tem I/O
+  de arquivo nem parâmetro-array, então o corpus precisa ser literal embutido);
+- `compiler0_manifest.rulel` + `test/verify_compiler0_manifest.py` — as três imagens
+  pinadas (bytes + auto-digest do formato), a raiz agregada
+  (`leaf = SHA-256("lin:compiler0:leaf:" ‖ module ‖ ":" ‖ bytes ‖ ":" ‖ sha)`, fold
+  sequencial sob `lin:compiler0:node:`), hoje `65823d779874dc0e…`, e o pinnado do
+  self-lex. O verificador **recalcula o self-hash em Python** a partir dos bytes do
+  arquivo (`SHA-256("linbc1:img:" ‖ imagem-sem-os-últimos-32-bytes)`, a regra que o
+  `lin_bc1_load` confia), então o digest publicado não é validado pelo mesmo código
+  que o emitiu;
+- `test/verify_c0_selfhost.sh` — o gate: roda cada função **pelas duas rotas** e exige
+  `.result` idênticos, e imprime `check/lint NÃO verificados (Stage0 ausente)` quando
+  não há `zig-out/bin/lin_native`. Com `LIN_NATIVE=<bin>` ele cruza `zig vm` × `lin_c0
+  vm` e roda `check`/`lint` — bônus, nunca precondição.
+
+O que §7 **não** é (R5):
+
+- não é o ponto fixo: `C0 = C1 = C2` pede o compilador completo em LIN (parser +
+  typecheck + lowering + emissão de LINBC1/C11 a partir do LIN). O que roda em LIN aqui é
+  o front-end semântico (#46): lexer, avaliador de expressões e lowerer como **folds
+  bit-exatos** verificados contra o Stage0. Os *bytes* da imagem LINBC1 são emitidos pelo
+  host (C11), não pelo módulo LIN — o `compiler0.linbc` produzido pelo próprio LIN é o
+  próximo corte;
+- `check`/`lint` continuam Stage0 (portanto `compiler0_manifest.rulel` tem
+  `status="FROZEN_LOCAL"`, não `ATTESTED`, e o `not_claimed` do manifesto diz isso);
+- o corpus do self-lex é limitado a 256 bytes por arranjo pela ISA; não é "qualquer
+  arquivo", e o gate não finge que é;
+- as portas acima são **locais**: o job `compiler0-no-zig` do CI continua pronto em
+  `docs/CI_COMPILER0_NO_ZIG_JOB_PATCH.rulel` e ainda não aplicado (rito Q3).
