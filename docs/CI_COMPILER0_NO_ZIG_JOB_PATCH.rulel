@@ -1,0 +1,105 @@
+@RULEL:DOC_CI_COMPILER0_NO_ZIG_JOB_PATCH:1.0.0
+~MARKDOWN_SPEC
+# PATCH pendente — `.github/workflows/ci.yml` (job `compiler0-no-zig`)
+
+> **Por que pendente:** o token da App deste sandbox não tem o escopo
+> `workflows`, e o git recusa push de qualquer alteração em
+> `.github/workflows/` ("refusing to allow a GitHub App to create or update
+> workflow without `workflows` permission") — mesmo motivo documentado em
+> `docs/CI_RELEASE_E_V1_GATES_PATCH.rulel` e no PR #46. O job abaixo foi
+> **executado localmente, passo a passo**, na mesma ordem (verde, sem Zig no
+> PATH); falta apenas o registro em CI. Rito Q3: enquanto o patch não entra, o
+> resultado é "medido localmente", não "verificado em CI".
+
+## O que o job faz
+
+Um job **sem** `setup-zig`, que falha se `zig` aparecer no PATH — é isso que o
+torna a prova de que o Compilador 0 da LinVM existe fora do Stage0:
+
+1. `make c0` — constrói `transpile/c/bin/lin_c0` (só `cc`);
+2. `make test-c0` — 100 asserções do front-end (valores, `VM_REJ_*`,
+   determinismo e fail-closed da imagem LINBC1);
+3. `./test/verify_c0.sh` — reproduz os goldens publicados do Zig
+   (`vms_gate value=1 steps=8511500`, `lb_selfhash_fold=-178321285347216732`,
+   corpus GPU do P2) + varredura de robustez sobre todo `.lin` do repo;
+4. `make -C transpile/c test-linbc1` e `roundtrip-linbc1-noc` — suite do loader
+   e consenso de fold emissor-LIN × loader-C11 **sem** `lin_native`;
+5. `python3 test/verify_gate_manifest.py` — raiz do LIN Gate recomputada sem o
+   binário Zig;
+6. publica as medidas na *step summary* (inclusive `ldd` do host, para que
+   "libc-only" deixe de ser alegação).
+
+Sugestão de posição: depois do job `verify`, para que o root publicado por ele
+seja a referência com a qual o caminho sem Zig é comparado.
+
+## Bloco a apendar em `jobs:`
+
+O diff inteiro de `.github/workflows/ci.yml` deste corte (53 linhas, append no fim do
+arquivo — o job `verify` acima já publicou as raízes com as quais este compara):
+
+```yaml
+  # --------------------------------------------------------------------------
+  # Compilador 0 sem Zig: o host C11 da LinVM compila o subconjunto LINVM-1/i64
+  # e tem que reproduzir os goldens que o job de cima publica. Roda de propósito
+  # num runner onde nada de Zig é instalado: se este job fica verde, a cadeia
+  # "fonte .lin -> bytecode -> imagem LINBC1 -> execução" existe fora do Stage0.
+  # --------------------------------------------------------------------------
+  compiler0-no-zig:
+    name: Compiler 0 = LinVM (no Zig)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prove there is no Zig in PATH
+        run: |
+          if command -v zig >/dev/null 2>&1; then
+            echo "este job existe para rodar SEM zig"; exit 1
+          fi
+          echo "zig ausente — como planejado"
+
+      - name: Build the C11 host (cc only)
+        run: make c0
+
+      - name: Golden vectors of the front-end
+        run: make test-c0
+
+      - name: Stage0 goldens reproduced without Zig
+        run: ./test/verify_c0.sh transpile/c/bin/lin_c0
+
+      - name: LINBC1 loader suite + fold consensus
+        run: |
+          make -C transpile/c test-linbc1
+          make -C transpile/c roundtrip-linbc1-noc
+
+      - name: Recompute the LIN Gate root (python3, no Zig binary)
+        run: python3 test/verify_gate_manifest.py
+
+      - name: Publish the measured compiler-0 evidence
+        run: |
+          {
+            echo "### Compilador 0 = LinVM (C11) — medido sem Zig"
+            echo ""
+            echo "\`\`\`"
+            ./transpile/c/bin/lin_c0 --version
+            ./transpile/c/bin/lin_c0 vm src/linvm_selfhost.lin vms_gate
+            ./transpile/c/bin/lin_c0 vm src/lin_linbc_emit.lin lb_selfhash_fold
+            ./transpile/c/bin/lin_c0 image src/linvm_selfhost.lin | grep '\.sha256'
+            echo "gate: $(python3 test/verify_gate_manifest.py | grep 'raiz computada')"
+            echo 'linux-vdso/libc only:'; ldd transpile/c/bin/lin_c0 | sed 's/^/  /'
+            echo "\`\`\`"
+            echo ""
+            echo "Qualquer máquina com um cc reproduz isto: \`make c0 && make c0-gate\`."
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+```
+
+## Como validar antes de aplicar
+
+```sh
+# os passos, na ordem do job, num shell sem zig no PATH:
+make c0 && make test-c0
+./test/verify_c0.sh transpile/c/bin/lin_c0
+make -C transpile/c test-linbc1 roundtrip-linbc1-noc
+python3 test/verify_gate_manifest.py
+```
+
+Medido neste sandbox (2026-09-01): os cinco acima passam, com `zig` ausente.

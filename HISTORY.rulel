@@ -165,3 +165,57 @@ equivalente funcional ao ACC 261473 do referencial v1 — o que importa e a pari
 
 Suite apos esta etapa: **26 passed / 0 failed**.
 Artefatos: /tmp/opencode/linmem2/ (fontes emitidos + drivers + medicoes).
+
+---
+
+## C0-no-Zig — a LinVM vira Compilador 0 onde não há Zig (2026-09-01)
+
+Levantamento prévio em todos os branches: o host C11 (V1) sabia **executar imagens**
+`LINBC1`, e o PR #46 escreveu o front-end do compiler0 **em LIN** — mas o gate dele
+invoca `zig-out/bin/lin_native`, então nenhum branch fechava a pergunta
+"e se não houver Zig?". `docs/LIN_SEM_ZIG_CAMINHOS.rulel` respondia faixa 3 = "AINDA NÃO".
+
+### O que entrou
+
+- `transpile/c/tool/lin_c0_front.{h,c}` — port fiel de `vmTokenize` + `parse_fn_type_infos`
+  + `VmComp` + `vmBuild` + `vmResolveDeps`: fonte `.lin` → bytecode canônico, com os mesmos
+  códigos `VM_REJ_*` do Stage0, e emissor `LINBC1` (perfil 1) que só produz imagem quando o
+  módulo tem cobertura total.
+- `transpile/c/tool/lin_c0.c` — CLI `vm`/`info`/`image`/`roundtrip`, saída idêntica ao
+  `lin vm` do Stage0 mais uma linha `.host{}` que declara quem emitiu.
+- `transpile/c/test/test_c0_front.c` — 100 asserções transcritas do fonte Zig (valores,
+  passos, code_len, 18 rejeições, determinismo de imagem, mutação de 1 byte, limites do host).
+- `test/verify_c0.sh` — gate medido contra a fonte do repo; `test/verify_gate_manifest.py` —
+  recomputação independente da raiz `LIN_GATE_MANIFEST_v1` em python3 (reproduz a raiz
+  anterior, `410e2a5c…`, antes de ser usada).
+- `Makefile` (+`c0`, `test-c0`, `c0-gate`, `gate-nozig`; alvos de Stage0 agora falham com a
+  rota alternativa impressa) e `transpile/c/Makefile` (`c0`, `test-c0`, `gate-c0`,
+  `roundtrip-linbc1-noc`).
+
+### Medido (sandbox sem nenhum `zig` no PATH; só `cc` + `python3`)
+
+| Golden publicado pelo Zig | Host C11 |
+|---|---|
+| `vms_gate` = 1 em 8 511 500 passos (P1 §3) | idêntico |
+| cobertura `linvm_selfhost` 21/21 OK | idêntico |
+| `lb_selfhash_fold` = -178321285347216732 (V1 §2) | idêntico |
+| corpus GPU: `test_gpu_known_vectors`=1/49, `gpu_map_bitfold 8`=72/12, `gpu_map_affine 21`=43, `gpu_map_mix 5`=8 (P2 §2) | idêntico |
+| round-trip fonte→imagem→loader→exec | `CONSENSUS` (3 170 passos nos dois caminhos) |
+| `test_c0_front` | 100 checks / 0 falhas |
+
+TCB: `transpile/c/lin_c/` continua **1 826 linhas** (meta R6 ≤ 2 500) — o front-end foi para
+`tool/` porque é compilador, não runtime confiável; sua credencial é o vetor dourado, não o
+diretório.
+
+### Descoberta registrada (não é defeito novo; vale para os dois hosts)
+
+`src/linvm_embedded.lin` **não é elegível para `lin vm`**: `?(c) { x = 1 }` sem `;` por
+statement ⇒ `VM_REJ_PARSE`, e a rejeição contamina os chamadores
+(`VM_REJ_DEP_REJECTED`). Idem em Zig. E `b = 1` sem `;` seguido de `^b` falha com
+`VM_REJ_UNBOUND_IDENT` porque `^` ali é `bit_xor`, não o sigil — ambos viraram vetores.
+
+### Não é (R5)
+
+Nada de typecheck completo/`check`, `lint`, MIR/GPU, receipts ou `integrity` sem Zig; nada de
+ponto fixo C0=C1=C2. Caminho marcado **EXPERIMENTAL** até o gate V3
+(`docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel`).

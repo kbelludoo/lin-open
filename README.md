@@ -113,6 +113,32 @@ The asset is built from the exact same `compiler/lin.zig` source that CI verifie
 `ReleaseFast`, so the reproducible-Merkle-root behavior is identical. SHA-256 of each asset
 is printed in the release notes so you can verify the download.
 
+### No Zig at all: Compiler 0 = the LinVM host (C11)
+
+If the machine has **no Zig and no pre-compiled asset** — a clean container, an audit box, an
+air-gapped verifier — the chain does not stop: the LinVM host built from C11 sources *is*
+Compiler 0 for the `LINVM-1/i64` subset. It needs only `cc`.
+
+```bash
+make c0                                            # build transpile/c/bin/lin_c0
+./transpile/c/bin/lin_c0 vm file.lin [fn args...]  # drop-in for `lin vm file.lin`
+./transpile/c/bin/lin_c0 info file.lin             # per-function eligibility + rejections
+./transpile/c/bin/lin_c0 image file.lin -o a.linbc # freeze a LINBC1 image (self-hashed)
+./transpile/c/bin/lin_c0 roundtrip file.lin fn     # source == image, same steps
+make c0-gate                                       # all of the above, measured
+python3 test/verify_gate_manifest.py               # LIN Gate root, without the Zig binary
+```
+
+It is faithful rather than approximate: the emitted bytecode, the `VM_REJ_*` codes and the
+step counts are transcribed from the frozen Stage0, and the published goldens are reproduced
+bit-exactly — `vms_gate` returns `value=1` in **8 511 500 steps** on the C11 host, the same
+number the Zig Stage0 measured; `lb_selfhash_fold` reproduces `-178321285347216732`.
+
+**Boundary (read this before trusting it):** this path compiles and runs the integer subset
+only. `check` (the full type-checker), `lint`, MIR/GPU lowering, receipts and `integrity`
+remain Stage0 — `make test`/`make build-cpu` refuse with a pointer to `make c0-gate` instead of
+`zig: command not found`. Scope, evidence and honest limits: `docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel`.
+
 ### Run the checks and tests
 
 ```bash
