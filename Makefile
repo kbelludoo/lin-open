@@ -125,6 +125,31 @@ ci-gate: gate attestation-gate xver
 linvm0-gate: build-cpu
 	@./verify_linvm0.sh $(BIN)
 
+# --------------------------------------------------------------------------
+# Compiler 0 host (C11): compila e executa .lin SEM Zig.
+#
+#   make c0               -> transpile/c/bin/lin_c0 (só `cc`, nenhum Zig)
+#   make c0-gate          -> test/verify_c0.sh: goldens bit-exact do Stage0
+#                            (vms_gate value=1 steps=8511500, corpus P2),
+#                            round-trip fonte->LINBC1->loader e fail-closed;
+#                            SAN=1 refaz a varredura sob ASan+UBSan
+#   make c0-selfhost-gate -> test/verify_c0_selfhost.sh: o front-end escrito em
+#                            LIN roda na LinVM, congela em LINBC1 e tokeniza o
+#                            próprio texto (30 verificações)
+#
+# Escopo honesto (R5): o subconjunto aceito é o de `vmBuild`/`VmComp` do Stage0
+# (port em transpile/c/tool/lin_c0_front.c). `check`/`lint` e o ponto fixo
+# C0=C1=C2 continuam no Stage0 Zig — ver docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel.
+.PHONY: c0 c0-gate c0-selfhost-gate
+c0:
+	@$(MAKE) -C transpile/c c0
+
+c0-gate: c0
+	@./test/verify_c0.sh transpile/c/bin/lin_c0
+
+c0-selfhost-gate: c0
+	@./test/verify_c0_selfhost.sh
+
 # Independent zero-trust receipt verification: recomputes the Merkle root
 # with python3 / bash+openssl / node — no LIN binary involved. Requires
 # python3, openssl and node (all present on ubuntu-latest CI runners).

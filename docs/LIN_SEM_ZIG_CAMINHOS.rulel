@@ -44,16 +44,30 @@ expressões C. Os 6 intrínsecos de string (HOST-ABI-1) e o loader fail-closed j
 existem (V1); os 3 de I/O (`host_read/write/exit`) virão com o compilador que os
 usa (V2+ — não há consumidor ainda).
 
-## Faixa 3 — COMPILAR uma fonte `.lin` arbitrária sem artefato Zig: **AINDA NÃO**
+## Faixa 3 — COMPILAR uma fonte `.lin` sem artefato Zig: **SIM para o subconjunto `vmBuild`; NÃO para o compilador inteiro**
 
-Compilar = lexer → parser → typecheck → lowering → imagem LINBC1. Hoje essa
-cadeia completa existe APENAS dentro do Stage0 Zig (`compiler/lin.zig`):
+> **Atualizado em 2026-09-02 (medido).** Quando este documento foi escrito, a
+> resposta era "ainda não": os gates `test/verify_c0.sh` e
+> `test/verify_c0_selfhost.sh` referenciavam um host `transpile/c/bin/lin_c0`
+> que **não existia** (nem o alvo `make -C transpile/c c0`, nem
+> `transpile/c/tool/lin_c0.c`). Ele agora existe e está medido em
+> `docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel`.
 
-- o emissor LIN de V1 (`src/lin_linbc_emit.lin`) empacota **tabelas transcritas**
-  da fixture e prova self-hash em LIN — ele não *deriva* bytecode de texto `.lin`;
-- isso começa em **V2** (`src/linvm0_compiler/*.lin`: lexer+parser+lowerer do
-  subset, `compiler0-mvp.linbc`) e vira cadeia de produção em **V5** (ponto fixo
-  C0=C1=C2 + suítes rodando sob a imagem), conforme `docs/LINVM_COMPILER0_PLAN.rulel`.
+Compilar = lexer → parser → typecheck de assinatura → lowering → imagem LINBC1.
+Essa cadeia, **para o subconjunto que `vmBuild` aceita**, roda hoje só com `cc`:
+
+```
+make -C transpile/c c0                                   # nenhum zig no PATH
+lin_c0 vm src/linvm_selfhost.lin vms_gate  → value=1 steps=8511500
+lin_c0 image src/linvm_selfhost.lin        → 79838 B, sha256 ec4035c9…
+lin_c0 roundtrip … vms_udiv 10 3           → .verdict{ status="CONSENSUS" … }
+./test/verify_c0.sh                        → 16 ok, 0 falhas (também sob ASan+UBSan)
+./test/verify_c0_selfhost.sh               → 30 verificações, sem Zig
+```
+
+O que continua **exclusivamente** no Stage0 Zig: `check`, `lint`, o typechecker
+completo, a CLI de receipts/attestation/gate e o OpenCL. O ponto fixo C0=C1=C2
+(V3/V4) segue aberto — o compiler0 ainda não compila a si mesmo.
 
 ## Resumo em uma linha
 
@@ -61,7 +75,7 @@ cadeia completa existe APENAS dentro do Stage0 Zig (`compiler/lin.zig`):
 |---|---|---|
 | "Rodo a toolchain LIN sem instalar Zig?" | ✅ binário pré-compilado (CI publica a partir deste PR + tag) | 4A da análise de migração |
 | "Rodo programa LIN em imagem sem nada de Zig?" | ✅ rota C11/LINBC1 (V1, medido) | `make -C transpile/c` |
-| "Compilo `.lin` arbitrário sem Zig em algum lugar da cadeia?" | ❌ | V2 (`compiler0-mvp`) → V5 |
+| "Compilo `.lin` sem Zig?" | ✅ subconjunto `vmBuild` (`lin_c0`, medido) · ❌ compilador inteiro (`check`/`lint`/typecheck) | V3/V4 (ponto fixo) → V5 |
 
 Tudo verificável na CI deste PR: os passos V1 (`test-linbc1`, `roundtrip-linbc1`)
 entram no workflow — primeira prova em CI dos gates G(V1), conforme o rito Q3.

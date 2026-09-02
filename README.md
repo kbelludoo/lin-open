@@ -20,7 +20,8 @@ All capabilities below are **fully verified without mock data or simulated infra
 | **Compute Receipts (RULEL + JSON)** | ✅ **PASS** | Generates SHA-256 Merkle receipts validating `f(input) = output` |
 | **Independent Verification** | ✅ **PASS** | Zero-trust verification scripts in Python, Node.js, Bash+OpenSSL, and WebCrypto |
 | **N-Version Cross-Check (Zig × C11)** | ✅ **PASS** | 34/34 consensus test vectors with zero divergence between Zig and C11 runtimes |
-| **LinVM0 Self-Hosting (V1 → V5)** | 🔄 **IN PROGRESS** | Lexer, Evaluator, Lowerer and LINBC1 Emitter written directly in LIN (`src/linvm0_compiler/`) |
+| **LinVM0 Self-Hosting (V1 → V5)** | 🔄 **IN PROGRESS** | Lexer, Evaluator, Lowerer and LINBC1 Emitter written directly in LIN (`src/linvm0_compiler/`); fixed point C0=C1=C2 still open |
+| **Compiler 0 Host (C11, no Zig)** | ✅ **PASS** | `transpile/c/bin/lin_c0` compiles+runs `.lin` with `cc` only — Stage0 goldens bit-exact incl. steps (`vms_gate` value=1 steps=8511500); `verify_c0.sh` 16/16, `verify_c0_selfhost.sh` 30/30, also under ASan+UBSan |
 | **Cross-Platform Target** | ✅ **PASS** | Runs identically bit-for-bit on CPU (Host C11), Web (Wasm/JS), and GPU (OpenCL) |
 
 ---
@@ -68,8 +69,8 @@ To safely transpile larger C codebases without introducing memory vulnerabilitie
   Determinístico     em código .lin            em LIN puro                 Merkle Idêntico             (TCB ≤ 1.500 LOC)
 ```
 
-1. **V1 (Host C11 Native):** Runtime determinístico C11 em `transpile/c/` para execução isolada.
-2. **V2 (Front-End em LIN):** Lexer + Evaluator + Lowerer escritos em LIN e validados via `verify_linvm0.sh`.
+1. **V1 (Host C11 Native):** ✅ Runtime determinístico C11 em `transpile/c/` para execução isolada (29/29 expressões, 17/17 bordas, 33/33 LINBC1).
+2. **V2 (Front-End em LIN + host C11):** 🔄 Lexer + Evaluator + Lowerer escritos em LIN (`verify_linvm0.sh`, requer Stage0) **e** o host `lin_c0` que compila/executa `.lin` sem Zig (`make c0-gate`, `make c0-selfhost-gate` — medido em `docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel`).
 3. **V3 (Emissor LINBC1):** Serializador binário completo gerando imagens de bytecode `.linbc1` em LIN puro.
 4. **V4 (Ponto Fixo $C_0=C_1$):** O compilador compila a si mesmo dentro da LinVM gerando digests SHA-256 idênticos.
 5. **V5 (Zero-Zig Definitivo):** Todo o ecossistema é executado exclusivamente sobre LinVM + Host C11 com base de código confiável mínima (TCB $\le$ 1.500 LOC).
@@ -79,20 +80,29 @@ To safely transpile larger C codebases without introducing memory vulnerabilitie
 ## 6. Building & Running
 
 ### Prerequisites
-- **Zig 0.13.0** (for Stage 0 bootstrap compiler)
+- **Zig 0.13.0** — still required to build the full Stage-0 compiler (`lin_native`):
+  `check`, `lint`, the type checker, receipts/attestation/gate and OpenCL live in
+  `compiler/lin.zig` and have **not** been ported. This is stated, not hidden (R5).
 - Optional: OpenCL dev headers (`ocl-icd-opencl-dev` or ROCm) for GPU execution.
+- **No Zig needed** for the C11 Compiler-0 host below (`cc` + `python3` only).
 
 ```bash
-# Build native compiler
+# Build native compiler (needs Zig)
 zig build -Doptimize=ReleaseFast
 
 # Build CPU-only (no OpenCL required)
 zig build -Dgpu=false -Doptimize=ReleaseFast
 
-# Run tests and verification gates
+# Run tests and verification gates (need Zig)
 make test
 make xver          # Zig vs C11 N-Version cross-check
 make gate          # LIN Gate toolchain integrity verification
+
+# ---- Compiler 0 host: compile and run .lin WITHOUT Zig (cc only) ----
+make c0                # -> transpile/c/bin/lin_c0
+make c0-gate           # Stage0 goldens bit-exact + round-trip + fail-closed (16 checks)
+make c0-selfhost-gate  # LIN front-end runs in LinVM, freezes to LINBC1, self-lexes (30 checks)
+transpile/c/bin/lin_c0 vm src/linvm_selfhost.lin vms_gate   # value=1 steps=8511500
 ```
 
 ### Create and Verify a Compute Receipt
@@ -116,7 +126,7 @@ make gate          # LIN Gate toolchain integrity verification
 │   ├── linvm0_compiler/   # Self-hosted LinVM front-end in pure LIN (V2/V3)
 │   ├── components/        # Web dashboard & interactive verifier UI
 │   └── lib/               # Verified sample corpus & execution engine
-├── transpile/c/           # Host C11 runtime & independent cross-check port
+├── transpile/c/           # Host C11 runtime, independent cross-check port & lin_c0 (Compiler 0, no Zig)
 ├── docs/                  # Architectural specs, LINBC1 binary format & rulel manifests
 └── test_*.zig             # Root self-hosted and compatibility test suites
 ```

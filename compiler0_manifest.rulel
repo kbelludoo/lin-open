@@ -1,0 +1,21 @@
+@RULEL:COMPILER0_MANIFEST:1.0.0
+~R{.m=modules .r=root .h=scope}
+
+# Manifesto das imagens LINBC1 do front-end compiler0 (V2/B2), sem Zig.
+#
+# Cada linha abaixo e uma MEDICAO do host C11 (transpile/c/bin/lin_c0,
+# construido so com `cc`) cruzada com o oraculo independente de
+# test/lin0_selflex.py. Conferir: python3 test/verify_compiler0_manifest.py
+# Re-emitir (so junto da mudanca que alterou as medicoes):
+#   python3 test/verify_compiler0_manifest.py --emit
+#
+# Escopo honesto (R5): isto pina as IMAGENS do front-end em LIN e o seu
+# self-lex. NAO e o ponto fixo C0=C1=C2, e `check`/`lint` continuam no
+# Stage0 Zig — ver docs/LINVM0_V2_FRONTIER.rulel.
+.m{
+  .mod{ name="lin_lexer_selfhost" source="src/linvm0_compiler/lin_lexer_selfhost.lin" src_sha256="a6342b109295c4f2bb023cec455ab08f94dc3817f9f64d1511281c7ade9d09f7" img_bytes=21051 img_sha256="c948c6ae63eeeea05139c77607cf4ea2ccaea830eab9ac8903cbdf9ea8078b4f" fold=273558074902940495 selflex_checksum=3045357153765650598 selflex_tokens=30 }
+  .mod{ name="lin_expr_eval" source="src/linvm0_compiler/lin_expr_eval.lin" src_sha256="503ab37e3df881cd1a5c0caf631e7a36eb1f176e23677f56d2f09c61ab8b3e93" img_bytes=12922 img_sha256="420857aec2cb94c4ccdfb269304921b54c13584e44b6a952f56f240d1113c7be" fold=-761350173462640706 selflex_checksum=3683369026950091959 selflex_tokens=30 }
+  .mod{ name="lin_lower_selfhost" source="src/linvm0_compiler/lin_lower_selfhost.lin" src_sha256="f30d71b858f52025d843e9ded66511f32a9a941bb956fd385abbb7b4f37f11d2" img_bytes=7598 img_sha256="fe48cdcd24f741fd483c8a527a65aaf742ffd358a5e41bc34b16aca5336cb0e9" fold=5410701827864572137 selflex_checksum=8225996234675508288 selflex_tokens=30 }
+}
+.r{ domain="linvm:c0:manifest:" root="sha256:086a7ef937f66245f50d99f48e34a1ae735fa00ff1e85c9730c6b64d49ff3d2f" }
+.h{ host="C11-lin_c0" zig=false compiler="transpile/c/tool/lin_c0*.c" oracle="test/lin0_selflex.py" selflex_cap=256 note="imagens reproduziveis byte a byte; raiz agrega os 3 modulos" }
