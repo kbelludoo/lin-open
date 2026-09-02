@@ -1,0 +1,108 @@
+# Grant Proposal — LIN: Experimental Zero-Heap Verifiable State Kernel
+
+**Project title:** LIN — An Experimental Zero-Heap State Engine for Verifiable
+Off-Chain Computation and Cryptographic Auditability
+
+**Category:** Developer Tooling, Cryptography, Formal Verification Infrastructure
+
+**Requested amount:** $25,000 USD
+**Duration:** 6 months (3 milestones)
+
+---
+
+## 1. Problem
+
+High-value systems routinely run deterministic numeric code (AMM math, hashing,
+serialization, pricing models) either
+- on an expensive shared execution machine (EVM/L1), where re-execution is the
+  only way to audit a result; or
+- on an ordinary server in C/Rust, where a result can be altered without leaving
+  a reproducible trace and where dynamic memory corruption is a real risk.
+
+The gap is not "another fast language" — C/Rust/LLVM already win on execution
+speed. The gap is **zero-trust auditability**: a compact, deterministic,
+externally reproducible proof that `f(input) == output`, with a documented
+fail-closed behavior when an operation is outside the accepted subset.
+
+## 2. What LIN is (and is not)
+
+LIN is a deterministic scalar/i64 kernel with:
+- a flat, heap-free memory model;
+- a tiny VM with a hard step limit and explicit fail-closed rejection;
+- a canonical SHA-256 receipt (`source hash + output + steps + sp_at_ret`);
+- an independent C11 implementation and an independent Python verifier.
+
+It is **not**: an OS, a database, a blockchain layer, or a replacement for LLVM.
+The project states this limitation in `docs/RATIONALIST_PROOF_STATUS.md`.
+
+## 3. Existing evidence in this repository
+
+No simulation. The following run with `cc` + Python only, no Zig:
+
+```bash
+make -C transpile/c all
+python3 test/prove_all_claims_external.py --iterations 10000
+```
+
+Current observable results:
+- 5 real upstream files fetched and SHA-256 verified (Uniswap v2/v3, OpenSSL
+  SHA-256, QOI, TinyExpr).
+- `qoi_color_hash` (from `phoboslab/qoi`) has exact parity against an
+  independent Python oracle.
+- `tinyexpr_fac` (from `codeplea/tinyexpr`) matches Python factorial over
+  `0..20` and fails closed outside that range.
+- `lin_c_receipt` produces a Merkle root that Python independently recomputes;
+  a tampered output is rejected.
+- Compiler-0 no-Zig gates pass (`verify_c0.sh`, `verify_c0_selfhost.sh`).
+
+## 4. Milestones
+
+### Milestone 1 — Formal semantics and reference documentation ($8,000, months 1–2)
+- Publish grammar/semantics PDF/Markdown based on the `.rulel` specs.
+- Make the C0 host behavior table explicit (accepted subset, rejected
+  `VM_REJ_*`, wrapping arithmetic, fail-closed edges).
+- Deliverable: `docs/AGENTS_EMENDA…` + human-readable `FORMAL_SPECIFICATION.md`.
+
+### Milestone 2 — Standalone no-Zig compiler/interpreter and differential fuzzing ($10,000, months 3–4)
+- Extend `transpile/c` to support shifts and integer division behind a profile
+  flag (currently rejected), without weakening the `VM_REJ_*` fail-closed path.
+- Build a differential fuzz harness over the C11 host, Python oracle and (when
+  available) the Zig Stage-0 build for 100,000 vectors.
+- Deliverable: `make c0-fuzz`, `make c0-selfhost-gate`, external proof output.
+
+### Milestone 3 — CLI verifier, docs, final report ($7,000, months 5–6)
+- Ship `lin-verify` (C11/Python), consuming `.lin` + receipts and emitting
+  PASS/FAIL with the recomputed Merkle root.
+- Publish usage docs and a reproducible CI job.
+- Deliverable: final report with measured coverage, known non-goals and honest
+  security/performance boundaries.
+
+## 5. Budget rationale
+Salaries are intentionally modest (independent researcher). Most work is
+compiler/runtime engineering, fuzz harnesses and documentation.
+
+| Item | Cost |
+|---|---|
+| Researcher time (0.4 FTE, 6 months) | $18,000 |
+| CI runners / domain / tooling | $2,000 |
+| Independent audits (2 small external reviews) | $3,500 |
+| Documentation/formatting | $1,500 |
+| **Total** | **$25,000** |
+
+## 6. Non-goals
+- Do **not** claim "$1.8 trillion savings", "faster than LLVM", or "verified
+  production-ready".
+- Do **not** claim to have executed Uniswap/OpenSSL in LinVM in this
+  environment. The proof explicitly prints `NOT-PROVEN` for that claim until a
+  Zig build (or full C0 profile) is available.
+
+## 7. Evaluation
+A reviewer can verify every claim above by running:
+
+```bash
+make -C transpile/c all
+python3 test/prove_all_claims_external.py --iterations 10000
+```
+
+and then reading `docs/RATIONALIST_PROOF_STATUS.md` for the exact not-proven
+list.

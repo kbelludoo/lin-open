@@ -172,6 +172,20 @@ verify-receipt: build-cpu
 	@rm -f /tmp/lin_tampered.json
 
 # --------------------------------------------------------------------------
+# Rationalist external proof: real GitHub upstream provenance + independent
+# Python/C oracle parity + no-Zig self-host gates. No Zig required.
+#
+#   make rationalist-proof            # local pinned upstream (offline)
+#   make rationalist-proof FETCH=1    # re-download upstream via GitHub API
+.PHONY: rationalist-proof
+rationalist-proof: c0
+ifneq ($(FETCH),)
+	@python3 test/prove_all_claims_external.py --iterations 10000 --fetch
+else
+	@python3 test/prove_all_claims_external.py --iterations 10000
+endif
+
+# --------------------------------------------------------------------------
 # LIN-CRYPTO-256-REAL: a real cryptanalysis gate (no Zig required).
 #
 #   pillar A  exhaustive frontier .......... (LIN-CRYPTO-MAX-256, measured cost)

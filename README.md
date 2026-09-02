@@ -116,6 +116,22 @@ transpile/c/bin/lin_c0 vm src/linvm_selfhost.lin vms_gate   # value=1 steps=8511
 # -> PASS: Merkle root valid: sha256:b96fecee...
 ```
 
+### Rationalist external proof (no Zig, `cc` + Python only)
+
+The repository ships a conservative, externally reproducible proof harness. It
+pins/fetches real GitHub upstream sources, compares selected LIN modules against
+independent Python/C oracles, recomputes the Merkle receipt without the LIN
+runtime, and explicitly reports what is **not** proven (e.g. it does not claim
+Uniswap executes on the no-Zig C0 host, because that host rejects `/`).
+
+```bash
+make -C transpile/c all
+python3 test/prove_all_claims_external.py --iterations 10000
+python3 test/prove_all_claims_external.py --iterations 10000 --fetch   # re-download upstream
+```
+
+See `docs/RATIONALIST_PROOF_STATUS.md` for the full claim/limit table.
+
 ---
 
 ## 7. Repository Layout

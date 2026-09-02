@@ -1,0 +1,15 @@
+@LIN:MODULE:2.0.0
+@QOI_HASH_PURE{
+  upstream_repo="https://github.com/phoboslab/qoi"
+  upstream_file="qoi.h"
+  formula="index_position = (r * 3 + g * 5 + b * 7 + a * 11) % 64"
+}
+
+// Pure single-return version of the QOI color index hash. It is intentionally
+// kept as a single expression so the Compiler-0 host can emit a LINBC1 image
+// and use the round-trip route (source -> image -> VM) as an additional proof.
+!qoi_hash(r: int, g: int, b: int, a: int) -> int {
+  ^ ((r * 3) + (g * 5) + (b * 7) + (a * 11)) & 63;
+}
+
+=ex{qoi_hash}
