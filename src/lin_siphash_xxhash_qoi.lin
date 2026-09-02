@@ -1,0 +1,38 @@
+@LIN:MODULE:2.0.0
+@SIPHASH_XXHASH_QOI{source="https://github.com/veorq/SipHash + https://github.com/Cyan4973/xxHash + https://github.com/phoboslab/qoi" author="transpiled_into_lin"}
+
+// SipHash-2-4 SipRound state mixer (Jean-Philippe Aumasson & Daniel J. Bernstein)
+!siphash_round(v0: int, v1: int, v2: int, v3: int) -> int {
+  v0 = v0 + v1;
+  v1 = ((v1 << 13) | ((v1 >> 51) & 8191)) ^ v0;
+  v0 = ((v0 << 32) | ((v0 >> 32) & 4294967295));
+  v2 = v2 + v3;
+  v3 = ((v3 << 16) | ((v3 >> 48) & 65535)) ^ v2;
+  v0 = v0 + v3;
+  v3 = ((v3 << 21) | ((v3 >> 43) & 2097151)) ^ v0;
+  v2 = v2 + v1;
+  v1 = ((v1 << 17) | ((v1 >> 47) & 131071)) ^ v2;
+  v2 = ((v2 << 32) | ((v2 >> 32) & 4294967295));
+  ^ (v0 ^ v1 ^ v2 ^ v3);
+}
+
+// xxHash64 Prime Round (Yann Collet / Cyan4973)
+!xxhash64_round(acc: int, input_val: int) -> int {
+  prime1 = -7046029254386353131;
+  prime2 = -4417276706815106179;
+  prime3 = 1609587929392839161;
+  prime4 = -8796714831421247437;
+  prime5 = 2870177450012600261;
+
+  acc = acc + (input_val * prime2);
+  acc = ((acc << 31) | ((acc >> 33) & 2147483647)) * prime1;
+  ^ acc;
+}
+
+// QOI (Quite OK Image Format) Color Hash (Dominic Szablewski)
+!qoi_color_hash(r: int, g: int, b: int, a: int) -> int {
+  index = ((r * 3) + (g * 5) + (b * 7) + (a * 11)) & 63;
+  ^ index;
+}
+
+=ex{siphash_round, xxhash64_round, qoi_color_hash}

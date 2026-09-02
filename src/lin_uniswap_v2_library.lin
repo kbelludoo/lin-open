@@ -1,0 +1,62 @@
+@LIN:MODULE:2.0.0
+@UNISWAP_V2_OFFICIAL_PERIPHERY_SPEC{
+  cloned_repo="https://github.com/Uniswap/v2-periphery"
+  source_file="contracts/libraries/UniswapV2Library.sol"
+  test_spec="test/UniswapV2Router02.spec.ts"
+  commit_hash="canonical_v2_periphery"
+}
+
+// 1. quote(amountA, reserveA, reserveB)
+// Official Spec: amountB = (amountA * reserveB) / reserveA
+!quote(amount_a: int, reserve_a: int, reserve_b: int) -> int {
+  ?(amount_a <= 0 | reserve_a <= 0 | reserve_b <= 0) {
+    ^ 0;
+  } : {
+    amount_b = (amount_a * reserve_b) / reserve_a;
+    ^ amount_b;
+  }
+}
+
+// 2. getAmountOut(amountIn, reserveIn, reserveOut)
+// Official Spec:
+// uint amountInWithFee = amountIn.mul(997);
+// uint numerator = amountInWithFee.mul(reserveOut);
+// uint denominator = reserveIn.mul(1000).add(amountInWithFee);
+// amountOut = numerator / denominator;
+!get_amount_out(amount_in: int, reserve_in: int, reserve_out: int) -> int {
+  ?(amount_in <= 0 | reserve_in <= 0 | reserve_out <= 0) {
+    ^ 0;
+  } : {
+    amount_in_with_fee = amount_in * 997;
+    numerator = amount_in_with_fee * reserve_out;
+    denominator = (reserve_in * 1000) + amount_in_with_fee;
+    ?(denominator <= 0) {
+      ^ 0;
+    } : {
+      amount_out = numerator / denominator;
+      ^ amount_out;
+    }
+  }
+}
+
+// 3. getAmountIn(amountOut, reserveIn, reserveOut)
+// Official Spec:
+// uint numerator = reserveIn.mul(amountOut).mul(1000);
+// uint denominator = reserveOut.sub(amountOut).mul(997);
+// amountIn = (numerator / denominator).add(1);
+!get_amount_in(amount_out: int, reserve_in: int, reserve_out: int) -> int {
+  ?(amount_out <= 0 | reserve_in <= 0 | reserve_out <= 0 | amount_out >= reserve_out) {
+    ^ 0;
+  } : {
+    numerator = reserve_in * amount_out * 1000;
+    denominator = (reserve_out - amount_out) * 997;
+    ?(denominator <= 0) {
+      ^ 0;
+    } : {
+      amount_in = (numerator / denominator) + 1;
+      ^ amount_in;
+    }
+  }
+}
+
+=ex{quote, get_amount_out, get_amount_in}
