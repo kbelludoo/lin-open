@@ -1,0 +1,124 @@
+@RULEL:LINVM_IMPLEMENTATION_AUDIT:1.0.0
+~MARKDOWN_SPEC
+# Auditoria — onde a LinVM está realmente implementada
+
+> **Veredito:** a LinVM completa já existe no Stage0 Zig e possui um port independente C11.
+> A implementação em LIN possui dispatch experimental para 33/33 opcodes. Entretanto,
+> “escrever a LinVM” só é necessário para o objetivo de self-hosting em LIN; não para executar
+> programas hoje.
+
+## 1. Inventário conferido
+
+| Implementação | Local | Cobertura | Papel |
+|---|---|---:|---|
+| Stage0 Zig | `compiler/lin.zig` (`VmOp`, `vmBuild`, `vmExecWithSp`) | 33/33 | referência completa de produção |
+| Port C11 | `transpile/c/lin_c/lin_vm.h/.c` | 33/33 no intérprete | oráculo independente executável |
+| LIN embedded | `src/linvm_embedded.lin` | 33/33 dispatch | executor bounded, ainda não conformante |
+
+O enum canônico, em ordem, contém:
+
+    0 push_const          1 load_local           2 store_local
+    3 add                 4 sub                  5 mul
+    6 div                 7 mod                  8 bit_and
+    9 bit_or             10 bit_xor             11 bit_not
+   12 neg                13 shl                 14 shr
+   15 ushr               16 cmp_eq              17 cmp_ne
+   18 cmp_lt             19 cmp_gt              20 cmp_le
+   21 cmp_ge             22 log_not             23 jump
+   24 jump_if_false      25 jump_if_false_keep  26 jump_if_true_keep
+   27 pop                28 call                29 ret
+   30 load_index         31 store_index         32 arr_len
+
+## 2. O que o intérprete LIN cobre
+
+`src/linvm_embedded.lin` implementa dispatch para os 33 opcodes:
+
+    push_const, load_local, store_local, add, sub, mul, div, mod,
+    bit_and, bit_or, bit_xor, bit_not, neg, shl, shr, ushr,
+    cmp_eq, cmp_ne, cmp_lt, cmp_gt, cmp_le, cmp_ge, log_not,
+    jump, jump_if_false, jump_if_false_keep, jump_if_true_keep, pop, call, ret,
+    load_index, store_index, arr_len
+
+`div` usa divisão binária truncada em 64 passos e reproduz inclusive `INT64_MIN / -1`; divisor
+zero ainda retorna sentinel 0 porque o protótipo não possui canal de erro estruturado. `call`
+ainda usa um catálogo bounded em vez de `VmModule`, e arrays usam um pool flat 8x256. Ainda
+faltam erros estruturados, limites completos, input de bytecode
+arbitrário e trace canônico. Os demos `sq_demo` e `fact_demo` provam apenas o subset inicial;
+`linvm_extended_selftest()==31` acrescenta vetores de bit/shift/comparação, short-circuit,
+call, arrays e divisão. Nenhum dos dois significa conformidade completa.
+
+Para impedir sobredeclaração programaticamente, o módulo LIN agora exporta:
+
+    linvm_opcode_coverage() -> 33
+    linvm_is_full()         -> 0
+
+`linvm_is_full` só poderá mudar para `1` após o gate da seção 4.
+
+## 3. O que deve ser escrito em LIN
+
+Não duplicar parser, compiler e VM numa única entrega. A ordem verificável é:
+
+1. definir um formato canônico de módulo/bytecode que a LIN consiga receber como dados;
+2. manter os 33 dispatches bit-exact enquanto a estrutura do executor evolui;
+3. acrescentar limites idênticos: 64 locals, 256 stack, depth 192, step limit 200.000.000,
+   8 arrays de até 256 elementos;
+4. retornar códigos estáveis para step limit, stack overflow/underflow, bad function, depth,
+   arity e division by zero;
+5. implementar `call` com contador de passos compartilhado;
+6. implementar arrays com a mesma regra de índice fora do range (load=0, store ignorado);
+7. emitir trace `(opcode, pc, sp)` e vincular sua SHA-256 em domínio próprio;
+8. executar os mesmos vetores nos runtimes Zig, C e LIN.
+
+O parser/lowerer LIN vem depois do executor: primeiro a VM deve aceitar bytecode canônico já
+produzido pela referência. Isso separa defeito de execução de defeito de compilação.
+
+## 4. Gate para chamar a implementação LIN de “LinVM completa”
+
+    FULL = opcode_coverage == 33
+        && same_result
+        && same_error_code
+        && same_steps
+        && same_sp_at_ret
+        && same_trace_root
+        && limits_fail_closed
+        && corpus_zig_c_lin_equal
+
+Fixtures mínimas obrigatórias:
+
+- pelo menos uma para cada opcode;
+- overflow/underflow da pilha;
+- divisão e módulo por zero;
+- `INT64_MIN / -1` e `INT64_MIN % -1`;
+- shifts negativos, 0, 63 e >=64;
+- short-circuit keep true/false;
+- chamada, aridade errada e limite de profundidade;
+- array válido, índice negativo e índice além do limite;
+- loop interrompido exatamente no step limit.
+
+Somente depois de todas passarem:
+
+    @LINVM_EMBEDDED{status=conformant opcode_coverage=33_of_33}
+    linvm_opcode_coverage() -> 33
+    linvm_is_full()         -> 1
+
+## 5. Como executar agora
+
+Sem Zig, o port C independente executa a VM:
+
+    make -C transpile/c test test-edges test-sha256
+    make -C transpile/c xver
+    ./transpile/c/bin/lin_c_receipt --expr "2 * 3 + 4 * 5"
+
+Com Zig disponível, a referência completa é executada pelos comandos `compile_run`,
+`run_suite`, `run_compat`, `selfhost_parity` e `selfhost_p1ref` definidos em `AGENTS.md`.
+
+## 6. Decisão
+
+- **Já existe LinVM executável completa:** sim, Stage0 Zig; C11 como oráculo independente.
+- **Já existe LinVM completa escrita em LIN:** não.
+- **O arquivo LIN atual é útil:** sim, como executor bounded experimental de 33 opcodes.
+- **Próxima implementação correta:** formato de bytecode/módulo como dados, erros estruturados
+  e calls genéricas, sem declarar conformidade antes do gate.
+
+Esta auditoria corrige qualquer leitura de que os self-tests comprovam a LinVM inteira: eles
+comprovam somente programas selecionados; 33 dispatches ainda não satisfazem o gate FULL.

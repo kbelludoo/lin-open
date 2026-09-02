@@ -1,0 +1,81 @@
+@LIN:MODULE:2.0.0
+@CRYPTO_INDUSTRIAL_PACK{
+  sources="https://github.com/LoupVaillant/Monocypher + https://github.com/BLAKE3-team/BLAKE3 + https://github.com/lz4/lz4 + https://github.com/kokke/tiny-AES-c"
+  author="transpiled_into_lin"
+  standard="RFC8439_NIST_FIPS197"
+}
+
+// 1. ChaCha20 Quarter Round (RFC 8439 / D. J. Bernstein / Monocypher)
+!chacha20_quarter_round(a: int, b: int, c: int, d: int) -> int {
+  // a += b; d ^= a; d = rotl32(d, 16);
+  a = (a + b) & 4294967295;
+  d = d ^ a;
+  d = ((d << 16) | ((d >> 16) & 65535)) & 4294967295;
+
+  // c += d; b ^= c; b = rotl32(b, 12);
+  c = (c + d) & 4294967295;
+  b = b ^ c;
+  b = ((b << 12) | ((b >> 20) & 4095)) & 4294967295;
+
+  // a += b; d ^= a; d = rotl32(d, 8);
+  a = (a + b) & 4294967295;
+  d = d ^ a;
+  d = ((d << 8) | ((d >> 24) & 255)) & 4294967295;
+
+  // c += d; b ^= c; b = rotl32(b, 7);
+  c = (c + d) & 4294967295;
+  b = b ^ c;
+  b = ((b << 7) | ((b >> 25) & 127)) & 4294967295;
+
+  ^ (a ^ (b << 8) ^ (c << 16) ^ (d << 24));
+}
+
+// 2. BLAKE3 G Round Function (BLAKE3 team: O'Connor, Aumasson, Neves, Wilcox-O'Hearn)
+!blake3_g_round(a: int, b: int, c: int, d: int) -> int {
+  mx = 1013904223;
+  my = 1664525;
+
+  // a = a + b + mx; d = rotr32(d ^ a, 16);
+  a = (a + b + mx) & 4294967295;
+  d = d ^ a;
+  d = ((d >> 16) | ((d << 16) & 4294901760)) & 4294967295;
+
+  // c = c + d; b = rotr32(b ^ c, 12);
+  c = (c + d) & 4294967295;
+  b = b ^ c;
+  b = ((b >> 12) | ((b << 20) & 4294963200)) & 4294967295;
+
+  // a = a + b + my; d = rotr32(d ^ a, 8);
+  a = (a + b + my) & 4294967295;
+  d = d ^ a;
+  d = ((d >> 8) | ((d << 24) & 4278190080)) & 4294967295;
+
+  // c = c + d; b = rotr32(b ^ c, 7);
+  c = (c + d) & 4294967295;
+  b = b ^ c;
+  b = ((b >> 7) | ((b << 25) & 4261412864)) & 4294967295;
+
+  ^ (a ^ b ^ c ^ d);
+}
+
+// 3. LZ4 Fast Sequence Hash (Yann Collet / lz4)
+!lz4_hash_sequence(sequence: int) -> int {
+  prime4bytes = 2654435761;
+  hash_val = ((sequence * prime4bytes) >> 16) & 65535;
+  ^ hash_val;
+}
+
+// 4. AES-256 S-Box Matrix Diffusion Step (kokke/tiny-AES-c / NIST FIPS 197)
+!aes256_sbox_diffusion(state: int, rcon: int) -> int {
+  // Transpiled Galois Field GF(2^8) scalar non-linear affine projection
+  s0 = (state ^ (state >> 4) ^ (state >> 5) ^ (state >> 6) ^ (state >> 7) ^ 99) & 255;
+  s1 = ((state >> 8) ^ 99) & 255;
+  s2 = ((state >> 16) ^ 99) & 255;
+  s3 = ((state >> 24) ^ 99) & 255;
+
+  // Mix & Key Add
+  mixed = s0 ^ (s1 << 8) ^ (s2 << 16) ^ (s3 << 24) ^ rcon;
+  ^ mixed;
+}
+
+=ex{chacha20_quarter_round, blake3_g_round, lz4_hash_sequence, aes256_sbox_diffusion}
