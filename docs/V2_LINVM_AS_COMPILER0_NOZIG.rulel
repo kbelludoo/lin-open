@@ -147,8 +147,8 @@ medido: o host C11 concorda com os números que o Zig publicou).
 ## 7. Auto-aplicação: o compilador **escrito em LIN** roda na LinVM, sem Zig (2026-09-01)
 
 §1–§6 deram à LinVM a *materialização* do Compilador 0 em C11. Esta seção fecha o
-elo seguinte, o que a pergunta do usuário realmente pedia: existe um front-end de
-compilador **escrito em LIN** (#46: `src/linvm0_compiler/lin_lexer_selfhost.lin`,
+elo seguinte — a pergunta difícil: existe um front-end de compilador **escrito em
+LIN** (#46: `src/linvm0_compiler/lin_lexer_selfhost.lin`,
 `lin_expr_eval.lin`, `lin_lower_selfhost.lin`), mas o gate dele (`verify_linvm0.sh`,
 `make linvm0-gate`) chama `zig-out/bin/lin_native` para `check`/`lint` — a mesma
 barreira de ambiente que motivou este corte. Esse front-end agora roda sob o host
