@@ -16,10 +16,11 @@ advertising. Every claim carries an explicit status:
 What it does NOT do:
   * It does not claim that LIN "saves $1.8 trillion" or that it is faster than
     LLVM/C/Rust for general computation. The pinned Uniswap/OpenSSL files are
-    used for provenance and for the arithmetic/math oracle only.
-  * It does not pretend that the Compiler-0 host can execute integer division
-    or shifts in this environment. Those operations are explicitly rejected by
-    the audited `lin_c0` front-end (VM_REJ_INT_DIVISION / VM_REJ_PARSE).
+    used for provenance and for selected arithmetic/math oracles only.
+  * The default C0 host still rejects division/shifts with VM_REJ_*, but the
+    proof uses the experimental `vmfull` profile for the scalar math and hashing
+    functions. It still does not claim full protocol security, full OpenSSL
+    execution, gas savings, or performance against GCC/LLVM/Rust.
 
 Usage:
     python3 test/prove_all_claims_external.py            # 10,000 math vectors

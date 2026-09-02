@@ -12,8 +12,11 @@ Commands:
   lin_verify receipt <file> [--source "..."]      verify a LIN receipt.
   lin_verify provenance [--fetch]                 check pinned GitHub upstream digests.
   lin_verify module <file.lin> <fn> [args...]     run a LIN module via lin_c0 (needs C0 built).
+  lin_verify module-full <file.lin> <fn> [...]    run via the experimental profile-full host.
   lin_verify selfhost                             run the no-Zig Compiler-0 gates.
   lin_verify all [--iterations N] [--fetch]       run the complete rationalist proof.
+  lin_verify fuzz [--iterations N]                run the differential fuzz harness.
+  lin_verify benchmark [--iterations N]           run the audit-cost microbenchmark.
 
 Example:
   python3 lin_verify.py receipt benchmarks/fixtures/receipt_sqr9.json
@@ -213,6 +216,21 @@ def cmd_all(args: argparse.Namespace) -> int:
     ] + (["--fetch"] if args.fetch else [])).returncode
 
 
+def cmd_fuzz(args: argparse.Namespace) -> int:
+    return subprocess.run([
+        sys.executable, str(ROOT / "test" / "fuzz_differential.py"),
+        "--iterations", str(args.iterations),
+        "--categories", args.categories,
+    ]).returncode
+
+
+def cmd_benchmark(args: argparse.Namespace) -> int:
+    return subprocess.run([
+        sys.executable, str(ROOT / "test" / "benchmark_audit_cost.py"),
+        "--iterations", str(args.iterations),
+    ]).returncode
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Standalone LIN verifier CLI")
     sub = ap.add_subparsers(dest="command", required=True)
@@ -245,6 +263,15 @@ def main() -> int:
     p_a.add_argument("--iterations", type=int, default=10000)
     p_a.add_argument("--fetch", action="store_true")
     p_a.set_defaults(func=cmd_all)
+
+    p_f = sub.add_parser("fuzz", help="run the differential fuzz harness")
+    p_f.add_argument("--iterations", type=int, default=10000)
+    p_f.add_argument("--categories", default="qoi,uniswap,hash,tinyexpr")
+    p_f.set_defaults(func=cmd_fuzz)
+
+    p_b = sub.add_parser("benchmark", help="run the audit-cost microbenchmark")
+    p_b.add_argument("--iterations", type=int, default=1000)
+    p_b.set_defaults(func=cmd_benchmark)
 
     args = ap.parse_args()
     try:

@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "run_at": "2026-09-02",
+  "host": "arena sandbox (Debian 12, gcc 12.2.0, Python 3.11.2)",
+  "seed": 20260905,
+  "iterations_per_category": 10000,
+  "categories": {
+    "qoi": {
+      "vectors": 10000,
+      "error": null
+    },
+    "uniswap": {
+      "vectors": 11001,
+      "error": null
+    },
+    "hash": {
+      "vectors": 20000,
+      "error": null
+    },
+    "tinyexpr": {
+      "vectors": 24,
+      "error": null
+    }
+  },
+  "elapsed_seconds": 47.771,
+  "note": "Internal differential evidence only. Not a claim of on-chain gas savings or competitiveness with GCC/LLVM/Rust.",
+  "reproduce": "make -C transpile/c all && python3 test/fuzz_differential.py --iterations 10000"
+}

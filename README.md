@@ -121,16 +121,21 @@ transpile/c/bin/lin_c0 vm src/linvm_selfhost.lin vms_gate   # value=1 steps=8511
 The repository ships a conservative, externally reproducible proof harness. It
 pins/fetches real GitHub upstream sources, compares selected LIN modules against
 independent Python/C oracles, recomputes the Merkle receipt without the LIN
-runtime, and explicitly reports what is **not** proven (e.g. it does not claim
-Uniswap executes on the no-Zig C0 host, because that host rejects `/`).
+runtime, and explicitly reports what is **not** proven. The default `lin_c0`
+host is still fail-closed; division/shifts are available only through the
+experimental `vmfull` profile used by the proof.
 
 ```bash
 make -C transpile/c all
 python3 test/prove_all_claims_external.py --iterations 10000
 python3 test/prove_all_claims_external.py --iterations 10000 --fetch   # re-download upstream
+python3 test/fuzz_differential.py --iterations 10000                   # differential fuzz
+python3 test/benchmark_audit_cost.py --iterations 1000                 # internal audit microbenchmark
+bash test/verify_grant_artifacts.sh                                     # grant package self-check
 ```
 
-See `docs/RATIONALIST_PROOF_STATUS.md` for the full claim/limit table.
+Committed measurement artifacts are in `benchmarks/evidence/`. See
+`docs/RATIONALIST_PROOF_STATUS.md` for the full claim/limit table.
 
 ### Standalone `lin-verify` CLI (stdlib, no Zig)
 
@@ -155,6 +160,10 @@ python3 lin_verify.py selfhost
 
 # Full rationalist proof
 python3 lin_verify.py all --iterations 10000
+
+# Differential fuzz + internal audit microbenchmark
+python3 lin_verify.py fuzz --iterations 10000
+python3 lin_verify.py benchmark --iterations 1000
 ```
 
 ---

@@ -53,9 +53,15 @@ Current observable results:
   `0..20` and fails closed outside that range.
 - An experimental `vmfull` profile executes the pure `UniswapV2Library` math
   (`get_amount_out`, `quote`, `get_amount_in`) and the SipHash/xxHash round
-  kernels, matching independent Python oracles over thousands of vectors.
+  kernels, matching independent Python oracles.
+- Differential fuzz run on 2026-09-02: 10k QOI + 11,001 Uniswap + 20k hash
+  + 24 TinyExpr vectors, all PASS in 47.771s
+  (`benchmarks/evidence/fuzz_differential_20260902.json`).
 - `lin_c_receipt` produces a Merkle root that Python independently recomputes;
   a tampered output is rejected.
+- Internal audit microbenchmark (1,000 receipts): C11 producer ~1.1s vs Python
+  verifier ~0.005s, all verified
+  (`benchmarks/evidence/benchmark_audit_20260902.json`).
 - Compiler-0 no-Zig gates pass (`verify_c0.sh`, `verify_c0_selfhost.sh`),
   and a standalone `lin_verify.py` CLI exists.
 
@@ -72,7 +78,10 @@ Current observable results:
   flag; the default `lin_c0` must stay fail-closed.
 - Build a differential fuzz harness over the C11 host, Python oracle and (when
   available) the Zig Stage-0 build for 100,000 vectors.
-- Deliverable: `make c0-fuzz`, `make c0-selfhost-gate`, external proof output.
+- Deliverable: `make fuzz-differential`, `make c0-selfhost-gate`, external
+  proof output. A working harness already exists
+  (`test/fuzz_differential.py`); the remaining milestone work is running the
+  100k target on CI and adding the Zig side when available.
 
 ### Milestone 3 — CLI verifier, docs, final report ($7,000, months 5–6)
 - Ship `lin-verify` (Python stdlib, no Zig), consuming `.lin` + receipts and
@@ -100,9 +109,10 @@ compiler/runtime engineering, fuzz harnesses and documentation.
 ## 6. Non-goals
 - Do **not** claim "$1.8 trillion savings", "faster than LLVM", or "verified
   production-ready".
-- Do **not** claim to have executed Uniswap/OpenSSL in LinVM in this
-  environment. The proof explicitly prints `NOT-PROVEN` for that claim until a
-  Zig build (or full C0 profile) is available.
+- The proof executes the **pure math functions** of `UniswapV2Library` on the
+  experimental `vmfull` profile. It does **not** claim full protocol security,
+  full OpenSSL execution, on-chain gas savings, or a production-ready
+  compiler. Those remain `NOT-PROVEN` in `docs/RATIONALIST_PROOF_STATUS.md`.
 
 ## 7. Grant readiness checklist (current vs. missing)
 
@@ -112,15 +122,15 @@ compiler/runtime engineering, fuzz harnesses and documentation.
 | One-line reproducible command | ✅ `make -C transpile/c all && python3 lin_verify.py all` | install package? optional |
 | Standalone external verifier | ✅ `lin_verify.py` (stdlib) | PEP-517 installer only if requested |
 | Formal spec/EBNF + VM ISA | ⚠️ `.rulel` + `FORMAL_SPECIFICATION.md` | a frozen version (status `frozen`, not `proposed`) |
-| Differential fuzz harness | ⚠️ QOI/TinyExpr/Uniswap math/SipHash/xxHash + receipt | 100k vectors over shifts/division/profile C0 |
+| Differential fuzz harness | ✅ `test/fuzz_differential.py`; 10k/11k/20k run | run 100k target in CI, add Zig side |
+| Audit-cost microbenchmark | ✅ `test/benchmark_audit_cost.py`; 1k receipts | independent baseline (EVM/OpenSSL) |
 | Independent external audit | ❌ | 1 small independent reviewer/company |
-| Published benchmark vs baseline | ❌ | honest benchmark (not speed-vs-LLVM; verification/audit cost) |
-| CI evidence on GitHub | ⚠️ local CI file exists but GitHub App lacks `workflows` permission | push a workflow or run this in a repo owned by the app owner |
+| Published benchmark vs baseline | ❌ | baseline measurement against real tool |
+| CI evidence on GitHub | ⚠️ local `make verify-grant` passes; GitHub App lacks `workflows` permission | push a workflow or run this in a repo owned by the app owner |
 
 The proof never conflates "is ready for a grant" with "is ready for production".
-The most important remaining technical work is the C0 profile that exercises
-shifts/division and the 100k differential fuzz corpus, plus one external review.
-Those turn the current `NOT-PROVEN` Uniswap/OpenSSL claim into a measured claim.
+The remaining technical gaps are the 100k CI fuzz run, a frozen spec, a real
+baseline benchmark, and one independent external review.
 
 ## 8. Evaluation
 A reviewer can verify every claim above by running:

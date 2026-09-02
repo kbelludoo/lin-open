@@ -140,9 +140,13 @@ linvm0-gate: build-cpu
 # Escopo honesto (R5): o subconjunto aceito é o de `vmBuild`/`VmComp` do Stage0
 # (port em transpile/c/tool/lin_c0_front.c). `check`/`lint` e o ponto fixo
 # C0=C1=C2 continuam no Stage0 Zig — ver docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel.
-.PHONY: c0 c0-gate c0-selfhost-gate
+.PHONY: c0 c-tools c0-gate c0-selfhost-gate
 c0:
 	@$(MAKE) -C transpile/c c0
+
+# Builds the whole no-Zig C11 toolset: lin_c0, lin_c_receipt, linbc1 tests, etc.
+c-tools:
+	@$(MAKE) -C transpile/c all
 
 c0-gate: c0
 	@./test/verify_c0.sh transpile/c/bin/lin_c0
@@ -177,8 +181,9 @@ verify-receipt: build-cpu
 #
 #   make rationalist-proof            # local pinned upstream (offline)
 #   make rationalist-proof FETCH=1    # re-download upstream via GitHub API
-.PHONY: rationalist-proof verify-cli install-cli
-rationalist-proof: c0
+.PHONY: rationalist-proof verify-cli install-cli \
+        fuzz-differential benchmark-audit verify-grant
+rationalist-proof: c-tools
 ifneq ($(FETCH),)
 	@python3 test/prove_all_claims_external.py --iterations 10000 --fetch
 else
@@ -187,11 +192,25 @@ endif
 
 # Standalone no-Zig CLI (python3, stdlib only). `make install-cli PREFIX=~/.local`
 # puts an executable `lin-verify` on PATH.
-verify-cli: c0
+verify-cli: c-tools
 	@python3 lin_verify.py receipt benchmarks/fixtures/receipt_sqr9.json >/dev/null
 	@python3 lin_verify.py provenance >/dev/null
 	@python3 lin_verify.py selfhost >/dev/null
-	@echo "lim-verify CLI: PASS (receipt + provenance + no-Zig self-host)"
+	@echo "lin-verify CLI: PASS (receipt + provenance + no-Zig self-host)"
+
+# Differential fuzz over the proven categories. `--iterations 100000` is the
+# grant proposal target; it is deliberately available here but defaults to that
+# only when invoked explicitly.
+fuzz-differential: c-tools
+	@python3 test/fuzz_differential.py --iterations 100000
+
+# Internal producer/verifier microbenchmark. Not an EVM gas claim.
+benchmark-audit: c-tools
+	@python3 test/benchmark_audit_cost.py --iterations 1000
+
+# Cheap grant-package self-check: files present + quick proof + fuzz + benchmark.
+verify-grant: c-tools
+	@bash test/verify_grant_artifacts.sh
 
 PREFIX ?= ~/.local
 install-cli:

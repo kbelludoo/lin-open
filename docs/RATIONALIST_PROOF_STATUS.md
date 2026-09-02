@@ -3,12 +3,12 @@
 > Status: truthful audit, not marketing. Every line below is either reproducible
 > from this repository (no Zig required) or explicitly marked as NOT PROVEN.
 
-The previous conversation produced several strong claims ("$1.8T saved", "Uniswap
-executed in LinVM with 16,624 in 21 steps", "all claims proven"). In this checkout
-the **only** thing those claims had as evidence was a React/TypeScript dashboard
-that was not present in this repository, plus a C11 runtime that **rejects** the
-Uniswap integer division (`VM_REJ_INT_DIVISION`) on the no-Zig host. Therefore
-this document replaces them with a smaller, verifiable claim set.
+The earlier conversation claimed "$1.8T saved", "Uniswap executed in LinVM",
+and "all claims proven". In this checkout the default no-Zig C11 host still
+rejects integer division (`VM_REJ_INT_DIVISION`); the proof now uses an
+experimental `vmfull` profile for selected scalar kernels. This document
+replaces the broad claims with a smaller, verifiable claim set and an explicit
+`NOT-PROVEN` scope.
 
 ---
 
@@ -153,12 +153,43 @@ than inventing a pass.
 4. It explicitly publishes what it could not prove.
 
 The next real step to enlarge the claim set is no longer "make the C11 host
-accept division/shifts" — that now exists as the experimental `vmfull` profile.
-The remaining gaps are:
-1. a 100k-vector differential corpus over shifts/division;
-2. an actual audit-cost benchmark (verifying a receipt vs re-executing);
-3. a frozen formal spec (not `proposed`/`experimental`);
-4. one independent external review.
+accept division/shifts" — that already exists as the experimental `vmfull`
+profile. New evidence added in this repository:
+
+### Differential fuzz harness
+`test/fuzz_differential.py` compares the proven LIN modules against independent
+Python oracles with a deterministic seed. Committed JSON:
+`benchmarks/evidence/fuzz_differential_20260902.json`. Run on 2026-09-02:
+
+```text
+qoi       10,000 vectors
+uniswap   11,001 vectors  (get_amount_out + quote)
+hash      20,000 vectors  (SipHash-2-4 + xxHash64)
+tinyexpr  24 vectors      (0..20 + fail-closed edges)
+elapsed   47.771s
+RESULT    PASS
+```
+
+### Audit-cost microbenchmark (internal, no gas claim)
+`test/benchmark_audit_cost.py` measures the C11 producer vs the Python stdlib
+verifier for 1,000 receipts. Committed JSON:
+`benchmarks/evidence/benchmark_audit_20260902.json`.
+
+```text
+producer: 1.099745s  (~1,100 us/op)
+verifier: 0.005428s  (~5.4 us/op)
+verified: 1000/1000
+```
+
+This is *not* an EVM gas savings or LLVM/C/Rust performance claim; it is the
+measurable ratio inside this repository.
+
+### Remaining gaps
+1. run the 100k-vector target on a CI runner (the harness exists; this laptop
+   run used 10k/11k/20k);
+2. a frozen formal spec (not `proposed`/`experimental`);
+3. one independent external review;
+4. if desired, a benchmark against a real baseline tool (EVM/OpenSSL/etc).
 
 Until those exist, this document is the honest maximum: **seven reproducible
 claims**, one explicit `NOT-PROVEN` scope line.
@@ -183,9 +214,13 @@ python3 lin_verify.py selfhost
 
 # full proof
 python3 lin_verify.py all --iterations 10000
+
+# differential fuzz (100k target; 10k+ already run in this repo)
+python3 test/fuzz_differential.py --iterations 100000
+
+# internal audit-cost microbenchmark
+python3 test/benchmark_audit_cost.py --iterations 1000
 ```
 
-For grant readiness, the remaining technical gaps are listed in
-`GRANT_PROPOSAL.md` §7: a frozen formal spec, 100k differential fuzz vectors
-over shifts/division, one independent external reviewer, and an honest audit-cost
-benchmark.
+For grant readiness, the remaining gaps are listed in
+`GRANT_PROPOSAL.md` §7.
