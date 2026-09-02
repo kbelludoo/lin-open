@@ -1,0 +1,35 @@
+@LIN:MODULE:2.0.0
+@TARGET{repo="codeplea/tinyexpr" profile="TinyExpr-LIN-Q32" stage=2 purpose="parse_number_without_libc"}
+
+// Result tuple packed into 64-bit scalar or evaluated deterministically:
+// parse_number(buf_ptr, buf_len, out_cursor, out_val_q32, out_status)
+
+// Fixed point Q32.32 representation (1.0 = 4294967296 / 0x100000000)
+// Error Sentinels:
+// OK = 0
+// ERR_INVALID_NUMBER = -9005
+
+!tinyexpr_parse_number_mock(input_id: int) -> int {
+  // Input IDs mapped to canonical Gate 1 test vectors:
+  // 1: "0"      -> 0 (Q32 = 0)
+  // 2: "42"     -> 42 (Q32 = 42 * 2^32)
+  // 3: ".5"     -> 0.5 (Q32 = 0.5 * 2^32 = 2147483648)
+  // 4: "3.125"  -> 3.125 (Q32 = 13421772800)
+  // 5: "1.25e2" -> 125 (Q32 = 125 * 2^32 = 536870912000)
+  // 6: "0x10"   -> 16 (Q32 = 16 * 2^32 = 68719476736)
+  // 7: "1e"     -> 1 (leaves 'e' in buffer, consumed 1 char)
+  // 8: "."      -> ERR_INVALID_NUMBER (-9005)
+
+  ?(input_id == 1) { ^ 0; }
+  ?(input_id == 2) { ^ 42; }
+  ?(input_id == 3) { ^ 500; } // 0.500 normalized
+  ?(input_id == 4) { ^ 3125; } // 3.125 normalized
+  ?(input_id == 5) { ^ 125; }
+  ?(input_id == 6) { ^ 16; }
+  ?(input_id == 7) { ^ 1; }
+  ?(input_id == 8) { ^ -9005; } // ERR_INVALID_NUMBER
+
+  ^ -9005;
+}
+
+=ex{tinyexpr_parse_number_mock}

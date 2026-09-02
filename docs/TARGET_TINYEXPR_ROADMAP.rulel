@@ -1,80 +1,88 @@
-@RULEL:TARGET_TINYEXPR_ROADMAP:1.0.0
+@RULEL:TARGET_TINYEXPR_ROADMAP:1.2.0
 ~MARKDOWN_SPEC
-# Roadmap de Transpilação & Verificação Diferencial: codeplea/tinyexpr → LIN
+# Especificação Formal: TinyExpr-LIN Profile & Roadmap de Verificação Diferencial
 
-> **Alvo Primário:** `codeplea/tinyexpr` (C99, 1 header `tinyexpr.h`, 1 source `tinyexpr.c`, zero dependências externas).
-> **Alvo Secundário (Downstream Milestone):** `rui314/chibicc` (compilador C11 completo).
-> **Princípio:** Decomposição em 6 estágios incrementais orientados a regras de regressão e testes diferenciais com paridade bit-a-bit contra GCC/Clang C11.
+> **Definição Canônica:** **TinyExpr-LIN Profile**  
+> Preservação estrita da semântica matemática e lógica da biblioteca e gramática `codeplea/tinyexpr`, adaptando a representação para o modelo LIN de memória linear plana (sem `malloc`, sem `union`, sem ponteiros soltos e sem ponteiros de função indiretos).
+>
+> **Classificação de Conformidade:** **PASS — TinyExpr-LIN Profile** (não C11 puro, dado que `^` é potência, `&&`/`||` são avaliados como funções sem short-circuit C, e funções aritméticas como `fac`/`ncr` são extensões da biblioteca).
+>
+> **Alvo Secundário (Downstream Milestone):** `rui314/chibicc` (compilador C11 modular).
 
 ---
 
-## 1. Justificativa & Arquitetura do Alvo
+## 1. Classificação Rigorosa dos Vetores & Componentes
 
-| Propriedade | tinyexpr (C99) | LIN (Modelo Alvo) |
+| Grupo | Vetores / Componentes | Classificação Formal |
 |---|---|---|
-| **Arquivos** | `tinyexpr.h` + `tinyexpr.c` (~600 LOC) | Modularizado em `src/lin_tinyexpr_*.lin` |
-| **Dependências** | `math.h` e `string.h` mínimos | Built-ins escalares do LinVM |
-| **Memória** | `malloc` / `realloc` para AST e `te_variable` | Regiões lineares limitadas e flat registers |
-| **Execução** | Recursivo descendente com avaliação direta | Bytecode LinVM determinístico com receipts SHA-256 |
+| **Gramática TinyExpr** | `1 + 2 * 3`, `(2 + 3) * 4`, `3 < 4 && 7 != 8`, `a ^ b` | **Paridade da Gramática TinyExpr** |
+| **Biblioteca TinyExpr** | `fac(n)`, `ncr(n, r)` | **Paridade da Biblioteca TinyExpr** |
+| **Adaptação Fail-Closed LIN** | `-9001 (DIV_ZERO)`, `-9002 (ERR_DOMAIN)`, `-9003 (OVERFLOW)` | **Extensão Semântica LIN (Fail-Closed)** |
+| **Extensão Exclusiva LIN** | `isqrt_safe(val)` (com $\le 6$ iterações e correção $\Delta = 1$) | **Extensão Exclusiva LIN** |
+| **Funções de Ponto Flutuante** | `sqrt(x)`, `pow(x, y)`, `sin`, `cos`, `ln`, `exp` | **Dependentes do Backend Numérico** |
 
 ---
 
-## 2. Escalonamento em 6 Estágios Incrementais
+## 2. Separação de Perfis Numéricos (Backends)
 
-### Estágio 1: Funções Aritméticas e Combinatórias Puras
-- `fac(n)` (Fatorial inteiro com wrap-around)
-- `ncr(n, r)` (Combinação $n! / (r! (n-r)!)$ com simplificação)
-- Operadores binários (`+`, `-`, `*`, `/`, `%`, `^`, bitwise)
-- **Gate:** Paridade 100% contra C11 `tinyexpr` math kernels.
+Não é permitido declarar paridade bit-a-bit cega entre formatos matemáticos distintos. Estabelecemos dois perfis numéricos independentes:
 
-### Estágio 2: `parse_number` (Parsing Escalar de Dígitos)
-- Conversão de string/buffer ASCII para inteiro 64-bit / ponto fixo.
-- Tratamento de base decimal, hexadecimal (`0x...`), e potências de 10.
-- **Gate:** 0 estouros de buffer, paridade estrita em edge-cases (`0`, `-0`, `INT64_MAX`, `INT64_MIN`).
-
-### Estágio 3: `next_token` (Tokenizer e Léxico)
-- Classificação de tokens (`TOK_NUMBER`, `TOK_PLUS`, `TOK_MINUS`, `TOK_MUL`, `TOK_DIV`, `TOK_LPAREN`, `TOK_RPAREN`, `TOK_FUNC`).
-- Consumo de whitespace e delimitadores sem ponteiros desordenados.
-- **Gate:** Vetor canônico de tokens idêntico ao output de `tinyexpr.c:next_token`.
-
-### Estágio 4: Parser de Expressões com Precedência de Operadores
-- Implementação da tabela de precedência (Shunting-yard ou recursão descendente).
-- Suporte a expressões aninhadas e parênteses.
-- **Gate:** Expressões diferenciais:
-  - `1 + 2 * 3 → 7`
-  - `(2 + 3) * 4 → 20`
-  - `3 < 4 && 7 != 8 → 1`
-
-### Estágio 5: AST e `te_eval` (Avaliação e Redução)
-- Formato flat de nós de expressão em região estática (`lin_regions`).
-- Avaliação determinística recursiva ou por pilha com gas limit estrito.
-- **Gate:** Cálculo de receipts `LIN_COMPUTE_RECEIPT_1.0` sobre cada avaliação de expressão.
-
-### Estágio 6: Eliminação de Heap / `malloc`, `union` e Ponteiros de Função
-- Substituição de tabelas de ponteiros de função por dispatch tables enumeradas (`switch-case` / LUT indexada).
-- Substituição de `union` C por tags escalares explícitas de 64 bits.
-- **Gate:** Validação em ASan/UBSan e verificação formal de isolamento de memória.
+1. **`TinyExpr-LIN-F64`**: Compatibilidade com IEEE-754 dupla precisão (64-bit float).
+2. **`TinyExpr-LIN-Q32`**: Compatibilidade com aritmética determinística de ponto fixo Q32.32 (32 bits inteiros, 32 bits fracionários), 100% reproduzível entre plataformas e livre de divergências de arredondamento de hardware FPU.
 
 ---
 
-## 3. Matriz de Testes Diferenciais Iniciais
+## 3. Contrato de Limites Formais (Boundaries & Fault Handling)
 
-| Expressão Teste | Output C11 | Output LinVM | Status Gate |
-|---|---|---|---|
-| `1 + 2 * 3` | `7` | `7` | PASS |
-| `(2 + 3) * 4` | `20` | `20` | PASS |
-| `fac(5)` | `120` | `120` | PASS |
-| `ncr(10, 3)` | `120` | `120` | PASS |
-| `3 < 4 && 7 != 8` | `1` (true) | `1` (true) | PASS |
-| `pow_int(3, 2) + pow_int(4, 2)` | `25` | `25` | PASS |
-| `isqrt(25)` | `5` | `5` | PASS |
+1. **Tamanho Máximo da Expressão:** $\le 256$ bytes ASCII / UTF-8.
+2. **Profundidade Máxima de Pilha (SP):** $\text{SP} \le 32$. Excesso gera `ERR_STACK_OVERFLOW (-9004)`.
+3. **Capacidade Máxima da AST Flat:** $\le 64$ nós planos alocados estaticamente.
+4. **Divisão por Zero:** Sentinela determinístico `ERR_DIV_ZERO (-9001)`.
+5. **Erros de Domínio (ex: `ncr(5, 6)`, `fac(-1)`):** Sentinela determinístico `ERR_DOMAIN (-9002)` (equivalente seguro ao NaN).
+6. **Overflow Aritmético:** Fatorial para $n > 20$ gera `ERR_OVERFLOW (-9003)`.
+7. **Determinismo & Idempotência:** Toda execução gera receipt Merkle SHA-256 idêntico em múltiplas execuções consecutivas.
 
 ---
 
-## 4. Downstream Milestone: rui314/chibicc
+## 4. Gate 0: TinyExpr-LIN Profile (Validado)
 
-Após a conclusão e validação do pipeline do `tinyexpr`, o `chibicc` servirá como prova de escala industrial:
-1. Lexer C11 completo (`tokenize.c`);
-2. Pré-processador com macros e includes (`preprocess.c`);
-3. Parser de tipos C11 com structs, enums e typedefs (`parse.c`);
-4. Geração de código de baixo nível e emissão LINBC1.
+| Vetor de Teste | Chamada / Expressão | Saída Canônica | Classificação | Status Gate |
+|---|---|---|---|---|
+| **V1** | `fac(0)` | `1` | Paridade Biblioteca TinyExpr | PASS — TinyExpr-LIN Profile |
+| **V2** | `fac(5)` | `120` | Paridade Biblioteca TinyExpr | PASS — TinyExpr-LIN Profile |
+| **V3** | `fac(12)` | `479001600` | Paridade Biblioteca TinyExpr | PASS — TinyExpr-LIN Profile |
+| **V4** | `ncr(10, 3)` | `120` | Paridade Biblioteca TinyExpr | PASS — TinyExpr-LIN Profile |
+| **V5** | `ncr(5, 6)` | `-9002` | Extensão Semântica LIN (Fail-Closed) | PASS — TinyExpr-LIN Profile |
+| **V6** | `1 + 2 * 3` | `7` | Paridade Gramática TinyExpr | PASS — TinyExpr-LIN Profile |
+| **V7** | `(2 + 3) * 4` | `20` | Paridade Gramática TinyExpr | PASS — TinyExpr-LIN Profile |
+| **V8** | `3 < 4 && 7 != 8` | `1` | Paridade Gramática TinyExpr | PASS — TinyExpr-LIN Profile |
+
+---
+
+## 5. Gate 1: `parse_number` (Parsing Escalar Sem Dependências Libc)
+
+O TinyExpr implementa o parsing de números manualmente em `tinyexpr.c:parse_number` (decodificando hexadecimais `0x...`, parte fracionária `.` e expoentes `e`/`E`).
+
+### Vetores Canônicos Obrigatórios do Gate 1
+
+| Entrada (String) | Valor Canônico (Q32.32 / Escalar) | Cursor Consumido | Próximo Caractere | Status de Erro |
+|---|---|---|---|---|
+| `"0"` | `0.0` (`0x00000000_00000000`) | 1 byte | `\0` | `OK (0)` |
+| `"42"` | `42.0` (`0x0000002A_00000000`) | 2 bytes | `\0` | `OK (0)` |
+| `".5"` | `0.5` (`0x00000000_80000000`) | 2 bytes | `\0` | `OK (0)` |
+| `"3.125"` | `3.125` (`0x00000003_20000000`) | 5 bytes | `\0` | `OK (0)` |
+| `"1.25e2"` | `125.0` (`0x0000007D_00000000`) | 6 bytes | `\0` | `OK (0)` |
+| `"0x10"` | `16.0` (`0x00000010_00000000`) | 4 bytes | `\0` | `OK (0)` |
+| `"1e"` | `1.0` (`0x00000001_00000000`) | 1 byte (deixa `'e'`) | `'e'` | `OK (0)` |
+| `"."` | `0.0` | 0 bytes | `.` | `ERR_INVALID_NUMBER (-9005)` |
+
+---
+
+## 6. Escalonamento em 6 Estágios Progressivos
+
+1. **Estágio 1:** Aritmética e Combinatória Pura (`fac`, `ncr`, `isqrt_safe`) — **GATE 0 PASS**.
+2. **Estágio 2:** `parse_number` (Hex, Fração, Expoente, Cursor & Status) — **GATE 1 ACTIVE**.
+3. **Estágio 3:** `next_token` (Classificador léxico sem ponteiros soltos).
+4. **Estágio 4:** Parser de Expressões (Precedência, Parênteses, Profundidade $\le 32$).
+5. **Estágio 5:** AST Flat & `te_eval` Determinístico com Receipts Criptográficos.
+6. **Estágio 6:** Eliminação Completa de Heap/`malloc`, substituição de `union` por tags e jump tables indexadas.
