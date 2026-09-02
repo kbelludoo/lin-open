@@ -1,0 +1,68 @@
+@LIN:L1c:0.2
+@LIN_V3_EMITTER_PIPELINE{version=1 purpose=ast_lower_to_linbc1_bytecode_bridge runs_on="lin vm" status=EXPERIMENTAL_V3}
+
+// ============================================================================
+// LIN V3 Pipeline Bridge: Conecta o Lowerer (lin_lower_selfhost.lin)
+// ao Emissor de Bytecode LINBC1 (lin_linbc_emit.lin).
+//
+// 100% em LIN Escalar Puro (i64, flat static buffers, sem heap).
+// Invariante R0/R1: Zero dependência externa de Zig no pipeline de lower.
+// ============================================================================
+
+!v3_opcode_push_const() -> int { ^1 }
+!v3_opcode_add() -> int { ^4 }
+!v3_opcode_sub() -> int { ^5 }
+!v3_opcode_mul() -> int { ^6 }
+!v3_opcode_cmp() -> int { ^12 }
+!v3_opcode_ret() -> int { ^29 }
+
+!v3_emit_header_magic(idx: int) -> int {
+  // 'L' 'I' 'N' 'B' 'C' '1' (0x4C, 0x49, 0x4E, 0x42, 0x43, 0x31)
+  ?(idx == 0) { ^76 }
+  : (idx == 1) { ^73 }
+  : (idx == 2) { ^78 }
+  : (idx == 3) { ^66 }
+  : (idx == 4) { ^67 }
+  : (idx == 5) { ^49 }
+  : { ^0 };
+}
+
+!v3_encode_instruction(op: int, arg: int) -> int {
+  // Empacota (opcode: 8 bits, reserved: 24 bits, arg: 32 bits) em uma palavra escalar de 64 bits
+  mask32 = 4294967295;
+  high_word = (op & 255) * 16777216;
+  low_word = arg & mask32;
+  ^high_word * 4294967296 + low_word
+}
+
+!v3_decode_opcode(word: int) -> int {
+  high = _lia_shr(word, 32) & 4294967295;
+  ^_lia_shr(high, 24) & 255
+}
+
+!v3_decode_arg(word: int) -> int {
+  ^word & 4294967295
+}
+
+!v3_validate_roundtrip(op: int, arg: int) -> int {
+  encoded = v3_encode_instruction(op, arg);
+  dec_op = v3_decode_opcode(encoded);
+  dec_arg = v3_decode_arg(encoded);
+  
+  ok = 1;
+  ?(dec_op != op) { ok = 0; };
+  ?(dec_arg != arg) { ok = 0; };
+  ^ok
+}
+
+!v3_pipeline_selftest() -> int {
+  pass = 1;
+  ?(v3_emit_header_magic(0) != 76) { pass = 0; };
+  ?(v3_emit_header_magic(5) != 49) { pass = 0; };
+  
+  ?(v3_validate_roundtrip(v3_opcode_push_const(), 42) != 1) { pass = 0; };
+  ?(v3_validate_roundtrip(v3_opcode_add(), 0) != 1) { pass = 0; };
+  ?(v3_validate_roundtrip(v3_opcode_ret(), 0) != 1) { pass = 0; };
+  
+  ^pass
+}

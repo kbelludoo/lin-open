@@ -1,0 +1,64 @@
+@LIN:L1c:0.2
+@LIN_V3_LINKER{version=1 purpose=selfhost_symbol_table_and_jump_resolution_linker status=EXPERIMENTAL_V3 emissions=LINBC1_IMAGE}
+
+// ============================================================================
+// LIN V3 Linker & Symbol Resolution Stage:
+// Resolve labels simbólicos, offsets de saltos condicionais (? e while),
+// e monta a tabela de símbolos de funções exportadas.
+//
+// 100% em LIN Escalar Puro (i64, sem ponteiros, sem heap).
+// Invariante R0/R1: Respeito estrito às regras de governança.
+// ============================================================================
+
+!v3_link_entrypoint_offset() -> int {
+  // Offset base onde se iniciam as instruções executáveis após o header LINBC1
+  ^64
+}
+
+!v3_calculate_jump_offset(src_pc: int, target_label_pc: int) -> int {
+  // Retorna salto relativo em instruções de 64 bits
+  delta = target_label_pc - src_pc;
+  ^delta
+}
+
+!v3_patch_jump_instruction(raw_word: int, resolved_relative_offset: int) -> int {
+  // Preserva os 32 bits superiores (opcode + flags) e injeta o offset relativo nos 32 bits inferiores
+  mask32 = 4294967295;
+  high_part = _lia_shr(raw_word, 32);
+  packed_high = high_part * 4294967296;
+  packed_low = resolved_relative_offset & mask32;
+  ^packed_high + packed_low
+}
+
+!v3_verify_symbol_entry(fn_id: int, expected_hash: int) -> int {
+  // Validador de consistência da tabela de exportação =ex{...}
+  fn_hash = (fn_id * 1000003) & 4294967295;
+  match = 0;
+  ?(fn_hash == expected_hash) { match = 1; };
+  ^match
+}
+
+!v3_linker_selftest() -> int {
+  pass = 1;
+  
+  // Teste 1: Base offset do entry point
+  ?(v3_link_entrypoint_offset() != 64) { pass = 0; };
+  
+  // Teste 2: Salto para frente (+12 instruções)
+  delta = v3_calculate_jump_offset(10, 22);
+  ?(delta != 12) { pass = 0; };
+  
+  // Teste 3: Salto para trás (-8 instruções em loop)
+  back_delta = v3_calculate_jump_offset(20, 12);
+  ?(back_delta != -8) { pass = 0; };
+  
+  // Teste 4: Patch de instrução de salto
+  raw_jump_op = 15 * 16777216 * 4294967296; // Opcode 15 (JUMP_IF_FALSE)
+  patched = v3_patch_jump_instruction(raw_jump_op, 42);
+  
+  // Extrai argumento após patch
+  arg = patched & 4294967295;
+  ?(arg != 42) { pass = 0; };
+  
+  ^pass
+}
