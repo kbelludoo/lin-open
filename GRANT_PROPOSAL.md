@@ -51,9 +51,13 @@ Current observable results:
   independent Python oracle.
 - `tinyexpr_fac` (from `codeplea/tinyexpr`) matches Python factorial over
   `0..20` and fails closed outside that range.
+- An experimental `vmfull` profile executes the pure `UniswapV2Library` math
+  (`get_amount_out`, `quote`, `get_amount_in`) and the SipHash/xxHash round
+  kernels, matching independent Python oracles over thousands of vectors.
 - `lin_c_receipt` produces a Merkle root that Python independently recomputes;
   a tampered output is rejected.
-- Compiler-0 no-Zig gates pass (`verify_c0.sh`, `verify_c0_selfhost.sh`).
+- Compiler-0 no-Zig gates pass (`verify_c0.sh`, `verify_c0_selfhost.sh`),
+  and a standalone `lin_verify.py` CLI exists.
 
 ## 4. Milestones
 
@@ -64,18 +68,22 @@ Current observable results:
 - Deliverable: `docs/AGENTS_EMENDA…` + human-readable `FORMAL_SPECIFICATION.md`.
 
 ### Milestone 2 — Standalone no-Zig compiler/interpreter and differential fuzzing ($10,000, months 3–4)
-- Extend `transpile/c` to support shifts and integer division behind a profile
-  flag (currently rejected), without weakening the `VM_REJ_*` fail-closed path.
+- Continue the existing experimental `vmfull` profile (division/shifts) behind a
+  flag; the default `lin_c0` must stay fail-closed.
 - Build a differential fuzz harness over the C11 host, Python oracle and (when
   available) the Zig Stage-0 build for 100,000 vectors.
 - Deliverable: `make c0-fuzz`, `make c0-selfhost-gate`, external proof output.
 
 ### Milestone 3 — CLI verifier, docs, final report ($7,000, months 5–6)
-- Ship `lin-verify` (C11/Python), consuming `.lin` + receipts and emitting
-  PASS/FAIL with the recomputed Merkle root.
+- Ship `lin-verify` (Python stdlib, no Zig), consuming `.lin` + receipts and
+  emitting PASS/FAIL with the recomputed Merkle root.
 - Publish usage docs and a reproducible CI job.
 - Deliverable: final report with measured coverage, known non-goals and honest
   security/performance boundaries.
+
+A first stand-alone `lin-verify` already exists in this repository (`lin_verify.py`)
+with commands `receipt`, `provenance`, `module`, `selfhost` and `all`. It is the
+seed of the Milestone 3 deliverable.
 
 ## 5. Budget rationale
 Salaries are intentionally modest (independent researcher). Most work is
@@ -96,12 +104,30 @@ compiler/runtime engineering, fuzz harnesses and documentation.
   environment. The proof explicitly prints `NOT-PROVEN` for that claim until a
   Zig build (or full C0 profile) is available.
 
-## 7. Evaluation
+## 7. Grant readiness checklist (current vs. missing)
+
+| Item | Now | Missing to submit |
+|---|---|---|
+| Public repository with MIT license | ✅ | none |
+| One-line reproducible command | ✅ `make -C transpile/c all && python3 lin_verify.py all` | install package? optional |
+| Standalone external verifier | ✅ `lin_verify.py` (stdlib) | PEP-517 installer only if requested |
+| Formal spec/EBNF + VM ISA | ⚠️ `.rulel` + `FORMAL_SPECIFICATION.md` | a frozen version (status `frozen`, not `proposed`) |
+| Differential fuzz harness | ⚠️ QOI/TinyExpr/Uniswap math/SipHash/xxHash + receipt | 100k vectors over shifts/division/profile C0 |
+| Independent external audit | ❌ | 1 small independent reviewer/company |
+| Published benchmark vs baseline | ❌ | honest benchmark (not speed-vs-LLVM; verification/audit cost) |
+| CI evidence on GitHub | ⚠️ local CI file exists but GitHub App lacks `workflows` permission | push a workflow or run this in a repo owned by the app owner |
+
+The proof never conflates "is ready for a grant" with "is ready for production".
+The most important remaining technical work is the C0 profile that exercises
+shifts/division and the 100k differential fuzz corpus, plus one external review.
+Those turn the current `NOT-PROVEN` Uniswap/OpenSSL claim into a measured claim.
+
+## 8. Evaluation
 A reviewer can verify every claim above by running:
 
 ```bash
 make -C transpile/c all
-python3 test/prove_all_claims_external.py --iterations 10000
+python3 lin_verify.py all --iterations 10000
 ```
 
 and then reading `docs/RATIONALIST_PROOF_STATUS.md` for the exact not-proven

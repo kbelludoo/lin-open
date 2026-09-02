@@ -36,7 +36,11 @@ Latest rationalist output:
           x*x receipt root independently recomputed by Python
 [PASS] C5  Compiler-0 no-Zig self-host gates
           verify_c0.sh + verify_c0_selfhost.sh pass with no Zig
-[NOT-PROVEN] NP1  Full UniswapV2Library LinVM execution
+[PASS] C6  UniswapV2Library scalar math parity (profile-full)
+          get_amount_out/quote/get_amount_in match Python oracle
+[PASS] C7  SipHash/xxHash round parity (profile-full)
+          SipHash-2-4 and xxHash64 round match Python oracle
+[NOT-PROVEN] NP1  Full protocol/security/performance proof
 ```
 
 ### C1 — Real GitHub provenance, fetched from the GitHub Contents API
@@ -94,20 +98,49 @@ bash test/verify_c0_selfhost.sh
 Both pass, using only `cc` + Python. This is a real no-simulation result from
 this repository; it is not borrowed from the absent React dashboard.
 
+### C6 — UniswapV2Library scalar math parity (profile-full)
+
+The default `lin_c0` host still rejects `/` (`VM_REJ_INT_DIVISION`) on purpose.
+We added an **experimental** `vmfull` mode to `lin_c0` that accepts the
+division/shift opcodes already implemented in the audited C11 VM. Using that
+mode, the harness executes the three pure functions of the pinned
+`UniswapV2Library.sol` module and compares each result with an independent Python
+oracle over thousands of random reserves. The canonical vector
+`(10000, 50000, 100000)` returns `16624`.
+
+```bash
+transpile/c/bin/lin_c0 vmfull src/lin_uniswap_v2_library.lin get_amount_out 10000 50000 100000
+# .result{ fn="get_amount_out" value=16624 steps=36 }
+```
+
+### C7 — SipHash/xxHash round parity (profile-full)
+
+`src/lin_siphash_xxhash_qoi.lin::siphash_round` and `::xxhash64_round` use
+`<<` and `>>`, which the default C0 parser rejected. With `vmfull` they execute
+and match an independent Python 64-bit rotate/wrap oracle over 2,000 vectors.
+
+```bash
+transpile/c/bin/lin_c0 vmfull src/lin_siphash_xxhash_qoi.lin xxhash64_round 1 2
+# .result{ fn="xxhash64_round" value=4536812348109739777 steps=33 }
+```
+
+The `vmfull` mode is **experimental and intentionally separate from the default
+fail-closed profile**: it does not change what `lin_c0 info`/`vm` report.
+
 ---
 
 ## 2. What is NOT proven (and must not be sold as proven)
 
 | Claim | Status |
 |---|---|
-| "LIN runs UniswapV2Library and returns 16,624" | **NOT PROVEN** — `lin_c0` rejects `/` with `VM_REJ_INT_DIVISION`; no Zig compiler is available in this environment |
 | "LIN saves $1.8T" | **FALSE AS STATED** — the number is cumulative swap volume, not a cost or savings; no benchmark supports a savings figure |
 | "LIN is faster than LLVM/C/Rust" | **NOT PROVEN** — no benchmark here |
 | "OpenSSL SHA-256 executes in LinVM" | **NOT PROVEN** — the OpenSSL file is only pinned/verified for provenance |
+| "Full Uniswap protocol is now protected/replaced" | **NOT PROVEN** — only the three pure math functions are executed; routing addresses, storage, EVM, reentrancy, etc. are outside this test |
 | "Heaps are eliminated in all upstream repos" | **NOT PROVEN** — only the compiler host and the selected LIN modules are observed; upstream C/Solidity is not rewritten by this proof |
 
-The proof harness deliberately encodes the Uniswap limitation as `NP1` and
-prints it as `NOT-PROVEN` rather than inventing a pass.
+The proof harness encodes these as `NP1` and prints the `NOT-PROVEN` line rather
+than inventing a pass.
 
 ---
 
@@ -119,9 +152,40 @@ prints it as `NOT-PROVEN` rather than inventing a pass.
 3. It verifies tamper detection.
 4. It explicitly publishes what it could not prove.
 
-The next real step to enlarge the claim set is not another dashboard; it is a
-Zig-native `zig-out/bin/lin_native` build (or a C11 front-end that accepts the
-currently rejected operations), followed by a differential fuzz harness over the
-full Uniswap/OpenSSL module and an actual benchmark. Until that exists, this
-document is the honest maximum: five reproducible claims, one explicitly
-unproven.
+The next real step to enlarge the claim set is no longer "make the C11 host
+accept division/shifts" — that now exists as the experimental `vmfull` profile.
+The remaining gaps are:
+1. a 100k-vector differential corpus over shifts/division;
+2. an actual audit-cost benchmark (verifying a receipt vs re-executing);
+3. a frozen formal spec (not `proposed`/`experimental`);
+4. one independent external review.
+
+Until those exist, this document is the honest maximum: **seven reproducible
+claims**, one explicit `NOT-PROVEN` scope line.
+
+## 4. Standalone CLI
+
+```bash
+# verify a receipt independently (stdlib, no Zig)
+python3 lin_verify.py receipt benchmarks/fixtures/receipt_sqr9.json
+
+# upstream provenance
+python3 lin_verify.py provenance --fetch
+
+# run a LIN module through the C11 Compiler-0 host
+python3 lin_verify.py module src/lin_siphash_xxhash_qoi.lin qoi_color_hash 50 60 70 80
+
+# run through the experimental profile-full host
+python3 lin_verify.py module-full src/lin_uniswap_v2_library.lin get_amount_out 10000 50000 100000
+
+# no-Zig self-host gates
+python3 lin_verify.py selfhost
+
+# full proof
+python3 lin_verify.py all --iterations 10000
+```
+
+For grant readiness, the remaining technical gaps are listed in
+`GRANT_PROPOSAL.md` §7: a frozen formal spec, 100k differential fuzz vectors
+over shifts/division, one independent external reviewer, and an honest audit-cost
+benchmark.

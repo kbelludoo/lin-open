@@ -66,6 +66,12 @@ const C0FnInfo *c0_parse_fn_infos(C0Arena *a, const char *src, size_t len,
  * like the Zig. Returns NULL only on arena exhaustion. */
 VmModule *c0_build(C0Arena *a, const char *src, size_t len);
 
+/* Experimental research profile: same front-end as c0_build but the parser is
+ * allowed to emit OP_DIV/OP_MOD and OP_SHL/OP_SHR/OP_USHR. This is the
+ * "profile full" needed to execute Uniswap/SipHash/xxHash-style scalar kernels
+ * from source. It does NOT change the default fail-closed c0_build behavior. */
+VmModule *c0_build_full(C0Arena *a, const char *src, size_t len);
+
 /* LINBC1 image encoder (docs/LINBC1_FORMAT.rulel §2/§3, profile 1).
  * Refuses (returns NULL, sets *err) when any function is not ok or when a
  * loader invariant of §3 would be violated — fail-closed, never a partial

@@ -82,7 +82,11 @@ canonical digest.
 
 ## 5. Known non-goals / current limits
 
-- The C0 host does **not** implement `/`, `%`, `<<`, `>>`, `>>>`.
+- The default `lin_c0` host rejects `/` and `<<`/`>>` with explicit
+  `VM_REJ_INT_DIVISION` / `VM_REJ_SHIFT`.
+- An **experimental** `vmfull` profile in the same host accepts these operations
+  (the C11 VM already implements them). It is deliberately separate: default
+  `vm`/`info` fail-closed behavior is unchanged.
 - There is **no** general I/O, OS, database, or blockchain consensus layer.
 - The project is a verifiable computation kernel, not a replacement for LLVM,
   Rust, C, or a general-purpose language.

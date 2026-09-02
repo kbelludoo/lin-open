@@ -132,6 +132,31 @@ python3 test/prove_all_claims_external.py --iterations 10000 --fetch   # re-down
 
 See `docs/RATIONALIST_PROOF_STATUS.md` for the full claim/limit table.
 
+### Standalone `lin-verify` CLI (stdlib, no Zig)
+
+```bash
+# Install on PATH (optional)
+make install-cli PREFIX=~/.local
+
+# Independent receipt verification
+python3 lin_verify.py receipt benchmarks/fixtures/receipt_sqr9.json
+
+# Provenance of pinned/fetched upstream GitHub files
+python3 lin_verify.py provenance --fetch
+
+# Run a LIN module through the C11 Compiler-0 host
+python3 lin_verify.py module src/lin_siphash_xxhash_qoi.lin qoi_color_hash 50 60 70 80
+
+# Run through the experimental profile-full host (division/shifts)
+python3 lin_verify.py module-full src/lin_uniswap_v2_library.lin get_amount_out 10000 50000 100000
+
+# No-Zig self-host gates
+python3 lin_verify.py selfhost
+
+# Full rationalist proof
+python3 lin_verify.py all --iterations 10000
+```
+
 ---
 
 ## 7. Repository Layout

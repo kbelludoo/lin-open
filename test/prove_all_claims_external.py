@@ -116,6 +116,62 @@ def qoi_python(r: int, g: int, b: int, a: int) -> int:
     return (r * 3 + g * 5 + b * 7 + a * 11) % 64
 
 
+_MASK64 = (1 << 64) - 1
+
+
+def _u64(x: int) -> int:
+    return x & _MASK64
+
+
+def _s64(x: int) -> int:
+    x &= _MASK64
+    return x - (1 << 64) if x >= (1 << 63) else x
+
+
+def _rotl64(x: int, n: int) -> int:
+    return ((x << n) | (x >> (64 - n))) & _MASK64
+
+
+def uniswap_amount_out(amount_in: int, reserve_in: int, reserve_out: int) -> int:
+    """Official UniswapV2Library.getAmountOut integer math (independent Python)."""
+    if amount_in <= 0 or reserve_in <= 0 or reserve_out <= 0:
+        return 0
+    amount_in_with_fee = amount_in * 997
+    numerator = amount_in_with_fee * reserve_out
+    denominator = reserve_in * 1000 + amount_in_with_fee
+    if denominator <= 0:
+        return 0
+    return numerator // denominator
+
+
+def uniswap_quote(amount_a: int, reserve_a: int, reserve_b: int) -> int:
+    if amount_a <= 0 or reserve_a <= 0 or reserve_b <= 0:
+        return 0
+    return (amount_a * reserve_b) // reserve_a
+
+
+def siphash_round_py(v0: int, v1: int, v2: int, v3: int) -> int:
+    v0 = _s64(_u64(v0) + _u64(v1))
+    v1 = _s64(_rotl64(_u64(v1), 13) ^ _u64(v0))
+    v0 = _s64(_rotl64(_u64(v0), 32))
+    v2 = _s64(_u64(v2) + _u64(v3))
+    v3 = _s64(_rotl64(_u64(v3), 16) ^ _u64(v2))
+    v0 = _s64(_u64(v0) + _u64(v3))
+    v3 = _s64(_rotl64(_u64(v3), 21) ^ _u64(v0))
+    v2 = _s64(_u64(v2) + _u64(v1))
+    v1 = _s64(_rotl64(_u64(v1), 17) ^ _u64(v2))
+    v2 = _s64(_rotl64(_u64(v2), 32))
+    return _s64(_u64(v0) ^ _u64(v1) ^ _u64(v2) ^ _u64(v3))
+
+
+def xxhash64_round_py(acc: int, inp: int) -> int:
+    p1 = _s64(-7046029254386353131)
+    p2 = _s64(-4417276706815106179)
+    total = (_u64(acc) + _u64(inp) * _u64(p2)) & _MASK64
+    rotated = ((total << 31) | (total >> 33)) & _MASK64
+    return _s64(rotated * _u64(p1))
+
+
 def receipt_root_from_parts(expr: str, env: str, result: int, steps: int, sp: int,
                             code_sha: str) -> str:
     def leaf(domain: str, data: bytes) -> bytes:
@@ -260,6 +316,90 @@ def tinyexpr_claims() -> tuple[str, str]:
     )
 
 
+def uniswap_claims(iterations: int) -> tuple[str, str]:
+    """Profile-full execution of the three pure UniswapV2Library math fns."""
+    if not C0.exists():
+        return "SKIP", "lin_c0 not built"
+
+    rng = random.Random(20260903)
+    mismatches = []
+    checked = 0
+    for _ in range(iterations):
+        amount_in = rng.randint(1, 10**6)
+        reserve_in = rng.randint(1, 10**9)
+        reserve_out = rng.randint(1, 10**9)
+        want_out = uniswap_amount_out(amount_in, reserve_in, reserve_out)
+        rc, out = run(C0, "vmfull", UNISWAP_LIN, "get_amount_out",
+                      amount_in, reserve_in, reserve_out)
+        got = value_of(out)
+        checked += 1
+        if rc != 0 or got != want_out:
+            mismatches.append(("get_amount_out", amount_in, reserve_in, reserve_out,
+                               want_out, got, rc, out))
+            break
+
+    # Fixed canonical vector and quote/get_amount_in round-trip.
+    for (name, args, want) in [
+        ("get_amount_out", [10000, 50000, 100000], uniswap_amount_out(10000, 50000, 100000)),
+        ("quote", [100, 50, 100], uniswap_quote(100, 50, 100)),
+        ("get_amount_in", [16624, 50000, 100000], 10000),
+    ]:
+        rc, out = run(C0, "vmfull", UNISWAP_LIN, name, *args)
+        got = value_of(out)
+        checked += 1
+        if rc != 0 or got != want:
+            mismatches.append((name, *args, want, got, rc, out))
+            break
+
+    if mismatches:
+        name, *rest = mismatches[0]
+        want, got, rc, out = rest[-4:]
+        return "FAIL", f"{name} divergence: python={want}, lin={got}, rc={rc}, out={out!r}"
+
+    return "PASS", (
+        f"UniswapV2Library scalar math (get_amount_out/quote/get_amount_in) "
+        f"matches Python oracle over {checked} vectors via profile-full vmfull; "
+        f"canonical vector = 16624"
+    )
+
+
+def hashing_claims(iterations: int) -> tuple[str, str]:
+    if not C0.exists():
+        return "SKIP", "lin_c0 not built"
+
+    rng = random.Random(20260904)
+    mismatches = []
+    checked = 0
+    for _ in range(iterations):
+        args = [rng.randint(-(2**62), 2**62) for _ in range(4)]
+        want = siphash_round_py(*args)
+        rc, out = run(C0, "vmfull", QOI_LIN, "siphash_round", *args)
+        got = value_of(out)
+        checked += 1
+        if rc != 0 or got != want:
+            mismatches.append(("siphash_round", *args, want, got, rc, out))
+            break
+        a = rng.randint(-(2**62), 2**62)
+        inp = rng.randint(-(2**62), 2**62)
+        want = xxhash64_round_py(a, inp)
+        rc, out = run(C0, "vmfull", QOI_LIN, "xxhash64_round", a, inp)
+        got = value_of(out)
+        checked += 1
+        if rc != 0 or got != want:
+            mismatches.append(("xxhash64_round", a, inp, want, got, rc, out))
+            break
+
+    if mismatches:
+        name, *rest = mismatches[0]
+        want, got, rc, out = rest[-4:]
+        return "FAIL", f"{name} divergence: oracle={want}, lin={got}, rc={rc}, out={out!r}"
+
+    return "PASS", (
+        f"SipHash-2-4 and xxHash64 round parity vs independent Python oracle "
+        f"over {checked} vectors via profile-full vmfull"
+    )
+
+
 def receipt_claims() -> tuple[str, str]:
     if not XREC.exists():
         return "FAIL", f"{XREC} missing; run `make -C transpile/c all`"
@@ -314,8 +454,10 @@ def selfhost_claims() -> tuple[str, str]:
     return "PASS", "verify_c0.sh (16 checks) and verify_c0_selfhost.sh (30 checks) pass with no Zig"
 
 
-def not_proven_uniprogram() -> str:
-    """Document the honest limit of this host, not a pass/fail of the language."""
+def not_proven_scope() -> str:
+    """Honest limits that the harness explicitly does not claim."""
+    # Ensure the default fail-closed path still rejects division; the
+    # experiment must not silently change the default profile.
     rc, out = run(C0, "info", UNISWAP_LIN)
     if rc != 0:
         return "FAIL", f"lin_c0 info failed on Uniswap module:\n{out}"
@@ -326,16 +468,16 @@ def not_proven_uniprogram() -> str:
     reasons = [x for x in re.findall(r"reason=\"([A-Z0-9_]+)\"", out)]
     if eligible != 0 or rejected != total or "VM_REJ_INT_DIVISION" not in reasons:
         return "FAIL", (
-            f"expected the C0 host to reject all Uniswap functions with "
+            f"expected the default C0 host to reject all Uniswap functions with "
             f"VM_REJ_INT_DIVISION (eligible=0), got total={total} eligible={eligible} "
             f"rejected={rejected} reasons={reasons}"
         )
     return "NOT-PROVEN", (
-        "Full UniswapV2Library execution on LinVM is NOT proven in this "
-        "environment: the no-Zig Compiler-0 host rejects integer division "
-        "with VM_REJ_INT_DIVISION. The upstream source is pinned and the "
-        "integer math is oracle-only. You must not sell this as a finished "
-        "Uniswap/OpenSSL execution result."
+        "Scope limits: the proof executes the three pure UniswapV2Library math "
+        "functions and the SipHash/xxHash round kernels on the experimental "
+        "profile-full host. It does NOT prove full protocol security, full "
+        "OpenSSL execution, on-chain gas savings, or performance vs LLVM/"
+        "C/Rust. Those are not measured here and must not be sold as proven."
     )
 
 
@@ -359,8 +501,10 @@ def main() -> int:
     claims.append(Claim("C3", "TinyExpr factorial parity (0..20, fail-closed edges)", *tinyexpr_claims()))
     claims.append(Claim("C4", "Compute receipt root independently recomputed", *receipt_claims()))
     claims.append(Claim("C5", "Compiler-0 no-Zig self-host gates", *selfhost_claims()))
-    np_status, np_note = not_proven_uniprogram()
-    claims.append(Claim("NP1", "Full UniswapV2Library LinVM execution", np_status, np_note))
+    claims.append(Claim("C6", "UniswapV2Library scalar math parity (profile-full)", *uniswap_claims(args.iterations)))
+    claims.append(Claim("C7", "SipHash/xxHash round parity (profile-full)", *hashing_claims(args.iterations)))
+    np_status, np_note = not_proven_scope()
+    claims.append(Claim("NP1", "Full protocol/security/performance proof", np_status, np_note))
 
     print("=" * 78)
     print("   LIN RATIONALIST EXTERNAL PROOF   (only observable claims)")
