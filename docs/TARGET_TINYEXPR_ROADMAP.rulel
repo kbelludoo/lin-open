@@ -1,0 +1,80 @@
+@RULEL:TARGET_TINYEXPR_ROADMAP:1.0.0
+~MARKDOWN_SPEC
+# Roadmap de Transpilação & Verificação Diferencial: codeplea/tinyexpr → LIN
+
+> **Alvo Primário:** `codeplea/tinyexpr` (C99, 1 header `tinyexpr.h`, 1 source `tinyexpr.c`, zero dependências externas).
+> **Alvo Secundário (Downstream Milestone):** `rui314/chibicc` (compilador C11 completo).
+> **Princípio:** Decomposição em 6 estágios incrementais orientados a regras de regressão e testes diferenciais com paridade bit-a-bit contra GCC/Clang C11.
+
+---
+
+## 1. Justificativa & Arquitetura do Alvo
+
+| Propriedade | tinyexpr (C99) | LIN (Modelo Alvo) |
+|---|---|---|
+| **Arquivos** | `tinyexpr.h` + `tinyexpr.c` (~600 LOC) | Modularizado em `src/lin_tinyexpr_*.lin` |
+| **Dependências** | `math.h` e `string.h` mínimos | Built-ins escalares do LinVM |
+| **Memória** | `malloc` / `realloc` para AST e `te_variable` | Regiões lineares limitadas e flat registers |
+| **Execução** | Recursivo descendente com avaliação direta | Bytecode LinVM determinístico com receipts SHA-256 |
+
+---
+
+## 2. Escalonamento em 6 Estágios Incrementais
+
+### Estágio 1: Funções Aritméticas e Combinatórias Puras
+- `fac(n)` (Fatorial inteiro com wrap-around)
+- `ncr(n, r)` (Combinação $n! / (r! (n-r)!)$ com simplificação)
+- Operadores binários (`+`, `-`, `*`, `/`, `%`, `^`, bitwise)
+- **Gate:** Paridade 100% contra C11 `tinyexpr` math kernels.
+
+### Estágio 2: `parse_number` (Parsing Escalar de Dígitos)
+- Conversão de string/buffer ASCII para inteiro 64-bit / ponto fixo.
+- Tratamento de base decimal, hexadecimal (`0x...`), e potências de 10.
+- **Gate:** 0 estouros de buffer, paridade estrita em edge-cases (`0`, `-0`, `INT64_MAX`, `INT64_MIN`).
+
+### Estágio 3: `next_token` (Tokenizer e Léxico)
+- Classificação de tokens (`TOK_NUMBER`, `TOK_PLUS`, `TOK_MINUS`, `TOK_MUL`, `TOK_DIV`, `TOK_LPAREN`, `TOK_RPAREN`, `TOK_FUNC`).
+- Consumo de whitespace e delimitadores sem ponteiros desordenados.
+- **Gate:** Vetor canônico de tokens idêntico ao output de `tinyexpr.c:next_token`.
+
+### Estágio 4: Parser de Expressões com Precedência de Operadores
+- Implementação da tabela de precedência (Shunting-yard ou recursão descendente).
+- Suporte a expressões aninhadas e parênteses.
+- **Gate:** Expressões diferenciais:
+  - `1 + 2 * 3 → 7`
+  - `(2 + 3) * 4 → 20`
+  - `3 < 4 && 7 != 8 → 1`
+
+### Estágio 5: AST e `te_eval` (Avaliação e Redução)
+- Formato flat de nós de expressão em região estática (`lin_regions`).
+- Avaliação determinística recursiva ou por pilha com gas limit estrito.
+- **Gate:** Cálculo de receipts `LIN_COMPUTE_RECEIPT_1.0` sobre cada avaliação de expressão.
+
+### Estágio 6: Eliminação de Heap / `malloc`, `union` e Ponteiros de Função
+- Substituição de tabelas de ponteiros de função por dispatch tables enumeradas (`switch-case` / LUT indexada).
+- Substituição de `union` C por tags escalares explícitas de 64 bits.
+- **Gate:** Validação em ASan/UBSan e verificação formal de isolamento de memória.
+
+---
+
+## 3. Matriz de Testes Diferenciais Iniciais
+
+| Expressão Teste | Output C11 | Output LinVM | Status Gate |
+|---|---|---|---|
+| `1 + 2 * 3` | `7` | `7` | PASS |
+| `(2 + 3) * 4` | `20` | `20` | PASS |
+| `fac(5)` | `120` | `120` | PASS |
+| `ncr(10, 3)` | `120` | `120` | PASS |
+| `3 < 4 && 7 != 8` | `1` (true) | `1` (true) | PASS |
+| `pow_int(3, 2) + pow_int(4, 2)` | `25` | `25` | PASS |
+| `isqrt(25)` | `5` | `5` | PASS |
+
+---
+
+## 4. Downstream Milestone: rui314/chibicc
+
+Após a conclusão e validação do pipeline do `tinyexpr`, o `chibicc` servirá como prova de escala industrial:
+1. Lexer C11 completo (`tokenize.c`);
+2. Pré-processador com macros e includes (`preprocess.c`);
+3. Parser de tipos C11 com structs, enums e typedefs (`parse.c`);
+4. Geração de código de baixo nível e emissão LINBC1.
