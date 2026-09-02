@@ -378,7 +378,7 @@ static C0Tok *c0_tokenize(const char *src, size_t len, size_t *out_n) {
             continue;
         }
         if (i + 1 < len) {
-            static const char *const TWO[] = { "==", "!=", "<=", ">=", "&&", "||", "->" };
+            static const char *const TWO[] = { "==", "!=", "<=", ">=", "&&", "||", "->", "<<", ">>" };
             int is_two = 0;
             for (size_t k = 0; k < sizeof(TWO) / sizeof(TWO[0]); k++)
                 if (memcmp(src + i, TWO[k], 2) == 0) { is_two = 1; break; }
@@ -420,6 +420,8 @@ typedef struct {
     size_t nfns;
 
     const char *reject;   /* NULL = no rejection; C0_OOM = arena exhausted */
+    int allow_div;        /* profile full: emit OP_DIV/OP_MOD instead of reject */
+    int allow_shift;      /* profile full: emit OP_SHL/OP_SHR/OP_USHR */
 } C0Comp;
 
 static int c0_tok_eq(const C0Tok *t, const char *s) {
@@ -535,6 +537,7 @@ static void c0_expr(C0Comp *c);
 static void c0_e_or(C0Comp *c);
 static void c0_e_and(C0Comp *c);
 static void c0_e_cmp(C0Comp *c);
+static void c0_e_shift(C0Comp *c);
 static void c0_e_bor(C0Comp *c);
 static void c0_e_bxor(C0Comp *c);
 static void c0_e_band(C0Comp *c);
@@ -580,7 +583,7 @@ static void c0_e_and(C0Comp *c) {
 }
 
 static void c0_e_cmp(C0Comp *c) {
-    c0_e_bor(c);
+    c0_e_shift(c);
     while (c->reject == NULL) {
         VmOp op;
         if (c0_at_punct(c, "==")) op = OP_CMP_EQ;
@@ -591,9 +594,31 @@ static void c0_e_cmp(C0Comp *c) {
         else if (c0_at_punct(c, ">"))  op = OP_CMP_GT;
         else return;
         (void)c0_bump(c);
-        c0_e_bor(c);
+        c0_e_shift(c);
         if (c->reject) return;
         (void)c0_emit(c, op, 0);
+    }
+}
+
+/* Shift precedence sits between the bitwise-or group and comparisons so the
+ * profile-full parser can execute the SipHash/xxHash-style scalar kernels.
+ * Default profile still rejects shifts via VM_REJ_PARSE (no `<<` tokens). */
+static void c0_e_shift(C0Comp *c) {
+    c0_e_bor(c);
+    while (c->reject == NULL) {
+        if (c0_at_punct(c, "<<")) {
+            if (!c->allow_shift) { c0_fail(c, "VM_REJ_SHIFT"); return; }
+            (void)c0_bump(c);
+            c0_e_bor(c);
+            if (c->reject) return;
+            (void)c0_emit(c, OP_SHL, 0);
+        } else if (c0_at_punct(c, ">>")) {
+            if (!c->allow_shift) { c0_fail(c, "VM_REJ_SHIFT"); return; }
+            (void)c0_bump(c);
+            c0_e_bor(c);
+            if (c->reject) return;
+            (void)c0_emit(c, OP_SHR, 0);
+        } else return;
     }
 }
 
@@ -658,8 +683,14 @@ static void c0_e_mul(C0Comp *c) {
             if (c->reject) return;
             (void)c0_emit(c, OP_MOD, 0);
         } else if (c0_at_punct(c, "/")) {
-            c0_fail(c, "VM_REJ_INT_DIVISION");
-            return;
+            if (!c->allow_div) {
+                c0_fail(c, "VM_REJ_INT_DIVISION");
+                return;
+            }
+            (void)c0_bump(c);
+            c0_e_unary(c);
+            if (c->reject) return;
+            (void)c0_emit(c, OP_DIV, 0);
         } else return;
     }
 }
@@ -1128,7 +1159,8 @@ static void c0_free_fn_infos(const C0FnInfo *infos, size_t n) {
  * vmBuild (lin.zig:6296)
  * ===================================================================== */
 
-VmModule *c0_build(C0Arena *a, const char *src, size_t len) {
+static VmModule *c0_build_impl(C0Arena *a, const char *src, size_t len,
+                               int allow_div, int allow_shift) {
     size_t n_infos = 0;
     const C0FnInfo *infos;
     VmModule *mod;
@@ -1178,6 +1210,8 @@ VmModule *c0_build(C0Arena *a, const char *src, size_t len) {
         comp.fns = fns;
         comp.nfns = n_infos;
         comp.reject = NULL;
+        comp.allow_div = allow_div;
+        comp.allow_shift = allow_shift;
 
         for (size_t p = 0; p < infos[i].nparams; p++) {
             int64_t li = c0_local_idx(&comp, infos[i].params[p].name,
@@ -1237,6 +1271,15 @@ VmModule *c0_build(C0Arena *a, const char *src, size_t len) {
     c0_resolve_deps(fns, n_infos);
     c0_free_fn_infos(infos, n_infos);
     return mod;
+}
+
+VmModule *c0_build(C0Arena *a, const char *src, size_t len) {
+    return c0_build_impl(a, src, len, 0, 0);
+}
+
+/* Experimental "profile full": used only by the `vmfull` CLI command. */
+VmModule *c0_build_full(C0Arena *a, const char *src, size_t len) {
+    return c0_build_impl(a, src, len, 1, 1);
 }
 
 /* =====================================================================

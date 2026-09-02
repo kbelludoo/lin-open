@@ -172,6 +172,35 @@ verify-receipt: build-cpu
 	@rm -f /tmp/lin_tampered.json
 
 # --------------------------------------------------------------------------
+# Rationalist external proof: real GitHub upstream provenance + independent
+# Python/C oracle parity + no-Zig self-host gates. No Zig required.
+#
+#   make rationalist-proof            # local pinned upstream (offline)
+#   make rationalist-proof FETCH=1    # re-download upstream via GitHub API
+.PHONY: rationalist-proof verify-cli install-cli
+rationalist-proof: c0
+ifneq ($(FETCH),)
+	@python3 test/prove_all_claims_external.py --iterations 10000 --fetch
+else
+	@python3 test/prove_all_claims_external.py --iterations 10000
+endif
+
+# Standalone no-Zig CLI (python3, stdlib only). `make install-cli PREFIX=~/.local`
+# puts an executable `lin-verify` on PATH.
+verify-cli: c0
+	@python3 lin_verify.py receipt benchmarks/fixtures/receipt_sqr9.json >/dev/null
+	@python3 lin_verify.py provenance >/dev/null
+	@python3 lin_verify.py selfhost >/dev/null
+	@echo "lim-verify CLI: PASS (receipt + provenance + no-Zig self-host)"
+
+PREFIX ?= ~/.local
+install-cli:
+	@mkdir -p $(PREFIX)/bin
+	@cp lin_verify.py $(PREFIX)/bin/lin-verify
+	@chmod +x $(PREFIX)/bin/lin-verify
+	@echo "installed: $(PREFIX)/bin/lin-verify"
+
+# --------------------------------------------------------------------------
 # LIN-CRYPTO-256-REAL: a real cryptanalysis gate (no Zig required).
 #
 #   pillar A  exhaustive frontier .......... (LIN-CRYPTO-MAX-256, measured cost)

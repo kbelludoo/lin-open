@@ -125,7 +125,7 @@ static int parse_args(int argc, char **argv, int start, int64_t *out, size_t cap
 /* info / vm                                                            */
 /* ------------------------------------------------------------------ */
 
-static int cmd_vm(C0Arena *a, int argc, char **argv) {
+static int cmd_vm(C0Arena *a, int argc, char **argv, int full) {
     const char *path;
     char *src;
     size_t len = 0;
@@ -138,7 +138,7 @@ static int cmd_vm(C0Arena *a, int argc, char **argv) {
     LinErr e;
 
     if (argc < 3) {
-        fprintf(stderr, "usage: lin_c0 vm <file.lin> [fn] [int args...]\n");
+        fprintf(stderr, "usage: lin_c0 vm|vmfull <file.lin> [fn] [int args...]\n");
         return 1;
     }
     path = argv[2];
@@ -149,7 +149,7 @@ static int cmd_vm(C0Arena *a, int argc, char **argv) {
                C0_HOST_LINE, path);
         return 1;
     }
-    mod = c0_build(a, src, len);
+    mod = full ? c0_build_full(a, src, len) : c0_build(a, src, len);
     if (!mod) {
         printf("@RULEL:LIN_VM:1.0.0\n%s\n.error{ file=\"%s\" code=\"C0_BUILD_FAILED\" }\n",
                C0_HOST_LINE, path);
@@ -475,8 +475,8 @@ int main(int argc, char **argv) {
     if (argc < 2) {
         fprintf(stderr,
                 "usage: lin_c0 --version | info <f.lin> | vm <f.lin> [fn] [args] |\n"
-                "            image <f.lin> [-o out] | run <img> <fn> [args] |\n"
-                "            roundtrip <f.lin> <fn> [args]\n");
+                "            vmfull <f.lin> [fn] [args] | image <f.lin> [-o out] |\n"
+                "            run <img> <fn> [args] | roundtrip <f.lin> <fn> [args]\n");
         return 1;
     }
     cmd = argv[1];
@@ -490,7 +490,8 @@ int main(int argc, char **argv) {
         fprintf(stderr, "lin_c0: out of memory\n");
         return 1;
     }
-    if (strcmp(cmd, "info") == 0 || strcmp(cmd, "vm") == 0) rc = cmd_vm(a, argc, argv);
+    if (strcmp(cmd, "info") == 0 || strcmp(cmd, "vm") == 0) rc = cmd_vm(a, argc, argv, 0);
+    else if (strcmp(cmd, "vmfull") == 0) rc = cmd_vm(a, argc, argv, 1);
     else if (strcmp(cmd, "image") == 0) rc = cmd_image(a, argc, argv);
     else if (strcmp(cmd, "run") == 0) rc = cmd_run(argc, argv);
     else if (strcmp(cmd, "roundtrip") == 0) rc = cmd_roundtrip(a, argc, argv);
