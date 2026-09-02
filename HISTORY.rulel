@@ -271,3 +271,19 @@ avaliador de expressões e lowerer como folds bit-exatos verificados contra o St
 *bytes* do LINBC1 continuam sendo emitidos pelo host C11, e `check`/`lint` seguem Stage0 —
 por isso o manifesto das imagens declara `status="FROZEN_LOCAL"`, não `ATTESTED`. O PR #55
 carrega os arquivos de #46 até o #46 entrar na master.
+
+## 2026-09-01 — decisão registrada: LINBC1 é o contrato, C11 é o host padrão, LIN é o compilador
+
+Decisão de arquitetura em `docs/DECISAO_C11_HOST_LIN_COMPILADOR.rulel`: **não** se troca Zig por
+um compilador LIN escrito em C agora. O C11 fica como host padrão (executa a imagem congelada e o
+subconjunto `LINVM-1/i64`, com a fronteira impressa pelo próprio CLI em `tool/lin_c0.c:365`), o
+contrato é o formato LINBC1, e as decisões semânticas continuam em LIN. Zig permanece
+semente/oráculo até a conjunção de quatro critérios: frontend completo em LIN, ponto fixo
+**+** DDC com raízes iguais nos dois hosts, `compiler0_manifest` `ATTESTED`, e âncora de
+confiança pinada fora do artefato (achados F-01/F-02 da auditoria de 2026-09-01) — sem o último,
+o ponto fixo é reprodutível mas auto-declarado. O único destravamento real é a entrega V1 do
+plano: `host_read`/`host_write`/`host_exit` do `HOST-ABI-1` no host C11 (`docs/HOST_ABI_1.rulel`,
+ainda `PROPOSED`); a issue está pronta para colar na seção 6 do documento. `transpile/c/README.md`
+foi corrigido: ele se descrevia como "Slice 1" (pipeline de expressões) e não mencionava o host
+C11 + front do subconjunto que existem desde o corte C0-no-Zig.
+
