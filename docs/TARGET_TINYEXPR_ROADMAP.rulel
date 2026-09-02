@@ -1,11 +1,11 @@
-@RULEL:TARGET_TINYEXPR_ROADMAP:1.2.0
+@RULEL:TARGET_TINYEXPR_ROADMAP:1.4.0
 ~MARKDOWN_SPEC
-# Especificação Formal: TinyExpr-LIN Profile & Roadmap de Verificação Diferencial
+# Especificação Formal Normativa: TinyExpr-LIN Profile & Roadmap de Verificação Diferencial
 
 > **Definição Canônica:** **TinyExpr-LIN Profile**  
 > Preservação estrita da semântica matemática e lógica da biblioteca e gramática `codeplea/tinyexpr`, adaptando a representação para o modelo LIN de memória linear plana (sem `malloc`, sem `union`, sem ponteiros soltos e sem ponteiros de função indiretos).
 >
-> **Classificação de Conformidade:** **PASS — TinyExpr-LIN Profile** (não C11 puro, dado que `^` é potência, `&&`/`||` são avaliados como funções sem short-circuit C, e funções aritméticas como `fac`/`ncr` são extensões da biblioteca).
+> **Classificação de Conformidade:** **PASS — TinyExpr-LIN Profile**
 >
 > **Alvo Secundário (Downstream Milestone):** `rui314/chibicc` (compilador C11 modular).
 
@@ -17,72 +17,103 @@
 |---|---|---|
 | **Gramática TinyExpr** | `1 + 2 * 3`, `(2 + 3) * 4`, `3 < 4 && 7 != 8`, `a ^ b` | **Paridade da Gramática TinyExpr** |
 | **Biblioteca TinyExpr** | `fac(n)`, `ncr(n, r)` | **Paridade da Biblioteca TinyExpr** |
-| **Adaptação Fail-Closed LIN** | `-9001 (DIV_ZERO)`, `-9002 (ERR_DOMAIN)`, `-9003 (OVERFLOW)` | **Extensão Semântica LIN (Fail-Closed)** |
+| **Adaptação Fail-Closed LIN** | `-9001 (DIV_ZERO)`, `-9002 (ERR_DOMAIN)`, `-9003 (OVERFLOW)`, `-9005 (INVALID_NUM)`, `-9006 (ERR_GRAMMAR)` | **Extensão Semântica LIN (Fail-Closed)** |
 | **Extensão Exclusiva LIN** | `isqrt_safe(val)` (com $\le 6$ iterações e correção $\Delta = 1$) | **Extensão Exclusiva LIN** |
 | **Funções de Ponto Flutuante** | `sqrt(x)`, `pow(x, y)`, `sin`, `cos`, `ln`, `exp` | **Dependentes do Backend Numérico** |
 
 ---
 
-## 2. Separação de Perfis Numéricos (Backends)
+## 2. Especificação Canônica de Backends Numéricos & Aritmética Q32.32
 
 Não é permitido declarar paridade bit-a-bit cega entre formatos matemáticos distintos. Estabelecemos dois perfis numéricos independentes:
 
-1. **`TinyExpr-LIN-F64`**: Compatibilidade com IEEE-754 dupla precisão (64-bit float).
-2. **`TinyExpr-LIN-Q32`**: Compatibilidade com aritmética determinística de ponto fixo Q32.32 (32 bits inteiros, 32 bits fracionários), 100% reproduzível entre plataformas e livre de divergências de arredondamento de hardware FPU.
+1. **`TinyExpr-LIN-Q32`**: Aritmética determinística de ponto fixo Q32.32 em inteiro de 64 bits assinado (`int64_t` / `i64`):
+   - **Largura total (`width`):** 64 bits signed two's-complement.
+   - **Bits fracionários (`fractional_bits`):** 32 bits ($2^{32} = 4294967296$).
+   - **Fórmula de conversão raw pura (sem float intermediário):**
+     $$\text{raw} = \text{trunc\_toward\_zero}\left(\frac{\text{numerador} \times 2^{32}}{\text{denominador}}\right)$$
+   - **Prevenção de Overflow Intermediário no LIN:**  
+     Multiplicações intermediárias que excedem 64 bits utilizam divisão por partes de 32-bit (ou registradores de produto 128-bit) ou pré-escalonamento para garantir que $\text{numerador} \times 2^{32}$ seja avaliado como $\text{div128\_64}(\text{num} \ll 32, \text{den})$ com verificação de overflow se o quociente não couber em `[-2^63, 2^63 - 1]`. Caso exceda, emite imediatamente `ERR_OVERFLOW (-9003)`.
+   - **Modo de Arredondamento Normativo (`rounding_mode`):** `TRUNCATE_TOWARD_ZERO`.
+   - **Variante de Associatividade de Potência (`^`):**  
+     O TinyExpr C original por padrão avalia `2 ^ 3 ^ 2` como `(2 ^ 3) ^ 2 = 64` (associatividade à esquerda, a menos que `TE_POW_FROM_RIGHT` seja definido). O perfil **TinyExpr-LIN-Q32 adota formalmente associatividade à esquerda** `(a ^ b) ^ c` para paridade com a configuração padrão do `tinyexpr.c`.
+   - **Precedência Unária vs Potência:** `-2 ^ 2` no perfil TinyExpr padrão é avaliado como `(-2) ^ 2 = 4`.
 
 ---
 
-## 3. Contrato de Limites Formais (Boundaries & Fault Handling)
+## 3. Especificação Normativa do Recibo Criptográfico (Canonical Receipt Spec)
 
-1. **Tamanho Máximo da Expressão:** $\le 256$ bytes ASCII / UTF-8.
-2. **Profundidade Máxima de Pilha (SP):** $\text{SP} \le 32$. Excesso gera `ERR_STACK_OVERFLOW (-9004)`.
-3. **Capacidade Máxima da AST Flat:** $\le 64$ nós planos alocados estaticamente.
-4. **Divisão por Zero:** Sentinela determinístico `ERR_DIV_ZERO (-9001)`.
-5. **Erros de Domínio (ex: `ncr(5, 6)`, `fac(-1)`):** Sentinela determinístico `ERR_DOMAIN (-9002)` (equivalente seguro ao NaN).
-6. **Overflow Aritmético:** Fatorial para $n > 20$ gera `ERR_OVERFLOW (-9003)`.
-7. **Determinismo & Idempotência:** Toda execução gera receipt Merkle SHA-256 idêntico em múltiplas execuções consecutivas.
+Para assegurar 100% de reproducibilidade entre implementações independentes sem divergência de hash, a serialização binária e textual do recibo é rigorosamente fixada:
 
----
+### 3.1. Layout Binário da Folha Merkle (NIST FIPS 180-4 SHA-256)
+A folha Merkle é calculada sobre um buffer binário exato de 64 bytes com os seguintes campos (todos em **Little-Endian**):
 
-## 4. Gate 0: TinyExpr-LIN Profile (Validado)
+1. **Offset 00..03 (4 bytes, u32 LE):** Magic Version `0x51333201` (`"Q32\x01"`).
+2. **Offset 04..11 (8 bytes, i64 LE):** `raw_value` (Signed 64-bit integer, Two's complement).
+3. **Offset 12..15 (4 bytes, i32 LE):** `status_code` (ex: `0` para OK, `-9002` para ERR_DOMAIN, `-9003` para ERR_OVERFLOW, `-9005` para ERR_INVALID_NUMBER).
+4. **Offset 16..19 (4 bytes, u32 LE):** `cursor` (posição final após parsing).
+5. **Offset 20..23 (4 bytes, u32 LE):** `input_length` (comprimento total da entrada).
+6. **Offset 24..27 (4 bytes, u32 LE):** `fractional_bits` = `32`.
+7. **Offset 28..31 (4 bytes, u32 LE):** `width` = `64`.
+8. **Offset 32..63 (32 bytes):** `SHA-256(raw_input_utf8_bytes)`.
 
-| Vetor de Teste | Chamada / Expressão | Saída Canônica | Classificação | Status Gate |
-|---|---|---|---|---|
-| **V1** | `fac(0)` | `1` | Paridade Biblioteca TinyExpr | PASS — TinyExpr-LIN Profile |
-| **V2** | `fac(5)` | `120` | Paridade Biblioteca TinyExpr | PASS — TinyExpr-LIN Profile |
-| **V3** | `fac(12)` | `479001600` | Paridade Biblioteca TinyExpr | PASS — TinyExpr-LIN Profile |
-| **V4** | `ncr(10, 3)` | `120` | Paridade Biblioteca TinyExpr | PASS — TinyExpr-LIN Profile |
-| **V5** | `ncr(5, 6)` | `-9002` | Extensão Semântica LIN (Fail-Closed) | PASS — TinyExpr-LIN Profile |
-| **V6** | `1 + 2 * 3` | `7` | Paridade Gramática TinyExpr | PASS — TinyExpr-LIN Profile |
-| **V7** | `(2 + 3) * 4` | `20` | Paridade Gramática TinyExpr | PASS — TinyExpr-LIN Profile |
-| **V8** | `3 < 4 && 7 != 8` | `1` | Paridade Gramática TinyExpr | PASS — TinyExpr-LIN Profile |
-
----
-
-## 5. Gate 1: `parse_number` (Parsing Escalar Sem Dependências Libc)
-
-O TinyExpr implementa o parsing de números manualmente em `tinyexpr.c:parse_number` (decodificando hexadecimais `0x...`, parte fracionária `.` e expoentes `e`/`E`).
-
-### Vetores Canônicos Obrigatórios do Gate 1
-
-| Entrada (String) | Valor Canônico (Q32.32 / Escalar) | Cursor Consumido | Próximo Caractere | Status de Erro |
-|---|---|---|---|---|
-| `"0"` | `0.0` (`0x00000000_00000000`) | 1 byte | `\0` | `OK (0)` |
-| `"42"` | `42.0` (`0x0000002A_00000000`) | 2 bytes | `\0` | `OK (0)` |
-| `".5"` | `0.5` (`0x00000000_80000000`) | 2 bytes | `\0` | `OK (0)` |
-| `"3.125"` | `3.125` (`0x00000003_20000000`) | 5 bytes | `\0` | `OK (0)` |
-| `"1.25e2"` | `125.0` (`0x0000007D_00000000`) | 6 bytes | `\0` | `OK (0)` |
-| `"0x10"` | `16.0` (`0x00000010_00000000`) | 4 bytes | `\0` | `OK (0)` |
-| `"1e"` | `1.0` (`0x00000001_00000000`) | 1 byte (deixa `'e'`) | `'e'` | `OK (0)` |
-| `"."` | `0.0` | 0 bytes | `.` | `ERR_INVALID_NUMBER (-9005)` |
+### 3.2. Ordem Canônica de Campos Textuais do `@LIN:RECEIPT:1.0.0:TINYEXPR_Q32`
+1. `@LIN:RECEIPT:1.0.0:TINYEXPR_Q32`
+2. `~R{.ver=format_version .backend=backend_id .w=width .f=fractional_bits .r=rounding .raw=raw_value .st_code=status_code .st_name=status_name .c=cursor .len=input_len .in_sha=input_sha256 .m=merkle}`
+3. `.version="1.0.0"`
+4. `.backend_id="TinyExpr-LIN-Q32"`
+5. `.width=64`
+6. `.fractional_bits=32`
+7. `.endianness="LITTLE_ENDIAN"`
+8. `.rounding_mode="TRUNCATE_TOWARD_ZERO"`
+9. `.raw_value=<i64_signed>`
+10. `.status_code=<i32_signed>`
+11. `.status_name="<STATUS_NAME_STRING>"`
+12. `.cursor=<u32>`
+13. `.input_length=<u32>`
+14. `.input_hash="sha256:..."`
+15. `.merkle_root="sha256:..."`
 
 ---
 
-## 6. Escalonamento em 6 Estágios Progressivos
+## 4. Gate 1 Expandido: `parse_number` com Valores Não-Exatos & Limites
 
-1. **Estágio 1:** Aritmética e Combinatória Pura (`fac`, `ncr`, `isqrt_safe`) — **GATE 0 PASS**.
-2. **Estágio 2:** `parse_number` (Hex, Fração, Expoente, Cursor & Status) — **GATE 1 ACTIVE**.
-3. **Estágio 3:** `next_token` (Classificador léxico sem ponteiros soltos).
-4. **Estágio 4:** Parser de Expressões (Precedência, Parênteses, Profundidade $\le 32$).
-5. **Estágio 5:** AST Flat & `te_eval` Determinístico com Receipts Criptográficos.
-6. **Estágio 6:** Eliminação Completa de Heap/`malloc`, substituição de `union` por tags e jump tables indexadas.
+| Entrada | Valor Decimal | Cálculo Canônico Q32.32 (Trunc toward zero) | Valor Bruto Q32.32 (`raw`) | Status Code | Status Name | Cursor | Próx Char |
+|---|---|---|---|---|---|---|---|
+| `"0"` | `0.0` | $0 \times 2^{32}$ | `0` | `0` | `OK` | 1 | `\0` |
+| `"42"` | `42.0` | $42 \times 2^{32}$ | `180388626432` | `0` | `OK` | 2 | `\0` |
+| `".5"` | `0.5` | $1 \times 2^{32} / 2$ | `2147483648` | `0` | `OK` | 2 | `\0` |
+| `"3.125"` | `3.125` | $3125 \times 2^{32} / 1000$ | `13421772800` | `0` | `OK` | 5 | `\0` |
+| `"0.1"` | `0.1` | $\lfloor 1 \times 2^{32} / 10 \rfloor$ | `429496729` | `0` | `OK` | 3 | `\0` |
+| `"-0.1"` | `-0.1` | $\text{trunc}( -1 \times 2^{32} / 10 )$ | `-429496729` | `0` | `OK` | 4 | `\0` |
+| `"1e-10"` | `0.0000000001` | $\lfloor 1 \times 2^{32} / 10^{10} \rfloor = \lfloor 0.429496... \rfloor$ | `0` | `0` | `OK (UNDERFLOW_ZERO)` | 5 | `\0` |
+| `"999999999999"` | $10^{12} - 1$ | $999999999999 \times 2^{32} > 2^{63}-1$ | `-9003` | `-9003` | `ERR_OVERFLOW` | 12 | `\0` |
+| `"1.25e2"` | `125.0` | $125 \times 2^{32}$ | `536870912000` | `0` | `OK` | 6 | `\0` |
+| `"0x10"` | `16.0` | $16 \times 2^{32}$ | `68719476736` | `0` | `OK` | 4 | `\0` |
+| `"1e"` | `1.0` | $1 \times 2^{32}$ (deixa 'e') | `4294967296` | `0` | `OK` | 1 | `'e'` |
+| `"."` | `0.0` | Rejeição sem dígitos | `-9005` | `-9005` | `ERR_INVALID_NUMBER` | 0 | `.` |
+
+---
+
+## 5. Gate 2: `next_token` (Classificação Léxica, Composição Gulosa & Rejeição)
+
+### Regra de Máxima Extensão (Maximal Munch / Lookahead Guloso):
+- `!=` é classificado como `TOK_NEQ (108)` (2 chars) antes de avaliar `!` como `TOK_LOGICAL_NOT (107)`.
+- `<=` é classificado como `TOK_LEQ (111)` (2 chars) antes de avaliar `<` como `TOK_LT (110)`.
+- `>=` é classificado como `TOK_GEQ (113)` (2 chars) antes de avaliar `>` como `TOK_GT (112)`.
+- `==` é classificado como `TOK_EQ (109)` (2 chars).
+- `&&` é classificado como `TOK_LOGICAL_AND (114)` (2 chars). Caractere `&` isolado gera `TOK_ERR_GRAMMAR (-9006)`.
+- `||` é classificado como `TOK_LOGICAL_OR (115)` (2 chars). Caractere `|` isolado gera `TOK_ERR_GRAMMAR (-9006)`.
+
+---
+
+## 6. Gate 3 (Parser Flat AST): Vetores Canônicos de Expressões
+
+| Expressão | AST Flat / Resolução | Saída Canônica Q32.32 | Observação Semântica |
+|---|---|---|---|
+| `1 + 2 * 3` | `+(1, *(2, 3))` | `7.0` (`30064771072`) | Precedência clássica: `*` antes de `+`. |
+| `2 ^ 3 ^ 2` | `^(*(2, 3), 2)` &rarr; `(2^3)^2 = 8^2` | `64.0` (`274877906944`) | Associatividade à esquerda padrão do TinyExpr. |
+| `-2 ^ 2` | `(-2) ^ 2` | `4.0` (`17179869184`) | Precedência unária antes da exponenciação padrão. |
+| `1 \|\| 0 && 0` | `\|\|(1, &&(0, 0))` | `1.0` (`4294967296`) | Precedência: `&&` antes de `\|\|`. |
+| `1, 2, 3` | `seq(1, seq(2, 3))` | `3.0` (`12884901888`) | Operador vírgula: retorna o último operando. |
+| `fac(5)` | `call(FAC, [5])` | `120.0` (`515396075520`) | Builtin `fac` com aridade 1. |

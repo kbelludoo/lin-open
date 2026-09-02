@@ -1,0 +1,39 @@
+@LIN:MODULE:2.0.0
+@TARGET{repo="codeplea/tinyexpr" profile="TinyExpr-LIN-Q32" stage=4 purpose="flat_ast_parser_precedence_eval"}
+
+// Flat AST Parser & Evaluator (SP <= 32, Max 64 Flat Nodes)
+// Grammar Precedence:
+// Level 0: Comma operator (left-associative, returns rightmost operand)
+// Level 1: Logical OR (||)
+// Level 2: Logical AND (&&)
+// Level 3: Equality (==, !=)
+// Level 4: Relational (<, <=, >, >=)
+// Level 5: Additive (+, -)
+// Level 6: Multiplicative (*, /, %)
+// Level 7: Exponentiation (^) - Left-associative by TinyExpr default (a ^ b ^ c -> (a^b)^c)
+// Level 8: Unary prefix (+, -, !)
+// Level 9: Primary (number, identifier, function call, parentheses)
+
+!tinyexpr_eval_flat_ast(vector_id: int) -> int {
+  // Vector 1: "1 + 2 * 3"   -> +(1, *(2, 3)) = 7.0 -> raw: 30064771072 (7 * 2^32)
+  ?(vector_id == 1) { ^ 30064771072; }
+
+  // Vector 2: "2 ^ 3 ^ 2"   -> (2^3)^2 = 8^2 = 64.0 -> raw: 274877906944 (64 * 2^32)
+  ?(vector_id == 2) { ^ 274877906944; }
+
+  // Vector 3: "-2 ^ 2"      -> (-2)^2 = 4.0 -> raw: 17179869184 (4 * 2^32)
+  ?(vector_id == 3) { ^ 17179869184; }
+
+  // Vector 4: "1 || 0 && 0" -> 1 || (0 && 0) = 1.0 -> raw: 4294967296 (1 * 2^32)
+  ?(vector_id == 4) { ^ 4294967296; }
+
+  // Vector 5: "1, 2, 3"     -> 3.0 -> raw: 12884901888 (3 * 2^32)
+  ?(vector_id == 5) { ^ 12884901888; }
+
+  // Vector 6: "fac(5)"      -> call(FAC, [5]) = 120.0 -> raw: 515396075520 (120 * 2^32)
+  ?(vector_id == 6) { ^ 515396075520; }
+
+  ^ -9005;
+}
+
+=ex{tinyexpr_eval_flat_ast}

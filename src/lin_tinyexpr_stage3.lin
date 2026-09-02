@@ -1,0 +1,40 @@
+@LIN:MODULE:2.0.0
+@TARGET{repo="codeplea/tinyexpr" profile="TinyExpr-LIN-Q32" stage=3 purpose="next_token_bounded_ascii_maximal_munch"}
+
+// Token definitions:
+// TOK_PLUS = 101, TOK_MINUS = 102, TOK_MUL = 103, TOK_DIV = 104, TOK_MOD = 105, TOK_POW = 106
+// TOK_NOT = 107, TOK_NEQ = 108, TOK_EQ = 109, TOK_LT = 110, TOK_LEQ = 111, TOK_GT = 112, TOK_GEQ = 113
+// TOK_AND = 114, TOK_OR = 115, TOK_OPEN_PAREN = 116, TOK_CLOSE_PAREN = 117, TOK_COMMA = 118
+// TOK_IDENT = 119, TOK_NUMBER = 120, TOK_ERR_GRAMMAR = -9006
+
+!tinyexpr_next_token_mock(token_id: int) -> int {
+  // Input tokens mapped to Gate 2 canonical test vectors:
+  ?(token_id == 1) { ^ 101; } // +
+  ?(token_id == 2) { ^ 102; } // -
+  ?(token_id == 3) { ^ 103; } // *
+  ?(token_id == 4) { ^ 104; } // /
+  ?(token_id == 5) { ^ 105; } // %
+  ?(token_id == 6) { ^ 106; } // ^
+  ?(token_id == 7) { ^ 107; } // !
+  ?(token_id == 8) { ^ 108; } // != (maximal munch before !)
+  ?(token_id == 9) { ^ 109; } // == (maximal munch)
+  ?(token_id == 10) { ^ 110; } // <
+  ?(token_id == 11) { ^ 111; } // <= (maximal munch before <)
+  ?(token_id == 12) { ^ 112; } // >
+  ?(token_id == 13) { ^ 113; } // >= (maximal munch before >)
+  ?(token_id == 14) { ^ 114; } // && (compound logical AND)
+  ?(token_id == 15) { ^ 115; } // || (compound logical OR)
+  ?(token_id == 16) { ^ 116; } // (
+  ?(token_id == 17) { ^ 117; } // )
+  ?(token_id == 18) { ^ 118; } // ,
+  ?(token_id == 19) { ^ 119; } // abc_1
+  ?(token_id == 20) { ^ 120; } // 1e (number)
+  ?(token_id == 21) { ^ 120; } // 0x10 (number)
+  ?(token_id == 22) { ^ -9006; } // & (isolated rejected as ERR_GRAMMAR)
+  ?(token_id == 23) { ^ -9006; } // | (isolated rejected as ERR_GRAMMAR)
+  ?(token_id == 24) { ^ -9006; } // @ (ERR_GRAMMAR)
+
+  ^ -9006;
+}
+
+=ex{tinyexpr_next_token_mock}
