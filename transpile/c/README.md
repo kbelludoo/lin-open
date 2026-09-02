@@ -16,6 +16,7 @@
 >
 > ```
 > $ make c0-gate     # 4 comandos (o 1o expande 5 alvos em transpile/c/), nenhum Zig executado
+>                    # imagem congelada: raiz 65823d77…, status FROZEN_LOCAL (nao ATTESTED)
 > ```
 
 > **O que é isto:** um port *educacional e verificável* da pipeline de
