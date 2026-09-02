@@ -62,3 +62,9 @@ lin_gate_key*
 # .py de teste são rastreados (!**/*.py), mas o cache de import não deve ser
 __pycache__/
 *.pyc
+
+# artefatos da auditoria de seguranca de 2026-09-01 (PDF + issues geradas + scripts)
+!docs/security-audit/*.pdf
+!docs/security-audit/*.py
+!docs/security-audit/issues/
+!docs/security-audit/issues/*.md
