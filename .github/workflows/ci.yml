@@ -18,6 +18,22 @@ env:
   BIN: zig-out/bin/lin_native
 
 jobs:
+  c0-bootstrap-nozig:
+    name: C0 bootstrap (C11, no Zig)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prove Zig is absent
+        run: |
+          if command -v zig >/dev/null 2>&1; then
+            echo "unexpected Zig executable: $(command -v zig)"
+            exit 1
+          fi
+
+      - name: Build and verify the C0 bootstrap
+        run: make c0-bootstrap-gate
+
   verify:
     runs-on: ubuntu-latest
     steps:
