@@ -140,7 +140,7 @@ linvm0-gate: build-cpu
 # Escopo honesto (R5): o subconjunto aceito é o de `vmBuild`/`VmComp` do Stage0
 # (port em transpile/c/tool/lin_c0_front.c). `check`/`lint` e o ponto fixo
 # C0=C1=C2 continuam no Stage0 Zig — ver docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel.
-.PHONY: c0 c0-gate c0-selfhost-gate
+.PHONY: c0 c0-gate c0-selfhost-gate c0-bootstrap-gate
 c0:
 	@$(MAKE) -C transpile/c c0
 
@@ -149,6 +149,19 @@ c0-gate: c0
 
 c0-selfhost-gate: c0
 	@./test/verify_c0_selfhost.sh
+
+# Hard bootstrap boundary: unlike the mixed Stage0 CI, this target refuses to
+# run when Zig is visible. It proves that checkout -> C0 build -> source/image
+# execution -> pinned self-host manifest needs only C11, Python and POSIX shell.
+c0-bootstrap-gate:
+	@if command -v zig >/dev/null 2>&1; then \
+	  echo "c0-bootstrap-gate: FAIL: zig is visible in PATH"; exit 1; \
+	fi
+	@$(MAKE) --no-print-directory c0-gate
+	@$(MAKE) --no-print-directory c0-selfhost-gate
+	@python3 test/verify_compiler0_manifest.py
+	@SAN=1 ./test/verify_c0.sh transpile/c/bin/lin_c0
+	@echo "C0-BOOTSTRAP-NOZIG: PASS"
 
 # Independent zero-trust receipt verification: recomputes the Merkle root
 # with python3 / bash+openssl / node — no LIN binary involved. Requires
