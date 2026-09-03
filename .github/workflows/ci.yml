@@ -62,6 +62,9 @@ jobs:
       - name: make test-cpu (CPU-only)
         run: make test-cpu
 
+      - name: Control-flow cross-check (Zig vs C11)
+        run: make control-flow-crosscheck
+
       - name: integrity (CPU-only)
         run: ${{ env.BIN }} integrity
 

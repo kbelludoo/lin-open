@@ -21,18 +21,8 @@
   ^(h * 31 + c) & 4294967295;
 }
 
-// --- Symtab: localiza ou insere simbolo; retorna o slot index ---
-!symtab_find_or_add(syms_h: [32]int, n_syms: int, target_h: int) -> int {
-  idx = 0;
-  found = 0 - 1;
-  while (idx < n_syms) {
-    ?(syms_h[idx] == target_h) {
-      found = idx;
-    };
-    idx = idx + 1;
-  };
-  ^found;
-}
+// O subset LIN0 não passa arrays como argumentos. As buscas são inlinadas
+// no parser, mantendo a tabela plana local e sem heap.
 
 // --- Vector 0: `!add(a: int, b: int) -> int { ^a + b; }` (35 bytes)
 // --- Vector 1: `!inc(x: int) -> int { y = x + 1; ^y; }` (37 bytes)
@@ -99,7 +89,7 @@
   cur_param_h = 0;
   while (cursor < limit && src[cursor] != 41) {
     c = src[cursor];
-    ?(c >= 97 && c <= 122 || c >= 65 && c <= 90 || c == 95) {
+    ?((c >= 97 && c <= 122) || (c >= 65 && c <= 90) || c == 95) {
       cur_param_h = sym_hash_char(cur_param_h, c);
       in_param = 1;
     } : (c == 58) { // ':'
@@ -128,15 +118,15 @@
     cursor = cursor + 1;
   };
 
-  // 5. Skip return type -> type {
-  while (cursor < limit && src[cursor] != 123) { // '{'
+  // 5. Skip return type and locate the body block
+  while (cursor < limit && src[cursor] != 123) { // body open
     cursor = cursor + 1;
   };
   ?(cursor < limit && src[cursor] == 123) {
     cursor = cursor + 1;
   };
 
-  // 6. Parse Body statements until '}'
+  // 6. Parse body statements until the closing delimiter
   // Emite bytecode:
   // OP_PUSH_CONST  = 0
   // OP_LOAD_LOCAL  = 1
@@ -162,7 +152,9 @@
         ?(rc >= 97 && rc <= 122) {
           // Ident
           ih = sym_hash_char(0, rc);
-          s_idx = symtab_find_or_add(sym_hashes, n_syms, ih);
+          s_idx = 0 - 1;
+          si = 0;
+          while (si < n_syms) { ?(sym_hashes[si] == ih) { s_idx = si; }; si = si + 1; };
           fold = fold * 31 + 1; // OP_LOAD_LOCAL
           fold = fold * 31 + s_idx;
         } : (rc == 43) { // '+'
@@ -187,7 +179,9 @@
       cursor = cursor + 1; // skip '='
 
       // Register local in symtab if new
-      loc_idx = symtab_find_or_add(sym_hashes, n_syms, local_ident_h);
+      loc_idx = 0 - 1;
+      si = 0;
+      while (si < n_syms) { ?(sym_hashes[si] == local_ident_h) { loc_idx = si; }; si = si + 1; };
       ?(loc_idx < 0) {
         sym_hashes[n_syms] = local_ident_h;
         loc_idx = n_syms;
@@ -201,7 +195,9 @@
         ?(ec >= 97 && ec <= 122) {
           // Read var
           vh = sym_hash_char(0, ec);
-          v_idx = symtab_find_or_add(sym_hashes, n_syms, vh);
+          v_idx = 0 - 1;
+          si = 0;
+          while (si < n_syms) { ?(sym_hashes[si] == vh) { v_idx = si; }; si = si + 1; };
           fold = fold * 31 + 1; // OP_LOAD_LOCAL
           fold = fold * 31 + v_idx;
         } : (ec >= 48 && ec <= 57) {

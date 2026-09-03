@@ -17820,6 +17820,19 @@ fn runCli() !void {
         var selfhost_root: [32]u8 = undefined;
         root_hasher.final(&selfhost_root);
 
+        // Format all recomputed digests in this scope before comparing them
+        // with the pinned P0 baselines and printing the parity record.
+        var comp_hex_buf: [64]u8 = undefined;
+        const comp_hex = std.fmt.bufPrint(&comp_hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&compiler_digest)}) catch "";
+        var corp_hex_buf: [64]u8 = undefined;
+        const corp_hex = std.fmt.bufPrint(&corp_hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&corpus_digest)}) catch "";
+        var ledg_hex_buf: [64]u8 = undefined;
+        const ledg_hex = std.fmt.bufPrint(&ledg_hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&ledger_digest)}) catch "";
+        var cert_hex_buf: [64]u8 = undefined;
+        const cert_hex = std.fmt.bufPrint(&cert_hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&cert_digest)}) catch "";
+        var root_hex_buf: [64]u8 = undefined;
+        const root_hex = std.fmt.bufPrint(&root_hex_buf, "{s}", .{std.fmt.fmtSliceHexLower(&selfhost_root)}) catch "";
+
         // Baselines pinned in docs/SELF_HOSTING_PLAN.rulel §2 (commit 4debcf0).
         // corpus/ledger/root do NOT depend on the compiler source, so they are
         // asserted; compiler/cert are self-referential, so they are reported.

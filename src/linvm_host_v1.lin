@@ -1,0 +1,235 @@
+@LIN:L1c:0.2
+@LINVM_HOST_V1{version=1 profile=LINVM-C0 phase=H0-H4 status=EXPERIMENTAL}
+
+// Host mínimo self-hosted: arena, pilha, locais, steps e trace.
+// Esta fatia usa runners pequenos para manter compatibilidade com LIN0.
+
+!host_arena_probe(sel: int) -> int {
+  arena: [256]int;
+  used = 0;
+  ?(sel == 0) { used = 16; } : { used = 64; };
+  arena[0] = used;
+  ?(arena[0] == used && used <= 256) { ^1; };
+  ^0;
+}
+
+!host_u_ge(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^1; };
+  ?(a >= 0 && b < 0) { ^0; };
+  ?(a >= b) { ^1; };
+  ^0;
+}
+
+!host_div_trunc(x: int, y: int) -> int {
+  ?(y == 0) { ^0; };
+  neg = 0;
+  ?((x < 0 && y >= 0) || (x >= 0 && y < 0)) { neg = 1; };
+  ux = x; uy = y;
+  ?(x < 0) { ux = 0 - x; };
+  ?(y < 0) { uy = 0 - y; };
+  q = 0; rem = 0; i = 63;
+  while (i >= 0) {
+    carry = 0;
+    ?(rem < 0) { carry = 1; };
+    bit = _lia_ushr(ux, i) & 1;
+    rem = _lia_shl(rem, 1) | bit;
+    ?(carry == 1 || host_u_ge(rem, uy) == 1) {
+      rem = rem - uy;
+      q = q | _lia_shl(1, i);
+    };
+    i = i - 1;
+  };
+  ?(neg == 1) { q = 0 - q; };
+  ^q;
+}
+
+!host_add() -> int {
+  st: [16]int;
+  sp = 0; pc = 0; steps = 0; trace = 0; done = 0; value = 0;
+  while (done == 0) {
+    ?(pc == 0) { st[sp] = 20; sp = sp + 1; } : (pc == 1) { st[sp] = 22; sp = sp + 1; } : (pc == 2) { y = st[sp - 1]; x = st[sp - 2]; sp = sp - 2; st[sp] = x + y; sp = sp + 1; } : { value = st[sp - 1]; done = 1; };
+    op = pc; steps = steps + 1; trace = (trace + op) * 31 + sp; ?(done == 0) { pc = pc + 1; };
+  };
+  ^value;
+}
+
+!host_branch() -> int {
+  st: [16]int;
+  sp = 0; pc = 0; steps = 0; trace = 0; done = 0; value = 0;
+  while (done == 0) {
+    ?(pc == 0) { st[sp] = 3; sp = sp + 1; } : (pc == 1) { st[sp] = 4; sp = sp + 1; } : (pc == 2) { y = st[sp - 1]; x = st[sp - 2]; sp = sp - 2; ?(x < y) { st[sp] = 1; } : { st[sp] = 0; }; sp = sp + 1; } : (pc == 3) { x = st[sp - 1]; sp = sp - 1; ?(x == 0) { pc = 5; } : { pc = 3; }; } : (pc == 4) { st[sp] = 7; sp = sp + 1; } : { value = st[sp - 1]; done = 1; };
+    op = pc; steps = steps + 1; trace = (trace + op) * 31 + sp; ?(done == 0) { pc = pc + 1; };
+  };
+  ^value;
+}
+
+!host_loop() -> int {
+  x = 0; steps = 0; trace = 0; i = 0;
+  while (i < 3) { x = x + 1; i = i + 1; steps = steps + 2; trace = (trace + 3) * 31 + 1; };
+  ?(steps == 6 && trace != 0) { ^x; };
+  ^0;
+}
+
+!host_shift() -> int {
+  x = 1; y = 3; steps = 0; trace = 0;
+  x = _lia_shl(x, y); steps = steps + 3; trace = (trace + 13) * 31 + 1;
+  ?(trace != 0) { ^x; };
+  ^0;
+}
+
+!host_child(a: int, b: int) -> int {
+  ^(a + b);
+}
+
+!host_call() -> int {
+  frames: [8]int;
+  args: [8]int;
+  depth = 0;
+  arity = 2;
+  ?(arity != 2) { ^-4; };
+  frames[depth] = 0;
+  args[0] = 20;
+  args[1] = 22;
+  a = 20;
+  b = 22;
+  depth = depth + 1;
+  result = host_child(a, b);
+  depth = depth - 1;
+  ?(depth != 0) { ^-5; };
+  ^result;
+}
+
+!host_call_bad_arity() -> int {
+  expected = 2;
+  supplied = 1;
+  ?(supplied != expected) { ^-4; };
+  ^0;
+}
+
+!host_call_depth_guard() -> int {
+  depth = 192;
+  ?(depth >= 192) { ^-6; };
+  ^0;
+}
+
+!host_arrays() -> int {
+  pool: [256]int;
+  lens: [8]int;
+  slot = 0;
+  lens[slot] = 4;
+  pool[0] = 10;
+  pool[1] = 20;
+  pool[2] = 30;
+  pool[3] = 40;
+  pool[2] = 99;
+  value = pool[2];
+  ?(lens[slot] == 4 && value == 99) { ^value; };
+  ^0;
+}
+
+!host_array_bounds() -> int {
+  pool: [256]int;
+  lens: [8]int;
+  slot = 0;
+  lens[slot] = 4;
+  index = 9;
+  value = 0;
+  ?(index >= 0 && index < lens[slot]) { value = pool[index]; };
+  ?(value == 0) { ^1; };
+  ^0;
+}
+
+!host_array_len() -> int {
+  lens: [8]int;
+  lens[0] = 4;
+  lens[1] = 0;
+  ?(lens[0] == 4 && lens[1] == 0) { ^1; };
+  ^0;
+}
+
+!host_image_call() -> int {
+  code: [16]int;
+  arg: [16]int;
+  st: [32]int;
+  loc: [8]int;
+  frames: [4]int;
+  code[0] = 0; arg[0] = 20;
+  code[1] = 0; arg[1] = 22;
+  code[2] = 28; arg[2] = 1;
+  code[3] = 29; arg[3] = 0;
+  // function 1 body: add two parameters and return.
+  code[4] = 1; arg[4] = 0;
+  code[5] = 1; arg[5] = 1;
+  code[6] = 3; arg[6] = 0;
+  code[7] = 29; arg[7] = 0;
+  loc[0] = 20; loc[1] = 22;
+  sp = 0; pc = 0; depth = 0; steps = 0; done = 0; value = 0;
+  while (done == 0) {
+    ?(pc == 0) { st[sp] = 20; sp = sp + 1; } : (pc == 1) { st[sp] = 22; sp = sp + 1; } : (pc == 2) { ?(sp < 2 || depth >= 4) { ^-5; }; frames[depth] = pc; depth = depth + 1; sp = sp - 2; st[sp] = loc[0] + loc[1]; sp = sp + 1; depth = depth - 1; pc = 3; } : { value = st[sp - 1]; done = 1; };
+    steps = steps + 1; ?(steps > 200000000) { ^-1; };
+    ?(done == 0) { pc = pc + 1; };
+  };
+  ^value;
+}
+
+!host_image_array() -> int {
+  pool: [256]int;
+  lens: [8]int;
+  st: [32]int;
+  lens[0] = 4;
+  st[0] = 2; st[1] = 99; sp = 2;
+  // store_index local-index=0: consumes index and value.
+  ?(sp < 2) { ^-3; };
+  ix = st[0]; val = st[1];
+  ?(ix < 0 || ix >= lens[0]) { ^-7; };
+  pool[ix] = val; sp = 0;
+  // load_index local-index=0.
+  st[sp] = 2; sp = sp + 1;
+  ix = st[sp - 1]; sp = sp - 1;
+  ?(ix < 0 || ix >= lens[0]) { ^-7; };
+  st[sp] = pool[ix]; sp = sp + 1;
+  value = st[sp - 1];
+  ?(value == 99 && lens[0] == 4) { ^value; };
+  ^0;
+}
+
+!host_image_array_bad_index() -> int {
+  pool: [256]int;
+  lens: [8]int;
+  lens[0] = 4;
+  ix = 9;
+  ?(ix < 0 || ix >= lens[0]) { ^1; };
+  pool[ix] = 1;
+  ^0;
+}
+
+// Ponte H8 -> H5/H6: o dispatch só é liberado após validação da imagem.
+!host_image_dispatch_gate() -> int {
+  // O entrypoint combinado fornece lb1_validate_fixture pelo loader H8.
+  // O retorno 2 indica header, seções e self-hash aceitos.
+  valid = lb1_validate_fixture();
+  ?(valid != 2) { ^-20; };
+  ?(host_image_call() != 42) { ^-30; };
+  ?(host_image_array() != 99) { ^-31; };
+  ?(host_image_array_bad_index() != 1) { ^-32; };
+  ^3;
+}
+
+!host_gate() -> int {
+  ok = 0;
+  ?(host_arena_probe(0) == 1) { ok = ok + 1; };
+  ?(host_arena_probe(1) == 1) { ok = ok + 1; };
+  ?(host_add() == 42) { ok = ok + 1; };
+  ?(host_branch() == 7) { ok = ok + 1; };
+  ?(host_loop() == 3) { ok = ok + 1; };
+  ?(host_shift() == 8) { ok = ok + 1; };
+  ?(host_div_trunc(7, 2) == 3) { ok = ok + 1; };
+  ?(host_call() == 42) { ok = ok + 1; };
+  ?(host_call_bad_arity() == -4) { ok = ok + 1; };
+  ?(host_call_depth_guard() == -6) { ok = ok + 1; };
+  ?(host_arrays() == 99) { ok = ok + 1; };
+  ?(host_array_bounds() == 1) { ok = ok + 1; };
+  ?(host_array_len() == 1) { ok = ok + 1; };
+    ^ok;
+}
+!host_gate_expected() -> int { ^13; }

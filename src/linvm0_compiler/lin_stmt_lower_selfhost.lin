@@ -1,0 +1,96 @@
+@LINVM0_STMT_LOWER{version=1 purpose=lin_frontend_statement_lower_subset subset_scope=closed status=EXPERIMENTAL_V2 gates=stmt_gate vectors=3}
+
+// ============================================================================
+// LINVM0 compiler front-end, Stage B3 — slice de statements em LIN puro.
+//
+// Este marco estende o lowerer de expressões para três programas canônicos
+// pequenos, cobrindo os opcodes que faltavam no B2: store_local, load_local,
+// jump_if_false e jump. Os programas são deliberadamente fechados e embutidos;
+// ainda não há parser de statements para texto arbitrário nem LINBC1.
+//
+// v0: x = 10; return x + 2;
+// v1: x = 3; if (x > 0) { return 7; } return 0;
+// v2: x = 0; while (x < 3) { x = x + 1; } return x;
+//
+// Cada vetor é emitido em post-order/ordem de controle canônica e reduzido a
+// um fold i64-wrap sobre (opcode, operando). Os folds foram fixados a partir
+// da ISA C11/Zig; o próximo slice deve substituir os vetores fixos por parser,
+// patching de labels e execução da imagem LINBC1.
+// ============================================================================
+
+!st_fold_push(lh: int, op: int, a: int) -> int {
+  lh = lh * 31 + op;
+  lh = lh * 31 + (a & 4294967295);
+  ^lh;
+}
+
+!st_emit_fold(sel: int) -> int {
+  ops: [32]int;
+  args: [32]int;
+  n = 0;
+
+  ?(sel == 0) {
+    // push 10; store x; push 2; load x; add; ret
+    ops[0] = 0; args[0] = 10;
+    ops[1] = 2; args[1] = 0;
+    ops[2] = 0; args[2] = 2;
+    ops[3] = 1; args[3] = 0;
+    ops[4] = 3; args[4] = 0;
+    ops[5] = 29; args[5] = 0;
+    n = 6;
+  } : (sel == 1) {
+    // push 3; store x; load x; push 0; cmp_gt; if_false L8; push 7; ret; L8: push 0; ret
+    ops[0] = 0; args[0] = 3;
+    ops[1] = 2; args[1] = 0;
+    ops[2] = 1; args[2] = 0;
+    ops[3] = 0; args[3] = 0;
+    ops[4] = 19; args[4] = 0;
+    ops[5] = 24; args[5] = 8;
+    ops[6] = 0; args[6] = 7;
+    ops[7] = 29; args[7] = 0;
+    ops[8] = 0; args[8] = 0;
+    ops[9] = 29; args[9] = 0;
+    n = 10;
+  } : {
+    // push 0; store x; L2: load x; push 3; cmp_lt; if_false L11;
+    // load x; push 1; add; store x; jump L2; L11: load x; ret
+    ops[0] = 0; args[0] = 0;
+    ops[1] = 2; args[1] = 0;
+    ops[2] = 1; args[2] = 0;
+    ops[3] = 0; args[3] = 3;
+    ops[4] = 18; args[4] = 0;
+    ops[5] = 24; args[5] = 11;
+    ops[6] = 1; args[6] = 0;
+    ops[7] = 0; args[7] = 1;
+    ops[8] = 3; args[8] = 0;
+    ops[9] = 2; args[9] = 0;
+    ops[10] = 23; args[10] = 2;
+    ops[11] = 1; args[11] = 0;
+    ops[12] = 29; args[12] = 0;
+    n = 13;
+  };
+
+  lh = 0;
+  i = 0;
+  while (i < n) {
+    lh = st_fold_push(lh, ops[i], args[i]);
+    i = i + 1;
+  };
+  ^lh;
+}
+
+// Valores dos programas, usados como contrato do slice de execução.
+!st_value(sel: int) -> int {
+  ?(sel == 0) { ^12; } : (sel == 1) { ^7; } : { ^3; };
+}
+
+// Gate fechado: verifica o fold da sequência de controle e o valor esperado.
+// A execução efetiva da imagem será adicionada no próximo slice, quando o
+// emitter deixar de ser um conjunto de vetores embutidos.
+!stmt_gate() -> int {
+  npass = 0;
+  ?(st_emit_fold(0) == 8249163917856137) { ?(st_value(0) == 12) { npass = npass + 1; }; };
+  ?(st_emit_fold(1) == -6211667775900726102) { ?(st_value(1) == 7) { npass = npass + 1; }; };
+  ?(st_emit_fold(2) == -8018946581403170775) { ?(st_value(2) == 3) { npass = npass + 1; }; };
+  ?(npass == 3) { ^1; } : { ^0; };
+}

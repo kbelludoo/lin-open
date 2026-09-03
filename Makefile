@@ -3,7 +3,7 @@
 .PHONY: all build build-gpu build-cpu test test-cpu lint clean \
         crypto256-real crypto256-audit \
         attestation-gate guard-unit xver gate gate-attest ci-gate \
-        linvm0-gate
+        linvm0-gate stmt-selfhost-gate linbc1-loader-gate linbc1-mutation-gate host-v1-gate linvm-host-image-gate control-flow-crosscheck
 
 # LIN build/test Makefile (2026-08-31)
 #
@@ -114,8 +114,12 @@ else
 	@$(BIN) gate-attest --key $(KEY) --key-id $(or $(KEY_ID),gate-maintainer)
 endif
 
+# LINBC1 mutation gate: C11 fuzz plus length-extension negative controls.
+linbc1-mutation-gate:
+	@$(MAKE) -C transpile/c test-linbc1
+
 # The full PR gate, in the order CI runs it.
-ci-gate: gate attestation-gate xver
+ci-gate: gate attestation-gate xver linbc1-mutation-gate host-v1-gate linvm-host-image-gate
 	@$(BIN) integrity
 
 # LINVM0 front-end gate (V2/B2): verifies the LIN lexer and expression evaluator
@@ -149,6 +153,31 @@ c0-gate: c0
 
 c0-selfhost-gate: c0
 	@./test/verify_c0_selfhost.sh
+
+# Slice B3: statements/control-flow do front-end self-hosted em LIN.
+# Usa somente o host C11 e verifica a rota fonte contra LINBC1.
+stmt-selfhost-gate: c0
+	@./test/verify_stmt_selfhost.sh
+
+# compiler-host-v1 gate: arena, scalar dispatch, limits and canonical trace seed.
+host-v1-gate: build-cpu
+	@$(BIN) check src/linvm_host_v1.lin >/dev/null
+	@$(BIN) lint src/linvm_host_v1.lin >/dev/null
+	@v=$$($(BIN) vm src/linvm_host_v1.lin host_gate | sed -n 's/.*value=\(-\?[0-9]*\).*/\1/p'); \
+	[ "$$v" = 13 ] || { echo "HOST-V1: FAIL expected=13 got=$$v" >&2; exit 1; }; \
+	echo "HOST-V1: PASS (arena + scalar dispatch + trace/steps seed)"
+
+# LINBC1 loader gate (H8): fase A de leituras seguras e fase B de validação estática.
+linbc1-loader-gate: build-cpu
+	@./test/verify_linbc1_loader.sh
+
+# Combined H8 -> H5/H6 gate: validate LINBC1 before call/array dispatch.
+linvm-host-image-gate: build-cpu
+	@./test/verify_image_view_dispatch.sh
+
+# Cross-check integrado: controle de fluxo deve coincidir entre Zig e C11.
+control-flow-crosscheck: build-cpu c0
+	@./test/verify_control_flow_crosscheck.sh
 
 # Independent zero-trust receipt verification: recomputes the Merkle root
 # with python3 / bash+openssl / node — no LIN binary involved. Requires

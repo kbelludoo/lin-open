@@ -1,0 +1,67 @@
+name: LIN Gate
+
+# Verifica que o toolchain protegido continua correspondendo ao manifesto
+# Merkle versionado. O CI nunca executa gate-attest: a atestação é uma ação
+# deliberada feita por um mantenedor após revisar o diff.
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lin-gate-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ZIG_VERSION: 0.13.0
+  BIN: zig-out/bin/lin_native
+
+jobs:
+  merkle-gate:
+    name: Verify Merkle gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Zig ${{ env.ZIG_VERSION }}
+        uses: goto-bus-stop/setup-zig@v2
+        with:
+          version: ${{ env.ZIG_VERSION }}
+
+      - name: Build CPU-only compiler
+        run: zig build -Dgpu=false -Doptimize=ReleaseFast
+
+      - name: Verify attested toolchain
+        run: |
+          if [ -f lin_gate_roster.rulel ]; then
+            "$BIN" gate-check \
+              --manifest lin_gate_manifest.rulel \
+              --roster lin_gate_roster.rulel
+          else
+            "$BIN" gate-check --manifest lin_gate_manifest.rulel
+          fi
+
+      - name: Verify source tree is clean after gate
+        run: git diff --exit-code -- lin_gate_manifest.rulel lin_gate_roster.rulel
+
+      - name: Publish gate summary
+        if: always()
+        run: |
+          {
+            echo '## LIN Merkle Gate'
+            echo
+            echo '- **Mode:** verification only; no automatic attestation'
+            echo "- **Commit:** $GITHUB_SHA"
+            echo "- **Manifest:** lin_gate_manifest.rulel"
+            if [ -f lin_gate_roster.rulel ]; then
+              echo '- **Signatures:** roster verification enabled'
+            else
+              echo '- **Signatures:** no roster present'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

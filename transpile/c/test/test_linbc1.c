@@ -155,6 +155,53 @@ static void t_fuzz(void) {
     printf("  T-FUZZ: rejected %zu/%zu corrupted images\n", rej, tot);
 }
 
+static void t_length_extension(void) {
+    static uint8_t img[IMG_BYTES], mut[IMG_BYTES + 64];
+    static LinBc1Vm vm;
+    size_t body = IMG_BYTES - 32;
+    unhex(IMG_HEX, img, sizeof img);
+
+    /* A classic length-extension candidate appends padding/suffix after the
+     * original message. LINBC1 must reject it as trailing bytes, regardless of
+     * whether an attacker also carries a candidate digest. */
+    memcpy(mut, img, IMG_BYTES);
+    mut[IMG_BYTES] = 0x80;
+    mut[IMG_BYTES + 1] = 'X';
+    CK(lin_bc1_load(mut, IMG_BYTES + 2, &vm) == LIN_BC1_ERR_TRAILING,
+       "length extension after self_hash rejected");
+
+    /* Put the extension before the old digest, as a forged extended message
+     * would do. The fixed function section ends at body, so the loader must
+     * reject the bytes before it can inspect any supplied digest. */
+    memcpy(mut, img, body);
+    mut[body] = 0x80;
+    mut[body + 1] = 0;
+    mut[body + 2] = 0;
+    mut[body + 3] = 0;
+    mut[body + 4] = 0;
+    mut[body + 5] = 0;
+    mut[body + 6] = 0;
+    mut[body + 7] = 0;
+    memcpy(mut + body + 8, img + body, 32);
+    CK(lin_bc1_load(mut, IMG_BYTES + 8, &vm) == LIN_BC1_ERR_TRAILING,
+       "length extension before self_hash rejected");
+
+    /* Padding-looking bytes inside the protected body cannot be hidden by
+     * retaining the old digest. */
+    memcpy(mut, img, IMG_BYTES);
+    mut[body - 1] ^= 0x01;
+    CK(lin_bc1_load(mut, IMG_BYTES, &vm) == LIN_BC1_ERR_SELFHASH,
+       "body mutation with old digest rejected");
+
+    /* Mutating the stored digest itself is independently rejected. */
+    memcpy(mut, img, IMG_BYTES);
+    mut[body] ^= 0x01;
+    CK(lin_bc1_load(mut, IMG_BYTES, &vm) == LIN_BC1_ERR_SELFHASH,
+       "self_hash mutation rejected");
+
+    printf("  T-LENEXT: padding/suffix/relocation mutations rejected\n");
+}
+
 int main(int argc, char **argv) {
     if (argc == 2 && strcmp(argv[1], "--print-fold") == 0) {
         static uint8_t img[IMG_BYTES];
@@ -169,6 +216,7 @@ int main(int argc, char **argv) {
     t_img_exec();
     printf("  T-IMG: fixture accept/exec goldens\n");
     t_fuzz();
+    t_length_extension();
     printf("LINBC1 SUITE: %s (%d pass, %d fail)\n",
            g_fail == 0 ? "ALL PASSED" : "FAILURES", g_pass, g_fail);
     return g_fail == 0 ? 0 : 1;

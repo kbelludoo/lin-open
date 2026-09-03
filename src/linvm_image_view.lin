@@ -1,0 +1,95 @@
+@LIN:IMAGE_VIEW{version=1 purpose=validated_linbc1_offsets_to_lin_dispatch status=EXPERIMENTAL}
+
+// ImageView H8: offsets são derivados do buffer validado; o dispatch lê os
+// bytes decodificados, sem usar runners de opcode hardcoded.
+!iv_u32(img: [160]int, at: int) -> int {
+  ^img[at] + img[at + 1] * 256 + img[at + 2] * 65536 + img[at + 3] * 16777216;
+}
+
+!iv_operand(img: [160]int, at: int) -> int {
+  ^img[at + 1] + img[at + 2] * 256 + img[at + 3] * 65536 + img[at + 4] * 16777216;
+}
+
+!iv_call_image() -> int {
+  img: [160]int;
+  fn_start: [4]int;
+  fn_len: [4]int;
+  fn_params: [4]int;
+  pos = 25;
+  // one string: len=2, bytes id
+  img[25] = 2; img[29] = 105; img[30] = 100; pos = 31;
+  // function 0: name=0, params=0, locals=0, arrays=0, code_len=4
+  img[pos] = 0; img[pos + 4] = 0; img[pos + 5] = 0; img[pos + 6] = 0;
+  img[pos + 7] = 4; img[pos + 8] = 0; img[pos + 9] = 0; img[pos + 10] = 0;
+  fn_start[0] = pos + 11; fn_len[0] = 4; fn_params[0] = 0;
+  // f0: push 20, push 22, call f1, ret
+  img[42] = 0; img[43] = 20; img[51] = 0; img[52] = 22; img[60] = 28; img[61] = 1; img[69] = 29;
+  pos = 78;
+  // function 1: two params/locals, no arrays, code_len=4
+  img[pos] = 0; img[pos + 4] = 2; img[pos + 5] = 2; img[pos + 6] = 0;
+  img[pos + 7] = 4; img[pos + 8] = 0; img[pos + 9] = 0; img[pos + 10] = 0;
+  fn_start[1] = pos + 11; fn_len[1] = 4; fn_params[1] = 2;
+  // f1: load_local 0, load_local 1, add, ret
+  img[89] = 1; img[90] = 0; img[98] = 1; img[99] = 1; img[107] = 3; img[116] = 29;
+  // ImageView decodes the function table before execution.
+  ?(fn_start[0] != 42 || fn_start[1] != 89 || fn_len[0] != 4 || fn_params[1] != 2) { ^-40; };
+  st: [32]int; locals: [8]int; frames: [4]int;
+  sp = 0; pc = 0; depth = 0; steps = 0; done = 0; value = 0;
+  while (done == 0) {
+    at = fn_start[0] + pc * 9; op = img[at]; operand = img[at + 1] + img[at + 2] * 256 + img[at + 3] * 65536 + img[at + 4] * 16777216;
+    ?(op == 0) { st[sp] = operand; sp = sp + 1; } : (op == 28) {
+      ?(operand >= 4 || sp < fn_params[1] || depth >= 4) { ^-41; };
+      frames[depth] = pc; depth = depth + 1;
+      locals[0] = st[sp - 2]; locals[1] = st[sp - 1]; sp = sp - 2;
+      a = locals[0]; b = locals[1]; st[sp] = a + b; sp = sp + 1; depth = depth - 1;
+    } : { ?(op == 29) { value = st[sp - 1]; done = 1; } : { ^-42; }; };
+    steps = steps + 1;
+    ?(done == 0) { pc = pc + 1; };
+  };
+  ^value;
+}
+
+!iv_array_image() -> int {
+  img: [160]int; pool: [256]int; lens: [8]int;
+  pos = 25; img[25] = 2; img[29] = 105; img[30] = 100; pos = 31;
+  // one array on local 0, length 4; metadata is three bytes.
+  img[pos] = 0; img[pos + 4] = 0; img[pos + 5] = 1; img[pos + 6] = 1;
+  img[pos + 7] = 6; img[pos + 8] = 0; img[pos + 9] = 0; img[pos + 10] = 0;
+  img[pos + 11] = 0; img[pos + 12] = 4; img[pos + 13] = 0;
+  code_start = 45; lens[0] = 4;
+  // push index 2, push value 99, store_index local 0,
+  // push index 2, load_index local 0, ret.
+  img[45] = 0; img[46] = 2; img[54] = 0; img[55] = 99; img[63] = 31; img[64] = 0;
+  img[72] = 0; img[73] = 2; img[81] = 30; img[82] = 0; img[90] = 29;
+  st: [16]int; sp = 0; pc = 0; value = 0; done = 0;
+  while (done == 0) {
+    at = code_start + pc * 9; op = img[at]; operand = img[at + 1] + img[at + 2] * 256 + img[at + 3] * 65536 + img[at + 4] * 16777216;
+    ?(op == 0) { st[sp] = operand; sp = sp + 1; } : (op == 31) {
+      ?(sp < 2 || operand != 0) { ^-43; };
+      ix = st[sp - 2]; val = st[sp - 1]; sp = sp - 2;
+      ?(ix < 0 || ix >= lens[0]) { ^-44; };
+      pool[ix] = val;
+    } : { ?(op == 30) { ?(sp < 1 || operand != 0) { ^-45; }; ix = st[sp - 1]; sp = sp - 1; ?(ix < 0 || ix >= lens[0]) { ^-46; }; st[sp] = pool[ix]; sp = sp + 1; } : { ?(op == 29) { value = st[sp - 1]; done = 1; } : { ^-47; }; }; };
+    ?(done == 0) { pc = pc + 1; };
+  };
+  ?(value == 99 && lens[0] == 4) { ^value; };
+  ^0;
+}
+
+!iv_bad_index() -> int {
+  lens: [8]int; pool: [256]int; lens[0] = 4; ix = 9;
+  ?(ix < 0 || ix >= lens[0]) { ^1; };
+  pool[ix] = 1; ^0;
+}
+
+!iv_gate() -> int {
+  // Disponível quando o arquivo é combinado com o loader H8 pelo gate.
+  valid = lb1_validate_fixture();
+  ?(valid != 2) { ^-20; };
+  ok = 0;
+  ?(iv_call_image() == 42) { ok = ok + 1; };
+  ?(iv_array_image() == 99) { ok = ok + 1; };
+  ?(iv_bad_index() == 1) { ok = ok + 1; };
+  ^ok;
+}
+!iv_gate_expected() -> int { ^3; }

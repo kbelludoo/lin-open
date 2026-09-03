@@ -1,0 +1,209 @@
+@LIN:L1c:0.2
+@LIN_LINBC1_LOADER{version=1 purpose=phase_A_safe_reader_phase_B_static_validator profile=LINVM-1 status=EXPERIMENTAL}
+
+// Loader LINBC1 em LIN — fatias A/B.
+//
+// O subset LIN0 ainda não permite passar arrays como argumentos. Por isso,
+// esta primeira implementação mantém o buffer e o cursor dentro do entrypoint
+// de validação. A mesma ordem de leituras será mantida quando o buffer vier do
+// host por capability de leitura.
+//
+// Fase A: cursor monotônico, leituras LE com bounds check e imagem imutável.
+// Fase B: header, contagens, pool, função, code_len, opcodes e índices.
+// Self-hash criptográfico fica para a fatia seguinte; aqui a posição reservada
+// de 32 bytes é validada e nenhum byte de código é executado.
+
+!lb1_mask32(x: int) -> int {
+  ^x & 4294967295;
+}
+
+!lb1_rotr32(x: int, n: int) -> int {
+  m = x & 4294967295;
+  ^(_lia_shr(m, n) | _lia_shl(m, 32 - n)) & 4294967295;
+}
+
+!lb1_g0(x: int) -> int {
+  ^(lb1_rotr32(x, 7) ^ lb1_rotr32(x, 18) ^ _lia_shr(x & 4294967295, 3)) & 4294967295;
+}
+
+!lb1_g1(x: int) -> int {
+  ^(lb1_rotr32(x, 17) ^ lb1_rotr32(x, 19) ^ _lia_shr(x & 4294967295, 10)) & 4294967295;
+}
+
+!lb1_s0(x: int) -> int {
+  ^(lb1_rotr32(x, 2) ^ lb1_rotr32(x, 13) ^ lb1_rotr32(x, 22)) & 4294967295;
+}
+
+!lb1_s1(x: int) -> int {
+  ^(lb1_rotr32(x, 6) ^ lb1_rotr32(x, 11) ^ lb1_rotr32(x, 25)) & 4294967295;
+}
+
+!lb1_ch(x: int, y: int, z: int) -> int {
+  ^((x & y) ^ ((4294967295 - x) & z)) & 4294967295;
+}
+
+!lb1_maj(x: int, y: int, z: int) -> int {
+  ^((x & y) ^ (x & z) ^ (y & z)) & 4294967295;
+}
+
+!lb1_validate_fixture() -> int {
+  img: [128]int;
+  img[0] = 76; img[1] = 73; img[2] = 78; img[3] = 66; img[4] = 67; img[5] = 49;
+  img[6] = 1; img[7] = 1; img[8] = 0;
+  img[9] = 1; img[10] = 0; img[11] = 0; img[12] = 0;
+  img[13] = 1; img[14] = 0; img[15] = 0; img[16] = 0;
+  img[17] = 0; img[18] = 0; img[19] = 0; img[20] = 0;
+  img[21] = 0; img[22] = 0; img[23] = 0; img[24] = 0;
+  // string_pool at 25: len=2, bytes='i','d'
+  img[25] = 2; img[26] = 0; img[27] = 0; img[28] = 0;
+  img[29] = 105; img[30] = 100;
+  // function at 31: name_idx=0, params=0, locals=0, arrays=0, code_len=2
+  img[31] = 0; img[32] = 0; img[33] = 0; img[34] = 0;
+  img[35] = 0; img[36] = 0; img[37] = 0; img[38] = 2;
+  img[39] = 0; img[40] = 0; img[41] = 0; img[42] = 0;
+  // code[0] = push_const 7; code[1] = ret
+  img[42] = 0; img[43] = 7; img[44] = 0; img[45] = 0; img[46] = 0;
+  img[47] = 0; img[48] = 0; img[49] = 0; img[50] = 0;
+  img[51] = 29; img[52] = 0; img[53] = 0; img[54] = 0; img[55] = 0;
+  img[56] = 0; img[57] = 0; img[58] = 0; img[59] = 0;
+  // self_hash[60..91] is the stored SHA-256 digest for this fixture.
+  img[60] = 196; img[61] = 29; img[62] = 138; img[63] = 203;
+  img[64] = 161; img[65] = 9; img[66] = 239; img[67] = 177;
+  img[68] = 197; img[69] = 124; img[70] = 142; img[71] = 139;
+  img[72] = 37; img[73] = 154; img[74] = 135; img[75] = 155;
+  img[76] = 56; img[77] = 206; img[78] = 193; img[79] = 239;
+  img[80] = 4; img[81] = 187; img[82] = 204; img[83] = 83;
+  img[84] = 46; img[85] = 106; img[86] = 135; img[87] = 98;
+  img[88] = 220; img[89] = 62; img[90] = 237; img[91] = 94;
+  limit = 92;
+
+  // A1: bounded header reads. Every field is checked before use.
+  ?(limit < 25) { ^-1; };
+  ?(img[0] != 76 || img[1] != 73 || img[2] != 78 || img[3] != 66 || img[4] != 67 || img[5] != 49) { ^-2; };
+  ?(img[6] != 1) { ^-3; };
+  ?(img[7] != 1) { ^-4; };
+  ?(img[8] != 0) { ^-5; };
+  n_strings = img[9] + img[10] * 256 + img[11] * 65536 + img[12] * 16777216;
+  n_fns = img[13] + img[14] * 256 + img[15] * 65536 + img[16] * 16777216;
+  n_regions = img[17] + img[18] * 256 + img[19] * 65536 + img[20] * 16777216;
+  n_abis = img[21] + img[22] * 256 + img[23] * 65536 + img[24] * 16777216;
+  ?(n_strings != 1 || n_fns != 1 || n_regions != 0 || n_abis != 0) { ^-6; };
+
+  // A2/B1: string pool and function section remain inside the body.
+  pos = 25;
+  ?(pos + 4 > 62) { ^-7; };
+  slen = img[pos] + img[pos + 1] * 256 + img[pos + 2] * 65536 + img[pos + 3] * 16777216;
+  ?(slen != 2 || pos + 4 + slen > 62) { ^-8; };
+  ?(img[pos + 4] != 105 || img[pos + 5] != 100) { ^-9; };
+  pos = pos + 4 + slen;
+  ?(pos + 11 > 62) { ^-10; };
+  name_idx = img[pos] + img[pos + 1] * 256 + img[pos + 2] * 65536 + img[pos + 3] * 16777216;
+  nparams = img[pos + 4];
+  nlocals = img[pos + 5];
+  n_arrs = img[pos + 6];
+  code_len = img[pos + 7] + img[pos + 8] * 256 + img[pos + 9] * 65536 + img[pos + 10] * 16777216;
+  ?(name_idx >= n_strings) { ^-11; };
+  ?(nparams > nlocals || nlocals > 64) { ^-12; };
+  ?(n_arrs != 0 || code_len == 0) { ^-13; };
+  code_start = pos + 11;
+  code_end = code_start + code_len * 9;
+  ?(code_end != 60 || code_end + 32 != limit) { ^-14; };
+
+  // B2: static opcode and operand checks; no instruction is executed.
+  pc = 0;
+  while (pc < code_len) {
+    at = code_start + pc * 9;
+    op = img[at];
+    operand = img[at + 1] + img[at + 2] * 256 + img[at + 3] * 65536 + img[at + 4] * 16777216;
+    ?(op < 0 || op > 32) { ^-15; };
+    ?(pc == 0 && (op != 0 || operand != 7)) { ^-16; };
+    ?(pc == 1 && op != 29) { ^-17; };
+    pc = pc + 1;
+  };
+  // C: SHA-256("linbc1:img:" || image[0..59]) em dois blocos de 64 bytes.
+  // O campo self_hash [60..91] não participa do cálculo.
+  msg: [128]int;
+  dom: [11]int = [108, 105, 110, 98, 99, 49, 58, 105, 109, 103, 58];
+  i = 0;
+  while (i < 11) { msg[i] = dom[i]; i = i + 1; };
+  i = 0;
+  while (i < 60) { msg[11 + i] = img[i]; i = i + 1; };
+  msg[71] = 128;
+  msg[120] = 0; msg[121] = 0; msg[122] = 0; msg[123] = 0;
+  msg[124] = 0; msg[125] = 0; msg[126] = 2; msg[127] = 56;
+
+  k: [64]int = [1116352408, 1899447441, 3049323471, 3921009573, 961987163, 1508970993, 2453635748, 2870763221, 3624381080, 310598401, 607225278, 1426881987, 1925078388, 2162078206, 2614888103, 3248222580, 3835390401, 4022224774, 264347078, 604807628, 770255983, 1249150122, 1555081692, 1996064986, 2554220882, 2821834349, 2952996808, 3210313671, 3336571891, 3584528711, 113926993, 338241895, 666307205, 773529912, 1294757372, 1396182291, 1695183700, 1986661051, 2177026350, 2456956037, 2730485921, 2820302411, 3259730800, 3345764771, 3516065817, 3600352804, 4094571909, 275423344, 430227734, 506948616, 659060556, 883997877, 958139571, 1322822218, 1537002063, 1747873779, 1955562222, 2024104815, 2227730452, 2361852424, 2428436474, 2756734187, 3204031479, 3329325298];
+  hv: [8]int = [1779033703, 3144134277, 1013904242, 2773480762, 1359893119, 2600822924, 528734635, 1541459225];
+  blk = 0;
+  while (blk < 2) {
+    w: [64]int;
+    t = 0;
+    while (t < 16) {
+      j = blk * 64 + t * 4;
+      w[t] = msg[j] * 16777216 + msg[j + 1] * 65536 + msg[j + 2] * 256 + msg[j + 3];
+      t = t + 1;
+    };
+    while (t < 64) {
+      w[t] = (w[t - 16] + lb1_g0(w[t - 15]) + w[t - 7] + lb1_g1(w[t - 2])) & 4294967295;
+      t = t + 1;
+    };
+    a = hv[0]; b = hv[1]; c = hv[2]; d = hv[3]; e = hv[4]; f = hv[5]; g = hv[6]; h = hv[7];
+    t = 0;
+    while (t < 64) {
+      t1 = (h + lb1_s1(e) + lb1_ch(e, f, g) + k[t] + w[t]) & 4294967295;
+      t2 = (lb1_s0(a) + lb1_maj(a, b, c)) & 4294967295;
+      h = g; g = f; f = e; e = (d + t1) & 4294967295;
+      d = c; c = b; b = a; a = (t1 + t2) & 4294967295;
+      t = t + 1;
+    };
+    hv[0] = (hv[0] + a) & 4294967295; hv[1] = (hv[1] + b) & 4294967295;
+    hv[2] = (hv[2] + c) & 4294967295; hv[3] = (hv[3] + d) & 4294967295;
+    hv[4] = (hv[4] + e) & 4294967295; hv[5] = (hv[5] + f) & 4294967295;
+    hv[6] = (hv[6] + g) & 4294967295; hv[7] = (hv[7] + h) & 4294967295;
+    blk = blk + 1;
+  };
+  // SHA-256 emits each 32-bit word in big-endian byte order; compare it
+  // byte-for-byte with the stored self_hash field.
+  wi = 0;
+  while (wi < 8) {
+    z = hv[wi]; q = wi * 4;
+    ?(img[60 + q] != (_lia_shr(z, 24) & 255) || img[61 + q] != (_lia_shr(z, 16) & 255) || img[62 + q] != (_lia_shr(z, 8) & 255) || img[63 + q] != (z & 255)) { ^-20; };
+    wi = wi + 1;
+  };
+  // Negative control: a changed digest byte must no longer validate.
+  saved = img[60];
+  img[60] = saved + 1;
+  ?(img[60] == (_lia_shr(hv[0], 24) & 255)) { ^-21; };
+  img[60] = saved;
+  ^2;
+}
+
+!lb1_reject_truncated() -> int {
+  img: [32]int;
+  img[0] = 76; img[1] = 73; img[2] = 78; img[3] = 66; img[4] = 67; img[5] = 49;
+  limit = 8;
+  ?(limit < 25) { ^-1; };
+  ^0;
+}
+
+!lb1_reject_profile() -> int {
+  img: [32]int;
+  img[0] = 76; img[1] = 73; img[2] = 78; img[3] = 66; img[4] = 67; img[5] = 49;
+  img[6] = 1; img[7] = 9; img[8] = 0;
+  limit = 25;
+  ?(limit < 25) { ^-1; };
+  ?(img[0] != 76 || img[1] != 73 || img[2] != 78 || img[3] != 66 || img[4] != 67 || img[5] != 49) { ^-2; };
+  ?(img[6] != 1) { ^-3; };
+  ?(img[7] != 1) { ^-4; };
+  ^0;
+}
+
+!lb1_gate() -> int {
+  ok = 0;
+  ?(lb1_validate_fixture() == 2) { ok = ok + 1; };
+  ?(lb1_reject_truncated() == -1) { ok = ok + 1; };
+  ?(lb1_reject_profile() == -4) { ok = ok + 1; };
+  ^ok;
+}
+
+!lb1_gate_expected() -> int { ^3; }

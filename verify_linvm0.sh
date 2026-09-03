@@ -21,6 +21,7 @@
 set -euo pipefail
 BIN="${1:-zig-out/bin/lin_native}"
 DIR="src/linvm0_compiler"
+STMT="$DIR/lin_stmt_lower_selfhost.lin"
 
 fail() { echo "LINVM0: FAIL: $*"; exit 1; }
 ok()   { echo "LINVM0:   ok: $*"; }
@@ -69,4 +70,13 @@ g="$( "$BIN" vm "$DIR/lin_lower_selfhost.lin" low_gate | grep -o 'value=[-0-9]*'
 ok "low_gate=1 (5/5 folds == consenso)"
 
 echo
-echo "LINVM0-GATE: PASS (marco V2/B2: front-end subset em LIN — lexer+eval+lowerer)"
+# --- 4. statement lowerer (slice B3: assignment + if + while) ---
+echo "== statement lowerer (slice B3) =="
+"$BIN" check "$STMT" >/dev/null || fail "statement check"
+ok "statement check"
+"$BIN" lint "$STMT" | grep -q 'errors=0' || fail "statement lint"
+ok "statement lint"
+g="$( "$BIN" vm "$STMT" stmt_gate | grep -o 'value=[-0-9]*' | cut -d= -f2 )"
+[ "$g" = "1" ] || fail "stmt_gate (got $g)"
+ok "stmt_gate=1 (3/3 control-flow folds)"
+echo "LINVM0-GATE: PASS (marco V2/B3: front-end subset em LIN — lexer+eval+lowerer+statement-control-flow)"
