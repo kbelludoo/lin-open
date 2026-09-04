@@ -29,7 +29,7 @@ The repository features working, reproducible code:
 - **Deterministic 256-bit Settlement Engine (`u256_settlement_engine.lin`):** Multiword integer arithmetic (16 limbs × 16 bits) implementing Uniswap V2 math without floating-point or hardware division. Parity verified against Python big-int in 157/157 transactions (785 VM runs) and 2,000 legacy vectors.
 - **Formal Sensitivity Theorem (`docs/EVM_AMM_MATHEMATICAL_SENSITIVITY.md`):** Documents the exact discrete floor division resolution limit ($\Delta R_{out}^{\text{min}} \ge \lceil \frac{D}{997 \cdot A_{in}} \rceil$), explaining why sub-threshold perturbations are truncated to zero by EVM floor arithmetic.
 - **Reproducible Reference Runners:** Both C11 CPU reference (`u256_kernel_cpu_ref.c`) and physical GPU runner (`u256_opencl_host.c`) verify identical results and detect tampered datasets.
-- **M1 Cryptographic Verifier & Test Harness (`tools/lin_audit_tx.py`):** Canonical RLP parser/reserializer, pure-Python Keccak-256 strictly differentiated from NIST SHA3-256, envelope support for Legacy (0), EIP-2930 (1), EIP-1559 (2), and EIP-4844 (3), 17-test compliance/mutation harness (`test/ethereum_tx/test_m1_compliance.py`), specification (`docs/M1_SPEC.md`), and CI workflow (`.github/workflows/m1-ethereum-tx.yml`).
+- **M1-A: Independent Reference Prototype (`tools/lin_audit_tx.py`):** Canonical RLP parser/reserializer, pure-Python Keccak-256 strictly differentiated from NIST SHA3-256, envelope support for Legacy (0), EIP-2930 (1), EIP-1559 (2), and EIP-4844 (3), 17-test compliance/mutation harness (`test/ethereum_tx/test_m1_compliance.py`), specifications (`docs/M1_SPEC.md`, `docs/M1_THREAT_MODEL.md`), LinVM profile `LIN-ETH-1` specification (`docs/M1_KECCAK_IMPLEMENTATION.md`), and CI workflow (`.github/workflows/m1-ethereum-tx.yml`).
 
 ---
 
@@ -37,7 +37,7 @@ The repository features working, reproducible code:
 
 | Milestone | Deliverables | Target Timeline | Allocation |
 | :--- | :--- | :---: | :---: |
-| **M1: Canonical Transaction Verifier** | Baseline engine and CLI implemented (`tools/lin_audit_tx.py`). Scale verification to a 10,000-transaction public Mainnet corpus (Legacy, EIP-2930, EIP-1559, EIP-4844) cross-checked differentially against Geth and Reth, with portable C11/Lin host integration. | Months 1–2 | $10,000 |
+| **M1: Canonical Transaction Verifier** | **M1-A (Delivered):** Reference Python prototype, RLP/Keccak CLI, and mutation suite.<br>**M1-B (Grant Scope):** Port Keccak-256/RLP to the LinVM execution kernel under profile `LIN-ETH-1` (`docs/M1_KECCAK_IMPLEMENTATION.md`), 3-way differential cross-checking (LinVM vs. Python vs. C11 vs. Geth/Reth), and scaling to 10,000 Mainnet fixtures. | Months 1–2 | $10,000 |
 | **M2: Auditable Ingestion & Block Inclusion** | Incremental JSON-RPC ingestion daemon with persistent checkpoints, reorg detection, `transactionsRoot` validation, and multi-source cross-checking to detect data omission. | Months 3–4 | $10,000 |
 | **M3: Lin-Audit DeFi & External Review** | Integration of verified logs (`Sync`/`Swap`) with the LinVM execution kernel for Uniswap V2 reconciliation, issuance of cryptographic LCR4 receipts, public CI, and an independent third-party external security review. *(Uniswap V3 and full MPT scoped as roadmap extensions).* | Months 5–6 | $10,000 |
 
