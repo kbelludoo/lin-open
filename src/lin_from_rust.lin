@@ -1,0 +1,73 @@
+@LIN:L1c:0.2
+@LIN_FROM_RUST{
+  version=1
+  purpose="extract_pure_math_rust_no_std_functions_to_lin"
+  profile="LINVM-1"
+  status="EXPERIMENTAL_V1"
+}
+
+// 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
+!rs_is_kw(nm: string): int {
+  ?(starts_lit(nm, 0, "fn") == 1 && nm.length == 2) { ^1 };
+  ?(starts_lit(nm, 0, "let") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "mut") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "pub") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "return") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2) { ^1 };
+  ?(starts_lit(nm, 0, "else") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "while") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "loop") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "match") == 1 && nm.length == 5) { ^1 };
+  ^0;
+}
+
+// 2. Identificação de tipos inteiros primitivos Rust
+!rs_is_type(nm: string): int {
+  ?(starts_lit(nm, 0, "u128") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "u64") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "u32") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "u16") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "u8") == 1 && nm.length == 2) { ^1 };
+  ?(starts_lit(nm, 0, "i128") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "i64") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "i32") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "i16") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "i8") == 1 && nm.length == 2) { ^1 };
+  ?(starts_lit(nm, 0, "usize") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "bool") == 1 && nm.length == 4) { ^1 };
+  ^0;
+}
+
+// 3. Critérios fail-closed de rejeição de código Rust não-puro
+!rs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "&mut") > 0) { ^"REJ_RUST_MUTABLE_REF" };
+  ?(rg_count_lit(sig, "&") > 0) { ^"REJ_RUST_BORROW" };
+  ?(rg_count_lit(body, "unsafe") > 0) { ^"REJ_RUST_UNSAFE" };
+  ?(rg_count_lit(body, "alloc") > 0) { ^"REJ_RUST_DYNAMIC_ALLOC" };
+  ?(rg_count_lit(body, "Vec") > 0) { ^"REJ_RUST_DYNAMIC_ALLOC" };
+  ?(rg_count_lit(body, "Box") > 0) { ^"REJ_RUST_DYNAMIC_ALLOC" };
+  ?(rg_count_lit(body, "String") > 0) { ^"REJ_RUST_HEAP_STRING" };
+  ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
+  ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
+  ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ^"OK";
+}
+
+// 4. Teste de conformidade de parser Rust (funções pure no_std)
+!rs_parse_test_gate(): int {
+  sig_ok = "pub fn compute_fee(amount: u64, fee_bps: u64) -> u64";
+  body_ok = "let fee = (amount * fee_bps) / 10000; return fee;";
+
+  sig_bad = "pub fn allocate_vec(n: usize) -> Vec<u8>";
+  body_bad = "let mut v = Vec::with_capacity(n); v";
+
+  r1 = rs_reason(sig_ok, body_ok);
+  ?(r1.length != 2) { ^0 }; // "OK"
+
+  r2 = rs_reason(sig_bad, body_bad);
+  ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  ^1;
+}
+
+=ex{rs_is_kw, rs_is_type, rs_reason, rs_parse_test_gate}

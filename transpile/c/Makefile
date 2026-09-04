@@ -99,7 +99,7 @@ u256: u256-image u256-host
 
 # The three no-Zig gates, in one command (nothing below touches `zig`).
 test-c0: $(C0)
-	@../test/verify_c0.sh $(C0)
+	@../../test/verify_c0.sh $(C0)
 
 .PHONY: c0 u256-image u256-host u256 test-c0
 

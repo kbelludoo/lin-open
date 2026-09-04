@@ -364,7 +364,6 @@ static LinErr vm_exec_internal(const VmModule *mod, size_t fi,
         }
     }
 
-    /* Zig fallthrough (code ended without `ret`): val=0, sp_at_ret=sp */
     if (capture_local != LIN_VM_CAPTURE_NONE) {
         size_t slot = (size_t)locals[capture_local];
         uint16_t n = f->arr_n[capture_local];
@@ -376,6 +375,7 @@ static LinErr vm_exec_internal(const VmModule *mod, size_t fi,
         }
         *capture_len = n;
     }
+    /* Zig fallthrough (code ended without `ret`): val=0, sp_at_ret=sp */
     out->val = 0;
     out->sp_at_ret = sp;
     return LIN_OK;
