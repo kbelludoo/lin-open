@@ -1,0 +1,26 @@
+@LIN:MODULE:2.0.0
+@TRANSPILATION{
+  upstream_repo="https://github.com/Uniswap/v2-periphery"
+  upstream_file="contracts/libraries/UniswapV2Library.sol"
+  upstream_function="getAmountOut"
+  upstream_commit="ed24991304291297c3b4a52818d02f46a17aa9a2"
+  upstream_sha256="4f83e9334f833568fa47b36e9ceca435f6c2962760a0596b043c4e538d0fd9f2"
+}
+// Solidity require() paths are represented by deterministic zero sentinels
+// in this scalar, value-only LIN host. Valid settlement inputs are exact.
+!get_amount_out(amount_in: int, reserve_in: int, reserve_out: int) -> int {
+  ?(amount_in <= 0 | reserve_in <= 0 | reserve_out <= 0) {
+    ^ 0;
+  } : {
+    amount_in_with_fee = amount_in * 997;
+    numerator = amount_in_with_fee * reserve_out;
+    denominator = (reserve_in * 1000) + amount_in_with_fee;
+    ?(denominator <= 0) {
+      ^ 0;
+    } : {
+      ^ numerator / denominator;
+    }
+  }
+}
+
+=ex{get_amount_out}

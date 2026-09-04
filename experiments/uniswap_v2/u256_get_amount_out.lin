@@ -1,0 +1,172 @@
+@LIN:MODULE:2.0.0
+@U256_EXPERIMENT{
+  purpose="Uniswap V2 getAmountOut with 256-bit unsigned limbs"
+  representation="16 little-endian limbs of 16 bits"
+  abi="each uint256 is four signed i64 words containing its raw u64 limbs"
+}
+
+// Return one 16-bit limb of the uint256 result.
+// The caller invokes out_limb=0..15 and reconstructs the result.
+// Negative returns are deterministic rejection sentinels:
+// -1 invalid input, -2 uint256 multiplication overflow.
+!get_amount_out_u256_limb(
+  amount_w0: int, amount_w1: int, amount_w2: int, amount_w3: int,
+  reserve_in_w0: int, reserve_in_w1: int, reserve_in_w2: int, reserve_in_w3: int,
+  reserve_out_w0: int, reserve_out_w1: int, reserve_out_w2: int, reserve_out_w3: int,
+  out_limb: int
+) -> int {
+  amount: [16]int;
+  reserve_in: [16]int;
+  reserve_out: [16]int;
+  fee_amount: [16]int;
+  denominator: [16]int;
+  remainder: [16]int;
+  quotient: [16]int;
+  numerator: [32]int;
+
+  i = 0;
+  while (i < 16) {
+    amount[i] = 0;
+    reserve_in[i] = 0;
+    reserve_out[i] = 0;
+    fee_amount[i] = 0;
+    denominator[i] = 0;
+    remainder[i] = 0;
+    quotient[i] = 0;
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 32) {
+    numerator[i] = 0;
+    i = i + 1;
+  };
+
+  i = 0;
+  while (i < 4) {
+    amount[i] = _lia_ushr(amount_w0, 16 * i) & 65535;
+    reserve_in[i] = _lia_ushr(reserve_in_w0, 16 * i) & 65535;
+    reserve_out[i] = _lia_ushr(reserve_out_w0, 16 * i) & 65535;
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 4) {
+    amount[4 + i] = _lia_ushr(amount_w1, 16 * i) & 65535;
+    reserve_in[4 + i] = _lia_ushr(reserve_in_w1, 16 * i) & 65535;
+    reserve_out[4 + i] = _lia_ushr(reserve_out_w1, 16 * i) & 65535;
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 4) {
+    amount[8 + i] = _lia_ushr(amount_w2, 16 * i) & 65535;
+    reserve_in[8 + i] = _lia_ushr(reserve_in_w2, 16 * i) & 65535;
+    reserve_out[8 + i] = _lia_ushr(reserve_out_w2, 16 * i) & 65535;
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 4) {
+    amount[12 + i] = _lia_ushr(amount_w3, 16 * i) & 65535;
+    reserve_in[12 + i] = _lia_ushr(reserve_in_w3, 16 * i) & 65535;
+    reserve_out[12 + i] = _lia_ushr(reserve_out_w3, 16 * i) & 65535;
+    i = i + 1;
+  };
+
+  ?(amount_w0 == 0 && amount_w1 == 0 && amount_w2 == 0 && amount_w3 == 0) { ^-1; };
+  ?(reserve_in_w0 == 0 && reserve_in_w1 == 0 && reserve_in_w2 == 0 && reserve_in_w3 == 0) { ^-1; };
+  ?(reserve_out_w0 == 0 && reserve_out_w1 == 0 && reserve_out_w2 == 0 && reserve_out_w3 == 0) { ^-1; };
+
+  carry = 0;
+  i = 0;
+  while (i < 16) {
+    t = amount[i] * 997 + carry;
+    fee_amount[i] = t & 65535;
+    carry = _lia_ushr(t, 16);
+    i = i + 1;
+  };
+  ?(carry != 0) { ^-2; };
+
+  carry = 0;
+  i = 0;
+  while (i < 16) {
+    t = reserve_in[i] * 1000 + carry + fee_amount[i];
+    denominator[i] = t & 65535;
+    carry = _lia_ushr(t, 16);
+    i = i + 1;
+  };
+  ?(carry != 0) { ^-2; };
+
+  i = 0;
+  while (i < 16) {
+    carry = 0;
+    j = 0;
+    while (j < 16) {
+      k = i + j;
+      t = numerator[k] + fee_amount[i] * reserve_out[j] + carry;
+      numerator[k] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      j = j + 1;
+    };
+    k = i + 16;
+    while (k < 32 && carry != 0) {
+      t = numerator[k] + carry;
+      numerator[k] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      k = k + 1;
+    };
+    i = i + 1;
+  };
+
+  i = 16;
+  while (i < 32) {
+    ?(numerator[i] != 0) { ^-2; };
+    i = i + 1;
+  };
+
+  bit = 255;
+  while (bit >= 0) {
+    limb = _lia_ushr(bit, 4);
+    pos = bit & 15;
+    carry = (_lia_ushr(numerator[limb], pos) & 1);
+
+    j = 0;
+    while (j < 16) {
+      t = remainder[j] * 2 + carry;
+      remainder[j] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      j = j + 1;
+    };
+
+    cmp = 0;
+    j = 15;
+    while (j >= 0) {
+      ?(cmp == 0) {
+        ?(remainder[j] > denominator[j]) { cmp = 1; }
+        : (remainder[j] < denominator[j]) { cmp = -1; };
+      };
+      j = j - 1;
+    };
+
+    take = 0;
+    ?((carry == 1) | (cmp >= 0)) { take = 1; };
+    ?(take == 1) {
+      quotient[limb] = quotient[limb] | _lia_shl(1, pos);
+      borrow = 0;
+      j = 0;
+      while (j < 16) {
+        t = remainder[j] - denominator[j] - borrow;
+        ?(t < 0) {
+          remainder[j] = t + 65536;
+          borrow = 1;
+        } : {
+          remainder[j] = t;
+          borrow = 0;
+        };
+        j = j + 1;
+      };
+    };
+    bit = bit - 1;
+  };
+
+  ^quotient[out_limb];
+}
+
+=ex{get_amount_out_u256_limb}
