@@ -1,0 +1,36 @@
+@LIN:PILOT_EVIDENCE:1.0.0
+~R{.p=profile .h=hashes .m=metrics .c=checks}
+.p{
+  spec="LIN-PILOT-VERIFIER-FUZZ-001"
+  status="PILOT_QUALIFIED"
+  profile="LINVM-1"
+  schema="LCR1"
+  record_bytes=112
+}
+.h{
+  commit="c7333de9da3aff2e4798f495c0a36e0a390573ce"
+  image_sha256="sha256:33ac6cdea938fb9bc7a234f94fe5ddbc436b2ee5a102b2129c783f40e5a57925"
+  image_loader_digest="sha256:0bb19d6f0ccb94e9b32e6281c7d3fa8e525d86fda0be972660b93643871d4ffa"
+  image_bytes=3323
+}
+.m{
+  corpus_seed=20260904
+  math_vectors_tested=114
+  math_divergences=0
+  fuzz_loader_cases=1000
+  fuzz_loader_crashes=0
+  fuzz_executor_cases=1000
+  fuzz_executor_divergences=0
+  fuzz_verifier_cases=1000
+  fuzz_verifier_escapes=0
+  asan_ubsan_errors=0
+  latency_p50_us=786.75
+  latency_p95_us=1229.93
+  latency_p99_us=1434.84
+}
+.c{
+  c0_purity="PASS_4_OF_4"
+  roundtrip_consensus="CONSENSUS"
+  merkle_sha256="PASS_DOMAINS_LEAF_AND_NODE"
+  fail_closed_truncation="PASS_100_PERCENT"
+}

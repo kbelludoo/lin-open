@@ -1,18 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-LIN Settlement SDK (Protótipo de Engenharia)
-Escopo técnico delimitado:
-  - Carrega a imagem congelada LINBC1 e executa swaps via lin_bc1_run
-  - Serializa registros canônicos de 72 bytes associando a imagem ao output
-  - Constrói a árvore Merkle SHA-256 (256 bits) para blocos de 4 swaps
-  - Exporta lote completo (raiz, folhas e caminhos de prova) para arquivo JSON
-  - Fornece validador independente desacoplado do ambiente de execução
-
-Ressalva Epistêmica (R5):
-  - A raiz Merkle comprova integridade e compromisso pós-execução do lote.
-  - Não confere privacidade nem substitui provas de conhecimento zero (ZK).
-  - A garantia de integridade depende da cadeia de custódia e publicação das folhas.
+LIN Settlement SDK (Normativo: LIN-PILOT-VERIFIER-FUZZ-001)
+Registro Canônico de 112 bytes com Prefixos de Domínio:
+  - Folha: SHA256("LIN:LEAF:1" || registro_112_bytes)
+  - Nó:    SHA256("LIN:NODE:1" || left_32_bytes || right_32_bytes)
 """
 
 from __future__ import annotations
@@ -22,7 +14,14 @@ import json
 import struct
 import subprocess
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
+
+
+DOM_LEAF = b"LIN:LEAF:1"
+DOM_NODE = b"LIN:NODE:1"
+SCHEMA_ID = b"LCR1"
+SCHEMA_VERSION = 1
+PROFILE_LINVM1 = 1
 
 
 class LINSettlementSDK:
@@ -44,7 +43,6 @@ class LINSettlementSDK:
         self.img_digest_32b = self._fetch_image_digest()
 
     def _fetch_image_digest(self) -> bytes:
-        # Executa uma chamada sonda para capturar o digest do loader linbc1:img:
         cmd = [str(self.lin_bc1_run), str(self.image_path), "settle_swap", "1000", "100000", "200000", "1970"]
         p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         if p.returncode != 0:
@@ -54,7 +52,7 @@ class LINSettlementSDK:
                 return bytes.fromhex(token.split("=")[1].strip('"'))
         raise RuntimeError("Não foi possível obter img_sha256 da saída do lin_bc1_run")
 
-    def execute_swap(self, tx_id: int, amount_in: int, reserve_in: int, reserve_out: int, min_out: int) -> Dict[str, Any]:
+    def execute_swap(self, run_id: int, tx_id: int, amount_in: int, reserve_in: int, reserve_out: int, min_out: int) -> Dict[str, Any]:
         cmd = [
             str(self.lin_bc1_run), str(self.image_path), "settle_swap",
             str(amount_in), str(reserve_in), str(reserve_out), str(min_out)
@@ -76,10 +74,11 @@ class LINSettlementSDK:
             raise RuntimeError("Saída malformada do executor LINBC1")
 
         status = 1 if val >= 0 else -1
-        record_bytes = self.pack_leaf_record(tx_id, amount_in, val, steps, status)
-        leaf_hash = hashlib.sha256(record_bytes).digest()
+        record_bytes = self.pack_leaf_record_112(run_id, tx_id, amount_in, reserve_in, reserve_out, min_out, val, steps, status)
+        leaf_hash = hashlib.sha256(DOM_LEAF + record_bytes).digest()
 
         return {
+            "run_id": run_id,
             "tx_id": tx_id,
             "amount_in": amount_in,
             "reserve_in": reserve_in,
@@ -93,14 +92,22 @@ class LINSettlementSDK:
             "leaf_hash_hex": leaf_hash.hex()
         }
 
-    def pack_leaf_record(self, tx_id: int, amount_in: int, out_val: int, steps: int, status: int) -> bytes:
-        raw = bytearray(72)
-        raw[0:32] = self.img_digest_32b
-        struct.pack_into("<Q", raw, 32, tx_id)
-        struct.pack_into("<Q", raw, 40, amount_in)
-        struct.pack_into("<q", raw, 48, out_val)
-        struct.pack_into("<Q", raw, 56, steps)
-        struct.pack_into("<q", raw, 64, status)
+    def pack_leaf_record_112(self, run_id: int, tx_id: int, amount_in: int, reserve_in: int, reserve_out: int, min_out: int, out_val: int, steps: int, status: int) -> bytes:
+        raw = bytearray(112)
+        raw[0:4] = SCHEMA_ID                       # offset 0..3: ASCII LCR1
+        raw[4] = SCHEMA_VERSION                    # offset 4: u8 = 1
+        raw[5] = PROFILE_LINVM1                    # offset 5: u8 = 1
+        raw[6:8] = b"\x00\x00"                     # offset 6..7: reserved u16 = 0
+        raw[8:40] = self.img_digest_32b            # offset 8..39: image_digest (32 bytes)
+        struct.pack_into("<Q", raw, 40, run_id)    # offset 40..47: u64 LE
+        struct.pack_into("<Q", raw, 48, tx_id)     # offset 48..55: u64 LE
+        struct.pack_into("<q", raw, 56, amount_in) # offset 56..63: i64 LE
+        struct.pack_into("<q", raw, 64, reserve_in)# offset 64..71: i64 LE
+        struct.pack_into("<q", raw, 72, reserve_out)# offset 72..79: i64 LE
+        struct.pack_into("<q", raw, 80, min_out)   # offset 80..87: i64 LE
+        struct.pack_into("<q", raw, 88, out_val)   # offset 88..95: i64 LE
+        struct.pack_into("<Q", raw, 96, steps)     # offset 96..103: u64 LE
+        struct.pack_into("<q", raw, 104, status)   # offset 104..111: i64 LE
         return bytes(raw)
 
     def build_block_bundle(self, block_id: int, swaps: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -110,7 +117,7 @@ class LINSettlementSDK:
         leaf_bytes = [bytes.fromhex(sw["leaf_hash_hex"]) for sw in swaps]
 
         def h_parent(left: bytes, right: bytes) -> bytes:
-            return hashlib.sha256(left + right).digest()
+            return hashlib.sha256(DOM_NODE + left + right).digest()
 
         n0 = h_parent(leaf_bytes[0], leaf_bytes[1])
         n1 = h_parent(leaf_bytes[2], leaf_bytes[3])
@@ -130,6 +137,7 @@ class LINSettlementSDK:
             tx_entries.append(entry)
 
         return {
+            "schema": "LIN_SETTLEMENT_BUNDLE_1.0",
             "block_id": block_id,
             "image_file_sha256": self.file_sha256,
             "image_loader_digest": self.img_digest_32b.hex(),
@@ -145,32 +153,15 @@ class LINSettlementSDK:
         s1 = bytes.fromhex(proof["sibling1_hex"])
         path_bits = proof["path_bits"]
 
-        # Recalcula a folha a partir do registro binário bruto para garantir integridade
-        recalculated_leaf = hashlib.sha256(bytes.fromhex(tx_entry["raw_record_hex"])).digest()
+        # Recalcula a folha com o prefixo de domínio LIN:LEAF:1
+        recalculated_leaf = hashlib.sha256(DOM_LEAF + bytes.fromhex(tx_entry["raw_record_hex"])).digest()
         if recalculated_leaf != leaf:
             return False
 
         def h_parent(l: bytes, r: bytes) -> bytes:
-            return hashlib.sha256(l + r).digest()
+            return hashlib.sha256(DOM_NODE + l + r).digest()
 
         curr = h_parent(leaf, s0) if (path_bits & 1) == 0 else h_parent(s0, leaf)
         curr = h_parent(curr, s1) if ((path_bits >> 1) & 1) == 0 else h_parent(s1, curr)
 
         return curr.hex() == expected_root_hex
-
-
-if __name__ == "__main__":
-    print("Testando LIN Settlement SDK...")
-    sdk = LINSettlementSDK()
-    txs = [
-        sdk.execute_swap(1001, 1000, 100000, 200000, 1970),
-        sdk.execute_swap(1002, 2500, 100000, 200000, 4800),
-        sdk.execute_swap(1003, 5000, 100000, 200000, 9900), # Rejeição
-        sdk.execute_swap(1004, 1200, 150000, 300000, 2300)
-    ]
-    bundle = sdk.build_block_bundle(1, txs)
-    print("Bloco construído com sucesso! Raiz Merkle:", bundle["merkle_root_sha256"])
-
-    # Teste de verificação independente da Tx 1001
-    ok = sdk.verify_transaction_proof(bundle["transactions"][0], bundle["merkle_root_sha256"])
-    print("Validação independente de prova:", "OK" if ok else "FALHA")
