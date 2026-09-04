@@ -85,3 +85,42 @@ corrigidos** (detalhes e provas em `audit_v2/audit_report_v2.json`):
 sh examples/defi_settlement_proof/audit_v2/run_audit.sh
 ```
 Executa: build → suíte v2 (8 estágios) → camada ASan/UBSan. Exit 0 só se tudo passar.
+
+### 4.1 "Verificação em tempo constante": como ter de verdade (estudo empírico)
+
+O claim original ("~2,3 µs em tempo constante") era uma medição única sem metodologia.
+O estudo `audit_v2/constant_time_study.py` mede com warmup + 21 rodadas + best/p50/p95 +
+regressão linear (resultados em `audit_v2/constant_time_study.json`):
+
+**O que cresce e o que não cresce (medido):**
+
+| Arquitetura | Custo/verificação | Evidência |
+|---|---|---|
+| Árvore única de N folhas | **O(log N)** — confirmado empiricamente: inclinação 0,745 µs/nível ≈ 1 SHA-256/nível (baseline 0,627 µs), **R² = 0,994** | 1,69 µs (N=4) → 7,78 µs (N=1024) |
+| Blocos encadeados com bloco FIXO (arquitetura do repo, B=4) | **O(1) em N** — variação de 6,5% entre 40 e 40.000 txs (ruído de CPU) | 1,63–1,72 µs/prova sempre |
+| Árvore única + RSA accumulator (Strong RSA) | **O(1) em N** — verificação ~477–484 µs plano (R² com log N = 0,09 ⇒ sem relação), prova de 144 B constante | prover cresce 4→1.225 ms (tradeoff honesto) |
+
+**Como ter "tempo constante", três caminhos honestos:**
+
+1. **Já temos, se o claim for escrito corretamente:** com tamanho de bloco B fixo como
+   constante do protocolo (demo: 4), verificar 1 tx é O(log B) = O(1) no total do lote.
+   Claim correto: *"O(log B), constante em N; ~1,6 µs/prova (best de 21 rodadas)"*.
+2. **Prova de inclusão O(1) em árvore única:** acumulador criptográfico (RSA/Strong RSA —
+   demo inclusa, 144 B e ~480 µs planos; produção: modulus ≥ 3072 bits — ou KZG/Verkle,
+   48 B + 1 pairing, requer biblioteca de curvas pareamento-eficientes e setup).
+   Prova MEMBERSHIP (mesmo modelo de confiança do Merkle), não a computação.
+   Crossover de tamanho: acumulador fica menor que o caminho Merkle a partir de bloco
+   de ~16–24 folhas.
+3. **Provar a COMPUTAÇÃO em O(1):** exige SNARK (Groth16/PLONK: prova ~128–500 B,
+   verificação ~ms constante) ou STARK (transparente, mas prova O(log²N)) — ambos
+   requerem aritmetizar a LinVM em circuito (roadmap real: meses, com bibliotecas de
+   corpo finito; fora do escopo stdlib deste repositório).
+
+**Metodologia de medição (a lição do "2,3 µs"):** clock monotônico ns; warmup; ≥21
+rodadas independentes; reportar best/p50/p95 (nunca número único); consumir o resultado
+(contra DCE); modelo preditivo (µs ≈ profundidade × µs(SHA-256 64B)); regressão vs
+log2(N) com R² para confirmar a classe de complexidade — não declará-la.
+
+```bash
+python3 examples/defi_settlement_proof/audit_v2/constant_time_study.py
+```

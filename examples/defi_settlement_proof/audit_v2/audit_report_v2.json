@@ -13,8 +13,8 @@
       "settled": 172,
       "rejected_fail_closed": 28,
       "parity_vs_bignum_oracle": "100% (domínio seguro)",
-      "spawn_ms_total": 235.77,
-      "spawn_us_per_tx": 1178.8
+      "spawn_ms_total": 229.12,
+      "spawn_us_per_tx": 1145.6
     },
     "1b_boundary_frozen": {
       "G1_reserve_in_zero": {
@@ -106,9 +106,9 @@
       "method": "verificador fail-closed com SHA-256 e domínio separado"
     },
     "4_audit_cost": {
-      "us_per_proof_min": 1.675,
-      "us_per_proof_p50": 1.724,
-      "us_per_proof_p95": 1.843,
+      "us_per_proof_min": 1.64,
+      "us_per_proof_p50": 1.993,
+      "us_per_proof_p95": 2.369,
       "rounds": 15,
       "proofs_per_round": 200,
       "complexity": "O(log N)"
@@ -116,9 +116,9 @@
     "5_c_independent": {
       "roots_bit_exact": true,
       "batch_root": "7ec7ed3e6f6dc280e2af8cb4904e404c73db084fcbbdf7b1f1921839388da619",
-      "verify_ns_p50": 1131.0,
-      "exec_ns_p50": 1537.0,
-      "ratio_reexec_vs_audit": 1.36,
+      "verify_ns_p50": 1129.0,
+      "exec_ns_p50": 1518.0,
+      "ratio_reexec_vs_audit": 1.34,
       "sha_impl": "lin_sha256.c (FIPS 180-4) vs hashlib — raízes idênticas"
     },
     "6_forensics": {
@@ -130,7 +130,7 @@
         "LEGACY_VERIFIER_ACCEPTS_FRAUD": "1",
         "VEREDITO": "hash"
       },
-      "sha256_budget_attack": "SHA_BUDGET probes=50000000 found=0 tempo=139.41s custo_esperado=2^256",
+      "sha256_budget_attack": "SHA_BUDGET probes=50000000 found=0 tempo=139.63s custo_esperado=2^256",
       "corrected_claim": "detecção é propriedade da resistência a colisões do hash; 32 bits → quebrado; SHA-256 → 2^256"
     },
     "7_runtime": {
@@ -146,7 +146,7 @@
   },
   "verdict": "PASS",
   "env": {
-    "utc": "2026-09-04T00:49:24.019203+00:00",
+    "utc": "2026-09-04T01:03:25.339948+00:00",
     "python": "3.11.2",
     "machine": "x86_64",
     "cpu": "Intel(R) Xeon(R) Processor @ 2.60GHz"

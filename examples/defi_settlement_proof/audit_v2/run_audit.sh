@@ -8,25 +8,29 @@
 #   2. build do kit de auditoria v2 (legacy_attack, verify_batch_c, hardening, no_heap)
 #   3. suíte Python v2 (determinismo, paridade, guardas, Merkle SHA-256,
 #      matriz adversarial, estatística, auditor C, forense do hash legado)
-#   4. camada ASan+UBSan (sem vazamentos, sem UB, zero-heap re-verificado)
+#   4. estudo de tempo constante (O(log B)/O(1): scaling + regressão + acumulador)
+#   5. camada ASan+UBSan (sem vazamentos, sem UB, zero-heap re-verificado)
 #
 # Exit 0 somente se TUDO passar. Relatório: audit_v2/audit_report_v2.json
 set -e
-cd "$(dirname "$0")/../.."          # raiz do repositório
+cd "$(dirname "$0")/../../.."       # raiz do repositório
 AUD=examples/defi_settlement_proof/audit_v2
 LINC=transpile/c/lin_c
 
-echo "== [1/4] build ferramentas C11 do repositório =="
+echo "== [1/5] build ferramentas C11 do repositório =="
 make -C transpile/c all >/dev/null
 echo "ok"
 
-echo "== [2/4] build kit de auditoria v2 =="
+echo "== [2/5] build kit de auditoria v2 =="
 sh "$AUD/build.sh"
 
-echo "== [3/4] suíte Python v2 =="
+echo "== [3/5] suíte Python v2 =="
 python3 "$AUD/benchmark_settlement_proof_v2.py"
 
-echo "== [4/4] camada ASan+UBSan =="
+echo "== [4/5] estudo de tempo constante (scaling + metodologia) =="
+python3 "$AUD/constant_time_study.py"
+
+echo "== [5/5] camada ASan+UBSan =="
 SAN="-fsanitize=address,undefined -fno-sanitize-recover=all -g -O1 -std=c11 -I$LINC"
 BASE="$LINC/lin_common.c $LINC/lin_token.c $LINC/lin_ast.c $LINC/lin_parse.c $LINC/lin_vm.c $LINC/lin_str.c $LINC/lin_linbc1.c"
 TMP=$(mktemp -d)

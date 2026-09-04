@@ -1,0 +1,185 @@
+{
+  "schema": "lin:defi:settlement:constant_time_study:v1",
+  "env": {
+    "utc": "2026-09-04T01:06:05.729079+00:00",
+    "python": "3.11.2",
+    "machine": "x86_64",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.60GHz",
+    "rounds": 21
+  },
+  "baseline_sha256_64b_us": 0.596,
+  "merkle_single_tree": [
+    {
+      "n_leaves": 4,
+      "depth": 2,
+      "proof_bytes": 64,
+      "us_per_proof": {
+        "min": 1.611,
+        "p50": 1.638,
+        "p95": 2.505,
+        "best": 1.611
+      }
+    },
+    {
+      "n_leaves": 16,
+      "depth": 4,
+      "proof_bytes": 128,
+      "us_per_proof": {
+        "min": 2.963,
+        "p50": 2.979,
+        "p95": 4.348,
+        "best": 2.963
+      }
+    },
+    {
+      "n_leaves": 64,
+      "depth": 6,
+      "proof_bytes": 192,
+      "us_per_proof": {
+        "min": 4.355,
+        "p50": 4.445,
+        "p95": 5.093,
+        "best": 4.355
+      }
+    },
+    {
+      "n_leaves": 256,
+      "depth": 8,
+      "proof_bytes": 256,
+      "us_per_proof": {
+        "min": 5.891,
+        "p50": 5.997,
+        "p95": 6.198,
+        "best": 5.891
+      }
+    },
+    {
+      "n_leaves": 1024,
+      "depth": 10,
+      "proof_bytes": 320,
+      "us_per_proof": {
+        "min": 7.431,
+        "p50": 7.485,
+        "p95": 7.579,
+        "best": 7.431
+      }
+    }
+  ],
+  "merkle_fit": {
+    "slope_us_per_level": 0.7284,
+    "r2": 0.99904
+  },
+  "chained_fixed_blocks": [
+    {
+      "total_txs": 40,
+      "block_leaves": 4,
+      "us_per_proof": {
+        "min": 1.541,
+        "p50": 1.572,
+        "p95": 1.672,
+        "best": 1.541
+      }
+    },
+    {
+      "total_txs": 400,
+      "block_leaves": 4,
+      "us_per_proof": {
+        "min": 1.571,
+        "p50": 1.622,
+        "p95": 1.705,
+        "best": 1.571
+      }
+    },
+    {
+      "total_txs": 4000,
+      "block_leaves": 4,
+      "us_per_proof": {
+        "min": 1.593,
+        "p50": 1.612,
+        "p95": 1.635,
+        "best": 1.593
+      }
+    },
+    {
+      "total_txs": 40000,
+      "block_leaves": 4,
+      "us_per_proof": {
+        "min": 1.625,
+        "p50": 1.65,
+        "p95": 1.705,
+        "best": 1.625
+      }
+    }
+  ],
+  "chained_spread_pct": 5.45,
+  "accumulator": [
+    {
+      "n_leaves": 4,
+      "proof_bytes": 144,
+      "us_per_proof": {
+        "min": 478.562,
+        "p50": 486.268,
+        "p95": 495.173,
+        "best": 478.562
+      },
+      "prover_ms_for_samples": 3.7
+    },
+    {
+      "n_leaves": 16,
+      "proof_bytes": 144,
+      "us_per_proof": {
+        "min": 484.07,
+        "p50": 494.954,
+        "p95": 502.612,
+        "best": 484.07
+      },
+      "prover_ms_for_samples": 17.9
+    },
+    {
+      "n_leaves": 64,
+      "proof_bytes": 144,
+      "us_per_proof": {
+        "min": 479.632,
+        "p50": 487.887,
+        "p95": 502.349,
+        "best": 479.632
+      },
+      "prover_ms_for_samples": 75.3
+    },
+    {
+      "n_leaves": 256,
+      "proof_bytes": 144,
+      "us_per_proof": {
+        "min": 478.192,
+        "p50": 485.031,
+        "p95": 494.568,
+        "best": 478.192
+      },
+      "prover_ms_for_samples": 303.6
+    },
+    {
+      "n_leaves": 1024,
+      "proof_bytes": 144,
+      "us_per_proof": {
+        "min": 475.903,
+        "p50": 483.777,
+        "p95": 497.894,
+        "best": 475.903
+      },
+      "prover_ms_for_samples": 1219.5
+    }
+  ],
+  "accumulator_meta": {
+    "modulus_bits": 1024,
+    "modulus_sha256_16": "2a23a8ac6116d47c",
+    "e_bits": 128,
+    "prime_gen_s": 1.32,
+    "note": "DEMO: parametros nao sao de producao"
+  },
+  "accumulator_fit": {
+    "slope_us_per_level": -0.5598,
+    "r2": 0.34655
+  },
+  "crossover_depth": 4.5,
+  "corrected_claim": "O(log B), B constante do protocolo ⇒ O(1) em N; acumulador RSA = O(1) membership em árvore única; SNARK/STARK = O(1)-computation (roadmap)"
+}
