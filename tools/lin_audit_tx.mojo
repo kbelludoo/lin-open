@@ -6,7 +6,7 @@
 # Trajectory: Python Legacy -> Pure Mojo -> Normative LinVM
 # ===----------------------------------------------------------------------=== #
 
-from std.sys import argv
+from std.sys import argv, exit
 
 def parse_hex_char(c: String) -> Int:
     if c == "0": return 0
@@ -171,6 +171,26 @@ def main():
         return
         
     var raw_bytes = hex_to_bytes(raw_hex)
+    if len(raw_bytes) == 0:
+        print('{"error": "Empty or invalid raw transaction bytes", "verdict": "FAIL"}')
+        return
+
+    var tx_type = -1
+    var tx_type_name = String("Unknown")
+    var b0 = Int(raw_bytes[0])
+    if b0 >= 0xC0:
+        tx_type = 0
+        tx_type_name = "Legacy/EIP-155"
+    elif b0 == 1:
+        tx_type = 1
+        tx_type_name = "EIP-2930"
+    elif b0 == 2:
+        tx_type = 2
+        tx_type_name = "EIP-1559"
+    elif b0 == 3:
+        tx_type = 3
+        tx_type_name = "EIP-4844"
+
     var digest = keccak256(raw_bytes)
     var recomputed = bytes_to_hex(digest)
     
@@ -180,6 +200,8 @@ def main():
         
     print("{")
     print('  "engine": "mojo_pure_m1_a",')
+    print('  "tx_type": ' + String(tx_type) + ",")
+    print('  "tx_type_name": "' + tx_type_name + '",')
     print('  "raw_bytes_len": ' + String(len(raw_bytes)) + ",")
     print('  "recomputed_hash": "' + recomputed + '",')
     if claimed_hash.byte_length() > 0:
@@ -187,3 +209,5 @@ def main():
         print('  "hash_matches": ' + ("true" if matches else "false") + ",")
     print('  "verdict": "' + ("PASS" if matches else "FAIL") + '"')
     print("}")
+    if not matches:
+        exit(1)
