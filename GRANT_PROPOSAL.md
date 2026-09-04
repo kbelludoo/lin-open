@@ -86,12 +86,12 @@ The repository already features working, reproducible code with zero simulation:
    - Documents the exact discrete floor division resolution limit ($\Delta R_{out}^{\text{min}} \ge \lceil \frac{D}{997 \cdot A_{in}} \rceil$), explaining why sub-threshold perturbations are truncated to zero by EVM floor arithmetic.
 4. **Reproducible Reference Runners:**
    - Both C11 CPU reference (`u256_kernel_cpu_ref.c`) and physical GPU runner (`u256_opencl_host.c`) verify identical results and detect tampered datasets.
-5. **M1-A: Independent Reference Prototype & Test Harness (`tools/lin_audit_tx.py`):**
-   - Implemented canonical RLP recursive parser and roundtrip reserializer with fail-closed rejection of non-minimal integers, unconsumed residual bytes, and oversized buffers.
-   - Bit-exact pure-Python Keccak-256 reference implementation strictly distinguished from NIST FIPS 202 SHA3-256.
+5. **M1-A: Independent Reference Implementations & Pure Mojo Verifier (`tools/lin_audit_tx.py` & `tools/lin_audit_tx.mojo`):**
+   - Canonical RLP recursive parser and roundtrip reserializer with fail-closed rejection of non-minimal integers, unconsumed residual bytes, and oversized buffers.
+   - Bit-exact Keccak-256 reference implementations in both pure Python and **pure Mojo 1.0+** (`tools/lin_audit_tx.mojo`, zero Python imports) strictly distinguished from NIST FIPS 202 SHA3-256.
    - Full support for envelopes: Legacy (type `0`), EIP-2930 (type `1`), EIP-1559 (type `2`), and EIP-4844 (type `3`).
    - Automated 17-test compliance and 7-scenario adversarial mutation suite (`test/ethereum_tx/test_m1_compliance.py`) running in GitHub Actions (`.github/workflows/m1-ethereum-tx.yml`).
-   - Formal specification (`docs/M1_SPEC.md`), threat model (`docs/M1_THREAT_MODEL.md`), and LinVM implementation specification for profile `LIN-ETH-1` (`docs/M1_KECCAK_IMPLEMENTATION.md`).
+   - Formal specifications: [`docs/M1_SPEC.md`](file:///home/k/Downloads/lin-master/docs/M1_SPEC.md), [`docs/M1_THREAT_MODEL.md`](file:///home/k/Downloads/lin-master/docs/M1_THREAT_MODEL.md), LinVM profile `LIN-ETH-1` specification ([`docs/M1_KECCAK_IMPLEMENTATION.md`](file:///home/k/Downloads/lin-master/docs/M1_KECCAK_IMPLEMENTATION.md)), and migration strategy ([`docs/MIGRATION_PATH_MOJO_TO_LIN.md`](file:///home/k/Downloads/lin-master/docs/MIGRATION_PATH_MOJO_TO_LIN.md)).
 
 ---
 
@@ -104,14 +104,15 @@ RLP, EIP-2718, Keccak-256     Checkpoints, Reorgs, MPT      Receipts, CI, Ext. R
 ```
 
 ### Milestone 1: Canonical Ethereum Transaction Verifier ($10,000 — Months 1–2)
-- **Status:** **M1-A (Independent Reference Prototype)** is completed and verifiable in repository (`tools/lin_audit_tx.py`).
+- **Status:** **M1-A (Independent Reference Implementations in Python & Pure Mojo)** completed and verifiable in repository (`tools/lin_audit_tx.py`, `tools/lin_audit_tx.mojo`).
 - **M1-B Grant Funding Scope:**
-  - Port the Keccak-256 and RLP core into the **LinVM execution kernel** under profile `LIN-ETH-1` (`docs/M1_KECCAK_IMPLEMENTATION.md`).
+  - Execute the canonical technological migration trajectory: **`Python legado → Mojo puro → LinVM normativa`** ([`docs/MIGRATION_PATH_MOJO_TO_LIN.md`](file:///home/k/Downloads/lin-master/docs/MIGRATION_PATH_MOJO_TO_LIN.md)).
+  - Port the Keccak-256 and RLP core into the **LinVM execution kernel** under profile `LIN-ETH-1` ([`docs/M1_KECCAK_IMPLEMENTATION.md`](file:///home/k/Downloads/lin-master/docs/M1_KECCAK_IMPLEMENTATION.md)).
   - Implement bounds-checked indexing, `rotl64`, bitwise operations, and permutation rounds directly in Lin bytecode (`.linbc`).
-  - Differential 3-way cross-verification: **LinVM vs. Python reference vs. C11 host vs. Geth/Reth**.
+  - Differential 4-way cross-verification: **LinVM (normative) == Mojo (high-performance oracle) == Python (baseline) == Geth/Reth (external reference)**.
   - Scale the verified public corpus from seed fixtures to **10,000 Mainnet transactions** (Types 0, 1, 2, 3) with published digest manifests.
-- **Deliverables:** Integrated LinVM executable (`.linbc`), minimal C11 host harness, and verified 10,000-tx compliance benchmark.
-- **Acceptance Criteria:** Bit-exact parity across LinVM, Python reference, and Ethereum client digests with zero divergence across 10,000 fixtures and 100% fail-closed rejection on mutation tests.
+- **Deliverables:** Integrated LinVM executable (`.linbc`), minimal C11 host harness, pure Mojo benchmark runner, and verified 10,000-tx compliance benchmark.
+- **Acceptance Criteria:** Bit-exact parity across LinVM, Mojo, Python reference, and Ethereum client digests with zero divergence across 10,000 fixtures and 100% fail-closed rejection on mutation tests.
 
 ### Milestone 2: Auditable Ingestion Engine & Inclusion Verification ($10,000 — Months 3–4)
 - Build an incremental, resilient JSON-RPC ingestion daemon with persistent checkpoints (`checkpoint.json`).
