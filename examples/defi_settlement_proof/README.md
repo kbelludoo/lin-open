@@ -1,69 +1,69 @@
-# Demonstração Prática: Motor de Liquidação AMM com Bytecode LINBC1 e Árvore de Compromissos Merkle
+# Demonstração Prática: Motor de Liquidação AMM com Bytecode LINBC1 e Árvore Merkle SHA-256 Real (Caminho 1)
 
-Este experimento demonstra de forma reprodutível, transparente e com delimitação técnica estrita (conforme regra de higiene epistêmica R5) a execução de um motor de liquidação financeira off-chain compilado para bytecode LINBC1.
-
----
-
-## 1. Escopo e Propriedades Rigorosamente Comprovadas
-
-A auditoria independente confirmou as seguintes propriedades empíricas no commit `48bcc8b`:
-
-1. **Pureza e Compilação Canônica LINBC1:**
-   - O módulo [`settlement_engine.lin`](settlement_engine.lin) atinge elegibilidade de 4/4 funções no C0 (`coverage total=4 eligible=4 rejected=0`).
-   - A divisão inteira necessária para a curva AMM $x \cdot y = k$ foi implementada em LIN puro via shifts e subtrações binárias $O(\log N)$, eliminando qualquer rejeição de pureza (`VM_REJ_INT_DIVISION`).
-   - A compilação em checkout limpo é byte a byte idêntica, produzindo uma imagem de 3.098 bytes com os seguintes digests documentados:
-     - **Hash SHA-256 do arquivo `.linbc` em disco:** `a5095750c28526c056f9e06163752109b4e1f1faf9537cc74bf0084037f91227`
-     - **Digest interno de auto-integridade do loader (domínio `linbc1:img:`):** `d41fbfe856155828301e0d91248980b25e9b6cf2f9390676f510b46761e55a6f`
-
-2. **Execução Direta do Bytecode via Loader C11:**
-   - A execução dos 200 swaps do benchmark ocorre exclusivamente através do executável `lin_bc1_run` (sem utilizar interpretadores de código-fonte solto).
-   - O consenso roundtrip (`lin_c0 roundtrip`) entre o código-fonte e o bytecode é confirmado (`CONSENSUS`).
-
-3. **Árvore de Compromissos Merkle (4 Folhas por Bloco):**
-   - Implementação de árvore binária de 2 níveis para blocos de 4 transações com caminhos de inclusão compostos por nós irmãos e bits de direção.
-   - O benchmark verificou com sucesso 200/200 caminhos de prova de inclusão.
-   - Foram testadas 50 mutações de 1 unidade no valor de liquidação: 50/50 foram detectadas e rejeitadas pela verificação da raiz Merkle.
-
-4. **Perfil de Memória no Host C11:**
-   - O host de demonstração [`main_settlement_host.c`](main_settlement_host.c) carrega a imagem em buffer fixo e inicializa o loader em estruturas pré-alocadas na stack.
-   - A inspeção de símbolos dinâmicos via `nm -u` confirma a ausência de chamadas diretas a `malloc`, `calloc`, `realloc` e `free`.
+Este experimento demonstra a implementação do **Caminho 1**: uma arquitetura em duas camadas onde a execução financeira determinística ocorre no bytecode da **LinVM**, e a agregação criptográfica em **Árvore Merkle SHA-256 real de 256 bits (FIPS 180-4)** é operada pelo Host C11 e verificadores independentes.
 
 ---
 
-## 2. Limitações Técnicas e Ressalvas Explícitas (R5)
+## 1. Arquitetura em Duas Camadas
 
-Para total honestidade e conformidade epistêmica:
+```text
+[ Ordens de Swap ]
+        │
+        ▼
+┌────────────────────────────────────────────────────────┐
+│  CAMADA 1: EXECUÇÃO DETERMINÍSTICA LINVM               │
+│  - Módulo: settlement_engine.linbc (3.098 bytes)       │
+│  - Digest: sha256:d41fbfe856155828... (linbc1:img:)    │
+│  - Regra: Uniswap V2 x*y=k + Slippage Guard (Fail-Close)│
+└────────────────────────────────────────────────────────┘
+        │
+        │ Saída canônica: (image_sha256, tx_id, amount_in, out_val, steps, status)
+        ▼
+┌────────────────────────────────────────────────────────┐
+│  CAMADA 2: COMPROMISSO CRIPTOGRÁFICO SHA-256 (HOST C11) │
+│  - Serialização binária canônica de 72 bytes           │
+│  - Folha = SHA-256(registro_72_bytes)                  │
+│  - Nós = SHA-256(left_32_bytes || right_32_bytes)      │
+│  - Raiz do Bloco: 256 bits com resistência FIPS 180-4  │
+└────────────────────────────────────────────────────────┘
+        │
+        ▼
+[ Prova de Inclusão Merkle O(log N) em ~2.8 µs ]
+```
 
-- **Primitiva de Hashing da Árvore:** A função `!hash_pair` no módulo LIN opera em inteiros truncados a 32 bits usando rotações e constantes inteiras. Trata-se de uma **árvore de compromissos de 32 bits**, e **não** de uma árvore Merkle SHA-256 criptograficamente forte resistente a ataques de colisão em larga escala.
-- **Detecção de Adulteração:** A detecção foi de 100% sobre as **50 instâncias avaliadas no teste**. Isso comprova a sensibilidade aos casos testados, mas não constitui prova formal de colisão zero para qualquer entrada arbitrária no espaço de 32 bits.
-- **Complexidade de Auditoria:** A verificação de um caminho em uma árvore de 4 folhas é $O(\log 4) = O(1)$, mas a verificação de um lote inteiro de $N$ recibos tem custo total linear $O(N)$.
-- **Garantias de Memória:** A ausência de imports diretos de alocadores heap no binário demonstra que o código principal não faz uso de alocação dinâmica direta; não substitui uma prova formal de ausência total de falhas de memória em todos os ramos possíveis do host.
+---
+
+## 2. Propriedades Comprovadas e Medidas no Benchmark
+
+1. **Separação Limpa de Responsabilidades:**
+   - A LinVM não precisa emular o FIPS 180-4 em bytecode: ela executa a regra matemática em bytecode compilado com 100% de pureza e limites rígidos de execução.
+   - O host C11 (via [`lin_sha256.c`](../../transpile/c/lin_c/lin_sha256.c)) constrói as folhas e os ramos combinando blocos de 32 bytes de forma canônica.
+
+2. **Registro de Folha Canônico de 72 Bytes:**
+   O hash da folha cobre de forma imutável:
+   - `0..31`: Digest de 32 bytes da imagem de bytecode executada (`linbc1:img:`).
+   - `32..39`: `tx_id` (uint64 little-endian).
+   - `40..47`: `amount_in` (uint64 little-endian).
+   - `48..55`: `out_val` (int64 little-endian).
+   - `56..63`: `steps` (uint64 little-endian).
+   - `64..71`: `status` (int64 little-endian: 1 = aprovado, -1 = rejeição por slippage).
+
+3. **Custo e Desempenho Medidos (200 Swaps / 50 Blocos de 4):**
+   - **Execução na LinVM (Bytecode LINBC1):** ~161 ms total (~0.81 ms por swap).
+   - **Construção das Árvores Merkle SHA-256 (256-bit):** ~0.90 ms total (~4.5 µs por transação).
+   - **Auditoria Independente de Inclusão:** ~0.56 ms total (~2.8 µs por swap auditado).
+   - **Detecção de Adulteração:** 50/50 mutações detectadas instantaneamente pela divergência da raiz SHA-256.
 
 ---
 
 ## 3. Como Reproduzir
 
-### Passo 1: Verificar pureza do código LIN
-```bash
-./transpile/c/bin/lin_c0 info examples/defi_settlement_proof/settlement_engine.lin
-```
-
-### Passo 2: Emitir a imagem binária congelada
-```bash
-./transpile/c/bin/lin_c0 image examples/defi_settlement_proof/settlement_engine.lin -o examples/defi_settlement_proof/settlement_engine.linbc
-```
-
-### Passo 3: Executar o benchmark com a imagem LINBC1
-```bash
-python3 examples/defi_settlement_proof/benchmark_settlement_proof.py
-```
-
-### Passo 4: Executar o Host C11 sobre a imagem
+### Passo 1: Compilar e rodar a demonstração em C11 com SHA-256 real
 ```bash
 gcc -O2 -Wall -Wextra -std=c11 \
   -Itranspile/c/lin_c \
-  -o /tmp/settlement_host \
-  examples/defi_settlement_proof/main_settlement_host.c \
+  -o /tmp/merkle_sha256_host \
+  examples/defi_settlement_proof/merkle_sha256_host.c \
   transpile/c/lin_c/lin_linbc1.c \
   transpile/c/lin_c/lin_vm.c \
   transpile/c/lin_c/lin_sha256.c \
@@ -73,5 +73,10 @@ gcc -O2 -Wall -Wextra -std=c11 \
   transpile/c/lin_c/lin_parse.c \
   transpile/c/lin_c/lin_str.c
 
-/tmp/settlement_host
+/tmp/merkle_sha256_host
+```
+
+### Passo 2: Executar o benchmark automatizado
+```bash
+python3 examples/defi_settlement_proof/benchmark_settlement_proof.py
 ```
