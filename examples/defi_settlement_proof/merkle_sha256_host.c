@@ -138,9 +138,9 @@ int main(void) {
 
     // Construção da Árvore Merkle SHA-256 de 256 bits real:
     //      Root (256-bit)
-    //     /              \
+    /*     /              \ */
     //   N0 (256-bit)    N1 (256-bit)
-    //   /        \       /        \
+    /*   /        \       /        \ */
     // Leaf0    Leaf1   Leaf2     Leaf3
     uint8_t n0[32], n1[32], merkle_root[32];
     merkle_parent_sha256(leaf_hashes[0], leaf_hashes[1], n0);
