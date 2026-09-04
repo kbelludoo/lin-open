@@ -6,14 +6,14 @@
   profile="LINVM-1"
   schema="LCR1"
   record_bytes=112
-  domain_ceiling="amount_le_1e6_reserve_le_4e9"
+  domain_ceiling="conservative_pre_arithmetic_i64"
 }
 .h{
-  commit="81277e5ad00e4154d768a9857b16db39adb60bc4"
-  image_sha256="sha256:f131e47c1519666ffde7545d73ee94a62b9f73f587d4af91425a4fc691e85710"
-  image_loader_digest="sha256:e2ade0682530b87d0c9c2e7db1d57ea95087b660a51f8b9dd83458fc87bc5175"
-  image_bytes=3728
-  c0_sha256="sha256:30c21306e73970654fdddf453b9711ac1893e2ade67c3b2dece6194060968e27"
+  commit="faffc59a7fbdc7db49c838df2f629b325204ebc2"
+  image_sha256="sha256:4723ebb51fb45a0292268035db5dfdf350cd443cd0b7adfbc635e1e7fedd31ce"
+  image_loader_digest="sha256:4fd10f6846cb16751a7e5754df9c799f1bbbea1f1eac6791a3574328a4311dd4"
+  image_bytes=3485
+  c0_sha256="sha256:fc271b6f512886116e8140c8d3fa49cec7b86df06c03604492546278ef7be4a9"
 }
 .m{
   corpus_seed=20260904
@@ -29,9 +29,9 @@
   fuzz_differential_cases=500
   fuzz_differential_divergences=0
   asan_ubsan_errors=0
-  latency_p50_us=770.02
-  latency_p95_us=1067.28
-  latency_p99_us=1339.91
+  latency_p50_us=756.74
+  latency_p95_us=1018.48
+  latency_p99_us=1313.34
 }
 .c{
   c0_purity="PASS_4_OF_4"
@@ -40,5 +40,5 @@
   fail_closed_truncation="PASS_100_PERCENT"
   redundant_fields_integrity="VERIFIED_STRICT"
   f1_zero_reserve_guard="PROTECTED_FAIL_CLOSED"
-  f3_i64_overflow_guard="CEILING_PROTECTED"
+  f3_i64_overflow_guard="CONSERVATIVE_PRE_ARITHMETIC_FAIL_CLOSED"
 }
