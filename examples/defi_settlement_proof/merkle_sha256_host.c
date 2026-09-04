@@ -1,59 +1,87 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include "../../transpile/c/lin_c/lin_linbc1.h"
 #include "../../transpile/c/lin_c/lin_sha256.h"
 
-// Registro canônico de folha de liquidação (binário, little-endian, 72 bytes)
-// Cobre:
-//  0..31: image_sha256 (32 bytes do bytecode executado)
-// 32..39: tx_id (u64 LE)
-// 40..47: amount_in (u64 LE)
-// 48..55: out_val (i64 LE)
-// 56..63: steps (u64 LE)
-// 64..71: status_code (i64 LE, ex: 1 = aprovado, -1 = slippage_reject)
+// Definições de domínio conservador pré-aritmética em i64 (F3)
+#define LIN_MAX_AMOUNT_IN   INT64_C(1000000)
+#define LIN_MAX_RESERVE_IN  INT64_C(9000000000000000)
+#define LIN_MAX_RESERVE_OUT INT64_C(9000000000)
+#define LIN_MAX_MIN_OUT     INT64_C(9000000000)
+
+static bool lin_settlement_domain_ok(int64_t amount_in, int64_t reserve_in, int64_t reserve_out, int64_t min_out) {
+    if (amount_in <= 0 || reserve_in <= 0 || reserve_out <= 0 || min_out <= 0) {
+        return false;
+    }
+    if (amount_in > LIN_MAX_AMOUNT_IN ||
+        reserve_in > LIN_MAX_RESERVE_IN ||
+        reserve_out > LIN_MAX_RESERVE_OUT ||
+        min_out > LIN_MAX_MIN_OUT) {
+        return false;
+    }
+    return true;
+}
+
+// Registro canônico de folha de liquidação (binário, little-endian, 112 bytes por LIN-PILOT-VERIFIER-FUZZ-001)
 typedef struct {
-    uint8_t image_sha256[32];
+    uint8_t  schema_id[4];      // LCR1
+    uint8_t  schema_version;   // 1
+    uint8_t  profile;          // 1
+    uint16_t reserved;         // 0
+    uint8_t  image_digest[32]; // 32 bytes
+    uint64_t run_id;
     uint64_t tx_id;
-    uint64_t amount_in;
+    int64_t  amount_in;
+    int64_t  reserve_in;
+    int64_t  reserve_out;
+    int64_t  min_out;
     int64_t  out_val;
     uint64_t steps;
     int64_t  status;
-} SettlementLeafRecord;
+} SettlementLeafRecord112;
 
 static void pack_u64_le(uint8_t *dst, uint64_t v) {
-    for (int i = 0; i < 8; i++) {
-        dst[i] = (uint8_t)(v >> (i * 8));
-    }
+    for (int i = 0; i < 8; i++) dst[i] = (uint8_t)(v >> (i * 8));
 }
 
-// Computa a folha SHA-256 canônica (FIPS 180-4) sobre o registro
-static void compute_leaf_hash(const SettlementLeafRecord *rec, uint8_t leaf_hash[32]) {
-    uint8_t raw[72];
-    memcpy(raw, rec->image_sha256, 32);
-    pack_u64_le(raw + 32, rec->tx_id);
-    pack_u64_le(raw + 40, rec->amount_in);
-    pack_u64_le(raw + 48, (uint64_t)rec->out_val);
-    pack_u64_le(raw + 56, rec->steps);
-    pack_u64_le(raw + 64, (uint64_t)rec->status);
+// Computa a folha SHA-256 com prefixo de domínio LIN:LEAF:1
+static void compute_leaf_hash(const SettlementLeafRecord112 *rec, uint8_t leaf_hash[32]) {
+    uint8_t raw[112];
+    memcpy(raw, "LCR1", 4);
+    raw[4] = 1;
+    raw[5] = 1;
+    raw[6] = 0; raw[7] = 0;
+    memcpy(raw + 8, rec->image_digest, 32);
+    pack_u64_le(raw + 40, rec->run_id);
+    pack_u64_le(raw + 48, rec->tx_id);
+    pack_u64_le(raw + 56, (uint64_t)rec->amount_in);
+    pack_u64_le(raw + 64, (uint64_t)rec->reserve_in);
+    pack_u64_le(raw + 72, (uint64_t)rec->reserve_out);
+    pack_u64_le(raw + 80, (uint64_t)rec->min_out);
+    pack_u64_le(raw + 88, (uint64_t)rec->out_val);
+    pack_u64_le(raw + 96, rec->steps);
+    pack_u64_le(raw + 104, (uint64_t)rec->status);
 
+    static const uint8_t DOM_LEAF[] = "LIN:LEAF:1";
     LinSha256 ctx;
     lin_sha256_init(&ctx);
+    lin_sha256_update(&ctx, DOM_LEAF, sizeof(DOM_LEAF) - 1);
     lin_sha256_update(&ctx, raw, sizeof(raw));
     lin_sha256_final(&ctx, leaf_hash);
 }
 
-// Nó pai Merkle padrão: SHA256(left_32 || right_32)
+// Nó pai Merkle: SHA256("LIN:NODE:1" || left_32 || right_32)
 static void merkle_parent_sha256(const uint8_t left[32], const uint8_t right[32], uint8_t parent[32]) {
-    uint8_t combined[64];
-    memcpy(combined, left, 32);
-    memcpy(combined + 32, right, 32);
-
+    static const uint8_t DOM_NODE[] = "LIN:NODE:1";
     LinSha256 ctx;
     lin_sha256_init(&ctx);
-    lin_sha256_update(&ctx, combined, sizeof(combined));
+    lin_sha256_update(&ctx, DOM_NODE, sizeof(DOM_NODE) - 1);
+    lin_sha256_update(&ctx, left, 32);
+    lin_sha256_update(&ctx, right, 32);
     lin_sha256_final(&ctx, parent);
 }
 
@@ -86,13 +114,13 @@ int main(void) {
     }
 
     printf("========================================================================\n");
-    printf("  CAMINHO 1: LIQUIDAÇÃO LINBC1 + ÁRVORE MERKLE SHA-256 REAL (FIPS 180-4)\n");
+    printf("  HOST C11 COM GUARDAS DE DOMÍNIO PRÉ-ARITMÉTICA (F3) & LINBC1 112-BYTE  \n");
     printf("========================================================================\n");
     printf("[LinVM Bytecode Image] %zu bytes | Digest: ", img_len);
     print_hex(vm.img_sha256, 32);
     printf("\n\n");
 
-    // Simulando um bloco de 4 transações liquidadas na LinVM
+    // Simulando 4 transações
     struct {
         uint64_t tx_id;
         int64_t amount_in;
@@ -100,82 +128,75 @@ int main(void) {
         int64_t res_out;
         int64_t min_out;
     } block_txs[4] = {
-        { 1001, 1000, 100000, 200000, 1970 }, // Passa
-        { 1002, 2500, 100000, 200000, 4800 }, // Passa
-        { 1003, 5000, 100000, 200000, 9900 }, // Slippage violado (rejeição)
-        { 1004, 1200, 150000, 300000, 2300 }  // Passa
+        { 1001, 1000, 100000, 200000, 1970 },         // Normal, passa
+        { 1002, 2500, 100000, 200000, 4800 },         // Normal, passa
+        { 1003, 5000, 100000, 200000, 9900 },         // Slippage violado
+        { 1004, 1000, INT64_C(4611686018427387904), 100000, 1 } // F3: 2^62 viola teto de domínio
     };
 
-    SettlementLeafRecord records[4];
+    SettlementLeafRecord112 records[4];
     uint8_t leaf_hashes[4][32];
 
     for (int i = 0; i < 4; i++) {
         uint64_t steps = 0;
         VmExecResult res;
-        int64_t args[4] = { block_txs[i].amount_in, block_txs[i].res_in, block_txs[i].res_out, block_txs[i].min_out };
-        LinErr e = vm_exec(&vm.mod, (size_t)fn_settle, args, 4, 0, &steps, &res);
-        if (e != LIN_OK) {
-            fprintf(stderr, "Erro LinVM na tx %lu\n", block_txs[i].tx_id);
-            return 1;
+        int64_t out_val;
+        int64_t status;
+
+        // Guarda C11 pré-execução: não chama LinVM se domínio inválido
+        if (!lin_settlement_domain_ok(block_txs[i].amount_in, block_txs[i].res_in, block_txs[i].res_out, block_txs[i].min_out)) {
+            out_val = -1;
+            status = -1;
+            steps = 0;
+            printf("[Host C11 Guard] Tx #%lu REJEITADA ANTES DA VM (Fora do Domínio i64 Seguro)\n", block_txs[i].tx_id);
+        } else {
+            int64_t args[4] = { block_txs[i].amount_in, block_txs[i].res_in, block_txs[i].res_out, block_txs[i].min_out };
+            LinErr e = vm_exec(&vm.mod, (size_t)fn_settle, args, 4, 0, &steps, &res);
+            if (e != LIN_OK) {
+                fprintf(stderr, "Erro LinVM na tx %lu\n", block_txs[i].tx_id);
+                return 1;
+            }
+            out_val = res.val;
+            status = (res.val >= 0) ? 1 : -1;
         }
 
-        memcpy(records[i].image_sha256, vm.img_sha256, 32);
+        memcpy(records[i].image_digest, vm.img_sha256, 32);
+        records[i].run_id = 1;
         records[i].tx_id = block_txs[i].tx_id;
         records[i].amount_in = block_txs[i].amount_in;
-        records[i].out_val = res.val;
+        records[i].reserve_in = block_txs[i].res_in;
+        records[i].reserve_out = block_txs[i].res_out;
+        records[i].min_out = block_txs[i].min_out;
+        records[i].out_val = out_val;
         records[i].steps = steps;
-        records[i].status = (res.val >= 0) ? 1 : -1;
+        records[i].status = status;
 
         compute_leaf_hash(&records[i], leaf_hashes[i]);
 
         printf("Tx #%lu -> Status=%s | Out=%ld | Steps=%lu\n",
-               records[i].tx_id, records[i].status == 1 ? "APPROVED" : "REJECTED_SLIPPAGE",
+               records[i].tx_id, records[i].status == 1 ? "APPROVED" : "REJECTED_FAIL_CLOSED",
                records[i].out_val, records[i].steps);
         printf("  Leaf SHA-256: ");
         print_hex(leaf_hashes[i], 32);
         printf("\n");
     }
 
-    // Construção da Árvore Merkle SHA-256 de 256 bits real:
-    //      Root (256-bit)
-    /*     /              \ */
-    //   N0 (256-bit)    N1 (256-bit)
-    /*   /        \       /        \ */
-    // Leaf0    Leaf1   Leaf2     Leaf3
+    // Árvore Merkle SHA-256 de 256 bits
     uint8_t n0[32], n1[32], merkle_root[32];
     merkle_parent_sha256(leaf_hashes[0], leaf_hashes[1], n0);
     merkle_parent_sha256(leaf_hashes[2], leaf_hashes[3], n1);
     merkle_parent_sha256(n0, n1, merkle_root);
 
-    printf("\n------------------------------------------------------------------------\n");
-    printf("[Merkle Tree 256-bit] Raiz do Bloco SHA-256:\n  ");
+    printf("\n[Merkle Tree 256-bit] Raiz do Bloco SHA-256:\n  ");
     print_hex(merkle_root, 32);
-    printf("\n------------------------------------------------------------------------\n\n");
+    printf("\n\n");
 
-    // Validação de Prova de Inclusão da Tx #1001 (Leaf0)
-    // Caminho: sibling0 = Leaf1, sibling1 = N1
-    printf("[Auditoria de Inclusão Independente (Tx #1001)]\n");
+    // Validação da Prova de Inclusão da Tx 1001
     uint8_t test_n0[32], test_root[32];
     merkle_parent_sha256(leaf_hashes[0], leaf_hashes[1], test_n0);
     merkle_parent_sha256(test_n0, n1, test_root);
-    printf("  Raiz Recalculada pela Prova: ");
-    print_hex(test_root, 32);
-    printf("\n  Status da Prova de Inclusão: %s\n\n",
+    printf("[Auditoria de Inclusão Tx #1001]: %s\n",
            memcmp(test_root, merkle_root, 32) == 0 ? "VERIFICADO_COM_SUCESSO" : "FALHA");
-
-    // Teste de Adulteração: atacante tenta mudar 1 unidade no valor de saída da Tx #1001
-    printf("[Simulação de Ataque de Adulteração (1 unidade fraudada na Tx #1001)]\n");
-    SettlementLeafRecord fraud_rec = records[0];
-    fraud_rec.out_val -= 1; // Fraude
-    uint8_t fraud_leaf[32], fraud_n0[32], fraud_root[32];
-    compute_leaf_hash(&fraud_rec, fraud_leaf);
-    merkle_parent_sha256(fraud_leaf, leaf_hashes[1], fraud_n0);
-    merkle_parent_sha256(fraud_n0, n1, fraud_root);
-
-    printf("  Raiz Gerada com Adulteração: ");
-    print_hex(fraud_root, 32);
-    printf("\n  Detecção de Fraude: %s (Raiz divergente rejeitada)\n",
-           memcmp(fraud_root, merkle_root, 32) != 0 ? "FRAUDE_DETECTADA_E_BARRADA (100%)" : "FALHA_NA_DETECCAO");
 
     printf("========================================================================\n");
     return 0;
