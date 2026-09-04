@@ -82,7 +82,7 @@ c0: $(C0)
 
 # The three no-Zig gates, in one command (nothing below touches `zig`).
 test-c0: $(C0)
-	@../test/verify_c0.sh $(C0)
+	@../../test/verify_c0.sh $(C0)
 
 .PHONY: c0 test-c0
 
