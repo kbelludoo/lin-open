@@ -48,3 +48,8 @@ jobs:
           else
             echo "CLI correctly rejected invalid payload with non-zero exit code"
           fi
+
+      - name: Build LinVM C11 host and run LinVM Keccak parity suite (M1-B.1)
+        run: |
+          make -C transpile/c
+          python3 test/ethereum_tx/test_linvm_keccak.py
