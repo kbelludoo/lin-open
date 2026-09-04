@@ -44,14 +44,28 @@ def run_lin_classify(
     gas_used: int,
     gas_budget: int
 ) -> int:
+    # Normalizar valores que excedam 62 bits para comparação proporcional em uint256
+    scale_shift = 0
+    max_val = max(reported_out, actual_out, min_out)
+    while (max_val >> scale_shift) > 0x3FFFFFFFFFFFFFFF:
+        scale_shift += 1
+
+    rep_w = (reported_out >> scale_shift) & 0x7FFFFFFFFFFFFFFF
+    act_w = (actual_out >> scale_shift) & 0x7FFFFFFFFFFFFFFF
+    min_w = (min_out >> scale_shift) & 0x7FFFFFFFFFFFFFFF
+
+    # Se a truncagem por shift igualou valores onde antes act < min, preservar guarda
+    if actual_out < min_out and act_w >= min_w and min_w > 0:
+        act_w = min_w - 1
+
     cmd = [
         str(LIN_BC1_RUN), str(RECONCILER_BC1), "classify_reconciliation",
         str(is_tx_success),
         str(bot_reported_success),
         str(pool_match),
-        str(reported_out & 0xFFFFFFFFFFFFFFFF),
-        str(actual_out & 0xFFFFFFFFFFFFFFFF),
-        str(min_out & 0xFFFFFFFFFFFFFFFF),
+        str(rep_w),
+        str(act_w),
+        str(min_w),
         str(gas_used),
         str(gas_budget)
     ]

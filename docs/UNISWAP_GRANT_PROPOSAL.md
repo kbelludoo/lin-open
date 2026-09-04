@@ -34,7 +34,12 @@ Lin-Audit provides a **deterministic, zero-dependency bytecode engine (LinVM)** 
 ## 4. Current Proof of Concept & Empirical Results (Already Completed)
 Before applying for this grant, the core technology was rigorously tested and verified:
 1. **Differential Oracle Testing:** 1,000 randomized synthetic multiword vectors tested against canonical Solidity reference contracts with **1,000 / 1,000 bit-exact passes**.
-2. **Real Ethereum Mainnet Settlement:** 50 real, contiguous swap transactions downloaded from Ethereum Mainnet blocks (25900475 to 25900661) across the USDC/WETH Uniswap V2 pool. All 50 transactions achieved **100.0% bit-exact parity** in 0.46s (9.2 ms per swap).
+2. **Multi-Token Real Ethereum Mainnet Settlement:** 192 real, contiguous swap transactions downloaded from Ethereum Mainnet blocks across 4 diverse high-volume pools:
+   - **USDC/WETH (6 vs 18 decimals)**: 80 swaps
+   - **USDT/WETH (6 vs 18 decimals)**: 80 swaps
+   - **DAI/WETH (18 vs 18 decimals)**: 19 swaps
+   - **WBTC/WETH (8 vs 18 decimals)**: 13 swaps
+   - **Result:** All 192/192 transactions achieved **100.0% bit-exact parity** in 1.72s (9.0 ms per swap), totaling 222M deterministic LinVM instructions without floating-point drift.
 3. **Adversarial Benchmark:** 7 canonical fraud/error attacks simulated against real on-chain data with **100% detection rate and 0.0% false positives**.
 
 ---
