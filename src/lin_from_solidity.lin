@@ -1,0 +1,71 @@
+@LIN:L1c:0.2
+@LIN_FROM_SOLIDITY{
+  version=1
+  purpose="extract_pure_math_solidity_functions_to_lin"
+  profile="LINVM-1"
+  status="EXPERIMENTAL_V1"
+}
+
+// 1. Identificação de palavras-chave do Solidity
+!sol_is_kw(nm: string): int {
+  ?(starts_lit(nm, 0, "function") == 1 && nm.length == 8) { ^1 };
+  ?(starts_lit(nm, 0, "returns") == 1 && nm.length == 7) { ^1 };
+  ?(starts_lit(nm, 0, "pure") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "view") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "internal") == 1 && nm.length == 8) { ^1 };
+  ?(starts_lit(nm, 0, "external") == 1 && nm.length == 8) { ^1 };
+  ?(starts_lit(nm, 0, "public") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "require") == 1 && nm.length == 7) { ^1 };
+  ?(starts_lit(nm, 0, "return") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2) { ^1 };
+  ?(starts_lit(nm, 0, "while") == 1 && nm.length == 5) { ^1 };
+  ^0;
+}
+
+// 2. Identificação de tipos inteiros do Solidity
+!sol_is_type(nm: string): int {
+  ?(starts_lit(nm, 0, "uint256") == 1 && nm.length == 7) { ^1 };
+  ?(starts_lit(nm, 0, "uint") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "uint128") == 1 && nm.length == 7) { ^1 };
+  ?(starts_lit(nm, 0, "uint64") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "uint32") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "uint16") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "uint8") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "int256") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "int") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "bool") == 1 && nm.length == 4) { ^1 };
+  ^0;
+}
+
+// 3. Análise de elegibilidade fail-closed
+// Apenas funções matematicamente puras são aceitas para transpilação LIN
+!sol_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
+  ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
+  ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
+  ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
+  ?(rg_count_lit(body, "assembly") > 0) { ^"REJ_SOLIDITY_INLINE_ASM" };
+  ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
+  ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
+  ?(rg_count_lit(sig, "pure") == 0) { ^"REJ_SOLIDITY_NON_PURE" };
+  ^"OK";
+}
+
+// 4. Teste de conformidade de parser Solidity
+!sol_parse_test_gate(): int {
+  sig_ok = "function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut)";
+  body_ok = "require(amountIn > 0); uint amountInWithFee = amountIn.mul(997); return amountInWithFee;";
+  
+  sig_bad = "function mint() external payable returns (bool)";
+  body_bad = "require(msg.value > 0); return true;";
+
+  r1 = sol_reason(sig_ok, body_ok);
+  ?(r1.length != 2) { ^0 }; // Deve ser "OK"
+
+  r2 = sol_reason(sig_bad, body_bad);
+  ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // Deve começar com REJ_
+
+  ^1;
+}
+
+=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate}

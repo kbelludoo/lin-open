@@ -8,6 +8,8 @@
   transpiler="src/zig_to_lin_transpiler.lin"
   c_transpiler="src/lin_from_c.lin"
   js_transpiler="src/lin_from_js.lin"
+  solidity_transpiler="src/lin_from_solidity.lin"
+  rust_transpiler="src/lin_from_rust.lin"
   merkle_engine="src/lin_binary_merkle_provenance.lin"
   compat_engine="src/lin_compatibility_matrix.lin"
   discovery_engine="src/lin_discovery_engine.lin"
