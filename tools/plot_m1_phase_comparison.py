@@ -41,8 +41,8 @@ def main():
     color_m1_full = "#3fb950"   # Verde (Escopo Grant Financiado)
 
     r1 = ax.barh(y + height, m1_a, height, label="M1-A: Protótipo Mojo 1.0+ (Entregue)", color=color_m1_a, alpha=0.9, edgecolor="#30363d")
-    r2 = ax.barh(y, m1_b1, height, label="M1-B.1: Núcleo Keccak LinVM (Entregue)", color=color_m1_b1, alpha=0.9, edgecolor="#30363d")
-    r3 = ax.barh(y - height, m1_b_full, height, label="M1-B Completo: Escopo do Grant ESP", color=color_m1_full, alpha=0.85, edgecolor="#30363d", linestyle="--")
+    r2 = ax.barh(y, m1_b1, height, label="M1-B.1 & M1-B.2: Núcleo Keccak & Absorção LinVM (Entregue)", color=color_m1_b1, alpha=0.9, edgecolor="#30363d")
+    r3 = ax.barh(y - height, m1_b_full, height, label="M1-B Completo: Escopo Restante do Grant", color=color_m1_full, alpha=0.85, edgecolor="#30363d", linestyle="--")
 
     ax.set_yticks(y)
     ax.set_yticklabels(labels, color="#c9d1d9", fontsize=10, fontweight="bold")

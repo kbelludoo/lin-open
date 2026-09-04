@@ -4,6 +4,7 @@
   spec="keccak_f1600_lin_eth_1"
   profile="LIN-ETH-1"
   abi="i64_lanes_little_endian"
+  milestone="M1-B.2_generic_multiblock_absorption"
 }
 
 // 64-bit circular left rotation: rotl64(x, n) = (x << n) | (x >> (64 - n))
@@ -16,12 +17,9 @@
 }
 
 // keccak256_empty_word:
+// Kept for backwards compatibility with M1-B.1.
 // Computes canonical Keccak-256 over empty input b"" inside LinVM.
 // Returns 64-bit little-endian word at out_idx (0..3).
-// Word 0: 4333579421379646149 (0x3c23f7860146d2c5)
-// Word 1: -4610621842795954542 (0xc003c7dcb27d7e92)
-// Word 2: 4262519377828905189 (0x3b2782ca53b600e5)
-// Word 3: 8116759062988257915 (0x70a4855d04d8fa7b)
 // Digest: c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470
 !keccak256_empty_word(out_idx: int) -> int {
   state: [25]int;
@@ -44,14 +42,12 @@
     i = i + 1;
   };
 
-  // Fixed Rho permutation table (linearized x + 5*y)
   rho[0] = 0;   rho[1] = 1;   rho[2] = 62;  rho[3] = 28;  rho[4] = 27;
   rho[5] = 36;  rho[6] = 44;  rho[7] = 6;   rho[8] = 55;  rho[9] = 20;
   rho[10] = 3;  rho[11] = 10; rho[12] = 43; rho[13] = 25; rho[14] = 39;
   rho[15] = 41; rho[16] = 45; rho[17] = 15; rho[18] = 21; rho[19] = 8;
   rho[20] = 18; rho[21] = 2;  rho[22] = 61; rho[23] = 56; rho[24] = 14;
 
-  // Fixed Iota round constants RC[24] (signed 64-bit integers)
   rc[0] = 1;
   rc[1] = 32898;
   rc[2] = -9223372036854742902;
@@ -77,16 +73,11 @@
   rc[22] = 2147483649;
   rc[23] = -9223372034707259384;
 
-  // Keccak padding for empty input (rate = 136 bytes = 17 words):
-  // Byte 0 of lane 0 gets 0x01
-  // Byte 7 of lane 16 gets 0x80 (0x8000000000000000 = _lia_shl(1, 63))
   state[0] = 1;
   state[16] = _lia_shl(1, 63);
 
-  // 24 rounds of Keccak-f[1600]
   ir = 0;
   while (ir < 24) {
-    // 1. Theta Step: column parity and correction
     x = 0;
     while (x < 5) {
       c[x] = state[x] ^ state[x + 5] ^ state[x + 10] ^ state[x + 15] ^ state[x + 20];
@@ -111,8 +102,6 @@
       };
       y = y + 1;
     };
-
-    // 2. Rho & Pi Steps: rotation and transposition
     y = 0;
     while (y < 5) {
       x = 0;
@@ -125,8 +114,6 @@
       };
       y = y + 1;
     };
-
-    // 3. Chi Step: non-linear row combination
     y = 0;
     while (y < 5) {
       x = 0;
@@ -143,10 +130,7 @@
       };
       y = y + 1;
     };
-
-    // 4. Iota Step: round constant injection
     state[0] = state[0] ^ rc[ir];
-
     ir = ir + 1;
   };
 
@@ -157,30 +141,192 @@
 }
 
 // verify_empty_hash:
-// Validates 4 words against Keccak-256("") and flags NIST SHA3-256 confusion.
-// Returns:
-//   0: SUCCESS (exact Keccak-256 match)
-//   1: HASH_MISMATCH
-//   2: NIST_SHA3_SUBSTITUTION_DETECTED
+// Kept for backwards compatibility with M1-B.1.
+// Returns 0 for SUCCESS, 1 for HASH_MISMATCH, 2 for NIST_SHA3_SUBSTITUTION_DETECTED.
 !verify_empty_hash(w0: int, w1: int, w2: int, w3: int) -> int {
-  k0 = keccak256_empty_word(0);
-  k1 = keccak256_empty_word(1);
-  k2 = keccak256_empty_word(2);
-  k3 = keccak256_empty_word(3);
+  c0 = keccak256_empty_word(0);
+  c1 = keccak256_empty_word(1);
+  c2 = keccak256_empty_word(2);
+  c3 = keccak256_empty_word(3);
 
-  ?(w0 == k0 && w1 == k1 && w2 == k2 && w3 == k3) {
+  ?(w0 == 7410425521722818471 && w1 == 7121987202003222865 && w2 == -411732039180517131 && w3 == 5351394012144785538) {
+    ^2;
+  };
+
+  ?(w0 == c0 && w1 == c1 && w2 == c2 && w3 == c3) {
     ^0;
   };
 
-  // NIST SHA3-256("") words:
-  // a7ffc6f8bf1ed766 51c14756a061d662 f580ff4de43b49fa 82d80a4b80f8434a
-  nist0 = 7410425521722818471;
-  nist1 = 7121987202003222865;
-  nist2 = -411732039180517131;
-  nist3 = 5351394012144785538;
+  ^1;
+}
 
-  ?(w0 == nist0 && w1 == nist1 && w2 == nist2 && w3 == nist3) {
+// keccak256_fixture_word:
+// Universal streaming absorption across multi-block buffers.
+// Employs declared word-buffer buf: [52]int (416 bytes capacity, up to 3 blocks).
+// Supported canonical fixture IDs:
+//   0: 0 bytes (Empty string b"")
+//   1: 1 byte (b"x")
+//   2: 43 bytes (Fox vector "The quick brown fox jumps over the lazy dog")
+//   3: 135 bytes (1 block boundary minus 1)
+//   4: 136 bytes (exact 1 block boundary -> 2 blocks)
+//   5: 137 bytes (2 blocks)
+//   6: 271 bytes (2 block boundary minus 1)
+//   7: 272 bytes (exact 2 block boundary -> 3 blocks)
+//   8: 273 bytes (3 blocks)
+// Returns the 64-bit little-endian digest word at out_idx (0..3), or -1 on error.
+!keccak256_fixture_word(fixture_id: int, out_idx: int) -> int {
+  state: [25]int;
+  b: [25]int;
+  c: [5]int;
+  d: [5]int;
+  rho: [25]int;
+  rc: [24]int;
+  buf: [52]int;
+
+  i = 0;
+  while (i < 25) { state[i] = 0; b[i] = 0; i = i + 1; };
+  i = 0;
+  while (i < 5) { c[i] = 0; d[i] = 0; i = i + 1; };
+  i = 0;
+  while (i < 52) { buf[i] = 0; i = i + 1; };
+
+  rho[0] = 0;   rho[1] = 1;   rho[2] = 62;  rho[3] = 28;  rho[4] = 27;
+  rho[5] = 36;  rho[6] = 44;  rho[7] = 6;   rho[8] = 55;  rho[9] = 20;
+  rho[10] = 3;  rho[11] = 10; rho[12] = 43; rho[13] = 25; rho[14] = 39;
+  rho[15] = 41; rho[16] = 45; rho[17] = 15; rho[18] = 21; rho[19] = 8;
+  rho[20] = 18; rho[21] = 2;  rho[22] = 61; rho[23] = 56; rho[24] = 14;
+
+  rc[0] = 1; rc[1] = 32898; rc[2] = -9223372036854742902; rc[3] = -9223372034707259392;
+  rc[4] = 32907; rc[5] = 2147483649; rc[6] = -9223372034707259263; rc[7] = -9223372036854743031;
+  rc[8] = 138; rc[9] = 136; rc[10] = 2147516425; rc[11] = 2147483658;
+  rc[12] = 2147516555; rc[13] = -9223372036854775669; rc[14] = -9223372036854742903;
+  rc[15] = -9223372036854743037; rc[16] = -9223372036854743038; rc[17] = -9223372036854775680;
+  rc[18] = 32778; rc[19] = -9223372034707292150; rc[20] = -9223372034707259263;
+  rc[21] = -9223372036854742912; rc[22] = 2147483649; rc[23] = -9223372034707259384;
+
+  msg_len = 0;
+
+  // Fixture 0: empty
+  ?(fixture_id == 0) {
+    msg_len = 0;
+  };
+  // Fixture 1: 1 byte of b"x" (0x78 = 120)
+  ?(fixture_id == 1) {
+    msg_len = 1;
+    buf[0] = 120;
+  };
+  // Fixture 2: Fox vector (43 bytes)
+  ?(fixture_id == 2) {
+    msg_len = 43;
+    buf[0] = 7163385811044755540;
+    buf[1] = 2336936577195974763;
+    buf[2] = 8101260403381137254;
+    buf[3] = 8367813887758639219;
+    buf[4] = 2340036040240162152;
+    buf[5] = 6778724;
+  };
+  // Fixtures 3..8: repetition of byte 120 (0x7878787878787878 = 8680820740569200760)
+  ?(fixture_id >= 3 && fixture_id <= 8) {
+    k = 0;
+    while (k < 35) {
+      buf[k] = 8680820740569200760;
+      k = k + 1;
+    };
+    ?(fixture_id == 3) { msg_len = 135; };
+    ?(fixture_id == 4) { msg_len = 136; };
+    ?(fixture_id == 5) { msg_len = 137; };
+    ?(fixture_id == 6) { msg_len = 271; };
+    ?(fixture_id == 7) { msg_len = 272; };
+    ?(fixture_id == 8) { msg_len = 273; };
+  };
+
+  // Fail-closed guard on fixture bounds
+  ?(fixture_id < 0 || fixture_id > 8) {
+    ^-1;
+  };
+
+  // Universal streaming absorption
+  block_pos = 0;
+  pos = 0;
+  while (pos < msg_len) {
+    lane = _lia_ushr(block_pos, 3);
+    byte_off = block_pos & 7;
+
+    w_idx = _lia_ushr(pos, 3);
+    b_off = pos & 7;
+    byte_val = _lia_ushr(buf[w_idx], b_off * 8) & 255;
+
+    state[lane] = state[lane] ^ _lia_shl(byte_val, byte_off * 8);
+    block_pos = block_pos + 1;
+    ?(block_pos == 136) {
+      // 24 rounds permutation
+      ir = 0;
+      while (ir < 24) {
+        x = 0; while (x < 5) { c[x] = state[x] ^ state[x + 5] ^ state[x + 10] ^ state[x + 15] ^ state[x + 20]; x = x + 1; };
+        x = 0; while (x < 5) {
+          x_prev = x + 4; ?(x_prev >= 5) { x_prev = x_prev - 5; };
+          x_next = x + 1; ?(x_next >= 5) { x_next = x_next - 5; };
+          d[x] = c[x_prev] ^ rotl64(c[x_next], 1);
+          x = x + 1;
+        };
+        y = 0; while (y < 5) { x = 0; while (x < 5) { idx = x + 5 * y; state[idx] = state[idx] ^ d[x]; x = x + 1; }; y = y + 1; };
+        y = 0; while (y < 5) { x = 0; while (x < 5) { src_idx = x + 5 * y; dest_x = _lia_mod(2 * x + 3 * y, 5); dest_idx = y + 5 * dest_x; b[dest_idx] = rotl64(state[src_idx], rho[src_idx]); x = x + 1; }; y = y + 1; };
+        y = 0; while (y < 5) { x = 0; while (x < 5) { idx = x + 5 * y; x1 = x + 1; ?(x1 >= 5) { x1 = x1 - 5; }; x2 = x + 2; ?(x2 >= 5) { x2 = x2 - 5; }; b1_idx = x1 + 5 * y; b2_idx = x2 + 5 * y; state[idx] = b[idx] ^ ((~b[b1_idx]) & b[b2_idx]); x = x + 1; }; y = y + 1; };
+        state[0] = state[0] ^ rc[ir];
+        ir = ir + 1;
+      };
+      block_pos = 0;
+    };
+    pos = pos + 1;
+  };
+
+  // Final block padding (Keccak pad10*1: 0x01 at block_pos, 0x80 at byte 135)
+  pad_lane = _lia_ushr(block_pos, 3);
+  pad_byte_off = block_pos & 7;
+  state[pad_lane] = state[pad_lane] ^ _lia_shl(1, pad_byte_off * 8);
+  state[16] = state[16] ^ _lia_shl(1, 63);
+
+  // Final permutation
+  ir = 0;
+  while (ir < 24) {
+    x = 0; while (x < 5) { c[x] = state[x] ^ state[x + 5] ^ state[x + 10] ^ state[x + 15] ^ state[x + 20]; x = x + 1; };
+    x = 0; while (x < 5) {
+      x_prev = x + 4; ?(x_prev >= 5) { x_prev = x_prev - 5; };
+      x_next = x + 1; ?(x_next >= 5) { x_next = x_next - 5; };
+      d[x] = c[x_prev] ^ rotl64(c[x_next], 1);
+      x = x + 1;
+    };
+    y = 0; while (y < 5) { x = 0; while (x < 5) { idx = x + 5 * y; state[idx] = state[idx] ^ d[x]; x = x + 1; }; y = y + 1; };
+    y = 0; while (y < 5) { x = 0; while (x < 5) { src_idx = x + 5 * y; dest_x = _lia_mod(2 * x + 3 * y, 5); dest_idx = y + 5 * dest_x; b[dest_idx] = rotl64(state[src_idx], rho[src_idx]); x = x + 1; }; y = y + 1; };
+    y = 0; while (y < 5) { x = 0; while (x < 5) { idx = x + 5 * y; x1 = x + 1; ?(x1 >= 5) { x1 = x1 - 5; }; x2 = x + 2; ?(x2 >= 5) { x2 = x2 - 5; }; b1_idx = x1 + 5 * y; b2_idx = x2 + 5 * y; state[idx] = b[idx] ^ ((~b[b1_idx]) & b[b2_idx]); x = x + 1; }; y = y + 1; };
+    state[0] = state[0] ^ rc[ir];
+    ir = ir + 1;
+  };
+
+  ?(out_idx >= 0 && out_idx < 4) {
+    ^state[out_idx];
+  };
+  ^-1;
+}
+
+// keccak256_verify_fixture:
+// Verifies all 4 words of the fixture against claimed words.
+// Returns:
+//   0: SUCCESS (bit-exact match across all 4 words)
+//   1: HASH_MISMATCH (any word corrupted or mismatching)
+//   2: INVALID_FIXTURE_ID (fixture out of bounds)
+!keccak256_verify_fixture(fixture_id: int, exp_w0: int, exp_w1: int, exp_w2: int, exp_w3: int) -> int {
+  ?(fixture_id < 0 || fixture_id > 8) {
     ^2;
+  };
+
+  w0 = keccak256_fixture_word(fixture_id, 0);
+  w1 = keccak256_fixture_word(fixture_id, 1);
+  w2 = keccak256_fixture_word(fixture_id, 2);
+  w3 = keccak256_fixture_word(fixture_id, 3);
+
+  ?(w0 == exp_w0 && w1 == exp_w1 && w2 == exp_w2 && w3 == exp_w3) {
+    ^0;
   };
 
   ^1;

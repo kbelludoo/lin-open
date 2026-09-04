@@ -65,13 +65,13 @@ O caminho Python só será descontinuado após:
 
 Em estrita conformidade com a regra de integridade do repositório **R5 (`LABEL_TOY_VS_EXPERIMENTAL_VS_REAL_WORLD_NO_OVERCLAIM`)**, o estado empírico das implementações é delimitado em três camadas:
 
-| Dimensão | M1-A (Mojo 1.0+) | M1-B.1 (LinVM Entregue) | M1-B Completo (Escopo do Grant) |
+| Dimensão | M1-A (Mojo 1.0+) | M1-B.1 & M1-B.2 (LinVM Entregue) | M1-B Completo (Escopo Restante) |
 | :--- | :--- | :--- | :--- |
 | **Keccak-f[1600] (24 Rodadas)** | **Demonstrado** (`lin_audit_tx.mojo`) | **Demonstrado** (`lin_ethereum_keccak.lin`) | Integrado na VM |
 | **Keccak-256 (Vetor Canônico)** | **Demonstrado** | **Demonstrado** (paridade bit-a-bit) | Integrado na VM |
-| **Guarda Anti-NIST & Fail-Closed** | **Demonstrado** (`0` vs `1`) | **Demonstrado** (código `2` para NIST) | Rejeição em cascata |
-| **Paridade Multi-Engine** | Python == Mojo | Python == Mojo == LinVM | LinVM == Mojo == Geth/Reth |
-| **Absorção Múltiplos Blocos** | **Demonstrado** | *Submarco M1-B.2 (Em andamento)* | Mensagens arbitrárias |
+| **Guarda Anti-NIST & Fail-Closed** | **Demonstrado** (`0` vs `1`) | **Demonstrado** (código `2` para NIST, `1` para tampered) | Rejeição em cascata |
+| **Paridade de Digest** | Python == Mojo | LinVM == Python (Automatizado no CI) | LinVM == Mojo == Geth/Reth |
+| **Absorção Múltiplos Blocos** | **Demonstrado** | **Demonstrado** (9 fixtures canônicos: 0..273 bytes) | Mensagens arbitrárias |
 | **Envelopes EIP-2718** | **Demonstrado** (0, 1, 2, 3) | *Submarco M1-B.4 (Planejado)* | Legacy, 2930, 1559, 4844 |
 | **Parser/Encoder RLP Canônico** | **Demonstrado** | *Submarco M1-B.3 (Planejado)* | Fail-closed estrito |
 | **Corpus 10k & Benchmark Formal**| *Pendente do corpus* | *Pendente do corpus* | Publicação e auditoria comparada |
