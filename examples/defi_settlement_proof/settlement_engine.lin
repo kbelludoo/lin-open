@@ -1,0 +1,56 @@
+@LIN:MODULE:2.0.0
+@AMM_SETTLEMENT_CORE{
+  domain="defi:amm:settlement"
+  spec="uniswap_v2_exact_input"
+  tamper_resistance="strict"
+}
+
+// 1. get_amount_out: Calcula o valor exato de saida com taxa de 0.3% (997/1000)
+!get_amount_out(amount_in: int, reserve_in: int, reserve_out: int) -> int {
+  ?(amount_in <= 0 | reserve_in <= 0 | reserve_out <= 0) {
+    ^ 0;
+  } : {
+    amount_in_with_fee = amount_in * 997;
+    numerator = amount_in_with_fee * reserve_out;
+    denominator = (reserve_in * 1000) + amount_in_with_fee;
+    ?(denominator <= 0) {
+      ^ 0;
+    } : {
+      amount_out = numerator / denominator;
+      ^ amount_out;
+    }
+  }
+}
+
+// 2. settle_swap: Liquida o swap garantindo que amount_out >= min_out (protecao anti-MEV/slippage)
+// Retorna amount_out se valido, ou -1 se slippage violado (fail-closed)
+!settle_swap(amount_in: int, reserve_in: int, reserve_out: int, min_out: int) -> int {
+  ?(amount_in <= 0 | reserve_in <= 0 | reserve_out <= 0 | min_out <= 0) {
+    ^ -1;
+  } : {
+    amount_in_with_fee = amount_in * 997;
+    numerator = amount_in_with_fee * reserve_out;
+    denominator = (reserve_in * 1000) + amount_in_with_fee;
+    ?(denominator <= 0) {
+      ^ -1;
+    } : {
+      amount_out = numerator / denominator;
+      ?(amount_out < min_out) {
+        ^ -1;
+      } : {
+        ^ amount_out;
+      }
+    }
+  }
+}
+
+// 3. verify_settlement: Validacao de consistencia de liquidacao
+!verify_settlement(expected_out: int, actual_out: int) -> int {
+  ?(expected_out == actual_out & actual_out > 0) {
+    ^ 1;
+  } : {
+    ^ 0;
+  }
+}
+
+=ex{get_amount_out, settle_swap, verify_settlement}

@@ -1,0 +1,25 @@
+@RULEL:ARENA_AGENT_ANALYSIS
+# Fonte: arena.ai Agent Mode, conversa /agent/01a056a1-33fb-77a0-9a28-19772c17841a
+# Repo analisado: github.com/kbelludoo/lin-open @ master (branch arena/01a056a1-lin-open, No Changes — analise pura)
+# Data: 2026-08-31
+# Correcricao do agente: src/indice.lin NAO existe no lin-open; "indice de capacidades" = lin capabilities (hardcoded no Zig) + headers ^ops= dos modulos. "nucleus protegido por hashes" = .h{} do AGENTS.md + .f{mutate_lin_nucleus} + corpus_sha256/ledger_sha256.
+
+@PROPOSTAS:
+P1 (M, LIN) VM self-host completa 33 opcodes com rastro deterministico — linvm_embedded.lin cobre 9/33; Fase 1 do SELF_HOSTING_PLAN exige H_trace. Validar: bit-exact vs lin vm/lin vm-sweep + p1ref.
+P2 (S, LIN) Higiene do corpus — gpu_parallel_map_kernels.lin falha check proprio (caveat 26); corpus 20 vs 21 arquivos (caveat 25). Validar: check passa, lin test roda, parity com novo baseline.
+P3 (S/M, LIN) from-js arrow functions e corpos de expressao — REJ_ARROW_FN hoje rejeita tudo com => (caveat 8). Pre-pass normalizador em LIN. Validar: fixtures em benchmarks/, paridade bit-exact vs node.
+P4 (M, LIN) from-c lowering de switch/ternario/unarios ou rejeicao explicita — hoje emite texto cru que falha check em silencio. Validar: fixtures C + baseline_diff.sh.
+P5 (M, LIN) zig_to_lin_transpiler lexer — sair do lossy (3 fns); Fase 2 depende deste modulo. Tokenizer heap-free de subconjunto Zig.
+P6 (S, LIN) indice de capacidades em LIN + runner selftest dogfooding — capabilities do Zig esta stale; harness so roda test_*() sem params (caveat 28). src/lin_indice_capacidades.lin + src/lin_selftest.lin.
+P7 (S, LIN) lint LIN-side — ck_heur_str decide string por prefixo de nome (frágil); regras novas + matriz de paridade lint_LIN vs lint_Zig.
+P8 (S, EMENDA) remover/gatear hook storage/dynamic_rules.rulel — reescrita silenciosa de fonte (caveat 23) e inaceitavel num projeto de receipt deterministico. Exige emenda R2a-style.
+P9 (S, EMENDA) unificar os dois verify-cert — vereditos divergentes para mesmo certificado (caveat 24).
+
+@PERGUNTAS_AO_MANTENEDOR:
+Q1 Politica de bugfix no Stage0 durante P1-P6: (a) emenda R2b com lista fechada de bugfixes fail-closed + gate de paridade, ou (b) host intocado e bugs herdados no port LIN (quebra GATE(k) bit-exact)?
+Q2 Tipos: manter int unico i64 + mascaras explicitas para sempre, ou introduzir larguras u8/u32/u64 como tipos de primeira classe? Afeta Fase 1, from-c, contrato sem-floats.
+Q3 Ritual de re-pin do corpus: proposta do agente = PR com emenda AGENTS.md@1.5.0 + valor medido em CI (nunca local). Modulos novos fora do corpus entram ja ou so apos gate PASS?
+Q4 Transpiladores .lin viram caminho do CLI? (a) CLI fica no host congelado ate Fase 6, ou (b) modo lin from-js --engine=linvm (dogfooding real, saida marcada .engine=linvm)?
+Q5 Receipts: tornar receipt verify --execute (re-execucao na VM) requisito da Fase 5? Qual frase de marketing vale ate la — "consistencia de campos verificavel" vs "prova de execucao"? Vetor novo em redteam/ a cada mudanca de semantica da VM?
+
+@PROXIMO_CICLO_SUGERIDO: agente ofereceu comecar por P1+P2 (VM 33 opcodes + higiene do corpus) assim que Q1-Q3 forem respondidas.

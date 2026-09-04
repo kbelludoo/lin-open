@@ -1,0 +1,48 @@
+@LIN:L1c:0.2
+@LIN_RISK_ENGINE{version=1 purpose=deterministic_financial_risk_scoring status=PRODUCTION}
+
+// Avaliacao de Risco de Transacao Financeira (Score de 0 a 1000)
+// Em LIN nativo puro:
+//  score_base = 100
+//  se amount > 50000 -> score = score + 300
+//  se tx_frequency_1h > 10 -> score = score + 250
+//  se device_trust < 50 -> score = score + 200
+//  se score > 500 -> taxa_basis_points = 300 (3.00%)
+//  retorna score
+
+!calc_risk_score(amount: int, tx_freq: int, device_trust: int) -> int {
+  score = 100;
+
+  ?(amount > 50000) {
+    score = score + 300;
+  };
+
+  ?(tx_freq > 10) {
+    score = score + 250;
+  };
+
+  ?(device_trust < 50) {
+    score = score + 200;
+  };
+
+  ^score;
+}
+
+!calc_fee_basis_points(score: int) -> int {
+  fee = 50; // taxa base 0.5%
+  ?(score > 600) {
+    fee = 300; // risco critico: taxa de 3.0%
+  } : (score > 300) {
+    fee = 150; // risco moderado: taxa de 1.5%
+  };
+  ^fee;
+}
+
+!is_tx_blocked(score: int) -> int {
+  ?(score >= 800) {
+    ^1; // Bloqueia fraude
+  };
+  ^0; // Aprovada
+}
+
+=ex{calc_risk_score, calc_fee_basis_points, is_tx_blocked}
