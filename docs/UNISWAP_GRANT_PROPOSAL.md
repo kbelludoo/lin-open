@@ -41,7 +41,7 @@ Before applying for this grant, the core technology was rigorously tested and ve
    - **DAI/WETH** (18 vs 18 decimals): 108 swaps
    - **WBTC/WETH** (8 vs 18 decimals): 31 swaps
    - **Empirical Benchmark & Performance:** All 2,000/2,000 transactions achieved **100.00% bit-exact parity** in **18.15s** (**9.07 ms per swap**, **110.2 swaps/s sustained**), executing **2,315,927,745 deterministic LinVM instructions** with instant Merkle proof generation (3.16 ms).
-3. **Adversarial Benchmark:** 7 canonical fraud/error attacks simulated against real on-chain data with **100% detection rate and 0.0% false positives**.
+3. **Adversarial Benchmark:** 7 canonical fraud/error attacks simulated against real on-chain data, all rejected. *Scope note (audit v3):* detection is bounded by EVM floor division — perturbations of `reserve_out` below `den/(997·amount_in)` (and often ±1 wei on any field) are mathematically invisible to `getAmountOut` itself; see `examples/defi_settlement_proof/README.md` §5 for the measured sensitivity limits. The on-chain sample used for earlier "100% parity" claims was pre-filtered by the formula; the unfiltered ingestor and class distribution replace that claim.
 
 ---
 

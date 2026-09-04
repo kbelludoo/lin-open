@@ -9,7 +9,9 @@
 #include <CL/cl.h>
 
 int main(int argc, char **argv) {
-    const char *bin_path = (argc > 1) ? argv[1] : "test/pilot_harness/swaps_2000_raw.bin";
+    // O .bin NAO e' versionado. Gere-o deterministicamente a partir do JSON com:
+    //   python3 test/pilot_harness/test_honest_parity_and_sensitivity.py --bin /tmp/swaps.bin
+    const char *bin_path = (argc > 1) ? argv[1] : "/tmp/swaps.bin";
 
     FILE *fd = fopen(bin_path, "rb");
     if (!fd) {
@@ -56,7 +58,7 @@ int main(int argc, char **argv) {
     printf("   EXECUÇÃO REAL EM GPU FÍSICA: LIQUIDAÇÃO UINT256 (OPENCL / ROCM)\n");
     printf("=====================================================================================\n");
     printf("[*] Hardware GPU Detectado: %s\n", dev_name);
-    printf("[*] Total de Swaps Reais Carregados: %zu\n", total_swaps);
+    printf("[*] Registros carregados de %s: %zu (128 B cada)\n", bin_path, total_swaps);
 
     cl_int err;
     cl_context context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &err);
@@ -116,9 +118,25 @@ int main(int argc, char **argv) {
     }
 
     printf("-------------------------------------------------------------------------------------\n");
-    printf("[Taxa de Sucesso]:          %zu/%zu (%.2f%%) PARIDADE BIT-EXACT 100%%\n", passed, total_swaps, (double)passed / total_swaps * 100.0);
-    printf("[Tempo de Execução na GPU]: %.4f segundos (%.3f ms por swap)\n", elapsed, (elapsed / total_swaps) * 1000.0);
-    printf("[Throughput Real na GPU]:   %.1f swaps reconciliados / segundo\n", total_swaps / elapsed);
+    size_t failed = total_swaps - passed;
+    printf("[Registros]:                %zu\n", total_swaps);
+    printf("[Concordam com expected]:   %zu\n", passed);
+    printf("[Divergem de expected]:     %zu\n", failed);
+    if (failed == 0) {
+        printf("[Resultado]:                PARIDADE BIT-EXACT em %zu/%zu registros\n", passed, total_swaps);
+    } else {
+        printf("[Resultado]:                DIVERGENCIA em %zu/%zu registros (%.2f%%) -- lote NAO reconciliado\n",
+               failed, total_swaps, (double)failed / total_swaps * 100.0);
+    }
+    printf("[Tempo do kernel na GPU]:   %.4f s (%.3f us por swap; exclui compilacao JIT e alocacao,\n"
+           "                            inclui transferencia H2D do buffer de entrada)\n",
+           elapsed, (elapsed / total_swaps) * 1e6);
+    printf("[Throughput deste lote]:    %.1f swaps/s -- NAO e' pico: lotes < ~10k swaps sao dominados\n"
+           "                            por latencia fixa de lancamento/PCIe (wavefront starvation).\n"
+           "                            Compare lotes de tamanhos diferentes antes de citar um numero.\n",
+           total_swaps / elapsed);
+    printf("[Aviso]:                    o kernel compara com `expected` do buffer; a proveniencia desse\n"
+           "                            valor (on-chain vs. formula) e' responsabilidade do gerador do .bin.\n");
     printf("=====================================================================================\n");
 
     clReleaseMemObject(d_in);

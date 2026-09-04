@@ -149,3 +149,36 @@ log2(N) com R² para confirmar a classe de complexidade — não declará-la.
 ```bash
 python3 examples/defi_settlement_proof/audit_v2/constant_time_study.py
 ```
+
+---
+
+## 5. Auditoria v3 — motor u256, dataset Mainnet e GPU (correção de overclaims)
+
+Uma revisão externa do relatório "100% paridade Mainnet / 100% detecção de fraude /
+441k swaps/s em GPU" encontrou os problemas abaixo. Cada linha diz o que era falso,
+o que é verdadeiro e como reproduzir.
+
+| Alegação anterior | Status | O que o código sustenta agora |
+|---|---|---|
+| "100% de paridade com a Ethereum Mainnet (2.000 swaps)" | **TAUTOLÓGICO** — os ingestores `test/pilot_harness/ingest_real_mainnet_*.py` descartavam silenciosamente (`if (num//den) != expected_out: continue`) todo swap que não batia com `getAmountOut`. O dataset foi selecionado pela fórmula que depois foi "validada" contra ele. | `tools/ingest_mainnet_unfiltered.py` grava **todos** os `Swap` de uma janela contínua de blocos e classifica: `EXACT_INPUT`, `EXACT_OUTPUT` (getAmountIn, +1 wei), `OVERPAID_INPUT` (roteador/fee-on-transfer), `BOTH_DIRECTIONS`, `K_VIOLATION`, `UNCLASSIFIED`, além de contar receipts indisponíveis. O número honesto é essa distribuição. `mainnet_real_swaps_2000.json` fica marcado como **pré-filtrado** pela suíte. |
+| "Comparação tripla Nó ↔ EVM ↔ LinVM" | **DUPLA** — o "oráculo EVM" era `num // den` em Python big-int; nenhum bytecode Solidity é executado. | A suíte declara: Lin (LinVM real via `lin_bc1_run`) ↔ referência big-int ↔ `amount_out` do log. `lin==onchain` só é esperado em `EXACT_INPUT`. |
+| "9/9 fraudes rejeitadas — 100% de detecção" | **CALIBRADO** — o delta do ataque em `reserve_out` foi aumentado (10³ → 10¹⁴) até a divisão inteira acusar diferença. Isso é evidência de que a função não é constante, não de detecção. | `test_honest_parity_and_sensitivity.py` FASE 2 mede por busca binária o **menor delta detectável** por campo. Em 25 swaps reais: ±1 wei é invisível em `amount_in` 14/25, `reserve_in` 15/25, `reserve_out` 23/25. Teorema: adulteração de `reserve_out` ≥ `den/(997·amount_in)` é **sempre** detectada; abaixo disso **não há garantia** — e nenhuma reimplementação bit-exata da EVM pode fazer melhor. |
+| "Verificado formalmente pelo compilador Lin (0 rejected)" | **IMPRECISO** — `lin verify` é gate de gramática/manifesto, não prova de corretude aritmética. | A evidência de corretude é a paridade contra big-int em todos os vetores + guardas `-1/-2` (FASE 1/3). Não há prova de equivalência com o `.sol`. |
+| "441.053 swaps/s em GPU" vs 1,62M no commit anterior | **NÃO EXPLICADO / NÃO REPRODUZÍVEL** — `swaps_2000_raw.bin` não estava versionado; lote de 2k é dominado por latência fixa de lançamento/PCIe. O host imprimia `"PARIDADE BIT-EXACT 100%"` como texto fixo mesmo com falhas. | Host corrigido (imprime concordam/divergem, exit≠0 em divergência, aviso de que o número de um lote pequeno não é pico). O `.bin` é gerado deterministicamente do JSON (`--bin`). `u256_kernel_cpu_ref.c` compila o **mesmo** `.cl` como C11 e reproduz o resultado sem GPU: 2.000/2.000 concordam; lote com 100 `expected` adulterados → 100 divergências, exit 1. |
+| `src/lin_uniswap_v2_library.lin` como "biblioteca Uniswap" | **TOY int64** — estoura em qualquer reserva de 18 decimais. | Cabeçalho marcado `TOY_INT64_PROTOTYPE_NOT_FOR_MAINNET_VALUES`; motor canônico é `u256_settlement_engine.lin`. |
+| `.mojo` "SIMD de alto rendimento" | **NUNCA EXECUTADO** — sem toolchain. | Não incluído neste repositório. |
+
+### O que é sólido
+- `u256_settlement_engine.lin`: `getAmountOut` em 256 bits, 16 limbs × 16 bits, sem `/` (divisão por shift-subtract), fail-closed `-1` (entrada zero) / `-2` (overflow do numerador ou de `amount_in·997` / `reserve_in·1000`). Bit-exato com big-int em todos os swaps testados (1.000 execuções da LinVM para 200 swaps).
+- Proveniência do dataset legado: `tx_hash` + `log_index` + bloco, verificáveis num explorador — apenas a **seleção** era enviesada, não os valores.
+
+### Reproduzir (sem GPU)
+```bash
+make -C transpile/c bin/lin_c0 bin/lin_bc1_run
+python3 test/pilot_harness/test_honest_parity_and_sensitivity.py --limit 200 --sens-sample 25 --bin /tmp/swaps.bin
+cc -O2 -std=c11 -o /tmp/u256_cpu_ref examples/defi_settlement_proof/u256_kernel_cpu_ref.c && /tmp/u256_cpu_ref /tmp/swaps.bin
+# dataset sem filtro (requer JSON-RPC Mainnet acessível):
+python3 tools/ingest_mainnet_unfiltered.py --blocks 200 --out test/pilot_harness/mainnet_unfiltered.json
+python3 test/pilot_harness/test_honest_parity_and_sensitivity.py --json test/pilot_harness/mainnet_unfiltered.json
+```
+Com GPU (ROCm/OpenCL): `u256_opencl_host /tmp/swaps.bin`. Cite throughput apenas comparando lotes de tamanhos distintos (ex.: 2k, 10k, 100k).

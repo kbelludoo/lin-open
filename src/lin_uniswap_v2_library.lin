@@ -1,5 +1,20 @@
 @LIN:MODULE:2.0.0
+// ============================================================================
+// STATUS (R5): TOY / PROTÓTIPO int64 — NÃO É O MOTOR CANÔNICO.
+//
+// Este módulo usa `int` de 64 bits com sinal e o operador `/`. Em valores reais
+// da Mainnet (reservas de 18 decimais ~1e21, e o produto amount_in*997*reserve_out)
+// TODOS os intermediários estouram 2^63-1 e o resultado é lixo silencioso
+// (ver examples/defi_settlement_proof/README.md, vetores B2/B3 e reserve_in=2^62).
+//
+// É válido apenas no domínio em que todos os intermediários cabem em i64
+// (fixtures pequenas / testes de gramática). Para Mainnet use o motor canônico:
+//   examples/defi_settlement_proof/u256_settlement_engine.lin
+// (16 limbs x 16 bits, sem `/`, fail-closed em overflow de 256 bits).
+// ============================================================================
 @UNISWAP_V2_OFFICIAL_PERIPHERY_SPEC{
+  status="TOY_INT64_PROTOTYPE_NOT_FOR_MAINNET_VALUES"
+  canonical_engine="examples/defi_settlement_proof/u256_settlement_engine.lin"
   cloned_repo="https://github.com/Uniswap/v2-periphery"
   source_file="contracts/libraries/UniswapV2Library.sol"
   test_spec="test/UniswapV2Router02.spec.ts"
