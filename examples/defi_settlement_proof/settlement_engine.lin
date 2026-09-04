@@ -4,29 +4,38 @@
   spec="uniswap_v2_exact_input"
   tamper_resistance="strict"
   profile="LINVM-1"
-  domain_ceiling="amount_le_1e6_reserve_le_4e9"
+  domain_ceiling="conservative_pre_arithmetic_i64"
 }
 
 // 1. get_amount_out: Calcula saida Uniswap V2 (x * y = k com taxa 0.3%)
-// Domínio Seguro Definido (anti-overflow i64):
-//   amount_in <= 1_000_000 (10^6)
-//   reserve_in, reserve_out <= 4_000_000_000 (4*10^9)
-// Garante: num = (amount_in * 997) * reserve_out < 4 * 10^18 < 2^62 (sem wrapping em i64)
+// Domínio Conservador Pré-Aritmética (F3: Anti-Overflow em i64):
+//   MAX_AMOUNT_IN   = 1_000_000
+//   MAX_RESERVE_IN  = 9_000_000_000_000_000
+//   MAX_RESERVE_OUT = 9_000_000_000
 !get_amount_out(amount_in: int, reserve_in: int, reserve_out: int) -> int {
-  ?(amount_in <= 0) { ^ 0; };
-  ?(reserve_in <= 0) { ^ 0; };
-  ?(reserve_out <= 0) { ^ 0; };
+  // Validação de domínio: antes de qualquer multiplicação com parênteses explícitos
+  ?((amount_in <= 0) |
+    (reserve_in <= 0) |
+    (reserve_out <= 0)) {
+    ^ 0;
+  };
 
-  // Guardas estritas de teto de domínio (F3: Anti-Overflow em i64)
-  ?(amount_in > 1000000) { ^ 0; };
-  ?(reserve_in > 4000000000) { ^ 0; };
-  ?(reserve_out > 4000000000) { ^ 0; };
+  // Perfil seguro i64 do piloto (pré-aritmética)
+  ?((amount_in > 1000000) |
+    (reserve_in > 9000000000000000) |
+    (reserve_out > 9000000000)) {
+    ^ 0;
+  };
 
+  // Agora os intermediários são garantidos <= INT64_MAX
   in_fee = amount_in * 997;
   num = in_fee * reserve_out;
   den = (reserve_in * 1000) + in_fee;
-  ?(den <= 0) { ^ 0; };
-  ?(num <= 0) { ^ 0; };
+
+  // Defesa adicional fail-closed
+  ?((in_fee <= 0) | (num <= 0) | (den <= 0)) {
+    ^ 0;
+  };
 
   quot = 0;
   rem = num;
@@ -51,21 +60,31 @@
 
 // 2. settle_swap: Liquida swap verificando tolerancia de slippage (retorna amount_out ou -1 fail-closed)
 !settle_swap(amount_in: int, reserve_in: int, reserve_out: int, min_out: int) -> int {
-  ?(amount_in <= 0) { ^ -1; };
-  ?(reserve_in <= 0) { ^ -1; };
-  ?(reserve_out <= 0) { ^ -1; };
-  ?(min_out <= 0) { ^ -1; };
+  // Validação de domínio: antes de qualquer multiplicação com parênteses explícitos
+  ?((amount_in <= 0) |
+    (reserve_in <= 0) |
+    (reserve_out <= 0) |
+    (min_out <= 0)) {
+    ^ -1;
+  };
 
-  // Guardas estritas de teto de domínio (F3: Anti-Overflow em i64)
-  ?(amount_in > 1000000) { ^ -1; };
-  ?(reserve_in > 4000000000) { ^ -1; };
-  ?(reserve_out > 4000000000) { ^ -1; };
+  // Perfil seguro i64 do piloto (pré-aritmética)
+  ?((amount_in > 1000000) |
+    (reserve_in > 9000000000000000) |
+    (reserve_out > 9000000000) |
+    (min_out > 9000000000)) {
+    ^ -1;
+  };
 
+  // Agora os intermediários são garantidos <= INT64_MAX
   in_fee = amount_in * 997;
   num = in_fee * reserve_out;
   den = (reserve_in * 1000) + in_fee;
-  ?(den <= 0) { ^ -1; };
-  ?(num <= 0) { ^ -1; };
+
+  // Defesa adicional fail-closed
+  ?((in_fee <= 0) | (num <= 0) | (den <= 0)) {
+    ^ -1;
+  };
 
   quot = 0;
   rem = num;

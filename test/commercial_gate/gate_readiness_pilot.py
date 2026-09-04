@@ -124,7 +124,7 @@ def test_group2_linbc1_reproducibility() -> bool:
         print("  [FAIL] Roundtrip não atingiu CONSENSUS entre fonte e bytecode")
         return False
 
-    print("  [PASS] Emissão idêntica (3.098 bytes) e Consenso de Roundtrip confirmado.")
+    print(f"  [PASS] Emissão idêntica ({len(ref_bytes)} bytes) e Consenso de Roundtrip confirmado.")
     return True
 
 def test_group3_merkle_cryptographic_integrity() -> bool:
