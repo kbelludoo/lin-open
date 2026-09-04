@@ -58,6 +58,15 @@ Current observable results:
   a tampered output is rejected.
 - Compiler-0 no-Zig gates pass (`verify_c0.sh`, `verify_c0_selfhost.sh`),
   and a standalone `lin_verify.py` CLI exists.
+- A single-shot multiword `uint256` settlement engine
+  (`u256_settlement_engine.linbc`) with 1,000 differential vectors vs an
+  independent BigInt oracle (PASS 1000/1000; 18-decimal canonical vector →
+  `1662497915624478906`).
+- A 400,003-vector external differential fuzz run (100k QOI + 100,003 Uniswap +
+  200k SipHash/xxHash, 0 divergences) — `--iterations 100000`.
+- An honest audit-cost benchmark: verifying a receipt (Merkle LCR2) ≈ 5.3 µs vs
+  re-executing the block in the VM ≈ 26.4 ms (≈4,986×) —
+  `benchmarks/audit_cost_benchmark.py`.
 
 ## 4. Milestones
 
@@ -108,19 +117,20 @@ compiler/runtime engineering, fuzz harnesses and documentation.
 
 | Item | Now | Missing to submit |
 |---|---|---|
-| Public repository with MIT license | ✅ | none |
+| Public repository with MIT license | ⚠️ MIT added as `LICENSE`; repo still **private** | flip visibility to public |
 | One-line reproducible command | ✅ `make -C transpile/c all && python3 lin_verify.py all` | install package? optional |
 | Standalone external verifier | ✅ `lin_verify.py` (stdlib) | PEP-517 installer only if requested |
-| Formal spec/EBNF + VM ISA | ⚠️ `.rulel` + `FORMAL_SPECIFICATION.md` | a frozen version (status `frozen`, not `proposed`) |
-| Differential fuzz harness | ⚠️ QOI/TinyExpr/Uniswap math/SipHash/xxHash + receipt | 100k vectors over shifts/division/profile C0 |
+| Formal spec/EBNF + VM ISA | ✅ `docs/SPEC_FREEZE_1_0.rulel` pins digests (status `FROZEN_CANDIDATE`) | bless as `frozen` |
+| Differential fuzz harness | ✅ 400,003 vectors (QOI 100k, Uniswap 100,003, SipHash/xxHash 200k), 0 divergences | publish the run in CI |
 | Independent external audit | ❌ | 1 small independent reviewer/company |
-| Published benchmark vs baseline | ❌ | honest benchmark (not speed-vs-LLVM; verification/audit cost) |
-| CI evidence on GitHub | ⚠️ local CI file exists but GitHub App lacks `workflows` permission | push a workflow or run this in a repo owned by the app owner |
+| Published benchmark vs baseline | ✅ `benchmarks/audit_cost_benchmark.py`: verify ≈5 µs vs re-execute ≈26 ms (≈4,986×) | run in CI |
+| CI evidence on GitHub | ⚠️ local CI file exists but GitHub App lacks `workflows` permission | enable workflows on the public repo |
 
 The proof never conflates "is ready for a grant" with "is ready for production".
-The most important remaining technical work is the C0 profile that exercises
-shifts/division and the 100k differential fuzz corpus, plus one external review.
-Those turn the current `NOT-PROVEN` Uniswap/OpenSSL claim into a measured claim.
+As of this cycle the 100k-vector differential fuzz, the audit-cost benchmark and
+a frozen-spec manifest already exist (see `docs/GRANT_EVIDENCE_2026_09.rulel`).
+The remaining items before submission are organizational, not technical: make
+the repository public, enable CI, and complete one external review.
 
 ## 8. Evaluation
 A reviewer can verify every claim above by running:

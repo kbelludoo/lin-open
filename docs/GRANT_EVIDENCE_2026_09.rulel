@@ -1,0 +1,34 @@
+@RULEL:LIN_GRANT_EVIDENCE:1.0.0
+~R{.s=subject .m=metrics .h=hashes}
+# Evidência medida para o pacote de grants (2026-09-03, ambiente limpo).
+# Cada número abaixo é reproduzível com `cc` + Python 3 (sem Zig).
+.s{
+  spec="LIN-GRANT-READINESS-2026-09"
+  status="MEASURED"
+  profile="LINVM-1"
+  engine="C11-LINBC1 + Compiler-0 lin_c0"
+  license="MIT (LICENSE)"
+}
+.m{
+  # Fuzz diferencial externo (prove_all_claims_external.py --iterations 100000)
+  fuzz_differential_vectors_total=400003
+  fuzz_qoi_vectors=100000
+  fuzz_uniswap_vectors=100003
+  fuzz_siphash_xxhash_vectors=200000
+  fuzz_differential_divergences=0
+  fuzz_exit_code=0
+  # Suíte uint256 single-shot (test_u256_differential_1000.py)
+  u256_differential_vectors=1000
+  u256_differential_divergences=0
+  u256_canonical_18decimals_out=1662497915624478906
+  # Benchmark honesto de custo de auditoria (audit_cost_benchmark.py --iters 40)
+  audit_reexec_block_4_ms=26.372
+  audit_verify_block_4_us=5.29
+  audit_verify_reexec_ratio=4986
+  # Spec congelada (candidata)
+  spec_freeze_status="FROZEN_CANDIDATE"
+}
+.h{
+  .f{ path="FORMAL_SPECIFICATION.md" sha256="4a26eb2a47093529f5caee2241f6adb35b8941147e101a4be8b148b7ec6adb95" }
+  .f{ path="examples/defi_settlement_proof/u256_settlement_engine.linbc" img_sha256="4f4d12882a326d1c0d6f3b3d62c25185c71370e48c01e0e393b02b73b22250dd" }
+}

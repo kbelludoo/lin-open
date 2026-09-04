@@ -1,0 +1,31 @@
+@RULEL:LIN_SPEC_FREEZE:1.0.0
+~R{.s=subject .h=hashes .p=policy}
+# Congelamento da especificação formal LIN (v1.0.0).
+#
+# O que "frozen" significa aqui (policy abaixo): as assinaturas de conteúdo
+# abaixo identificam a versão 1.0 da especificação. Qualquer mudança de
+# semântica nos artefatos pinados EXIGE um bump de versão + novo digest.
+# Mudanças editoriais (typos, clarificações sem mudança de semântica) também
+# invalidam o digest; o procedimento é re-emitir este manifesto junto do PR.
+#
+# Status candidato: preparado como parte do pacote de grants. A benção final
+# (publicar como "frozen") é decisão do mantenedor — ver GRANT_PROPOSAL.md §7.
+.s{
+  spec_id="LIN-FORMAL-SPEC-1.0"
+  version="1.0.0"
+  status="FROZEN_CANDIDATE"
+  frozen_at="2026-09-03"
+  reason="grant readiness: formal spec must not be marked EXPERIMENTAL at submission"
+}
+.p{
+  version_bump_required="semantic change"
+  re_emit_required="any change (semantic or editorial)"
+  change_log_required="yes"
+}
+.h{
+  .f{ path="FORMAL_SPECIFICATION.md" sha256="4a26eb2a47093529f5caee2241f6adb35b8941147e101a4be8b148b7ec6adb95" bytes=4350 }
+  .f{ path="docs/LINVM_ISA_V1.rulel" sha256="d8d333827fb47d18388a2f92dbb6c732e0d543ea676a7acf9046886bbfe69efb" bytes=15243 }
+  .f{ path="docs/LINBC1_FORMAT.rulel" sha256="cee00caac2f60b798b9df143d85f0690b1b20d111f4cf962d444a27689a341b0" bytes=7300 }
+  .f{ path="docs/LIN_VERIFIABLE_SPEC_v1.0.rulel" sha256="74e771d07e3478b418c1eeca958d0a3ba56c6b329be891fffcc672e9ffdd3edf" bytes=1607 }
+  .f{ path="docs/HOST_ABI_1.rulel" sha256="1faf05430d28953bc9c90b14070d2657baa955db33c03df5844cbf15364e4892" bytes=5670 }
+}
