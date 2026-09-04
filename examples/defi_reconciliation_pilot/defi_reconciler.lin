@@ -1,0 +1,82 @@
+@LIN:L1c:0.2
+@RECONCILIATION{profile="experimental" scope="normalized_swap_event"}
+
+// Unsigned comparison without signed-i64 ordering or arithmetic overflow.
+!reconcile_cmp(a0:int, a1:int, a2:int, a3:int,
+               b0:int, b1:int, b2:int, b3:int) -> int {
+  a:[16]int; b:[16]int;
+  i = 0;
+  while (i < 4) {
+    a[i] = _lia_ushr(a0, i * 16) & 65535;
+    a[4+i] = _lia_ushr(a1, i * 16) & 65535;
+    a[8+i] = _lia_ushr(a2, i * 16) & 65535;
+    a[12+i] = _lia_ushr(a3, i * 16) & 65535;
+    b[i] = _lia_ushr(b0, i * 16) & 65535;
+    b[4+i] = _lia_ushr(b1, i * 16) & 65535;
+    b[8+i] = _lia_ushr(b2, i * 16) & 65535;
+    b[12+i] = _lia_ushr(b3, i * 16) & 65535;
+    i = i + 1;
+  };
+  i = 15;
+  while (i >= 0) {
+    ?(a[i] > b[i]) { ^1; };
+    ?(a[i] < b[i]) { ^-1; };
+    i = i - 1;
+  };
+  ^0;
+}
+
+// Host performs identity joins, validates types and decodes evidence; LIN
+// applies the policy. Flags are validated facts, not a supplied verdict.
+// One primary finding, in documented priority order. Missing/reverted events
+// have no output: host uses zero only as an explicit absent-value placeholder.
+!reconcile(
+  reported0:int, reported1:int, reported2:int, reported3:int,
+  actual0:int, actual1:int, actual2:int, actual3:int,
+  minimum0:int, minimum1:int, minimum2:int, minimum3:int,
+  client_count:int, evidence_present:int, chain_success:int,
+  client_success:int, pool_equal:int, order_equal:int,
+  reported_decimals:int, token_decimals:int, formula_supported:int,
+  token_equal:int, input_equal:int, gas_equal:int,
+  amount0:int, amount1:int, amount2:int, amount3:int,
+  rin0:int, rin1:int, rin2:int, rin3:int,
+  rout0:int, rout1:int, rout2:int, rout3:int
+) -> int {
+  ?(client_count > 1) { ^-6; };
+  ?(client_count == 0) { ^-7; };
+  ?(evidence_present == 0) { ^-9; };
+  ?(chain_success == 0) {
+    ?(client_success == 1) { ^-2; };
+    ?(reported0 != 0 || reported1 != 0 || reported2 != 0 || reported3 != 0) { ^-1; };
+    ?(gas_equal == 0) { ^-12; };
+    ^1;
+  };
+  ?(client_success == 0) { ^-13; };
+  ?(pool_equal == 0) { ^-4; };
+  ?(order_equal == 0) { ^-8; };
+  ?(token_equal == 0) { ^-10; };
+  ?(reported_decimals != token_decimals) { ^-5; };
+  ?(input_equal == 0) { ^-11; };
+  ?(reconcile_cmp(reported0,reported1,reported2,reported3,
+                  actual0,actual1,actual2,actual3) != 0) { ^-1; };
+  ?(reconcile_cmp(actual0,actual1,actual2,actual3,
+                  minimum0,minimum1,minimum2,minimum3) < 0) { ^-3; };
+  ?(formula_supported == 0) { ^-9; };
+  // Same image, single host invocation; the existing u256 core is linked by
+  // deterministic source concatenation. No claim of single AMM evaluation:
+  // the scalar ABI computes status and four output words separately.
+  ?(settle_u256_word(amount0,amount1,amount2,amount3,
+       rin0,rin1,rin2,rin3,rout0,rout1,rout2,rout3,-1) != 1) { ^-9; };
+  ?(settle_u256_word(amount0,amount1,amount2,amount3,
+       rin0,rin1,rin2,rin3,rout0,rout1,rout2,rout3,0) != actual0) { ^-9; };
+  ?(settle_u256_word(amount0,amount1,amount2,amount3,
+       rin0,rin1,rin2,rin3,rout0,rout1,rout2,rout3,1) != actual1) { ^-9; };
+  ?(settle_u256_word(amount0,amount1,amount2,amount3,
+       rin0,rin1,rin2,rin3,rout0,rout1,rout2,rout3,2) != actual2) { ^-9; };
+  ?(settle_u256_word(amount0,amount1,amount2,amount3,
+       rin0,rin1,rin2,rin3,rout0,rout1,rout2,rout3,3) != actual3) { ^-9; };
+  ?(gas_equal == 0) { ^-12; };
+  ^1;
+}
+
+=ex{reconcile reconcile_cmp}

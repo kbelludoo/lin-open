@@ -1,0 +1,109 @@
+@RULEL:DEFI_RECONCILIATION_PILOT:0.1
+.status{
+  maturity="EXPERIMENTAL; not commercial-ready"
+  implemented="LIN policy and existing u256 AMM core; Python evidence adapter; LCR4; independent inclusion verifier"
+  business_claim="deterministic discrepancies in supplied records, within declared scope"
+  excluded="consensus proof; full EVM replay; token balance reconciliation; MEV attribution; autonomous transfers; measured customer savings"
+}
+
+.run{
+  adversarial="python3 test/pilot_harness/test_reconciliation_adversarial_7.py --out /tmp/reconciliation-tests.json"
+  customer="python3 test/pilot_harness/test_reconciliation_adversarial_7.py --bundle evidence.json --client client.csv --out /tmp/reconciliation.json"
+  independent="python3 test/pilot_harness/verify_reconciliation_receipts.py --report /tmp/reconciliation.json --expected-root TRUSTED_ROOT_HEX --image /tmp/reconciliation.linbc"
+  dependencies="Python 3 standard library, make, C11 compiler; no Zig"
+  build="CORE u256_settlement_engine.lin bytes + newline + defi_reconciler.lin bytes, compiled by lin_c0 image; sources and image emitted next to --out"
+  command_exit="adversarial exits nonzero on failure; customer mode exits zero when analysis completes, including findings; malformed or unsupported raw evidence fails the run"
+  root_trust="Obtain expected-root from an independent trusted channel. Copying the root from an untrusted report does not authenticate it. Commitments do not prove execution."
+}
+
+.input{
+  customer_json="array of event-level objects; CSV supports the same columns"
+  required="chain_id,tx_hash,log_index,event_order,pool,token_in,token_out,decimals,amount_in,reported_out,min_out,gas_cost,success"
+  quantities="unsigned integers or canonical base-10 digit strings in base units; no floats, scientific notation, negatives, bools or >uint256"
+  identifiers="0x-prefixed 32-byte tx hash and 20-byte pool/token addresses"
+  identity="chain_id+tx_hash+log_index; transaction hash alone is ambiguous for routes"
+  event_order="zero-based occurrence of this pool in the transaction; independent of CSV row order"
+  minimum="explicit min_out in base units; expected_out is not a minimum and is never substituted silently"
+  decimals="explicit metadata, compared to the supplied pool token metadata; amount ratio alone cannot establish a decimals cause"
+  gas="whole-transaction gasUsed*effectiveGasPrice in native-token base units; repeated on per-event rows for checking, NEVER summed as per-event expense"
+  reverted="one transaction-level row; log_index=4294967295, event_order=0, zero pool/token addresses, decimals=0, amount_in=reported_out=min_out=0, success=0; gas is still charged"
+  coverage="scope_tx_hashes is an independently agreed transaction inventory. An omitted transaction cannot be discovered if absent from both that inventory and the customer export."
+}
+
+.evidence_bundle{
+  chain_id=1
+  fields="evidence_class,chain_id,scope_tx_hashes,pools,blocks,receipt_responses"
+  evidence_class="synthetic for test fixtures; supplied_rpc_snapshot_unverified for external data; caller label never changes authenticity verdict"
+  scope_tx_hashes="array of transaction hashes; receipt set must match exactly"
+  blocks="array of raw block objects with hash,number,transactions; transactionIndex must match"
+  receipt_responses="array of complete JSON-RPC eth_getTransactionReceipt responses; null/error/duplicates rejected"
+  pools="object keyed by address, each containing token0,token1,decimals0,decimals1,rule"
+  rule="v2_exact_input_997, explicitly selected; this adapter does not independently verify the factory or contract bytecode"
+  retain="retain complete original RPC responses and customer export; report carries file hashes and canonical bundle digest"
+  authenticating="operator must independently check chain ID, finalized block hashes, receipts and pool/token metadata against a trusted node; the adapter checks internal consistency, not consensus"
+  pairing="ordered logs, increasing logIndex, same contract preceding Sync consumed once by Swap; never combine last Sync and last Swap across different contracts"
+  reserves="reconstructed event-local reserves, not beginning-of-block state; supported simple one-sided V2 swaps only"
+  formula="existing LIN uint256 engine with checked intermediate arithmetic and 997/1000 fee; a nonmatch is UNVERIFIED_OR_UNSUPPORTED, not evidence of an invalid Ethereum transaction"
+  unsupported="flash or multi-sided swaps, unrecognized pool events, missing logs, receipt/header inconsistency, zero/invalid reserves fail closed; fee-on-transfer/rebasing and balance changes are not certified"
+  network="no live RPC invoked by default; frozen bundle replay works offline"
+}
+
+.policy{
+  primary_priority="duplicate -6; missing customer -7; unknown evidence -9; reverted-as-success -2; client status -13; pool -4; event order -8; token -10; decimals -5; input -11; output -1; minimum -3; AMM unsupported/nonmatch -9; gas -12; matched 1"
+  multiple_errors="one primary finding per event, priority above; raw client records retained for further investigation"
+  reversed="correctly recorded revert can match; it never enters the successful-swap formula"
+  slippage="below explicit customer minimum only; no assertion about market cause, state at quote time, MEV, or router enforcement"
+  decimals="metadata mismatch; root cause of an amount difference requires customer review"
+  runtime="one classifier invocation per event, preceded by identity-only loader verification; inside the VM the existing scalar AMM ABI evaluates status and four words separately; no latency claim"
+}
+
+.lcr4{
+  size=384
+  endian="integer metadata LE; uint256 values BE; delta two's-complement signed int256 BE"
+  field_0_4="magic LCR4"
+  field_4_1="version 2"
+  field_5_1="profile 1 LINVM-1"
+  field_6_1="kind: 1 swap, 2 reverted transaction (actual_out=0 means absent output)"
+  field_7_1="reserved zero"
+  field_8_8="chain_id uint64 LE"
+  field_16_32="block_hash"
+  field_48_32="origin_tx_hash"
+  field_80_20="pool_address"
+  field_100_4="log_index uint32 LE; 0xffffffff reserved for reverted transaction"
+  field_104_32="reported_amount_out uint256 BE; zero placeholder if client missing"
+  field_136_32="actual_on_chain_out uint256 BE"
+  field_168_32="divergence_delta = reported - actual, int256 BE; refuse if outside [-2^255,2^255-1]"
+  field_200_8="status_code int64 LE"
+  field_208_32="image_digest = SHA256(entire LINBC1 file)"
+  field_240_32="loader_digest = SHA256(ASCII linbc1:img: || image_without_last_32_bytes)"
+  field_272_8="block_number uint64 LE"
+  field_280_8="steps_vm uint64 LE"
+  field_288_32="SHA256(canonical evidence bundle)"
+  field_320_32="SHA256(canonical normalized client rows for this event, including duplicates)"
+  field_352_32="SHA256(exact linked LIN source)"
+  canonical_json="Python json.dumps(sort_keys=True,separators=(',',':'),ensure_ascii=True), UTF-8; no float quantities"
+  leaf="SHA256(ASCII LIN:RECON:LCR4:LEAF:2 || NUL || record)"
+  node="SHA256(ASCII LIN:RECON:LCR4:NODE:2 || NUL || left || right)"
+  odd="duplicate last node at each level; verifier enforces padding, index, count, exact path length"
+  absent_evidence="finding retained in JSON, no fabricated block/provenance receipt"
+  missing_client="empty client array committed, status -7, reported amount placeholder zero; delta is not realized P&L"
+  audit="root binds source claims and values; authenticity and execution still need independent checks. Independent verifier does not authenticate JSON findings, metrics or completeness."
+}
+
+.gates{
+  adversarial="7/7 controlled mutation categories; 7 clean synthetic events; report exact sample denominator, never generalize 0%"
+  arithmetic="4 historical numbers from previous repository harness, recomputed in LIN and Python; transaction authenticity unverified"
+  edges="unsigned high-bit boundaries/random vectors, invalid integer inputs, checked AMM overflow, corrupt image, bad provenance and ordering"
+  inclusion="77 leaf mutations plus wrong paths/roots; separate stdlib client rejects record/path/root/image mutations"
+  real_world="NOT RUN: no preserved authenticated RPC snapshots available in base repository; direct RPC returned HTTP 403 in this environment"
+  customer="NOT RUN: no customer export supplied"
+  economics="manual_hours_saved=null, economic_benefit=null; future paired measurement against actual customer workflow"
+  reproducibility="build from pinned repository sources; no precompiled image committed; report loader and raw image digests"
+}
+
+.compatibility{
+  base="a7254d63c6f420a9d8354c71c55220dbed6b08c4"
+  legacy="reconciler_engine.lin and its existing image remain as legacy experimental artifacts; this harness uses defi_reconciler.lin and does not use that i64-only engine"
+  lcr4_v1="legacy 248-byte layout is distinct; v2 is 384 bytes and uses new hash domains; verifier rejects v1"
+  statuses="v2 status -6 means duplicate, -12 means gas mismatch; legacy engine status -6 meant gas budget breach; schemas and engines must not be mixed"
+}
