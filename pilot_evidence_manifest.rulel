@@ -6,12 +6,13 @@
   profile="LINVM-1"
   schema="LCR1"
   record_bytes=112
+  domain_ceiling="amount_le_1e6_reserve_le_4e9"
 }
 .h{
-  commit="6e50eaeec0f7b7de2c9f9405965cd4548620c4c0"
-  image_sha256="sha256:33ac6cdea938fb9bc7a234f94fe5ddbc436b2ee5a102b2129c783f40e5a57925"
-  image_loader_digest="sha256:0bb19d6f0ccb94e9b32e6281c7d3fa8e525d86fda0be972660b93643871d4ffa"
-  image_bytes=3323
+  commit="PENDING_GIT_COMMIT"
+  image_sha256="sha256:f131e47c1519666ffde7545d73ee94a62b9f73f587d4af91425a4fc691e85710"
+  image_loader_digest="sha256:e2ade0682530b87d0c9c2e7db1d57ea95087b660a51f8b9dd83458fc87bc5175"
+  image_bytes=3728
   c0_sha256="sha256:30c21306e73970654fdddf453b9711ac1893e2ade67c3b2dece6194060968e27"
 }
 .m{
@@ -28,9 +29,9 @@
   fuzz_differential_cases=500
   fuzz_differential_divergences=0
   asan_ubsan_errors=0
-  latency_p50_us=752.81
-  latency_p95_us=1147.05
-  latency_p99_us=1432.13
+  latency_p50_us=770.02
+  latency_p95_us=1067.28
+  latency_p99_us=1339.91
 }
 .c{
   c0_purity="PASS_4_OF_4"
@@ -38,4 +39,6 @@
   merkle_sha256="PASS_DOMAINS_LEAF_AND_NODE"
   fail_closed_truncation="PASS_100_PERCENT"
   redundant_fields_integrity="VERIFIED_STRICT"
+  f1_zero_reserve_guard="PROTECTED_FAIL_CLOSED"
+  f3_i64_overflow_guard="CEILING_PROTECTED"
 }
