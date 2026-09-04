@@ -1,0 +1,50 @@
+name: M1 Ethereum Transaction Verifier
+
+on:
+  push:
+    branches: [master, main, 'arena/**', 'feat/**', 'fix/**']
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m1-eth-tx-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-m1:
+    name: M1 Keccak-256 & RLP Compliance & Mutation Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run M1 compliance & adversarial mutation tests
+        run: |
+          python3 test/ethereum_tx/test_m1_compliance.py
+
+      - name: Verify canonical fixture corpus with lin-audit CLI
+        run: |
+          python3 tools/lin_audit_tx.py corpus verify \
+            --dir test/ethereum_tx/fixtures \
+            --report /tmp/m1_corpus_report.json
+          cat /tmp/m1_corpus_report.json
+
+      - name: Test CLI failure codes on corrupted payload
+        run: |
+          # Ensure exit code 1 is returned for corrupt input
+          if python3 tools/lin_audit_tx.py tx-hash --raw 0xdeadbeef --claimed 0x00; then
+            echo "Expected exit code 1 on invalid payload, got 0"
+            exit 1
+          else
+            echo "CLI correctly rejected invalid payload with non-zero exit code"
+          fi
