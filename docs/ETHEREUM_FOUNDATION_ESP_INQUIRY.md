@@ -20,6 +20,13 @@ Automated Market Makers (AMMs) on Ethereum settle billions in daily trading volu
 3. **Produce independent cryptographic receipts** for deterministic DeFi state transitions (Uniswap V2 AMM invariant $x \cdot y = k$) executed inside a confined, zero-heap, multiword integer engine (`LinVM`).
 
 Lin-Audit does not attempt to replace archive nodes or index the entire history of Ethereum. It is a focused, falsifiable verification and audit toolkit.
+ 
+### Architectural Boundary: Deterministic LinVM Kernel + Thin I/O Host
+Lin-Audit balances high technical differentiation with strict risk control by maintaining a clean separation:
+- **LinVM Execution Kernel (Profile `LIN-ETH-1`):** Canonical RLP parsing, typed transaction envelope identification (Types 0, 1, 2, 3), Keccak-256 permutation, hash comparison, and receipt generation.
+- **Thin Host (C11 / Reference Tooling):** Operational I/O, file reading, RPC transport, and JSON receipt formatting.
+- **Independent Oracles:** Python reference (`tools/lin_audit_tx.py`), C11 host, Geth, and Reth for multi-way differential verification.
+- **Explicit Non-Goals for LinVM in M1:** No HTTP/TLS networking, no database engines, and no full chain indexing in bytecode.
 
 ---
 

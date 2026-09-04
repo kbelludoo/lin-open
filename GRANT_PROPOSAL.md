@@ -26,6 +26,36 @@ The objective of **Lin-Audit** is:
 
 Lin-Audit does not attempt to be a full archive node or an all-encompassing EVM indexer. It is a **focused, verifiable, and falsifiable audit toolkit**.
 
+### System Architecture: Deterministic Kernel + Thin I/O Host
+
+To avoid the twin pitfalls of superficiality (a Python script merely wrapping external libraries) and overreach (attempting to build HTTP, TLS, databases, and an archive node directly in Lin bytecode), Lin-Audit enforces a strict architectural boundary:
+
+```text
+Thin Host (C11 / Minimal Tooling)
+  ├── Reads raw transaction bytes from files, stdin, or JSON-RPC
+  ├── Stages byte buffers into LinVM memory
+  ├── Receives deterministic execution status, digest, and step count
+  └── Formats machine-readable JSON reports and receipts
+
+LinVM Deterministic Kernel (Profile LIN-ETH-1)
+  ├── Validates input buffer bounds (fail-closed)
+  ├── Parses canonical RLP and rejects non-minimal/malleated encodings
+  ├── Identifies EIP-2718 envelope (Legacy, EIP-2930, EIP-1559, EIP-4844)
+  ├── Computes Keccak-256 (rate 136 bytes, immutable 0x01 domain suffix)
+  ├── Compares claimed hash vs computed digest
+  └── Emits canonical verdict (PASS/FAIL) and execution receipt
+
+Independent Oracles (3-Way / 4-Way Differential Validation)
+  ├── Python 3 pure reference (tools/lin_audit_tx.py)
+  ├── C11 native reference (u256_kernel_cpu_ref.c)
+  ├── Geth (go-ethereum crypto)
+  └── Reth (revm / alloy-primitives)
+```
+
+- **In LinVM (Core Verification):** Canonical RLP decoding, typed envelope validation, Keccak-256 permutation, hash comparison, and receipt generation.
+- **In Thin Host (Operational I/O):** Network transport, file staging, and JSON serialization.
+- **Intentionally Excluded from LinVM in M1:** HTTP/TLS/WebSocket clients, database engines, and full chain indexing.
+
 ---
 
 ## 2. Realistic Scope & Explicit Non-Goals
