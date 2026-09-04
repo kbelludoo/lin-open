@@ -1,0 +1,199 @@
+@LIN:L1c:0.2
+@AMM_U256_SETTLEMENT_CORE{
+  domain="defi:amm:settlement:u256"
+  spec="uniswap_v2_exact_input_uint256"
+  tamper_resistance="strict"
+  profile="LINVM-1"
+  abi="u256_multiword_16bit_limbs"
+}
+
+// settle_u256_word:
+// Inputs:
+//   amount_in: 4 words (64-bit each, little-endian words)
+//   reserve_in: 4 words
+//   reserve_out: 4 words
+//   out_word_idx:
+//     0..3  -> returns 64-bit word 0..3 of amount_out
+//     -1    -> returns status: 1 for APPROVED, -1 for REJECTED_INVALID_INPUT,
+//              -2 for REJECTED_OVERFLOW
+!settle_u256_word(
+  amount_w0: int, amount_w1: int, amount_w2: int, amount_w3: int,
+  reserve_in_w0: int, reserve_in_w1: int, reserve_in_w2: int, reserve_in_w3: int,
+  reserve_out_w0: int, reserve_out_w1: int, reserve_out_w2: int, reserve_out_w3: int,
+  out_word_idx: int
+) -> int {
+  amount: [16]int;
+  reserve_in: [16]int;
+  reserve_out: [16]int;
+  fee_amount: [16]int;
+  denominator: [16]int;
+  remainder: [16]int;
+  quotient: [16]int;
+  numerator: [32]int;
+
+  i = 0;
+  while (i < 16) {
+    amount[i] = 0;
+    reserve_in[i] = 0;
+    reserve_out[i] = 0;
+    fee_amount[i] = 0;
+    denominator[i] = 0;
+    remainder[i] = 0;
+    quotient[i] = 0;
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 32) {
+    numerator[i] = 0;
+    i = i + 1;
+  };
+
+  // Descompactando as 4 palavras de 64 bits em 16 limbs de 16 bits
+  i = 0;
+  while (i < 4) {
+    amount[i] = _lia_ushr(amount_w0, 16 * i) & 65535;
+    reserve_in[i] = _lia_ushr(reserve_in_w0, 16 * i) & 65535;
+    reserve_out[i] = _lia_ushr(reserve_out_w0, 16 * i) & 65535;
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 4) {
+    amount[4 + i] = _lia_ushr(amount_w1, 16 * i) & 65535;
+    reserve_in[4 + i] = _lia_ushr(reserve_in_w1, 16 * i) & 65535;
+    reserve_out[4 + i] = _lia_ushr(reserve_out_w1, 16 * i) & 65535;
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 4) {
+    amount[8 + i] = _lia_ushr(amount_w2, 16 * i) & 65535;
+    reserve_in[8 + i] = _lia_ushr(reserve_in_w2, 16 * i) & 65535;
+    reserve_out[8 + i] = _lia_ushr(reserve_out_w2, 16 * i) & 65535;
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 4) {
+    amount[12 + i] = _lia_ushr(amount_w3, 16 * i) & 65535;
+    reserve_in[12 + i] = _lia_ushr(reserve_in_w3, 16 * i) & 65535;
+    reserve_out[12 + i] = _lia_ushr(reserve_out_w3, 16 * i) & 65535;
+    i = i + 1;
+  };
+
+  // Guardas fail-closed de entrada não-zero
+  ?(amount_w0 == 0 && amount_w1 == 0 && amount_w2 == 0 && amount_w3 == 0) { ^-1; };
+  ?(reserve_in_w0 == 0 && reserve_in_w1 == 0 && reserve_in_w2 == 0 && reserve_in_w3 == 0) { ^-1; };
+  ?(reserve_out_w0 == 0 && reserve_out_w1 == 0 && reserve_out_w2 == 0 && reserve_out_w3 == 0) { ^-1; };
+
+  // 1. amount_in * 997
+  carry = 0;
+  i = 0;
+  while (i < 16) {
+    t = amount[i] * 997 + carry;
+    fee_amount[i] = t & 65535;
+    carry = _lia_ushr(t, 16);
+    i = i + 1;
+  };
+  ?(carry != 0) { ^-2; };
+
+  // 2. reserve_in * 1000 + amount_in_with_fee
+  carry = 0;
+  i = 0;
+  while (i < 16) {
+    t = reserve_in[i] * 1000 + carry + fee_amount[i];
+    denominator[i] = t & 65535;
+    carry = _lia_ushr(t, 16);
+    i = i + 1;
+  };
+  ?(carry != 0) { ^-2; };
+
+  // 3. numerator = amount_in_with_fee * reserve_out (schoolbook 16x16 -> 32)
+  i = 0;
+  while (i < 16) {
+    carry = 0;
+    j = 0;
+    while (j < 16) {
+      k = i + j;
+      t = numerator[k] + fee_amount[i] * reserve_out[j] + carry;
+      numerator[k] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      j = j + 1;
+    };
+    k = i + 16;
+    while (k < 32 && carry != 0) {
+      t = numerator[k] + carry;
+      numerator[k] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      k = k + 1;
+    };
+    i = i + 1;
+  };
+
+  // Verificação de overflow: limbs 16..31 devem ser estritamente zero
+  i = 16;
+  while (i < 32) {
+    ?(numerator[i] != 0) { ^-2; };
+    i = i + 1;
+  };
+
+  // 4. Divisão binária longa (256 bits): numerator / denominator
+  bit = 255;
+  while (bit >= 0) {
+    limb = _lia_ushr(bit, 4);
+    pos = bit & 15;
+    carry = (_lia_ushr(numerator[limb], pos) & 1);
+
+    j = 0;
+    while (j < 16) {
+      t = remainder[j] * 2 + carry;
+      remainder[j] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      j = j + 1;
+    };
+
+    cmp = 0;
+    j = 15;
+    while (j >= 0) {
+      ?(cmp == 0) {
+        ?(remainder[j] > denominator[j]) { cmp = 1; }
+        : (remainder[j] < denominator[j]) { cmp = -1; };
+      };
+      j = j - 1;
+    };
+
+    take = 0;
+    ?((carry == 1) | (cmp >= 0)) { take = 1; };
+    ?(take == 1) {
+      quotient[limb] = quotient[limb] | _lia_shl(1, pos);
+      borrow = 0;
+      j = 0;
+      while (j < 16) {
+        t = remainder[j] - denominator[j] - borrow;
+        ?(t < 0) {
+          remainder[j] = t + 65536;
+          borrow = 1;
+        } : {
+          remainder[j] = t;
+          borrow = 0;
+        };
+        j = j + 1;
+      };
+    };
+    bit = bit - 1;
+  };
+
+  // Retorno de status se solicitado
+  ?(out_word_idx == -1) {
+    ^1;
+  };
+
+  // Retorno da palavra 64-bit solicitada (0..3)
+  // Cada palavra agrupa 4 limbs de 16 bits
+  base_limb = out_word_idx * 4;
+  w = (quotient[base_limb] & 65535) |
+      _lia_shl(quotient[base_limb + 1] & 65535, 16) |
+      _lia_shl(quotient[base_limb + 2] & 65535, 32) |
+      _lia_shl(quotient[base_limb + 3] & 65535, 48);
+
+  ^w;
+}
+
+=ex{settle_u256_word}
