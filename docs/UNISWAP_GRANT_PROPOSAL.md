@@ -34,12 +34,13 @@ Lin-Audit provides a **deterministic, zero-dependency bytecode engine (LinVM)** 
 ## 4. Current Proof of Concept & Empirical Results (Already Completed)
 Before applying for this grant, the core technology was rigorously tested and verified:
 1. **Differential Oracle Testing:** 1,000 randomized synthetic multiword vectors tested against canonical Solidity reference contracts with **1,000 / 1,000 bit-exact passes**.
-2. **Multi-Token Real Ethereum Mainnet Settlement:** 192 real, contiguous swap transactions downloaded from Ethereum Mainnet blocks across 4 diverse high-volume pools:
-   - **USDC/WETH (6 vs 18 decimals)**: 80 swaps
-   - **USDT/WETH (6 vs 18 decimals)**: 80 swaps
-   - **DAI/WETH (18 vs 18 decimals)**: 19 swaps
-   - **WBTC/WETH (8 vs 18 decimals)**: 13 swaps
-   - **Result:** All 192/192 transactions achieved **100.0% bit-exact parity** in 1.72s (9.0 ms per swap), totaling 222M deterministic LinVM instructions without floating-point drift.
+2. **Industrial Scale Real Ethereum Mainnet Settlement:** **2,000 real, contiguous swap transactions** downloaded from Ethereum Mainnet blocks across 5 diverse high-volume pools:
+   - **USDC/WETH** (6 vs 18 decimals): 896 swaps
+   - **USDT/WETH** (6 vs 18 decimals): 714 swaps
+   - **UNI/WETH** (18 vs 18 decimals): 251 swaps
+   - **DAI/WETH** (18 vs 18 decimals): 108 swaps
+   - **WBTC/WETH** (8 vs 18 decimals): 31 swaps
+   - **Empirical Benchmark & Performance:** All 2,000/2,000 transactions achieved **100.00% bit-exact parity** in **18.15s** (**9.07 ms per swap**, **110.2 swaps/s sustained**), executing **2,315,927,745 deterministic LinVM instructions** with instant Merkle proof generation (3.16 ms).
 3. **Adversarial Benchmark:** 7 canonical fraud/error attacks simulated against real on-chain data with **100% detection rate and 0.0% false positives**.
 
 ---

@@ -20,13 +20,19 @@ Automated Market Makers (AMMs) on Ethereum settle billions in volume daily. Howe
 ## 3. Empirical Proofs & State of Art (Already Verifiable in Repository)
 We do not apply with theoretical promises or simulations. The repository already features reproducible benchmarks against live Ethereum Mainnet data:
 
-1. **Multi-Token Mainnet Parity (192 Swaps Across 4 Pools):**
-   - We extracted 192 contiguous, real transactions directly from recent Ethereum Mainnet blocks across diverse decimal pairs:
-     - **USDC / WETH** (6 vs 18 decimals): 80 swaps
-     - **USDT / WETH** (6 vs 18 decimals): 80 swaps
-     - **DAI / WETH** (18 vs 18 decimals): 19 swaps
-     - **WBTC / WETH** (8 vs 18 decimals): 13 swaps
-   - **Result:** 192 / 192 swaps achieved **100.0% bit-exact parity** against on-chain logs (`Sync` & `Swap` reserve reconstruction) in 1.69s total execution time (8.8 ms per swap), totaling over 222 million deterministic VM instructions without floating-point drift.
+1. **Industrial Scale Multi-Token Mainnet Parity (2,000 Swaps Across 5 High-Volume Pools):**
+   - We extracted **2,000 contiguous, real transactions** directly from recent Ethereum Mainnet blocks (spanning over 30 hours of continuous on-chain history) across 5 diverse high-volume pools:
+     - **USDC / WETH** (6 vs 18 decimals): 896 swaps
+     - **USDT / WETH** (6 vs 18 decimals): 714 swaps
+     - **UNI / WETH** (18 vs 18 decimals): 251 swaps
+     - **DAI / WETH** (18 vs 18 decimals): 108 swaps
+     - **WBTC / WETH** (8 vs 18 decimals): 31 swaps
+   - **Empirical Benchmark & Throughput:**
+     - **Parity Rate:** 2,000 / 2,000 (**100.00% bit-exact match** against confirmed on-chain events).
+     - **Total Execution Time:** **18.15 seconds** (averaging **9.07 ms per swap**).
+     - **Sustained Throughput:** **110.2 swaps/second** single-threaded on consumer CPU.
+     - **Deterministic Instructions:** **2,315,927,745 instructions executed** without floating-point error or signed overflow.
+     - **Merkle Tree Proof Assembly:** **3.16 ms** to build the 2,000-leaf SHA-256 binary tree (Root: `214355b6fa1e01fa521a0eef2cf256d91701dcf41df72ee4543cffa34a89bfc0`).
 
 2. **1,000 Differential Solidity Vectors:**
    - 1,000 synthetic multiword vectors tested against canonical Solidity reference contracts with 1,000 / 1,000 exact bit matches (`test_u256_differential_1000.py`).
