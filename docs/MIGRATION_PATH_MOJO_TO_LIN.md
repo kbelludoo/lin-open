@@ -63,16 +63,24 @@ O caminho Python só será descontinuado após:
 
 ## 5. Matriz de Evidência e Política Anti-Sobrereivindicação (No-Overclaim)
 
-Em estrita conformidade com a regra de integridade do repositório **R5 (`LABEL_TOY_VS_EXPERIMENTAL_VS_REAL_WORLD_NO_OVERCLAIM`)**, o estado empírico das implementações é delimitado abaixo:
+Em estrita conformidade com a regra de integridade do repositório **R5 (`LABEL_TOY_VS_EXPERIMENTAL_VS_REAL_WORLD_NO_OVERCLAIM`)**, o estado empírico das implementações é delimitado em três camadas:
 
-| Dimensão | M1-A Mojo | M1-B LinVM |
-| :--- | :--- | :--- |
-| **Keccak-256** | **Demonstrado e versionado** (`tools/lin_audit_tx.mojo`) | Ainda não portado (especificado em `docs/M1_KECCAK_IMPLEMENTATION.md`) |
-| **Envelopes EIP-2718** | **Demonstrados** (Legacy, EIP-2930, EIP-1559, EIP-4844) | Ainda não portados |
-| **Comportamento Fail-Closed** | **Demonstrado** com códigos de saída determinísticos (`0` vs `1`) | A ser implementado |
-| **Determinismo Criptográfico** | Vetores de teste e casos positivo/negativo comprovados | Especificado formalmente no perfil `LIN-ETH-1` |
-| **Desempenho Comparável** | **Ainda não medido** | **Ainda não medido** |
-| **Papel Arquitetural** | Referência de transição e oráculo de teste | Núcleo normativo oficial do projeto |
+| Dimensão | M1-A (Mojo 1.0+) | M1-B.1 (LinVM Entregue) | M1-B Completo (Escopo do Grant) |
+| :--- | :--- | :--- | :--- |
+| **Keccak-f[1600] (24 Rodadas)** | **Demonstrado** (`lin_audit_tx.mojo`) | **Demonstrado** (`lin_ethereum_keccak.lin`) | Integrado na VM |
+| **Keccak-256 (Vetor Canônico)** | **Demonstrado** | **Demonstrado** (paridade bit-a-bit) | Integrado na VM |
+| **Guarda Anti-NIST & Fail-Closed** | **Demonstrado** (`0` vs `1`) | **Demonstrado** (código `2` para NIST) | Rejeição em cascata |
+| **Paridade Multi-Engine** | Python == Mojo | Python == Mojo == LinVM | LinVM == Mojo == Geth/Reth |
+| **Absorção Múltiplos Blocos** | **Demonstrado** | *Submarco M1-B.2 (Em andamento)* | Mensagens arbitrárias |
+| **Envelopes EIP-2718** | **Demonstrado** (0, 1, 2, 3) | *Submarco M1-B.4 (Planejado)* | Legacy, 2930, 1559, 4844 |
+| **Parser/Encoder RLP Canônico** | **Demonstrado** | *Submarco M1-B.3 (Planejado)* | Fail-closed estrito |
+| **Corpus 10k & Benchmark Formal**| *Pendente do corpus* | *Pendente do corpus* | Publicação e auditoria comparada |
+
+### Artefatos de Comparação Visual e Reprodutibilidade
+- **Gráfico Comparativo (SVG):** [`docs/m1_phase_comparison.svg`](m1_phase_comparison.svg)
+- **Gráfico Comparativo (PNG):** [`docs/m1_phase_comparison.png`](m1_phase_comparison.png)
+- **Dados-Fonte Tabulares:** [`docs/m1_phase_comparison.csv`](m1_phase_comparison.csv)
+- **Script Gerador:** [`tools/plot_m1_phase_comparison.py`](../tools/plot_m1_phase_comparison.py)
 
 > **Nota Metodológica Obrigatória:** É terminantemente proibido alegar speedup relativo, throughput comparado ou vantagens de latência entre Mojo e LinVM sem a condução prévia de um benchmark empírico controlado e auditável sobre o corpus de 10.000 transações públicas da Mainnet.
 
