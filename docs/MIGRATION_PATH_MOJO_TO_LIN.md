@@ -61,7 +61,24 @@ O caminho Python só será descontinuado após:
 
 ---
 
-## 5. Como Executar o Verificador Mojo
+## 5. Matriz de Evidência e Política Anti-Sobrereivindicação (No-Overclaim)
+
+Em estrita conformidade com a regra de integridade do repositório **R5 (`LABEL_TOY_VS_EXPERIMENTAL_VS_REAL_WORLD_NO_OVERCLAIM`)**, o estado empírico das implementações é delimitado abaixo:
+
+| Dimensão | M1-A Mojo | M1-B LinVM |
+| :--- | :--- | :--- |
+| **Keccak-256** | **Demonstrado e versionado** (`tools/lin_audit_tx.mojo`) | Ainda não portado (especificado em `docs/M1_KECCAK_IMPLEMENTATION.md`) |
+| **Envelopes EIP-2718** | **Demonstrados** (Legacy, EIP-2930, EIP-1559, EIP-4844) | Ainda não portados |
+| **Comportamento Fail-Closed** | **Demonstrado** com códigos de saída determinísticos (`0` vs `1`) | A ser implementado |
+| **Determinismo Criptográfico** | Vetores de teste e casos positivo/negativo comprovados | Especificado formalmente no perfil `LIN-ETH-1` |
+| **Desempenho Comparável** | **Ainda não medido** | **Ainda não medido** |
+| **Papel Arquitetural** | Referência de transição e oráculo de teste | Núcleo normativo oficial do projeto |
+
+> **Nota Metodológica Obrigatória:** É terminantemente proibido alegar speedup relativo, throughput comparado ou vantagens de latência entre Mojo e LinVM sem a condução prévia de um benchmark empírico controlado e auditável sobre o corpus de 10.000 transações públicas da Mainnet.
+
+---
+
+## 6. Como Executar o Verificador Mojo
 
 ```bash
 # Execução direta com raw transaction hex
