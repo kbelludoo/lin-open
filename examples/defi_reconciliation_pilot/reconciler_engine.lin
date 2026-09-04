@@ -1,0 +1,78 @@
+@LIN:L1c:0.2
+@DEFI_RECONCILIATION_ENGINE{
+  domain="defi:reconciliation:core"
+  spec="deterministic_audit_rules_v1"
+  profile="LINVM-1"
+  status="PILOT_EXPERIMENTAL"
+}
+
+// Códigos de Status Normativos de Conciliação (Fail-Closed):
+//   1: STATUS_CONCILIATED (Paridade bit a bit perfeita)
+//  -1: ERR_AMOUNT_MISMATCH (Divergência de unidades de saída)
+//  -2: ERR_ON_CHAIN_REVERTED (Bot marcou sucesso em tx revertida na blockchain)
+//  -3: ERR_SLIPPAGE_BREACH (Saída executada abaixo do min_out acordado)
+//  -4: ERR_POOL_MISATTRIBUTION (Swap executado em endereço de pool divergente)
+//  -5: ERR_DECIMALS_SCALE (Erro crasso de escala de decimais, ex: fator 10^12)
+//  -6: ERR_GAS_DISCREPANCY (Gás real excedeu teto tolerado)
+
+!classify_reconciliation(
+  is_tx_success_on_chain: int,
+  bot_reported_success: int,
+  pool_match: int,
+  reported_out_w0: int,
+  actual_out_w0: int,
+  min_out_w0: int,
+  gas_used: int,
+  gas_budget: int
+) -> int {
+  // 1. Checagem de status de execução on-chain
+  ?(is_tx_success_on_chain == 0) {
+    ?(bot_reported_success == 1) {
+      ^-2; // ERR_ON_CHAIN_REVERTED
+    };
+    ^1; // Ambas concordam que reverteu
+  };
+
+  ?(bot_reported_success == 0) {
+    ^-2; // On-chain teve sucesso, mas bot registrou falha
+  };
+
+  // 2. Checagem de atribuição de contrato/pool
+  ?(pool_match == 0) {
+    ^-4; // ERR_POOL_MISATTRIBUTION
+  };
+
+  // 3. Checagem de violação de slippage contra o min_out informado
+  ?(actual_out_w0 < min_out_w0) {
+    ^-3; // ERR_SLIPPAGE_BREACH
+  };
+
+  // 4. Detecção de escala crassa de decimais (fator 10^9+ entre ordens de magnitude)
+  ?(reported_out_w0 > 0 && actual_out_w0 > 0) {
+    ?(reported_out_w0 > 1000000000 && _lia_shr(reported_out_w0, 30) > actual_out_w0) {
+      ^-5; // ERR_DECIMALS_SCALE
+    };
+    ?(actual_out_w0 > 1000000000 && _lia_shr(actual_out_w0, 30) > reported_out_w0) {
+      ^-5; // ERR_DECIMALS_SCALE
+    };
+  };
+
+  // 5. Checagem de divergência em unidades de token (amount mismatch)
+  ?(reported_out_w0 != actual_out_w0) {
+    ^-1; // ERR_AMOUNT_MISMATCH (mesmo por 1 wei)
+  };
+
+  // 6. Checagem de gasto de gás
+  ?(gas_budget > 0 && gas_used > gas_budget) {
+    ^-6; // ERR_GAS_DISCREPANCY
+  };
+
+  ^1; // STATUS_CONCILIATED
+}
+
+// Calcula delta de divergência (reported - actual)
+!compute_delta(reported_val: int, actual_val: int) -> int {
+  ^reported_val - actual_val;
+}
+
+=ex{classify_reconciliation, compute_delta}
