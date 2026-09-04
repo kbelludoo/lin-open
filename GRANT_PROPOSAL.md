@@ -1,134 +1,119 @@
-# Grant Proposal — LIN: Experimental Zero-Heap Verifiable State Kernel
+# Grant Proposal — Lin-Audit: Reproducible Ethereum Transaction Verifier & Deterministic DeFi State Reconciliation
 
-**Project title:** LIN — An Experimental Zero-Heap State Engine for Verifiable
-Off-Chain Computation and Cryptographic Auditability
+**Project Title:** Lin-Audit — A Minimalist, Reproducible Verification Toolkit for Ethereum Transactions, Block Inclusion, and Deterministic DeFi State Reconciliation
 
-**Category:** Developer Tooling, Cryptography, Formal Verification Infrastructure
+**Category:** Public Goods, Developer Tooling, Cryptography, Verification Infrastructure
 
-**Requested amount:** $25,000 USD
+**Requested Amount:** $30,000 USD (Non-dilutive Grant)
 **Duration:** 6 months (3 milestones)
+**Repository:** [github.com/kbelludoo/lin-open](https://github.com/kbelludoo/lin-open) (Open Source, MIT / Apache 2.0 compatible)
 
 ---
 
-## 1. Problem
+## 1. Executive Summary & Objective
 
-High-value systems routinely run deterministic numeric code (AMM math, hashing,
-serialization, pricing models) either
-- on an expensive shared execution machine (EVM/L1), where re-execution is the
-  only way to audit a result; or
-- on an ordinary server in C/Rust, where a result can be altered without leaving
-  a reproducible trace and where dynamic memory corruption is a real risk.
+Automated Market Makers (AMMs) and decentralized protocols on Ethereum settle billions of dollars in transaction volume. Today, verifying off-chain trading data or reconciling historical state transitions forces developers, researchers, and institutional auditors to either:
+1. Re-simulate blocks inside full archive nodes (expensive, high operational overhead, heavy hardware requirements); or
+2. Blindly trust third-party centralized indexers, JSON-RPC endpoints, and ad-hoc floating-point Python/JS scripts.
 
-The gap is not "another fast language" — C/Rust/LLVM already win on execution
-speed. The gap is **zero-trust auditability**: a compact, deterministic,
-externally reproducible proof that `f(input) == output`, with a documented
-fail-closed behavior when an operation is outside the accepted subset.
+The objective of **Lin-Audit** is:
+> **To build an open-source, reproducible toolkit capable of recalculating Ethereum transaction hashes from raw bytes, verifying their inclusion in finalized blocks, and generating independent cryptographic receipts for deterministic DeFi state reconciliation within the confined LinVM.**
 
-## 2. What LIN is (and is not)
+### Crucial Architectural Separation of Layers:
+- **Ethereum Identity Layer (Keccak-256 + RLP / EIP-2718):** Proves that raw transaction bytes match the canonical `transaction_hash`.
+- **Block Inclusion Layer (Block Number, Index, TransactionsRoot & Finality):** Proves the transaction was accepted by network consensus without relying on trusted indexer attestations.
+- **Deterministic Analysis Layer (LinVM + Canonical Merkle SHA-256 Receipts):** Proves the algebraic correctness of state transitions (e.g., AMM invariant $x \cdot y = k$) inside a pure, zero-heap, zero-syscall execution kernel.
 
-LIN is a deterministic scalar/i64 kernel with:
-- a flat, heap-free memory model;
-- a tiny VM with a hard step limit and explicit fail-closed rejection;
-- a canonical SHA-256 receipt (`source hash + output + steps + sp_at_ret`);
-- an independent C11 implementation and an independent Python verifier.
+Lin-Audit does not attempt to be a full archive node or an all-encompassing EVM indexer. It is a **focused, verifiable, and falsifiable audit toolkit**.
 
-It is **not**: an OS, a database, a blockchain layer, or a replacement for LLVM.
-The project states this limitation in `docs/RATIONALIST_PROOF_STATUS.md`.
+---
 
-## 3. Existing evidence in this repository
+## 2. Realistic Scope & Explicit Non-Goals
 
-No simulation. The following run with `cc` + Python only, no Zig:
+To maintain rigorous technical integrity and avoid overclaiming:
 
-```bash
-make -C transpile/c all
-python3 test/prove_all_claims_external.py --iterations 10000
+| What Lin-Audit IS | What Lin-Audit IS NOT (Explicit Non-Goals) |
+| :--- | :--- |
+| An open-source transaction and log verification toolkit | NOT a replacement for an Ethereum archive node (geth/reth/erigon) |
+| A deterministic multiword arithmetic engine (`uint256`) for AMM math | NOT a full EVM emulator or general-purpose smart contract verifier |
+| A multi-source incremental ingestor with checkpointing and reorg guards | NOT an attempt to index all 2.7+ billion transactions of Ethereum history |
+| A provable receipts engine (LCR4) binding execution inputs and outputs | NOT a Zero-Knowledge (ZK) rollup or SNARK prover |
+| A rigorously benchmarked tool with published sensitivity resolution bounds | NOT claiming "faster than LLVM" or "100% fraud detection for sub-threshold wei" |
+
+---
+
+## 3. Current State of Art in Repository (Empirical Evidence)
+
+The repository already features working, reproducible code with zero simulation:
+
+1. **Unbiased Mainnet Dataset (`mainnet_unfiltered.json`):**
+   - 157 contiguous swaps captured across 200 blocks (25.900.848..25.901.047) without selection bias.
+   - Measures actual network distribution: **88.54% EXACT_INPUT** ($getAmountOut$) and **11.46% OVERPAID_INPUT** (routers/aggregators/dust), with **0 K_VIOLATION**. Full dataset catalog documented in `docs/DATASETS.md`.
+2. **Deterministic LinVM Execution Core (`u256_settlement_engine.lin`):**
+   - Full 256-bit multiword arithmetic (16 limbs × 16 bits) implementing Uniswap V2 math without floating-point or hardware division.
+   - Bit-exact parity against independent Python big-int reference across 157/157 transactions (785 VM runs) and 2,000 legacy vectors.
+3. **Formal Mathematical Sensitivity Theorem (`docs/EVM_AMM_MATHEMATICAL_SENSITIVITY.md`):**
+   - Documents the exact discrete floor division resolution limit ($\Delta R_{out}^{\text{min}} \ge \lceil \frac{D}{997 \cdot A_{in}} \rceil$), explaining why sub-threshold perturbations are truncated to zero by EVM floor arithmetic.
+4. **Reproducible Reference Runners:**
+   - Both C11 CPU reference (`u256_kernel_cpu_ref.c`) and physical GPU runner (`u256_opencl_host.c`) verify identical results and detect tampered datasets.
+
+---
+
+## 4. Work Plan & Milestones ($30,000 USD / 6 Months)
+
+```
+[ Month 1-2: M1 ] ─────────► [ Month 3-4: M2 ] ─────────► [ Month 5-6: M3 ]
+Ethereum Tx Verifier          Auditable Ingestion           Lin-Audit DeFi (V2)
+RLP, EIP-2718, Keccak-256     Checkpoints, Reorgs, MPT      Receipts, CI, Ext. Review
 ```
 
-Current observable results:
-- 5 real upstream files fetched and SHA-256 verified (Uniswap v2/v3, OpenSSL
-  SHA-256, QOI, TinyExpr).
-- `qoi_color_hash` (from `phoboslab/qoi`) has exact parity against an
-  independent Python oracle.
-- `tinyexpr_fac` (from `codeplea/tinyexpr`) matches Python factorial over
-  `0..20` and fails closed outside that range.
-- An experimental `vmfull` profile executes the pure `UniswapV2Library` math
-  (`get_amount_out`, `quote`, `get_amount_in`) and the SipHash/xxHash round
-  kernels, matching independent Python oracles over thousands of vectors.
-- `lin_c_receipt` produces a Merkle root that Python independently recomputes;
-  a tampered output is rejected.
-- Compiler-0 no-Zig gates pass (`verify_c0.sh`, `verify_c0_selfhost.sh`),
-  and a standalone `lin_verify.py` CLI exists.
+### Milestone 1: Canonical Ethereum Transaction Verifier ($10,000 — Months 1–2)
+- Implement canonical RLP decoding and Keccak-256 transaction envelope hashing in portable C11/Lin-compatible tooling.
+- Full support for transaction formats:
+  - Legacy transactions (type `0x0`);
+  - EIP-2930 access list transactions (type `0x1`);
+  - EIP-1559 fee market transactions (type `0x2`);
+  - EIP-4844 blob-carrying transactions (type `0x3`).
+- **Deliverable:** Independent CLI tool to verify and recompute `transaction_hash` directly from raw payload bytes.
+- **Acceptance Criteria:** Zero divergence against a public corpus of 10,000 Mainnet transactions cross-checked against Geth and Reth.
 
-## 4. Milestones
+### Milestone 2: Auditable Ingestion Engine & Inclusion Verification ($10,000 — Months 3–4)
+- Build an incremental, resilient JSON-RPC ingestion daemon with persistent checkpoints (`checkpoint.json`).
+- Implement reorg detection and block finality validation:
+  - Verification of `transactionsRoot` against block headers.
+  - Multi-source cross-checking (detecting discrepancies or data omission between multiple RPC providers).
+- **Deliverable:** Standalone ingestor producing deterministic, byte-for-byte reproducible dataset bundles.
+- **Acceptance Criteria:** Re-running the ingestor over identical block ranges produces bit-exact identical binary and JSON manifests across separate executions.
 
-### Milestone 1 — Formal semantics and reference documentation ($8,000, months 1–2)
-- Publish grammar/semantics PDF/Markdown based on the `.rulel` specs.
-- Make the C0 host behavior table explicit (accepted subset, rejected
-  `VM_REJ_*`, wrapping arithmetic, fail-closed edges).
-- Deliverable: `docs/AGENTS_EMENDA…` + human-readable `FORMAL_SPECIFICATION.md`.
+### Milestone 3: Lin-Audit DeFi Reconciliation & External Audit ($10,000 — Months 5–6)
+- Integrate ingestion pipeline with the LinVM deterministic execution kernel.
+- Automated reconciliation of Uniswap V2 state transitions from verified logs (`Sync` and `Swap`).
+- Issuance of immutable cryptographic receipts (LCR4 standard) binding the verified Ethereum `tx_hash` to the LinVM execution digest.
+- Independent external security review of the codebase.
+- **Deliverable:** End-to-end reproducible pipeline, public GitHub Actions CI, and published audit report.
+- **Acceptance Criteria:** CI runs end-to-end verification of Mainnet test corpuses on every pull request, accompanied by an independent external review report.
 
-### Milestone 2 — Standalone no-Zig compiler/interpreter and differential fuzzing ($10,000, months 3–4)
-- Continue the existing experimental `vmfull` profile (division/shifts) behind a
-  flag; the default `lin_c0` must stay fail-closed.
-- Build a differential fuzz harness over the C11 host, Python oracle and (when
-  available) the Zig Stage-0 build for 100,000 vectors.
-- Deliverable: `make c0-fuzz`, `make c0-selfhost-gate`, external proof output.
+*(Note: Uniswap V3 concentrated liquidity math and full generalized Merkle-Patricia Trie proofs are formally scoped as roadmap extensions for Phase 2).*
 
-### Milestone 3 — CLI verifier, docs, final report ($7,000, months 5–6)
-- Ship `lin-verify` (Python stdlib, no Zig), consuming `.lin` + receipts and
-  emitting PASS/FAIL with the recomputed Merkle root.
-- Publish usage docs and a reproducible CI job.
-- Deliverable: final report with measured coverage, known non-goals and honest
-  security/performance boundaries.
+---
 
-A first stand-alone `lin-verify` already exists in this repository (`lin_verify.py`)
-with commands `receipt`, `provenance`, `module`, `selfhost` and `all`. It is the
-seed of the Milestone 3 deliverable.
+## 5. Budget Breakdown
 
-## 5. Budget rationale
-Salaries are intentionally modest (independent researcher). Most work is
-compiler/runtime engineering, fuzz harnesses and documentation.
+The grant funds independent research and development at modest rates:
 
-| Item | Cost |
-|---|---|
-| Researcher time (0.4 FTE, 6 months) | $18,000 |
-| CI runners / domain / tooling | $2,000 |
-| Independent audits (2 small external reviews) | $3,500 |
-| Documentation/formatting | $1,500 |
-| **Total** | **$25,000** |
+| Category | Description | Allocation |
+| :--- | :--- | :---: |
+| **Core Engineering** | 6 months research and systems development (0.5 FTE) | $21,000 |
+| **Independent External Review** | Third-party security/code audit by external reviewer | $4,500 |
+| **Infrastructure & CI** | RPC nodes, testing endpoints, GitHub Actions runners | $2,500 |
+| **Documentation & Educational Resources** | Formal documentation, reproducibility guides, diagrams | $2,000 |
+| **Total** | | **$30,000** |
 
-## 6. Non-goals
-- Do **not** claim "$1.8 trillion savings", "faster than LLVM", or "verified
-  production-ready".
-- Do **not** claim to have executed Uniswap/OpenSSL in LinVM in this
-  environment. The proof explicitly prints `NOT-PROVEN` for that claim until a
-  Zig build (or full C0 profile) is available.
+---
 
-## 7. Grant readiness checklist (current vs. missing)
+## 6. Public Goods Value for the Ethereum Ecosystem
 
-| Item | Now | Missing to submit |
-|---|---|---|
-| Public repository with MIT license | ✅ | none |
-| One-line reproducible command | ✅ `make -C transpile/c all && python3 lin_verify.py all` | install package? optional |
-| Standalone external verifier | ✅ `lin_verify.py` (stdlib) | PEP-517 installer only if requested |
-| Formal spec/EBNF + VM ISA | ⚠️ `.rulel` + `FORMAL_SPECIFICATION.md` | a frozen version (status `frozen`, not `proposed`) |
-| Differential fuzz harness | ⚠️ QOI/TinyExpr/Uniswap math/SipHash/xxHash + receipt | 100k vectors over shifts/division/profile C0 |
-| Independent external audit | ❌ | 1 small independent reviewer/company |
-| Published benchmark vs baseline | ❌ | honest benchmark (not speed-vs-LLVM; verification/audit cost) |
-| CI evidence on GitHub | ⚠️ local CI file exists but GitHub App lacks `workflows` permission | push a workflow or run this in a repo owned by the app owner |
-
-The proof never conflates "is ready for a grant" with "is ready for production".
-The most important remaining technical work is the C0 profile that exercises
-shifts/division and the 100k differential fuzz corpus, plus one external review.
-Those turn the current `NOT-PROVEN` Uniswap/OpenSSL claim into a measured claim.
-
-## 8. Evaluation
-A reviewer can verify every claim above by running:
-
-```bash
-make -C transpile/c all
-python3 lin_verify.py all --iterations 10000
-```
-
-and then reading `docs/RATIONALIST_PROOF_STATUS.md` for the exact not-proven
-list.
+1. **Client-Independent Auditability:** Enables researchers, DAOs, and protocol treasuries to independently verify on-chain trades without running archival infrastructure.
+2. **Defensive DeFi Analytics:** Distinguishes genuine AMM swaps from aggregator slippage, MEV sandwich extraction, and fee-on-transfer token anomalies with exact mathematical proofs.
+3. **Reproducible Public Datasets:** Publishes unpruned, verified datasets of on-chain activity for academic and industrial research.
+4. **100% Open Source:** Licensed under MIT/Apache 2.0 with all benchmarks reproducible with standard compilers.
