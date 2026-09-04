@@ -44,6 +44,19 @@ def rpc_call(method: str, params: list, ep_idx: int = 0):
             continue
     raise RuntimeError(f"Falha em todos os RPCs para método {method}")
 
+
+_BLOCK_HASH_CACHE: dict[int, str] = {}
+
+
+def resolve_block_hash(blk: int) -> str:
+    """Busca o hash real do bloco (0x-prefixed) via eth_getBlockByNumber, com cache."""
+    if blk in _BLOCK_HASH_CACHE:
+        return _BLOCK_HASH_CACHE[blk]
+    block = rpc_call("eth_getBlockByNumber", [hex(blk), False])
+    bh = block.get("hash", "")
+    _BLOCK_HASH_CACHE[blk] = bh
+    return bh
+
 def main():
     target_count = 50
     print(f"[*] Iniciando ingestão on-chain de {target_count} swaps reais da Mainnet...")
@@ -145,6 +158,7 @@ def main():
                 "id": len(dataset) + 1,
                 "tx_hash": txh,
                 "block": blk,
+                "block_hash": resolve_block_hash(blk),
                 "log_index": log_idx,
                 "pool": POOL_USDC_WETH,
                 "direction": f"{token_in_symbol}->{token_out_symbol}",

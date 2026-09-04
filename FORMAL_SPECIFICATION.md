@@ -6,10 +6,21 @@
 > This file is the cross-reference used by the grant proposal; it does not
 > replace the machine-readable `.rulel` artifacts.
 
-Status: **EXPERIMENTAL / not frozen**. The C11 Compiler-0 host
-(`transpile/c/bin/lin_c0`) is an audited subset of LINVM-1 that rejects integer
-division and shifts with explicit `VM_REJ_*` codes. The repository publishes
-this limitation rather than pretending it can execute every LIN module.
+Status: **FROZEN v1.0.0 (candidate)** — content pinned by digest in
+`docs/SPEC_FREEZE_1_0.rulel`. The two execution paths are distinct and both are
+in scope:
+
+- **Source-compiler host** (`transpile/c/bin/lin_c0`): an audited subset of
+  LINVM-1 whose default profile rejects integer division and shifts with
+  explicit `VM_REJ_*` codes (fail-closed). An experimental `vmfull` profile
+  accepts them.
+- **LINBC1 image host** (`transpile/c/bin/lin_bc1_run`): executes the full ISA
+  of a compiled `.linbc` image (including 64-bit shifts and the 256-bit
+  long-division of `u256_settlement_engine.linbc`), with the same fail-closed
+  load/step limits.
+
+The repository publishes these limits rather than pretending every LIN module
+executes on every host.
 
 ---
 

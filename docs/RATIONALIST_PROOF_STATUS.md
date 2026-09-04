@@ -154,11 +154,15 @@ than inventing a pass.
 
 The next real step to enlarge the claim set is no longer "make the C11 host
 accept division/shifts" — that now exists as the experimental `vmfull` profile.
-The remaining gaps are:
-1. a 100k-vector differential corpus over shifts/division;
-2. an actual audit-cost benchmark (verifying a receipt vs re-executing);
-3. a frozen formal spec (not `proposed`/`experimental`);
-4. one independent external review.
+Status of the remaining gaps:
+
+1. ✅ a 100k-vector differential corpus over shifts/division — **done**: 400,003
+   vectors (100k QOI + 100,003 Uniswap + 200k SipHash/xxHash), 0 divergences.
+2. ✅ an actual audit-cost benchmark — **done**: `benchmarks/audit_cost_benchmark.py`
+   measures verify ≈5.3 µs vs re-execute ≈26.4 ms (≈4,986×) on the u256 block.
+3. ✅ a frozen formal spec — **prepared**: `docs/SPEC_FREEZE_1_0.rulel` pins the
+   digests (status `FROZEN_CANDIDATE`, awaiting maintainer blessing).
+4. ❌ one independent external review — **open** (not automatable from here).
 
 Until those exist, this document is the honest maximum: **seven reproducible
 claims**, one explicit `NOT-PROVEN` scope line.

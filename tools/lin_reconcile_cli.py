@@ -1,9 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Lin-Audit CLI: Ferramenta Comercial de Conciliação Verificável de Operações DeFi
-Executa a imagem determinística LinVM (reconciler_engine.linbc) contra relatórios internos
-de bots de swap e eventos confirmados na blockchain.
+Lin-Audit CLI: Conciliação Verificável de Operações DeFi (open-source, MIT)
+Executa a imagem determinística LinVM (reconciler_engine.linbc) contra relatórios
+internos de bots de swap e eventos confirmados na blockchain.
+
+Escopo honesto (declarado):
+  - `classify_reconciliation` é um kernel escalar i64 (LINVM-1). Valores de
+    montante/report acima de 2^64-1 são truncados na entrada; o classificador
+    compara os 64 bits baixos. Para conciliação de 256 bits em precisão total,
+    use o motor multiword `u256_settlement_engine.linbc`. (A CLI avisa em runtime
+    se um valor exceder 2^64-1.)
+  - A folha LCR4 ancora o digest CANÔNICO da imagem (o que o loader verifica) e,
+    quando presente no dataset, o hash real do bloco. Sem `block_hash`, o recibo
+    é marcado `block_anchored=false` (não é prova de ancoragem on-chain).
 """
 
 from __future__ import annotations
@@ -33,6 +43,17 @@ STATUS_LABELS = {
     -5: "ERR_DECIMALS_SCALE (Decimals order of magnitude error)",
     -6: "ERR_GAS_DISCREPANCY (Gas budget exceeded)"
 }
+
+def canonical_image_digest() -> bytes:
+    """Digest CANÔNICO da imagem (o mesmo que o loader LINBC1 verifica em
+    `lin_bc1_run --verify`), NÃO o sha256 dos bytes crus do arquivo."""
+    out = subprocess.check_output(
+        [str(LIN_BC1_RUN), str(RECONCILER_BC1), "--verify"], text=True)
+    for token in out.split():
+        if token.startswith("img_sha256="):
+            return bytes.fromhex(token.split("=")[1].strip('"'))
+    raise RuntimeError("img_sha256 ausente na verificação LINBC1")
+
 
 def run_lin_classify(
     is_tx_success: int,
@@ -129,12 +150,11 @@ def main():
         sys.exit(1)
 
     items = json.loads(data_file.read_text())
-    img_bytes = RECONCILER_BC1.read_bytes()
-    img_digest = hashlib.sha256(img_bytes).digest()
+    img_digest = canonical_image_digest()
 
     print("=" * 80)
     print("  LIN-AUDIT CLI: CONCILIAÇÃO VERIFICÁVEL DE OPERAÇÕES DE SWAP")
-    print(f"  Regras LinVM Digest: {img_digest.hex()[:32]}...")
+    print(f"  Regras LinVM Digest (canônico/loader): {img_digest.hex()}")
     print(f"  Total de operações para auditoria: {len(items)}")
     print("=" * 80)
 
@@ -143,15 +163,33 @@ def main():
     counts = {k: 0 for k in STATUS_LABELS}
 
     t0 = time.perf_counter()
+    overflow_warned = False
     for item in items:
         actual_out = item["expected_out_real"]
         reported_out = item.get("reported_out", actual_out)
-        min_out = item.get("min_out", int(actual_out * (10000 - args.slippage_tol_bps) / 10000))
+        # Aritmética INTEIRA (sem float): min_out = actual_out * (10000 - bps) // 10000
+        min_out = item.get("min_out", actual_out * (10000 - args.slippage_tol_bps) // 10000)
         gas_used = item.get("gas_used", 150000)
         gas_budget = item.get("gas_budget", args.gas_budget)
         pool_match = 1 if item.get("pool_match", True) else 0
         tx_success = item.get("status_on_chain", 1)
         bot_success = item.get("bot_reported_success", 1)
+
+        # Aviso honesto: valores acima de 2^64-1 são truncados pelo kernel i64
+        for name, v in (("reported_out", reported_out), ("actual_out", actual_out), ("min_out", min_out)):
+            if v > 0xFFFFFFFFFFFFFFFF and not overflow_warned:
+                print(f"  [AVISO] Valor '{name}' > 2^64-1 em tx {item['tx_hash'][:16]}... "
+                      f"será truncado pelo classificador i64 (use o motor u256 para precisão total).")
+                overflow_warned = True
+
+        # Hash do bloco: usa o real se presente no dataset; senão marca não-ancorado
+        block_hash_hex = item.get("block_hash")
+        if block_hash_hex:
+            block_hash_bytes = bytes.fromhex(block_hash_hex[2:] if block_hash_hex.startswith("0x") else block_hash_hex)
+            block_anchored = True
+        else:
+            block_hash_bytes = b"\x00" * 32
+            block_anchored = False
 
         st = run_lin_classify(
             is_tx_success=tx_success,
@@ -169,7 +207,7 @@ def main():
 
         leaf = hashlib.sha256(DOM_LEAF + pack_leaf_lcr4(
             chain_id=1,
-            block_hash_bytes=b"\x00" * 32,
+            block_hash_bytes=block_hash_bytes,
             tx_hash_bytes=bytes.fromhex(item["tx_hash"][2:]),
             pool_addr_bytes=bytes.fromhex(item["pool"][2:]),
             log_index=item.get("log_index", 0),
@@ -184,6 +222,7 @@ def main():
         audit_results.append({
             "tx_hash": item["tx_hash"],
             "block": item["block"],
+            "block_anchored": block_anchored,
             "status_code": st,
             "status_label": STATUS_LABELS.get(st, f"UNKNOWN({st})"),
             "delta": delta,
@@ -192,12 +231,15 @@ def main():
 
     merkle_root = build_merkle_root(leaves)
     elapsed = time.perf_counter() - t0
+    anchored = sum(1 for r in audit_results if r["block_anchored"])
 
     report = {
         "metadata": {
             "lin_vm_image_digest": img_digest.hex(),
             "chain_id": 1,
             "total_swaps_audited": len(items),
+            "block_anchored": anchored,
+            "block_not_anchored": len(items) - anchored,
             "merkle_root_lcr4": merkle_root.hex(),
             "audit_duration_seconds": round(elapsed, 4),
             "generated_at_utc": time.strftime("%Y-%m-%d %H:%M:%SZ", time.gmtime())
@@ -214,6 +256,9 @@ def main():
         print(f"  • {label}: {c}")
     print("-" * 80)
     print(f"Raiz Merkle Auditável (LCR4): {merkle_root.hex()}")
+    if report["metadata"]["block_not_anchored"] > 0:
+        print(f"[AVISO] {report['metadata']['block_not_anchored']} recibos NÃO ancoram hash de bloco "
+              f"(block_anchored=false). Re-rode o ingestor com rede para resolver os hashes reais.")
     print(f"Relatório exportado em: {out_path.resolve()}")
     print("=" * 80)
 
