@@ -1,0 +1,20 @@
+@RULEL:RECONCILIATION_VALIDATION:0.1
+.result{
+  base_commit="a7254d63c6f420a9d8354c71c55220dbed6b08c4"
+  command="python3 test/pilot_harness/test_reconciliation_adversarial_7.py"
+  case_detection="7/7 controlled mutation categories"
+  false_positives="0/7 clean synthetic event records"
+  historical_arithmetic="4/4 exact in LIN and Python; authenticity unverified"
+  unsigned_comparisons=35
+  leaf_mutations_rejected=77
+  independent_negative_cases="record,path,root,image,legacy_version"
+  csv_cli="7 records matched; independent CLI verified 7 inclusions"
+  raw_image_sha256="eac14b5fdc3013b598c686f084fee24d4b149e345a4c33e25ab07045f1b5006a"
+  loader_domain_sha256="da8e6f5d1caf918eae24501337572b0280248fcd193f0075a238a520989700de"
+  live_rpc="not verified: HTTP 403"
+  customer_data="not supplied"
+  economic_benefit="not measured"
+  compiler_runtime_changes="none"
+  lcr4_version=2
+  commercial_ready=false
+}
