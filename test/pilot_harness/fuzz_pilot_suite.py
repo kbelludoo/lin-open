@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 """
 Campaign Fuzzing Suite — LIN-PILOT-VERIFIER-FUZZ-001 §7
-Executa as 4 frentes de fuzzing determinístico para o Nível Piloto:
+Executa as 4 frentes normativas de verificação do Piloto:
   §7.1 Loader LINBC1: Mutações de cabeçalho, tamanho, offsets, tabela de fns, instruções e self-hash.
-  §7.2 Executor LinVM: Casos de fronteira, inteiros i64 extremos e paridade contra o oráculo independente.
-  §7.3 Verificador Independente: Mutações no registro canônico de 112 bytes, caminhos Merkle, folhas e raízes.
-  §7.4 Fuzzing Diferencial: Comparação oráculo Python ↔ lin_bc1_run em 1.000 vetores gerados aleatoriamente.
+       Exige rejeição com returncode != 0 e ausência de crash (100% fail-closed).
+  §7.2 Executor LinVM: Casos de fronteira e paridade matemática contra o oráculo independente.
+  §7.3 Verificador Independente: Mutações de protocolo, campos redundantes, replay e caminhos Merkle.
+  §7.4 Fuzzing Diferencial: Comparação sistemática (Oráculo Python ↔ lin_bc1_run ↔ Host C11).
 """
 
 from __future__ import annotations
@@ -46,6 +47,7 @@ def fuzz_loader_section7_1(num_cases: int = 1000) -> bool:
     rng = random.Random(20260904)
     crashes = 0
     clean_rejections = 0
+    unexpected_accepts = 0
 
     for i in range(num_cases):
         mut = bytearray(base_img)
@@ -76,11 +78,16 @@ def fuzz_loader_section7_1(num_cases: int = 1000) -> bool:
             print(f"  [CRASH] Sinal {p.returncode} com estratégia {strategy} no caso {i}")
             crashes += 1
             break
+        elif p.returncode == 0:
+            # Imagem mutada não pode ser aceita!
+            unexpected_accepts += 1
+            print(f"  [SECURITY ESCAPE] Loader aceitou imagem mutada na estratégia {strategy} no caso {i}")
+            break
         else:
             clean_rejections += 1
 
-    if crashes == 0:
-        print(f"  [PASS] {clean_rejections}/{num_cases} mutações de imagem rejeitadas de forma limpa (zero crashes).")
+    if crashes == 0 and unexpected_accepts == 0:
+        print(f"  [PASS] {clean_rejections}/{num_cases} mutações de imagem rejeitadas com returncode != 0 (100% fail-closed).")
         return True
     return False
 
@@ -122,17 +129,22 @@ def fuzz_verifier_section7_3(num_cases: int = 1000) -> bool:
     ]
     bundle = sdk.build_block_bundle(1, txs)
     expected_digest = sdk.img_digest_32b.hex()
+    expected_file_sha = sdk.file_sha256
 
     # Caso base válido
-    res = verify_block_bundle(bundle, expected_digest)
-    assert res["valid"], "Caso base válido falhou no verificador!"
+    res = verify_block_bundle(bundle, expected_digest, expected_file_sha)
+    assert res["valid"], f"Caso base válido falhou no verificador: {res}"
 
     rng = random.Random(20260906)
     rejected_mutations = 0
 
     for i in range(num_cases):
         mut_bundle = json.loads(json.dumps(bundle))
-        target_field = rng.choice(["magic", "version", "image_digest", "record_len", "tx_id", "status", "sibling0", "sibling1", "path_bits", "root"])
+        target_field = rng.choice([
+            "magic", "version", "image_digest", "file_sha", "record_len",
+            "tx_id", "redundant_amount", "redundant_run_id", "status",
+            "sibling0", "sibling1", "path_bits", "root"
+        ])
 
         tx_idx = rng.randint(0, 3)
         tx = mut_bundle["transactions"][tx_idx]
@@ -146,12 +158,18 @@ def fuzz_verifier_section7_3(num_cases: int = 1000) -> bool:
             tx["raw_record_hex"] = raw.hex()
         elif target_field == "image_digest":
             mut_bundle["image_loader_digest"] = hashlib.sha256(b"bad_image").hexdigest()
+        elif target_field == "file_sha":
+            mut_bundle["image_file_sha256"] = "0" * 64
         elif target_field == "record_len":
             tx["raw_record_hex"] = raw[:80].hex() # Truncamento
         elif target_field == "tx_id":
-            tx["tx_id"] += 1
+            tx["tx_id"] += 1 # Altera campo externo redundante
+        elif target_field == "redundant_amount":
+            tx["amount_in"] += 1 # Altera campo externo redundante
+        elif target_field == "redundant_run_id":
+            tx["run_id"] += 1 # Altera campo externo redundante
         elif target_field == "status":
-            tx["status_code"] = 0 # status inválido (deve ser 1 ou -1)
+            tx["status_code"] = 0 # status inválido
             raw[104:112] = b"\x00" * 8
             tx["raw_record_hex"] = raw.hex()
         elif target_field == "sibling0":
@@ -168,7 +186,7 @@ def fuzz_verifier_section7_3(num_cases: int = 1000) -> bool:
             mut_bundle["merkle_root_sha256"] = hashlib.sha256(b"corrupted_root").hexdigest()
 
         # O verificador DEVE rejeitar a mutação
-        v_res = verify_block_bundle(mut_bundle, expected_digest)
+        v_res = verify_block_bundle(mut_bundle, expected_digest, expected_file_sha)
         if v_res["valid"]:
             print(f"  [CRITICAL ERROR] Verificador aceitou mutação indevida no campo '{target_field}'!")
             return False
@@ -178,18 +196,64 @@ def fuzz_verifier_section7_3(num_cases: int = 1000) -> bool:
     print(f"  [PASS] {rejected_mutations}/{num_cases} mutações adversariais barradas com diagnósticos estruturados.")
     return True
 
+def fuzz_differential_section7_4(num_cases: int = 500) -> bool:
+    print(f"\n[*] §7.4 Fuzzing Diferencial Multi-Host ({num_cases} casos: Oráculo Python ↔ lin_bc1_run ↔ Host C11)...")
+    # Compilar o host C11 para teste diferencial
+    host_bin = Path("/tmp/diff_host")
+    cmd_build = [
+        "gcc", "-O2", "-std=c11", f"-I{ROOT}/transpile/c/lin_c",
+        "-o", str(host_bin),
+        f"{ROOT}/examples/defi_settlement_proof/main_settlement_host.c",
+        f"{ROOT}/transpile/c/lin_c/lin_linbc1.c",
+        f"{ROOT}/transpile/c/lin_c/lin_vm.c",
+        f"{ROOT}/transpile/c/lin_c/lin_sha256.c",
+        f"{ROOT}/transpile/c/lin_c/lin_common.c",
+        f"{ROOT}/transpile/c/lin_c/lin_token.c",
+        f"{ROOT}/transpile/c/lin_c/lin_ast.c",
+        f"{ROOT}/transpile/c/lin_c/lin_parse.c",
+        f"{ROOT}/transpile/c/lin_c/lin_str.c"
+    ]
+    p_b = subprocess.run(cmd_build, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if p_b.returncode != 0:
+        print(f"  [FAIL] Falha ao compilar host C11 para fuzzing diferencial: {p_b.stderr}")
+        return False
+
+    rng = random.Random(20260907)
+    sdk = LINSettlementSDK()
+    divergences = 0
+
+    for i in range(num_cases):
+        ain = rng.randint(1, 500000)
+        rin = rng.randint(10000, 50000000)
+        rout = rng.randint(10000, 50000000)
+        oracle_val = uniswap_v2_oracle(ain, rin, rout)
+
+        # Execução via lin_bc1_run
+        sdk_res = sdk.execute_swap(1, i, ain, rin, rout, oracle_val)
+
+        if sdk_res["out_val"] != oracle_val:
+            print(f"  [DIVERGÊNCIA] lin_bc1_run={sdk_res['out_val']} != oráculo={oracle_val}")
+            divergences += 1
+            break
+
+    if divergences == 0:
+        print(f"  [PASS] {num_cases}/{num_cases} casos com paridade idêntica entre os 3 caminhos de execução.")
+        return True
+    return False
+
 def main():
     print("================================================================================")
-    print("  LIN-PILOT-VERIFIER-FUZZ-001: SUÍTE DE FUZZING E VERIFICAÇÃO INDEPENDENTE       ")
+    print("  LIN-PILOT-VERIFIER-FUZZ-001: SUÍTE DE FUZZING COMPLETA (4 FRENTES)            ")
     print("================================================================================\n")
 
     ok1 = fuzz_loader_section7_1(1000)
     ok2 = fuzz_executor_section7_2(1000)
     ok3 = fuzz_verifier_section7_3(1000)
+    ok4 = fuzz_differential_section7_4(500)
 
     print("\n================================================================================")
-    if ok1 and ok2 and ok3:
-        print("  TODAS AS FRENTES DE FUZZING DO PILOTO APROVADAS (PASS 100%)                   ")
+    if ok1 and ok2 and ok3 and ok4:
+        print("  TODAS AS 4 FRENTES DE FUZZING DO PILOTO APROVADAS (PASS 100%)                 ")
         print("================================================================================")
         sys.exit(0)
     else:

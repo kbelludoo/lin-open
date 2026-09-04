@@ -133,10 +133,10 @@ def test_group3_merkle_cryptographic_integrity() -> bool:
     sdk = LINSettlementSDK()
 
     txs = [
-        sdk.execute_swap(5001, 1000, 100000, 200000, 1970),
-        sdk.execute_swap(5002, 2500, 100000, 200000, 4800),
-        sdk.execute_swap(5003, 5000, 100000, 200000, 9900),
-        sdk.execute_swap(5004, 1200, 150000, 300000, 2300)
+        sdk.execute_swap(1, 5001, 1000, 100000, 200000, 1970),
+        sdk.execute_swap(1, 5002, 2500, 100000, 200000, 4800),
+        sdk.execute_swap(1, 5003, 5000, 100000, 200000, 9900),
+        sdk.execute_swap(1, 5004, 1200, 150000, 300000, 2300)
     ]
     bundle = sdk.build_block_bundle(10, txs)
     root = bundle["merkle_root_sha256"]
