@@ -1,0 +1,110 @@
+@LIN:L1c:0.2
+@AMM_SETTLEMENT_CORE{
+  domain="defi:amm:settlement"
+  spec="uniswap_v2_exact_input"
+  tamper_resistance="strict"
+}
+
+// 1. get_amount_out: Calcula saida Uniswap V2 (x * y = k com taxa 0.3%)
+// Implementacao com divisao binaria deterministica pura (compativel com perfil LINVM-1 e emissao LINBC1)
+!get_amount_out(amount_in: int, reserve_in: int, reserve_out: int) -> int {
+  ?((amount_in <= 0) | (reserve_in <= 0) | (reserve_out <= 0)) {
+    ^ 0;
+  };
+  in_fee = amount_in * 997;
+  num = in_fee * reserve_out;
+  den = (reserve_in * 1000) + in_fee;
+  ?((den <= 0) | (num <= 0)) {
+    ^ 0;
+  };
+
+  quot = 0;
+  rem = num;
+  k = 0;
+  cur_den = den;
+  while (cur_den <= _lia_shr(rem, 1)) {
+    cur_den = cur_den * 2;
+    k = k + 1;
+  };
+
+  while (k >= 0) {
+    ?(rem >= cur_den) {
+      rem = rem - cur_den;
+      quot = quot + _lia_shl(1, k);
+    };
+    cur_den = _lia_shr(cur_den, 1);
+    k = k - 1;
+  };
+
+  ^quot;
+}
+
+// 2. settle_swap: Liquida swap verificando tolerancia de slippage (retorna amount_out ou -1 fail-closed)
+!settle_swap(amount_in: int, reserve_in: int, reserve_out: int, min_out: int) -> int {
+  ?((amount_in <= 0) | (reserve_in <= 0) | (reserve_out <= 0) | (min_out <= 0)) {
+    ^ -1;
+  };
+  in_fee = amount_in * 997;
+  num = in_fee * reserve_out;
+  den = (reserve_in * 1000) + in_fee;
+  ?((den <= 0) | (num <= 0)) {
+    ^ -1;
+  };
+
+  quot = 0;
+  rem = num;
+  k = 0;
+  cur_den = den;
+  while (cur_den <= _lia_shr(rem, 1)) {
+    cur_den = cur_den * 2;
+    k = k + 1;
+  };
+
+  while (k >= 0) {
+    ?(rem >= cur_den) {
+      rem = rem - cur_den;
+      quot = quot + _lia_shl(1, k);
+    };
+    cur_den = _lia_shr(cur_den, 1);
+    k = k - 1;
+  };
+
+  ?(quot < min_out) {
+    ^ -1;
+  };
+  ^quot;
+}
+
+// 3. hash_pair: Primitiva de hashing deterministica para composicao de arvore Merkle
+!hash_pair(left: int, right: int) -> int {
+  v = (left * 2146129197) ^ (right * 2221712011);
+  v = (v ^ _lia_shr(v, 16)) * 16843009;
+  ^(v ^ _lia_shr(v, 15)) & 4294967295;
+}
+
+// 4. verify_merkle_branch_2: Validacao de prova Merkle de profundidade 2 (4 transacoes por lote)
+!verify_merkle_branch_2(leaf: int, s0: int, s1: int, path_bits: int, expected_root: int) -> int {
+  curr = leaf;
+
+  ?( (path_bits & 1) == 0 ) {
+    curr = (curr * 2146129197) ^ (s0 * 2221712011);
+  } : {
+    curr = (s0 * 2146129197) ^ (curr * 2221712011);
+  };
+  curr = (curr ^ _lia_shr(curr, 16)) * 16843009;
+  curr = (curr ^ _lia_shr(curr, 15)) & 4294967295;
+
+  ?( (_lia_shr(path_bits, 1) & 1) == 0 ) {
+    curr = (curr * 2146129197) ^ (s1 * 2221712011);
+  } : {
+    curr = (s1 * 2146129197) ^ (curr * 2221712011);
+  };
+  curr = (curr ^ _lia_shr(curr, 16)) * 16843009;
+  curr = (curr ^ _lia_shr(curr, 15)) & 4294967295;
+
+  is_valid = 0;
+  ?(curr == expected_root) { is_valid = 1; };
+  ^is_valid;
+}
+
+=ex{get_amount_out, settle_swap, hash_pair, verify_merkle_branch_2}

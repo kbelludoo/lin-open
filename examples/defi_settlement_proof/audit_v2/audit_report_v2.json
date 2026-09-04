@@ -1,0 +1,185 @@
+{
+  "schema": "lin:defi:settlement:audit:v2",
+  "stages": {
+    "0_determinism": {
+      "image_bytes": 3098,
+      "file_sha256": "a5095750c28526c056f9e06163752109b4e1f1faf9537cc74bf0084037f91227",
+      "domain_sha256": "d41fbfe856155828301e0d91248980b25e9b6cf2f9390676f510b46761e55a6f",
+      "bit_exact_recompile": true,
+      "embedded_tail_matches": true
+    },
+    "1_execution": {
+      "total_txs": 200,
+      "settled": 172,
+      "rejected_fail_closed": 28,
+      "parity_vs_bignum_oracle": "100% (domínio seguro)",
+      "spawn_ms_total": 229.12,
+      "spawn_us_per_tx": 1145.6
+    },
+    "1b_boundary_frozen": {
+      "G1_reserve_in_zero": {
+        "in": [
+          1000,
+          0,
+          200000,
+          1970
+        ],
+        "vm": 200000,
+        "esperado_contrato": -1,
+        "achado": "VULNERABILIDADE: paga 200000 contra reserva ZERO — guardas invertidas"
+      },
+      "G2_get_amount_out_reserve_zero": {
+        "vm": 200000,
+        "esperado_contrato": 0
+      },
+      "B1_max_safe_num": {
+        "in": [
+          1,
+          1000003,
+          9251125413094057
+        ],
+        "oracle": 9223335171,
+        "vm": 9223335171,
+        "parity": true
+      },
+      "B2_num_overflow": {
+        "oracle": 9223335171,
+        "vm_frozen": -1,
+        "num_wrapped_i64": -9223372036854775790,
+        "fail_closed": true
+      },
+      "B3_den_overflow_negative": {
+        "oracle": 0,
+        "vm_frozen": 999,
+        "fail_closed": false,
+        "nota": "contrato diz -1; guarda invertida deixa passar"
+      },
+      "B4_den_wraps_positive": {
+        "in": [
+          1,
+          4611686018427387904,
+          100000
+        ],
+        "oracle": 0,
+        "vm_frozen": 100000,
+        "direção": "PAGAMENTO EM EXCESSO — indetectável in-range; domínio seguro é obrigatório"
+      }
+    },
+    "1c_fixed": {
+      "source_change": "4 guardas com parênteses explícitos; nada mais",
+      "image_sha256": "774ae8311b70df965df73df8f63064219d1ca61408b2fd44bac8c7bfa44184cb",
+      "image_bytes": 3098,
+      "B4_fixed": {
+        "vm": 100000,
+        "nota": "wrap-positivo segue indetectável in-range (esperado)"
+      },
+      "vectors": {
+        "G1": -1,
+        "G2": 0,
+        "B2": -1,
+        "B3": -1,
+        "B4": 100000
+      },
+      "batch_parity_mismatches": 0
+    },
+    "2_merkle_v2": {
+      "blocks": 50,
+      "proofs_ok": 200,
+      "total": 200,
+      "batch_root": "7ec7ed3e6f6dc280e2af8cb4904e404c73db084fcbbdf7b1f1921839388da619",
+      "leaf_binding": "blk,idx,tx_id,amount_in,reserve_in,reserve_out,min_out,out,steps,img_sha256",
+      "complexity": "O(log N) por prova"
+    },
+    "3_adversarial": {
+      "attacks_total": 1027,
+      "attacks_detected": 1027,
+      "detection_rate": "100.00%",
+      "cases": [
+        "tamper ±1 (todas txs)",
+        "folha aleatória ×200",
+        "prova de outra posição ×~300",
+        "path_bits adulterado ×~200",
+        "raiz estrangeira",
+        "replay entre blocos",
+        "pb fora do domínio"
+      ],
+      "method": "verificador fail-closed com SHA-256 e domínio separado"
+    },
+    "4_audit_cost": {
+      "us_per_proof_min": 1.64,
+      "us_per_proof_p50": 1.993,
+      "us_per_proof_p95": 2.369,
+      "rounds": 15,
+      "proofs_per_round": 200,
+      "complexity": "O(log N)"
+    },
+    "5_c_independent": {
+      "roots_bit_exact": true,
+      "batch_root": "7ec7ed3e6f6dc280e2af8cb4904e404c73db084fcbbdf7b1f1921839388da619",
+      "verify_ns_p50": 1129.0,
+      "exec_ns_p50": 1518.0,
+      "ratio_reexec_vs_audit": 1.34,
+      "sha_impl": "lin_sha256.c (FIPS 180-4) vs hashlib — raízes idênticas"
+    },
+    "6_forensics": {
+      "legacy_collision_attack": {
+        "PREIMAGE_SANITY": "1",
+        "TARGET_LEAF": "1513302880",
+        "PREIMAGE_FOUND": "1",
+        "FORGED_OUT": "6599848918",
+        "LEGACY_VERIFIER_ACCEPTS_FRAUD": "1",
+        "VEREDITO": "hash"
+      },
+      "sha256_budget_attack": "SHA_BUDGET probes=50000000 found=0 tempo=139.63s custo_esperado=2^256",
+      "corrected_claim": "detecção é propriedade da resistência a colisões do hash; 32 bits → quebrado; SHA-256 → 2^256"
+    },
+    "7_runtime": {
+      "image_hardening": [
+        "HARDENING trailing=64 rejected=64",
+        "HARDENING passed=1"
+      ],
+      "no_heap": [
+        "NOHEAP delta_malloc=0 delta_calloc=0 delta_realloc=0 delta_free=0 delta_memalign=0 delta_strdup=0",
+        "NOHEAP total_heap_ops=0 passed=1"
+      ]
+    }
+  },
+  "verdict": "PASS",
+  "env": {
+    "utc": "2026-09-04T01:03:25.339948+00:00",
+    "python": "3.11.2",
+    "machine": "x86_64",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.60GHz"
+  },
+  "findings": [
+    {
+      "id": "F1",
+      "severidade": "alta",
+      "titulo": "Guardas fail-closed invertidas na imagem congelada",
+      "causa": "no front-end C0, '|' tem precedência MAIOR que '<='; '?(den <= 0 | num <= 0)' compila como (den <= (0|num)) <= 0",
+      "evidencia": "settle_swap(1000, 0, 200000, 1970) = 200000 contra reserva ZERO; den wrap negativo não é rejeitado",
+      "correção": "settlement_engine_fixed.lin (parênteses explícitos), sha256=774ae8311b70df965df73df8f63064219d1ca61408b2fd44bac8c7bfa44184cb"
+    },
+    {
+      "id": "F2",
+      "severidade": "alta",
+      "titulo": "Hash legado de 32 bits não resiste a adversário ativo",
+      "evidencia": "segunda pré-imagem forjada em 12.2s (~2^32 sondas) aceita pelo verificador do v1",
+      "correção": "camada de auditoria migra para SHA-256 com domínio separado e folhas que comprometem todas as entradas"
+    },
+    {
+      "id": "F3",
+      "severidade": "média",
+      "titulo": "Wrap i64 para positivo é indetectável in-range (mesmo com guardas corretas)",
+      "evidencia": "reserve_in=2^62 → den vira 997 e o motor paga a mais vs matemática exata",
+      "correção": "domínio seguro declarado e imposto fail-closed na camada de auditoria"
+    },
+    {
+      "id": "F4",
+      "severidade": "baixa",
+      "titulo": "Claims v1 imprecisos",
+      "evidencia": "'Merkle real com SHA-256' era hash próprio de 32 bits; 'tempo constante' é O(log N); 'detecção 100%' não media resistência a adversário",
+      "correção": "claims corrigidos nesta auditoria v2"
+    }
+  ]
+}
