@@ -75,7 +75,45 @@ produção diretamente contra o bytecode Solidity na EVM:
 
     PRODUCTION_SOLIDITY_VALUE=1662497915624478906
     PRODUCTION_U256_VALUE=1662497915624478906
-    PRODUCTION_U256_PARITY=PASS
+PRODUCTION_U256_PARITY=PASS
+
+## ABI C11 de execução única
+
+O próximo bloqueador do adaptador foi removido no branch: o kernel
+`examples/defi_settlement_proof/u256_settlement_engine.lin` recebe os três
+`uint256` como 12 palavras brutas e devolve o status na pilha. O host C11
+captura o primeiro array local de 16 limbs dentro da mesma chamada da LinVM e
+reconstrói os 32 bytes big-endian. A imagem congelada fica em
+`examples/defi_settlement_proof/u256_settlement_engine.linbc`.
+
+O comando de reprodução é:
+
+    make -C transpile/c u256
+    python3 examples/defi_settlement_proof/test_u256_host.py
+
+Resultado observado no seed `20260904`:
+
+    U256_SINGLE_EXECUTION=PASS
+    VECTORS=1000
+    VALID=500
+    INVALID_ZERO=3
+    OVERFLOW=497
+
+O vetor de produção também passou bit a bit no wrapper de execução única:
+
+    status=0
+    amount_out=1662497915624478906
+    steps=236235
+    receipt_sha256=sha256:ab99535ccc93e52cf689a5053f1985bc94d7ca9d540017ad920626afd7608a0a
+    execution=single_vm_call
+
+O host foi compilado com GCC ASan/UBSan e os mesmos 1.000 vetores passaram
+sem erro de memória ou undefined behavior. Para cada vetor, o host também
+emite `program_sha256`, `loader_digest`, `input_sha256` e `receipt_sha256`.
+O harness recalcula esses campos independentemente a partir dos bytes da
+imagem, dos 96 bytes de entrada, do status, da saída e dos passos. O receipt
+existente do piloto escalar permanece compatível e separado dessa codificação
+U256.
 
 ## Conclusão técnica
 
@@ -87,14 +125,14 @@ MEV, segurança do protocolo ou desempenho superior a Solidity/C/Rust.
 O primeiro bloqueador foi resolvido no protótipo: a rota `u256` reproduz o
 valor de produção bit a bit. A rota escalar original continua deliberadamente
 marcada como `BLOCKED_UINT256` e retorna 0 nesse vetor. A semântica de erro do
-adaptador já não confunde erro com resultado zero, mas ainda é uma ABI de
-experimento que devolve um limb por chamada.
+adaptador já não confunde erro com resultado zero. A ABI C11 nova remove a
+necessidade de 16 chamadas separadas; o resultado multiword é capturado em uma
+única execução da LinVM.
 
 ## Próximo passo de implementação
 
-O próximo trabalho para produção é mover a representação para uma ABI nativa
-de resultado (status + 32 bytes), adicionar `u256` ao perfil executável do LIN
-e gerar um `LINBC1`/receipt desse perfil. O critério de aceitação é preservar o
-resultado acima, os 132 vetores já aprovados, os códigos de overflow e uma
-verificação independente do receipt. O passo a passo está em
-`IMPLEMENTATION.md`.
+O próximo trabalho para produção é medir o caminho completo contra o baseline
+C/Rust e conectar o receipt a um verificador externo de serviço. O critério de
+aceitação é preservar o resultado acima, os 132 vetores Solidity/EVM já
+aprovados, os códigos de overflow, a execução única e a verificação
+independente do receipt. O passo a passo está em `IMPLEMENTATION.md`.

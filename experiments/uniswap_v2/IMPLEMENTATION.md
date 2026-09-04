@@ -89,7 +89,45 @@ get_amount_out_u256_limb(
 Ela deve ser substituída por uma chamada nativa que devolva status e os 32
 bytes do resultado em uma única execução.
 
-## 4. Trocar a ABI de experimento por ABI de produção
+### Implementação entregue: execução única
+
+Essa troca agora está implementada em:
+
+- `examples/defi_settlement_proof/u256_settlement_engine.lin`: kernel com
+  12 palavras de entrada e oito arrays locais; o primeiro array contém os 16
+  limbs de saída.
+- `transpile/c/lin_c/lin_vm.h` e `lin_vm.c`: API opt-in
+  `vm_exec_capture_array`, que copia um array local antes de o frame ser
+  descartado e mantém `vm_exec` compatível.
+- `examples/defi_settlement_proof/u256_host.c`: ABI C11 para três `bytes32`,
+  com loader LINBC1, conversão big-endian/little-endian, status e digest da
+  imagem.
+
+Recompile a imagem e o wrapper assim:
+
+```bash
+cd /workspace/scratch/ef3df4f50f2b/lin-open
+make -C transpile/c u256
+python3 examples/defi_settlement_proof/test_u256_host.py
+```
+
+O teste executa 1.000 vetores contra um oráculo inteiro Python. Para chamar um
+caso individual, use três valores hexadecimais de exatamente 32 bytes:
+
+```bash
+transpile/c/bin/u256_host \
+  examples/defi_settlement_proof/u256_settlement_engine.linbc \
+  0x0000000000000000000000000000000000000000000000000de0b6b3a7640000 \
+  0x0000000000000000000000000000000000000000000000004563918244f40000 \
+  0x0000000000000000000000000000000000000000000000008ac7230489e80000
+```
+
+O resultado canônico esperado para esse caso é
+`status=0`, `amount_out=0x...1712610bc49fd8ba`, `execution=single_vm_call`.
+O código de captura não altera a ABI escalar existente; ele apenas torna
+observável, com limite explícito, a saída multiword da chamada U256.
+
+## 4. ABI de produção
 
 Hoje o runner chama o LIN 16 vezes para recuperar os 16 limbs. Para produção,
 adicione uma destas duas interfaces ao host:
@@ -112,15 +150,20 @@ primeira opção é menor e mais simples para o C0 atual. O host deve:
 Não converta `uint256` para `double`, `Number` ou `int64` em nenhum ponto do
 caminho de liquidação.
 
+O wrapper entregue em `examples/defi_settlement_proof/u256_host.c` implementa
+essa fronteira: recebe os três argumentos como hex `bytes32`, transporta os
+bits em palavras brutas e só reconstrói o valor unsigned ao serializar a
+resposta.
+
 ## 5. Gerar receipt verificável
 
 O receipt de produção precisa incluir, no domínio hash, pelo menos:
 
 ```text
-domain = "lin:settlement:v1"
+domain = "lin:settlement:v1:"
 program_sha256
 input_sha256(amount32 || reserveIn32 || reserveOut32)
-status
+status_i64_le
 amountOut32
 steps
 ```
@@ -135,9 +178,17 @@ verificador deve rejeitar:
 - output alterado;
 - contagem de passos alterada.
 
-O receipt atual de `lin_c_receipt` prova apenas a expressão escalar de teste;
-ele não deve ser apresentado como prova da execução `uint256` até receber a
-codificação acima.
+O wrapper U256 agora emite essa codificação para cada execução. O domínio
+usado é `lin:settlement:v1:` e o payload fixo é:
+
+```text
+domain || program_sha256 || input_sha256 || status_i64_le || amountOut32 || steps_u64_le
+```
+
+O `program_sha256` é o SHA-256 dos bytes completos da imagem LINBC1; o
+`loader_digest` adicional é o digest do domínio `linbc1:img:` calculado pelo
+loader fail-closed. O harness Python recalcula os dois digests, a entrada e o
+receipt sem confiar no host C11.
 
 ## 6. Testes obrigatórios antes de chamar de produção
 
@@ -156,11 +207,17 @@ Também rode pelo menos 1.000 vetores aleatórios `uint256` com classificação
 separada entre casos válidos, overflow e divisão inválida. Só aceite parity
 quando o status e os 32 bytes do output forem iguais.
 
+O harness entregue já cobre essa classificação: no seed fixo `20260904`, o
+resultado observado foi `VALID=500`, `INVALID_ZERO=3` e `OVERFLOW=497`, com
+paridade de status e saída em todos os 1.000 vetores.
+
 ## 7. Critério comercial realista
 
 Depois dos testes, medir custo e latência do caminho completo: decodificação,
-execução, receipt e verificação. A vantagem demonstrada hoje é determinismo,
-reprodutibilidade e execução sem Zig no host C11. Ainda não foi demonstrada
-redução de gás on-chain, resistência a MEV, segurança econômica ou throughput
-superior a Rust/C. Essas alegações só podem entrar na oferta após benchmarks e
-auditoria independentes.
+execução, receipt e verificação. A vantagem demonstrada agora é determinismo,
+reprodutibilidade, execução U256 em uma única chamada e execução sem Zig no
+host C11. Ainda não foi demonstrada redução de gás on-chain, resistência a
+MEV, segurança econômica ou throughput superior a Rust/C. O receipt de
+produção da ABI U256 já é emitido e verificado pelo harness; comparação de
+desempenho contra C/Rust e integração do receipt em um serviço externo
+continuam sendo etapas separadas antes de uma oferta comercial.
