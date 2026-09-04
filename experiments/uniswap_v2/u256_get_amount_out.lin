@@ -1,39 +1,38 @@
 @LIN:MODULE:2.0.0
-@AMM_SETTLEMENT_U256{
-  purpose="Uniswap V2 exact-input settlement with uint256 limbs"
+@U256_EXPERIMENT{
+  purpose="Uniswap V2 getAmountOut with 256-bit unsigned limbs"
   representation="16 little-endian limbs of 16 bits"
-  abi="three uint256 inputs as four raw u64 words each"
-  output="first local array: 16 little-endian uint16 limbs"
-  status="0 success, -1 invalid zero input, -2 uint256 overflow"
+  abi="each uint256 is four signed i64 words containing its raw u64 limbs"
 }
 
-// One LinVM call computes the complete uint256 result.  The host wrapper
-// captures the first local array at return; no per-limb process or VM calls
-// are needed.
-!settle_u256(
+// Return one 16-bit limb of the uint256 result.
+// The caller invokes out_limb=0..15 and reconstructs the result.
+// Negative returns are deterministic rejection sentinels:
+// -1 invalid input, -2 uint256 multiplication overflow.
+!get_amount_out_u256_limb(
   amount_w0: int, amount_w1: int, amount_w2: int, amount_w3: int,
   reserve_in_w0: int, reserve_in_w1: int, reserve_in_w2: int, reserve_in_w3: int,
-  reserve_out_w0: int, reserve_out_w1: int, reserve_out_w2: int, reserve_out_w3: int
+  reserve_out_w0: int, reserve_out_w1: int, reserve_out_w2: int, reserve_out_w3: int,
+  out_limb: int
 ) -> int {
-  // Keep this array first: the C11 ABI captures local array 12.
-  quotient: [16]int;
   amount: [16]int;
   reserve_in: [16]int;
   reserve_out: [16]int;
   fee_amount: [16]int;
   denominator: [16]int;
   remainder: [16]int;
+  quotient: [16]int;
   numerator: [32]int;
 
   i = 0;
   while (i < 16) {
-    quotient[i] = 0;
     amount[i] = 0;
     reserve_in[i] = 0;
     reserve_out[i] = 0;
     fee_amount[i] = 0;
     denominator[i] = 0;
     remainder[i] = 0;
+    quotient[i] = 0;
     i = i + 1;
   };
   i = 0;
@@ -71,9 +70,9 @@
     i = i + 1;
   };
 
-  ?((amount_w0 == 0) & (amount_w1 == 0) & (amount_w2 == 0) & (amount_w3 == 0)) { ^-1; };
-  ?((reserve_in_w0 == 0) & (reserve_in_w1 == 0) & (reserve_in_w2 == 0) & (reserve_in_w3 == 0)) { ^-1; };
-  ?((reserve_out_w0 == 0) & (reserve_out_w1 == 0) & (reserve_out_w2 == 0) & (reserve_out_w3 == 0)) { ^-1; };
+  ?(amount_w0 == 0 && amount_w1 == 0 && amount_w2 == 0 && amount_w3 == 0) { ^-1; };
+  ?(reserve_in_w0 == 0 && reserve_in_w1 == 0 && reserve_in_w2 == 0 && reserve_in_w3 == 0) { ^-1; };
+  ?(reserve_out_w0 == 0 && reserve_out_w1 == 0 && reserve_out_w2 == 0 && reserve_out_w3 == 0) { ^-1; };
 
   carry = 0;
   i = 0;
@@ -107,12 +106,10 @@
       j = j + 1;
     };
     k = i + 16;
-    while (k < 32) {
-      ?(carry != 0) {
-        t = numerator[k] + carry;
-        numerator[k] = t & 65535;
-        carry = _lia_ushr(t, 16);
-      };
+    while (k < 32 && carry != 0) {
+      t = numerator[k] + carry;
+      numerator[k] = t & 65535;
+      carry = _lia_ushr(t, 16);
       k = k + 1;
     };
     i = i + 1;
@@ -169,7 +166,7 @@
     bit = bit - 1;
   };
 
-  ^0;
+  ^quotient[out_limb];
 }
 
-=ex{settle_u256}
+=ex{get_amount_out_u256_limb}

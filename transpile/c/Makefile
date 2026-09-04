@@ -21,6 +21,12 @@ BC1T   = bin/test_linbc1
 # Compiler 0 host: compiles and runs .lin source WITHOUT Zig (V2/V5 path).
 C0     = bin/lin_c0
 
+# Single-execution U256 settlement ABI (no Zig, no per-limb subprocesses).
+U256_SOURCE = ../../examples/defi_settlement_proof/u256_settlement_engine.lin
+U256_IMAGE  = ../../examples/defi_settlement_proof/u256_settlement_engine.linbc
+U256_HOST   = bin/u256_host
+U256_HOST_SRC = ../../examples/defi_settlement_proof/u256_host.c
+
 all: $(TARGET) $(EDGE) $(SHA) $(XVER) $(BC1) $(BC1T) $(C0)
 
 $(TARGET): test/test_c_expr.c $(SRCS) $(HDRS)
@@ -80,11 +86,22 @@ $(C0): $(C0_SRCS) $(C0_HDRS)
 
 c0: $(C0)
 
+$(U256_HOST): $(U256_HOST_SRC) $(SRCS) $(HDRS) $(BC1_SRCS) $(BC1_HDRS)
+	@mkdir -p bin
+	$(CC) $(CFLAGS) $(C0FLAGS) -o $@ $(U256_HOST_SRC) $(SRCS) $(BC1_SRCS)
+
+u256-image: $(C0) $(U256_SOURCE)
+	$(C0) image $(U256_SOURCE) -o $(U256_IMAGE)
+
+u256-host: $(U256_HOST)
+
+u256: u256-image u256-host
+
 # The three no-Zig gates, in one command (nothing below touches `zig`).
 test-c0: $(C0)
 	@../../test/verify_c0.sh $(C0)
 
-.PHONY: c0 test-c0
+.PHONY: c0 u256-image u256-host u256 test-c0
 
 # G(V1): golden vectors + corrupted-image fuzz (100% fail-closed).
 test-linbc1: $(BC1T)
