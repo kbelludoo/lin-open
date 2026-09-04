@@ -96,12 +96,14 @@ Essa troca agora está implementada em:
 - `examples/defi_settlement_proof/u256_settlement_engine.lin`: kernel com
   12 palavras de entrada e oito arrays locais; o primeiro array contém os 16
   limbs de saída.
-- `transpile/c/lin_c/lin_vm.h` e `lin_vm.c`: API opt-in
-  `vm_exec_capture_array`, que copia um array local antes de o frame ser
-  descartado e mantém `vm_exec` compatível.
 - `examples/defi_settlement_proof/u256_host.c`: ABI C11 para três `bytes32`,
-  com loader LINBC1, conversão big-endian/little-endian, status e digest da
-  imagem.
+  com loader LINBC1, conversão big-endian/little-endian, status, digest da
+  imagem e um loop de captura limitado ao formato dessa imagem.
+
+O núcleo genérico protegido do C11 não foi alterado: o host de exemplo faz a
+captura local em uma passagem sobre os opcodes necessários ao kernel U256. Isso
+evita exigir uma nova atestação do toolchain enquanto mantém a imagem LINBC1 e
+os limites de array sob validação do loader.
 
 Recompile a imagem e o wrapper assim:
 

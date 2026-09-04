@@ -133,25 +133,13 @@ static int64_t vm_ushr(int64_t a, int64_t b) {
     return (int64_t)((uint64_t)a >> (unsigned)b);
 }
 
-static LinErr vm_exec_internal(const VmModule *mod, size_t fi,
-                               const int64_t *args, size_t args_len,
-                               size_t depth, uint64_t *steps,
-                               VmExecResult *out, size_t capture_local,
-                               int64_t *capture, size_t capture_cap,
-                               size_t *capture_len) {
+LinErr vm_exec(const VmModule *mod, size_t fi, const int64_t *args, size_t args_len,
+               size_t depth, uint64_t *steps, VmExecResult *out) {
     if (depth > LIN_VM_MAX_DEPTH) return LIN_ERR_VM_DEPTH;
     if (fi >= mod->fns_len) return LIN_ERR_VM_BAD_FN;
     const VmFn *f = &mod->fns[fi];
     if (!f->ok) return LIN_ERR_VM_BAD_FN;
     if (args_len != f->nparams) return LIN_ERR_VM_ARITY;
-    if (capture_len != NULL) *capture_len = 0;
-    if (capture_local != LIN_VM_CAPTURE_NONE) {
-        if (capture == NULL || capture_len == NULL ||
-            capture_local >= f->arr_n_len || f->arr_n[capture_local] == 0 ||
-            (size_t)f->arr_n[capture_local] > capture_cap) {
-            return LIN_ERR_VM_BAD_FN;
-        }
-    }
 
     int64_t locals[LIN_VM_MAX_LOCALS];
     for (size_t i = 0; i < LIN_VM_MAX_LOCALS; i++) locals[i] = 0;
@@ -249,17 +237,6 @@ static LinErr vm_exec_internal(const VmModule *mod, size_t fi,
 
         case OP_RET:
             if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
-            if (capture_local != LIN_VM_CAPTURE_NONE) {
-                size_t slot = (size_t)locals[capture_local];
-                uint16_t n = f->arr_n[capture_local];
-                if (slot >= LIN_VM_MAX_ARRS || pool_len[slot] != n) {
-                    return LIN_ERR_VM_BAD_FN;
-                }
-                for (size_t z = 0; z < (size_t)n; z++) {
-                    capture[z] = pool[slot][z];
-                }
-                *capture_len = n;
-            }
             out->val = stack[sp - 1];
             out->sp_at_ret = sp;
             return LIN_OK;
@@ -364,36 +341,10 @@ static LinErr vm_exec_internal(const VmModule *mod, size_t fi,
         }
     }
 
-    if (capture_local != LIN_VM_CAPTURE_NONE) {
-        size_t slot = (size_t)locals[capture_local];
-        uint16_t n = f->arr_n[capture_local];
-        if (slot >= LIN_VM_MAX_ARRS || pool_len[slot] != n) {
-            return LIN_ERR_VM_BAD_FN;
-        }
-        for (size_t z = 0; z < (size_t)n; z++) {
-            capture[z] = pool[slot][z];
-        }
-        *capture_len = n;
-    }
     /* Zig fallthrough (code ended without `ret`): val=0, sp_at_ret=sp */
     out->val = 0;
     out->sp_at_ret = sp;
     return LIN_OK;
-}
-
-LinErr vm_exec(const VmModule *mod, size_t fi, const int64_t *args, size_t args_len,
-               size_t depth, uint64_t *steps, VmExecResult *out) {
-    return vm_exec_internal(mod, fi, args, args_len, depth, steps, out,
-                            LIN_VM_CAPTURE_NONE, NULL, 0, NULL);
-}
-
-LinErr vm_exec_capture_array(const VmModule *mod, size_t fi,
-                             const int64_t *args, size_t args_len,
-                             size_t depth, uint64_t *steps, VmExecResult *out,
-                             size_t capture_local, int64_t *capture,
-                             size_t capture_cap, size_t *capture_len) {
-    return vm_exec_internal(mod, fi, args, args_len, depth, steps, out,
-                            capture_local, capture, capture_cap, capture_len);
 }
 
 const char *vm_op_name(VmOp op) {

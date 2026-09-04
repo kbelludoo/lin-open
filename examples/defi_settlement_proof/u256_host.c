@@ -107,6 +107,212 @@ static void write_u64_le(uint8_t out[8], uint64_t value) {
     for (size_t i = 0; i < 8; i++) out[i] = (uint8_t)(value >> (8 * i));
 }
 
+/* The public vm_exec API intentionally returns one scalar and keeps arrays
+ * frame-local.  This example host therefore has a bounded, image-specific
+ * capture loop.  It mirrors the LINVM opcode semantics needed by this frozen
+ * image, while the protected generic interpreter remains unchanged. */
+static int64_t u256_shift(int64_t value, int64_t amount, int left) {
+    if (amount < 0 || amount >= 64) return 0;
+    if (left) return (int64_t)((uint64_t)value << (unsigned)amount);
+    return value >> (unsigned)amount;
+}
+
+static int64_t u256_ushr(int64_t value, int64_t amount) {
+    if (amount < 0 || amount >= 64) return 0;
+    return (int64_t)((uint64_t)value >> (unsigned)amount);
+}
+
+static LinErr u256_exec_capture(const VmModule *mod, size_t fi,
+                                const int64_t *args, size_t args_len,
+                                size_t depth, uint64_t *steps,
+                                VmExecResult *out, size_t capture_local,
+                                int64_t *capture, size_t capture_cap,
+                                size_t *capture_len) {
+    if (depth > LIN_VM_MAX_DEPTH) return LIN_ERR_VM_DEPTH;
+    if (fi >= mod->fns_len) return LIN_ERR_VM_BAD_FN;
+    const VmFn *fn = &mod->fns[fi];
+    if (!fn->ok) return LIN_ERR_VM_BAD_FN;
+    if (args_len != fn->nparams) return LIN_ERR_VM_ARITY;
+    if (capture == NULL || capture_len == NULL ||
+        capture_local >= fn->arr_n_len || fn->arr_n[capture_local] == 0 ||
+        (size_t)fn->arr_n[capture_local] > capture_cap) {
+        return LIN_ERR_VM_BAD_FN;
+    }
+    *capture_len = 0;
+
+    int64_t locals[LIN_VM_MAX_LOCALS];
+    for (size_t i = 0; i < LIN_VM_MAX_LOCALS; i++) locals[i] = 0;
+
+    int64_t pool[LIN_VM_MAX_ARRS][LIN_VM_MAX_ARR_LEN];
+    uint16_t pool_len[LIN_VM_MAX_ARRS];
+    for (size_t i = 0; i < LIN_VM_MAX_ARRS; i++) pool_len[i] = 0;
+    size_t pool_used = 0;
+    for (size_t li = 0; li < fn->arr_n_len; li++) {
+        uint16_t array_len = fn->arr_n[li];
+        if (array_len == 0) continue;
+        if (pool_used >= LIN_VM_MAX_ARRS) return LIN_ERR_VM_BAD_FN;
+        size_t slot = pool_used++;
+        pool_len[slot] = array_len;
+        for (size_t z = 0; z < array_len; z++) pool[slot][z] = 0;
+        locals[li] = (int64_t)slot;
+    }
+    for (size_t i = 0; i < args_len; i++) {
+        if (i < fn->arr_n_len && fn->arr_n[i] > 0) continue;
+        locals[i] = args[i];
+    }
+
+    int64_t stack[LIN_VM_MAX_STACK];
+    size_t sp = 0;
+    size_t pc = 0;
+    while (pc < fn->code_len) {
+        *steps += 1;
+        if (*steps > LIN_VM_STEP_LIMIT) return LIN_ERR_VM_STEP_LIMIT;
+        VmIns ins = fn->code[pc++];
+        switch (ins.op) {
+        case OP_PUSH_CONST:
+            if (sp >= LIN_VM_MAX_STACK) return LIN_ERR_VM_STACK_OVERFLOW;
+            stack[sp++] = ins.a;
+            break;
+        case OP_LOAD_LOCAL:
+            if (sp >= LIN_VM_MAX_STACK) return LIN_ERR_VM_STACK_OVERFLOW;
+            stack[sp++] = locals[(size_t)ins.a];
+            break;
+        case OP_STORE_LOCAL:
+            if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
+            locals[(size_t)ins.a] = stack[--sp];
+            break;
+        case OP_POP:
+            if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
+            sp -= 1;
+            break;
+        case OP_BIT_NOT:
+            if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
+            stack[sp - 1] = ~stack[sp - 1];
+            break;
+        case OP_NEG:
+            if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
+            stack[sp - 1] = lin_wsub(0, stack[sp - 1]);
+            break;
+        case OP_LOG_NOT:
+            if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
+            stack[sp - 1] = (stack[sp - 1] == 0) ? 1 : 0;
+            break;
+        case OP_JUMP:
+            pc = (size_t)ins.a;
+            break;
+        case OP_JUMP_IF_FALSE:
+            if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
+            if (stack[--sp] == 0) pc = (size_t)ins.a;
+            break;
+        case OP_JUMP_IF_FALSE_KEEP:
+            if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
+            if (stack[sp - 1] == 0) pc = (size_t)ins.a;
+            break;
+        case OP_JUMP_IF_TRUE_KEEP:
+            if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
+            if (stack[sp - 1] != 0) pc = (size_t)ins.a;
+            break;
+        case OP_RET: {
+            if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
+            size_t slot = (size_t)locals[capture_local];
+            uint16_t array_len = fn->arr_n[capture_local];
+            if (slot >= LIN_VM_MAX_ARRS || pool_len[slot] != array_len) {
+                return LIN_ERR_VM_BAD_FN;
+            }
+            for (size_t z = 0; z < array_len; z++) capture[z] = pool[slot][z];
+            *capture_len = array_len;
+            out->val = stack[sp - 1];
+            out->sp_at_ret = sp;
+            return LIN_OK;
+        }
+        case OP_LOAD_INDEX: {
+            if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
+            int64_t index = stack[--sp];
+            size_t slot = (size_t)locals[(size_t)ins.a];
+            int64_t value = 0;
+            if (slot < LIN_VM_MAX_ARRS) {
+                uint16_t array_len = pool_len[slot];
+                if (index >= 0 && index < (int64_t)array_len) {
+                    value = pool[slot][(size_t)index];
+                }
+            }
+            if (sp >= LIN_VM_MAX_STACK) return LIN_ERR_VM_STACK_OVERFLOW;
+            stack[sp++] = value;
+            break;
+        }
+        case OP_STORE_INDEX: {
+            if (sp < 2) return LIN_ERR_VM_STACK_UNDERFLOW;
+            sp -= 2;
+            int64_t index = stack[sp];
+            int64_t value = stack[sp + 1];
+            size_t slot = (size_t)locals[(size_t)ins.a];
+            if (slot < LIN_VM_MAX_ARRS) {
+                uint16_t array_len = pool_len[slot];
+                if (index >= 0 && index < (int64_t)array_len) {
+                    pool[slot][(size_t)index] = value;
+                }
+            }
+            break;
+        }
+        case OP_ARR_LEN: {
+            if (sp >= LIN_VM_MAX_STACK) return LIN_ERR_VM_STACK_OVERFLOW;
+            size_t slot = (size_t)locals[(size_t)ins.a];
+            stack[sp++] = slot < LIN_VM_MAX_ARRS ? pool_len[slot] : 0;
+            break;
+        }
+        case OP_CALL:
+            /* settle_u256 is intentionally a leaf function. */
+            return LIN_ERR_VM_BAD_FN;
+        default: {
+            if (sp < 2) return LIN_ERR_VM_STACK_UNDERFLOW;
+            sp -= 2;
+            int64_t x = stack[sp];
+            int64_t y = stack[sp + 1];
+            int64_t value = 0;
+            switch (ins.op) {
+            case OP_ADD: value = lin_wadd(x, y); break;
+            case OP_SUB: value = lin_wsub(x, y); break;
+            case OP_MUL: value = lin_wmul(x, y); break;
+            case OP_DIV:
+                if (y == 0) return LIN_ERR_VM_DIV_ZERO;
+                value = lin_wdiv(x, y);
+                break;
+            case OP_MOD:
+                if (y == 0) return LIN_ERR_VM_DIV_ZERO;
+                value = lin_wrem(x, y);
+                break;
+            case OP_BIT_AND: value = x & y; break;
+            case OP_BIT_OR: value = x | y; break;
+            case OP_BIT_XOR: value = x ^ y; break;
+            case OP_SHL: value = u256_shift(x, y, 1); break;
+            case OP_SHR: value = u256_shift(x, y, 0); break;
+            case OP_USHR: value = u256_ushr(x, y); break;
+            case OP_CMP_EQ: value = (x == y) ? 1 : 0; break;
+            case OP_CMP_NE: value = (x != y) ? 1 : 0; break;
+            case OP_CMP_LT: value = (x < y) ? 1 : 0; break;
+            case OP_CMP_GT: value = (x > y) ? 1 : 0; break;
+            case OP_CMP_LE: value = (x <= y) ? 1 : 0; break;
+            case OP_CMP_GE: value = (x >= y) ? 1 : 0; break;
+            default: return LIN_ERR_VM_BAD_FN;
+            }
+            stack[sp++] = value;
+            break;
+        }
+        }
+    }
+
+    size_t slot = (size_t)locals[capture_local];
+    uint16_t array_len = fn->arr_n[capture_local];
+    if (slot >= LIN_VM_MAX_ARRS || pool_len[slot] != array_len) {
+        return LIN_ERR_VM_BAD_FN;
+    }
+    for (size_t z = 0; z < array_len; z++) capture[z] = pool[slot][z];
+    *capture_len = array_len;
+    out->val = 0;
+    out->sp_at_ret = sp;
+    return LIN_OK;
+}
+
 int main(int argc, char **argv) {
     if (argc != 5) {
         fprintf(stderr, "usage: %s IMAGE AMOUNT_IN RESERVE_IN RESERVE_OUT\n", argv[0]);
@@ -154,14 +360,14 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    size_t capture_local = LIN_VM_CAPTURE_NONE;
+    size_t capture_local = (size_t)-1;
     for (size_t li = 0; li < fn->arr_n_len; li++) {
         if (fn->arr_n[li] != 0) {
             capture_local = li;
             break;
         }
     }
-    if (capture_local == LIN_VM_CAPTURE_NONE ||
+    if (capture_local == (size_t)-1 ||
         fn->arr_n[capture_local] != 16) {
         fprintf(stderr, "settle_u256 has no 16-limb output array\n");
         free(image);
@@ -178,7 +384,7 @@ int main(int argc, char **argv) {
     size_t capture_len = 0;
     uint64_t steps = 0;
     VmExecResult exec_result;
-    LinErr exec_err = vm_exec_capture_array(
+    LinErr exec_err = u256_exec_capture(
         &vm.mod, (size_t)fn_index, args, 12, 0, &steps, &exec_result,
         capture_local, limbs, 16, &capture_len);
     if (exec_err != LIN_OK) {

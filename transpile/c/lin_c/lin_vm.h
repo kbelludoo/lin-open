@@ -95,17 +95,6 @@ LinErr lower_arena(const AstArena *a, uint16_t root,
 LinErr vm_exec(const VmModule *mod, size_t fi, const int64_t *args, size_t args_len,
                size_t depth, uint64_t *steps, VmExecResult *out);
 
-/* Execute once and copy one local array before the VM frame is discarded.
- * Arrays are intentionally frame-local in LinVM.  This opt-in API exposes a
- * bounded, caller-owned copy for verifiers that need a multiword result while
- * preserving vm_exec's original scalar-only contract. */
-#define LIN_VM_CAPTURE_NONE ((size_t)-1)
-LinErr vm_exec_capture_array(const VmModule *mod, size_t fi,
-                             const int64_t *args, size_t args_len,
-                             size_t depth, uint64_t *steps, VmExecResult *out,
-                             size_t capture_local, int64_t *capture,
-                             size_t capture_cap, size_t *capture_len);
-
 const char *vm_op_name(VmOp op);
 
 #endif /* LIN_C_VM_H */

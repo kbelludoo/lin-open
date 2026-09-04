@@ -82,8 +82,9 @@ produção diretamente contra o bytecode Solidity na EVM:
 O próximo bloqueador do adaptador foi removido no branch: o kernel
 `examples/defi_settlement_proof/u256_settlement_engine.lin` recebe os três
 `uint256` como 12 palavras brutas e devolve o status na pilha. O host C11
-captura o primeiro array local de 16 limbs dentro da mesma chamada da LinVM e
-reconstrói os 32 bytes big-endian. A imagem congelada fica em
+captura o primeiro array local de 16 limbs durante uma única passagem do
+executor C11 sobre a imagem LINBC1 e reconstrói os 32 bytes big-endian. A
+imagem congelada fica em
 `examples/defi_settlement_proof/u256_settlement_engine.linbc`.
 
 O comando de reprodução é:
