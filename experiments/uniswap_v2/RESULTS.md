@@ -17,7 +17,7 @@ silenciosamente diferente.
 ## Comandos
 
     python3 experiments/uniswap_v2/transpile_get_amount_out.py \
-      --repo /workspace/scratch/ef3df4f50f2b/uniswap-v2-periphery \
+      --repo ../uniswap-v2-periphery \
       --output experiments/uniswap_v2/get_amount_out.lin
 
     make -C transpile/c c0

@@ -14,9 +14,13 @@ const {
   bytesToHex,
 } = require('@ethereumjs/util');
 
-const WORKSPACE = path.resolve(__dirname, '..');
-const UPSTREAM = path.join(WORKSPACE, 'uniswap-v2-periphery');
-const LIN_ROOT = path.join(WORKSPACE, 'lin-open');
+const candidateRoot = path.resolve(__dirname, '..');
+const LIN_ROOT = fs.existsSync(path.join(candidateRoot, 'experiments/uniswap_v2'))
+  ? candidateRoot
+  : path.join(candidateRoot, 'lin-open');
+const UPSTREAM = process.env.UNISWAP_V2_PERIPHERY
+  ? path.resolve(process.env.UNISWAP_V2_PERIPHERY)
+  : path.join(LIN_ROOT, '..', 'uniswap-v2-periphery');
 const LIN_FILE = path.join(LIN_ROOT, 'experiments/uniswap_v2/get_amount_out.lin');
 const U256_FILE = path.join(LIN_ROOT, 'experiments/uniswap_v2/u256_get_amount_out.lin');
 const C0 = path.join(LIN_ROOT, 'transpile/c/bin/lin_c0');

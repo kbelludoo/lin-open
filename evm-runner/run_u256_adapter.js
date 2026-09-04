@@ -1,10 +1,13 @@
 'use strict';
 
 const childProcess = require('child_process');
+const fs = require('fs');
 const path = require('path');
 
-const WORKSPACE = path.resolve(__dirname, '..');
-const LIN_ROOT = path.join(WORKSPACE, 'lin-open');
+const candidateRoot = path.resolve(__dirname, '..');
+const LIN_ROOT = fs.existsSync(path.join(candidateRoot, 'experiments/uniswap_v2'))
+  ? candidateRoot
+  : path.join(candidateRoot, 'lin-open');
 const LIN_FILE = path.join(LIN_ROOT, 'experiments/uniswap_v2/u256_get_amount_out.lin');
 const C0 = path.join(LIN_ROOT, 'transpile/c/bin/lin_c0');
 const U256 = (1n << 256n) - 1n;

@@ -3,8 +3,8 @@
 Este é o procedimento exato para continuar o experimento até uma API
 auditável. O ponto de partida já está no workspace:
 
-- upstream: `/workspace/scratch/ef3df4f50f2b/uniswap-v2-periphery`
-- snapshot LIN: `/workspace/scratch/ef3df4f50f2b/lin-open`
+- upstream: `../uniswap-v2-periphery`
+- snapshot LIN: `.`
 - comparação Solidity/EVM: `evm-runner/compare_uniswap.js`
 - adaptador `uint256`: `u256_get_amount_out.lin`
 
@@ -12,8 +12,9 @@ auditável. O ponto de partida já está no workspace:
 
 ```bash
 cd /workspace/scratch/ef3df4f50f2b/lin-open
+git clone https://github.com/Uniswap/v2-periphery ../uniswap-v2-periphery
 python3 experiments/uniswap_v2/transpile_get_amount_out.py \
-  --repo /workspace/scratch/ef3df4f50f2b/uniswap-v2-periphery \
+  --repo ../uniswap-v2-periphery \
   --output experiments/uniswap_v2/get_amount_out.lin
 make -C transpile/c c0
 make -C transpile/c xver
