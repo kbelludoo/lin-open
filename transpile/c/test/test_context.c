@@ -121,10 +121,85 @@ static void test_legacy_wrapper_and_invalid_context(void) {
           "invalid context fails closed");
 }
 
+static void test_abi_call_and_profile_gate(void) {
+    static const VmIns byte_zero_code[] = {
+        { OP_PUSH_CONST, 0 },
+        { OP_PUSH_CONST, 0 },
+        { OP_ABI_CALL, LIN_ABI2_REGION_LOAD_BYTE },
+        { OP_RET, 0 }
+    };
+    static const VmIns byte_one_code[] = {
+        { OP_PUSH_CONST, 0 },
+        { OP_PUSH_CONST, 1 },
+        { OP_ABI_CALL, LIN_ABI2_REGION_LOAD_BYTE },
+        { OP_RET, 0 }
+    };
+    static const VmIns underflow_code[] = {
+        { OP_ABI_CALL, LIN_ABI2_REGION_LOAD_BYTE },
+        { OP_RET, 0 }
+    };
+    int64_t cells[1];
+    uint8_t payload[2] = {0x00, 0xab};
+    LinRegionSet regions;
+    LinAbiContext abi;
+    VmFn fn;
+    VmModule module;
+    LinVmContext ctx;
+    VmExecResult result;
+    uint64_t steps;
+
+    lin_region_set_init(&regions);
+    CHECK(lin_region_bind(&regions, 0, cells, 1, 0) == LIN_REGION_OK,
+          "bind ABI-call region");
+    CHECK(lin_region_write_bytes(&regions.regions[0], payload, sizeof(payload)) == LIN_REGION_OK,
+          "write ABI-call payload");
+    lin_abi2_context_init(&abi, &regions);
+    CHECK(lin_abi2_enable(&abi, LIN_ABI2_REGION_LOAD_BYTE) == LIN_REGION_OK,
+          "enable byte intrinsic");
+
+    ctx.module = &module;
+    ctx.regions = &regions;
+    ctx.abi = &abi;
+    ctx.step_limit = 100;
+    ctx.profile = LIN_VM_PROFILE_LINVM_C0;
+    ctx.abi_version = LIN_HOST_ABI_2;
+
+    init_fn(&fn, "byte_zero", byte_zero_code, 4);
+    module.fns = &fn;
+    module.fns_len = 1;
+    steps = 0;
+    ctx.steps = &steps;
+    CHECK(vm_exec_ctx(&ctx, 0, NULL, 0, 0, &result) == LIN_OK && result.val == 0,
+          "ABI_CALL preserves valid zero byte");
+
+    init_fn(&fn, "byte_one", byte_one_code, 4);
+    steps = 0;
+    CHECK(vm_exec_ctx(&ctx, 0, NULL, 0, 0, &result) == LIN_OK && result.val == 0xab,
+          "ABI_CALL returns nonzero byte");
+
+    init_fn(&fn, "underflow", underflow_code, 2);
+    steps = 0;
+    CHECK(vm_exec_ctx(&ctx, 0, NULL, 0, 0, &result) == LIN_ERR_VM_STACK_UNDERFLOW,
+          "ABI_CALL validates arity through dispatcher");
+
+    init_fn(&fn, "legacy_profile", byte_zero_code, 4);
+    ctx.profile = LIN_VM_PROFILE_LINVM1;
+    steps = 0;
+    CHECK(vm_exec_ctx(&ctx, 0, NULL, 0, 0, &result) == LIN_ERR_VM_BAD_FN,
+          "LINVM-1 rejects ABI_CALL");
+
+    ctx.profile = LIN_VM_PROFILE_LINVM_C0;
+    ctx.abi_version = LIN_HOST_ABI_1;
+    steps = 0;
+    CHECK(vm_exec_ctx(&ctx, 0, NULL, 0, 0, &result) == LIN_ERR_VM_BAD_FN,
+          "ABI-1 rejects ABI_CALL");
+}
+
 int main(void) {
     test_context_and_call_propagation();
     test_custom_step_limit();
     test_legacy_wrapper_and_invalid_context();
+    test_abi_call_and_profile_gate();
 
     printf("context tests: %d passed, %d failed\n", pass_count, fail_count);
     return fail_count == 0 ? 0 : 1;

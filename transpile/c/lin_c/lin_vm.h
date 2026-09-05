@@ -8,6 +8,9 @@
 #include "lin_ast.h"
 #include "lin_abi.h"
 
+#define LIN_VM_PROFILE_LINVM1  1u
+#define LIN_VM_PROFILE_LINVM_C0 2u
+
 /* Enumeral order mirrors the Zig `VmOp` (push_const=0 ... arr_len=31).
  * Slice-1 lowers only a subset; the full set is ported so slice-2
  * (statements/control flow) can reuse the same interpreter unchanged. */
@@ -45,6 +48,9 @@ typedef enum {
     OP_LOAD_INDEX,
     OP_STORE_INDEX,
     OP_ARR_LEN,
+
+    /* Additive opcode: unavailable in the frozen LINVM-1 profile. */
+    OP_ABI_CALL,
 } VmOp;
 
 /* Zig `VmIns { op: VmOp, a: i64 = 0 } */

@@ -6,9 +6,11 @@ CFLAGS  ?= -O2 -Wall -Wextra -std=c11
 CPPFLAGS = -Ilin_c
 
 SRCS = lin_c/lin_common.c lin_c/lin_token.c lin_c/lin_ast.c \
-       lin_c/lin_parse.c lin_c/lin_vm.c lin_c/lin_sha256.c
+       lin_c/lin_parse.c lin_c/lin_vm.c lin_c/lin_sha256.c \
+       lin_c/lin_region.c lin_c/lin_abi.c
 HDRS = lin_c/lin_common.h lin_c/lin_token.h lin_c/lin_ast.h \
-       lin_c/lin_parse.h lin_c/lin_vm.h lin_c/lin_sha256.h
+       lin_c/lin_parse.h lin_c/lin_vm.h lin_c/lin_sha256.h \
+       lin_c/lin_region.h lin_c/lin_abi.h
 # V1 (R6): HOST-ABI-1 intrinsics + LINBC1 fail-closed loader.
 BC1_SRCS = lin_c/lin_str.c lin_c/lin_linbc1.c
 BC1_HDRS = lin_c/lin_str.h lin_c/lin_linbc1.h
@@ -54,10 +56,9 @@ $(ABI): test/test_abi.c lin_c/lin_abi.c lin_c/lin_abi.h \
 test-abi: $(ABI)
 	./$(ABI)
 
-$(CTX): test/test_context.c $(SRCS) $(HDRS) lin_c/lin_abi.h lin_c/lin_region.h
+$(CTX): test/test_context.c $(SRCS) $(HDRS)
 	@mkdir -p bin
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ test/test_context.c $(SRCS) \
-		lin_c/lin_abi.c lin_c/lin_region.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ test/test_context.c $(SRCS)
 
 test-context: $(CTX)
 	./$(CTX)

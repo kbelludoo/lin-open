@@ -133,6 +133,29 @@ static int64_t vm_ushr(int64_t a, int64_t b) {
     return (int64_t)((uint64_t)a >> (unsigned)b);
 }
 
+static LinErr vm_validate_abi_call_context(
+    const LinVmContext *ctx,
+    uint8_t abi_id
+) {
+    if (ctx == NULL || ctx->abi == NULL || ctx->regions == NULL) {
+        return LIN_ERR_VM_BAD_FN;
+    }
+    if (ctx->profile != LIN_VM_PROFILE_LINVM_C0) {
+        return LIN_ERR_VM_BAD_FN;
+    }
+    if (ctx->abi_version != LIN_HOST_ABI_2 ||
+        ctx->abi->abi_version != LIN_HOST_ABI_2) {
+        return LIN_ERR_VM_BAD_FN;
+    }
+    if (ctx->abi->regions != ctx->regions) {
+        return LIN_ERR_VM_BAD_FN;
+    }
+    if (!lin_abi2_is_enabled(ctx->abi, abi_id)) {
+        return LIN_ERR_VM_BAD_FN;
+    }
+    return LIN_OK;
+}
+
 LinErr vm_exec_ctx(const LinVmContext *ctx, size_t fi,
                    const int64_t *args, size_t args_len,
                    size_t depth, VmExecResult *out) {
@@ -305,6 +328,40 @@ LinErr vm_exec_ctx(const LinVmContext *ctx, size_t fi,
             break;
         }
 
+        case OP_ABI_CALL: {
+            if (ins.a < 0 || ins.a > UINT8_MAX) {
+                return LIN_ERR_VM_BAD_FN;
+            }
+
+            uint8_t abi_id = (uint8_t)ins.a;
+            LinErr context_error = vm_validate_abi_call_context(ctx, abi_id);
+            if (context_error != LIN_OK) return context_error;
+
+            size_t old_sp = sp;
+            LinAbiResult result = lin_abi2_dispatch(
+                ctx->abi,
+                abi_id,
+                stack,
+                &sp
+            );
+
+            if (result.vm_error != LIN_OK) return result.vm_error;
+
+            /* region_check_range is status-producing: a valid call consumes
+             * its arguments and pushes TRUNCATED/BOUNDS/etc. as a value.
+             * Fatal dispatch failures leave sp unchanged and abort. */
+            if (result.region_error != LIN_REGION_OK && sp == old_sp) {
+                return LIN_ERR_VM_BAD_FN;
+            }
+            if (sp >= LIN_VM_MAX_STACK) {
+                return LIN_ERR_VM_STACK_OVERFLOW;
+            }
+
+            stack[sp] = result.value;
+            sp += 1;
+            break;
+        }
+
         default: {
             /* binary ops: add sub mul div mod bit_and bit_or bit_xor
              * shl shr ushr cmp_eq cmp_ne cmp_lt cmp_gt cmp_le cmp_ge */
@@ -360,7 +417,7 @@ LinErr vm_exec(const VmModule *mod, size_t fi, const int64_t *args, size_t args_
     ctx.abi = NULL;
     ctx.steps = steps;
     ctx.step_limit = LIN_VM_STEP_LIMIT;
-    ctx.profile = 1u;
+    ctx.profile = LIN_VM_PROFILE_LINVM1;
     ctx.abi_version = LIN_HOST_ABI_1;
     return vm_exec_ctx(&ctx, fi, args, args_len, depth, out);
 }
@@ -400,6 +457,7 @@ const char *vm_op_name(VmOp op) {
     case OP_LOAD_INDEX: return "load_index";
     case OP_STORE_INDEX: return "store_index";
     case OP_ARR_LEN: return "arr_len";
+    case OP_ABI_CALL: return "abi_call";
     }
     return "?";
 }
