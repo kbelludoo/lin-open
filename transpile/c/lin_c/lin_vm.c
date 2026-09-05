@@ -133,8 +133,13 @@ static int64_t vm_ushr(int64_t a, int64_t b) {
     return (int64_t)((uint64_t)a >> (unsigned)b);
 }
 
-LinErr vm_exec(const VmModule *mod, size_t fi, const int64_t *args, size_t args_len,
-               size_t depth, uint64_t *steps, VmExecResult *out) {
+LinErr vm_exec_ctx(const LinVmContext *ctx, size_t fi,
+                   const int64_t *args, size_t args_len,
+                   size_t depth, VmExecResult *out) {
+    if (ctx == NULL || ctx->module == NULL || ctx->steps == NULL || out == NULL) {
+        return LIN_ERR_VM_BAD_FN;
+    }
+    const VmModule *mod = ctx->module;
     if (depth > LIN_VM_MAX_DEPTH) return LIN_ERR_VM_DEPTH;
     if (fi >= mod->fns_len) return LIN_ERR_VM_BAD_FN;
     const VmFn *f = &mod->fns[fi];
@@ -171,8 +176,8 @@ LinErr vm_exec(const VmModule *mod, size_t fi, const int64_t *args, size_t args_
     size_t pc = 0;
 
     while (pc < f->code_len) {
-        (*steps) += 1;
-        if (*steps > LIN_VM_STEP_LIMIT) return LIN_ERR_VM_STEP_LIMIT;
+        (*ctx->steps) += 1;
+        if (*ctx->steps > ctx->step_limit) return LIN_ERR_VM_STEP_LIMIT;
         VmIns ins = f->code[pc];
         pc += 1;
 
@@ -293,7 +298,7 @@ LinErr vm_exec(const VmModule *mod, size_t fi, const int64_t *args, size_t args_
             if (sp < n) return LIN_ERR_VM_STACK_UNDERFLOW;
             sp -= n;
             VmExecResult r;
-            LinErr e = vm_exec(mod, ti, stack + sp, n, depth + 1, steps, &r);
+            LinErr e = vm_exec_ctx(ctx, ti, stack + sp, n, depth + 1, &r);
             if (e) return e;
             stack[sp] = r.val;
             sp += 1;
@@ -345,6 +350,19 @@ LinErr vm_exec(const VmModule *mod, size_t fi, const int64_t *args, size_t args_
     out->val = 0;
     out->sp_at_ret = sp;
     return LIN_OK;
+}
+
+LinErr vm_exec(const VmModule *mod, size_t fi, const int64_t *args, size_t args_len,
+               size_t depth, uint64_t *steps, VmExecResult *out) {
+    LinVmContext ctx;
+    ctx.module = mod;
+    ctx.regions = NULL;
+    ctx.abi = NULL;
+    ctx.steps = steps;
+    ctx.step_limit = LIN_VM_STEP_LIMIT;
+    ctx.profile = 1u;
+    ctx.abi_version = LIN_HOST_ABI_1;
+    return vm_exec_ctx(&ctx, fi, args, args_len, depth, out);
 }
 
 const char *vm_op_name(VmOp op) {

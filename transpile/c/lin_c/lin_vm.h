@@ -6,6 +6,7 @@
 #define LIN_C_VM_H
 
 #include "lin_ast.h"
+#include "lin_abi.h"
 
 /* Enumeral order mirrors the Zig `VmOp` (push_const=0 ... arr_len=31).
  * Slice-1 lowers only a subset; the full set is ported so slice-2
@@ -78,6 +79,20 @@ typedef struct {
     size_t sp_at_ret;
 } VmExecResult;
 
+/* Per-execution state shared by every frame, including OP_CALL children.
+ * The module, regions and ABI context are borrowed; the caller owns them.
+ * `steps` is shared across the complete call tree and `step_limit` is the
+ * limit for this execution, not a process-global constant. */
+typedef struct {
+    const VmModule *module;
+    const LinRegionSet *regions;
+    const LinAbiContext *abi;
+    uint64_t *steps;
+    uint64_t step_limit;
+    uint8_t profile;
+    uint8_t abi_version;
+} LinVmContext;
+
 /* Zero-allocation substitute for Zig's `ArrayList(VmIns)`. See LIN_LOWER_CAP. */
 typedef struct {
     VmIns code[LIN_LOWER_CAP];
@@ -88,6 +103,10 @@ typedef struct {
  * emission + one trailing `ret`. */
 LinErr lower_arena(const AstArena *a, uint16_t root,
                    const VarBinding *env, size_t env_len, LoweredCode *out);
+
+LinErr vm_exec_ctx(const LinVmContext *ctx, size_t fi,
+                   const int64_t *args, size_t args_len,
+                   size_t depth, VmExecResult *out);
 
 /* Zig `vmExecWithSp(mod, fi, args, depth, steps) !VmExecResult`.
  * `depth` is the call nesting (top-level = 0). `*steps` is a running
