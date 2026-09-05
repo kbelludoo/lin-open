@@ -15,10 +15,11 @@
  *   vmResolveDeps        lin.zig:6284   -> c0_resolve_deps
  *
  * The interpreter it feeds is the already-audited `vm_exec`
- * (transpile/c/lin_c/lin_vm.c, port of vmExecWithSp). Semantics, rejection
- * codes and instruction emission are meant to be BIT-IDENTICAL to the Zig
- * Stage0: the published goldens (vms_gate value=1 steps=8511500, lex_gate
- * value=1 steps=10097, ...) are the oracle, not this file.
+ * (transpile/c/lin_c/lin_vm.c, port of vmExecWithSp). The base subset remains
+ * BIT-IDENTICAL to the Zig Stage0. This C11 frontend additionally accepts
+ * C-like `for (init; cond; step)` and integer division; those extensions have
+ * dedicated tests and intentionally do not claim parity with the frozen
+ * Stage0 source-compiler rejection set. Published goldens remain the oracle.
  *
  * Enabled by amendment R6 (AGENTS.md@1.4.4): HOST_RUNTIME_MINIMO_C11_PERMITIDO,
  * limited to transpile/c/{lin_c,tool,test}. Zero new Zig files (R1).
@@ -67,9 +68,8 @@ const C0FnInfo *c0_parse_fn_infos(C0Arena *a, const char *src, size_t len,
 VmModule *c0_build(C0Arena *a, const char *src, size_t len);
 
 /* Experimental research profile: same front-end as c0_build but the parser is
- * allowed to emit OP_DIV/OP_MOD and OP_SHL/OP_SHR/OP_USHR. This is the
- * "profile full" needed to execute Uniswap/SipHash/xxHash-style scalar kernels
- * from source. It does NOT change the default fail-closed c0_build behavior. */
+ * additionally allowed to emit OP_SHL/OP_SHR/OP_USHR. Division and modulo are
+ * already enabled by the default C11 frontend. */
 VmModule *c0_build_full(C0Arena *a, const char *src, size_t len);
 
 /* LINBC1 image encoder (docs/LINBC1_FORMAT.rulel §2/§3, profile 1).

@@ -14,10 +14,9 @@
  * code and nothing executes; a module with any rejected function never becomes
  * an image (C0_REJ_MODULE_NOT_PURE); a malformed image never executes.
  *
- * Scope (R5, no overclaim): this host compiles the LIN subset that
- * `vmBuild`/`VmComp` of the Stage0 accept — the same subset, byte for byte,
- * because this file and lin_c0_front.c are a port of that code, not a
- * reimplementation. `check`/`lint` (the full type checker and linter) remain
+ * Scope (R5, no overclaim): this host compiles the Stage0-compatible LIN
+ * subset plus the C11 frontend extensions `for (init; cond; step)` and integer
+ * division. `check`/`lint` (the full type checker and linter) remain
  * Stage0-only, and the fixed point C0=C1=C2 is still open.
  */
 #include "lin_c0_front.h"

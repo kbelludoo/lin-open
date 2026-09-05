@@ -1006,6 +1006,23 @@ static void c0_if_chain(C0Comp *c, size_t **ends, size_t *n_ends, size_t *cap_en
     }
 }
 
+/* Find the closing ')' of a for header without compiling its increment yet.
+ * Nested calls and parenthesized expressions are balanced independently. */
+static size_t c0_for_close(const C0Comp *c, size_t start) {
+    size_t depth = 0;
+    for (size_t i = start; i < c->ntoks; i++) {
+        const C0Tok *tk = &c->toks[i];
+        if (tk->kind != C0_TK_PUNCT) continue;
+        if (c0_tok_eq(tk, "(")) {
+            depth += 1;
+        } else if (c0_tok_eq(tk, ")")) {
+            if (depth == 0) return i;
+            depth -= 1;
+        }
+    }
+    return SIZE_MAX;
+}
+
 static void c0_stmt(C0Comp *c) {
     if (c0_accept_punct(c, ";")) return;
     if (c0_at_punct(c, "^")) {
@@ -1049,6 +1066,60 @@ static void c0_stmt(C0Comp *c) {
         c0_block(c);
         if (c->reject != NULL) return;
         (void)c0_emit(c, OP_JUMP, top);
+        if (c->reject) return;
+        c0_patch(c, jf);
+        (void)c0_accept_punct(c, ";");
+        return;
+    }
+    if (c0_at_ident(c, "for")) {
+        size_t step_pos;
+        size_t close_pos;
+        size_t body_pos;
+        size_t cond_pos;
+        size_t jf;
+        size_t body_end;
+
+        (void)c0_bump(c);
+        if (!c0_accept_punct(c, "(")) { c0_fail(c, "VM_REJ_PARSE"); return; }
+
+        /* init: assignment or an empty clause */
+        if (!c0_at_punct(c, ";")) c0_assign(c);
+        if (c->reject) return;
+        if (!c0_accept_punct(c, ";")) { c0_fail(c, "VM_REJ_PARSE"); return; }
+
+        /* condition: an empty condition is the canonical true loop */
+        cond_pos = c->ncode;
+        if (c0_at_punct(c, ";")) {
+            (void)c0_emit(c, OP_PUSH_CONST, 1);
+        } else {
+            c0_expr(c);
+            if (c->reject) return;
+        }
+        if (!c0_accept_punct(c, ";")) { c0_fail(c, "VM_REJ_PARSE"); return; }
+
+        /* The increment is lexically before the body but executes after it.
+         * Save its token position, skip to the body, then compile it after
+         * the body has been emitted. */
+        step_pos = c->pos;
+        close_pos = c0_for_close(c, step_pos);
+        if (close_pos == SIZE_MAX) { c0_fail(c, "VM_REJ_PARSE"); return; }
+        body_pos = close_pos + 1;
+        c->pos = body_pos;
+
+        jf = c0_emit(c, OP_JUMP_IF_FALSE, 0);
+        if (c->reject) return;
+        c0_block(c);
+        if (c->reject) return;
+        body_end = c->pos;
+
+        c->pos = step_pos;
+        if (c->pos != close_pos) {
+            c0_assign(c);
+            if (c->reject) return;
+            if (c->pos != close_pos) { c0_fail(c, "VM_REJ_PARSE"); return; }
+        }
+        c->pos = body_end;
+        (void)c0_emit(c, OP_JUMP, (int64_t)cond_pos);
         if (c->reject) return;
         c0_patch(c, jf);
         (void)c0_accept_punct(c, ";");
@@ -1274,7 +1345,7 @@ static VmModule *c0_build_impl(C0Arena *a, const char *src, size_t len,
 }
 
 VmModule *c0_build(C0Arena *a, const char *src, size_t len) {
-    return c0_build_impl(a, src, len, 0, 0);
+    return c0_build_impl(a, src, len, 1, 0);
 }
 
 /* Experimental "profile full": used only by the `vmfull` CLI command. */

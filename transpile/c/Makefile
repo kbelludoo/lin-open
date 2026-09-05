@@ -20,13 +20,14 @@ SHA    = bin/test_sha256
 REGION = bin/test_region
 ABI    = bin/test_abi
 CTX    = bin/test_context
+C0FEATURE = bin/test_c0_features
 XVER   = bin/lin_c_receipt
 BC1    = bin/lin_bc1_run
 BC1T   = bin/test_linbc1
 # Compiler 0 host: compiles and runs .lin source WITHOUT Zig (V2/V5 path).
 C0     = bin/lin_c0
 
-all: $(TARGET) $(EDGE) $(SHA) $(REGION) $(ABI) $(CTX) $(XVER) $(BC1) $(BC1T) $(C0)
+all: $(TARGET) $(EDGE) $(SHA) $(REGION) $(ABI) $(CTX) $(C0FEATURE) $(XVER) $(BC1) $(BC1T) $(C0)
 
 $(TARGET): test/test_c_expr.c $(SRCS) $(HDRS)
 	@mkdir -p bin
@@ -62,6 +63,15 @@ $(CTX): test/test_context.c $(SRCS) $(HDRS)
 
 test-context: $(CTX)
 	./$(CTX)
+
+$(C0FEATURE): test/test_c0_features.c tool/lin_c0_front.c lin_c0_front.h \
+		$(SRCS) $(BC1_SRCS) $(BC1_HDRS)
+	@mkdir -p bin
+	$(CC) $(CFLAGS) $(C0FLAGS) -o $@ test/test_c0_features.c \
+		tool/lin_c0_front.c $(SRCS) $(BC1_SRCS)
+
+test-c0-features: $(C0FEATURE)
+	./$(C0FEATURE)
 
 # Independent C implementation of the cross-version execution receipt. This is
 # the second implementation behind `lin crosscheck-c` (compiler/lin.zig).
@@ -112,7 +122,7 @@ c0: $(C0)
 test-c0: $(C0)
 	@../../test/verify_c0.sh $(C0)
 
-.PHONY: c0 test-c0 test-region test-abi test-context
+.PHONY: c0 test-c0 test-region test-abi test-context test-c0-features
 
 # G(V1): golden vectors + corrupted-image fuzz (100% fail-closed).
 test-linbc1: $(BC1T)
@@ -134,4 +144,4 @@ roundtrip-linbc1: $(BC1T)
 clean:
 	rm -rf bin
 
-.PHONY: all test test-edges test-sha256 test-region test-abi test-context test-linbc1 roundtrip-linbc1 clean
+.PHONY: all test test-edges test-sha256 test-region test-abi test-context test-c0-features test-linbc1 roundtrip-linbc1 clean

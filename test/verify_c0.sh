@@ -103,15 +103,15 @@ else
   fail=$((fail + 1)); printf '  FAIL  imagem não reproduz: %s vs %s\n' "$H1" "$H2"
 fi
 
-printf '\n-- fail-closed: o que o Stage0 recusa tem que ser recusado --\n'
+printf '\n-- fail-closed e extensões C11 do frontend --\n'
 TMP=$(mktemp -d)
 printf '!f(a: int) -> int {\n  ^a / 2;\n}\n' > "$TMP/div.lin"
-expect_fail "divisão inteira no VM" "VM_REJ_INT_DIVISION" "$C0" vm "$TMP/div.lin" f 4
+expect "divisão inteira C11" ".result{ fn=\"f\" value=2" "$C0" vm "$TMP/div.lin" f 4
 printf '!f() -> int {\n  ^9223372036854775808;\n}\n' > "$TMP/range.lin"
 expect_fail "literal fora de i64" "VM_REJ_LITERAL_RANGE" "$C0" vm "$TMP/range.lin" f
 printf '!f(x: nope) -> int {\n  ^0;\n}\n' > "$TMP/type.lin"
 expect_fail "parâmetro não-inteiro" "VM_REJ_PARAM_NOT_INT" "$C0" vm "$TMP/type.lin" f
-printf '!ok(a: int) -> int {\n  ^a;\n}\n!bad(x: int) -> int {\n  ^x / 2;\n}\n' > "$TMP/mixed.lin"
+printf '!ok(a: int) -> int {\n  ^a;\n}\n!bad(x: int) -> int {\n  ^\"unsupported\";\n}\n' > "$TMP/mixed.lin"
 expect_fail "módulo com fn rejeitada não vira imagem" "C0_REJ_MODULE_NOT_PURE" "$C0" image "$TMP/mixed.lin"
 rm -rf "$TMP"
 
