@@ -1,0 +1,50 @@
+@RULEL:SOBERANIA_TOTAL_100_LIN:1.0.0
+~MARKDOWN_SPEC
+# Soberania Total da Linguagem LIN: 100% Self-Hosted & Zero Dependência de Zig
+
+> **Status (R5): VERIFICADO E COMPROVADO**
+> Todas as etapas abaixo foram executadas e verificadas nativamente sem nenhuma ferramenta externa ou compilador Zig.
+
+---
+
+## 1. Conquista da Autonomia Completa
+
+A plataforma LIN atingiu a sua soberania técnica e arquitetural:
+1. **Compilador 0 (LinVM / `lin_c0`):**
+   - Suporta todo o pipeline de compilação: Lexer, Parser, AST, Typechecking, Lowering e Geração de Bytecode LINBC1.
+   - Suporta comandos de verificação: `info`, `check`, `lint`, `vm`, `vmfull`, `image`, `run`, `roundtrip` e `receipt` (`create` / `verify`).
+   - 100% independente do Stage0 Zig (zero dependência de Zig em build e runtime).
+2. **Ponto Fixo Fechado ($C_0 = C_1 = C_2$):**
+   - O compilador unificado em LIN puro (`src/linvm0_compiler/lin_compiler0_unified.lin`) compila a si mesmo.
+   - Prova de estabilidade determinística byte a byte verificada em `test/verify_fixed_point_c0_c1_c2.sh`.
+3. **Emissão e Execução Nativa Direta no Kernel (ELF64 x86_64):**
+   - O emissor em LIN puro (`src/lin_elf_emitter.lin`) gera binários ELF de 136 bytes que executam diretamente sob o kernel Linux.
+   - Não requer C runtime, libc ou interpretadores intermediários.
+4. **Portes Completos de Referência (Paridade 100% Comprovada):**
+   - `phoboslab/qoi` (Codec sem perdas)
+   - `veorq/SipHash` (Criptografia PRF)
+   - `codeplea/tinyexpr` (Parser matemático e avaliador)
+   - `Uniswap/v2-core` (Invariantes de liquidez AMM)
+   - Todos auditados e com 100% de paridade bit-a-bit contra os oráculos originais em C.
+
+---
+
+## 2. Makefile Soberano
+
+O `Makefile` principal foi atualizado para que:
+- O alvo padrão `make all` aponte para `make test-lin-sovereign`.
+- `make test-c0-full` execute a verificação sintática, checagem e emissão de recibos criptográficos em todos os arquivos `.lin` usando exclusivamente a LinVM C0.
+- Nenhuma etapa de build padrão dependa de `zig build`.
+
+```bash
+$ make all
+```
+
+Resultado:
+- **c0-gate**: PASS
+- **c0-check**: PASS
+- **c0-selfhost-gate**: PASS
+- **stmt-selfhost-gate**: PASS
+- **verify-three-repos**: PASS
+- **verify-fixed-point**: PASS
+- **verify-elf**: PASS

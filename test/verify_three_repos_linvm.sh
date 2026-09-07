@@ -82,5 +82,50 @@ UNI_CONS="$( "$BIN" roundtrip "$UNI_SRC" u2_test_suite | grep -o 'status="[^"]*"
 [ "$UNI_CONS" = "CONSENSUS" ] || fail "uniswap_v2_core roundtrip falhou: $UNI_CONS"
 ok "uniswap_v2_core: consenso total entre código-fonte e imagem LINBC1"
 
-echo "=== TODOS OS 3 REPOSITÓRIOS COMPILADOS E EXECUTADOS COM SUCESSO NA LINVM ==="
+# -----------------------------------------------------------------------------
+# REPO 4: phoboslab/qoi (Implementação Completa 100% LIN)
+# -----------------------------------------------------------------------------
+echo "--- 4. phoboslab/qoi (Codec Completo 100% LIN) ---"
+QOI_C_SRC="$ROOT_DIR/src/lin_qoi_complete.lin"
+[ -f "$QOI_C_SRC" ] || fail "Arquivo não encontrado: $QOI_C_SRC"
+
+QOI_C_REJ="$( "$BIN" info "$QOI_C_SRC" | grep -o 'rejected=[0-9]*' | cut -d= -f2 )"
+[ "$QOI_C_REJ" = "0" ] || fail "qoi_complete tem funções rejeitadas ($QOI_C_REJ)"
+ok "qoi_complete: todas funções elegíveis (0 rejeitadas)"
+
+QOI_C_VAL="$( "$BIN" vm "$QOI_C_SRC" qoi_verify_external_parity | grep -o 'value=[-0-9]*' | cut -d= -f2 )"
+[ "$QOI_C_VAL" = "1" ] || fail "qoi_verify_external_parity falhou (esperado 1, obteve $QOI_C_VAL)"
+ok "qoi_complete: qoi_verify_external_parity() == 1 (execução direta)"
+
+# -----------------------------------------------------------------------------
+# REPO 5: veorq/SipHash (Implementação Criptográfica Completa 100% LIN)
+# -----------------------------------------------------------------------------
+echo "--- 5. veorq/SipHash (Criptografia PRF Completa 100% LIN) ---"
+SIP_C_SRC="$ROOT_DIR/src/lin_siphash_complete.lin"
+[ -f "$SIP_C_SRC" ] || fail "Arquivo não encontrado: $SIP_C_SRC"
+
+SIP_C_REJ="$( "$BIN" info "$SIP_C_SRC" | grep -o 'rejected=[0-9]*' | cut -d= -f2 )"
+[ "$SIP_C_REJ" = "0" ] || fail "siphash_complete tem funções rejeitadas ($SIP_C_REJ)"
+ok "siphash_complete: todas funções elegíveis (0 rejeitadas)"
+
+SIP_C_VAL="$( "$BIN" vm "$SIP_C_SRC" siphash_verify_all_64_vectors | grep -o 'value=[-0-9]*' | cut -d= -f2 )"
+[ "$SIP_C_VAL" = "1" ] || fail "siphash_verify_all_64_vectors falhou (esperado 1, obteve $SIP_C_VAL)"
+ok "siphash_complete: siphash_verify_all_64_vectors() == 1 (execução direta)"
+
+# -----------------------------------------------------------------------------
+# REPO 6: codeplea/tinyexpr (Implementação Matemática Completa 100% LIN)
+# -----------------------------------------------------------------------------
+echo "--- 6. codeplea/tinyexpr (Parser e Avaliador Completo 100% LIN) ---"
+TE_C_SRC="$ROOT_DIR/src/lin_tinyexpr_complete.lin"
+[ -f "$TE_C_SRC" ] || fail "Arquivo não encontrado: $TE_C_SRC"
+
+TE_C_REJ="$( "$BIN" info "$TE_C_SRC" | grep -o 'rejected=[0-9]*' | cut -d= -f2 )"
+[ "$TE_C_REJ" = "0" ] || fail "tinyexpr_complete tem funções rejeitadas ($TE_C_REJ)"
+ok "tinyexpr_complete: todas funções elegíveis (0 rejeitadas)"
+
+TE_C_VAL="$( "$BIN" vm "$TE_C_SRC" te_verify_against_c_oracle | grep -o 'value=[-0-9]*' | cut -d= -f2 )"
+[ "$TE_C_VAL" = "1" ] || fail "te_verify_against_c_oracle falhou (esperado 1, obteve $TE_C_VAL)"
+ok "tinyexpr_complete: te_verify_against_c_oracle() == 1 (execução direta)"
+
+echo "=== TODOS OS REPOSITÓRIOS COMPILADOS E EXECUTADOS COM SUCESSO NA LINVM ==="
 exit 0

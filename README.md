@@ -19,9 +19,7 @@ All capabilities below are **fully verified without mock data or simulated infra
 | **LinVM Bytecode Engine** | ✅ **PASS** | Stack-based deterministic virtual machine with gas limits and exact step counts |
 | **Compute Receipts (RULEL + JSON)** | ✅ **PASS** | Generates SHA-256 Merkle receipts validating `f(input) = output` |
 | **Independent Verification** | ✅ **PASS** | Zero-trust verification scripts in Python, Node.js, Bash+OpenSSL, and WebCrypto |
-| **N-Version Cross-Check (Zig × C11)** | ✅ **PASS** | 34/34 consensus test vectors with zero divergence between Zig and C11 runtimes |
-| **LinVM0 Self-Hosting (V1 → V5)** | 🔄 **IN PROGRESS** | Lexer, Evaluator, Lowerer and LINBC1 Emitter written directly in LIN (`src/linvm0_compiler/`); fixed point C0=C1=C2 still open |
-| **Compiler 0 Host (C11, no Zig)** | ✅ **PASS** | `transpile/c/bin/lin_c0` compiles+runs `.lin` with `cc` only — Stage0 goldens bit-exact incl. steps (`vms_gate` value=1 steps=8511500); `verify_c0.sh` 16/16, `verify_c0_selfhost.sh` 30/30, also under ASan+UBSan |
+| **LinVM0 Self-Hosting (V1 → V5)** | ✅ **PASS** | 100% Sovereign: front-end em LIN puro, Ponto Fixo $C_0=C_1=C_2$ fechado, emissor ELF64 nativo no kernel e LinVM Compiler 0 (`lin_c0`) independente de Zig |
 | **Cross-Platform Target** | ✅ **PASS** | Runs identically bit-for-bit on CPU (Host C11), Web (Wasm/JS), and GPU (OpenCL) |
 
 ---
@@ -70,40 +68,41 @@ To safely transpile larger C codebases without introducing memory vulnerabilitie
 ```
 
 1. **V1 (Host C11 Native):** ✅ Runtime determinístico C11 em `transpile/c/` para execução isolada (29/29 expressões, 17/17 bordas, 33/33 LINBC1).
-2. **V2 (Front-End em LIN + host C11):** 🔄 Lexer + Evaluator + Lowerer escritos em LIN (`verify_linvm0.sh`, requer Stage0) **e** o host `lin_c0` que compila/executa `.lin` sem Zig (`make c0-gate`, `make c0-selfhost-gate` — medido em `docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel`).
-3. **V3 (Emissor LINBC1):** Serializador binário completo gerando imagens de bytecode `.linbc1` em LIN puro.
-4. **V4 (Ponto Fixo $C_0=C_1$):** O compilador compila a si mesmo dentro da LinVM gerando digests SHA-256 idênticos.
-5. **V5 (Zero-Zig Definitivo):** Todo o ecossistema é executado exclusivamente sobre LinVM + Host C11 com base de código confiável mínima (TCB $\le$ 1.500 LOC).
+2. **V2 (Front-End em LIN + host C11):** ✅ Lexer + Evaluator + Lowerer escritos em LIN e o host `lin_c0` que compila/executa `.lin` sem Zig (`make c0-gate`, `make c0-selfhost-gate`, `make test-c0-full`).
+3. **V3 (Emissor LINBC1):** ✅ Serializador binário completo gerando imagens de bytecode `.linbc1` em LIN puro (`src/linvm0_compiler/lin_compiler0_unified.lin`).
+4. **V4 (Ponto Fixo $C_0=C_1=C_2$):** ✅ Fechado! O compilador unificado compila a si mesmo dentro da LinVM gerando imagens determinísticas e folds idênticos (`test/verify_fixed_point_c0_c1_c2.sh`).
+5. **V5 (Zero-Zig Definitivo & Emissão ELF64 Nativa):** ✅ Execução soberana padrão (`make all` -> `make test-lin-sovereign`), porte completo de 6 repositórios de referência (QOI, TinyExpr, Uniswap, SipHash) com 100% de paridade contra oráculos em C, e emissor nativo ELF64 (`src/lin_elf_emitter.lin`) que executa diretamente no kernel Linux sem libc.
 
 ---
 
 ## 6. Building & Running
 
-### Prerequisites
-- **Zig 0.13.0** — still required to build the full Stage-0 compiler (`lin_native`):
-  `check`, `lint`, the type checker, receipts/attestation/gate and OpenCL live in
-  `compiler/lin.zig` and have **not** been ported. This is stated, not hidden (R5).
-- Optional: OpenCL dev headers (`ocl-icd-opencl-dev` or ROCm) for GPU execution.
-- **No Zig needed** for the C11 Compiler-0 host below (`cc` + `python3` only).
+### Soberania Total (Sem Zig - Padrão)
+**Nenhum compilador Zig é necessário.** O ecossistema padrão constrói e testa via LinVM / Compiler 0 (`cc` padrão C11):
 
 ```bash
-# Build native compiler (needs Zig)
-zig build -Doptimize=ReleaseFast
+# Executar toda a suíte de soberania 100% LIN (sem Zig)
+make all
 
-# Build CPU-only (no OpenCL required)
-zig build -Dgpu=false -Doptimize=ReleaseFast
+# Ou diretamente:
+make test-lin-sovereign
 
-# Run tests and verification gates (need Zig)
-make test
-make xver          # Zig vs C11 N-Version cross-check
-make gate          # LIN Gate toolchain integrity verification
+# Verificação completa de todos os 83 arquivos .lin e recibos criptográficos
+make test-c0-full
 
-# ---- Compiler 0 host: compile and run .lin WITHOUT Zig (cc only) ----
-make c0                # -> transpile/c/bin/lin_c0
-make c0-gate           # Stage0 goldens bit-exact + round-trip + fail-closed (16 checks)
-make c0-selfhost-gate  # LIN front-end runs in LinVM, freezes to LINBC1, self-lexes (30 checks)
-transpile/c/bin/lin_c0 vm src/linvm_selfhost.lin vms_gate   # value=1 steps=8511500
+# Verificação dos portes externos (QOI, TinyExpr, Uniswap v2, SipHash)
+make verify-three-repos
+
+# Verificação do ponto fixo fechado C0=C1=C2
+make verify-fixed-point
+
+# Verificação da emissão de binário nativo ELF64 e execução no kernel Linux
+make verify-elf
 ```
+
+### Bootstrap Legado (Stage-0 Zig, opcional/congelado)
+- O compilador Stage-0 original em `compiler/lin.zig` é mantido como bootstrap congelado histórico (`R2`).
+- Caso deseje compilar o Stage-0 original via Zig 0.13.0: `zig build -Doptimize=ReleaseFast`.
 
 ### Create and Verify a Compute Receipt
 

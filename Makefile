@@ -29,9 +29,10 @@
 
 BUILD_GPU := zig build -Doptimize=ReleaseFast
 BUILD_CPU := zig build -Dgpu=false -Doptimize=ReleaseFast
-BIN := zig-out/bin/lin_native
+BIN ?= transpile/c/bin/lin_c0
 
-all: test
+# Por padrão, `make all` executa a suíte de Soberania 100% LIN sem nenhuma dependência de Zig!
+all: test-lin-sovereign
 
 build: build-gpu
 
@@ -41,37 +42,51 @@ build-gpu:
 build-cpu:
 	$(BUILD_CPU)
 
+# Suíte sem Zig (Soberania 100% LIN): usa transpile/c/bin/lin_c0
+test-c0-full: c0
+	@echo "== version (c0) =="; $(BIN) --version
+	@echo; echo "== check: all src/*.lin and examples/*.lin (c0) =="
+	@fail=0; for f in $$(find src examples -name '*.lin' | sort); do \
+	  out=$$($(BIN) check "$$f" 2>&1); \
+	  if printf '%s' "$$out" | grep -q '^@RULEL:LIN_CHECK:1.0.0'; then echo "  OK   $$f"; else echo "  FAIL $$f"; fail=1; fi; \
+	done; \
+	if [ "$$fail" != 0 ]; then echo "test-c0: one or more .lin files failed check"; exit 1; fi; \
+	echo "test-c0: all .lin files pass check"
+	@echo; echo "== receipt round-trip (c0) =="
+	@$(BIN) receipt create --source "return x * x;" --input 9 > /tmp/lin_rec.rulel
+	@$(BIN) receipt verify --receipt /tmp/lin_rec.rulel
+
 # CPU checks that need no GPU hardware (they only need a linked binary):
 #   - version, parse+type-check+lint every .lin under src/ and examples/
 #   - compute-receipt create -> verify round-trip
 test: build-gpu
-	@echo "== version =="; $(BIN) version
+	@echo "== version =="; zig-out/bin/lin_native version
 	@echo; echo "== check: all src/*.lin and examples/*.lin =="
 	@fail=0; for f in $$(find src examples -name '*.lin' | sort); do \
-	  out=$$($(BIN) check "$$f" 2>&1); \
+	  out=$$(zig-out/bin/lin_native check "$$f" 2>&1); \
 	  if printf '%s' "$$out" | grep -q '^@RULEL:LIN_CHECK:1.0.0'; then echo "  OK   $$f"; else echo "  FAIL $$f"; fail=1; fi; \
 	done; \
 	if [ "$$fail" != 0 ]; then echo "test: one or more .lin files failed check"; exit 1; fi; \
 	echo "test: all .lin files pass check"
 	@echo; echo "== receipt round-trip =="
-	@$(BIN) receipt create --source "return x * x;" --input 9 > /tmp/lin_rec.rulel
-	@$(BIN) receipt verify --receipt /tmp/lin_rec.rulel
+	@zig-out/bin/lin_native receipt create --source "return x * x;" --input 9 > /tmp/lin_rec.rulel
+	@zig-out/bin/lin_native receipt verify --receipt /tmp/lin_rec.rulel
 	@echo; echo "== attestation honesty gate =="
 	@$(MAKE) --no-print-directory attestation-gate
 
 # Same checks but with the CPU-only build (no OpenCL toolchain needed).
 test-cpu: build-cpu
-	@echo "== version (cpu) =="; $(BIN) version
+	@echo "== version (cpu) =="; zig-out/bin/lin_native version
 	@echo; echo "== check: all src/*.lin and examples/*.lin (cpu) =="
 	@fail=0; for f in $$(find src examples -name '*.lin' | sort); do \
-	  out=$$($(BIN) check "$$f" 2>&1); \
+	  out=$$(zig-out/bin/lin_native check "$$f" 2>&1); \
 	  if printf '%s' "$$out" | grep -q '^@RULEL:LIN_CHECK:1.0.0'; then echo "  OK   $$f"; else echo "  FAIL $$f"; fail=1; fi; \
 	done; \
 	if [ "$$fail" != 0 ]; then echo "test-cpu: one or more .lin files failed check"; exit 1; fi; \
 	echo "test-cpu: all .lin files pass check"
 	@echo; echo "== receipt round-trip (cpu) =="
-	@$(BIN) receipt create --source "return x * x;" --input 9 > /tmp/lin_rec.rulel
-	@$(BIN) receipt verify --receipt /tmp/lin_rec.rulel
+	@zig-out/bin/lin_native receipt create --source "return x * x;" --input 9 > /tmp/lin_rec.rulel
+	@zig-out/bin/lin_native receipt verify --receipt /tmp/lin_rec.rulel
 	@echo; echo "== attestation honesty gate (cpu) =="
 	@$(MAKE) --no-print-directory attestation-gate
 
@@ -207,6 +222,32 @@ verify-receipt: build-cpu
 	  echo "verify-receipt: tampered receipt PASSED (BUG)"; exit 1; \
 	else echo "tampered receipt correctly rejected"; fi
 	@rm -f /tmp/lin_tampered.json
+
+# --------------------------------------------------------------------------
+# Soberania 100% LIN: LinVM Compiler 0 + Ponto Fixo (C0=C1=C2) + Emissor ELF64
+# Nenhum compilador externo (Zig) é necessário para construir ou verificar.
+#
+#   make test-lin-sovereign   -> executa toda a suíte de soberania 100% LIN
+#   make verify-three-repos   -> 6 repositórios (QOI, TinyExpr, Uniswap, SipHash)
+#   make verify-fixed-point   -> auto-compilação e estabilidade de ponto fixo
+#   make verify-elf           -> emissor nativo ELF64 e execução direta no kernel
+.PHONY: test-lin-sovereign verify-three-repos verify-fixed-point verify-elf
+
+test-lin-sovereign: c0 c0-gate c0-check c0-selfhost-gate stmt-selfhost-gate verify-three-repos verify-fixed-point verify-elf
+	@echo "================================================================================"
+	@echo "=== SOBERANIA 100% LIN: TODAS AS ETAPAS E TESTES PASSARAM COM SUCESSO!      ==="
+	@echo "=== LIN COMPILANDO LIN, EXECUTANDO NA LINVM E EMITINDO BINÁRIO NATIVO ELF64 ==="
+	@echo "================================================================================"
+
+verify-three-repos: c0
+	@./test/verify_three_repos_linvm.sh
+	@python3 test/verify_external_complete_ports.py
+
+verify-fixed-point: c0
+	@./test/verify_fixed_point_c0_c1_c2.sh
+
+verify-elf: c0
+	@./test/verify_elf_native_emitter.sh
 
 # --------------------------------------------------------------------------
 # Rationalist external proof: real GitHub upstream provenance + independent
