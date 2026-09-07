@@ -256,6 +256,9 @@ verify-gpu: c0
 gpu-verify: c0
 	@$(BIN) gpu-verify test/corpus/gpu_parallel_map_kernels.lin
 
+benchmark-uniswap: c0
+	@./test/benchmark_uniswap_lin_vs_original.sh
+
 # --------------------------------------------------------------------------
 # Rationalist external proof: real GitHub upstream provenance + independent
 # Python/C oracle parity + no-Zig self-host gates. No Zig required.

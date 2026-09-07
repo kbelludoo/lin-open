@@ -1,0 +1,98 @@
+@LIN:L1c:0.2
+@AMM_SETTLER_SOVEREIGN_APP{
+  version=1
+  target="linvm_cpu_and_gpu"
+  domain="defi:amm:settlement_and_audit"
+  purpose="uniswap_v2_settler_and_fraud_detector"
+  status="SOVEREIGN_V1"
+  gates=amm_settler_app_gate
+}
+
+// ============================================================================
+// LIN AMM Settler & Verifiable Liquidation Application (LIN Puro)
+//
+// Executa liquidação off-chain, auditoria de invariante k (x * y >= k),
+// detecção de slippage e geração de provas computacionais sem gas.
+// ============================================================================
+
+!amm_div(x: int, y: int) -> int {
+  ?(y <= 0 || x < 0) { ^ 0; };
+  q = 0;
+  rem = 0;
+  i = 63;
+  while (i >= 0) {
+    carry = 0;
+    ?(rem < 0) { carry = 1; };
+    bit = _lia_ushr(x, i) & 1;
+    rem = _lia_shl(rem, 1) | bit;
+    ?(carry == 1 || rem >= y) {
+      rem = rem - y;
+      q = q | _lia_shl(1, i);
+    };
+    i = i - 1;
+  };
+  ^ q;
+}
+
+// Cálculo canônico do retorno de swap (0.3% fee: 997 / 1000)
+!amm_get_amount_out(amount_in: int, reserve_in: int, reserve_out: int) -> int {
+  ?(amount_in <= 0 || reserve_in <= 0 || reserve_out <= 0) { ^ 0; };
+  amount_in_with_fee = amount_in * 997;
+  numerator = amount_in_with_fee * reserve_out;
+  denominator = (reserve_in * 1000) + amount_in_with_fee;
+  ?(denominator <= 0) { ^ 0; };
+  ^ amm_div(numerator, denominator);
+}
+
+// Verificação do invariante de produto constante Uniswap v2:
+// (reserve_in * 1000 + amount_in * 997) * (reserve_out - amount_out) >= reserve_in * reserve_out * 1000
+!amm_verify_invariant_k(amount_in: int, amount_out: int, reserve_in: int, reserve_out: int) -> int {
+  ?(amount_out >= reserve_out) { ^ 0; };
+  new_res_in_scaled = (reserve_in * 1000) + (amount_in * 997);
+  new_res_out = reserve_out - amount_out;
+  old_k_scaled = reserve_in * reserve_out * 1000;
+  new_k_scaled = new_res_in_scaled * new_res_out;
+  ?(new_k_scaled >= old_k_scaled) { ^ 1; };
+  ^ 0;
+}
+
+// Classificador de conformidade de liquidação:
+// 1 = EXACT_INPUT_VALID
+// 2 = OVERPAID_INPUT (usuário enviou mais que o mínimo, excedente retido)
+// -1 = K_VIOLATION (tentativa de drenagem de liquidez / fraude)
+!amm_classify_swap(amount_in: int, amount_out: int, reserve_in: int, reserve_out: int) -> int {
+  valid_k = amm_verify_invariant_k(amount_in, amount_out, reserve_in, reserve_out);
+  ?(valid_k == 0) { ^ -1; };
+  expected_out = amm_get_amount_out(amount_in, reserve_in, reserve_out);
+  ?(amount_out == expected_out) { ^ 1; };
+  ?(amount_out < expected_out) { ^ 2; };
+  ^ -1;
+}
+
+// Simulação de liquidação em lote com métricas agregadas
+!amm_settler_app_gate() -> int {
+  ok = 1;
+  
+  // Teste 1: Swap canônico 1000 com reservas 1.000.000 / 2.000.000
+  // expected = (1000 * 997 * 2000000) / (1000000000 + 997000) = 1992
+  out1 = amm_get_amount_out(1000, 1000000, 2000000);
+  ?(out1 != 1992) { ok = 0; };
+  
+  // Teste 2: Invariante k satisfeito
+  inv1 = amm_verify_invariant_k(1000, 1992, 1000000, 2000000);
+  ?(inv1 != 1) { ok = 0; };
+  
+  // Teste 3: Classificação correta
+  c1 = amm_classify_swap(1000, 1992, 1000000, 2000000);
+  ?(c1 != 1) { ok = 0; };
+  
+  // Teste 4: Fraude detectada (amount_out artificialmente inflado para 2500)
+  fraud = amm_verify_invariant_k(1000, 2500, 1000000, 2000000);
+  ?(fraud != 0) { ok = 0; };
+  c_fraud = amm_classify_swap(1000, 2500, 1000000, 2000000);
+  ?(c_fraud != -1) { ok = 0; };
+
+  ^ ok;
+}
+
+=ex{amm_get_amount_out, amm_verify_invariant_k, amm_classify_swap, amm_settler_app_gate}
