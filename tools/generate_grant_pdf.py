@@ -145,11 +145,11 @@ def build_pdf(filename="docs/LIN_GPU_DeFi_Settlement_Grant_Proposal.pdf"):
     story.append(Paragraph("2. Empirical Performance: Real Mainnet Swaps Benchmark", h1_style))
     
     table_data = [
-        ["Metric", "Ethereum EVM (L1)", "LIN (AMD RX 6600 GPU)", "Empirical Advantage"],
-        ["Execution Throughput", "~15 - 30 TPS", "459,000+ TPS", "22,000x faster execution"],
-        ["Latency (2,000 Swaps)", "~100 - 133 seconds", "0.0041 seconds (4.1 ms)", "Instant batch settlement"],
-        ["Average Latency / Swap", "12,000 ms (block time)", "0.0021 ms (2.1 µs)", "5,700,000x lower latency"],
-        ["Gas Overhead on L1", "~200M gas (~$30k USD)", "~25k gas (Batch Receipt)", "99.98% gas reduction"],
+        ["Metric", "Ethereum L1 Execution", "LIN (AMD RX 6600 GPU)", "Empirical Advantage"],
+        ["AMM Math Throughput", "~15 - 30 swaps/sec (L1 limit)", "459,000+ swaps/sec", "22,000x offload speedup"],
+        ["Compute Time (2,000 Swaps)", "~100 - 133 seconds", "0.0041 seconds (4.1 ms)", "Instant batch settlement"],
+        ["Average Compute / Swap", "12,000 ms (block interval)", "0.0021 ms (2.1 µs)", "5,700,000x lower latency"],
+        ["Gas Overhead on L1", "1,164,504,079 gas (Mainnet)", "70,707 gas (Measured EVM)", "99.9939% gas reduction"],
         ["Memory Safety Model", "Reentrancy / Out-of-gas", "Heap-Free / Bounds-Checked", "Provably crash-safe"],
         ["Off-chain Auditability", "Requires full archive node", "SHA-256 Merkle Receipt", "O(1) independent verification"]
     ]
