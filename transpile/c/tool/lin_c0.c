@@ -30,6 +30,7 @@
 #include "lin_vm.h"
 #include "lin_linbc1.h"
 #include "lin_sha256.h"
+#include "lin_c0_gpu.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -851,7 +852,7 @@ int main(int argc, char **argv) {
                 "usage: lin_c0 --version | info <f.lin> | check <f.lin> | lint <f.lin> |\n"
                 "            vm <f.lin> [fn] [args] | receipt create|verify [args] |\n"
                 "            vmfull <f.lin> [fn] [args] | image <f.lin> [-o out] |\n"
-                "            run <img> <fn> [args] | roundtrip <f.lin> <fn> [args]\n");
+                "            gpu-verify [f.lin] | run <img> <fn> [args] | roundtrip <f.lin> <fn> [args]\n");
         return 1;
     }
     cmd = argv[1];
@@ -869,6 +870,10 @@ int main(int argc, char **argv) {
     else if (strcmp(cmd, "check") == 0) rc = cmd_check(a, argc, argv);
     else if (strcmp(cmd, "lint") == 0) rc = cmd_lint(argc, argv);
     else if (strcmp(cmd, "receipt") == 0) rc = cmd_receipt(a, argc, argv);
+    else if (strcmp(cmd, "gpu-verify") == 0) {
+        const char *fpath = (argc >= 3) ? argv[2] : "examples/map_kernels.lin";
+        rc = c0_gpu_verify(a, fpath);
+    }
     else if (strcmp(cmd, "vmfull") == 0) rc = cmd_vm(a, argc, argv, 1);
     else if (strcmp(cmd, "image") == 0) rc = cmd_image(a, argc, argv);
     else if (strcmp(cmd, "run") == 0) rc = cmd_run(argc, argv);

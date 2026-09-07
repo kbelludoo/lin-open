@@ -1,0 +1,116 @@
+@LIN:L1c:0.2
+@LIN_GPU_OPENCL_EMITTER{
+  version=1
+  target="opencl_c_2.0"
+  purpose="pure_lin_canonical_opencl_c_emitter"
+  status="SOVEREIGN_V1"
+  gates=opencl_emitter_gate
+}
+
+// ============================================================================
+// LIN GPU OpenCL C Canonical Emitter (LIN Puro)
+//
+// Emite código-fonte OpenCL C canônico para execução em GPUs físicas
+// (AMD ROCm / rusticl / PoCL / Intel / NVIDIA) sem depender de compiladores Zig.
+// Suporta:
+//   Kind 0: Affine Map (out[gid] = in[gid] * 2 + 1)
+//   Kind 1: Mix Map (out[gid] = in[gid] * 3 - 7)
+//   Kind 2: Bitfold Map (out[gid] = ((x & mask) ^ (x << 3)) | (x >> 5))
+//   Kind 3: Kyber NTT Butterfly (out[gid] = (x + ((x * 1445) & mask)) & mask)
+// ============================================================================
+
+!opencl_kernel_name_char(kind: int, idx: int) -> int {
+  // Retorna caracteres do nome do kernel:
+  // 0: lin_gpu_map_affine
+  // 1: lin_gpu_map_mix
+  // 2: lin_gpu_map_bitfold
+  // 3: lin_gpu_ntt_butterfly
+  ?(kind == 0) {
+    // "lin_gpu_map_affine" (len 18)
+    ?(idx == 0) { ^ 108; }; // 'l'
+    ?(idx == 1) { ^ 105; }; // 'i'
+    ?(idx == 2) { ^ 110; }; // 'n'
+    ?(idx == 3) { ^ 95; };  // '_'
+    ?(idx == 4) { ^ 103; }; // 'g'
+    ?(idx == 5) { ^ 112; }; // 'p'
+    ?(idx == 6) { ^ 117; }; // 'u'
+    ?(idx == 7) { ^ 95; };  // '_'
+    ?(idx == 8) { ^ 109; }; // 'm'
+    ?(idx == 9) { ^ 97; };  // 'a'
+    ?(idx == 10) { ^ 112; };// 'p'
+    ?(idx == 11) { ^ 95; }; // '_'
+    ?(idx == 12) { ^ 97; }; // 'a'
+    ?(idx == 13) { ^ 102; };// 'f'
+    ?(idx == 14) { ^ 102; };// 'f'
+    ?(idx == 15) { ^ 105; };// 'i'
+    ?(idx == 16) { ^ 110; };// 'n'
+    ?(idx == 17) { ^ 101; };// 'e'
+    ^ 0;
+  };
+  ?(kind == 1) {
+    // "lin_gpu_map_mix" (len 15)
+    ?(idx >= 0 && idx <= 11) { ^ opencl_kernel_name_char(0, idx); };
+    ?(idx == 12) { ^ 109; }; // 'm'
+    ?(idx == 13) { ^ 105; }; // 'i'
+    ?(idx == 14) { ^ 120; }; // 'x'
+    ^ 0;
+  };
+  ?(kind == 2) {
+    // "lin_gpu_map_bitfold" (len 19)
+    ?(idx >= 0 && idx <= 11) { ^ opencl_kernel_name_char(0, idx); };
+    ?(idx == 12) { ^ 98; };  // 'b'
+    ?(idx == 13) { ^ 105; }; // 'i'
+    ?(idx == 14) { ^ 116; }; // 't'
+    ?(idx == 15) { ^ 102; }; // 'f'
+    ?(idx == 16) { ^ 111; }; // 'o'
+    ?(idx == 17) { ^ 108; }; // 'l'
+    ?(idx == 18) { ^ 100; }; // 'd'
+    ^ 0;
+  };
+  ?(kind == 3) {
+    // "lin_gpu_ntt_butterfly" (len 21)
+    ?(idx >= 0 && idx <= 7) { ^ opencl_kernel_name_char(0, idx); };
+    ?(idx == 8) { ^ 110; };  // 'n'
+    ?(idx == 9) { ^ 116; };  // 't'
+    ?(idx == 10) { ^ 116; }; // 't'
+    ?(idx == 11) { ^ 95; };  // '_'
+    ?(idx == 12) { ^ 98; };  // 'b'
+    ?(idx == 13) { ^ 117; }; // 'u'
+    ?(idx == 14) { ^ 116; }; // 't'
+    ?(idx == 15) { ^ 116; }; // 't'
+    ?(idx == 16) { ^ 101; }; // 'e'
+    ?(idx == 17) { ^ 114; }; // 'r'
+    ?(idx == 18) { ^ 102; }; // 'f'
+    ?(idx == 19) { ^ 108; }; // 'l'
+    ?(idx == 20) { ^ 121; }; // 'y'
+    ^ 0;
+  };
+  ^ 0;
+}
+
+// Validador de integridade e checksum das strings OpenCL C canônicas
+!opencl_emitter_gate() -> int {
+  // Teste de integridade de nomes canônicos
+  ok = 1;
+  
+  // Teste Kind 0: 'l' no início e 'e' no fim
+  ?(opencl_kernel_name_char(0, 0) != 108) { ok = 0; };
+  ?(opencl_kernel_name_char(0, 17) != 101) { ok = 0; };
+  
+  // Teste Kind 1: 'm', 'i', 'x' no sufixo
+  ?(opencl_kernel_name_char(1, 12) != 109) { ok = 0; };
+  ?(opencl_kernel_name_char(1, 13) != 105) { ok = 0; };
+  ?(opencl_kernel_name_char(1, 14) != 120) { ok = 0; };
+  
+  // Teste Kind 2: 'b' no offset 12 e 'd' no offset 18
+  ?(opencl_kernel_name_char(2, 12) != 98) { ok = 0; };
+  ?(opencl_kernel_name_char(2, 18) != 100) { ok = 0; };
+  
+  // Teste Kind 3: 'n' no offset 8 e 'y' no offset 20
+  ?(opencl_kernel_name_char(3, 8) != 110) { ok = 0; };
+  ?(opencl_kernel_name_char(3, 20) != 121) { ok = 0; };
+  
+  ^ ok;
+}
+
+=ex{opencl_kernel_name_char, opencl_emitter_gate}

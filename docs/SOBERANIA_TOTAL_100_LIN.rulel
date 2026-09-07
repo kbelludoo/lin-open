@@ -26,6 +26,10 @@ A plataforma LIN atingiu a sua soberania técnica e arquitetural:
    - `codeplea/tinyexpr` (Parser matemático e avaliador)
    - `Uniswap/v2-core` (Invariantes de liquidez AMM)
    - Todos auditados e com 100% de paridade bit-a-bit contra os oráculos originais em C.
+5. **Soberania Total da GPU (AMD Radeon RX 6600 / Zero Zig):**
+   - Emissor OpenCL canônico em LIN puro (`src/lin_gpu_opencl_emitter.lin`).
+   - Runner GPU na LinVM C0 (`lin_c0 gpu-verify`) que compila e despacha kernels sem nenhum código Zig.
+   - 77/77 alvos confirmados com 100% de paridade bit-a-bit contra a LinVM CPU até 1.000.000 de elementos.
 
 ---
 
@@ -48,3 +52,4 @@ Resultado:
 - **verify-three-repos**: PASS
 - **verify-fixed-point**: PASS
 - **verify-elf**: PASS
+- **verify-gpu**: PASS

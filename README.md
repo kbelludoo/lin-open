@@ -98,6 +98,9 @@ make verify-fixed-point
 
 # Verificação da emissão de binário nativo ELF64 e execução no kernel Linux
 make verify-elf
+
+# Verificação da GPU real (AMD RX 6600) sem Zig (77 alvos bit-a-bit)
+make verify-gpu
 ```
 
 ### Bootstrap Legado (Stage-0 Zig, opcional/congelado)

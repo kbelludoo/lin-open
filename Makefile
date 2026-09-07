@@ -224,19 +224,20 @@ verify-receipt: build-cpu
 	@rm -f /tmp/lin_tampered.json
 
 # --------------------------------------------------------------------------
-# Soberania 100% LIN: LinVM Compiler 0 + Ponto Fixo (C0=C1=C2) + Emissor ELF64
+# Soberania 100% LIN: LinVM Compiler 0 + Ponto Fixo (C0=C1=C2) + Emissor ELF64 + GPU
 # Nenhum compilador externo (Zig) é necessário para construir ou verificar.
 #
-#   make test-lin-sovereign   -> executa toda a suíte de soberania 100% LIN
+#   make test-lin-sovereign   -> executa toda a suíte de soberania 100% LIN (CPU + GPU)
 #   make verify-three-repos   -> 6 repositórios (QOI, TinyExpr, Uniswap, SipHash)
 #   make verify-fixed-point   -> auto-compilação e estabilidade de ponto fixo
 #   make verify-elf           -> emissor nativo ELF64 e execução direta no kernel
-.PHONY: test-lin-sovereign verify-three-repos verify-fixed-point verify-elf
+#   make verify-gpu           -> emissor OpenCL em LIN + execução na GPU real (AMD RX 6600)
+.PHONY: test-lin-sovereign verify-three-repos verify-fixed-point verify-elf verify-gpu gpu-verify
 
-test-lin-sovereign: c0 c0-gate c0-check c0-selfhost-gate stmt-selfhost-gate verify-three-repos verify-fixed-point verify-elf
+test-lin-sovereign: c0 c0-gate c0-check c0-selfhost-gate stmt-selfhost-gate verify-three-repos verify-fixed-point verify-elf verify-gpu
 	@echo "================================================================================"
 	@echo "=== SOBERANIA 100% LIN: TODAS AS ETAPAS E TESTES PASSARAM COM SUCESSO!      ==="
-	@echo "=== LIN COMPILANDO LIN, EXECUTANDO NA LINVM E EMITINDO BINÁRIO NATIVO ELF64 ==="
+	@echo "=== LIN COMPILANDO LIN, EXECUTANDO NA LINVM, NO KERNEL ELF64 E NA GPU REAL  ==="
 	@echo "================================================================================"
 
 verify-three-repos: c0
@@ -248,6 +249,12 @@ verify-fixed-point: c0
 
 verify-elf: c0
 	@./test/verify_elf_native_emitter.sh
+
+verify-gpu: c0
+	@./test/verify_gpu_sovereign.sh
+
+gpu-verify: c0
+	@$(BIN) gpu-verify test/corpus/gpu_parallel_map_kernels.lin
 
 # --------------------------------------------------------------------------
 # Rationalist external proof: real GitHub upstream provenance + independent
