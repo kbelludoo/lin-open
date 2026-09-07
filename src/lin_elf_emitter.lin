@@ -1,0 +1,145 @@
+@LIN:L1c:0.2
+@LIN_ELF_EMITTER{
+  version=1
+  target="linux_x86_64"
+  format="ELF64_STANDALONE"
+  purpose="pure_lin_native_elf_binary_emitter"
+  status="EXPERIMENTAL_V1"
+}
+
+// ----------------------------------------------------------------------------
+// LIN Native ELF64 Emitter (Linux x86_64)
+// Gera diretamente os bytes de um binário executável ELF64 autônomo sem runtime C.
+// Tamanho total do executável: 136 bytes (64 header + 56 pheader + 16 code)
+// ----------------------------------------------------------------------------
+
+!elf_size() -> int {
+  ^ 136;
+}
+
+// Retorna o byte do executável ELF na posição `idx` (0..135)
+!elf_byte(idx: int, exit_val: int) -> int {
+  // === 1. ELF Header (64 bytes: 0..63) ===
+  // e_ident[16]
+  ?(idx == 0) { ^ 127; }; // 0x7f
+  ?(idx == 1) { ^ 69; };  // 'E'
+  ?(idx == 2) { ^ 76; };  // 'L'
+  ?(idx == 3) { ^ 70; };  // 'F'
+  ?(idx == 4) { ^ 2; };   // ELFCLASS64 (64-bit)
+  ?(idx == 5) { ^ 1; };   // ELFDATA2LSB (little-endian)
+  ?(idx == 6) { ^ 1; };   // EV_CURRENT (versão 1)
+  ?(idx >= 7 && idx <= 15) { ^ 0; }; // OSABI SysV + padding
+  // e_type (ET_EXEC = 2)
+  ?(idx == 16) { ^ 2; };
+  ?(idx == 17) { ^ 0; };
+  // e_machine (EM_X86_64 = 62 = 0x3e)
+  ?(idx == 18) { ^ 62; };
+  ?(idx == 19) { ^ 0; };
+  // e_version (1)
+  ?(idx == 20) { ^ 1; };
+  ?(idx >= 21 && idx <= 23) { ^ 0; };
+  // e_entry (0x400078 = 0x400000 + 120 bytes de offset)
+  ?(idx == 24) { ^ 120; }; // 0x78
+  ?(idx == 25) { ^ 0; };
+  ?(idx == 26) { ^ 64; };  // 0x40
+  ?(idx >= 27 && idx <= 31) { ^ 0; };
+  // e_phoff (offset do program header = 64 = 0x40)
+  ?(idx == 32) { ^ 64; };
+  ?(idx >= 33 && idx <= 39) { ^ 0; };
+  // e_shoff (sem section headers = 0)
+  ?(idx >= 40 && idx <= 47) { ^ 0; };
+  // e_flags (0)
+  ?(idx >= 48 && idx <= 51) { ^ 0; };
+  // e_ehsize (tamanho do header ELF = 64)
+  ?(idx == 52) { ^ 64; };
+  ?(idx == 53) { ^ 0; };
+  // e_phentsize (tamanho de cada program header = 56)
+  ?(idx == 54) { ^ 56; };
+  ?(idx == 55) { ^ 0; };
+  // e_phnum (1 program header)
+  ?(idx == 56) { ^ 1; };
+  ?(idx == 57) { ^ 0; };
+  // e_shentsize (64)
+  ?(idx == 58) { ^ 64; };
+  ?(idx == 59) { ^ 0; };
+  // e_shnum e e_shstrndx (0)
+  ?(idx >= 60 && idx <= 63) { ^ 0; };
+
+  // === 2. Program Header Table (56 bytes: 64..119) ===
+  // p_type (PT_LOAD = 1)
+  ?(idx == 64) { ^ 1; };
+  ?(idx >= 65 && idx <= 67) { ^ 0; };
+  // p_flags (PF_R | PF_X = 5)
+  ?(idx == 68) { ^ 5; };
+  ?(idx >= 69 && idx <= 71) { ^ 0; };
+  // p_offset (0)
+  ?(idx >= 72 && idx <= 79) { ^ 0; };
+  // p_vaddr (0x400000)
+  ?(idx == 80 || idx == 81) { ^ 0; };
+  ?(idx == 82) { ^ 64; }; // 0x40
+  ?(idx >= 83 && idx <= 87) { ^ 0; };
+  // p_paddr (0x400000)
+  ?(idx == 88 || idx == 89) { ^ 0; };
+  ?(idx == 90) { ^ 64; }; // 0x40
+  ?(idx >= 91 && idx <= 95) { ^ 0; };
+  // p_filesz (136 bytes)
+  ?(idx == 96) { ^ 136; };
+  ?(idx >= 97 && idx <= 103) { ^ 0; };
+  // p_memsz (136 bytes)
+  ?(idx == 104) { ^ 136; };
+  ?(idx >= 105 && idx <= 111) { ^ 0; };
+  // p_align (0x1000 = 4096)
+  ?(idx == 112) { ^ 0; };
+  ?(idx == 113) { ^ 16; }; // 0x10 -> 0x1000
+  ?(idx >= 114 && idx <= 119) { ^ 0; };
+
+  // === 3. Machine Code x86_64 (16 bytes: 120..135) ===
+  // mov eax, 60 (sys_exit syscall número 60) -> b8 3c 00 00 00
+  ?(idx == 120) { ^ 184; }; // 0xb8
+  ?(idx == 121) { ^ 60; };  // 0x3c (sys_exit)
+  ?(idx == 122 || idx == 123 || idx == 124) { ^ 0; };
+  // mov edi, exit_val -> bf [exit_val & 255] 00 00 00
+  ?(idx == 125) { ^ 191; }; // 0xbf
+  ?(idx == 126) { ^ exit_val & 255; };
+  ?(idx >= 127 && idx <= 129) { ^ 0; };
+  // syscall -> 0f 05
+  ?(idx == 130) { ^ 15; };  // 0x0f
+  ?(idx == 131) { ^ 5; };   // 0x05
+  // nops de padding -> 90 90 90 90
+  ?(idx >= 132 && idx <= 135) { ^ 144; }; // 0x90 (NOP)
+
+  ^ 0;
+}
+
+// Validação dos bytes críticos do cabeçalho
+!elf_self_check() -> int {
+  // Confere o magic ELF: 0x7f, 'E', 'L', 'F'
+  ?(elf_byte(0, 0) != 127) { ^ -1; };
+  ?(elf_byte(1, 0) != 69)  { ^ -2; };
+  ?(elf_byte(2, 0) != 76)  { ^ -3; };
+  ?(elf_byte(3, 0) != 70)  { ^ -4; };
+  // Confere arquitetura x86_64
+  ?(elf_byte(18, 0) != 62) { ^ -5; };
+  // Confere instrução syscall
+  ?(elf_byte(130, 0) != 15 || elf_byte(131, 0) != 5) { ^ -6; };
+  ^ 1;
+}
+
+// Emite checksum de integridade de todos os 136 bytes emitidos
+!elf_emit_checksum(exit_val: int) -> int {
+  fold = 0;
+  i = 0;
+  while (i < 136) {
+    b = elf_byte(i, exit_val);
+    fold = (fold * 31) + b;
+    i = i + 1;
+  };
+  ^ fold;
+}
+
+=ex{
+  elf_size,
+  elf_byte,
+  elf_self_check,
+  elf_emit_checksum
+}
