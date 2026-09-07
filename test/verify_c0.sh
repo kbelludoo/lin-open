@@ -128,6 +128,7 @@ if [ -n "$SAN" ]; then
   $CC -O1 -g -std=c11 -fsanitize=address,undefined -fno-sanitize-recover=all \
       -I "$ROOT/transpile/c" -I "$ROOT/transpile/c/lin_c" -o "$SWEEP_TMP" \
       "$ROOT/transpile/c/tool/lin_c0.c" "$ROOT/transpile/c/tool/lin_c0_front.c" \
+      "$ROOT/transpile/c/tool/lin_c0_check.c" \
       "$ROOT"/transpile/c/lin_c/*.c || { printf '  FAIL  build com sanitizers\n'; exit 1; }
   printf '  sanitizers ..... ASan+UBSan ativos na varredura\n'
   C0RUN=$SWEEP_TMP

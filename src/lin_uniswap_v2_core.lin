@@ -1,0 +1,124 @@
+@LIN:L1c:0.2
+@UNISWAP_V2_CORE{
+  version=1
+  repo="Uniswap/v2-periphery"
+  source="contracts/libraries/UniswapV2Library.sol"
+  profile="LINVM-1"
+  purpose="pure_lin_uniswap_v2_core_math"
+}
+
+// ----------------------------------------------------------------------------
+// Uniswap V2 AMM Math Core (Implementação canônica em LIN determinístico)
+// Invariante x * y = k, taxas 0.3%, quote, getAmountOut, getAmountIn, sqrt
+// Sem operador / primitivo da CPU, divisão estritamente fail-closed.
+// ----------------------------------------------------------------------------
+
+!u2_u_ge(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 1; };
+  ?(a >= 0 && b < 0) { ^ 0; };
+  ?(a >= b) { ^ 1; };
+  ^ 0;
+}
+
+!u2_div(x: int, y: int) -> int {
+  ?(y <= 0 || x < 0) { ^ 0; }; // Fail-closed em DeFi: divisão por zero/negativo resulta em 0
+  ux = x;
+  uy = y;
+  q = 0;
+  rem = 0;
+  i = 63;
+  while (i >= 0) {
+    carry = 0;
+    ?(rem < 0) { carry = 1; };
+    bit = _lia_ushr(ux, i) & 1;
+    rem = _lia_shl(rem, 1) | bit;
+    ?(carry == 1 || u2_u_ge(rem, uy) == 1) {
+      rem = rem - uy;
+      q = q | _lia_shl(1, i);
+    };
+    i = i - 1;
+  };
+  ^ q;
+}
+
+// 1. quote(amountA, reserveA, reserveB) -> amountB = (amountA * reserveB) / reserveA
+!u2_quote(amount_a: int, reserve_a: int, reserve_b: int) -> int {
+  ?(amount_a <= 0 || reserve_a <= 0 || reserve_b <= 0) { ^ 0; };
+  ^ u2_div(amount_a * reserve_b, reserve_a);
+}
+
+// 2. getAmountOut(amountIn, reserveIn, reserveOut)
+!u2_get_amount_out(amount_in: int, reserve_in: int, reserve_out: int) -> int {
+  ?(amount_in <= 0 || reserve_in <= 0 || reserve_out <= 0) { ^ 0; };
+  amount_in_with_fee = amount_in * 997;
+  numerator = amount_in_with_fee * reserve_out;
+  denominator = (reserve_in * 1000) + amount_in_with_fee;
+  ?(denominator <= 0) { ^ 0; };
+  ^ u2_div(numerator, denominator);
+}
+
+// 3. getAmountIn(amountOut, reserveIn, reserveOut)
+!u2_get_amount_in(amount_out: int, reserve_in: int, reserve_out: int) -> int {
+  ?(amount_out <= 0 || reserve_in <= 0 || reserve_out <= 0 || amount_out >= reserve_out) { ^ 0; };
+  numerator = reserve_in * amount_out * 1000;
+  denominator = (reserve_out - amount_out) * 997;
+  ?(denominator <= 0) { ^ 0; };
+  ^ u2_div(numerator, denominator) + 1;
+}
+
+// 4. sqrt(y) - Raiz quadrada inteira para precificação de LP tokens
+!u2_sqrt(y: int) -> int {
+  ?(y <= 0) { ^ 0; };
+  ?(y <= 3) { ^ 1; };
+  z = y;
+  x = u2_div(y, 2) + 1;
+  while (x < z) {
+    z = x;
+    x = u2_div(u2_div(y, x) + x, 2);
+  };
+  ^ z;
+}
+
+// 5. mulDiv(a, b, denominator) - Multiplicação e divisão protegida contra overflow
+!u2_mul_div(a: int, b: int, denominator: int) -> int {
+  ?(denominator <= 0) { ^ 0; };
+  ^ u2_div(a * b, denominator);
+}
+
+// Suíte de validação com os vetores oficiais do UniswapV2Router02
+!u2_test_suite() -> int {
+  // Teste 1: quote
+  ?(u2_quote(10, 100, 200) != 20) { ^ -1; };
+  ?(u2_quote(0, 100, 200) != 0)   { ^ -2; };
+  ?(u2_quote(10, 0, 200) != 0)   { ^ -3; };
+
+  // Teste 2: getAmountOut (Swap 1000 de entrada com reservas 10000 / 20000)
+  ?(u2_get_amount_out(1000, 10000, 20000) != 1813) { ^ -4; };
+
+  // Teste 3: getAmountIn (Inverso do swap: para obter 1813 precisa de 1000)
+  ?(u2_get_amount_in(1813, 10000, 20000) != 1000) { ^ -5; };
+
+  // Teste 4: Proteção contra liquidez insuficiente (amountOut >= reserveOut)
+  ?(u2_get_amount_in(20000, 10000, 20000) != 0) { ^ -6; };
+
+  // Teste 5: sqrt de LP shares
+  ?(u2_sqrt(10000) != 100) { ^ -7; };
+  ?(u2_sqrt(9999) != 99)   { ^ -8; };
+  ?(u2_sqrt(0) != 0)       { ^ -9; };
+
+  // Teste 6: mulDiv
+  ?(u2_mul_div(100, 200, 50) != 400) { ^ -10; };
+
+  ^ 1;
+}
+
+=ex{
+  u2_u_ge,
+  u2_div,
+  u2_quote,
+  u2_get_amount_out,
+  u2_get_amount_in,
+  u2_sqrt,
+  u2_mul_div,
+  u2_test_suite
+}

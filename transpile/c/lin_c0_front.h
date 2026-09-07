@@ -14,6 +14,19 @@
  *   vmArrLenOf           lin.zig:6262   -> c0_arr_len_of
  *   vmResolveDeps        lin.zig:6284   -> c0_resolve_deps
  *
+ * Plus the check/lint path (tool/lin_c0_check.c), also ported, not
+ * reimplemented:
+ *
+ *   lin_syntax_valid   lin.zig:5513   -> c0_syntax_valid
+ *   lin_type_check     lin.zig:5396   -> c0_type_check (+ infer_expr_type
+ *                                        :5204 and its scanners)
+ *   lin_check_rulel    lin.zig:5552   -> c0_check_rulel
+ *   cks_lint           lin.zig:5016   -> c0_lint (+ cks_ops :4861
+ *                                        cks_params :4982 cks_plist :4934)
+ *
+ * Parity oracle: test/verify_c0_check.sh byte-compares `check`/`lint`
+ * against the Zig Stage0 over the whole src/ + examples/ corpus plus
+ * negative vectors.
  * The interpreter it feeds is the already-audited `vm_exec`
  * (transpile/c/lin_c/lin_vm.c, port of vmExecWithSp). The base subset remains
  * BIT-IDENTICAL to the Zig Stage0. This C11 frontend additionally accepts
@@ -78,6 +91,24 @@ VmModule *c0_build_full(C0Arena *a, const char *src, size_t len);
  * image. The emitted bytes are deterministic: same module -> same bytes. */
 uint8_t *c0_image_encode(C0Arena *a, const VmModule *mod, size_t *out_len,
                          const char **err);
+
+/* lin_syntax_valid (lin.zig:5513): 1 when braces balance (string-aware,
+ * NO comment skipping, like the Zig) and at least one `!fn` exists. */
+int c0_syntax_valid(const char *src, size_t len,
+                    const C0FnInfo *fns, size_t nfns);
+
+/* lin_type_check (lin.zig:5396): NULL when clean, else a malloc'd
+ * "LIN_TYPE_ERROR: ..." message the caller must free. */
+char *c0_type_check(const C0FnInfo *fns, size_t nfns);
+
+/* lin_check_rulel (lin.zig:5552): malloc'd RULEL (@RULEL:LIN_CHECK:1.0.0),
+ * byte-identical to the Zig; caller frees. */
+char *c0_check_rulel(const char *src, size_t len, const C0FnInfo *fns,
+                     size_t nfns);
+
+/* cks_lint (lin.zig:5016): malloc'd RULEL (@RULEL:LIN_LINT:1.0.0),
+ * byte-identical to the Zig; caller frees. */
+char *c0_lint(const char *src, size_t len);
 
 /* Number of opcodes of the ISA (VM_OPCODE_COUNT in the Zig). */
 #define C0_OPCODE_COUNT 33

@@ -108,7 +108,7 @@ $(BC1T): test/test_linbc1.c $(SRCS) $(HDRS) $(BC1_SRCS) $(BC1_HDRS)
 # vmTokenize:5678, VmComp:5733, vmBuild:6296); interpreter is the audited
 # vm_exec (lin_c/lin_vm.c). Goldens: P1_LINVM_SELFHOST.rulel §3 and
 # docs/LINVM0_V2_FRONTIER.rulel (value AND steps are bit-exact oracles).
-C0_SRCS = tool/lin_c0.c tool/lin_c0_front.c $(SRCS) $(BC1_SRCS)
+C0_SRCS = tool/lin_c0.c tool/lin_c0_front.c tool/lin_c0_check.c $(SRCS) $(BC1_SRCS)
 C0_HDRS = lin_c0_front.h $(HDRS) $(BC1_HDRS)
 C0FLAGS = -I. -Ilin_c
 

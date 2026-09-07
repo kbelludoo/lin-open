@@ -5,6 +5,8 @@
  *
  *   lin_c0 --version
  *   lin_c0 info      <file.lin>                 coverage record (== Zig `lin vm <file>`)
+ *   lin_c0 check     <file.lin>                 parse+typecheck record (== Zig `lin check <file>`)
+ *   lin_c0 lint      <file.lin>                 lint record (== Zig `lin lint <file>`)
  *   lin_c0 vm        <file.lin> [fn] [i64...]   run from SOURCE
  *   lin_c0 image     <file.lin> [-o out.linbc]  freeze module as a LINBC1 image
  *   lin_c0 run       <img.linbc> <fn> [i64...]  run from IMAGE (fail-closed loader)
@@ -16,8 +18,9 @@
  *
  * Scope (R5, no overclaim): this host compiles the Stage0-compatible LIN
  * subset plus the C11 frontend extensions `for (init; cond; step)` and integer
- * division. `check`/`lint` (the full type checker and linter) remain
- * Stage0-only, and the fixed point C0=C1=C2 is still open.
+ * division. `check`/`lint` are also ported (tool/lin_c0_check.c, gated by
+ * test/verify_c0_check.sh); receipts/attestation/GPU and the fixed point
+ * C0=C1=C2 remain Stage0-only and still open.
  */
 #include "lin_c0_front.h"
 #include "lin_common.h"
@@ -118,6 +121,77 @@ static int parse_args(int argc, char **argv, int start, int64_t *out, size_t cap
         out[(*n)++] = (int64_t)v;
     }
     return 1;
+}
+
+/* ------------------------------------------------------------------ */
+/* check / lint (no Zig: port of `lin check` / `lin lint`)             */
+/* ------------------------------------------------------------------ */
+
+static int cmd_check(C0Arena *a, int argc, char **argv) {
+    char *src;
+    size_t len = 0;
+    size_t nfns = 0;
+    const C0FnInfo *fns;
+    char *err, *rulel;
+
+    if (argc < 3) {
+        fprintf(stderr, "usage: lin_c0 check <file.lin>\n");
+        return 1;
+    }
+    src = read_file(argv[2], &len);
+    if (!src) {
+        fprintf(stderr, "check: cannot open %s\n", argv[2]);
+        return 1;
+    }
+    fns = c0_parse_fn_infos(a, src, len, &nfns);
+    if (!c0_syntax_valid(src, len, fns, nfns)) {
+        fprintf(stderr, "LIN_PARSE\n");
+        free(src);
+        return 1;
+    }
+    err = c0_type_check(fns, nfns);
+    if (err) {
+        fprintf(stderr, "%s\n", err);
+        free(err);
+        free(src);
+        return 1;
+    }
+    rulel = c0_check_rulel(src, len, fns, nfns);
+    if (!rulel) {
+        fprintf(stderr, "check: out of memory\n");
+        free(src);
+        return 1;
+    }
+    printf("%s", rulel);
+    free(rulel);
+    free(src);
+    return 0;
+}
+
+static int cmd_lint(int argc, char **argv) {
+    char *src;
+    size_t len = 0;
+    char *rulel;
+
+    if (argc < 3) {
+        fprintf(stderr, "usage: lin_c0 lint <file.lin>\n");
+        return 1;
+    }
+    src = read_file(argv[2], &len);
+    if (!src) {
+        fprintf(stderr, "lint: cannot open %s\n", argv[2]);
+        return 1;
+    }
+    rulel = c0_lint(src, len);
+    if (!rulel) {
+        fprintf(stderr, "lint: out of memory\n");
+        free(src);
+        return 1;
+    }
+    printf("%s\n", rulel);
+    free(rulel);
+    free(src);
+    return 0;
 }
 
 /* ------------------------------------------------------------------ */
@@ -473,7 +547,8 @@ int main(int argc, char **argv) {
 
     if (argc < 2) {
         fprintf(stderr,
-                "usage: lin_c0 --version | info <f.lin> | vm <f.lin> [fn] [args] |\n"
+                "usage: lin_c0 --version | info <f.lin> | check <f.lin> | lint <f.lin> |\n"
+                "            vm <f.lin> [fn] [args] |\n"
                 "            vmfull <f.lin> [fn] [args] | image <f.lin> [-o out] |\n"
                 "            run <img> <fn> [args] | roundtrip <f.lin> <fn> [args]\n");
         return 1;
@@ -490,6 +565,8 @@ int main(int argc, char **argv) {
         return 1;
     }
     if (strcmp(cmd, "info") == 0 || strcmp(cmd, "vm") == 0) rc = cmd_vm(a, argc, argv, 0);
+    else if (strcmp(cmd, "check") == 0) rc = cmd_check(a, argc, argv);
+    else if (strcmp(cmd, "lint") == 0) rc = cmd_lint(argc, argv);
     else if (strcmp(cmd, "vmfull") == 0) rc = cmd_vm(a, argc, argv, 1);
     else if (strcmp(cmd, "image") == 0) rc = cmd_image(a, argc, argv);
     else if (strcmp(cmd, "run") == 0) rc = cmd_run(argc, argv);

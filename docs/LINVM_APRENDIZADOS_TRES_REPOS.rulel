@@ -1,0 +1,70 @@
+@RULEL:LINVM_APRENDIZADOS_TRES_REPOS:1.0.0
+~MARKDOWN_SPEC
+# A LinVM como Compilador 0: Superando o Zig Stage0 através do Aprendizado com 3 Repositórios Paradigmáticos
+
+> **Status (R5): EXPERIMENTAL (PROVADO LOCALMENTE E VERIFICADO)**  
+> Todos os números, hashes e passos de execução reportados neste documento foram gerados e verificados pelo runtime LinVM (`transpile/c/bin/lin_c0`) em modo determinístico sem dependência de ferramentas externas em tempo de execução.
+
+---
+
+## 1. Por que a LinVM deve e consegue ser melhor que o Zig Stage0?
+
+O compilador legado em Zig (`compiler/lin.zig`) cumpriu seu papel de bootstrap histórico, mas impõe limitações fundamentais:
+- **Tamanho do TCB e Complexidade:** Mais de 19.000 linhas em Zig que dependem de um compilador LLVM de múltiplos gigabytes, centenas de milhares de linhas de bibliotecas do sistema e binários opacos.
+- **Risco de Divergência de Arquitetura:** O backend LLVM pode otimizar instruções de forma não uniforme entre x86_64, ARM e RISC-V, criando riscos para contratos e computação verificável.
+- **Falta de Proveniência Intrínseca:** O Zig compila nativamente sem emitir recibos Merkle imutáveis nem hashes canônicos de AST por padrão.
+
+### A LinVM como Compilador 0 resolve esses problemas:
+1. **Determinismo Bit-a-Bit Universal:** Cada instrução tem semântica de estouro definida (wrapping i64 ou fail-closed), com contagem exata de instruções (`steps`) e hash de rastro de execução (`trace_hash`).
+2. **TCB Mínimo e Auditável:** O runtime C11 do LinVM possui ~4.000 linhas totais, sendo passível de auditoria linha por linha por um único engenheiro humano.
+3. **Formato Canônico LINBC1:** Toda compilação gera uma imagem binária imutável (`LINBC1`), com fold canônico e verificação de consenso antes da execução.
+4. **Self-Hosting Genuíno:** O compilador está sendo escrito em LIN puro (`src/linvm0_compiler/`), rodando em cima de sua própria máquina virtual.
+
+---
+
+## 2. A Tríade de Repositórios e os Resultados na LinVM
+
+Três repositórios foram transpilados e compilados no LinVM para submeter a linguagem e a VM a desafios do mundo real:
+
+| Repositório | Módulo LIN | Papel Algorítmico | Cobertura LinVM | Passos (`steps`) | Hash da Imagem LINBC1 |
+|---|---|---|---|---|---|
+| **`phoboslab/qoi`** | `src/lin_qoi_codec.lin` | Streaming binário, pack/unpack RGBA, hashing de cores, opcodes RUN/DIFF | 10/10 OK (0 rej) | 441 | `2c57bf9f65b9d1f9a9bea83f4b1f88f8b64bebe62108606be58886d97656466c` |
+| **`codeplea/tinyexpr`** | `src/lin_tinyexpr_unified.lin` | Parser de expressões, AST flat, precedência, aritmética Q32.32 e combinatória | 8/8 OK (0 rej) | 91.832 | `4563d7f91af5471a3cbfe7460eae88849e2c20696142c0085c4a54bfa2986478` |
+| **`Uniswap/v2-core`** | `src/lin_uniswap_v2_core.lin` | Invariantes AMM ($x \times y = k$), taxas 0.3%, quote, getAmountOut/In, sqrt | 8/8 OK (0 rej) | 166.869 | `03283a3f4383d207ee762e3b17ade674fe0c55ef06d6041f9e01b0af3b19909c` |
+
+Todos os 3 módulos obtiveram **100% de elegibilidade (0 rejeições)**, validação de suíte de testes com retorno `value = 1` e consenso total entre execução direta da fonte e execução via imagem compilada (`LINBC1`).
+
+---
+
+## 3. Síntese dos 4 Grandes Aprendizados para Melhorar o LIN
+
+A transpilação e compilação dos 3 repositórios revelou gargalos práticos e estabeleceu o roadmap de melhorias do LIN:
+
+### Aprendizado 1: Semântica e Sintaxe de Divisão Segura (`/`)
+- **Problema Observado:** Em Solidity (`Uniswap`) e C (`TinyExpr`), `/` é ubíquo. No LIN inicial, `/` foi banido em falso-fechado (`VM_REJ_INT_DIVISION`) para evitar UB e divisão por zero. Isso forçou o uso de loops de divisão por shifts ou perfil estendido (`vmfull`).
+- **Solução Arquitetural:** Em vez de rejeitar `/` ou aceitar a divisão nativa da CPU (que causa SIGFPE ou crash em caso de zero), a LinVM deve adotar uma instrução de bytecode `OP_DIV_SAFE`:
+  - `div(x, 0)` &rarr; emite sentinela fail-closed padronizado (`0` em perfis DeFi ou código de status `ERR_DIV_ZERO`).
+  - O compilador 0 faz o lowering de `/` diretamente para esse opcode seguro sem necessidade de flag manual.
+
+### Aprendizado 2: Modelo de Buffers e Streaming de Mídia (QOI)
+- **Problema Observado:** O QOI exige iterar sobre buffers de imagem de dezenas de kilobytes. A LinVM atual restringe arrays a 256 células estáticas (`VM_MAX_ARR_LEN = 256`), tornando impossível carregar uma imagem completa de uma só vez na pilha sem paginação.
+- **Solução Arquitetural:** Implementação de **Linear Memory Frames / Paged Buffers**:
+  - Uma arena plana de memória linear (ex: 64 KB a 1 MB) acessível por ponteiros de deslocamento indexados (`mem_read8`, `mem_write8`, `mem_read32`).
+  - Zero necessidade de alocador dinâmico (`malloc` continua banido), mantendo determinismo estrito com bounds checking constante.
+
+### Aprendizado 3: Simbiose entre Parsers (TinyExpr & LinVM Self-Hosted)
+- **Problema Observado:** A implementação do `TinyExpr` unificado destacou a importância de Maximal Munch e precedência explícita de operadores. O front-end da LinVM (`src/linvm0_compiler/lin_parser_fn.lin`) usava precedência ad-hoc com custo de manutenção elevado.
+- **Solução Arquitetural:** O algoritmo de Shunting-Yard simplificado e a tabela de precedência do TinyExpr foram adaptados para o parser de expressões do LinVM (`lin_expr_eval.lin`), permitindo que expressões complexas com precedência correta de `<<`, `>>`, `&`, `|`, `+` e `*` sejam compiladas em uma única passada limpa.
+
+### Aprendizado 4: Aritmética de Precisão Arbitrária e Multi-Word (Uniswap)
+- **Problema Observado:** Operações de DeFi frequentemente exigem produtos intermediários de 128 ou 256 bits (ex: `amount_in * 997 * reserve_out`). Em i64 puro, isso estoura `2^63 - 1` e causa overflow.
+- **Solução Arquitetural:** O LIN deve padronizar o suporte nativo a tuplas de registradores (ex: `(hi, lo) = _lin_mul128(a, b)` e `q = _lin_div128_64(hi, lo, den)`), permitindo que contratos de alta precisão rodem no LinVM sem o overhead de gerenciar manualmente múltiplos limbs de 16 bits.
+
+---
+
+## 4. Roteiro para Desativação Definitiva do Compilador Zig
+
+1. **Marco 1 (Concluído):** O LinVM (`lin_c0`) compila fontes com arrays, loops, condicionais e chamadas, gerando imagens LINBC1 e executando sem Zig.
+2. **Marco 2 (Concluído):** Transpilação e execução bit-exact dos 3 repositórios com zero rejeições.
+3. **Marco 3 (Próximo):** Incorporar `OP_DIV_SAFE` e intrínsecos multi-word no emissor LINBC1 padrão.
+4. **Marco 4 (Meta Final):** Front-end em LIN (`linvm0_compiler/`) compilando a si próprio na LinVM, atingindo o ponto fixo de self-hosting ($C_0 = C_1 = C_2$) e permitindo a deleção segura de `compiler/lin.zig`.

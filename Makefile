@@ -140,11 +140,16 @@ linvm0-gate: build-cpu
 #   make c0-selfhost-gate -> test/verify_c0_selfhost.sh: o front-end escrito em
 #                            LIN roda na LinVM, congela em LINBC1 e tokeniza o
 #                            próprio texto (30 verificações)
+#   make c0-check       -> test/verify_c0_check.sh: `check`/`lint` do C0
+#                            byte-idênticos ao Stage0 Zig no corpus + vetores
+#                            negativos (usa Zig como oráculo quando presente;
+#                            sem Zig, roda a parte pinada com o C0 apenas)
 #
 # Escopo honesto (R5): o subconjunto aceito é o de `vmBuild`/`VmComp` do Stage0
-# (port em transpile/c/tool/lin_c0_front.c). `check`/`lint` e o ponto fixo
-# C0=C1=C2 continuam no Stage0 Zig — ver docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel.
-.PHONY: c0 c0-gate c0-selfhost-gate
+# (port em transpile/c/tool/lin_c0_front.c); `check`/`lint` também são ports
+# (transpile/c/tool/lin_c0_check.c, gatados). Receipts/attestation/GPU e o ponto
+# fixo C0=C1=C2 continuam no Stage0 Zig — ver docs/V2_LINVM_AS_COMPILER0_NOZIG.rulel.
+.PHONY: c0 c0-gate c0-selfhost-gate c0-check
 c0:
 	@$(MAKE) -C transpile/c c0
 
@@ -153,6 +158,9 @@ c0-gate: c0
 
 c0-selfhost-gate: c0
 	@./test/verify_c0_selfhost.sh
+
+c0-check: c0
+	@./test/verify_c0_check.sh transpile/c/bin/lin_c0
 
 # Slice B3: statements/control-flow do front-end self-hosted em LIN.
 # Usa somente o host C11 e verifica a rota fonte contra LINBC1.

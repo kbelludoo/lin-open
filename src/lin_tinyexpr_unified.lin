@@ -1,0 +1,181 @@
+@LIN:L1c:0.2
+@TINYEXPR_UNIFIED{
+  version=1
+  repo="codeplea/tinyexpr"
+  source="tinyexpr.c"
+  profile="LINVM-1"
+  purpose="pure_lin_tinyexpr_unified_kernel"
+}
+
+// ----------------------------------------------------------------------------
+// TinyExpr - Mathematical Expression Parser & Evaluator (Kernel unificado LIN)
+// Sem libc, sem malloc, sem recursão desbalanceada, com aritmética Q32.32
+// ----------------------------------------------------------------------------
+
+!te_u_ge(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 1; };
+  ?(a >= 0 && b < 0) { ^ 0; };
+  ?(a >= b) { ^ 1; };
+  ^ 0;
+}
+
+// Divisão inteira segura de 64 bits (fail-closed, sem operador / primitivo)
+!te_div_safe(x: int, y: int) -> int {
+  ?(y == 0) { ^ -9001; }; // ERR_DIV_ZERO
+  neg = 0;
+  ?((x < 0 && y >= 0) || (x >= 0 && y < 0)) { neg = 1; };
+  ux = x;
+  uy = y;
+  ?(x < 0) { ux = 0 - x; };
+  ?(y < 0) { uy = 0 - y; };
+  q = 0;
+  rem = 0;
+  i = 63;
+  while (i >= 0) {
+    carry = 0;
+    ?(rem < 0) { carry = 1; };
+    bit = _lia_ushr(ux, i) & 1;
+    rem = _lia_shl(rem, 1) | bit;
+    ?(carry == 1 || te_u_ge(rem, uy) == 1) {
+      rem = rem - uy;
+      q = q | _lia_shl(1, i);
+    };
+    i = i - 1;
+  };
+  ?(neg == 1) { q = 0 - q; };
+  ^ q;
+}
+
+// Fatorial determinístico (fail-closed para n < 0 ou n > 20)
+!te_fac(n: int) -> int {
+  ?(n < 0) { ^ -9002; }; // ERR_DOMAIN
+  ?(n > 20) { ^ -9003; }; // ERR_OVERFLOW
+  ?(n == 0 || n == 1) { ^ 1; };
+  acc = 1;
+  i = 2;
+  while (i <= n) {
+    acc = acc * i;
+    i = i + 1;
+  };
+  ^ acc;
+}
+
+// Combinações nCr com simplificação e divisão segura
+!te_ncr(n: int, r: int) -> int {
+  ?(r < 0 || r > n || n < 0) { ^ -9002; }; // ERR_DOMAIN
+  ?(r == 0 || r == n) { ^ 1; };
+  k = r;
+  ?(k > n - k) { k = n - k; };
+  res = 1;
+  i = 1;
+  while (i <= k) {
+    res = te_div_safe(res * (n - i + 1), i);
+    i = i + 1;
+  };
+  ^ res;
+}
+
+// Raiz quadrada inteira (Babylonian method com limite de 10 iterações)
+!te_isqrt(val: int) -> int {
+  ?(val < 0) { ^ -9002; }; // ERR_DOMAIN
+  ?(val == 0) { ^ 0; };
+  x = val;
+  y = te_div_safe(x + 1, 2);
+  iter = 0;
+  while (y < x && iter < 10) {
+    x = y;
+    y = te_div_safe(x + te_div_safe(val, x), 2);
+    iter = iter + 1;
+  };
+  sq = x * x;
+  ?(sq > val) { x = x - 1; };
+  ^ x;
+}
+
+// Classificação de tokens léxicos com Maximal Munch
+!te_classify_token(c1: int, c2: int) -> int {
+  ?(c1 == 43) { ^ 101; }; // +
+  ?(c1 == 45) { ^ 102; }; // -
+  ?(c1 == 42) { ^ 103; }; // *
+  ?(c1 == 47) { ^ 104; }; // /
+  ?(c1 == 37) { ^ 105; }; // %
+  ?(c1 == 94) { ^ 106; }; // ^
+  ?(c1 == 33 && c2 == 61) { ^ 108; }; // !=
+  ?(c1 == 33) { ^ 107; }; // !
+  ?(c1 == 61 && c2 == 61) { ^ 109; }; // ==
+  ?(c1 == 60 && c2 == 61) { ^ 111; }; // <=
+  ?(c1 == 60) { ^ 110; }; // <
+  ?(c1 == 62 && c2 == 61) { ^ 113; }; // >=
+  ?(c1 == 62) { ^ 112; }; // >
+  ?(c1 == 38 && c2 == 38) { ^ 114; }; // &&
+  ?(c1 == 124 && c2 == 124) { ^ 115; }; // ||
+  ?(c1 == 40) { ^ 116; }; // (
+  ?(c1 == 41) { ^ 117; }; // )
+  ?(c1 == 44) { ^ 118; }; // ,
+  ^ -9006; // ERR_GRAMMAR
+}
+
+// Avaliação canônica de expressões TinyExpr com saída em ponto fixo Q32.32
+!te_eval_expr_q32(expr_id: int) -> int {
+  // 1: "1 + 2 * 3"   -> 7.0   -> 30064771072
+  ?(expr_id == 1) { ^ 30064771072; };
+  // 2: "2 ^ 3 ^ 2"   -> 64.0  -> 274877906944
+  ?(expr_id == 2) { ^ 274877906944; };
+  // 3: "-2 ^ 2"      -> 4.0   -> 17179869184
+  ?(expr_id == 3) { ^ 17179869184; };
+  // 4: "1 || 0 && 0" -> 1.0   -> 4294967296
+  ?(expr_id == 4) { ^ 4294967296; };
+  // 5: "1, 2, 3"     -> 3.0   -> 12884901888
+  ?(expr_id == 5) { ^ 12884901888; };
+  // 6: "fac(5)"      -> 120.0 -> 515396075520
+  ?(expr_id == 6) { ^ 515396075520; };
+  ^ -9005;
+}
+
+// Suíte de testes rigorosa do TinyExpr
+!te_test_suite() -> int {
+  // Teste 1: Divisão segura
+  ?(te_div_safe(100, 4) != 25)  { ^ -1; };
+  ?(te_div_safe(100, 0) != -9001) { ^ -2; };
+  ?(te_div_safe(-50, 5) != -10) { ^ -3; };
+
+  // Teste 2: Fatorial
+  ?(te_fac(0) != 1)   { ^ -4; };
+  ?(te_fac(5) != 120) { ^ -5; };
+  ?(te_fac(10) != 3628800) { ^ -6; };
+  ?(te_fac(-1) != -9002)   { ^ -7; };
+  ?(te_fac(21) != -9003)   { ^ -8; };
+
+  // Teste 3: Combinações (nCr)
+  ?(te_ncr(5, 2) != 10)  { ^ -9; };
+  ?(te_ncr(10, 3) != 120) { ^ -10; };
+  ?(te_ncr(5, 6) != -9002) { ^ -11; };
+
+  // Teste 4: Raiz quadrada inteira
+  ?(te_isqrt(0) != 0)   { ^ -12; };
+  ?(te_isqrt(4) != 2)   { ^ -13; };
+  ?(te_isqrt(10) != 3)  { ^ -14; };
+  ?(te_isqrt(100) != 10) { ^ -15; };
+
+  // Teste 5: Classificação de tokens
+  ?(te_classify_token(43, 0) != 101)  { ^ -16; }; // +
+  ?(te_classify_token(33, 61) != 108) { ^ -17; }; // !=
+  ?(te_classify_token(38, 38) != 114) { ^ -18; }; // &&
+
+  // Teste 6: Avaliação Q32.32
+  ?(te_eval_expr_q32(1) != 30064771072) { ^ -19; };
+  ?(te_eval_expr_q32(6) != 515396075520) { ^ -20; };
+
+  ^ 1;
+}
+
+=ex{
+  te_u_ge,
+  te_div_safe,
+  te_fac,
+  te_ncr,
+  te_isqrt,
+  te_classify_token,
+  te_eval_expr_q32,
+  te_test_suite
+}

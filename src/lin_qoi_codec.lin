@@ -1,0 +1,131 @@
+@LIN:L1c:0.2
+@QOI_CODEC{
+  version=1
+  repo="phoboslab/qoi"
+  source="qoi.h"
+  profile="LINVM-1"
+  purpose="pure_lin_qoi_codec_kernel"
+}
+
+// ----------------------------------------------------------------------------
+// QOI - Quite OK Image Format (Kernel puro em LIN)
+// Implementação do núcleo algorítmico do qoi.h em LIN determinístico sem heap.
+// ----------------------------------------------------------------------------
+
+// Hash canônico de cor da especificação QOI:
+// index_pos = (r*3 + g*5 + b*7 + a*11) % 64
+!qoi_color_hash(r: int, g: int, b: int, a: int) -> int {
+  sum = (r * 3) + (g * 5) + (b * 7) + (a * 11);
+  ^ sum & 63;
+}
+
+// Empacota RGBA em um inteiro de 64 bits (32 bits úteis little-endian)
+!qoi_pack_rgba(r: int, g: int, b: int, a: int) -> int {
+  r_u = r & 255;
+  g_u = _lia_shl(g & 255, 8);
+  b_u = _lia_shl(b & 255, 16);
+  a_u = _lia_shl(a & 255, 24);
+  ^ r_u | g_u | b_u | a_u;
+}
+
+!qoi_unpack_r(rgba: int) -> int {
+  ^ rgba & 255;
+}
+
+!qoi_unpack_g(rgba: int) -> int {
+  ^ _lia_ushr(rgba, 8) & 255;
+}
+
+!qoi_unpack_b(rgba: int) -> int {
+  ^ _lia_ushr(rgba, 16) & 255;
+}
+
+!qoi_unpack_a(rgba: int) -> int {
+  ^ _lia_ushr(rgba, 24) & 255;
+}
+
+// Classifica o tipo de tag do byte de comando QOI:
+// 0: QOI_OP_INDEX (00xxxxxx)
+// 1: QOI_OP_DIFF  (01xxxxxx)
+// 2: QOI_OP_LUMA  (10xxxxxx)
+// 3: QOI_OP_RUN   (11xxxxxx)
+// 4: QOI_OP_RGB   (11111110 = 0xfe)
+// 5: QOI_OP_RGBA  (11111111 = 0xff)
+!qoi_classify_tag(b: int) -> int {
+  tag_byte = b & 255;
+  ?(tag_byte == 254) { ^ 4; };
+  ?(tag_byte == 255) { ^ 5; };
+  mask2 = tag_byte & 192;
+  ?(mask2 == 0)   { ^ 0; };
+  ?(mask2 == 64)  { ^ 1; };
+  ?(mask2 == 128) { ^ 2; };
+  ^ 3;
+}
+
+// Decodifica canal diferencial (QOI_OP_DIFF):
+// O byte armazena (dr + 2) << 4 | (dg + 2) << 2 | (db + 2)
+!qoi_decode_diff(b: int, prev: int, channel: int) -> int {
+  diff = 0;
+  ?(channel == 0) { // dr
+    diff = (_lia_ushr(b, 4) & 3) - 2;
+  } : (channel == 1) { // dg
+    diff = (_lia_ushr(b, 2) & 3) - 2;
+  } : { // db
+    diff = (b & 3) - 2;
+  };
+  ^ (prev + diff) & 255;
+}
+
+// Decodifica comprimento de run (QOI_OP_RUN):
+// Bias de 1 (valor 0 significa run de 1, valor 61 significa run de 62)
+!qoi_decode_run_length(b: int) -> int {
+  ^ (b & 63) + 1;
+}
+
+// Suíte de validação de vetores canônicos do QOI
+!qoi_test_suite() -> int {
+  // Teste 1: Hash exato do spec qoi.h
+  ?(qoi_color_hash(0, 0, 0, 255) != 53) { ^ -1; };
+  ?(qoi_color_hash(255, 255, 255, 255) != 38) { ^ -2; };
+  ?(qoi_color_hash(128, 64, 32, 255) != 21) { ^ -3; };
+
+  // Teste 2: Pack & Unpack integridade
+  packed = qoi_pack_rgba(128, 64, 32, 255);
+  ?(qoi_unpack_r(packed) != 128) { ^ -4; };
+  ?(qoi_unpack_g(packed) != 64)  { ^ -5; };
+  ?(qoi_unpack_b(packed) != 32)  { ^ -6; };
+  ?(qoi_unpack_a(packed) != 255) { ^ -7; };
+
+  // Teste 3: Classificação de tags
+  ?(qoi_classify_tag(0) != 0)   { ^ -8; };
+  ?(qoi_classify_tag(64) != 1)  { ^ -9; };
+  ?(qoi_classify_tag(128) != 2) { ^ -10; };
+  ?(qoi_classify_tag(192) != 3) { ^ -11; };
+  ?(qoi_classify_tag(254) != 4) { ^ -12; };
+  ?(qoi_classify_tag(255) != 5) { ^ -13; };
+
+  // Teste 4: DIFF decodificação
+  diff_b = 64 | 45;
+  ?(qoi_decode_diff(diff_b, 100, 0) != 100) { ^ -14; };
+  ?(qoi_decode_diff(diff_b, 100, 1) != 101) { ^ -15; };
+  ?(qoi_decode_diff(diff_b, 100, 2) != 99)  { ^ -16; };
+
+  // Teste 5: RUN decodificação
+  ?(qoi_decode_run_length(192) != 1)   { ^ -17; };
+  ?(qoi_decode_run_length(253) != 62) { ^ -18; };
+
+  ^ 1;
+}
+
+=ex{
+  qoi_color_hash,
+  qoi_pack_rgba,
+  qoi_unpack_r,
+  qoi_unpack_g,
+  qoi_unpack_b,
+  qoi_unpack_a,
+  qoi_classify_tag,
+  qoi_decode_diff,
+  qoi_decode_run_length,
+  qoi_test_suite
+}
