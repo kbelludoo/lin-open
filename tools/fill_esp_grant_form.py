@@ -35,8 +35,12 @@ def fill_form(headless=False):
         page.goto("https://esp.ethereum.foundation/form-direct/apply", wait_until="networkidle")
         page.wait_for_selector("input#projectName", timeout=20000)
 
-        # 1. Project Information
-        print("[*] Preenchendo Informações do Projeto...")
+        # 1. Personal & Project Information
+        print("[*] Preenchendo Informações Pessoais e do Projeto...")
+        page.fill("input#firstName", "Bruno")
+        page.fill("input#lastName", "Fonseca")
+        page.fill("input#email", "kbelludoo@gmail.com")
+        page.fill("input#company", "LIN Open Research")
         page.fill("input#budgetRequest", "30000")
         page.fill("input#projectName", "LIN Sovereign GPU AMM Settlement & Rollup Co-processor")
         page.fill("input#projectRepo", "https://github.com/kbelludoo/lin-open")
