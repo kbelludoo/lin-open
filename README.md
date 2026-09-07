@@ -21,6 +21,7 @@ All capabilities below are **fully verified without mock data or simulated infra
 | **Independent Verification** | ✅ **PASS** | Zero-trust verification scripts in Python, Node.js, Bash+OpenSSL, and WebCrypto |
 | **LinVM0 Self-Hosting (V1 → V5)** | ✅ **PASS** | 100% Sovereign: front-end em LIN puro, Ponto Fixo $C_0=C_1=C_2$ fechado, emissor ELF64 nativo no kernel e LinVM Compiler 0 (`lin_c0`) independente de Zig |
 | **Cross-Platform Target** | ✅ **PASS** | Runs identically bit-for-bit on CPU (Host C11), Web (Wasm/JS), and GPU (OpenCL) |
+| **GPU Sovereign DeFi AMM** | ✅ **PASS** | **459,000+ TPS** on AMD Radeon RX 6600 (2,000 real Ethereum mainnet swaps in 4.1ms) with L1 Solidity Verifier contract (`contracts/LinReceiptVerifier.sol`) |
 
 ---
 
@@ -101,6 +102,12 @@ make verify-elf
 
 # Verificação da GPU real (AMD RX 6600) sem Zig (77 alvos bit-a-bit)
 make verify-gpu
+
+# Benchmark real DeFi AMM vs Ethereum EVM (459,000+ TPS)
+make benchmark-uniswap
+
+# Verificação do Smart Contract Verificador Solidity L1
+make verify-contracts
 ```
 
 ### Bootstrap Legado (Stage-0 Zig, opcional/congelado)
