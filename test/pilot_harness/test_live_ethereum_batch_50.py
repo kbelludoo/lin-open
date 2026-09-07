@@ -67,6 +67,17 @@ def run_lin_u256(ain: int, rin: int, rout: int) -> tuple[int, int, int]:
     out_val = words_out[0] | (words_out[1] << 64) | (words_out[2] << 128) | (words_out[3] << 192)
     return status, out_val, total_steps
 
+def canonical_image_digest() -> bytes:
+    """Digest CANÔNICO da imagem (o mesmo que o loader LINBC1 verifica em
+    `lin_bc1_run --verify`), NÃO o sha256 dos bytes crus do arquivo."""
+    out = subprocess.check_output(
+        [str(LIN_BC1_RUN), str(U256_BC1), "--verify"], text=True)
+    for token in out.split():
+        if token.startswith("img_sha256="):
+            return bytes.fromhex(token.split("=")[1].strip('"'))
+    raise RuntimeError("img_sha256 ausente na verificação LINBC1")
+
+
 def build_merkle_root(leaves: list[bytes]) -> bytes:
     curr = list(leaves)
     while len(curr) > 1:
@@ -88,6 +99,9 @@ def main():
     print(f"[*] Total de swaps reais carregados: {len(swaps)}")
     print(f"[*] Imagem LinVM: {U256_BC1.name}")
 
+    img_digest = canonical_image_digest()
+    print(f"[*] Digest canônico (loader): {img_digest.hex()}")
+
     t0 = time.perf_counter()
     leaves = []
     passed = 0
@@ -106,7 +120,7 @@ def main():
         raw = bytearray(208)
         raw[0:4] = b"LCR2"
         raw[4] = 1; raw[5] = 1
-        raw[8:40] = hashlib.sha256(U256_BC1.read_bytes()).digest()
+        raw[8:40] = img_digest
         struct.pack_into("<QQ", raw, 40, 1, s["id"]) # chain_id=1, seq
         raw[56:88] = s["amount_in"].to_bytes(32, "big")
         raw[88:120] = s["reserve_in"].to_bytes(32, "big")
