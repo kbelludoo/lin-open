@@ -8,16 +8,22 @@ It is purpose-built for verifiable numeric algorithms: cryptography, hashing, di
 
 > **⚡ 60-Second Fast Verification (Zero Assumptions / Independent Oracle):**
 >
-> 1. **Public GitHub Actions CI (100% Passing):** [Workflow Runs](https://github.com/kbelludoo/lin-open/actions)
-> 2. **Audit 2,000 Real Mainnet Swaps & LCR2 Merkle Root (< 1s, Python stdlib):**
+> 1. **Public GitHub Actions CI:** [Workflow Runs](https://github.com/kbelludoo/lin-open/actions) — three workflows: `CI` (Zig build + self-hosted suites + sovereign no-Zig host), `LIN Gate` (Merkle attestation of the protected toolchain), `M1 Ethereum Tx Verifier` (RLP/Keccak compliance + mutation suite).
+> 2. **Audit 2,000 Real Mainnet Swaps & the 157-Swap Unfiltered Corpus — LCR2 Merkle roots (< 1s, Python stdlib):**
 >    ```bash
->    python3 tools/verify_batch_receipt.py --manifest /tmp/batch_receipt_2000.json --bin /tmp/batch_records_2000.bin
+>    make verify-batch-receipt
+>    # (emits deterministic binary records + JSON manifests, then verifies
+>    #  LCR2 Merkle roots, per-record SHA-256 and the big-int oracle: 2000/2000 + 157/157)
 >    ```
 > 3. **Live On-Chain Gas Audit (Foundry Unit Tests + Anvil Receipts):**
 >    ```bash
 >    make verify-forge-gas
 >    ```
-> 4. **In-Browser WebCrypto Receipt Verifier (zero install, runs 100% locally):** Open [`benchmarks/verify_receipt.html`](file:///home/k/Downloads/lin-master/benchmarks/verify_receipt.html)
+> 4. **In-Browser WebCrypto Receipt Verifier (zero install, runs 100% locally):** Open [`benchmarks/verify_receipt.html`](benchmarks/verify_receipt.html)
+> 5. **Verify the attested toolchain manifest without Zig (Python stdlib oracle):**
+>    ```bash
+>    python3 tools/verify_gate_manifest.py
+>    ```
 
 > **Execution & Audit Boundary:** Execution core — AMM mathematics, invariants, gates, and self-hosted front-end — 100% in LIN, executed on LinVM/GPU. Production I/O and cryptographic Merkle roots run in the audited C11 host (TCB-809); Python/hashlib scripts exist strictly as cleanroom audit oracles, and every quoted figure maps directly to a reproducible shell command.
 
@@ -34,7 +40,7 @@ All capabilities below are **fully verified without mock data or simulated infra
 | **LinVM Bytecode Engine** | ✅ **PASS** | Stack-based deterministic virtual machine with gas limits and exact step counts |
 | **Compute Receipts (RULEL + JSON)** | ✅ **PASS** | Generates SHA-256 Merkle receipts validating `f(input) = output` |
 | **Independent Verification** | ✅ **PASS** | Zero-trust verification scripts in Python, Node.js, Bash+OpenSSL, and WebCrypto |
-| **LinVM0 Self-Hosting (V1 → V5)** | ✅ **PASS** | 100% Sovereign: front-end em LIN puro, Ponto Fixo $C_0=C_1=C_2$ fechado, emissor ELF64 nativo no kernel e LinVM Compiler 0 (`lin_c0`) independente de Zig |
+| **LinVM0 Self-Hosting (V1 → V5)** | ✅ **PASS** | 100% Sovereign: front-end in pure LIN, closed Fixed Point $C_0=C_1=C_2$, native ELF64 emitter running on the Linux kernel, and LinVM Compiler 0 (`lin_c0`) independent of Zig |
 | **Cross-Platform Target** | ✅ **PASS** | Runs identically bit-for-bit on CPU (Host C11), Web (Wasm/JS), and GPU (OpenCL) |
 | **GPU Sovereign DeFi AMM** | ✅ **PASS** | **Deterministic AMM Co-processor** on AMD Radeon RX 6600 (Kernel: 1.7ms / 1.17M swaps/s; Wall: 218ms / 9.1k swaps/s). LIN OpenCL emitter proven in 4 classes; u256 AMM kernel executes via OpenCL C (direct LIN emission is grant Milestone 2). On-chain verifier (`contracts/LinReceiptVerifier.sol`) measured in Foundry at 70,133 gas — **13,258×–16,604× gas reduction vs L1**. |
 
@@ -98,65 +104,76 @@ LIN does **not** claim to be a zero-knowledge proof system. It is an ultra-fast,
 ## 6. Self-Hosting Roadmap (V1 → V5: Zero-Zig)
 
 ```
-[V1: Host C11] ──► [V2: Front-End em LIN] ──► [V3: Emissor LINBC1] ──► [V4: Ponto Fixo C0=C1] ──► [V5: Zero-Zig]
-  Host C11           Lexer + Lowerer           Serializador Binário        Autocompilação com          Aposentadoria Zig
-  Determinístico     em código .lin            em LIN puro                 Merkle Idêntico             (TCB ≤ 1.500 LOC)
+[V1: Host C11] ──► [V2: Front-End in LIN] ──► [V3: LINBC1 Emitter] ──► [V4: Fixed Point C0=C1] ──► [V5: Zero-Zig]
+  C11                 Lexer + Lowerer           Binary Serializer         Self-compilation with         Zig retirement
+  deterministic      in .lin code              in pure LIN               identical Merkle              (TCB ≤ 1,500 LOC)
 ```
 
-1. **V1 (Host C11 Native):** ✅ Runtime determinístico C11 em `transpile/c/` para execução isolada (29/29 expressões, 17/17 bordas, 33/33 LINBC1).
-2. **V2 (Front-End em LIN + host C11):** ✅ Lexer + Evaluator + Lowerer escritos em LIN e o host `lin_c0` que compila/executa `.lin` sem Zig (`make c0-gate`, `make c0-selfhost-gate`, `make test-c0-full`).
-3. **V3 (Emissor LINBC1):** ✅ Serializador binário completo gerando imagens de bytecode `.linbc1` em LIN puro (`src/linvm0_compiler/lin_compiler0_unified.lin`).
-4. **V4 (Ponto Fixo $C_0=C_1=C_2$):** ✅ Fechado! O compilador unificado compila a si mesmo dentro da LinVM gerando imagens determinísticas e folds idênticos (`test/verify_fixed_point_c0_c1_c2.sh`).
-5. **V5 (Zero-Zig Definitivo & Emissão ELF64 Nativa):** ✅ Execução soberana padrão (`make all` -> `make test-lin-sovereign`), porte completo de 6 repositórios de referência (QOI, TinyExpr, Uniswap, SipHash) com 100% de paridade contra oráculos em C, e emissor nativo ELF64 (`src/lin_elf_emitter.lin`) que executa diretamente no kernel Linux sem libc.
+1. **V1 (Host C11 Native):** ✅ Deterministic C11 runtime in `transpile/c/` for isolated execution (29/29 expressions, 17/17 edge cases, 33/33 LINBC1).
+2. **V2 (Front-End in LIN + C11 host):** ✅ Lexer + Evaluator + Lowerer written in LIN and the `lin_c0` host that compiles/executes `.lin` without Zig (`make c0-gate`, `make c0-selfhost-gate`, `make test-c0-full`).
+3. **V3 (LINBC1 Emitter):** ✅ Complete binary serializer generating `.linbc1` bytecode images in pure LIN (`src/linvm0_compiler/lin_compiler0_unified.lin`).
+4. **V4 (Fixed Point $C_0=C_1=C_2$):** ✅ Closed! The unified compiler compiles itself inside LinVM producing deterministic images and identical folds (`test/verify_fixed_point_c0_c1_c2.sh`).
+5. **V5 (Definitive Zero-Zig & Native ELF64 Emission):** ✅ Sovereign execution by default (`make all` → `make test-lin-sovereign`), complete port of the 6 reference repositories (QOI, TinyExpr, Uniswap, SipHash) with 100% parity against the C oracles, and a native ELF64 emitter (`src/lin_elf_emitter.lin`) that executes directly on the Linux kernel without libc.
 
 ---
 
 ## 7. Building & Running
 
-### Soberania Total (Sem Zig - Padrão)
-**Nenhum compilador Zig é necessário.** O ecossistema padrão constrói e testa via LinVM / Compiler 0 (`cc` padrão C11):
+### Full Sovereignty (No Zig — Default)
+**No Zig compiler is required.** The default ecosystem builds and tests through LinVM / Compiler 0 (`cc`, standard C11):
 
 ```bash
-# Executar toda a suíte de soberania 100% LIN (sem Zig)
+# Run the full 100% LIN sovereignty suite (no Zig)
 make all
 
-# Ou diretamente:
+# Or directly:
 make test-lin-sovereign
 
-# Verificação completa de todos os 83 arquivos .lin e recibos criptográficos
+# Full verification of all 83 .lin files and the cryptographic receipts
 make test-c0-full
 
-# Verificação dos portes externos (QOI, TinyExpr, Uniswap v2, SipHash)
+# External port verification (QOI, TinyExpr, Uniswap v2, SipHash)
 make verify-three-repos
 
-# Verificação do ponto fixo fechado C0=C1=C2
+# Closed C0=C1=C2 fixed-point verification
 make verify-fixed-point
 
-# Verificação da emissão de binário nativo ELF64 e execução no kernel Linux
+# Native ELF64 binary emission + execution on the Linux kernel
 make verify-elf
 
-# Verificação da GPU real (AMD RX 6600) sem Zig (77 alvos bit-a-bit)
+# Real-GPU verification (AMD RX 6600) without Zig (77 bit-exact targets)
 make verify-gpu
 
-# Benchmark honesto de Co-processamento DeFi AMM (Kernel vs Wall-clock)
+# Honest DeFi AMM co-processing benchmark (Kernel vs Wall-clock)
 make benchmark-uniswap
 
-# Verificação do Smart Contract Verificador Solidity L1 (invariante k + Merkle + LCR2)
+# Solidity L1 verifier smart contract (invariant k + Merkle + LCR2)
 make verify-contracts
 ```
 
-### Bootstrap Legado (Stage-0 Zig, opcional/congelado)
-- O compilador Stage-0 original em `compiler/lin.zig` é mantido como bootstrap congelado histórico (`R2`).
-- Caso deseje compilar o Stage-0 original via Zig 0.13.0: `zig build -Doptimize=ReleaseFast`.
+### Legacy Bootstrap (Stage-0 Zig, optional/frozen)
+- The original Stage-0 compiler in `compiler/lin.zig` is kept as a frozen historical bootstrap (`R2`).
+- To build the original Stage-0 with Zig 0.13.0: `zig build -Doptimize=ReleaseFast`.
 
 ### Create and Verify a Compute Receipt
 
+No-Zig path (Compiler-0 C11 host; the Merkle root is independently recomputed
+by the Python rationalist oracle):
+
+```bash
+make -C transpile/c all
+./transpile/c/bin/lin_c_receipt --expr "x * x" --env "x=9"
+# -> @LIN:XVER:1.0 ... result=81 ... root="sha256:a6d17453..."
+```
+
+Stage-0 Zig path (requires the legacy bootstrap build above):
+
 ```bash
 # Create deterministic receipt
-./bin/lin_native receipt create --source "return x * x;" --input 9 > receipt.rulel
+zig-out/bin/lin_native receipt create --source "return x * x;" --input 9 > receipt.rulel
 
 # Cryptographically verify the receipt
-./bin/lin_native receipt verify --receipt receipt.rulel
+zig-out/bin/lin_native receipt verify --receipt receipt.rulel
 # -> PASS: Merkle root valid: sha256:b96fecee...
 ```
 
@@ -206,14 +223,20 @@ python3 lin_verify.py all --iterations 10000
 ## 8. Repository Layout
 
 ```
-├── compiler/              # Stage 0 bootstrap compiler (LinVM, MIR, receipts, OpenCL)
+├── .github/               # CI workflows: ci.yml, lin_gate.yml, m1-ethereum-tx.yml
+├── benchmarks/            # Receipt verifiers (WebCrypto HTML/JS, Python, Bash) + audit cost benchmark
+├── compiler/              # Stage-0 bootstrap compiler (frozen R2: LinVM, MIR, receipts, OpenCL)
+├── contracts/             # Solidity L1 receipt verifier (LinReceiptVerifier.sol, Foundry-tested)
+├── docs/                  # Specs, grant documents, event ledger (*.rulel), datasets, M1 compliance docs
+├── examples/              # Cryptanalysis gates (RSA, A5/1, ECDH, Enigma, ML-KEM) + DeFi settlement proof
+├── redteam/               # Adversarial fixtures (fake OpenCL device, spoofed host)
 ├── src/                   # Native LIN specification modules (.lin)
-│   ├── linvm0_compiler/   # Self-hosted LinVM front-end in pure LIN (V2/V3)
-│   ├── components/        # Web dashboard & interactive verifier UI
-│   └── lib/               # Verified sample corpus & execution engine
+│   └── linvm0_compiler/   # Self-hosted LinVM front-end in pure LIN (V2/V3)
+├── stubs/                 # OpenCL stubs for isolated unit testing
+├── test/                  # Gates, oracles (pinned upstream C), pilot_harness, ethereum_tx, forge-gas
+├── tools/                 # Mainnet ingestors, receipt emit/verify, gate manifest oracle, grant tooling
 ├── transpile/c/           # Host C11 runtime, independent cross-check port & lin_c0 (Compiler 0, no Zig)
-├── docs/                  # Architectural specs, LINBC1 binary format & rulel manifests
-└── test_*.zig             # Root self-hosted and compatibility test suites
+└── test_*.zig             # Root self-hosted and compatibility test suites (Stage-0)
 ```
 
 ---

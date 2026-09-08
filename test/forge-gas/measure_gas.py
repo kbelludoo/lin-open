@@ -27,8 +27,7 @@ def find_bin(name):
         return p
     for cand in [
         Path.home() / ".foundry" / "bin" / name,
-        Path("/home/k/.foundry/bin") / name,
-        Path("/home/k/.foundry/versions/foundry-rs/foundry/v1.8.1") / name
+        Path.home() / ".foundry" / "versions/foundry-rs/foundry/v1.8.1" / name,
     ]:
         if cand.exists() and os.access(cand, os.X_OK):
             return str(cand)

@@ -16,7 +16,7 @@ Ao transpilar e executar o motor matemático do Uniswap v2 em **LIN Puro** com a
 
 ## 2. Tabela Comparativa de Desempenho e Economia Real
 
-Resultados obtidos com o dataset canônico de 2.000 swaps reais da Ethereum Mainnet ([`test/pilot_harness/mainnet_real_swaps_2000.json`](file:///home/k/Downloads/lin-master/test/pilot_harness/mainnet_real_swaps_2000.json)):
+Resultados obtidos com o dataset canônico de 2.000 swaps reais da Ethereum Mainnet ([`test/pilot_harness/mainnet_real_swaps_2000.json`](../test/pilot_harness/mainnet_real_swaps_2000.json)):
 
 | Métrica | Ethereum EVM (Original) | LIN (LinVM + GPU AMD RX 6600) | Vantagem Competitiva de LIN |
 |---|:---:|:---:|:---:|
@@ -32,7 +32,7 @@ Resultados obtidos com o dataset canônico de 2.000 swaps reais da Ethereum Main
 
 ## 3. Arquitetura da Aplicação Soberana
 
-1. **Código-Fonte em LIN Puro ([`examples/defi_settlement_proof/lin_amm_settler_app.lin`](file:///home/k/Downloads/lin-master/examples/defi_settlement_proof/lin_amm_settler_app.lin)):**
+1. **Código-Fonte em LIN Puro ([`examples/defi_settlement_proof/lin_amm_settler_app.lin`](../examples/defi_settlement_proof/lin_amm_settler_app.lin)):**
    - Implementa a divisão fail-closed sem operadores inseguros.
    - Calcula a taxa de 0,3% (`997 / 1000`) em precisão de 256 bits.
    - Verifica o invariante $(R_{in} \cdot 1000 + A_{in} \cdot 997) \cdot (R_{out} - A_{out}) \ge R_{in} \cdot R_{out} \cdot 1000$.

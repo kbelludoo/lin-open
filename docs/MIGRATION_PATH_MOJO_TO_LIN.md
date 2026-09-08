@@ -29,7 +29,7 @@ O M1-A consolida uma implementação em **Mojo puro** (`tools/lin_audit_tx.mojo`
 - Geração de vetores e oráculo de alta velocidade para testes de mutação.
 
 ### Fase 2 — LinVM como Implementação Normativa (Escopo do Grant / M1-B & M1-C)
-Após a estabilização do Mojo, a semântica criptográfica é congelada e portada para a **LinVM** sob o perfil `LIN-ETH-1` ([`docs/M1_KECCAK_IMPLEMENTATION.md`](file:///home/k/Downloads/lin-master/docs/M1_KECCAK_IMPLEMENTATION.md)):
+Após a estabilização do Mojo, a semântica criptográfica é congelada e portada para a **LinVM** sob o perfil `LIN-ETH-1` ([`docs/M1_KECCAK_IMPLEMENTATION.md`](M1_KECCAK_IMPLEMENTATION.md)):
 - A **LinVM** torna-se a fonte normativa oficial do veredito;
 - O **Mojo** passa a operar como oráculo de validação cruzada, ferramenta de benchmark e gerador de fuzzing;
 - Clientes externos (Geth / Reth) atuam como oráculos de conformidade do ecossistema.

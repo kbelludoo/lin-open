@@ -29,6 +29,7 @@ Usage:
 """
 
 import argparse
+import datetime
 import hashlib
 import math
 import os
@@ -276,11 +277,26 @@ def main() -> int:
         secs = (1 << 256) / 136_510_000.0
         yrs = secs / SECONDS_PER_YEAR
         art = sha256_of(SOURCE)
+        # The restatement restates the ORIGINAL event, so its @DATE is the
+        # v1.0.0 receipt's date -- never the re-emission date. Stamping
+        # date.today() made --emit-corrections non-reproducible day to day,
+        # which is exactly what CI's `git diff --quiet` check forbids.
+        restatement_date = ""
+        try:
+            with open(os.path.join(REPO, "docs/events/EVENT_LIN_CRYPTO_MAX_256_FRONTIER.rulel")) as f:
+                for line in f:
+                    if line.startswith("@DATE="):
+                        restatement_date = line.strip().split('"')[1]
+                        break
+        except OSError:
+            pass
+        if not restatement_date:
+            restatement_date = datetime.date.today().isoformat()
         body = f'''@RULEL:LIN_CRYPTO_256_RECEIPT:1.1.0
 @CHALLENGE_ID="LIN-CRYPTO-MAX-256"
 @TITLE="256-Bit Classical Exhaustive-Search Cost Frontier (audited restatement)"
 @STATUS="PASS_WITH_SCOPE_LIMITS"
-@DATE="{__import__('datetime').date.today().isoformat()}"
+@DATE="{restatement_date}"
 @SUPERSEDES="EVENT_LIN_CRYPTO_MAX_256_FRONTIER.rulel (1.0.0, retained unchanged as history)"
 
 ~R{{.s=spec .i=identity .r=results .x=state_register .e=extrapolation .b=binding .v=verdict}}

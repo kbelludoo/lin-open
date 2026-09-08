@@ -22,7 +22,7 @@ Ambos os passos foram implementados e comprovados com testes automatizados execu
 
 ## 2. Passo 1: Emissor de Binário Nativo ELF64 (`src/lin_elf_emitter.lin`)
 
-O módulo [`src/lin_elf_emitter.lin`](file:///home/k/Downloads/lin-master/src/lin_elf_emitter.lin) implementa o gerador de arquivos binários ELF64 com 136 bytes de tamanho:
+O módulo [`src/lin_elf_emitter.lin`](../src/lin_elf_emitter.lin) implementa o gerador de arquivos binários ELF64 com 136 bytes de tamanho:
 - **ELF64 Header (64 bytes):** Magic `\x7fELF`, classe 64-bit, little-endian, tipo `ET_EXEC`, máquina `EM_X86_64`, ponto de entrada virtual `0x400078`.
 - **Program Header Table (56 bytes):** Segmento `PT_LOAD` com permissões `PF_R | PF_X` mapeado em `0x400000`.
 - **Machine Code x86_64 (16 bytes):** Código de máquina nativo para a syscall `sys_exit` do Linux (`mov eax, 60; mov edi, exit_val; syscall`).
@@ -43,7 +43,7 @@ ELF_EMITTER:   ok: Execução nativa dinâmica bem-sucedida! Kernel Linux retorn
 
 ## 3. Passo 2: Ponto Fixo de Auto-Compilação ($C_0 = C_1 = C_2$)
 
-O módulo [`src/linvm0_compiler/lin_compiler0_unified.lin`](file:///home/k/Downloads/lin-master/src/linvm0_compiler/lin_compiler0_unified.lin) unifica o pipeline de auto-compilação em LIN puro:
+O módulo [`src/linvm0_compiler/lin_compiler0_unified.lin`](../src/linvm0_compiler/lin_compiler0_unified.lin) unifica o pipeline de auto-compilação em LIN puro:
 - **Lexer:** Reconhecimento e classificação de tokens em LIN.
 - **Parser & Lowerer:** Geração de opcodes LinVM com resolução de variáveis locais e branches de controle de fluxo.
 - **Auto-Compilação:** O compilador processa suas próprias funções canônicas e gera o fold agregado.

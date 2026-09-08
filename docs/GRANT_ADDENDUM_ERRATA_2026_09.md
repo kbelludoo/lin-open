@@ -22,7 +22,7 @@ In strict accordance with project honesty rules (R4: *One digest, one meaning*; 
 
 ## 2. On-Chain EVM Gas Audit (Receipt-Level)
 
-The Solidity on-chain anchor contract ([`contracts/LinReceiptVerifier.sol`](file:///home/k/Downloads/lin-master/contracts/LinReceiptVerifier.sol)) was compiled with `solc 0.8.20` (optimizer 200 runs, Cancun EVM) and executed on Anvil using Foundry v1.8.1. All transactions confirmed with `status = 1`:
+The Solidity on-chain anchor contract ([`contracts/LinReceiptVerifier.sol`](../contracts/LinReceiptVerifier.sol)) was compiled with `solc 0.8.20` (optimizer 200 runs, Cancun EVM) and executed on Anvil using Foundry v1.8.1. All transactions confirmed with `status = 1`:
 
 | Operation | Gas Used | ETH Cost @ 20 gwei | Amortized $/swap (÷2k swaps @ $3k ETH) |
 |---|:---:|:---:|:---:|
@@ -49,7 +49,7 @@ Reviewers frequently ask: *"Why build a bespoke scalar systems co-processor rath
 
 ## 4. Formal Spec Freeze & Independent Review Budget
 
-- **Specification Freeze:** The LIN v1.0 specification has been formally frozen in [`docs/SPEC_FREEZE_1_0.rulel`](file:///home/k/Downloads/lin-master/docs/SPEC_FREEZE_1_0.rulel) with `status = "FROZEN"`, locking the formal specification, LinVM ISA v1, LINBC1 bytecode format, verifiable compute receipt format, and Host C11 ABI to exact SHA-256 digests.
+- **Specification Freeze:** The LIN v1.0 specification has been formally frozen in [`docs/SPEC_FREEZE_1_0.rulel`](SPEC_FREEZE_1_0.rulel) with `status = "FROZEN"`, locking the formal specification, LinVM ISA v1, LINBC1 bytecode format, verifiable compute receipt format, and Host C11 ABI to exact SHA-256 digests.
 - **External Security Review:** To address the single-maintainer risk, the grant budget explicitly reserves **$4,500 USD** for an independent external audit of the smart contracts, receipt verification logic, and arithmetic invariants prior to mainnet deployment.
 
 ---
@@ -61,13 +61,13 @@ To guarantee that the codebase withstands adversarial scrutiny from top-tier cry
 > *"Núcleo de execução — matemática AMM, invariantes, gates e front-end auto-hospedado — 100% em LIN, executado na LinVM/GPU. I/O e Merkle de produção rodam no thin host C11 auditado (TCB-809); scripts Python/hashlib existem **somente** como oráculos cleanroom, e todo número citado tem o comando que o reproduz."*
 
 1. **GPU Emitter Scope (Physical GPU vs Roadmap Milestone):**
-   - LIN's pure `.lin` OpenCL emitter ([`src/lin_gpu_opencl_emitter.lin`](file:///home/k/Downloads/lin-master/src/lin_gpu_opencl_emitter.lin)) currently compiles and dispatches 4 canonical kernel classes (affine, mix, bitfold, Kyber NTT butterfly), fully verified across 77 physical GPU silicon targets on AMD RX 6600 (`make verify-gpu`).
-   - The measured 2,000-swap multiword integer kernel ([`examples/defi_settlement_proof/u256_opencl_kernel.cl`](file:///home/k/Downloads/lin-master/examples/defi_settlement_proof/u256_opencl_kernel.cl)) is hand-written OpenCL C. **Extending the LIN compiler to emit the u256 settlement kernel directly from pure `.lin` source is an explicit deliverable of Milestone 2.**
+   - LIN's pure `.lin` OpenCL emitter ([`src/lin_gpu_opencl_emitter.lin`](../src/lin_gpu_opencl_emitter.lin)) currently compiles and dispatches 4 canonical kernel classes (affine, mix, bitfold, Kyber NTT butterfly), fully verified across 77 physical GPU silicon targets on AMD RX 6600 (`make verify-gpu`).
+   - The measured 2,000-swap multiword integer kernel ([`examples/defi_settlement_proof/u256_opencl_kernel.cl`](../examples/defi_settlement_proof/u256_opencl_kernel.cl)) is hand-written OpenCL C. **Extending the LIN compiler to emit the u256 settlement kernel directly from pure `.lin` source is an explicit deliverable of Milestone 2.**
 2. **Cryptographic Merkle Engine:**
-   - Production cryptographic Merkle trees and LCR2 leaf packing are implemented in C11 within the strict 809 LOC runtime boundary ([`transpile/c/lin_c/lin_sha256.c`](file:///home/k/Downloads/lin-master/transpile/c/lin_c/lin_sha256.c) and [`examples/defi_settlement_proof/merkle_sha256_u256_host.c`](file:///home/k/Downloads/lin-master/examples/defi_settlement_proof/merkle_sha256_u256_host.c)).
+   - Production cryptographic Merkle trees and LCR2 leaf packing are implemented in C11 within the strict 809 LOC runtime boundary ([`transpile/c/lin_c/lin_sha256.c`](../transpile/c/lin_c/lin_sha256.c) and [`examples/defi_settlement_proof/merkle_sha256_u256_host.c`](../examples/defi_settlement_proof/merkle_sha256_u256_host.c)).
    - Early algebraic models like `src/lin_binary_merkle_provenance.lin` are non-cryptographic affine toy models and are excluded from production settlement claims.
 3. **True N-Version Cross-Verification Loops:**
-   - [`tools/emit_batch_receipt.py`](file:///home/k/Downloads/lin-master/tools/emit_batch_receipt.py) functions as the Python test harness and reference big-int oracle.
+   - [`tools/emit_batch_receipt.py`](../tools/emit_batch_receipt.py) functions as the Python test harness and reference big-int oracle.
    - The genuine N-version verification loops in the repository are:
      * **C11 Host (`lin_c0 receipt`) ↔ Cleanroom Verifiers (`lin_verify.py` / `verify_receipt.html`)**
      * **Physical GPU Kernel (AMD RX 6600) ↔ Big-Int Differential Oracle**

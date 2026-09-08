@@ -20,7 +20,7 @@ Em conformidade com a regra **R5 (`LABEL_TOY_VS_EXPERIMENTAL_VS_REAL_WORLD_NO_OV
 
 ## 2. Metodologia de Classificação
 
-O classificador canônico ([tools/ingest_mainnet_unfiltered.py](file:///home/k/Downloads/lin-master/tools/ingest_mainnet_unfiltered.py)) processa os eventos `Swap` e `Sync` sem descartes e aplica a seguinte hierarquia de decisão:
+O classificador canônico ([tools/ingest_mainnet_unfiltered.py](../tools/ingest_mainnet_unfiltered.py)) processa os eventos `Swap` e `Sync` sem descartes e aplica a seguinte hierarquia de decisão:
 
 1. **`K_VIOLATION`**: Violação do invariante $k$ do pool ($(R_{in} \cdot 1000 - A_{in} \cdot 3) \cdot R_{out} > R_{in}^{\text{post}} \cdot R_{out}^{\text{post}} \cdot 1000$). Indica falha crítica ou contrato anômalo.
 2. **`EXACT_INPUT`**: Paridade bit-a-bit estrita com a fórmula $y = \lfloor \frac{A_{in} \cdot 997 \cdot R_{out}}{R_{in} \cdot 1000 + A_{in} \cdot 997} \rfloor$.

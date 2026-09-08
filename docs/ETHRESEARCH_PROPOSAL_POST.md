@@ -45,7 +45,7 @@ Leaves are hashed with domain separation (`LIN:LEAF:1` and `LIN:NODE:1`) into a 
 
 ### 3. Empirical EVM Gas Benchmarks (Foundry v1.8.1 + Live Anvil Receipts)
 
-Rather than relying on theoretical estimates, the Solidity anchoring contract ([`contracts/LinReceiptVerifier.sol`](file:///home/k/Downloads/lin-master/contracts/LinReceiptVerifier.sol)) was deployed and tested with live receipts on Anvil (Cancun EVM, optimizer 200):
+Rather than relying on theoretical estimates, the Solidity anchoring contract ([`contracts/LinReceiptVerifier.sol`](../contracts/LinReceiptVerifier.sol)) was deployed and tested with live receipts on Anvil (Cancun EVM, optimizer 200):
 
 | Contract Call | Measured Gas | Status | Effective $/swap (÷2,000 @ 20 gwei, $3k ETH) |
 |---|:---:|:---:|:---:|

@@ -3,9 +3,9 @@
 .s{
   scope="compiler,transpile/c/lin_c,transpile/c/tool,transpile/c/test"
   canonicalization="LIN_GATE_MANIFEST_v1"
-  merkle_root="sha256:9994a28755ba5833773aae742a4007cda60c8c572d00d482080bc4f3460d4b7f"
-  attested_by="root"
-  audit_timestamp_unix=1788479742
+  merkle_root="sha256:1f7d5946d32026852ba09d1de926b7e2e40428052fffaadecc0445991f9be3e1"
+  attested_by="user"
+  audit_timestamp_unix=1788884431
 }
 .f{
   .f{ path="compiler/lin.zig" bytes=839766 sha256="sha256:668f93a3ee037ff1adf5f72c3b32006a2d41335380d7e9168e45a29f52e4786d" }
@@ -23,6 +23,8 @@
   .f{ path="compiler/lin_reduction_analyzer.zig" bytes=13578 sha256="sha256:8381dad467f8ad9a7035624a0968dd45bc4c7ab6f088f7f3f5d1720c00da6c6d" }
   .f{ path="compiler/lin_vm_to_mir.zig" bytes=9729 sha256="sha256:035bc6cbdd15d827768f232fbf7b38941f2d4b1d2035d6c9d796008ef52354f2" }
   .f{ path="compiler/lin_workload_planner.zig" bytes=15650 sha256="sha256:71cbb8ab9f4887e64ec78f5fd29480976c32d232b6ed1fbfee0bfd227bf8be17" }
+  .f{ path="transpile/c/lin_c/lin_abi.c" bytes=6248 sha256="sha256:2a3c2e7817ecba357597ff3bade6dbc3fd2241054913f1f5538037bd2ea145a3" }
+  .f{ path="transpile/c/lin_c/lin_abi.h" bytes=3035 sha256="sha256:d05db8d75b4fb832b2d72fd3ad3a918664df055445693b42eb26ceec672e5471" }
   .f{ path="transpile/c/lin_c/lin_ast.c" bytes=5276 sha256="sha256:27c156179b49d1906882de63a5c69217cb345433ec5476bcaff24df9a7bf995a" }
   .f{ path="transpile/c/lin_c/lin_ast.h" bytes=1967 sha256="sha256:7ac2c613f4c5c08e0b6ae75ab8cc8c568443b843b0762bde42137b36911ba92e" }
   .f{ path="transpile/c/lin_c/lin_common.c" bytes=1358 sha256="sha256:2f82bfd9cb7ec9a6baa38ffe39274e66d4921af066638f2fd2c8d1b25553aeda" }
@@ -31,34 +33,45 @@
   .f{ path="transpile/c/lin_c/lin_linbc1.h" bytes=3856 sha256="sha256:94eee28024aeaa5fbef26784abbb291971d7b2d666c85033166b634656ea032f" }
   .f{ path="transpile/c/lin_c/lin_parse.c" bytes=6113 sha256="sha256:d20f0d451b27f437f3a8b20aec18932f467dd64748ef98c3613b0330e2dc8702" }
   .f{ path="transpile/c/lin_c/lin_parse.h" bytes=869 sha256="sha256:cbe2309f74e6f1ba126117d286e7c9cfe5180c671ff00093525a189978940cd2" }
+  .f{ path="transpile/c/lin_c/lin_region.c" bytes=6125 sha256="sha256:da2f0d4fe12161e382262d68ffba8708f47656cb05e004198b91fd9e29381f98" }
+  .f{ path="transpile/c/lin_c/lin_region.h" bytes=3596 sha256="sha256:6e133fc38b18222b7b03ee52c76882a12321a8df447fc4c9d18f04c47841b7ae" }
   .f{ path="transpile/c/lin_c/lin_sha256.c" bytes=4546 sha256="sha256:45d92051d4b8073b7258c7b8a6ce9c903121a00f8bed5352d81804bda83105dd" }
   .f{ path="transpile/c/lin_c/lin_sha256.h" bytes=1099 sha256="sha256:1eab995374c7db3f33a3acc33ecd0546544d55682b1139d472df8aef808f5b6c" }
   .f{ path="transpile/c/lin_c/lin_str.c" bytes=2628 sha256="sha256:53d2d9a57e914cfa3257ed4a331e309ffa10b548a2644cd5f1810a8aeb598dc7" }
   .f{ path="transpile/c/lin_c/lin_str.h" bytes=2248 sha256="sha256:2f3ac3c074cf9c0baa83250d802629266dd4a208761483de258b3701697e6ab5" }
   .f{ path="transpile/c/lin_c/lin_token.c" bytes=3897 sha256="sha256:b2a6096c472c57777787136c0f6adc3249cffdb7ca2373bd4a3830caffe21a41" }
   .f{ path="transpile/c/lin_c/lin_token.h" bytes=1531 sha256="sha256:50bd1bc8457945aaa2312e951aa38fd8713a41d5d868b75eed8a517fccdcdacf" }
-  .f{ path="transpile/c/lin_c/lin_vm.c" bytes=13215 sha256="sha256:3716e8fb44d4799f99862f8c90592ea42ddd68c362618d159eea4f6c64968586" }
-  .f{ path="transpile/c/lin_c/lin_vm.h" bytes=2449 sha256="sha256:30b76b578de129f8792c2c587957c65ce704ae4172c18fb1a754960fb09682ea" }
+  .f{ path="transpile/c/lin_c/lin_vm.c" bytes=15643 sha256="sha256:ee46c1afbcd488de3b0a3985447609a4f626776624019ae48fb4c1f8a8192d06" }
+  .f{ path="transpile/c/lin_c/lin_vm.h" bytes=3298 sha256="sha256:b0e0c5bda8013aa70f6674328cc74baebd71bda92fce165ca8e001744fda290b" }
+  .f{ path="transpile/c/test/test_abi.c" bytes=6341 sha256="sha256:aab1f2e4a15d753607c4c3be9e23dd806c522c831cee30cadf02798bb35ab8b5" }
+  .f{ path="transpile/c/test/test_c0_features.c" bytes=3472 sha256="sha256:08b39daadd990aa4bcd671a1d681d4a70f47fc4b87ec27ac5e3b3f6f271dc842" }
   .f{ path="transpile/c/test/test_c_expr.c" bytes=8234 sha256="sha256:16cde2cf48601b5da6b7ee451f6e825dffb610455c2b0097cb8d15a66e1f1b3c" }
+  .f{ path="transpile/c/test/test_context.c" bytes=6040 sha256="sha256:8af8b754ffa0a137c28536327af528ad16f0174e2d7020b856ec9ec9d79e349c" }
   .f{ path="transpile/c/test/test_linbc1.c" bytes=9700 sha256="sha256:1354ad81f8384147f7ba08e2fc5dea98d8e5ad22aa3d59394cf36640c8870554" }
   .f{ path="transpile/c/test/test_overflow_edges.c" bytes=4711 sha256="sha256:6f6bba2a66ca990cfdc8ed9ec893f43cdabce7eae9c46c236bd3f22dad3688e4" }
+  .f{ path="transpile/c/test/test_region.c" bytes=3697 sha256="sha256:9c5ea63ddb8b10f1ac1a7b42d4083cc3beda3248ec4560d7dde2bea715392895" }
   .f{ path="transpile/c/test/test_sha256.c" bytes=2878 sha256="sha256:b55872456ee62f5eff3e6e12a4292432d775d310fd68e8a2fa82549114cea767" }
   .f{ path="transpile/c/tool/lin_bc1_run.c" bytes=4357 sha256="sha256:c0f70a8a5b09619c2e8c3917037918917d05c1a6dced224184283c37b06ffff3" }
-  .f{ path="transpile/c/tool/lin_c0.c" bytes=16941 sha256="sha256:b435c0daaac771550b8ee65e3338dc8375b3b2105184b0e5a0ead88383c0ee45" }
-  .f{ path="transpile/c/tool/lin_c0_front.c" bytes=49749 sha256="sha256:6ad41109fdd30bc24cb74b0e799f95d39ef4234f2fc99699ce64d26c016401dd" }
+  .f{ path="transpile/c/tool/lin_c0.c" bytes=31547 sha256="sha256:cc16168b7872796806960daa4c8e2e9166334c85eb36b8b0401df0a57e27fc03" }
+  .f{ path="transpile/c/tool/lin_c0_check.c" bytes=39706 sha256="sha256:79ae19a782223bb4b71082c6ba26c45951d303f9333390f8b520033a337401ce" }
+  .f{ path="transpile/c/tool/lin_c0_front.c" bytes=52130 sha256="sha256:c3c6194d5b151ac5db3ae89d090ca6d09b0e14e277afe7d493e144f61a3dd480" }
+  .f{ path="transpile/c/tool/lin_c0_gpu.c" bytes=21356 sha256="sha256:a24e360504e9de7907140c7bf6aa38c456181f5ad0c11fcf85126cb80b429006" }
+  .f{ path="transpile/c/tool/lin_c0_gpu.h" bytes=690 sha256="sha256:98c07154901c0a9a2b0be08cca989d0f4881f362a16b78034fd39d3f129494fe" }
   .f{ path="transpile/c/tool/lin_c_receipt.c" bytes=7353 sha256="sha256:c1d5fd0bdf03bd51449d7da3eca8bcc5344ad3aa577ec4b45dffd058ceba6689" }
+  .f{ path="transpile/c/tool/lin_opencl_dyn.h" bytes=1513 sha256="sha256:0429c0d71a294b54f535767336b6318a9fa1dd361817604ca1366471ff39ac2c" }
 }
 .v{
-  files=39
+  files=51
   merkle_levels=7
-  merkle_root="sha256:9994a28755ba5833773aae742a4007cda60c8c572d00d482080bc4f3460d4b7f"
+  merkle_root="sha256:1f7d5946d32026852ba09d1de926b7e2e40428052fffaadecc0445991f9be3e1"
   status="GATE_ATTESTED"
   evidence_status="COMPUTED"
 }
+
 .g{
-  signed_at=1788479742
+  signed_at=1788884431
   key_id="gate-maintainer"
-  pubkey="ed25519:2b0126ff34608e636b2849433518c1034cf2490d39406a6ed9038a2ddd028006"
-  body_sha256="sha256:23274c7f5f332a0c394572a76c82d39dc4faa421ed3cec59b33467969dc87bc1"
-  signature="ed25519:5a45d6bd502527ae4e4df647e4be184a0b9fca844c25438a64ef768af232a5edb805de52c6697f103a04fbd2f47be203932cf17142395a9c9c848e7101154e09"
+  pubkey="ed25519:38995b6ac1b38ad70baaee32af11cde6f78c8dcf00dc9d68f1d6bb6a23c60c39"
+  body_sha256="sha256:20e0e4e77100e8727d4e0c2b3ef17a36ace2dfca6b054541dfde292529425ac9"
+  signature="ed25519:029ec958488788ec0bf778b4911a05520e9301fce6986cbf877e55c0ff1ef347d8ff654be2a1bf669103fac9e6f47ae53b74bf730868ff47c082caf3decd2008"
 }

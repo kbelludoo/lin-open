@@ -91,13 +91,13 @@ The repository already features working, reproducible code with zero simulation:
    - Canonical RLP recursive parser and roundtrip reserializer with fail-closed rejection of non-minimal integers, unconsumed residual bytes, and oversized buffers.
    - Full support for envelopes: Legacy (type `0`), EIP-2930 (type `1`), EIP-1559 (type `2`), and EIP-4844 (type `3`).
    - Automated 17-test compliance and 7-scenario adversarial mutation suite (`test/ethereum_tx/test_m1_compliance.py`) running in GitHub Actions (`.github/workflows/m1-ethereum-tx.yml`).
-   - Formal specifications: [`docs/M1_SPEC.md`](file:///home/k/Downloads/lin-master/docs/M1_SPEC.md), [`docs/M1_THREAT_MODEL.md`](file:///home/k/Downloads/lin-master/docs/M1_THREAT_MODEL.md), LinVM profile `LIN-ETH-1` specification ([`docs/M1_KECCAK_IMPLEMENTATION.md`](file:///home/k/Downloads/lin-master/docs/M1_KECCAK_IMPLEMENTATION.md)), and migration strategy ([`docs/MIGRATION_PATH_MOJO_TO_LIN.md`](file:///home/k/Downloads/lin-master/docs/MIGRATION_PATH_MOJO_TO_LIN.md)).
+   - Formal specifications: [`docs/M1_SPEC.md`](docs/M1_SPEC.md), [`docs/M1_THREAT_MODEL.md`](docs/M1_THREAT_MODEL.md), LinVM profile `LIN-ETH-1` specification ([`docs/M1_KECCAK_IMPLEMENTATION.md`](docs/M1_KECCAK_IMPLEMENTATION.md)), and migration strategy ([`docs/MIGRATION_PATH_MOJO_TO_LIN.md`](docs/MIGRATION_PATH_MOJO_TO_LIN.md)).
 6. **M1-B.1: First Executable Keccak-256 Core in LinVM (`src/lin_ethereum_keccak.lin` & `test/ethereum_tx/test_linvm_keccak.py`):**
    - AST structurally accepted by the frozen bootstrap compiler (`compiler/lin.zig -- verify`).
    - Implementation using fixed arrays (`state: [25]int;`, `b: [25]int;`, `rc: [24]int;`) without dynamic heap allocation.
    - Executes Keccak-f[1600] across 24 rounds on 25 64-bit lanes directly in Lin bytecode via minimal C11 host runner.
    - Bit-exact parity demonstrated for canonical `Keccak-256("")` against Python reference (`c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470`), with explicit fail-closed rejection of tampered words and active distinction against NIST SHA3-256 substitution.
-   - Documented in the 3-tier matrix ([`docs/m1_phase_comparison.csv`](file:///home/k/Downloads/lin-master/docs/m1_phase_comparison.csv)), with arbitrary multi-block absorption (M1-B.2), canonical RLP (M1-B.3), and envelope verification (M1-B.4) constituting the ongoing and funded scope.
+   - Documented in the 3-tier matrix ([`docs/m1_phase_comparison.csv`](docs/m1_phase_comparison.csv)), with arbitrary multi-block absorption (M1-B.2), canonical RLP (M1-B.3), and envelope verification (M1-B.4) constituting the ongoing and funded scope.
 
 ---
 
@@ -112,8 +112,8 @@ RLP, EIP-2718, Keccak-256     Checkpoints, Reorgs, MPT      Receipts, CI, Ext. R
 ### Milestone 1: Canonical Ethereum Transaction Verifier ($10,000 — Months 1–2)
 - **Status:** **M1-A (Independent Pure Mojo Reference, Zero CPython Runtime Dependency)** delivered and verifiable in repository (`tools/lin_audit_tx.mojo`).
 - **M1-B Grant Funding Scope:**
-  - Execute the canonical technological migration trajectory: **`Python legado → Mojo puro → LinVM normativa`** ([`docs/MIGRATION_PATH_MOJO_TO_LIN.md`](file:///home/k/Downloads/lin-master/docs/MIGRATION_PATH_MOJO_TO_LIN.md)).
-  - Port the Keccak-256 and RLP core into the **LinVM execution kernel** under profile `LIN-ETH-1` ([`docs/M1_KECCAK_IMPLEMENTATION.md`](file:///home/k/Downloads/lin-master/docs/M1_KECCAK_IMPLEMENTATION.md)).
+  - Execute the canonical technological migration trajectory: **`Python legado → Mojo puro → LinVM normativa`** ([`docs/MIGRATION_PATH_MOJO_TO_LIN.md`](docs/MIGRATION_PATH_MOJO_TO_LIN.md)).
+  - Port the Keccak-256 and RLP core into the **LinVM execution kernel** under profile `LIN-ETH-1` ([`docs/M1_KECCAK_IMPLEMENTATION.md`](docs/M1_KECCAK_IMPLEMENTATION.md)).
   - Implement bounds-checked indexing, `rotl64`, bitwise operations, and permutation rounds directly in Lin bytecode (`.linbc`).
   - Differential 4-way cross-verification: **LinVM (normative) == Mojo (high-performance oracle) == Python (baseline) == Geth/Reth (external consensus)**.
   - Scale the verified public corpus from seed fixtures to **10,000 Mainnet transactions** (Types 0, 1, 2, 3) with published digest manifests.
