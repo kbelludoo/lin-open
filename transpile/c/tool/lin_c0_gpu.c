@@ -8,14 +8,13 @@
 #include "lin_common.h"
 #include "lin_sha256.h"
 #include "lin_vm.h"
+#include "lin_opencl_dyn.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <dlfcn.h>
-#define CL_TARGET_OPENCL_VERSION 200
-#include <CL/cl.h>
 
 /* OpenCL dynamic function pointers */
 typedef cl_int (*fn_clGetPlatformIDs)(cl_uint, cl_platform_id*, cl_uint*);
