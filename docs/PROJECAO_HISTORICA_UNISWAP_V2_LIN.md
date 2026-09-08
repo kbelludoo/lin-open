@@ -95,7 +95,7 @@ Nas GPUs modernas, cada Compute Unit (CU) / Streaming Multiprocessor (SM) execut
 
 - **Data e Hora da Execução:** 2026-09-03T23:21:13-03:00 (UTC 2026-09-04 02:21:13)
 - **Hardware Físico Utilizado:** **AMD Radeon RX 6600** (GPU intermediária de R$ 1.300, 28 Compute Units / 1.792 stream cores, Navi 23, OpenCL 3.0 / ROCm).
-- **Código Fonte Executado:** [`examples/defi_settlement_proof/u256_opencl_host.c`](file:///home/k/Downloads/lin-master/examples/defi_settlement_proof/u256_opencl_host.c) e [`examples/defi_settlement_proof/u256_opencl_kernel.cl`](file:///home/k/Downloads/lin-master/examples/defi_settlement_proof/u256_opencl_kernel.cl).
+- **Código Fonte Executado:** [`examples/defi_settlement_proof/u256_opencl_host.c`](../examples/defi_settlement_proof/u256_opencl_host.c) e [`examples/defi_settlement_proof/u256_opencl_kernel.cl`](../examples/defi_settlement_proof/u256_opencl_kernel.cl).
 
 ### Resultados Reais Medidos no Silício da GPU:
 
