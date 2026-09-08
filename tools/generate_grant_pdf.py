@@ -128,30 +128,31 @@ def build_pdf(filename="docs/LIN_GPU_DeFi_Settlement_Grant_Proposal.pdf"):
     # Executive Summary
     story.append(Paragraph("1. Executive Summary & Core Innovation", h1_style))
     story.append(Paragraph(
-        "DEX trading on Ethereum L1 is severely constrained by EVM execution throughput (~15–30 TPS) and high transaction gas costs. "
-        "Rollup sequencers and batch settlement processors struggle to scale high-frequency automated market making (AMM) without compute bottlenecks or high latency. "
+        "DEX trading and batch settlement on Ethereum L1 face severe computational and economic limits. "
+        "Re-executing thousands of state transitions across archival nodes to audit settlement integrity is slow and expensive. "
         "<b>LIN</b> introduces a sovereign, verified offload co-processor and parallel AMM settlement engine written in LIN (a deterministic numeric systems language) "
-        "orchestrated by a pure C11 host runtime (zero LLVM/Zig dependency in production).",
+        "orchestrated by a pure C11 host runtime with a <b>strict execution runtime TCB of only 809 LOC</b> (zero LLVM/Zig dependency in production).",
         body_style
     ))
     story.append(Paragraph(
-        "Running on commodity consumer hardware (AMD Radeon RX 6600, 28 CUs), our sovereign pipeline settles <b>2,000 real Ethereum mainnet Uniswap v2 swaps in 4.1 milliseconds</b> "
-        "(exceeding <b>459,000 TPS</b>), enforces strict constant-product invariants (<i>x · y ≥ k</i>), filters front-running/sandwich deviations, and issues deterministic "
-        "<b>64-byte SHA-256 Merkle compute receipts</b>. These receipts can be verified on Ethereum L1 via our lightweight Solidity verifier contract with ~99.98% gas savings.",
+        "Running on commodity consumer hardware (AMD Radeon RX 6600, 28 CUs), our sovereign pipeline processes <b>2,000 Ethereum mainnet Uniswap v2 swaps in 1.7 milliseconds of kernel time</b> "
+        "(1,176,000 swaps/sec kernel-only; 218 ms end-to-end cold wall-clock), enforces strict constant-product invariants (<i>x · y ≥ k</i>), filters routing deviations, and issues deterministic "
+        "<b>canonical 208-byte LCR2 Merkle compute receipts</b>. These receipts enable client-side auditability in <b>~7.3 µs per block (~3,200× to 4,900× cheaper than VM re-execution)</b>, "
+        "with L1 root anchoring and inclusion proof verification implemented in <code>contracts/LinReceiptVerifier.sol</code>.",
         body_style
     ))
 
     # Empirical Results Table
-    story.append(Paragraph("2. Empirical Performance: Real Mainnet Swaps Benchmark", h1_style))
+    story.append(Paragraph("2. Empirical Performance: Real Mainnet Swaps Benchmark (AMD RX 6600)", h1_style))
     
     table_data = [
-        ["Metric", "Ethereum L1 Execution", "LIN (AMD RX 6600 GPU)", "Empirical Advantage"],
-        ["AMM Math Throughput", "~15 - 30 swaps/sec (L1 limit)", "459,000+ swaps/sec", "22,000x offload speedup"],
-        ["Compute Time (2,000 Swaps)", "~100 - 133 seconds", "0.0041 seconds (4.1 ms)", "Instant batch settlement"],
-        ["Average Compute / Swap", "12,000 ms (block interval)", "0.0021 ms (2.1 µs)", "5,700,000x lower latency"],
-        ["Gas Overhead on L1", "1,164,504,079 gas (Mainnet)", "70,707 gas (Measured EVM)", "99.9939% gas reduction"],
-        ["Memory Safety Model", "Reentrancy / Out-of-gas", "Heap-Free / Bounds-Checked", "Provably crash-safe"],
-        ["Off-chain Auditability", "Requires full archive node", "SHA-256 Merkle Receipt", "O(1) independent verification"]
+        ["Metric", "Kernel Compute (GPU)", "End-to-End Wall-Clock", "Off-Chain Audit Advantage"],
+        ["Batch Throughput (N=2,000)", "1,176,470 swaps/sec", "9,166 swaps/sec (cold)", "~3,200x faster than VM re-exec"],
+        ["Execution Time (N=2,000)", "1.70 ms (0.85 µs / swap)", "218 ms (includes JIT/PCIe)", "Receipt verified in ~7.3 µs"],
+        ["Saturated Batch (N=10,000)", "2.80 ms (3,300,000 swaps/s)", "219 ms (45,000 swaps/s)", "Amortizes cold startup latency"],
+        ["Trusted Computing Base (TCB)", "809 LOC (core runtime)", "6,628 LOC (full C0 toolchain)", "Zero runtime heap / bounds-checked"],
+        ["Cryptographic Receipt", "LCR2 208-byte canonical", "SHA-256 Merkle root", "O(1) client verification (hashlib)"],
+        ["On-Chain Bridge (Solidity)", "Root anchor (settleBatch)", "Spot inclusion proof", "LinReceiptVerifier.sol verified"]
     ]
     
     t = Table(table_data, colWidths=[130, 115, 125, 134])
@@ -178,11 +179,11 @@ def build_pdf(filename="docs/LIN_GPU_DeFi_Settlement_Grant_Proposal.pdf"):
         bullet_style
     ))
     story.append(Paragraph(
-        "• <b>Deterministic Host VM (LinVM C0):</b> Pure C11 orchestration runtime (<code>transpile/c/tool/lin_c0.c</code>). Validates input buffers, executes anti-fraud filters, and generates canonical <code>@RULEL:COMPUTE_RECEIPT</code> artifacts.",
+        "• <b>Deterministic Host VM (LinVM C0):</b> Pure C11 orchestration runtime (<code>transpile/c/tool/lin_c0.c</code>). Strict TCB: 809 LOC runtime, 6.6k LOC full toolchain. Emits canonical LCR2 Merkle receipts.",
         bullet_style
     ))
     story.append(Paragraph(
-        "• <b>L1 On-Chain Verifier (Solidity):</b> <code>contracts/LinReceiptVerifier.sol</code> allows smart contracts or rollups on Ethereum L1 to verify whole-batch inclusion proofs and settle state in a single call costing ~25,000 gas.",
+        "• <b>L1 On-Chain Verifier (Solidity):</b> <code>contracts/LinReceiptVerifier.sol</code> anchors batch Merkle roots and verifies both legacy and LCR2 inclusion proofs (<code>verifyLCR2Inclusion</code>).",
         bullet_style
     ))
 

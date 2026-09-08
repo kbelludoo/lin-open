@@ -21,7 +21,12 @@ All capabilities below are **fully verified without mock data or simulated infra
 | **Independent Verification** | ✅ **PASS** | Zero-trust verification scripts in Python, Node.js, Bash+OpenSSL, and WebCrypto |
 | **LinVM0 Self-Hosting (V1 → V5)** | ✅ **PASS** | 100% Sovereign: front-end em LIN puro, Ponto Fixo $C_0=C_1=C_2$ fechado, emissor ELF64 nativo no kernel e LinVM Compiler 0 (`lin_c0`) independente de Zig |
 | **Cross-Platform Target** | ✅ **PASS** | Runs identically bit-for-bit on CPU (Host C11), Web (Wasm/JS), and GPU (OpenCL) |
-| **GPU Sovereign DeFi AMM** | ✅ **PASS** | **459,000+ TPS** on AMD Radeon RX 6600 (2,000 real Ethereum mainnet swaps in 4.1ms) with L1 Solidity Verifier contract (`contracts/LinReceiptVerifier.sol`) |
+| **GPU Sovereign DeFi AMM** | ✅ **PASS** | **Deterministic AMM Co-processor** on AMD Radeon RX 6600 (Kernel: 1.7ms / 1.17M swaps/s; Wall-clock cold: 218ms / 9.1k swaps/s) with L1 Solidity Verifier (`contracts/LinReceiptVerifier.sol`) |
+
+### Strict TCB Boundary
+* **Execution Runtime Core TCB:** **809 LOC** (`lin_vm.c`, `lin_linbc1.c`, `lin_sha256.c`, `lin_common.c`).
+* **Compiler-0 C11 Front-End:** **1,764 LOC** (`transpile/c/lin_c/*.c`).
+* **Full Toolchain:** **6.6k LOC** (including CLI tools, linbc1 runner, receipt generators, and OpenCL emitter).
 
 ---
 
@@ -54,7 +59,7 @@ To safely transpile larger C codebases without introducing memory vulnerabilitie
 | Sector | Industry Problem | The LIN Solution | Tangible Commercial Benefit |
 |---|---|---|---|
 | **Cybersecurity & Compliance** | Memory corruption (*Buffer Overflows*, Undefined Behavior) in legacy C libraries. | Transpilation to mathematically verified, memory-safe LIN models. | **Up to 80% reduction in security audit turnaround.** |
-| **Web3 & Rollups (L2)** | Extreme gas costs to re-execute complex computations on EVM/L1. | Compute off-chain in LinVM; verify lightweight SHA-256 Merkle Receipts on-chain. | **Up to 99% gas savings on state proofs.** |
+| **Web3 & Rollups (L2)** | Extreme gas costs to re-execute complex computations on EVM/L1. | Compute off-chain in LinVM; verify lightweight SHA-256 Merkle Receipts on-chain. | **~3,200× to 4,900× cheaper off-chain audit via receipts vs re-execution.** |
 | **Verifiable AI Inference** | Lack of tamper-proof proof for cloud ML inferences and model weights. | Transpiled matrix/convolution kernels generate SHA-256 integrity receipts. | **Zero-trust auditability for regulated AI & FinTech.** |
 | **Universal Portability** | High cost of maintaining separate codebases for CPU, Web, and GPU. | Single `.lin` source runs on Host C11, Browser (Wasm), and GPU (OpenCL). | **1 single codebase for 3 deployment targets.** |
 
@@ -103,10 +108,10 @@ make verify-elf
 # Verificação da GPU real (AMD RX 6600) sem Zig (77 alvos bit-a-bit)
 make verify-gpu
 
-# Benchmark real DeFi AMM vs Ethereum EVM (459,000+ TPS)
+# Benchmark honesto de Co-processamento DeFi AMM (Kernel vs Wall-clock)
 make benchmark-uniswap
 
-# Verificação do Smart Contract Verificador Solidity L1
+# Verificação do Smart Contract Verificador Solidity L1 (invariante k + Merkle + LCR2)
 make verify-contracts
 ```
 
@@ -130,8 +135,8 @@ make verify-contracts
 The repository ships a conservative, externally reproducible proof harness. It
 pins/fetches real GitHub upstream sources, compares selected LIN modules against
 independent Python/C oracles, recomputes the Merkle receipt without the LIN
-runtime, and explicitly reports what is **not** proven (e.g. it does not claim
-Uniswap executes on the no-Zig C0 host, because that host rejects `/`).
+runtime, and explicitly reports what is **not** proven (default `vm` runs pure
+Uniswap division, shifts require `vmfull`, and protocol security is isolated in NP1).
 
 ```bash
 make -C transpile/c all
