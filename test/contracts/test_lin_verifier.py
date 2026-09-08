@@ -20,11 +20,40 @@ def solidity_verify_constant_product(reserve_in, reserve_out, amount_in, amount_
     return (balance_in_adjusted * balance_out_adjusted) >= k_before
 
 def compute_swap_leaf(rin, rout, ain, aout):
+    # Deve espelhar LinReceiptVerifier.computeSwapLeaf:
+    # sha256(abi.encodePacked(uint256,uint256,uint256,uint256)) = sha256(4x32B big-endian)
     data = (rin.to_bytes(32, 'big') + 
             rout.to_bytes(32, 'big') + 
             ain.to_bytes(32, 'big') + 
             aout.to_bytes(32, 'big'))
     return hashlib.sha256(data).digest()
+
+def verify_swap_inclusion_py(leaf, proof, index, root):
+    # Espelha LinReceiptVerifier.verifySwapInclusion (bit i do index escolhe lado)
+    h = leaf
+    for i, pe in enumerate(proof):
+        if (index >> i) & 1 == 1:
+            h = hashlib.sha256(pe + h).digest()
+        else:
+            h = hashlib.sha256(h + pe).digest()
+    return h == root
+
+def merkle_proof(leaves, index):
+    # Arvore com duplicacao do ultimo quando impar (mesmo do contrato/teste)
+    proof = []
+    idx = index
+    cur = list(leaves)
+    while len(cur) > 1:
+        if len(cur) % 2 == 1:
+            cur = cur + [cur[-1]]
+        sibling = idx ^ 1
+        proof.append(cur[sibling])
+        nxt = []
+        for i in range(0, len(cur), 2):
+            nxt.append(hashlib.sha256(cur[i] + cur[i+1]).digest())
+        cur = nxt
+        idx //= 2
+    return proof
 
 def main():
     print("================================================================================")
@@ -55,6 +84,8 @@ def main():
         leaves.append(leaf)
     
     print(f"[+] Fase 1: Todos os {passed}/{len(swaps)} swaps validados matematicamente no invariante k.")
+    print("    NOTA HONESTA: dataset 2000 e corpus aritmetico PRE-FILTRADO (ver DATASETS.md).")
+    print("    Para distribuicao mainnet use mainnet_unfiltered.json (139 EXACT + 18 OVERPAID).")
     
     # Merkle Root
     current = leaves
@@ -65,8 +96,73 @@ def main():
             right = current[i+1] if i+1 < len(current) else current[i]
             next_level.append(hashlib.sha256(left + right).digest())
         current = next_level
-    root_hex = current[0].hex()
+    root = current[0]
+    root_hex = root.hex()
     print(f"[+] Raiz de Merkle do lote: sha256:{root_hex}")
+
+    # Fase 1b: prova de inclusao espelhando o Solidity (prova externa real)
+    print("\n[*] Fase 1b: Verificacao de inclusao Merkle (espelho Python do Solidity)...")
+    for spot in (0, 1, 1999):
+        proof = merkle_proof(leaves, spot)
+        assert verify_swap_inclusion_py(leaves[spot], proof, spot, root), f"spot {spot} deveria passar"
+        print(f"  [+] spot {spot}: inclusao PASS (proof len={len(proof)})")
+    # Controles negativos (devem FALHAR):
+    bad_leaf = hashlib.sha256(b"tamper").digest()
+    assert not verify_swap_inclusion_py(bad_leaf, merkle_proof(leaves, 0), 0, root), "folha adulterada passou (BUG)"
+    assert not verify_swap_inclusion_py(leaves[0], merkle_proof(leaves, 0), 1, root), "indice errado passou (BUG)"
+    tampered_proof = list(merkle_proof(leaves, 0)); tampered_proof[0] = hashlib.sha256(b"x").digest()
+    assert not verify_swap_inclusion_py(leaves[0], tampered_proof, 0, root), "proof adulterada passou (BUG)"
+    # Fase 1c: verificacao de inclusao LCR2 canonica (espelha LinReceiptVerifier.verifyLCR2Inclusion)
+    bin_lcr2_path = "/tmp/batch_records_2000.bin"
+    manifest_lcr2_path = "/tmp/batch_receipt_2000.json"
+    if not (os.path.exists(bin_lcr2_path) and os.path.exists(manifest_lcr2_path)):
+        import subprocess
+        print("\n[*] Fase 1c: Gerando recibo LCR2 2000 via tools/emit_batch_receipt.py...")
+        subprocess.run([
+            sys.executable, "tools/emit_batch_receipt.py",
+            "--dataset", dataset_path,
+            "--out-manifest", manifest_lcr2_path,
+            "--out-bin", bin_lcr2_path
+        ], check=True)
+
+    print("\n[*] Fase 1c: Verificacao de inclusao LCR2 on-chain mirror (208B + dominios)...")
+    manifest_lcr2 = json.load(open(manifest_lcr2_path))
+    bin_lcr2 = open(bin_lcr2_path, "rb").read()
+    rec_len = manifest_lcr2["record_bytes"]
+    root_lcr2 = bytes.fromhex(manifest_lcr2["merkle_root"])
+    leaves_lcr2 = [hashlib.sha256(b"LIN:LEAF:1" + bin_lcr2[i*rec_len:(i+1)*rec_len]).digest() for i in range(manifest_lcr2["count"])]
+
+    def lcr2_merkle_proof(leaves, index):
+        proof = []
+        idx = index
+        cur = list(leaves)
+        while len(cur) > 1:
+            if len(cur) % 2 == 1:
+                cur = cur + [cur[-1]]
+            sibling = idx ^ 1
+            proof.append(cur[sibling])
+            nxt = []
+            for i in range(0, len(cur), 2):
+                nxt.append(hashlib.sha256(b"LIN:NODE:1" + cur[i] + cur[i+1]).digest())
+            cur = nxt
+            idx //= 2
+        return proof
+
+    def verify_lcr2_inclusion_py(record, proof, index, root):
+        h = hashlib.sha256(b"LIN:LEAF:1" + record).digest()
+        for i, pe in enumerate(proof):
+            if (index >> i) & 1 == 1:
+                h = hashlib.sha256(b"LIN:NODE:1" + pe + h).digest()
+            else:
+                h = hashlib.sha256(b"LIN:NODE:1" + h + pe).digest()
+        return h == root
+
+    for spot in (0, 1, 1999):
+        rec = bin_lcr2[spot*rec_len:(spot+1)*rec_len]
+        proof = lcr2_merkle_proof(leaves_lcr2, spot)
+        assert verify_lcr2_inclusion_py(rec, proof, spot, root_lcr2), f"LCR2 spot {spot} falhou"
+        print(f"  [+] LCR2 spot {spot}: inclusao PASS contra raiz off-chain {root_lcr2.hex()[:16]}... (proof len={len(proof)})")
+    print("  [+] LCR2 on-chain bridge logic: 100% compativel com raiz do tools/emit_batch_receipt.py")
 
     # Fase 2: EVM real compilation & execution (se solcx / web3 disponível)
     print("\n[*] Fase 2: Auditoria e Execução no Bytecode EVM Real (Solidity 0.8.20)...")
@@ -116,10 +212,12 @@ def main():
             receipt_settle = w3.eth.wait_for_transaction_receipt(tx_settle)
             measured_gas = receipt_settle.gasUsed
             print(f"[+] settleBatch() EXECUTADO COM SUCESSO NA EVM!")
-            print(f"    Gas Real Medido na EVM: {measured_gas:,} gas")
-            print(f"    Gas Real Gasto na Mainnet L1 (2.000 swaps): {total_l1_gas_real:,} gas")
+            print(f"    Gas Real Medido na EVM (ancoramento da raiz): {measured_gas:,} gas")
+            print(f"    Gas das transacoes individuais na Mainnet L1 (2.000 swaps): {total_l1_gas_real:,} gas")
             reduction = (1.0 - (measured_gas / total_l1_gas_real)) * 100.0
-            print(f"    Economia Real de Gas Comprovada: {reduction:.4f}% ({total_l1_gas_real / measured_gas:,.1f}x menos gas)")
+            print(f"    Razao de Gas Ancoramento vs Re-execucao direta: {total_l1_gas_real / measured_gas:,.1f}x menos gas on-chain")
+            print("    [AVISO DE MODELO]: settleBatch apenas armazena a raiz Merkle (modelo sequencer/ancoramento).")
+            print("    A liquidacao/execucao real ocorre off-chain na GPU/LinVM; inclusao e auditada via verifySwapInclusion.")
         except Exception as e:
             print(f"[-] Aviso EVM execution: {e}")
     else:

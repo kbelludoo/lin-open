@@ -33,6 +33,6 @@ python3 "$ROOT_DIR/tools/lin_defi_settler.py" \
 "$ROOT_DIR/transpile/c/bin/lin_c0" receipt verify --receipt /tmp/uniswap_settlement_receipt.rulel
 
 echo "================================================================================"
-echo "=== BENCHMARK CONCLUÍDO COM SUCESSO: SUPERIORIDADE MATEMÁTICA E REAL PROVADA ==="
+echo "=== BENCHMARK DE CONFORMIDADE E CO-PROCESSAMENTO CONCLUÍDO COM SUCESSO       ==="
 echo "================================================================================"
 exit 0

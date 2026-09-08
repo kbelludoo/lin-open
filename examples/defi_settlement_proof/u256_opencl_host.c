@@ -11,7 +11,20 @@
 int main(int argc, char **argv) {
     // O .bin NAO e' versionado. Gere-o deterministicamente a partir do JSON com:
     //   python3 test/pilot_harness/test_honest_parity_and_sensitivity.py --bin /tmp/swaps.bin
-    const char *bin_path = (argc > 1) ? argv[1] : "/tmp/swaps.bin";
+    // Uso: u256_opencl_host <bin> [--repeat N]
+    //   --repeat N: executa o kernel N vezes no MESMO contexto/programa (JIT amortizado),
+    //   provando throughput sustentado. Default 1 (cold, inclui 1 enqueue).
+    const char *bin_path = "/tmp/swaps.bin";
+    int repeat = 1;
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--repeat") == 0 && i + 1 < argc) {
+            repeat = atoi(argv[++i]);
+            if (repeat < 1) repeat = 1;
+            if (repeat > 1000) repeat = 1000;
+        } else if (argv[i][0] != '-') {
+            bin_path = argv[i];
+        }
+    }
 
     FILE *fd = fopen(bin_path, "rb");
     if (!fd) {
@@ -103,11 +116,18 @@ int main(int argc, char **argv) {
     struct timespec ts0, ts1;
     clock_gettime(CLOCK_MONOTONIC, &ts0);
 
-    err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &global_size, &local_size, 0, NULL, NULL);
-    clFinish(queue);
+    for (int r = 0; r < repeat; r++) {
+        err = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &global_size, &local_size, 0, NULL, NULL);
+        if (err != CL_SUCCESS) {
+            fprintf(stderr, "clEnqueue falhou no repeat %d: %d\n", r, err);
+            return 1;
+        }
+        clFinish(queue);
+    }
 
     clock_gettime(CLOCK_MONOTONIC, &ts1);
     double elapsed = (ts1.tv_sec - ts0.tv_sec) + (ts1.tv_nsec - ts0.tv_nsec) / 1e9;
+    double elapsed_per_run = elapsed / repeat;
 
     int *h_match = malloc(total_swaps * sizeof(int));
     clEnqueueReadBuffer(queue, d_match, CL_TRUE, 0, total_swaps * sizeof(int), h_match, 0, NULL, NULL);
@@ -130,11 +150,15 @@ int main(int argc, char **argv) {
     }
     printf("[Tempo do kernel na GPU]:   %.4f s (%.3f us por swap; exclui compilacao JIT e alocacao,\n"
            "                            inclui transferencia H2D do buffer de entrada)\n",
-           elapsed, (elapsed / total_swaps) * 1e6);
+           elapsed_per_run, (elapsed_per_run / total_swaps) * 1e6);
     printf("[Throughput deste lote]:    %.1f swaps/s -- NAO e' pico: lotes < ~10k swaps sao dominados\n"
            "                            por latencia fixa de lancamento/PCIe (wavefront starvation).\n"
            "                            Compare lotes de tamanhos diferentes antes de citar um numero.\n",
-           total_swaps / elapsed);
+           total_swaps / elapsed_per_run);
+    if (repeat > 1) {
+        printf("[Sustentado --repeat %d]:   %.4f s total, %.4f s/run amortizado, %.1f swaps/s sustentado\n",
+               repeat, elapsed, elapsed_per_run, total_swaps / elapsed_per_run);
+    }
     printf("[Aviso]:                    o kernel compara com `expected` do buffer; a proveniencia desse\n"
            "                            valor (on-chain vs. formula) e' responsabilidade do gerador do .bin.\n");
     printf("=====================================================================================\n");

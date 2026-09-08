@@ -17,9 +17,10 @@ What it does NOT do:
   * It does not claim that LIN "saves $1.8 trillion" or that it is faster than
     LLVM/C/Rust for general computation. The pinned Uniswap/OpenSSL files are
     used for provenance and for the arithmetic/math oracle only.
-  * It does not pretend that the Compiler-0 host can execute integer division
-    or shifts in this environment. Those operations are explicitly rejected by
-    the audited `lin_c0` front-end (VM_REJ_INT_DIVISION / VM_REJ_PARSE).
+  * Default `lin_c0 vm` accepts integer division (c0_build allow_div=1) so the
+    three pure UniswapV2Library math fns run on the default profile; shifts
+    (<<,>>) remain fail-closed (VM_REJ_SHIFT) and need `vmfull`. The NP1 gate
+    below pins this exact split.
 
 Usage:
     python3 test/prove_all_claims_external.py            # 10,000 math vectors
@@ -317,7 +318,7 @@ def tinyexpr_claims() -> tuple[str, str]:
 
 
 def uniswap_claims(iterations: int) -> tuple[str, str]:
-    """Profile-full execution of the three pure UniswapV2Library math fns."""
+    """Default-vm execution of the three pure UniswapV2Library math fns."""
     if not C0.exists():
         return "SKIP", "lin_c0 not built"
 
@@ -329,26 +330,30 @@ def uniswap_claims(iterations: int) -> tuple[str, str]:
         reserve_in = rng.randint(1, 10**9)
         reserve_out = rng.randint(1, 10**9)
         want_out = uniswap_amount_out(amount_in, reserve_in, reserve_out)
-        rc, out = run(C0, "vmfull", UNISWAP_LIN, "get_amount_out",
+        # Default profile must handle division (allow_div=1 since 2026-09).
+        rc, out = run(C0, "vm", UNISWAP_LIN, "get_amount_out",
                       amount_in, reserve_in, reserve_out)
         got = value_of(out)
         checked += 1
         if rc != 0 or got != want_out:
-            mismatches.append(("get_amount_out", amount_in, reserve_in, reserve_out,
+            mismatches.append(("get_amount_out[vm]", amount_in, reserve_in, reserve_out,
                                want_out, got, rc, out))
             break
 
-    # Fixed canonical vector and quote/get_amount_in round-trip.
+    # Fixed canonical vectors on BOTH vm and vmfull (locks profile parity).
     for (name, args, want) in [
         ("get_amount_out", [10000, 50000, 100000], uniswap_amount_out(10000, 50000, 100000)),
         ("quote", [100, 50, 100], uniswap_quote(100, 50, 100)),
         ("get_amount_in", [16624, 50000, 100000], 10000),
     ]:
-        rc, out = run(C0, "vmfull", UNISWAP_LIN, name, *args)
-        got = value_of(out)
-        checked += 1
-        if rc != 0 or got != want:
-            mismatches.append((name, *args, want, got, rc, out))
+        for profile in ("vm", "vmfull"):
+            rc, out = run(C0, profile, UNISWAP_LIN, name, *args)
+            got = value_of(out)
+            checked += 1
+            if rc != 0 or got != want:
+                mismatches.append((f"{name}[{profile}]", *args, want, got, rc, out))
+                break
+        if mismatches:
             break
 
     if mismatches:
@@ -358,8 +363,8 @@ def uniswap_claims(iterations: int) -> tuple[str, str]:
 
     return "PASS", (
         f"UniswapV2Library scalar math (get_amount_out/quote/get_amount_in) "
-        f"matches Python oracle over {checked} vectors via profile-full vmfull; "
-        f"canonical vector = 16624"
+        f"matches Python oracle over {checked} vectors via default vm "
+        f"(+vmfull parity on canonicals); canonical vector = 16624"
     )
 
 
@@ -456,8 +461,11 @@ def selfhost_claims() -> tuple[str, str]:
 
 def not_proven_scope() -> str:
     """Honest limits that the harness explicitly does not claim."""
-    # Ensure the default fail-closed path still rejects division; the
-    # experiment must not silently change the default profile.
+    # Pin the current fail-closed split (2026-09-08):
+    #   default vm: allow_div=1, allow_shift=0  -> Uniswap 3/3 eligible,
+    #   QOI module 1/3 eligible (siphash/xxhash VM_REJ_SHIFT).
+    # Full `vmfull` allows both. If this split changes, the harness must fail
+    # so the spec freeze / docs are updated together (no silent profile drift).
     rc, out = run(C0, "info", UNISWAP_LIN)
     if rc != 0:
         return "FAIL", f"lin_c0 info failed on Uniswap module:\n{out}"
@@ -465,19 +473,29 @@ def not_proven_scope() -> str:
     if not m:
         return "FAIL", f"cannot parse info output:\n{out}"
     total, eligible, rejected = (int(x) for x in m.groups())
-    reasons = [x for x in re.findall(r"reason=\"([A-Z0-9_]+)\"", out)]
-    if eligible != 0 or rejected != total or "VM_REJ_INT_DIVISION" not in reasons:
+    if not (total == 3 and eligible == 3 and rejected == 0):
         return "FAIL", (
-            f"expected the default C0 host to reject all Uniswap functions with "
-            f"VM_REJ_INT_DIVISION (eligible=0), got total={total} eligible={eligible} "
-            f"rejected={rejected} reasons={reasons}"
+            f"default vm must accept Uniswap division (total=3 eligible=3 rejected=0), "
+            f"got total={total} eligible={eligible} rejected={rejected} out={out!r}"
+        )
+    rc2, out2 = run(C0, "info", QOI_LIN)
+    if rc2 != 0:
+        return "FAIL", f"lin_c0 info failed on QOI module:\n{out2}"
+    m2 = re.search(r"\.coverage\{ total=(\d+) eligible=(\d+) rejected=(\d+) \}", out2)
+    if not m2:
+        return "FAIL", f"cannot parse QOI info output:\n{out2}"
+    t2, e2, r2 = (int(x) for x in m2.groups())
+    if not (t2 == 3 and e2 == 1 and r2 == 2) or "VM_REJ_SHIFT" not in out2:
+        return "FAIL", (
+            f"default vm must keep shifts fail-closed on QOI module "
+            f"(total=3 eligible=1 rejected=2 + VM_REJ_SHIFT), got total={t2} "
+            f"eligible={e2} rejected={r2} out={out2!r}"
         )
     return "NOT-PROVEN", (
-        "Scope limits: the proof executes the three pure UniswapV2Library math "
-        "functions and the SipHash/xxHash round kernels on the experimental "
-        "profile-full host. It does NOT prove full protocol security, full "
+        "Scope limits: default vm runs Uniswap division; SipHash/xxHash shifts "
+        "need experimental profile-full (vmfull). Full protocol security, full "
         "OpenSSL execution, on-chain gas savings, or performance vs LLVM/"
-        "C/Rust. Those are not measured here and must not be sold as proven."
+        "C/Rust are NOT proven here and must not be sold as proven."
     )
 
 
@@ -501,7 +519,7 @@ def main() -> int:
     claims.append(Claim("C3", "TinyExpr factorial parity (0..20, fail-closed edges)", *tinyexpr_claims()))
     claims.append(Claim("C4", "Compute receipt root independently recomputed", *receipt_claims()))
     claims.append(Claim("C5", "Compiler-0 no-Zig self-host gates", *selfhost_claims()))
-    claims.append(Claim("C6", "UniswapV2Library scalar math parity (profile-full)", *uniswap_claims(args.iterations)))
+    claims.append(Claim("C6", "UniswapV2Library scalar math parity (default vm)", *uniswap_claims(args.iterations)))
     claims.append(Claim("C7", "SipHash/xxHash round parity (profile-full)", *hashing_claims(args.iterations)))
     np_status, np_note = not_proven_scope()
     claims.append(Claim("NP1", "Full protocol/security/performance proof", np_status, np_note))

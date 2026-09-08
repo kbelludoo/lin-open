@@ -83,6 +83,7 @@ distintos; só não usar o mesmo grant para pagar o mesmo trabalho duas vezes).
 - **Benchmark de custo de auditoria**: verificar um recibo (Merkle LCR2) ≈
   **5,3 µs** vs re-executar o bloco na VM ≈ **26,4 ms** → **~4.986× mais barato
   auditar por receipt** — `benchmarks/audit_cost_benchmark.py`.
+- **TCB delimitado com rigor**: **TCB Estrito (runtime)** = **809 LOC** (`lin_vm.c` 463, `lin_linbc1.c` 202, `lin_sha256.c` 114, `lin_common.c` 30); **toolchain completa C0** = **6.6k LOC** (`tool/*.c` 4.382 LOC + headers 482 LOC).
 - **Spec congelada (candidata)**: `docs/SPEC_FREEZE_1_0.rulel` pina os digests.
 - **LICENSE MIT** reconhecível (arquivo `LICENSE`).
 - Manifesto de evidência: `docs/GRANT_EVIDENCE_2026_09.rulel`.

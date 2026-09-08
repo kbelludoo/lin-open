@@ -36,7 +36,7 @@ Latest rationalist output:
           x*x receipt root independently recomputed by Python
 [PASS] C5  Compiler-0 no-Zig self-host gates
           verify_c0.sh + verify_c0_selfhost.sh pass with no Zig
-[PASS] C6  UniswapV2Library scalar math parity (profile-full)
+[PASS] C6  UniswapV2Library scalar math parity (default vm)
           get_amount_out/quote/get_amount_in match Python oracle
 [PASS] C7  SipHash/xxHash round parity (profile-full)
           SipHash-2-4 and xxHash64 round match Python oracle
@@ -98,17 +98,25 @@ bash test/verify_c0_selfhost.sh
 Both pass, using only `cc` + Python. This is a real no-simulation result from
 this repository; it is not borrowed from the absent React dashboard.
 
-### C6 — UniswapV2Library scalar math parity (profile-full)
+**Fronteira Explícita do Trusted Computing Base (TCB):**
+* **TCB Estrito (Runtime de Execução Core):** **809 LOC**
+  `lin_vm.c` (463) + `lin_linbc1.c` (202) + `lin_sha256.c` (114) + `lin_common.c` (30) = **809 LOC**.
+* **Front-end & Host C11 (`transpile/c/lin_c/*.c`):** **1.764 LOC**.
+* **Toolchain Completa C0 (`transpile/c/tool/*.c` + headers):** **6.6k LOC** (4.382 LOC em `tool/*.c` + 482 em headers).
+* *Regra de integridade:* Nunca misturar o TCB estrito do runtime de execução (809 LOC) com a toolchain completa do compilador (6.6k LOC).
 
-The default `lin_c0` host still rejects `/` (`VM_REJ_INT_DIVISION`) on purpose.
-We added an **experimental** `vmfull` mode to `lin_c0` that accepts the
-division/shift opcodes already implemented in the audited C11 VM. Using that
-mode, the harness executes the three pure functions of the pinned
-`UniswapV2Library.sol` module and compares each result with an independent Python
-oracle over thousands of random reserves. The canonical vector
-`(10000, 50000, 100000)` returns `16624`.
+### C6 — UniswapV2Library scalar math parity (default vm, 2026-09-08)
+
+Default `lin_c0 vm` now accepts `/` (c0_build allow_div=1; verified
+`info total=3 eligible=3 rejected=0`). Shifts (`<<,>>`) stay fail-closed
+(`VM_REJ_SHIFT`, QOI module 1/3 eligible) and still need `vmfull`.
+The harness executes the three pure functions of the pinned
+`UniswapV2Library.sol` on default `vm` (+`vmfull` parity on canonicals)
+vs an independent Python oracle. Canonical `(10000, 50000, 100000)` → `16624`.
 
 ```bash
+transpile/c/bin/lin_c0 vm src/lin_uniswap_v2_library.lin get_amount_out 10000 50000 100000
+# .result{ fn="get_amount_out" value=16624 steps=36 }
 transpile/c/bin/lin_c0 vmfull src/lin_uniswap_v2_library.lin get_amount_out 10000 50000 100000
 # .result{ fn="get_amount_out" value=16624 steps=36 }
 ```

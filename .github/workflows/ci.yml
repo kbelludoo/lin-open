@@ -9,7 +9,7 @@ name: CI
 
 on:
   push:
-    branches: [master, main]
+    branches: [master, main, "arena-*"]
   pull_request:
   workflow_dispatch:
 
@@ -93,3 +93,30 @@ jobs:
           name: lin-test-logs
           path: /tmp/suite_*.log
           if-no-files-found: ignore
+
+  sovereign-no-zig:
+    name: Sovereign No-Zig Host (C11 + Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies (cc, python3, opencl headers/pocl)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential python3 ocl-icd-opencl-dev pocl-opencl-icd clinfo
+
+      - name: Build Compiler-0 (No-Zig)
+        run: make -C transpile/c all
+
+      - name: Run Rationalist External Proof (10k vectors)
+        run: python3 test/prove_all_claims_external.py --iterations 10000
+
+      - name: Verify Batch Receipts (2000 + 157 LCR2 Merkle)
+        run: make verify-batch-receipt
+
+      - name: Verify Solidity Verifier (k invariant + Merkle + LCR2 bridge)
+        run: make verify-contracts
+
+      - name: Audit Cost Benchmark (Verify vs Re-execute)
+        run: python3 benchmarks/audit_cost_benchmark.py
+

@@ -15,6 +15,52 @@ import argparse
 import subprocess
 import hashlib
 
+def parse_gpu_output(stdout):
+    """Parse kernel time/TPS from both honest and legacy host formats.
+
+    Honest (src atual): '[Tempo do kernel na GPU]:   0.0016 s'
+                        '[Throughput deste lote]:    1235822.8 swaps/s'
+    Legado (binario stale): '[Tempo de Execução na GPU]: 0.0022 segundos'
+                            '[Throughput Real na GPU]:   916564.2 ...'
+    Retorna (kernel_sec|None, kernel_tps|None).
+    """
+    import re
+    kernel_sec = None
+    kernel_tps = None
+    m = re.search(r"Tempo do kernel.*?([\d.]+)\s*s", stdout)
+    if m:
+        try:
+            kernel_sec = float(m.group(1))
+        except Exception:
+            pass
+    if kernel_sec is None:
+        m = re.search(r"Tempo de Execu.*?([\d.]+)\s*segundos", stdout)
+        if m:
+            try:
+                kernel_sec = float(m.group(1))
+            except Exception:
+                pass
+    m = re.search(r"Throughput deste lote.*?([\d.,]+)\s*swaps/s", stdout)
+    if m:
+        try:
+            kernel_tps = float(m.group(1).replace(",", ""))
+        except Exception:
+            pass
+    if kernel_tps is None:
+        m = re.search(r"Throughput Real.*?([\d.,]+)", stdout)
+        if m:
+            try:
+                kernel_tps = float(m.group(1).replace(",", ""))
+            except Exception:
+                pass
+    return kernel_sec, kernel_tps
+
+
+def median(xs):
+    s = sorted(xs)
+    return s[len(s) // 2]
+
+
 def format_tokens(val, decimals=18):
     try:
         n = int(val)
@@ -70,15 +116,29 @@ def main():
     print("      Hardware: AMD Radeon RX 6600 | LinVM Compiler 0 (Pure LIN)")
     print("=====================================================================================")
 
-    # 1. Carregar dataset
+    # 1. Carregar dataset (suporta lista-2000, dict-swaps e dict-records unfiltered)
     print(f"[*] Carregando transações on-chain de: {dataset_path}...")
     with open(dataset_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # Suporta listas de swaps ou dicionários com chave 'swaps'
-    swaps = data if isinstance(data, list) else data.get("swaps", [])
+    if isinstance(data, list):
+        swaps = data
+        kind = "list-2000-PRE-FILTRADO-corpus-aritmetico (NAO usar p/ distribuicao)"
+    elif isinstance(data, dict) and "records" in data:
+        swaps = data["records"]
+        kind = "unfiltered-PRIMARIO p/ distribuicao (SEM FILTRO)"
+    else:
+        swaps = data.get("swaps", [])
+        kind = "dict-swaps"
+    # Normaliza: unfiltered usa amount_out/get_amount_out; legado usa expected_out_real.
+    for s in swaps:
+        if "expected_out_real" not in s:
+            s["expected_out_real"] = s.get("amount_out", s.get("get_amount_out", 0))
     n_swaps = len(swaps)
-    print(f"[*] Total de Swaps Reais da Ethereum Mainnet: {n_swaps:,}")
+    print(f"[*] Total de Swaps: {n_swaps:,} | tipo: {kind}")
+    if "PRE-FILTRADO" in kind:
+        print("    AVISO: corpus 2000 e pre-filtrado (tautologico p/ rede). "
+              "Para distribuicao use test/pilot_harness/mainnet_unfiltered.json.")
 
     # 2. Gerar representação binária para GPU (128 bytes por swap: 4 palavras de 32 bytes, big-endian)
     bin_path = "/tmp/swaps_batch.bin"
@@ -91,48 +151,90 @@ def main():
             for val in (ain, rin, rout, aout):
                 bf.write(val.to_bytes(32, byteorder="big"))
 
-    # 3. Execução no Silício Físico da GPU
-    gpu_time = 0.0
-    gpu_tps = 0.0
+    # 3. Execucao no Silicio Fisico da GPU (honesto: kernel vs wall)
+    gpu_kernel_sec = 0.0
+    gpu_wall_sec = 0.0
+    gpu_kernel_tps = 0.0
+    gpu_wall_tps = 0.0
     if args.gpu:
-        print("\n[+] Despachando lote para a GPU física (AMD Radeon RX 6600)...")
+        print("\n[+] Despachando lote para a GPU fisica (AMD Radeon RX 6600)...")
+        host_c = os.path.join(root_dir, "examples/defi_settlement_proof/u256_opencl_host.c")
+        # Rebuild automatico se fonte mais novo que binario (evita binario stale).
+        rebuild = False
         if not os.path.exists(gpu_host_bin):
-            print("[*] Compilando host OpenCL...")
-            cmd_build = [
-                "cc", "-O3",
-                os.path.join(root_dir, "examples/defi_settlement_proof/u256_opencl_host.c"),
-                "-lOpenCL",
-                "-o", gpu_host_bin
-            ]
+            rebuild = True
+        elif os.path.exists(host_c) and os.path.getmtime(host_c) > os.path.getmtime(gpu_host_bin):
+            print("[*] Fonte OpenCL mais novo que binario: recompilando (evita stale)...")
+            rebuild = True
+        if rebuild:
+            cmd_build = ["cc", "-O3", host_c, "-lOpenCL", "-o", gpu_host_bin]
             subprocess.run(cmd_build, check=True)
 
-        t0 = time.perf_counter()
-        res_gpu = subprocess.run([gpu_host_bin, bin_path], capture_output=True, text=True)
-        gpu_time = time.perf_counter() - t0
-
-        if res_gpu.returncode != 0:
-            print(f"[ERRO] Falha na execução da GPU:\n{res_gpu.stderr}")
+        # 3 execucoes para mediana (kernel varia 1.6-3.9ms por clock/estado).
+        # NOTA: exit 1 com DIVERGENCIA e resultado honesto (overpaid/roteador),
+        # nao crash. So falha se sem info de paridade.
+        import re as _re
+        walls = []
+        kernels = []
+        last_out = ""
+        match_n = div_n = 0
+        for _ in range(3):
+            t0 = time.perf_counter()
+            res_gpu = subprocess.run([gpu_host_bin, bin_path], capture_output=True, text=True)
+            walls.append(time.perf_counter() - t0)
+            last_out = res_gpu.stdout
+            m1 = _re.search(r"Concordam com expected\D+(\d+)", res_gpu.stdout)
+            m2 = _re.search(r"Divergem de expected\D+(\d+)", res_gpu.stdout)
+            if m1 and m2:
+                match_n, div_n = int(m1.group(1)), int(m2.group(1))
+            elif res_gpu.returncode != 0:
+                print(f"[ERRO] Falha na execucao da GPU:\n{res_gpu.stderr}\n{res_gpu.stdout[-2000:]}")
+                sys.exit(1)
+            ks, _ = parse_gpu_output(res_gpu.stdout)
+            if ks is not None:
+                kernels.append(ks)
+        if not kernels:
+            print("[ERRO] Nao foi possivel extrair tempo de kernel do host OpenCL.")
+            print(last_out[-2000:])
             sys.exit(1)
+        gpu_kernel_sec = median(kernels)
+        gpu_wall_sec = median(walls)
+        gpu_kernel_tps = n_swaps / gpu_kernel_sec if gpu_kernel_sec > 0 else 0.0
+        gpu_wall_tps = n_swaps / gpu_wall_sec if gpu_wall_sec > 0 else 0.0
 
-        # Parse output do runner GPU
-        for line in res_gpu.stdout.splitlines():
-            if "Tempo de Execução na GPU" in line:
-                try:
-                    gpu_time = float(line.split(":")[1].split()[0])
-                except Exception:
-                    pass
-            if "Throughput Real na GPU" in line:
-                try:
-                    gpu_tps = float(line.split(":")[1].split()[0])
-                except Exception:
-                    pass
+        print(f"  -> GPU: {match_n}/{n_swaps} EXACT (oracle==on-chain), "
+              f"{div_n}/{n_swaps} OVERPAID/DIVERGENTE (roteador/fee, k valido).")
+        if div_n == 0:
+            print("  -> 100% de paridade aprovada no silicio da GPU.")
+        else:
+            print("  -> Lote NAO reconciliado (esperado no unfiltered): divergencias sao "
+                  "overpaid, nao K_VIOLATION. Ver DATASETS.md.")
+        print(f"  -> Kernel (mediana 3 runs, exclui JIT/init): {gpu_kernel_sec*1000:.3f} ms "
+              f"({gpu_kernel_sec/n_swaps*1e6:.3f} us/swap) -> {gpu_kernel_tps:,.1f} swaps/s kernel-only")
+        print(f"  -> Wall (mediana 3 runs, inclui init+JIT+spawn): {gpu_wall_sec*1000:.1f} ms "
+              f"-> {gpu_wall_tps:,.1f} swaps/s end-to-end cold")
+        print("  -> NOTA: kernel-only NAO e comparavel a TPS L1 (consenso+rede+storage).")
 
-        if gpu_tps == 0.0 and gpu_time > 0:
-            gpu_tps = n_swaps / gpu_time
-
-        print(f"  -> Sucesso! 100% de paridade aprovada no silício da GPU.")
-        print(f"  -> Tempo total na GPU: {gpu_time * 1000:.3f} ms ({gpu_time / n_swaps * 1000:.4f} ms por swap)")
-        print(f"  -> Throughput Real:    {gpu_tps:,.1f} swaps/segundo")
+        # Sensibilidade a tamanho de lote (prova wavefront starvation).
+        print("\n  [Sensibilidade a lote: kernel TPS cresce com N, wall dominado por fixo ~200ms]")
+        for sub_n in [100, 500, n_swaps]:
+            sub_n = min(sub_n, n_swaps)
+            sub_bin = f"/tmp/swaps_sub_{sub_n}.bin"
+            with open(sub_bin, "wb") as bf:
+                for s in swaps[:sub_n]:
+                    ain = int(s.get("amount_in", 0))
+                    rin = int(s.get("reserve_in", 0))
+                    rout = int(s.get("reserve_out", 0))
+                    aout = int(s.get("expected_out_real", s.get("amount_out", s.get("expected_out", 0))))
+                    for val in (ain, rin, rout, aout):
+                        bf.write(val.to_bytes(32, byteorder="big"))
+            t0 = time.perf_counter()
+            r = subprocess.run([gpu_host_bin, sub_bin], capture_output=True, text=True)
+            w = time.perf_counter() - t0
+            ks, _ = parse_gpu_output(r.stdout)
+            ks = ks if ks else float("nan")
+            print(f"    n={sub_n:>4}: kernel={ks*1000:.2f}ms ({ks/sub_n*1e6:.2f}us/swap) "
+                  f"kernelTPS={sub_n/ks:,.0f} wall={w*1000:.0f}ms wallTPS={sub_n/w:,.0f}")
 
     # 4. Auditoria Formal na LinVM CPU
     print("\n[+] Auditando regras de invariante e conformidade na LinVM CPU...")
@@ -146,8 +248,12 @@ def main():
         sys.exit(1)
     print("  -> Invariante x * y >= k e anti-fraude: 100% VALIDADOS na LinVM.")
 
-    # 5. Emissão do Compute Receipt SHA-256
-    print("\n[+] Gerando e Verificando Compute Receipt Criptográfico SHA-256...")
+    # 5. Emissao do Compute Receipt SHA-256 (PLACEHOLDER honesto)
+    # AVISO: este receipt de integridade NAO amarra o Merkle root do lote.
+    # O receipt real do lote (LCR2 208B/record + Merkle) e gerado por
+    # tools/emit_batch_receipt.py (ver Melhoria #3). Mantido aqui apenas
+    # como prova de integridade do device/contagem.
+    print("\n[+] Gerando e Verificando Compute Receipt Criptografico SHA-256...")
     with open(args.receipt, "w", encoding="utf-8") as rf:
         subprocess.run(
             [c0_bin, "receipt", "create", "--source", "return x * 997;", "--input", str(n_swaps), "--device", "AMD_Radeon_RX_6600"],
@@ -161,29 +267,19 @@ def main():
     else:
         print(f"[AVISO] Verificação do recibo: {res_ver.stderr.strip()}")
 
-    # 6. Benchmark Comparativo: LIN vs EVM Original
+    # 6. Benchmark honesto (sem comparacao enganosa com EVM)
     if args.benchmark:
-        evm_tps = 20.0  # Ethereum L1 médio: 15-30 TPS
-        evm_time_sec = n_swaps / evm_tps
-        gas_per_swap_usd = 15.00  # Custo médio de gas por swap em DEX L1 ($10 a $30)
-        total_gas_saved = n_swaps * gas_per_swap_usd
-        speedup = gpu_tps / evm_tps if evm_tps > 0 else 0
-
         print("\n=====================================================================================")
-        print("                 BENCHMARK COMPARATIVO: LIN vs ETHEREUM EVM ORIGINAL")
+        print("                 BENCHMARK HONESTO: KERNEL vs WALL (NAO vs EVM)")
         print("=====================================================================================")
-        print(f"| Métrica                     | Ethereum EVM (Original)    | LIN (LinVM + GPU RX 6600)     |")
-        print(f"|-----------------------------|----------------------------|-------------------------------|")
-        print(f"| Throughput de Execução      | {evm_tps:>10.1f} TPS          | {gpu_tps:>17,.1f} TPS           |")
-        print(f"| Tempo para 2.000 Swaps      | {evm_time_sec:>10.1f} segundos     | {gpu_time:>17.4f} segundos      |")
-        print(f"| Latência por Swap           | 12.000 ms (12 seg)         | {gpu_time / n_swaps * 1000:>17.4f} ms            |")
-        print(f"| Custo de Gas                | ~US$ {total_gas_saved:>12,.2f}     | US$               0.00 (Zero) |")
-        print(f"| Multiplicador de Velocidade | 1x (Base)                  | {speedup:>17,.1f}x MAIS RÁPIDO   |")
-        print(f"| Prova Criptográfica Off-Chain| Nenhuma (Re-executa tudo)  | SHA-256 Compute Receipt       |")
-        print(f"| Segurança de Memória        | Reentrancy / EVM OOM       | Bounds-Checked / Heap-Free    |")
-        print("=====================================================================================")
-        print(f"[CONCLUSÃO]: A aplicação em LIN processou o lote {speedup:,.0f}x mais rápido que a EVM,")
-        print(f"             economizando US$ {total_gas_saved:,.2f} com 100% de paridade e prova criptográfica.")
+        print(f"  Lote N={n_swaps} | kernel mediana {gpu_kernel_sec*1000:.3f} ms "
+              f"({gpu_kernel_tps:,.1f} TPS kernel-only, exclui JIT/init)")
+        print(f"  Lote N={n_swaps} | wall mediana {gpu_wall_sec*1000:.1f} ms "
+              f"({gpu_wall_tps:,.1f} TPS end-to-end cold, inclui init+JIT ~200ms)")
+        print("  EVM L1 15-30 TPS inclui consenso+rede+storage: NAO comparavel a kernel")
+        print("    puro de getAmountOut. Nao alegar speedup vs EVM.")
+        print("  Para custo de auditoria ver: benchmarks/audit_cost_benchmark.py (~3-5k x).")
+        print("  Para gas L1 real ver: test/contracts/test_lin_verifier.py (mede settleBatch).")
         print("=====================================================================================\n")
 
 if __name__ == "__main__":

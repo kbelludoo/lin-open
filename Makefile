@@ -232,9 +232,9 @@ verify-receipt: build-cpu
 #   make verify-fixed-point   -> auto-compilação e estabilidade de ponto fixo
 #   make verify-elf           -> emissor nativo ELF64 e execução direta no kernel
 #   make verify-gpu           -> emissor OpenCL em LIN + execução na GPU real (AMD RX 6600)
-.PHONY: test-lin-sovereign verify-three-repos verify-fixed-point verify-elf verify-gpu gpu-verify verify-contracts
+.PHONY: test-lin-sovereign verify-three-repos verify-fixed-point verify-elf verify-gpu gpu-verify verify-contracts verify-opencl-freshness verify-batch-receipt
 
-test-lin-sovereign: c0 c0-gate c0-check c0-selfhost-gate stmt-selfhost-gate verify-three-repos verify-fixed-point verify-elf verify-gpu verify-contracts
+test-lin-sovereign: c0 c0-gate c0-check c0-selfhost-gate stmt-selfhost-gate verify-three-repos verify-fixed-point verify-elf verify-gpu verify-opencl-freshness verify-batch-receipt verify-contracts
 	@echo "================================================================================"
 	@echo "=== SOBERANIA 100% LIN: TODAS AS ETAPAS E TESTES PASSARAM COM SUCESSO!      ==="
 	@echo "=== LIN COMPILANDO LIN, EXECUTANDO NA LINVM, NO KERNEL ELF64 E NA GPU REAL  ==="
@@ -253,13 +253,22 @@ verify-elf: c0
 verify-gpu: c0
 	@./test/verify_gpu_sovereign.sh
 
+verify-opencl-freshness:
+	@./test/verify_opencl_host_freshness.sh
+
 gpu-verify: c0
 	@$(BIN) gpu-verify test/corpus/gpu_parallel_map_kernels.lin
 
 benchmark-uniswap: c0
 	@./test/benchmark_uniswap_lin_vs_original.sh
 
-verify-contracts:
+verify-batch-receipt: c0
+	@python3 tools/emit_batch_receipt.py --dataset test/pilot_harness/mainnet_real_swaps_2000.json --out-manifest /tmp/batch_receipt_2000.json --out-bin /tmp/batch_records_2000.bin
+	@python3 tools/verify_batch_receipt.py --manifest /tmp/batch_receipt_2000.json --bin /tmp/batch_records_2000.bin
+	@python3 tools/emit_batch_receipt.py --dataset test/pilot_harness/mainnet_unfiltered.json --out-manifest /tmp/batch_receipt_unfiltered.json --out-bin /tmp/batch_records_unfiltered.bin
+	@python3 tools/verify_batch_receipt.py --manifest /tmp/batch_receipt_unfiltered.json --bin /tmp/batch_records_unfiltered.bin
+
+verify-contracts: c0 verify-batch-receipt
 	@python3 test/contracts/test_lin_verifier.py
 
 # --------------------------------------------------------------------------

@@ -3,8 +3,17 @@ pragma solidity ^0.8.20;
 
 /**
  * @title LinReceiptVerifier
- * @notice Verifies off-chain LIN GPU execution receipts and settles AMM batch states on Ethereum L1.
- * @dev Replaces heavy on-chain re-execution with O(1) cryptographic verification of SHA-256 Merkle roots.
+ * @notice Anchors off-chain LIN GPU batch Merkle roots on L1 + spot-checks inclusion on-chain.
+ * @dev TRUST MODEL (honesto): `settleBatch` e trusted-sequencer (onlyOwner).
+ *      Nao verifica o lote inteiro on-chain; ancora a raiz para auditoria
+ *      off-chain via `verifySwapInclusion`. Use `settleBatchWithInclusionProof`
+ *      para amarrar pelo menos 1 folha valida (invariante k + Merkle) no ato
+ *      do settlement. Leaf EVM = sha256(abi.encodePacked(rIn,rOut,aIn,aOut))
+ *      com uint256 de 32B big-endian; DIFERENTE da folha LCR2 off-chain
+ *      (208B + dominios LIN:LEAF:1/NODE:1, ver tools/emit_batch_receipt.py).
+ *      `gasSavedEstimate = swapCount * 100000` e ESTIMATIVA (swap L1 ~100k),
+ *      nao medicao; gas real de deploy/settle e medido em
+ *      test/contracts/test_lin_verifier.py quando solcx/web3 disponivel.
  */
 contract LinReceiptVerifier {
     struct SwapRecord {
@@ -30,6 +39,13 @@ contract LinReceiptVerifier {
         uint256 gasSavedEstimate
     );
 
+    event BatchSettledWithProof(
+        uint256 indexed batchId,
+        bytes32 indexed merkleRoot,
+        uint256 swapCount,
+        uint256 spotIndex
+    );
+
     address public immutable owner;
     mapping(uint256 => bytes32) public settledBatches;
     mapping(bytes32 => bool) public verifiedMerkleRoots;
@@ -37,6 +53,7 @@ contract LinReceiptVerifier {
     error BatchAlreadySettled(uint256 batchId);
     error InvalidSwapInvariant(uint256 swapIndex);
     error MerkleRootMismatch(bytes32 expected, bytes32 actual);
+    error InvalidInclusionProof(uint256 spotIndex);
     error Unauthorized();
 
     modifier onlyOwner() {
@@ -78,6 +95,36 @@ contract LinReceiptVerifier {
     }
 
     /**
+     * @notice Computes leaf hash for a raw LCR2 canonical 208-byte record:
+     *         sha256("LIN:LEAF:1" || record).
+     */
+    function computeLCR2Leaf(bytes calldata record) public pure returns (bytes32) {
+        return sha256(abi.encodePacked("LIN:LEAF:1", record));
+    }
+
+    /**
+     * @notice Verifies an LCR2 Merkle inclusion proof against an LCR2 batch root.
+     *         Parent node hash: sha256("LIN:NODE:1" || left || right).
+     */
+    function verifyLCR2Inclusion(
+        bytes calldata record,
+        bytes32[] calldata proof,
+        uint256 index,
+        bytes32 root
+    ) public pure returns (bool) {
+        bytes32 hash = computeLCR2Leaf(record);
+        for (uint256 i = 0; i < proof.length; i++) {
+            bytes32 proofElement = proof[i];
+            if ((index >> i) & 1 == 1) {
+                hash = sha256(abi.encodePacked("LIN:NODE:1", proofElement, hash));
+            } else {
+                hash = sha256(abi.encodePacked("LIN:NODE:1", hash, proofElement));
+            }
+        }
+        return hash == root;
+    }
+
+    /**
      * @notice Verifies a Merkle inclusion proof for a swap leaf against the settled batch Merkle root.
      */
     function verifySwapInclusion(
@@ -99,7 +146,9 @@ contract LinReceiptVerifier {
     }
 
     /**
-     * @notice Settles a verified LIN GPU batch on L1.
+     * @notice Settles a LIN GPU batch on L1 (trusted sequencer).
+     * @dev Ancora sem verificar proof; auditoria e off-chain via
+     *      verifySwapInclusion + tools/verify_batch_receipt.py.
      * @param header Metadata of the batch computed off-chain on GPU.
      */
     function settleBatch(
@@ -112,8 +161,8 @@ contract LinReceiptVerifier {
         settledBatches[header.batchId] = header.merkleRoot;
         verifiedMerkleRoots[header.merkleRoot] = true;
 
-        // An on-chain Uniswap swap costs ~100,000 gas.
-        // A batch verification consumes ~25,000 gas total, saving ~99.9% gas.
+        // ESTIMATIVA, nao medicao: swap L1 ~100k gas; settle ~25k fixo.
+        // Gas real medido em test/contracts/test_lin_verifier.py (solcx).
         uint256 gasSavedEstimate = header.swapCount * 100000;
 
         emit BatchSettled(
@@ -123,6 +172,33 @@ contract LinReceiptVerifier {
             gasSavedEstimate
         );
 
+        return true;
+    }
+
+    /**
+     * @notice Settles with an on-chain spot-check: invariant k + inclusion proof.
+     * @dev Garante que a raiz ancorada contem pelo menos 1 swap valido.
+     *      Reverte com InvalidSwapInvariant ou InvalidInclusionProof.
+     */
+    function settleBatchWithInclusionProof(
+        BatchHeader calldata header,
+        SwapRecord calldata spot,
+        bytes32[] calldata proof,
+        uint256 spotIndex
+    ) external onlyOwner returns (bool) {
+        if (settledBatches[header.batchId] != bytes32(0)) {
+            revert BatchAlreadySettled(header.batchId);
+        }
+        if (!verifyConstantProduct(spot.reserveIn, spot.reserveOut, spot.amountIn, spot.amountOut)) {
+            revert InvalidSwapInvariant(spotIndex);
+        }
+        bytes32 leaf = computeSwapLeaf(spot.reserveIn, spot.reserveOut, spot.amountIn, spot.amountOut);
+        if (!verifySwapInclusion(leaf, proof, spotIndex, header.merkleRoot)) {
+            revert InvalidInclusionProof(spotIndex);
+        }
+        settledBatches[header.batchId] = header.merkleRoot;
+        verifiedMerkleRoots[header.merkleRoot] = true;
+        emit BatchSettledWithProof(header.batchId, header.merkleRoot, header.swapCount, spotIndex);
         return true;
     }
 }

@@ -32,16 +32,13 @@ Lin-Audit provides a **deterministic, zero-dependency bytecode engine (LinVM)** 
 ---
 
 ## 4. Current Proof of Concept & Empirical Results (Already Completed)
-Before applying for this grant, the core technology was rigorously tested and verified:
+Before applying for this grant, the core technology was rigorously tested and verified.
+Primary distribution evidence is the UNFILTERED corpus; the 2000-set is an
+arithmetic corpus only (see honest labels below):
 1. **Differential Oracle Testing:** 1,000 randomized synthetic multiword vectors tested against canonical Solidity reference contracts with **1,000 / 1,000 bit-exact passes**.
-2. **Industrial Scale Real Ethereum Mainnet Settlement:** **2,000 real, contiguous swap transactions** downloaded from Ethereum Mainnet blocks across 5 diverse high-volume pools:
-   - **USDC/WETH** (6 vs 18 decimals): 896 swaps
-   - **USDT/WETH** (6 vs 18 decimals): 714 swaps
-   - **UNI/WETH** (18 vs 18 decimals): 251 swaps
-   - **DAI/WETH** (18 vs 18 decimals): 108 swaps
-   - **WBTC/WETH** (8 vs 18 decimals): 31 swaps
-   - **Empirical Benchmark & Performance:** All 2,000/2,000 transactions achieved **100.00% bit-exact parity** in **18.15s** (**9.07 ms per swap**, **110.2 swaps/s sustained**), executing **2,315,927,745 deterministic LinVM instructions** with instant Merkle proof generation (3.16 ms).
-3. **Adversarial Benchmark:** 7 canonical fraud/error attacks simulated against real on-chain data, all rejected. *Scope note (audit v3):* detection is bounded by EVM floor division — perturbations of `reserve_out` below `den/(997·amount_in)` (and often ±1 wei on any field) are mathematically invisible to `getAmountOut` itself; see `examples/defi_settlement_proof/README.md` §5 for the measured sensitivity limits. The on-chain sample used for earlier "100% parity" claims was pre-filtered by the formula; the unfiltered ingestor and class distribution replace that claim.
+2. **Unfiltered Mainnet Distribution (PRIMARY for network behavior):** **157 contiguous swaps, 200 blocks 25900848..25901047, NO filter** — 139 EXACT_INPUT (88.54%), 18 OVERPAID_INPUT (routers/aggregators/dust), 0 K_VIOLATION. Catalog: `docs/DATASETS.md`. Use this for any claim about mainnet distribution.
+3. **Arithmetic Corpus at Scale (NOT for distribution):** **2,000 swaps across 5 pools** (USDC 896, USDT 714, UNI 251, DAI 108, WBTC 31) — **PRE-FILTERED legacy** (`(num//den)!=expected` discarded, tautological for network parity, valid for arithmetic). **100% bit-exact parity** in **18.15s** (**9.07 ms/swap**, **110.2 swaps/s sustained LinVM**), **2,315,927,745 instructions**, Merkle 3.16 ms. GPU kernel-only (excl. JIT/init) ~1.6-3.6 ms/2000; wall cold ~200 ms — report both, never EVM-TPS speedup (see `tools/lin_defi_settler.py` honest table).
+4. **Adversarial Benchmark:** 7 canonical fraud/error attacks simulated against real on-chain data, all rejected. *Scope note (audit v3):* detection is bounded by EVM floor division — perturbations of `reserve_out` below `den/(997·amount_in)` (and often ±1 wei on any field) are mathematically invisible to `getAmountOut` itself; see `examples/defi_settlement_proof/README.md` §5 for the measured sensitivity limits. The on-chain sample used for earlier "100% parity" claims was pre-filtered by the formula; the unfiltered ingestor and class distribution replace that claim.
 
 ---
 
