@@ -29,6 +29,13 @@ src/lin_crypto_256_real.lin).
 
 Usage:  python3 examples/bind_crypto256_real_receipt.py [--run-json PATH]
                                                          [--out PATH]
+
+The canonical run record is a VERSIONED artifact:
+docs/events/LIN_CRYPTO_256_REAL_RUN_RECORD.json.  CI rebinds from it (not from
+a fresh /tmp run) so the receipt stays byte-reproducible on any day -- wall
+clock fields would otherwise make it drift.  A fresh `make crypto256-real`
+still proves the gate passes; to adopt a new canonical run, copy the /tmp
+record over the versioned one and rebind in the same commit.
 """
 
 import argparse
@@ -67,6 +74,7 @@ def main() -> int:
         print(f"[binder] cannot read run record ({args.run_json}): {e}", file=sys.stderr)
         print("[binder] run the gate first: make crypto256-real", file=sys.stderr)
         return 2
+    run_rel = os.path.relpath(args.run_json, REPO)
 
     def fail(msg):
         print(f"[binder] REFUSE TO BIND: {msg}", file=sys.stderr)
@@ -194,6 +202,8 @@ def main() -> int:
   verifier_artifact_digest="{ver}"
   run_receipt_digest="{run["run_receipt_digest"]}"
   run_receipt_digest_rule="sha256 over the canonical 176-byte run-config record; changes on a new run even if results are identical"
+  run_record="{run_rel}"
+  run_record_rule="the run record this receipt is bound to; the versioned canonical record is docs/events/LIN_CRYPTO_256_REAL_RUN_RECORD.json and CI rebinds from it, which is what makes the receipt byte-reproducible on any day"
   benchmark_result_digest="{run["benchmark_result_digest"]}"
   benchmark_result_digest_rule="sha256 over the canonical deterministic-outcome half (bytes 0..168 of the 216-byte result record: per-gate flags, operation counts, the recovered secret); MUST change when any measured outcome changes -- a result digest that survives changed results is stale by construction (the LIN-CRYPTO-MAX-256 defect)"
   run_config_record_hex="{run_hex}"
@@ -235,6 +245,7 @@ def main() -> int:
 
 .c{{
   supersedes="none -- first version of this gate"
+  rebind_history="2026-08-31 first binding (ephemeral /tmp record); 2026-09-08 re-bound from the versioned canonical record docs/events/LIN_CRYPTO_256_REAL_RUN_RECORD.json so CI can assert byte-reproducibility"
   relation_to_max_256="LIN-CRYPTO-MAX-256 measures the cost of exhaustive search (see EVENT_LIN_CRYPTO_MAX_256_FRONTIER_v1_1_0.rulel for the audited restatement). This gate is the other pillar: a published attack that does not search at all. Growing 256 to 512 bits would change neither."
   design_rules_inherited="one digest, one meaning; executed vs extrapolated labelled separately; negative controls that can actually fail; no self-attestation"
 }}
