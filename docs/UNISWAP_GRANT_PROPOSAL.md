@@ -23,6 +23,8 @@ Today, reconciliation relies on ad-hoc off-chain scripts (Python/JavaScript) usi
 ## 3. Proposed Solution: The Lin-Audit Framework
 Lin-Audit provides a **deterministic, zero-dependency bytecode engine (LinVM)** specifically optimized for multiword integer arithmetic (`uint256`) and formal state reconciliation.
 
+> **Execution & Audit Boundary:** Execution core — AMM mathematics, invariants, gates, and self-hosted front-end — 100% in LIN, executed on LinVM/GPU. Production I/O and cryptographic Merkle roots run in the audited C11 host (TCB-809); Python/hashlib scripts exist strictly as cleanroom audit oracles.
+
 ### Key Capabilities:
 - **Bit-Exact Parity:** 100% mathematical equivalence to the canonical Uniswap `getAmountOut` formula ($x \cdot y = k$ with exact 0.3% fee deduction).
 - **LCR4 Provenance Standard:** Each audited swap produces a compact, 248-byte canonical leaf binding chain ID, block hash, transaction hash, pool address, log index, reported amount, actual amount, exact delta, and execution status code.
@@ -50,8 +52,9 @@ arithmetic corpus only (see honest labels below):
 - Built-in support for top 20 Uniswap V2 pairs (DAI, USDT, WBTC, PEPE, UNI).
 - Automated pre-swap reserve reconstruction without requiring full archive node traces.
 
-### Milestone 2: Uniswap V3 Concentrated Liquidity Settlement Engine ($18,000 — Month 2)
+### Milestone 2: Uniswap V3 Engine & Pure LIN GPU Emitter ($18,000 — Month 2)
 - Multiword integer implementation of Uniswap V3 tick-math and square-root price calculations (`SqrtPriceX96`) in pure deterministic Lin bytecode.
+- Native compiler emission of u256 AMM settlement kernel directly from pure `.lin` source code (retiring hand-written OpenCL C).
 - Verification harness validating against official Uniswap V3 Core contracts.
 - Export of LCR4 cryptographic receipts for concentrated liquidity swaps.
 

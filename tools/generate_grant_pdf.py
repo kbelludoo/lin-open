@@ -130,8 +130,9 @@ def build_pdf(filename="docs/LIN_GPU_DeFi_Settlement_Grant_Proposal.pdf"):
     story.append(Paragraph(
         "DEX trading and batch settlement on Ethereum L1 face severe computational and economic limits. "
         "Re-executing thousands of state transitions across archival nodes to audit settlement integrity is slow and expensive. "
-        "<b>LIN</b> introduces a sovereign, verified offload co-processor and parallel AMM settlement engine written in LIN (a deterministic numeric systems language) "
-        "orchestrated by a pure C11 host runtime with a <b>strict execution runtime TCB of only 809 LOC</b> (zero LLVM/Zig dependency in production).",
+        "<b>LIN</b> introduces a sovereign, verified offload co-processor and parallel AMM settlement engine. "
+        "<b>Execution core — AMM mathematics, invariants, gates, and self-hosted front-end — 100% in LIN, executed on LinVM/GPU. "
+        "Production I/O and cryptographic Merkle roots run in the audited C11 host (TCB-809); Python/hashlib scripts exist strictly as cleanroom audit oracles.</b>",
         body_style
     ))
     story.append(Paragraph(
@@ -184,16 +185,19 @@ def build_pdf(filename="docs/LIN_GPU_DeFi_Settlement_Grant_Proposal.pdf"):
     # Architecture Overview
     story.append(Paragraph("3. End-to-End Sovereign Architecture", h1_style))
     story.append(Paragraph(
-        "• <b>Sovereign GPU Kernel (LIN OpenCL Emitter):</b> Written in pure LIN (<code>src/lin_gpu_opencl_emitter.lin</code>), emitting standards-compliant OpenCL C. "
-        "Executes directly on physical AMD/Intel/Nvidia GPUs via dynamic loader (<code>dlopen(libOpenCL.so)</code>) without proprietary dependencies.",
+        "• <b>Sovereign GPU Kernel Execution:</b> The 2,000-swap settlement benchmark executes on physical AMD GPUs via <code>u256_opencl_kernel.cl</code> (28 CUs, 1.7 ms). "
+        "LIN's native OpenCL C emitter (<code>src/lin_gpu_opencl_emitter.lin</code>) is proven across 4 canonical kernel classes (affine, mix, bitfold, Kyber NTT) with 77 physical GPU silicon targets. "
+        "<b>Extending the LIN compiler to emit the u256 AMM kernel directly from pure .lin source is Milestone 2 of this grant proposal.</b>",
         bullet_style
     ))
     story.append(Paragraph(
-        "• <b>Deterministic Host VM (LinVM C0):</b> Pure C11 orchestration runtime (<code>transpile/c/tool/lin_c0.c</code>). Strict TCB: 809 LOC runtime, 6.6k LOC full toolchain. Emits canonical LCR2 Merkle receipts.",
+        "• <b>Deterministic Host VM (LinVM C0):</b> Pure C11 orchestration runtime (<code>transpile/c/tool/lin_c0.c</code>). Strict TCB: 809 LOC runtime, 6.6k LOC full toolchain. "
+        "Production cryptographic Merkle trees are computed in C (<code>merkle_sha256_u256_host.c</code>, <code>lin_sha256.c</code>).",
         bullet_style
     ))
     story.append(Paragraph(
-        "• <b>L1 On-Chain Verifier (Solidity):</b> <code>contracts/LinReceiptVerifier.sol</code> anchors batch Merkle roots and verifies both legacy and LCR2 inclusion proofs (<code>verifyLCR2Inclusion</code>).",
+        "• <b>L1 On-Chain Verifier & Cleanroom Oracles:</b> <code>contracts/LinReceiptVerifier.sol</code> anchors batch Merkle roots and verifies inclusion proofs. "
+        "Python scripts serve strictly as cleanroom audit oracles (differential testing against native C/GPU execution).",
         bullet_style
     ))
 
@@ -211,10 +215,11 @@ def build_pdf(filename="docs/LIN_GPU_DeFi_Settlement_Grant_Proposal.pdf"):
             "• End-to-end integration test suite with empirical Foundry gas tests (70k gas seals, 16,600x vs L1)."
         ],
         [
-            "Milestone 2:\nMempool Batcher\n& Daemon",
+            "Milestone 2:\nMempool Batcher\n& LIN GPU Emitter",
             "6 Weeks",
             "$10,000",
             "• Standalone daemon ingesting live Ethereum pending DEX transactions.\n"
+            "• Compiler emission of u256 AMM settlement kernel directly from LIN source (retiring hand-written OpenCL C).\n"
             "• Real-time GPU streaming pipeline batching up to 10,000 swaps/second.\n"
             "• Automated emission of cryptographic receipts and IPFS/Arweave staging."
         ],
@@ -223,7 +228,7 @@ def build_pdf(filename="docs/LIN_GPU_DeFi_Settlement_Grant_Proposal.pdf"):
             "4 Weeks",
             "$10,000",
             "• Multi-vendor validation across AMD (ROCm), NVIDIA (CUDA/OpenCL), Apple Silicon.\n"
-            "• Third-party smart contract security audit report.\n"
+            "• Third-party smart contract security audit report ($4,500 allocated).\n"
             "• Open-source developer SDK, reproducibility paper, and interactive live demo."
         ]
     ]

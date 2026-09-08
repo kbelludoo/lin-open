@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-tools/emit_batch_receipt.py — Emite receipt LCR2 real do lote (Merkle amarrado).
+tools/emit_batch_receipt.py — Emissor de referência do harness / oráculo big-int (lote LCR2 208B).
+
+PAPEL NO SISTEMA (Rigor N-Version):
+  Este script em Python funciona como gerador de teste do harness e oráculo de referência.
+  O caminho canônico de execução C11/LinVM do ecossistema é o host C
+  (examples/defi_settlement_proof/merkle_sha256_u256_host.c e transpile/c/lin_c/lin_sha256.c no TCB-809).
+  O verificador tools/verify_batch_receipt.py re-executa a validação cleanroom independente.
 
 Formato canonico LCR2 208 bytes (mesmo de benchmarks/audit_cost_benchmark.py):
   [0:4]=b"LCR2" [4]=1 schema [5]=1 profile [6:8]=0

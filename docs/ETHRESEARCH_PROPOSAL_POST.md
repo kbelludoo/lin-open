@@ -30,8 +30,8 @@ Auditing DEX trade execution and reconciling internal trading ledgers against on
 (USDC/USDT/UNI)     Parallel invariant check   Zero runtime heap    (70,133 gas)
 ```
 
-1. **Physical GPU Execution:** OpenCL C emitter generated from pure LIN (`src/lin_gpu_opencl_emitter.lin`), running without proprietary runtime frameworks.
-2. **Strict Host Runtime TCB:** The C11 host execution runtime (`lin_vm.c`, `lin_linbc1.c`, `lin_sha256.c`, `lin_common.c`) contains only **809 lines of C11 code**. No dynamic heap allocation occurs during settlement execution.
+1. **Physical GPU Execution:** The measured 2,000-swap settlement benchmark executes on physical AMD GPUs via hand-written OpenCL C (`examples/defi_settlement_proof/u256_opencl_kernel.cl`, 28 CUs, 1.70 ms kernel time). LIN's pure `.lin` native OpenCL C emitter (`src/lin_gpu_opencl_emitter.lin`) is currently proven across 4 canonical kernel families (affine, mix, bitfold, Kyber NTT) with 77 silicon targets on physical GPU hardware. Emitting the u256 AMM kernel directly from pure `.lin` source is an active roadmap milestone.
+2. **Strict Host Runtime TCB & Cryptographic Merkle Engine:** The C11 host execution runtime (`lin_vm.c`, `lin_linbc1.c`, `lin_sha256.c`, `lin_common.c`) contains only **809 lines of C11 code**. No dynamic heap allocation occurs during settlement execution. Production cryptographic Merkle trees and LCR2 leaf packing are implemented in C (`merkle_sha256_u256_host.c`, `lin_sha256.c`). Python scripts serve strictly as cleanroom audit oracles for independent cross-verification.
 3. **LCR2 Canonical Leaf Format (208 Bytes):**
    - Bytes `[0:4]`: Magic `LCR2`
    - Bytes `[8:40]`: `img_digest` (SHA-256 of the executed bytecode)

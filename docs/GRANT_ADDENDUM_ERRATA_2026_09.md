@@ -52,3 +52,24 @@ Reviewers frequently ask: *"Why build a bespoke scalar systems co-processor rath
 - **Specification Freeze:** The LIN v1.0 specification has been formally frozen in [`docs/SPEC_FREEZE_1_0.rulel`](file:///home/k/Downloads/lin-master/docs/SPEC_FREEZE_1_0.rulel) with `status = "FROZEN"`, locking the formal specification, LinVM ISA v1, LINBC1 bytecode format, verifiable compute receipt format, and Host C11 ABI to exact SHA-256 digests.
 - **External Security Review:** To address the single-maintainer risk, the grant budget explicitly reserves **$4,500 USD** for an independent external audit of the smart contracts, receipt verification logic, and arithmetic invariants prior to mainnet deployment.
 
+---
+
+## 5. Technical Rigor: Architecture Truth, Emitter Scope & N-Version Oracles
+
+To guarantee that the codebase withstands adversarial scrutiny from top-tier cryptographic auditors, the project enforces strict boundary definitions between LIN code, C11 host code, and Python oracles:
+
+> *"Núcleo de execução — matemática AMM, invariantes, gates e front-end auto-hospedado — 100% em LIN, executado na LinVM/GPU. I/O e Merkle de produção rodam no thin host C11 auditado (TCB-809); scripts Python/hashlib existem **somente** como oráculos cleanroom, e todo número citado tem o comando que o reproduz."*
+
+1. **GPU Emitter Scope (Physical GPU vs Roadmap Milestone):**
+   - LIN's pure `.lin` OpenCL emitter ([`src/lin_gpu_opencl_emitter.lin`](file:///home/k/Downloads/lin-master/src/lin_gpu_opencl_emitter.lin)) currently compiles and dispatches 4 canonical kernel classes (affine, mix, bitfold, Kyber NTT butterfly), fully verified across 77 physical GPU silicon targets on AMD RX 6600 (`make verify-gpu`).
+   - The measured 2,000-swap multiword integer kernel ([`examples/defi_settlement_proof/u256_opencl_kernel.cl`](file:///home/k/Downloads/lin-master/examples/defi_settlement_proof/u256_opencl_kernel.cl)) is hand-written OpenCL C. **Extending the LIN compiler to emit the u256 settlement kernel directly from pure `.lin` source is an explicit deliverable of Milestone 2.**
+2. **Cryptographic Merkle Engine:**
+   - Production cryptographic Merkle trees and LCR2 leaf packing are implemented in C11 within the strict 809 LOC runtime boundary ([`transpile/c/lin_c/lin_sha256.c`](file:///home/k/Downloads/lin-master/transpile/c/lin_c/lin_sha256.c) and [`examples/defi_settlement_proof/merkle_sha256_u256_host.c`](file:///home/k/Downloads/lin-master/examples/defi_settlement_proof/merkle_sha256_u256_host.c)).
+   - Early algebraic models like `src/lin_binary_merkle_provenance.lin` are non-cryptographic affine toy models and are excluded from production settlement claims.
+3. **True N-Version Cross-Verification Loops:**
+   - [`tools/emit_batch_receipt.py`](file:///home/k/Downloads/lin-master/tools/emit_batch_receipt.py) functions as the Python test harness and reference big-int oracle.
+   - The genuine N-version verification loops in the repository are:
+     * **C11 Host (`lin_c0 receipt`) ↔ Cleanroom Verifiers (`lin_verify.py` / `verify_receipt.html`)**
+     * **Physical GPU Kernel (AMD RX 6600) ↔ Big-Int Differential Oracle**
+     * **LinVM Scalar Execution ↔ Native C Reference Implementations** (100% bit-exact across QOI, SipHash, and TinyExpr).
+
