@@ -26,7 +26,19 @@ typedef struct _cl_event* cl_event;
 typedef cl_ulong cl_device_type;
 typedef cl_ulong cl_mem_flags;
 typedef cl_ulong cl_queue_properties;
+typedef cl_ulong cl_command_queue_properties;
+typedef cl_uint cl_platform_info;
+typedef cl_uint cl_device_info;
+typedef cl_uint cl_program_build_info;
+typedef cl_uint cl_program_info;
+typedef cl_uint cl_kernel_info;
+typedef cl_uint cl_context_info;
+typedef cl_uint cl_command_queue_info;
+typedef cl_uint cl_mem_info;
 typedef void* cl_context_properties;
+#ifndef CL_CALLBACK
+#define CL_CALLBACK
+#endif
 
 #define CL_SUCCESS 0
 #define CL_TRUE 1
