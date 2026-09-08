@@ -270,6 +270,13 @@ verify-batch-receipt: c0
 
 verify-contracts: c0 verify-batch-receipt
 	@python3 test/contracts/test_lin_verifier.py
+	@if [ -x "$$(which forge 2>/dev/null)" ] || [ -x "$$HOME/.foundry/bin/forge" ] || [ -x "/home/k/.foundry/bin/forge" ]; then \
+	  python3 test/forge-gas/measure_gas.py; \
+	fi
+
+.PHONY: verify-forge-gas
+verify-forge-gas: c0 verify-batch-receipt
+	@python3 test/forge-gas/measure_gas.py
 
 # --------------------------------------------------------------------------
 # Rationalist external proof: real GitHub upstream provenance + independent

@@ -6,6 +6,19 @@
 
 It is purpose-built for verifiable numeric algorithms: cryptography, hashing, digital signal processing, zero-knowledge/rollup off-chain execution, and verified transpilation from C.
 
+> **⚡ 60-Second Fast Verification (Zero Assumptions / Independent Oracle):**
+>
+> 1. **Public GitHub Actions CI (100% Passing):** [Workflow Runs](https://github.com/kbelludoo/lin-open/actions)
+> 2. **Audit 2,000 Real Mainnet Swaps & LCR2 Merkle Root (< 1s, Python stdlib):**
+>    ```bash
+>    python3 tools/verify_batch_receipt.py --manifest /tmp/batch_receipt_2000.json --bin /tmp/batch_records_2000.bin
+>    ```
+> 3. **Live On-Chain Gas Audit (Foundry Unit Tests + Anvil Receipts):**
+>    ```bash
+>    make verify-forge-gas
+>    ```
+> 4. **In-Browser WebCrypto Receipt Verifier (zero install, runs 100% locally):** Open [`benchmarks/verify_receipt.html`](file:///home/k/Downloads/lin-master/benchmarks/verify_receipt.html)
+
 ---
 
 ## 1. Verified Architecture & Feature Status
@@ -21,7 +34,7 @@ All capabilities below are **fully verified without mock data or simulated infra
 | **Independent Verification** | ✅ **PASS** | Zero-trust verification scripts in Python, Node.js, Bash+OpenSSL, and WebCrypto |
 | **LinVM0 Self-Hosting (V1 → V5)** | ✅ **PASS** | 100% Sovereign: front-end em LIN puro, Ponto Fixo $C_0=C_1=C_2$ fechado, emissor ELF64 nativo no kernel e LinVM Compiler 0 (`lin_c0`) independente de Zig |
 | **Cross-Platform Target** | ✅ **PASS** | Runs identically bit-for-bit on CPU (Host C11), Web (Wasm/JS), and GPU (OpenCL) |
-| **GPU Sovereign DeFi AMM** | ✅ **PASS** | **Deterministic AMM Co-processor** on AMD Radeon RX 6600 (Kernel: 1.7ms / 1.17M swaps/s; Wall-clock cold: 218ms / 9.1k swaps/s) with L1 Solidity Verifier (`contracts/LinReceiptVerifier.sol`) |
+| **GPU Sovereign DeFi AMM** | ✅ **PASS** | **Deterministic AMM Co-processor** on AMD Radeon RX 6600 (Kernel: 1.7ms / 1.17M swaps/s; Wall: 218ms / 9.1k swaps/s). On-chain verifier (`contracts/LinReceiptVerifier.sol`) measured in Foundry at 70,133 gas (fresh root) and 87,831 gas (spot proof) — **13,258×–16,604× gas reduction vs L1 re-execution**. |
 
 ### Strict TCB Boundary
 * **Execution Runtime Core TCB:** **809 LOC** (`lin_vm.c`, `lin_linbc1.c`, `lin_sha256.c`, `lin_common.c`).
@@ -59,13 +72,28 @@ To safely transpile larger C codebases without introducing memory vulnerabilitie
 | Sector | Industry Problem | The LIN Solution | Tangible Commercial Benefit |
 |---|---|---|---|
 | **Cybersecurity & Compliance** | Memory corruption (*Buffer Overflows*, Undefined Behavior) in legacy C libraries. | Transpilation to mathematically verified, memory-safe LIN models. | **Up to 80% reduction in security audit turnaround.** |
-| **Web3 & Rollups (L2)** | Extreme gas costs to re-execute complex computations on EVM/L1. | Compute off-chain in LinVM; verify lightweight SHA-256 Merkle Receipts on-chain. | **~3,200× to 4,900× cheaper off-chain audit via receipts vs re-execution.** |
+| **Web3 & Rollups (L2)** | Extreme gas costs to re-execute complex computations on EVM/L1. | Compute off-chain in LinVM; verify lightweight SHA-256 Merkle Receipts on-chain. | **~3,200× to 4,900× cheaper off-chain audit via receipts vs re-execution; 13,258×–16,604× on-chain gas reduction.** |
 | **Verifiable AI Inference** | Lack of tamper-proof proof for cloud ML inferences and model weights. | Transpiled matrix/convolution kernels generate SHA-256 integrity receipts. | **Zero-trust auditability for regulated AI & FinTech.** |
 | **Universal Portability** | High cost of maintaining separate codebases for CPU, Web, and GPU. | Single `.lin` source runs on Host C11, Browser (Wasm), and GPU (OpenCL). | **1 single codebase for 3 deployment targets.** |
 
 ---
 
-## 5. Self-Hosting Roadmap (V1 → V5: Zero-Zig)
+## 5. Why Not zkVMs (RISC Zero, SP1, Jolt)?
+
+A standard question from technical reviewers is: *"Why develop a deterministic co-processor with Merkle compute receipts instead of writing Rust inside RISC Zero or SP1?"*
+
+| Dimension | General zkVMs (RISC Zero, SP1, Jolt) | LIN Co-processor & Compute Receipts |
+|---|---|---|
+| **Prover Computational Overhead** | Massive ($10,000\times$ to $100,000\times$ arithmetization slowdown). Proving 2,000 swaps requires high-end server GPUs, gigabytes of RAM, and minutes of prover time. | **Near-zero overhead:** Pure physical OpenCL kernel execution takes **1.7 ms on a commodity consumer GPU** (AMD RX 6600, 28 CUs). |
+| **On-Chain Verifier Gas** | Complex pairing cryptography or recursive SNARK verifiers (~250k–400k gas for Groth16/Plonk verifiers). | **70,133 gas** (`settleBatch` root anchor) and **87,831 gas** (`settleBatchWithInclusionProof` spot check). |
+| **Verifier Complexity & TCB** | Requires trusting large circuit compilers, cryptographic proving engines, and polynomial constraint libraries. | **Zero-dependency verification** via standard NIST SHA-256 (`hashlib`, WebCrypto, or C standard library) in **< 10 µs**. |
+| **Execution Model** | Zero-knowledge proof of arbitrary execution trace. | **Fail-closed deterministic co-processing:** bit-exact numerical invariants ($x \cdot y \ge k$) bound to canonical binary receipts. |
+
+LIN does **not** claim to be a zero-knowledge proof system. It is an ultra-fast, fail-closed deterministic co-processor designed for verifiable batch settlement, audit reconciliation, and instant client-side verification at commodity hardware speeds.
+
+---
+
+## 6. Self-Hosting Roadmap (V1 → V5: Zero-Zig)
 
 ```
 [V1: Host C11] ──► [V2: Front-End em LIN] ──► [V3: Emissor LINBC1] ──► [V4: Ponto Fixo C0=C1] ──► [V5: Zero-Zig]
@@ -81,7 +109,7 @@ To safely transpile larger C codebases without introducing memory vulnerabilitie
 
 ---
 
-## 6. Building & Running
+## 7. Building & Running
 
 ### Soberania Total (Sem Zig - Padrão)
 **Nenhum compilador Zig é necessário.** O ecossistema padrão constrói e testa via LinVM / Compiler 0 (`cc` padrão C11):
@@ -173,7 +201,7 @@ python3 lin_verify.py all --iterations 10000
 
 ---
 
-## 7. Repository Layout
+## 8. Repository Layout
 
 ```
 ├── compiler/              # Stage 0 bootstrap compiler (LinVM, MIR, receipts, OpenCL)

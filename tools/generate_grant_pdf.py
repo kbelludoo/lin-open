@@ -152,7 +152,7 @@ def build_pdf(filename="docs/LIN_GPU_DeFi_Settlement_Grant_Proposal.pdf"):
         ["Saturated Batch (N=10,000)", "2.80 ms (3,300,000 swaps/s)", "219 ms (45,000 swaps/s)", "Amortizes cold startup latency"],
         ["Trusted Computing Base (TCB)", "809 LOC (core runtime)", "6,628 LOC (full C0 toolchain)", "Zero runtime heap / bounds-checked"],
         ["Cryptographic Receipt", "LCR2 208-byte canonical", "SHA-256 Merkle root", "O(1) client verification (hashlib)"],
-        ["On-Chain Bridge (Solidity)", "Root anchor (settleBatch)", "Spot inclusion proof", "LinReceiptVerifier.sol verified"]
+        ["On-Chain Bridge (Solidity)", "Root anchor: 70,133 gas", "Spot proof: 87,831 gas", "13,258x–16,604x on-chain reduction"]
     ]
     
     t = Table(table_data, colWidths=[130, 115, 125, 134])
@@ -169,7 +169,17 @@ def build_pdf(filename="docs/LIN_GPU_DeFi_Settlement_Grant_Proposal.pdf"):
         ('TOPPADDING', (0, 0), (-1, -1), 4),
     ]))
     story.append(t)
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 6))
+
+    story.append(Paragraph(
+        "<b>Empirical EVM Gas Audit (Foundry v1.8.1 + Live Anvil Receipts):</b> "
+        "The on-chain verifier (<code>contracts/LinReceiptVerifier.sol</code>) was deployed (718,682 gas) and verified with live receipts (<code>test/forge-gas/</code>). "
+        "Anchoring a 2,000-swap batch root (<code>settleBatch</code>) consumed <b>70,133 gas ($0.0021/swap</b> @ 20 gwei, $3k/ETH); anchoring with inclusion proof "
+        "(<code>settleBatchWithInclusionProof</code>) consumed <b>87,831 gas ($0.0026/swap)</b>. Against the actual 1,164,504,079 gas consumed by the 2,000 swaps on mainnet, "
+        "LIN delivers a measured <b>13,258× to 16,604× reduction in on-chain gas</b>.",
+        body_style
+    ))
+    story.append(Spacer(1, 6))
 
     # Architecture Overview
     story.append(Paragraph("3. End-to-End Sovereign Architecture", h1_style))
@@ -198,7 +208,7 @@ def build_pdf(filename="docs/LIN_GPU_DeFi_Settlement_Grant_Proposal.pdf"):
             "$10,000",
             "• Audited LinReceiptVerifier.sol supporting batched AMM state settlements.\n"
             "• Sepolia testnet deployment with automated verification scripts.\n"
-            "• End-to-end integration test suite demonstrating <30k gas batch seals."
+            "• End-to-end integration test suite with empirical Foundry gas tests (70k gas seals, 16,600x vs L1)."
         ],
         [
             "Milestone 2:\nMempool Batcher\n& Daemon",

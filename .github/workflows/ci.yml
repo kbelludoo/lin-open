@@ -114,7 +114,12 @@ jobs:
       - name: Verify Batch Receipts (2000 + 157 LCR2 Merkle)
         run: make verify-batch-receipt
 
-      - name: Verify Solidity Verifier (k invariant + Merkle + LCR2 bridge)
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Verify Solidity Verifier & Foundry Gas Harness
         run: make verify-contracts
 
       - name: Audit Cost Benchmark (Verify vs Re-execute)
