@@ -26,8 +26,9 @@ BC1    = bin/lin_bc1_run
 BC1T   = bin/test_linbc1
 # Compiler 0 host: compiles and runs .lin source WITHOUT Zig (V2/V5 path).
 C0     = bin/lin_c0
+JIT_BIN = bin/test_c0_jit
 
-all: $(TARGET) $(EDGE) $(SHA) $(REGION) $(ABI) $(CTX) $(C0FEATURE) $(XVER) $(BC1) $(BC1T) $(C0)
+all: $(TARGET) $(EDGE) $(SHA) $(REGION) $(ABI) $(CTX) $(C0FEATURE) $(XVER) $(BC1) $(BC1T) $(C0) $(JIT_BIN)
 
 $(TARGET): test/test_c_expr.c $(SRCS) $(HDRS)
 	@mkdir -p bin
@@ -108,8 +109,8 @@ $(BC1T): test/test_linbc1.c $(SRCS) $(HDRS) $(BC1_SRCS) $(BC1_HDRS)
 # vmTokenize:5678, VmComp:5733, vmBuild:6296); interpreter is the audited
 # vm_exec (lin_c/lin_vm.c). Goldens: P1_LINVM_SELFHOST.rulel §3 and
 # docs/LINVM0_V2_FRONTIER.rulel (value AND steps are bit-exact oracles).
-C0_SRCS = tool/lin_c0.c tool/lin_c0_front.c tool/lin_c0_check.c tool/lin_c0_gpu.c $(SRCS) $(BC1_SRCS)
-C0_HDRS = lin_c0_front.h tool/lin_c0_gpu.h tool/lin_opencl_dyn.h $(HDRS) $(BC1_HDRS)
+C0_SRCS = tool/lin_c0.c tool/lin_c0_front.c tool/lin_c0_check.c tool/lin_c0_gpu.c tool/lin_c0_jit.c $(SRCS) $(BC1_SRCS)
+C0_HDRS = lin_c0_front.h tool/lin_c0_gpu.h tool/lin_opencl_dyn.h tool/lin_c0_jit.h tool/lin_tcc_dyn.h $(HDRS) $(BC1_HDRS)
 C0FLAGS = -I. -Ilin_c
 
 $(C0): $(C0_SRCS) $(C0_HDRS)
@@ -122,7 +123,17 @@ c0: $(C0)
 test-c0: $(C0)
 	@../../test/verify_c0.sh $(C0)
 
-.PHONY: c0 test-c0 test-region test-abi test-context test-c0-features
+test-c0-jit: $(C0)
+	@../../test/verify_c0_jit.sh $(C0)
+
+$(JIT_BIN): test/test_c0_jit.c tool/lin_c0_jit.c tool/lin_c0_jit.h tool/lin_tcc_dyn.h tool/lin_c0_front.c $(SRCS) $(BC1_SRCS)
+	@mkdir -p bin
+	$(CC) $(CFLAGS) $(C0FLAGS) -o $@ test/test_c0_jit.c tool/lin_c0_jit.c tool/lin_c0_front.c $(SRCS) $(BC1_SRCS) -ldl
+
+test-jit: $(JIT_BIN)
+	./$(JIT_BIN)
+
+.PHONY: c0 test-c0 test-c0-jit test-jit test-region test-abi test-context test-c0-features
 
 # G(V1): golden vectors + corrupted-image fuzz (100% fail-closed).
 test-linbc1: $(BC1T)
