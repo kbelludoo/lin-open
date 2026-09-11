@@ -1,0 +1,42 @@
+// ==============================================================================
+// examples/api_rate_limiter.lin — Token Bucket / Rate Limiter para APIs SaaS
+// Computação determinística de consumo de quota com recibo à prova de disputa.
+// ==============================================================================
+@LIN:L1c:0.2
+@RATE_LIMITER{version=1.0 algorithm=token_bucket}
+
+// Calcula novos tokens acumulados com base no tempo decorrido (em segundos):
+// capacity: Capacidade máxima do bucket (ex: 100 tokens)
+// current_tokens: Saldo anterior de tokens (ex: 10 tokens)
+// refill_rate_per_sec: Taxa de recarga por segundo (ex: 5 tokens/s)
+// elapsed_sec: Tempo passado desde a última chamada (ex: 10 segundos)
+// requested_tokens: Quantidade de tokens que a requisição quer gastar (ex: 20)
+// Retorna: Novo saldo de tokens restantes se permitido, ou -1 se BLOQUEADO por rate limit.
+!evaluate_request(capacity: int, current_tokens: int, refill_rate_per_sec: int, elapsed_sec: int, requested_tokens: int) -> int {
+  // 1. Recarga do bucket respeitando a capacidade máxima
+  recarga = elapsed_sec * refill_rate_per_sec;
+  total_disponivel = current_tokens + recarga;
+  ?(total_disponivel > capacity) {
+    total_disponivel = capacity;
+  };
+
+  // 2. Verificação de saldo suficiente
+  saldo_final = 0 - 1;
+  ?(total_disponivel >= requested_tokens) {
+    saldo_final = total_disponivel - requested_tokens;
+  };
+
+  ^saldo_final;
+}
+
+// Verifica se um cliente foi bloqueado com razão legítima
+// Retorna 1 se o bloqueio foi justo (saldo_final == -1), 0 se foi corte indevido
+!audit_throttled_decision(resultado_saldo: int) -> int {
+  bloqueado_justo = 0;
+  ?(resultado_saldo < 0) {
+    bloqueado_justo = 1;
+  };
+  ^bloqueado_justo;
+}
+
+=ex{evaluate_request, audit_throttled_decision}

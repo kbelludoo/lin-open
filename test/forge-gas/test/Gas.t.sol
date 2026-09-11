@@ -2,6 +2,25 @@
 pragma solidity ^0.8.20;
 import "contracts/LinReceiptVerifier.sol";
 
+/// @notice Canonical math from Uniswap Labs official @uniswap/v2-periphery/contracts/libraries/UniswapV2Library.sol
+library CanonicalUniswapV2Library {
+    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut) {
+        require(amountIn > 0, 'UniswapV2Library: INSUFFICIENT_INPUT_AMOUNT');
+        require(reserveIn > 0 && reserveOut > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');
+        uint amountInWithFee = amountIn * 997;
+        uint numerator = amountInWithFee * reserveOut;
+        uint denominator = reserveIn * 1000 + amountInWithFee;
+        amountOut = numerator / denominator;
+    }
+
+    /// @notice Invariant check from Uniswap Labs official @uniswap/v2-core/contracts/UniswapV2Pair.sol lines 180-182
+    function verifyPairK(uint balance0, uint balance1, uint reserve0, uint reserve1, uint amount0In, uint amount1In) internal pure returns (bool) {
+        uint balance0Adjusted = balance0 * 1000 - (amount0In * 3);
+        uint balance1Adjusted = balance1 * 1000 - (amount1In * 3);
+        return balance0Adjusted * balance1Adjusted >= reserve0 * reserve1 * (1000**2);
+    }
+}
+
 contract GasTest {
     bytes32 constant EVM_ROOT = bytes32(0x5d961cae6be15b1705ce55a1bdb8d7e5b200f4c8788683c3a92331f04352b386);
     bytes32 constant LCR2_ROOT = bytes32(0x0f9ed69fde420922f6dcff5ee827ecaf51cae57c347ae3ae3464f3f81eac870f);
@@ -98,4 +117,131 @@ contract GasTest {
         bytes32 lf = v.computeSwapLeaf(9916868896781, 4148941281736026227948, 996242, 415549418053706);
         assert(!v.verifySwapInclusion(lf, pf, 0, EVM_ROOT));
     }
+
+    function testDisputeFraudulentSwapSuccess() public {
+        LinReceiptVerifier v = _v();
+        // Construct a fraudulent swap that violates constant product k
+        LinReceiptVerifier.SwapRecord memory fraudSwap = LinReceiptVerifier.SwapRecord({
+            reserveIn: 1000000000,
+            reserveOut: 2000000000,
+            amountIn: 1000000,
+            amountOut: 2500000 // Out of pool bounds, steals liquidity
+        });
+        bytes32 fraudLeaf = v.computeSwapLeaf(fraudSwap.reserveIn, fraudSwap.reserveOut, fraudSwap.amountIn, fraudSwap.amountOut);
+
+        // Sequencer settles a batch with this fraudulent root
+        LinReceiptVerifier.BatchHeader memory h = LinReceiptVerifier.BatchHeader({
+            batchId: 99,
+            swapCount: 1,
+            merkleRoot: fraudLeaf, // single-leaf root
+            kernelSourceHash: bytes32(0),
+            timestamp: 1725700000,
+            sequencer: address(this)
+        });
+        v.settleBatch(h);
+        assert(v.verifiedMerkleRoots(fraudLeaf));
+
+        // Watchtower / Challenger calls disputeFraudulentSwap with empty proof
+        bytes32[] memory emptyProof = new bytes32[](0);
+        uint256 g0 = gasleft();
+        bool ok = v.disputeFraudulentSwap(99, fraudSwap, emptyProof, 0);
+        emit Log("disputeFraudulentSwap", g0 - gasleft());
+        assert(ok);
+
+        // Verify batch was canceled and stripped from verified roots
+        assert(!v.verifiedMerkleRoots(fraudLeaf));
+        assert(v.settledBatches(99) == bytes32(0));
+    }
+
+    function testDisputeValidSwapReverts() public {
+        LinReceiptVerifier v = _v();
+        // Construct a genuine swap
+        LinReceiptVerifier.SwapRecord memory validSwap = LinReceiptVerifier.SwapRecord({
+            reserveIn: 1000000000,
+            reserveOut: 2000000000,
+            amountIn: 1000000,
+            amountOut: 1992013 // Honest output
+        });
+        bytes32 validLeaf = v.computeSwapLeaf(validSwap.reserveIn, validSwap.reserveOut, validSwap.amountIn, validSwap.amountOut);
+
+        LinReceiptVerifier.BatchHeader memory h = LinReceiptVerifier.BatchHeader({
+            batchId: 100,
+            swapCount: 1,
+            merkleRoot: validLeaf,
+            kernelSourceHash: bytes32(0),
+            timestamp: 1725700000,
+            sequencer: address(this)
+        });
+        v.settleBatch(h);
+
+        // False dispute should revert with SwapIsValidNoFraud
+        bytes32[] memory emptyProof = new bytes32[](0);
+        try v.disputeFraudulentSwap(100, validSwap, emptyProof, 0) {
+            assert(false); // Should not succeed
+        } catch {
+            assert(true); // Reverted as expected!
+        }
+    }
+
+    function testSettle100kBatchAudited() public {
+        LinReceiptVerifier v = _v();
+        bytes32 ROOT_100K = bytes32(0x9ffa679b7a2e4837f59af91675705ff516417f02a4e903c65780fd73949b2d71);
+        LinReceiptVerifier.BatchHeader memory h = LinReceiptVerifier.BatchHeader({
+            batchId: 100000,
+            swapCount: 100000,
+            merkleRoot: ROOT_100K,
+            kernelSourceHash: bytes32(0x4f4d12882a326d1c0d6f3b3d62c25185c71370e48c01e0e393b02b73b22250dd),
+            timestamp: 1725700000,
+            sequencer: address(this)
+        });
+        uint256 g0 = gasleft();
+        assert(v.settleBatch(h));
+        emit Log("settle100kBatch", g0 - gasleft());
+        assert(v.verifiedMerkleRoots(ROOT_100K));
+    }
+
+    function testCanonicalUniswapLibraryParity() public {
+        // Test 1: Real mainnet transaction #1 from dataset
+        uint256 reserveIn1 = 9916868896781;
+        uint256 reserveOut1 = 4148941281736026227948;
+        uint256 amountIn1 = 996242;
+        uint256 expectedOut1 = 415549418053706;
+
+        uint256 canonicalOut1 = CanonicalUniswapV2Library.getAmountOut(amountIn1, reserveIn1, reserveOut1);
+        assert(canonicalOut1 == expectedOut1);
+
+        // Test 2: Live Ethereum Mainnet state queried via RPC
+        // USDC/WETH Pair: 0xb4e16d0168e52d35cacd2c6185b44281ec28c9dc
+        uint256 liveReserveUSDC = 10016324931612;
+        uint256 liveReserveWETH = 4089201265933885299007;
+        uint256 liveAmountIn = 1000000; // 1 USDC
+        uint256 liveCanonicalOut = CanonicalUniswapV2Library.getAmountOut(liveAmountIn, liveReserveUSDC, liveReserveWETH);
+        assert(liveCanonicalOut == 407028853812571); // Exactly what UniswapV2Router02 returned on Mainnet!
+
+        // Test 3: LinReceiptVerifier constant product check must confirm canonical outputs
+        LinReceiptVerifier v = _v();
+        assert(v.verifyConstantProduct(reserveIn1, reserveOut1, amountIn1, canonicalOut1));
+        assert(v.verifyConstantProduct(liveReserveUSDC, liveReserveWETH, liveAmountIn, liveCanonicalOut));
+    }
+
+    function testCanonicalPairInvariantK() public pure {
+        // Direct test against UniswapV2Pair.sol lines 180-182 invariant
+        uint256 r0 = 10016324931612;
+        uint256 r1 = 4089201265933885299007;
+        uint256 a0In = 1000000;
+        uint256 a1Out = 407028853812571;
+
+        uint256 b0 = r0 + a0In;
+        uint256 b1 = r1 - a1Out;
+
+        bool kSatisfied = CanonicalUniswapV2Library.verifyPairK(b0, b1, r0, r1, a0In, 0);
+        assert(kSatisfied);
+
+        // And check that overdrawing even by 100 wei violates K
+        uint256 badA1Out = a1Out + 100;
+        uint256 badB1 = r1 - badA1Out;
+        bool badKSatisfied = CanonicalUniswapV2Library.verifyPairK(b0, badB1, r0, r1, a0In, 0);
+        assert(!badKSatisfied);
+    }
 }
+

@@ -10,6 +10,8 @@
  *     C leaves it implementation-defined — see README)
  */
 #include "lin_vm.h"
+#include <stdlib.h>
+#include <string.h>
 
 /* =====================================================================
  * LOWERER — AstToVmLowerer (lin.zig:14525-14630)
@@ -156,6 +158,14 @@ static LinErr vm_validate_abi_call_context(
     return LIN_OK;
 }
 
+VmFrameStore *lin_vm_frames_alloc(void) {
+    return (VmFrameStore *)calloc(1, sizeof(VmFrameStore));
+}
+
+void lin_vm_frames_free(VmFrameStore *s) {
+    free(s);
+}
+
 LinErr vm_exec_ctx(const LinVmContext *ctx, size_t fi,
                    const int64_t *args, size_t args_len,
                    size_t depth, VmExecResult *out) {
@@ -169,24 +179,41 @@ LinErr vm_exec_ctx(const LinVmContext *ctx, size_t fi,
     if (!f->ok) return LIN_ERR_VM_BAD_FN;
     if (args_len != f->nparams) return LIN_ERR_VM_ARITY;
 
-    int64_t locals[LIN_VM_MAX_LOCALS];
+    VmFrameStore *allocated_frames = NULL;
+    LinVmContext local_ctx;
+    if (ctx->frames == NULL) {
+        allocated_frames = lin_vm_frames_alloc();
+        if (allocated_frames == NULL) return LIN_ERR_ARENA_OOM;
+        local_ctx = *ctx;
+        local_ctx.frames = allocated_frames;
+        ctx = &local_ctx;
+    }
+
+    VmFrame *frame = &ctx->frames->frames[depth];
+    int64_t *locals = frame->locals;
+    int64_t *stack = frame->stack;
+
     for (size_t i = 0; i < LIN_VM_MAX_LOCALS; i++) locals[i] = 0;
 
-    /* array pool (used by slice-2; always empty in this slice) */
-    int64_t pool[LIN_VM_MAX_ARRS][LIN_VM_MAX_ARR_LEN];
-    uint16_t pool_len[LIN_VM_MAX_ARRS];
-    for (size_t i = 0; i < LIN_VM_MAX_ARRS; i++) pool_len[i] = 0;
-    size_t pool_used = 0;
+    frame->pool_used = 0;
+    for (size_t i = 0; i < LIN_VM_MAX_ARRS; i++) frame->pool_len[i] = 0;
 
-    for (size_t li = 0; li < f->arr_n_len; li++) {
-        uint16_t an = f->arr_n[li];
-        if (an == 0) continue;
-        if (pool_used >= LIN_VM_MAX_ARRS) return LIN_ERR_VM_BAD_FN;
-        size_t slot = pool_used;
-        pool_used += 1;
-        pool_len[slot] = an;
-        for (size_t z = 0; z < an; z++) pool[slot][z] = 0;
-        locals[li] = (int64_t)slot;
+    LinErr err = LIN_OK;
+
+    if (f->arr_n_len > 0) {
+        for (size_t li = 0; li < f->arr_n_len; li++) {
+            uint16_t an = f->arr_n[li];
+            if (an == 0) continue;
+            if (frame->pool_used >= LIN_VM_MAX_ARRS) {
+                err = LIN_ERR_VM_BAD_FN;
+                goto cleanup;
+            }
+            size_t slot = frame->pool_used;
+            frame->pool_used += 1;
+            frame->pool_len[slot] = an;
+            for (size_t z = 0; z < an; z++) frame->pool[slot][z] = 0;
+            locals[li] = (int64_t)slot;
+        }
     }
 
     for (size_t idx = 0; idx < args_len; idx++) {
@@ -194,52 +221,54 @@ LinErr vm_exec_ctx(const LinVmContext *ctx, size_t fi,
         locals[idx] = args[idx];
     }
 
-    int64_t stack[LIN_VM_MAX_STACK];
     size_t sp = 0;
     size_t pc = 0;
 
     while (pc < f->code_len) {
         (*ctx->steps) += 1;
-        if (*ctx->steps > ctx->step_limit) return LIN_ERR_VM_STEP_LIMIT;
+        if (*ctx->steps > ctx->step_limit) {
+            err = LIN_ERR_VM_STEP_LIMIT;
+            goto cleanup;
+        }
         VmIns ins = f->code[pc];
         pc += 1;
 
         switch (ins.op) {
         case OP_PUSH_CONST:
-            if (sp >= LIN_VM_MAX_STACK) return LIN_ERR_VM_STACK_OVERFLOW;
+            if (sp >= LIN_VM_MAX_STACK) { err = LIN_ERR_VM_STACK_OVERFLOW; goto cleanup; }
             stack[sp] = ins.a;
             sp += 1;
             break;
 
         case OP_LOAD_LOCAL:
-            if (sp >= LIN_VM_MAX_STACK) return LIN_ERR_VM_STACK_OVERFLOW;
+            if (sp >= LIN_VM_MAX_STACK) { err = LIN_ERR_VM_STACK_OVERFLOW; goto cleanup; }
             stack[sp] = locals[(size_t)ins.a];
             sp += 1;
             break;
 
         case OP_STORE_LOCAL:
-            if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
+            if (sp == 0) { err = LIN_ERR_VM_STACK_UNDERFLOW; goto cleanup; }
             sp -= 1;
             locals[(size_t)ins.a] = stack[sp];
             break;
 
         case OP_POP:
-            if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
+            if (sp == 0) { err = LIN_ERR_VM_STACK_UNDERFLOW; goto cleanup; }
             sp -= 1;
             break;
 
         case OP_BIT_NOT:
-            if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
+            if (sp == 0) { err = LIN_ERR_VM_STACK_UNDERFLOW; goto cleanup; }
             stack[sp - 1] = ~stack[sp - 1];
             break;
 
         case OP_NEG:
-            if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
+            if (sp == 0) { err = LIN_ERR_VM_STACK_UNDERFLOW; goto cleanup; }
             stack[sp - 1] = lin_wsub(0, stack[sp - 1]); /* Zig: 0 -% x */
             break;
 
         case OP_LOG_NOT:
-            if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
+            if (sp == 0) { err = LIN_ERR_VM_STACK_UNDERFLOW; goto cleanup; }
             stack[sp - 1] = (stack[sp - 1] == 0) ? 1 : 0;
             break;
 
@@ -248,67 +277,68 @@ LinErr vm_exec_ctx(const LinVmContext *ctx, size_t fi,
             break;
 
         case OP_JUMP_IF_FALSE:
-            if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
+            if (sp == 0) { err = LIN_ERR_VM_STACK_UNDERFLOW; goto cleanup; }
             sp -= 1;
             if (stack[sp] == 0) pc = (size_t)ins.a;
             break;
 
         case OP_JUMP_IF_FALSE_KEEP:
-            if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
+            if (sp == 0) { err = LIN_ERR_VM_STACK_UNDERFLOW; goto cleanup; }
             if (stack[sp - 1] == 0) pc = (size_t)ins.a;
             break;
 
         case OP_JUMP_IF_TRUE_KEEP:
-            if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
+            if (sp == 0) { err = LIN_ERR_VM_STACK_UNDERFLOW; goto cleanup; }
             if (stack[sp - 1] != 0) pc = (size_t)ins.a;
             break;
 
         case OP_RET:
-            if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
+            if (sp == 0) { err = LIN_ERR_VM_STACK_UNDERFLOW; goto cleanup; }
             out->val = stack[sp - 1];
             out->sp_at_ret = sp;
-            return LIN_OK;
+            err = LIN_OK;
+            goto cleanup;
 
         case OP_LOAD_INDEX: {
-            if (sp == 0) return LIN_ERR_VM_STACK_UNDERFLOW;
+            if (sp == 0) { err = LIN_ERR_VM_STACK_UNDERFLOW; goto cleanup; }
             sp -= 1;
             int64_t ix = stack[sp];
             size_t li = (size_t)ins.a;
             size_t slot = (size_t)locals[li];
             int64_t v = 0;
             if (slot < LIN_VM_MAX_ARRS) {
-                uint16_t n = pool_len[slot];
+                uint16_t n = frame->pool_len[slot];
                 if (ix >= 0 && ix < (int64_t)n) {
-                    v = pool[slot][(size_t)ix];
+                    v = frame->pool[slot][(size_t)ix];
                 }
             }
-            if (sp >= LIN_VM_MAX_STACK) return LIN_ERR_VM_STACK_OVERFLOW;
+            if (sp >= LIN_VM_MAX_STACK) { err = LIN_ERR_VM_STACK_OVERFLOW; goto cleanup; }
             stack[sp] = v;
             sp += 1;
             break;
         }
 
         case OP_STORE_INDEX: {
-            if (sp < 2) return LIN_ERR_VM_STACK_UNDERFLOW;
+            if (sp < 2) { err = LIN_ERR_VM_STACK_UNDERFLOW; goto cleanup; }
             sp -= 2;
             int64_t ix = stack[sp];
             int64_t val = stack[sp + 1];
             size_t li = (size_t)ins.a;
             size_t slot = (size_t)locals[li];
             if (slot < LIN_VM_MAX_ARRS) {
-                uint16_t n = pool_len[slot];
+                uint16_t n = frame->pool_len[slot];
                 if (ix >= 0 && ix < (int64_t)n) {
-                    pool[slot][(size_t)ix] = val;
+                    frame->pool[slot][(size_t)ix] = val;
                 }
             }
             break;
         }
 
         case OP_ARR_LEN: {
-            if (sp >= LIN_VM_MAX_STACK) return LIN_ERR_VM_STACK_OVERFLOW;
+            if (sp >= LIN_VM_MAX_STACK) { err = LIN_ERR_VM_STACK_OVERFLOW; goto cleanup; }
             size_t slot = (size_t)locals[(size_t)ins.a];
             int64_t n = 0;
-            if (slot < LIN_VM_MAX_ARRS) n = pool_len[slot];
+            if (slot < LIN_VM_MAX_ARRS) n = frame->pool_len[slot];
             stack[sp] = n;
             sp += 1;
             break;
@@ -316,13 +346,13 @@ LinErr vm_exec_ctx(const LinVmContext *ctx, size_t fi,
 
         case OP_CALL: {
             size_t ti = (size_t)ins.a;
-            if (ti >= mod->fns_len) return LIN_ERR_VM_BAD_FN;
+            if (ti >= mod->fns_len) { err = LIN_ERR_VM_BAD_FN; goto cleanup; }
             size_t n = mod->fns[ti].nparams;
-            if (sp < n) return LIN_ERR_VM_STACK_UNDERFLOW;
+            if (sp < n) { err = LIN_ERR_VM_STACK_UNDERFLOW; goto cleanup; }
             sp -= n;
             VmExecResult r;
             LinErr e = vm_exec_ctx(ctx, ti, stack + sp, n, depth + 1, &r);
-            if (e) return e;
+            if (e) { err = e; goto cleanup; }
             stack[sp] = r.val;
             sp += 1;
             break;
@@ -330,12 +360,13 @@ LinErr vm_exec_ctx(const LinVmContext *ctx, size_t fi,
 
         case OP_ABI_CALL: {
             if (ins.a < 0 || ins.a > UINT8_MAX) {
-                return LIN_ERR_VM_BAD_FN;
+                err = LIN_ERR_VM_BAD_FN;
+                goto cleanup;
             }
 
             uint8_t abi_id = (uint8_t)ins.a;
             LinErr context_error = vm_validate_abi_call_context(ctx, abi_id);
-            if (context_error != LIN_OK) return context_error;
+            if (context_error != LIN_OK) { err = context_error; goto cleanup; }
 
             size_t old_sp = sp;
             LinAbiResult result = lin_abi2_dispatch(
@@ -345,16 +376,18 @@ LinErr vm_exec_ctx(const LinVmContext *ctx, size_t fi,
                 &sp
             );
 
-            if (result.vm_error != LIN_OK) return result.vm_error;
+            if (result.vm_error != LIN_OK) { err = result.vm_error; goto cleanup; }
 
             /* region_check_range is status-producing: a valid call consumes
              * its arguments and pushes TRUNCATED/BOUNDS/etc. as a value.
              * Fatal dispatch failures leave sp unchanged and abort. */
             if (result.region_error != LIN_REGION_OK && sp == old_sp) {
-                return LIN_ERR_VM_BAD_FN;
+                err = LIN_ERR_VM_BAD_FN;
+                goto cleanup;
             }
             if (sp >= LIN_VM_MAX_STACK) {
-                return LIN_ERR_VM_STACK_OVERFLOW;
+                err = LIN_ERR_VM_STACK_OVERFLOW;
+                goto cleanup;
             }
 
             stack[sp] = result.value;
@@ -365,7 +398,7 @@ LinErr vm_exec_ctx(const LinVmContext *ctx, size_t fi,
         default: {
             /* binary ops: add sub mul div mod bit_and bit_or bit_xor
              * shl shr ushr cmp_eq cmp_ne cmp_lt cmp_gt cmp_le cmp_ge */
-            if (sp < 2) return LIN_ERR_VM_STACK_UNDERFLOW;
+            if (sp < 2) { err = LIN_ERR_VM_STACK_UNDERFLOW; goto cleanup; }
             sp -= 2;
             int64_t x = stack[sp];
             int64_t y = stack[sp + 1];
@@ -375,11 +408,11 @@ LinErr vm_exec_ctx(const LinVmContext *ctx, size_t fi,
             case OP_SUB:     r = lin_wsub(x, y); break;
             case OP_MUL:     r = lin_wmul(x, y); break;
             case OP_DIV:
-                if (y == 0) return LIN_ERR_VM_DIV_ZERO;
+                if (y == 0) { err = LIN_ERR_VM_DIV_ZERO; goto cleanup; }
                 r = lin_wdiv(x, y);
                 break;
             case OP_MOD:
-                if (y == 0) return LIN_ERR_VM_DIV_ZERO;
+                if (y == 0) { err = LIN_ERR_VM_DIV_ZERO; goto cleanup; }
                 r = lin_wrem(x, y);
                 break;
             case OP_BIT_AND: r = x & y; break;
@@ -394,7 +427,7 @@ LinErr vm_exec_ctx(const LinVmContext *ctx, size_t fi,
             case OP_CMP_GT:  r = (x > y) ? 1 : 0; break;
             case OP_CMP_LE:  r = (x <= y) ? 1 : 0; break;
             case OP_CMP_GE:  r = (x >= y) ? 1 : 0; break;
-            default:         return LIN_ERR_VM_BAD_FN;
+            default:         { err = LIN_ERR_VM_BAD_FN; goto cleanup; }
             }
             stack[sp] = r;
             sp += 1;
@@ -406,12 +439,18 @@ LinErr vm_exec_ctx(const LinVmContext *ctx, size_t fi,
     /* Zig fallthrough (code ended without `ret`): val=0, sp_at_ret=sp */
     out->val = 0;
     out->sp_at_ret = sp;
-    return LIN_OK;
+    err = LIN_OK;
+
+cleanup:
+    if (allocated_frames != NULL) {
+        lin_vm_frames_free(allocated_frames);
+    }
+    return err;
 }
 
 LinErr vm_exec(const VmModule *mod, size_t fi, const int64_t *args, size_t args_len,
                size_t depth, uint64_t *steps, VmExecResult *out) {
-    LinVmContext ctx;
+    LinVmContext ctx = {0};
     ctx.module = mod;
     ctx.regions = NULL;
     ctx.abi = NULL;
@@ -419,6 +458,7 @@ LinErr vm_exec(const VmModule *mod, size_t fi, const int64_t *args, size_t args_
     ctx.step_limit = LIN_VM_STEP_LIMIT;
     ctx.profile = LIN_VM_PROFILE_LINVM1;
     ctx.abi_version = LIN_HOST_ABI_1;
+    ctx.frames = NULL;
     return vm_exec_ctx(&ctx, fi, args, args_len, depth, out);
 }
 

@@ -29,7 +29,8 @@
 
 BUILD_GPU := zig build -Doptimize=ReleaseFast
 BUILD_CPU := zig build -Dgpu=false -Doptimize=ReleaseFast
-BIN ?= transpile/c/bin/lin_c0
+BIN ?= zig-out/bin/lin_native
+C0_BIN ?= transpile/c/bin/lin_c0
 
 # Por padrão, `make all` executa a suíte de Soberania 100% LIN sem nenhuma dependência de Zig!
 all: test-lin-sovereign
@@ -44,17 +45,17 @@ build-cpu:
 
 # Suíte sem Zig (Soberania 100% LIN): usa transpile/c/bin/lin_c0
 test-c0-full: c0
-	@echo "== version (c0) =="; $(BIN) --version
+	@echo "== version (c0) =="; $(C0_BIN) --version
 	@echo; echo "== check: all src/*.lin and examples/*.lin (c0) =="
 	@fail=0; for f in $$(find src examples -name '*.lin' | sort); do \
-	  out=$$($(BIN) check "$$f" 2>&1); \
+	  out=$$($(C0_BIN) check "$$f" 2>&1); \
 	  if printf '%s' "$$out" | grep -q '^@RULEL:LIN_CHECK:1.0.0'; then echo "  OK   $$f"; else echo "  FAIL $$f"; fail=1; fi; \
 	done; \
 	if [ "$$fail" != 0 ]; then echo "test-c0: one or more .lin files failed check"; exit 1; fi; \
 	echo "test-c0: all .lin files pass check"
 	@echo; echo "== receipt round-trip (c0) =="
-	@$(BIN) receipt create --source "return x * x;" --input 9 > /tmp/lin_rec.rulel
-	@$(BIN) receipt verify --receipt /tmp/lin_rec.rulel
+	@$(C0_BIN) receipt create --source "return x * x;" --input 9 > /tmp/lin_rec.rulel
+	@$(C0_BIN) receipt verify --receipt /tmp/lin_rec.rulel --source "return x * x;"
 
 # CPU checks that need no GPU hardware (they only need a linked binary):
 #   - version, parse+type-check+lint every .lin under src/ and examples/
@@ -133,8 +134,16 @@ endif
 linbc1-mutation-gate:
 	@$(MAKE) -C transpile/c test-linbc1
 
+# Receipt soundness gate: tests against forged receipts, output fraud, and digest desync.
+test-receipt-soundness: c0
+	@./test/test_receipt_soundness.sh
+
+# Red team fixes gate: external verification of LRT-01, LRT-02, LRT-03 under ulimit, pthread128, etc.
+test-redteam-fixes: c0
+	@./test/test_redteam_fixes_external.sh
+
 # The full PR gate, in the order CI runs it.
-ci-gate: gate attestation-gate xver linbc1-mutation-gate host-v1-gate linvm-host-image-gate
+ci-gate: gate attestation-gate xver linbc1-mutation-gate test-receipt-soundness test-redteam-fixes host-v1-gate linvm-host-image-gate
 	@$(BIN) integrity
 
 # LINVM0 front-end gate (V2/B2): verifies the LIN lexer and expression evaluator

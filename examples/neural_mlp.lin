@@ -1,22 +1,34 @@
+// ==============================================================================
+// examples/neural_mlp.lin — Rede Neural TinyML Determinística para Sensores IoT
+// Classificador Multilayer Perceptron (MLP 4x4x2) quantizado em inteiros (INT8)
+// Elimina variações de ponto flutuante (GPU drift) entre diferentes chips e hardware.
+// ==============================================================================
 @LIN:L1c:0.2
 @NEURAL_TINYML{version=1.0 model=mlp_4x4x2 activation=relu}
 
+// Função de ativação ReLU (Rectified Linear Unit) sem números de ponto flutuante
 !relu(x: int) -> int {
   ?(x > 0) { ^x; } : { ^0; };
 }
 
+// Classifica o estado de saúde de um equipamento industrial em tempo real:
+// s0: Temperatura do rolamento (°C normalizado)
+// s1: Vibração RMS (g normalizado)
+// s2: Corrente elétrica da fase (A normalizado)
+// s3: Pressão hidráulica (bar normalizado)
+// Retorna: 1 para Operação Normal, 0 para Anomalia Crítica / Falha Iminente.
 !predict_sensor_state(s0: int, s1: int, s2: int, s3: int) -> int {
-  // 1. Camada Oculta: Multiplicacao Matriz-Vetor com Pesos Quantizados (INT8)
+  // 1. Camada Oculta: Multiplicação Matriz-Vetor com Pesos Quantizados (INT8)
   h0 = _lia_shr(relu((s0 * 12)  + (s1 * -4)  + (s2 * 8)   + (s3 * 15)  + 10), 8);
   h1 = _lia_shr(relu((s0 * -10) + (s1 * 20)  + (s2 * 5)   + (s3 * -2)  - 5), 8);
   h2 = _lia_shr(relu((s0 * 6)   + (s1 * 14)  + (s2 * -12) + (s3 * 9)   + 20), 8);
   h3 = _lia_shr(relu((s0 * -8)  + (s1 * 3)   + (s2 * 16)  + (s3 * -11) + 0), 8);
 
-  // 2. Camada de Saida: 2 Classes (Ex: Anomalia vs Normal)
+  // 2. Camada de Saída: 2 Classes (Classe 0: Anomalia, Classe 1: Operação Normal)
   out0 = (h0 * 15)  + (h1 * -12) + (h2 * 18)  + (h3 * 5)   - 50;
   out1 = (h0 * -10) + (h1 * 16)  + (h2 * -14) + (h3 * 22)  + 40;
 
-  // 3. ArgMax deterministico (Retorna classe vencedora: 0 ou 1)
+  // 3. ArgMax determinístico (Retorna classe vencedora: 1 = Normal, 0 = Anomalia)
   decision = 0;
   ?(out1 > out0) { decision = 1; };
   ^decision;
