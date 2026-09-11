@@ -55,6 +55,16 @@ contract LinReceiptVerifier {
     error MerkleRootMismatch(bytes32 expected, bytes32 actual);
     error InvalidInclusionProof(uint256 spotIndex);
     error Unauthorized();
+    error BatchNotSettled(uint256 batchId);
+    error InvalidDisputeProof(uint256 swapIndex);
+    error SwapIsValidNoFraud(uint256 swapIndex);
+
+    event BatchDisputed(
+        uint256 indexed batchId,
+        bytes32 indexed merkleRoot,
+        address indexed challenger,
+        uint256 swapIndex
+    );
 
     modifier onlyOwner() {
         if (msg.sender != owner) revert Unauthorized();
@@ -199,6 +209,41 @@ contract LinReceiptVerifier {
         settledBatches[header.batchId] = header.merkleRoot;
         verifiedMerkleRoots[header.merkleRoot] = true;
         emit BatchSettledWithProof(header.batchId, header.merkleRoot, header.swapCount, spotIndex);
+        return true;
+    }
+
+    /**
+     * @notice Interactive Fraud Dispute: Allows ANY third party (watchtower, auditor, user)
+     *         to dispute a settled batch by proving that it contains a fraudulent swap
+     *         violating the Uniswap v2 constant product invariant k.
+     * @dev If fraud is proven on-chain, the batch is canceled and invalidated.
+     */
+    function disputeFraudulentSwap(
+        uint256 batchId,
+        SwapRecord calldata fraudulentSwap,
+        bytes32[] calldata merkleProof,
+        uint256 swapIndex
+    ) external returns (bool) {
+        bytes32 root = settledBatches[batchId];
+        if (root == bytes32(0)) revert BatchNotSettled(batchId);
+
+        // 1. Verify that this exact swap is part of the committed Merkle batch
+        bytes32 leaf = computeSwapLeaf(fraudulentSwap.reserveIn, fraudulentSwap.reserveOut, fraudulentSwap.amountIn, fraudulentSwap.amountOut);
+        if (!verifySwapInclusion(leaf, merkleProof, swapIndex, root)) {
+            revert InvalidDisputeProof(swapIndex);
+        }
+
+        // 2. Verify whether the constant product invariant k was violated
+        bool isValid = verifyConstantProduct(fraudulentSwap.reserveIn, fraudulentSwap.reserveOut, fraudulentSwap.amountIn, fraudulentSwap.amountOut);
+        if (isValid) {
+            revert SwapIsValidNoFraud(swapIndex);
+        }
+
+        // 3. Fraud confirmed: cancel the batch and strip its verified status
+        verifiedMerkleRoots[root] = false;
+        delete settledBatches[batchId];
+
+        emit BatchDisputed(batchId, root, msg.sender, swapIndex);
         return true;
     }
 }

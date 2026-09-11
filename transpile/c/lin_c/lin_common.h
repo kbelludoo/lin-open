@@ -75,6 +75,8 @@ typedef enum {
     LIN_ERR_VM_DEPTH,
     LIN_ERR_VM_ARITY,
     LIN_ERR_VM_DIV_ZERO,
+    /* LRT-02: parser depth limit */
+    LIN_ERR_PARSE_TOO_DEEP,
 } LinErr;
 
 const char *lin_err_name(LinErr e);
@@ -105,6 +107,7 @@ static inline int64_t lin_wrem(int64_t x, int64_t y) {
 
 /* ---- Constants (mirrored from lin.zig) ------------------------------------ */
 #define LIN_ARENA_CAP      256            /* tags: [256]AstTag — "0 heap allocations" */
+#define LIN_PARSER_MAX_DEPTH 64           /* LRT-02: maximum recursion depth in Pratt parser */
 #define LIN_MAX_ARGS       16             /* arg_nodes: [16]u16 in parsePrimary */
 #define LIN_VM_MAX_LOCALS  64
 #define LIN_VM_MAX_STACK   256

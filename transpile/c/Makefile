@@ -59,7 +59,7 @@ test-abi: $(ABI)
 
 $(CTX): test/test_context.c $(SRCS) $(HDRS)
 	@mkdir -p bin
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ test/test_context.c $(SRCS)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ test/test_context.c $(SRCS) -pthread
 
 test-context: $(CTX)
 	./$(CTX)

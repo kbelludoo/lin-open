@@ -25,6 +25,7 @@ const char *lin_err_name(LinErr e) {
     case LIN_ERR_VM_DEPTH: return "error.VmDepth";
     case LIN_ERR_VM_ARITY: return "error.VmArity";
     case LIN_ERR_VM_DIV_ZERO: return "error.VmDivisionByZero";
+    case LIN_ERR_PARSE_TOO_DEEP: return "error.ParseTooDeep";
     }
     return "error.Unknown";
 }

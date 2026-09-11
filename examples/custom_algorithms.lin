@@ -1,0 +1,74 @@
+// ==============================================================================
+// examples/custom_algorithms.lin — Algoritmos Arbitrários em LIN
+// Prova de que o LIN executa qualquer algoritmo iterativo, condicional ou recursivo.
+// ==============================================================================
+@LIN:L1c:0.2
+@CUSTOM_ALGORITHMS{version=1.0}
+
+// 1. Sequência de Fibonacci iterativa
+!fibonacci(n: int) -> int {
+  ?(n <= 0) { ^0; };
+  ?(n == 1) { ^1; };
+  a = 0;
+  b = 1;
+  i = 2;
+  while (i <= n) {
+    c = a + b;
+    a = b;
+    b = c;
+    i = i + 1;
+  };
+  ^b;
+}
+
+!algo_div(n: int, d: int) -> int {
+  ?(d <= 0) { ^0; };
+  ?(n <= 0) { ^0; };
+  q = 0;
+  r = 0;
+  i = 63;
+  while (i >= 0) {
+    r = _lia_shl(r, 1) | (_lia_ushr(n, i) & 1);
+    ?(r >= d) {
+      r = r - d;
+      q = q | _lia_shl(1, i);
+    };
+    i = i - 1;
+  };
+  ^q;
+}
+
+// 2. Conjectura de Collatz (3n + 1): conta quantos passos até convergir para 1
+!collatz_steps(start_n: int) -> int {
+  n = start_n;
+  steps = 0;
+  while (n > 1) {
+    ?( (n % 2) == 0 ) {
+      n = _lia_ushr(n, 1);
+    } : {
+      n = (n * 3) + 1;
+    };
+    steps = steps + 1;
+  };
+  ^steps;
+}
+
+// 3. Raiz quadrada inteira pelo método de Newton-Raphson (Babylonian method)
+!integer_sqrt(val: int) -> int {
+  ?(val <= 0) { ^0; };
+  ?(val < 4) { ^1; };
+  x = _lia_ushr(val, 1);
+  seen = 0;
+  while (seen == 0) {
+    div_res = algo_div(val, x);
+    y = _lia_ushr(x + div_res, 1);
+    ?(y >= x) {
+      seen = 1;
+    } : {
+      x = y;
+    };
+  };
+  ^x;
+}
+
+=ex{fibonacci, collatz_steps, integer_sqrt}

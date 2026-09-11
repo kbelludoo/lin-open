@@ -1,0 +1,57 @@
+// ==============================================================================
+// examples/credit_risk_scoring.lin — Motor de Risco de Crédito Regulatório
+// Demonstração de IA/Regras de Negócio com Recibo de Auditoria Imutável (Zero-Trust)
+// ==============================================================================
+@LIN:L1c:0.2
+@CREDIT_ENGINE{version=1.0 model=regulatory_basel_scoring}
+
+// Calcula o score de crédito (0 a 1000) baseado em métricas estritamente auditáveis:
+// renda_mensal: Renda comprovada (ex: 8000)
+// parcela_solicitada: Valor da parcela do empréstimo (ex: 1600)
+// bureau_score: Pontuação de crédito externa (300 a 850)
+// atrasos_12m: Número de faturas atrasadas nos últimos 12 meses (ex: 0)
+!calculate_credit_score(renda_mensal: int, parcela_solicitada: int, bureau_score: int, atrasos_12m: int) -> int {
+  // 1. Cálculo de Comprometimento de Renda (DTI - Debt to Income) via produto cruzado
+  dti_num = parcela_solicitada * 100;
+  
+  // 2. Pontuação Base derivada do Bureau
+  score = bureau_score;
+  
+  // 3. Ajuste por Comprometimento de Renda:
+  // Se comprometer <= 20% da renda: bonificação de +50 pontos
+  // Se comprometer entre 21% e 35%: sem penalidade (+0)
+  // Se comprometer > 35%: penalidade severa de -150 pontos
+  ?(dti_num <= (renda_mensal * 20)) {
+    score = score + 50;
+  };
+  ?(dti_num > (renda_mensal * 35)) {
+    score = score - 150;
+  };
+
+  // 4. Penalidade por Histórico de Atrasos:
+  // Cada atraso nos últimos 12 meses desconta 80 pontos
+  penalidade_atrasos = atrasos_12m * 80;
+  score = score - penalidade_atrasos;
+
+  // 5. Normalização do Score entre 0 e 1000
+  ?(score < 0) {
+    score = 0;
+  };
+  ?(score > 1000) {
+    score = 1000;
+  };
+
+  ^score;
+}
+
+// Decide a aprovação de crédito com base na nota de corte regulatória (ex: score mínimo 650)
+// Retorna 1 para Aprovado, 0 para Reprovado
+!evaluate_loan_approval(score: int, corte_minimo: int) -> int {
+  aprovado = 0;
+  ?(score >= corte_minimo) {
+    aprovado = 1;
+  };
+  ^aprovado;
+}
+
+=ex{calculate_credit_score, evaluate_loan_approval}
