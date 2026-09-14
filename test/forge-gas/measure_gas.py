@@ -201,8 +201,10 @@ def main():
     print(f"| settleBatchWithProof (anchored root)         | {g4:>10,d} |      {st4} | ${g4*20e-9*3000/2000:.6f}                 |")
     print(f"| L1 Original Gas Sum (2,000 swaps in dataset) | {total_l1_gas:>10,d} |      - | ${total_l1_gas*20e-9*3000/2000:.2f}                   |")
     print("="*80)
-    print(f"On-chain Gas Reduction Ratio (settleBatch):          {total_l1_gas / g1:,.1f}x")
-    print(f"On-chain Gas Reduction Ratio (settleBatchWithProof): {total_l1_gas / g3:,.1f}x")
+    print(f"Gas Reduction Ratio (vs unoptimized L1 EVM re-execution): {total_l1_gas / g1:,.1f}x")
+    print(f"Amortized Gas per Swap (settleBatch, 2k batch):             {g1 / 2000:.1f} gas/swap")
+    print(f"Amortized Comparison vs Groth16 Verifier (~125 gas/swap):   ~{125.0 / (g1 / 2000):.2f}x cheaper (optimistic model)")
+    print(f"Note: 16k ratio compares root anchoring vs re-executing all swaps on L1; against rollups, compare gas/swap.")
     print("================================================================================")
 
     if anvil_proc:

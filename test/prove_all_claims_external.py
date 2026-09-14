@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-LIN external, zero-trust, rationalist proof harness.
+LIN external rationalist proof harness (observable claims only).
 
 This script is deliberately conservative. It only reports a claim as PASS when
 an independent observer can redo the check without trusting the LIN project's

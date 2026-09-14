@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-lin-verify — standalone, zero-trust CLI for LIN receipts and module proofs.
+lin-verify — standalone, independent CLI for LIN receipts and module proofs.
 
 Uses only the Python standard library. It deliberately does not depend on the
 LIN compiler/runtime for *receipt verification*: the SHA-256 Merkle root is
-recomputed from public fields, so an auditor can validate a receipt on any
+recomputed from public fields, verifying tamper-evidence on any
 machine with Python 3.
 
 Commands:

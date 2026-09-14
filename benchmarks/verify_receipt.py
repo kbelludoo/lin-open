@@ -3,10 +3,17 @@
 """
 Independent LIN compute-receipt verifier (Python 3, standard library only).
 
-Zero-trust: this verifier does NOT use the LIN compiler/runtime. It recomputes
-the receipt Merkle root with hashlib (NIST FIPS 180-4 SHA-256) and compares it
-against the claimed root, so any auditor can validate a LIN receipt on any
-machine that has Python 3.
+Independent LIN compute-receipt verifier (Python 3, standard library only).
+
+Tamper-evident log verification: this verifier does NOT use the LIN compiler/runtime.
+It independently recomputes the receipt Merkle root with hashlib (NIST FIPS 180-4 SHA-256)
+and compares it against the claimed root to verify that the record has not been modified
+post-execution.
+
+Note on soundness:
+A matching Merkle root confirms record integrity (tamper-evidence). To verify that the
+computation itself was correctly executed, supply --source "<code>" to check the artifact
+and re-run the calculation through an independent evaluator.
 
 Open receipt format (LIN_COMPUTE_RECEIPT_1.0):
     leaf[0:32]  = SHA-256(source code)                  ("artifact")
@@ -145,10 +152,11 @@ def verify_file(path: str, source: str | None) -> bool:
 
     ok = computed == claimed and artifact_ok
     if ok:
-        print(f"  [PASS] Receipt validated by an independent open-source verifier "
-              f"(sha256:{computed})")
+        print(f"  [PASS] Log integrity verified: Merkle root matches record fields (sha256:{computed})")
+        if source is None:
+            print("  [NOTE] Verified tamper-evidence only. To verify execution correctness, re-run source.")
     else:
-        print(f"  [FAIL] Receipt forged or tampered! "
+        print(f"  [FAIL] Merkle root or source mismatch: "
               f"calculated={computed}, claimed={claimed}")
     print("=" * 72)
     return ok

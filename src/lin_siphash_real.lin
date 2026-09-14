@@ -1,0 +1,144 @@
+@LIN:L1c:0.2
+@SIPHASH_REAL{
+  standard="RFC-SipHash-2-4"
+  repo="veorq/SipHash"
+  source="siphash.c"
+  author="Jean-Philippe Aumasson and Daniel J. Bernstein"
+  purpose="full_dynamic_siphash24_execution"
+}
+
+// Circular left rotation 64-bit
+!sip_rotl(x: int, b: int) -> int {
+  ^ _lia_shl(x, b) | _lia_ushr(x, 64 - b);
+}
+
+// Dynamic SipHash-2-4 computation over arbitrary length in_len (0..64 bytes)
+!siphash24_compute(in_len: int, k0: int, k1: int) -> int {
+  in_buf: [64]int;
+
+  // Initialize buffer with test pattern: in[i] = i
+  i = 0;
+  while (i < in_len) {
+    in_buf[i] = i & 255;
+    i = i + 1;
+  };
+
+  // SipHash initial state constants XORed with 128-bit key
+  v0 = 8317987319222330741 ^ k0;
+  v1 = 7237128888997146477 ^ k1;
+  v2 = 7816392313619706465 ^ k0;
+  v3 = 8387220255154660723 ^ k1;
+
+  // Process all full 8-byte blocks
+  blocks = _lia_ushr(in_len, 3);
+  b = 0;
+  while (b < blocks) {
+    base = b * 8;
+    m = (in_buf[base] & 255) |
+        _lia_shl(in_buf[base + 1] & 255, 8) |
+        _lia_shl(in_buf[base + 2] & 255, 16) |
+        _lia_shl(in_buf[base + 3] & 255, 24) |
+        _lia_shl(in_buf[base + 4] & 255, 32) |
+        _lia_shl(in_buf[base + 5] & 255, 40) |
+        _lia_shl(in_buf[base + 6] & 255, 48) |
+        _lia_shl(in_buf[base + 7] & 255, 56);
+
+    v3 = v3 ^ m;
+
+    // SIPROUND 1
+    v0 = v0 + v1;
+    v1 = sip_rotl(v1, 13) ^ v0;
+    v0 = sip_rotl(v0, 32);
+    v2 = v2 + v3;
+    v3 = sip_rotl(v3, 16) ^ v2;
+    v0 = v0 + v3;
+    v3 = sip_rotl(v3, 21) ^ v0;
+    v2 = v2 + v1;
+    v1 = sip_rotl(v1, 17) ^ v2;
+    v2 = sip_rotl(v2, 32);
+
+    // SIPROUND 2
+    v0 = v0 + v1;
+    v1 = sip_rotl(v1, 13) ^ v0;
+    v0 = sip_rotl(v0, 32);
+    v2 = v2 + v3;
+    v3 = sip_rotl(v3, 16) ^ v2;
+    v0 = v0 + v3;
+    v3 = sip_rotl(v3, 21) ^ v0;
+    v2 = v2 + v1;
+    v1 = sip_rotl(v1, 17) ^ v2;
+    v2 = sip_rotl(v2, 32);
+
+    v0 = v0 ^ m;
+    b = b + 1;
+  };
+
+  // Leftover bytes: b_val = (in_len << 56)
+  b_val = _lia_shl(in_len & 255, 56);
+  left = in_len & 7;
+  base = blocks * 8;
+
+  ?(left >= 7) { b_val = b_val | _lia_shl(in_buf[base + 6] & 255, 48); };
+  ?(left >= 6) { b_val = b_val | _lia_shl(in_buf[base + 5] & 255, 40); };
+  ?(left >= 5) { b_val = b_val | _lia_shl(in_buf[base + 4] & 255, 32); };
+  ?(left >= 4) { b_val = b_val | _lia_shl(in_buf[base + 3] & 255, 24); };
+  ?(left >= 3) { b_val = b_val | _lia_shl(in_buf[base + 2] & 255, 16); };
+  ?(left >= 2) { b_val = b_val | _lia_shl(in_buf[base + 1] & 255, 8); };
+  ?(left >= 1) { b_val = b_val | (in_buf[base] & 255); };
+
+  v3 = v3 ^ b_val;
+
+  // SIPROUND 1
+  v0 = v0 + v1;
+  v1 = sip_rotl(v1, 13) ^ v0;
+  v0 = sip_rotl(v0, 32);
+  v2 = v2 + v3;
+  v3 = sip_rotl(v3, 16) ^ v2;
+  v0 = v0 + v3;
+  v3 = sip_rotl(v3, 21) ^ v0;
+  v2 = v2 + v1;
+  v1 = sip_rotl(v1, 17) ^ v2;
+  v2 = sip_rotl(v2, 32);
+
+  // SIPROUND 2
+  v0 = v0 + v1;
+  v1 = sip_rotl(v1, 13) ^ v0;
+  v0 = sip_rotl(v0, 32);
+  v2 = v2 + v3;
+  v3 = sip_rotl(v3, 16) ^ v2;
+  v0 = v0 + v3;
+  v3 = sip_rotl(v3, 21) ^ v0;
+  v2 = v2 + v1;
+  v1 = sip_rotl(v1, 17) ^ v2;
+  v2 = sip_rotl(v2, 32);
+
+  v0 = v0 ^ b_val;
+
+  // Finalization XOR: v2 ^= 0xff
+  v2 = v2 ^ 255;
+
+  // 4 finalization rounds (dROUNDS = 4)
+  r = 0;
+  while (r < 4) {
+    v0 = v0 + v1;
+    v1 = sip_rotl(v1, 13) ^ v0;
+    v0 = sip_rotl(v0, 32);
+    v2 = v2 + v3;
+    v3 = sip_rotl(v3, 16) ^ v2;
+    v0 = v0 + v3;
+    v3 = sip_rotl(v3, 21) ^ v0;
+    v2 = v2 + v1;
+    v1 = sip_rotl(v1, 17) ^ v2;
+    v2 = sip_rotl(v2, 32);
+    r = r + 1;
+  };
+
+  ^ v0 ^ v1 ^ v2 ^ v3;
+}
+
+// Canonical test vector evaluator using official key (00 01 ... 0f)
+!siphash24_eval_vector(len: int) -> int {
+  k0 = 506097522914230528;
+  k1 = 1084818905618843912;
+  ^ siphash24_compute(len, k0, k1);
+}
