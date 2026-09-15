@@ -66,6 +66,16 @@ make rationalist-proof
 python3 test/prove_all_claims_external.py --iterations 10000
 ```
 
+Value against established languages is a narrower question (kernel parity, not language replacement). A skeptic with `cc` + Python 3 can run:
+
+```bash
+make value-proof
+# Python == GCC C == LIN on UniswapV2Library.getAmountOut (TOY_I64)
+# plus independent SHA-256 receipt recompute. Language-superiority stays NOT-PROVEN.
+```
+
+Protocol: `docs/VALUE_PROOF_VS_ESTABLISHED.rulel`.
+
 ### Verified Claims (Reproducible from this repository)
 
 | Claim ID | Focus Area | Status | Verification Detail |
