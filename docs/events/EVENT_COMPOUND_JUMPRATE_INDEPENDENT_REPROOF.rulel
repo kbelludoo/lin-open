@@ -1,0 +1,35 @@
+@RULEL:COMPOUND_JUMPRATE_INDEPENDENT_REPROOF:1.0.0
+@CHALLENGE_ID="LIN-COMPOUND-JUMPRATE-V2-REPROOF"
+@TITLE="Independent re-execution of Compound JumpRate V2 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-09-15"
+@PARENT="docs/events/EVENT_COMPOUND_JUMPRATE_CLONE_LIN.rulel"
+
+~R{.s=spec .p=proved .n=not_proved .m=method}
+
+.s{
+  purpose="re-run the Compound JumpRate clone proofs on a clean host; replace substring gates with executed oracles"
+  class="EXPERIMENTAL"
+}
+
+.p{
+  pin="fixture sha256 9cd2fe5f7b88748c336bf2988c475da517ffd4909057b53df138b80f162fb34f matches live compound-protocol clone"
+  c11="gcc -O2 -std=c11 oracle selftest PASS (__int128 XOR limbs)"
+  lin_vm="lin_c0 vm cjr_test_suite value=1 steps=167969"
+  jit="lin_c0 roundtrip-jit CONSENSUS on cjr_test_suite when libtcc is present"
+  wide_muldiv="cjr_muldiv(1e18,1e18,2e18)==5e17; wrapping uint64 product differs"
+  python="arbitrary-precision Python IRM matches C11 and LIN on util/borrow/supply vectors"
+  floppy="test/test_floppy_lin.py 4/4 PASS (dispute + playground + RAID-0 + DecompressionStream)"
+  siphash="test/prove_siphash_real_external.py 6/6 PASS (64/64 GCC C vs LIN JIT vectors.h)"
+}
+
+.n{
+  sol_emit_runtime="sol_from_sol_gate refused by C0 VM: VM_REJ_STRING_LITERAL — source inventory only"
+  uint256="Solidity uint256 / mainnet cToken parity not claimed"
+  floor_identity="(mult*BASE/kink)/blocks is not a general floor-identity with (mult*BASE)/(kink*blocks); only the executed uint64 vectors are claimed"
+}
+
+.m{
+  gate="make compound-jumprate-proof"
+  on_fail="do not publish a PASS status for unexecuted claims"
+}

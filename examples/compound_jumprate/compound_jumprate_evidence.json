@@ -34,7 +34,7 @@
     {
       "id": "SOL-TR-CHECK",
       "status": "PASS",
-      "description": "Compiler 0 check of Solidity transpiler v2 (emit path)",
+      "description": "Compiler 0 typecheck of lin_from_solidity.lin (not emit execution)",
       "note": ""
     },
     {
@@ -46,7 +46,7 @@
     {
       "id": "VEC-CONSENSUS",
       "status": "PASS",
-      "description": "6/6 vectors: C11 i128 == limbs == LIN vm",
+      "description": "6/6 vectors: C11 i128 == limbs == Python int == LIN vm",
       "note": ""
     },
     {
@@ -54,6 +54,24 @@
       "status": "PASS",
       "description": "parameterized getBorrowRate at 50% util matches C11",
       "note": "rate=11891171993"
+    },
+    {
+      "id": "PY-BORROW-50",
+      "status": "PASS",
+      "description": "independent Python int oracle matches LIN/C11 at 50% util",
+      "note": ""
+    },
+    {
+      "id": "BORROW-90",
+      "status": "PASS",
+      "description": "jump slope: 90% util borrow rate > 50% and matches C11",
+      "note": "rate=70871385082"
+    },
+    {
+      "id": "SUPPLY-50",
+      "status": "PASS",
+      "description": "getSupplyRate 50% util / 10% reserve matches C11 and Python",
+      "note": "rate=5351027396"
     },
     {
       "id": "C0-JIT",
@@ -64,20 +82,26 @@
     {
       "id": "EXPLICIT-ARGS",
       "status": "PASS",
-      "description": "LIN clone takes IRM parameters as arguments (no hidden storage / msg.sender)",
+      "description": "cjr_borrow_rate takes base/mult/jump/kink as arguments (no msg.sender)",
       "note": ""
     },
     {
       "id": "WIDE-MULDIV",
       "status": "PASS",
-      "description": "clone uses 128-bit product muldiv (naive i64 a*b/d would wrap on 1e18*1e18)",
+      "description": "cjr_muldiv(1e18,1e18,2e18)==5e17; wrapping uint64 product differs",
+      "note": "wrap=6"
+    },
+    {
+      "id": "SOL-SRC",
+      "status": "PASS",
+      "description": "source contains sol_from_sol + sol_expand_exp (inventory only)",
       "note": ""
     },
     {
-      "id": "SOL-EMIT",
-      "status": "PASS",
-      "description": "lin_from_solidity.lin now emits LIN and expands 1eN literals",
-      "note": ""
+      "id": "SOL-VM",
+      "status": "SKIP",
+      "description": "C0 integer VM cannot execute the Solidity emit gate",
+      "note": ".refused{ fn=\"sol_from_sol_gate\" reason=\"VM_REJ_STRING_LITERAL\" }"
     }
   ],
   "upstream": {
@@ -93,6 +117,10 @@
   "compiler0": "transpile/c/bin/lin_c0",
   "class": "EXPERIMENTAL",
   "borrow_rate_50_util": 11891171993,
+  "borrow_rate_90_util": 70871385082,
+  "supply_rate_50_util_rf10": 5351027396,
   "multiplier_per_block": 23782343987,
-  "jump_per_block": 518455098934
+  "jump_per_block": 518455098934,
+  "wide_muldiv_1e18_1e18_2e18": 500000000000000000,
+  "uint64_wrap_muldiv_1e18_1e18_2e18": 6
 }

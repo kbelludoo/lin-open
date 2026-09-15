@@ -31,7 +31,7 @@
   improvement_1="getBorrowRateInternal is view-on-storage in Solidity; LIN takes base/mult/jump/kink as arguments"
   improvement_2="borrows * 1e18 overflows i64; LIN uses schoolbook 128-bit muldiv matching C11 __int128"
   improvement_3="cash+borrows-reserves underflow: Solidity 0.8 reverts; LIN fail-closed returns 0 (documented)"
-  improvement_4="(mult_year * BASE) / blocksPerYear overflows uint64; LIN does (mult_year * BASE / kink) / blocksPerYear which is floor-identical and fits"
+  improvement_4="(mult_year * BASE) / (blocksPerYear * kink) overflows uint64; LIN does (mult_year * BASE / kink) / blocksPerYear on the executed vectors (not a general floor-identity)"
 }
 
 .c{
