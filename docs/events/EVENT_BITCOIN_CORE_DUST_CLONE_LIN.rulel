@@ -1,0 +1,65 @@
+@RULEL:BITCOIN_CORE_DUST_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-BITCOIN-CORE-DUST-V27-1"
+@TITLE="Clone-lin of Bitcoin Core v27.1 GetDustThreshold/IsDust with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_SCALAR_POLICY"
+@DATE="2026-09-15"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-bitcoin-core-dust"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Bitcoin Core dust/min-relay integer policy into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced surface | REAL_WORLD = bitcoind as deployed"
+  operand_width="i64 satoshis and script lengths; GetSerializeSize of CTxOut reduced to CompactSize(script_len)+8"
+  commercial_hook="DUST_RELAY_TX_FEE=3000 sat/kvB is the default Core relay dust rate. P2PKH dust is 546 sat; P2WPKH is 294 sat; a 34-byte witness program (P2TR/P2WSH) is 330 sat because Core kept the P2WPKH 107-byte dummy spend (PR 22779). Wallets that still apply 546 sat to Taproot over-dust; wallets that use BIP340 keypath weight would be below Core relay policy. IsDust is strict nValue < threshold: 545 sat P2PKH is rejected as dust, 546 is not."
+}
+
+.u{
+  repo="https://github.com/bitcoin/bitcoin"
+  tag="v27.1"
+  commit="1088a98f5aad080cc6cca2da174f206509fcda6c"
+  policy_cpp="src/policy/policy.cpp"
+  policy_cpp_git_blob_sha="d08ec4fb7f75c33ff68c1790d39e1671456baa44"
+  policy_cpp_sha256="cd442c9e4e40a4811fe6256109020b7567bb777dce5ac8398cf8664de2ccb2d5"
+  policy_h_sha256="da74b4819f1726151afb682e3f42f3954eb0d453b3db85faffa98b51189e2359"
+  feerate_cpp_sha256="dcee0d3c510936032addb0735dfb1e5389dcd4f8cf31e6867b94e2e14c6cb561"
+  feerate_cpp_git_blob_sha="eb0cba5c67a406ea9d2a3500e6be90b2f2f21b96"
+  license="MIT"
+  fixture="test/fixtures/external_proof/bitcoin_core_v27_1_dust_excerpt.cpp"
+}
+
+.l{
+  clone="src/lin_bitcoin_core_dust.lin"
+  transpiler_delta="src/lin_from_c.lin v2: REJ_C_FLOAT on ceil(/floor(/round(/trunc(/`.0`; REJ_C_CXX on ::/class/template and static/reinterpret/dynamic/const_cast plus namespace/throw; strip C11 U/L/LL suffixes; emit if/else. Honest: C0 integer VM cannot execute the string transpiler."
+  improvement_1="GetFee IEEE std::ceil(double) replaced by fail-closed integer ceil with overflow_mul"
+  improvement_2="CTxOut/CScript objects become explicit (script_len, is_witness, is_unspendable) arguments"
+  improvement_3="Taproot vs P2WPKH dummy spend is an explicit 330 vs 'true BIP340' gap, not hidden in GetSerializeSize"
+  improvement_4="negative fee rates fail-closed to -1 instead of producing a negative CAmount"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/bitcoin_core_dust_c11.c (gcc -O2 -std=c11 -lm)"
+  gate="test/verify_bitcoin_core_dust.sh"
+}
+
+.p{
+  harness="test/prove_bitcoin_core_dust_external.py"
+  evidence_json="examples/bitcoin_core_dust/bitcoin_core_dust_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-bitcoin-core-dust"
+}
+
+.n{
+  not_claimed_1="LIN is a Bitcoin wallet, node, or consensus replacement"
+  not_claimed_2="IEEE ceil equals integer ceil outside the measured dust-scale grid"
+  not_claimed_3="this clone implements GetSerializeSize of arbitrary CTxOut scripts with CompactSize>3"
+  not_claimed_4="Taproot keypath weight (Core explicitly did not lower dust in PR 22779)"
+  not_claimed_5="wall-clock superiority vs bitcoind/gcc"
+}
+
+.v{
+  method="PINNED_BYTES && C11_INTEGER_EQ_IEEE_DUST_SCALE && LIN_C0_VM_EQ_C11_EQ_PYTHON && OPTIONAL_JIT_CONSENSUS && TRANSPILER_REJECTS_CXX"
+  on_fail="do not publish a PASS status"
+}

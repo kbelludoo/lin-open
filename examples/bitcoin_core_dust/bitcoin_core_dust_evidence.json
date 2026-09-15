@@ -1,0 +1,119 @@
+{
+  "schema": "LIN_BITCOIN_CORE_DUST_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned GetDustThreshold excerpt sha256 matches harness",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of bitcoin v27.1 matches pinned blobs",
+      "note": "commit=1088a98f5aad080cc6cca2da174f206509fcda6c"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "policy.cpp/h + feerate.cpp git blobs",
+      "note": "src/policy/policy.cpp:d08ec4fb7f75c33ff68c1790d39e1671456baa44;src/policy/policy.h:6a7980c312c9bdf5398f914711571ed06a57712c;src/policy/feerate.cpp:eb0cba5c67a406ea9d2a3500e6be90b2f2f21b96"
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 integer ceil matches IEEE ceil on dust-scale grid",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_bitcoin_core_dust.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 accepted lin_from_c.lin as a module",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "btd_dust_gate == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "9/9 vectors: C11 == Python == LIN vm == Core constants",
+      "note": ""
+    },
+    {
+      "id": "COMMERCIAL-546",
+      "status": "PASS",
+      "description": "default DUST_RELAY_TX_FEE=3000 sat/kvB => P2PKH dust 546 sat (nSize=182)",
+      "note": "545 sat P2PKH is dust (IsStandardTx reason=dust); 546 sat is not"
+    },
+    {
+      "id": "COMMERCIAL-294",
+      "status": "PASS",
+      "description": "same rate => P2WPKH dust 294 sat (nSize=98); P2TR/P2WSH 34-byte script => 330 sat",
+      "note": "Core PR 22779 kept P2WPKH 107-byte dummy for Taproot; not BIP340 keypath"
+    },
+    {
+      "id": "COMMERCIAL-RELAY",
+      "status": "PASS",
+      "description": "minrelay 1000 sat/kvB on a 200 vB tx is 200 sat \u2014 a different policy number than dust",
+      "note": "dust is output value vs spend cost; minrelay is tx fee vs vsize"
+    },
+    {
+      "id": "C0-ROUNDTRIP",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip CONSENSUS on btd_dust_gate (in-memory bytecode)",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "C-TR-V2",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 rejects IEEE ceil and C++ casts; strips U/L suffixes; emits if/else",
+      "note": ""
+    },
+    {
+      "id": "TR-REJECT",
+      "status": "PASS",
+      "description": "C++ GetDustThreshold => REJ_C_CXX; GetFee ceil/.0 => REJ_C_FLOAT; C11 scalar => OK",
+      "note": "reinterpret_cast=REJ_C_CXX (new v2 reject vs GetFee-only static_cast)"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/bitcoin/bitcoin",
+    "tag": "v27.1",
+    "commit": "1088a98f5aad080cc6cca2da174f206509fcda6c",
+    "policy_cpp_sha256": "cd442c9e4e40a4811fe6256109020b7567bb777dce5ac8398cf8664de2ccb2d5",
+    "policy_cpp_git_blob": "d08ec4fb7f75c33ff68c1790d39e1671456baa44",
+    "policy_h_sha256": "da74b4819f1726151afb682e3f42f3954eb0d453b3db85faffa98b51189e2359",
+    "feerate_cpp_sha256": "dcee0d3c510936032addb0735dfb1e5389dcd4f8cf31e6867b94e2e14c6cb561",
+    "feerate_cpp_git_blob": "eb0cba5c67a406ea9d2a3500e6be90b2f2f21b96",
+    "license": "MIT"
+  },
+  "lin_clone": "src/lin_bitcoin_core_dust.lin",
+  "c11_oracle": "test/oracles/bitcoin_core_dust_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "published": {
+    "DUST_RELAY_TX_FEE": 3000,
+    "DEFAULT_MIN_RELAY_TX_FEE": 1000,
+    "p2pkh_dust_sat": 546,
+    "p2wpkh_dust_sat": 294,
+    "p2tr_kept_p2wpkh_dummy_dust_sat": 330,
+    "p2sh_dust_sat": 540
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-bitcoin-core-dust"
+}
