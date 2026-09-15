@@ -1,0 +1,41 @@
+@RULEL:PROVA_BECH32_SIPA_LIN:1.0.0
+~R{.p=paths .u=usage .o=oracles .c=claims .n=not_claimed .l=links}
+.o{
+  upstream="https://github.com/sipa/bech32"
+  commit="7a7d7ab158db7078a333384e0e918c90dbc42917"
+  file="ref/c/segwit_addr.c"
+  sha256="aa73529c41142d2a9fed384676910943692236eda2ec583f96a95b5283c3042d"
+  license="MIT (c) 2017, 2021 Pieter Wuille"
+  spec="BIP-173 / BIP-350"
+  gcc="gcc -O2 -fPIC -shared of bech32_polymod_step"
+  python="stdlib SHA-256 + integer polymod with published generators"
+  compiler0="transpile/c/bin/lin_c0 (C11 host, no Zig)"
+}
+.c{
+  C_BECH32_1="polymod_step bit-exact: gcc == Python == lin_c0 vm"
+  C_BECH32_2="BIP-173 vectors A12UEL5L and bc1qw508d... fold to checksum 1"
+  C_BECH32_3="charset fail-closed: OOB fwd=0, invalid rev=-1, no charset_rev[128]"
+  C_BECH32_4="bech32_encode/decode rejected (pointers); scalar kernel eligible"
+  C_BECH32_5="lin_from_c v2: strip UL suffix, >> as _lia_ushr, u32-return parens, REJ_C_ASSERT"
+  C_BECH32_6="Compiler 0: assignment in ?(cond){ x = y } no longer VM_REJ_PARSE"
+}
+.n{
+  full_segwit_codec="NOT proven — HRP/output buffers are pointers"
+  bitcoin_core_replacement="NOT claimed"
+  uint256="NOT claimed — uint32 polymod as in the C reference"
+  libtcc_jit="only if libtcc is present; otherwise bytecode VM is the Compiler 0 path"
+}
+.u{
+  prove="python3 test/prove_bech32_sipa_external.py"
+  c0="make -C transpile/c c0 && ./transpile/c/bin/lin_c0 vm src/lin_bech32_polymod.lin bech32_gate"
+  gate="make -C transpile/c test-c0-features"
+}
+.l{
+  clone_lin="https://github.com/kbelludoo/clone-lin-bech32"
+  lin_open_kernel="src/lin_bech32_polymod.lin"
+  lin_open_proof="test/prove_bech32_sipa_external.py"
+}
+.p{
+  class="EXPERIMENTAL"
+  commercial="BIP-173 checksum is what every native SegWit Bitcoin address (bc1q/bc1p) uses; this slice proves the BCH generator step in LIN, not a wallet."
+}

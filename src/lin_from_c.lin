@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN notes="v2: C integer suffixes, unsigned >> as _lia_ushr, u32-return parens, size_t/bool/uint/int8_t"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -17,6 +17,10 @@
   ?(starts_lit(nm, 0, "int32_t") == 1 && nm.length == 7){ ^1 };
   ?(starts_lit(nm, 0, "int64_t") == 1 && nm.length == 7){ ^1 };
   ?(starts_lit(nm, 0, "uint8_t") == 1 && nm.length == 7){ ^1 };
+  ?(starts_lit(nm, 0, "int8_t") == 1 && nm.length == 6){ ^1 };
+  ?(starts_lit(nm, 0, "size_t") == 1 && nm.length == 6){ ^1 };
+  ?(starts_lit(nm, 0, "bool") == 1 && nm.length == 4){ ^1 };
+  ?(starts_lit(nm, 0, "uint") == 1 && nm.length == 4){ ^1 };
   ?(starts_lit(nm, 0, "unsigned") == 1 && nm.length == 8){ ^1 };
   ?(starts_lit(nm, 0, "signed") == 1 && nm.length == 6){ ^1 };
   ?(starts_lit(nm, 0, "static") == 1 && nm.length == 6){ ^1 };
@@ -37,6 +41,7 @@
   ?(rg_count_lit(sig, "float") > 0 || rg_count_lit(body, "float") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(sig, "double") > 0 || rg_count_lit(body, "double") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(body, "goto") > 0){ ^"REJ_C_GOTO" };
+  ?(rg_count_lit(body, "assert(") > 0){ ^"REJ_C_ASSERT" };
   ^"OK";
 }
 
@@ -97,7 +102,7 @@
 !cfs_one_shift(s: string): string {
   i = cfs_find_shift(s, ">>");
   op = ">>";
-  fname = "_lia_shr";
+  fname = "_lia_ushr";
   ?(i < 0){
     i = cfs_find_shift(s, "<<");
     op = "<<";
@@ -600,8 +605,16 @@
   n = out.length;
   k = n - 1;
   lp = -1;
+  j = 0;
+  prev = 0;
   while (k >= 0 && lp < 0) {
-    ?(out.charCodeAt(k) == 94){ lp = k } : { k = k - 1 };
+    ?(out.charCodeAt(k) == 94){
+      j = k - 1;
+      while (j >= 0 && (out.charCodeAt(j) == 32 || out.charCodeAt(j) == 9)){ j = j - 1 };
+      prev = 10;
+      ?(j >= 0){ prev = out.charCodeAt(j) };
+      ?(j < 0 || prev == 10 || prev == 123){ lp = k } : { k = k - 1 };
+    } : { k = k - 1 };
   };
   ?(lp < 0){ ^out };
   e = skip_ws(out, lp + 1);
@@ -609,9 +622,9 @@
   ?(s2 > e){
     res = "";
     res = res + slice2(out, 0, lp);
-    res = res + "^(";
+    res = res + "^((";
     res = res + slice2(out, lp + 1, s2);
-    res = res + " & 4294967295)";
+    res = res + ") & 4294967295)";
     res = res + slice2(out, s2, n);
     ^res;
   };
@@ -642,8 +655,73 @@
   ^read_ident(s, st);
 }
 
+!cfs_is_hex_digit(c: int): int {
+  ?(c >= 48 && c <= 57){ ^1 };
+  ?(c >= 97 && c <= 102){ ^1 };
+  ?(c >= 65 && c <= 70){ ^1 };
+  ^0;
+}
+
+!cfs_is_dec_digit(c: int): int {
+  ?(c >= 48 && c <= 57){ ^1 };
+  ^0;
+}
+
+!cfs_is_int_suffix(c: int): int {
+  ?(c == 85 || c == 117 || c == 76 || c == 108){ ^1 };
+  ^0;
+}
+
+!cfs_strip_num_suffix(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  c = 0;
+  prev = 0;
+  while (i < n) {
+    c = s.charCodeAt(i);
+    ?(c == 34 || c == 39){
+      out = out + s.charAt(i);
+      i = i + 1;
+      while (i < n && s.charCodeAt(i) != c){ out = out + s.charAt(i); i = i + 1 };
+      ?(i < n){ out = out + s.charAt(i); i = i + 1 };
+      continue;
+    };
+    ?(c == 48 && i + 1 < n && (s.charCodeAt(i + 1) == 120 || s.charCodeAt(i + 1) == 88)){
+      prev = 0;
+      ?(i > 0){ prev = s.charCodeAt(i - 1) };
+      ?(is_ident(prev) == false){
+        out = out + s.charAt(i);
+        out = out + s.charAt(i + 1);
+        i = i + 2;
+        while (i < n && cfs_is_hex_digit(s.charCodeAt(i)) == 1){
+          out = out + s.charAt(i);
+          i = i + 1;
+        };
+        while (i < n && cfs_is_int_suffix(s.charCodeAt(i)) == 1){ i = i + 1 };
+        continue;
+      };
+    };
+    ?(cfs_is_dec_digit(c) == 1){
+      prev = 0;
+      ?(i > 0){ prev = s.charCodeAt(i - 1) };
+      ?(is_ident(prev) == false && prev != 46){
+        while (i < n && cfs_is_dec_digit(s.charCodeAt(i)) == 1){
+          out = out + s.charAt(i);
+          i = i + 1;
+        };
+        while (i < n && cfs_is_int_suffix(s.charCodeAt(i)) == 1){ i = i + 1 };
+        continue;
+      };
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
 !cfs_prep(src: string): string {
-  ^jss_rewrite_hex(jss_strip_comments(src));
+  ^jss_rewrite_hex(cfs_strip_num_suffix(jss_strip_comments(src)));
 }
 
 !cfs_from_c(src: string): string {
@@ -753,4 +831,4 @@
   ^out;
 }
 
-=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type}
+=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type, cfs_strip_num_suffix}
