@@ -1,0 +1,48 @@
+@RULEL:COMPOUND_JUMPRATE_HARDENING:1.1.0
+@CHALLENGE_ID="LIN-COMPOUND-JUMPRATE-HARDENING"
+@TITLE="Experimental JumpRate clone: explicit args + 128-bit muldiv, fail-closed q, remainder identity"
+@STATUS="EXPERIMENTAL_I64_NONNEG"
+@DATE="2026-09-15"
+@PRIOR_PR="https://github.com/kbelludoo/lin-open/pull/79"
+
+~R{.s=spec .d=real_deltas .n=not_claimed .p=proofs .c=c4 .v=verdict}
+
+.s{
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="nonnegative i64 inputs; 128-bit product for (a*b)/d; Solidity uint256 is NOT claimed"
+}
+
+.d{
+  delta_1="getBorrowRateInternal is view-on-storage in Solidity; LIN takes base/mult/jump/kink as arguments; doubling mult_block changes the rate"
+  delta_2="(a*b)/d uses schoolbook 128-bit muldiv; naive i64 1e18*1e18 wraps"
+  delta_3="quotient that does not fit nonnegative i64 fail-closes to 0 (1e18*1e18/1)"
+  delta_4="remainder identity q*d+r == a*b checked by Python bigint and C11 __int128"
+  delta_5="upstream clone pins commit a3214f67 rather than live master HEAD"
+  delta_6="sol_jumprate_honesty_gate is typechecked in lin_from_solidity.lin; C0 default vm reports VM_REJ_STRING_LITERAL (string profile). Python oracle checks view+storage vs explicit args and * / needing wide muldiv. Emit path is still wrapping i64"
+}
+
+.n{
+  not_1="Solidity uint256 / cToken mainnet parity"
+  not_2="LIN replacing Compound, Uniswap, or the EVM"
+  not_3="general superiority vs solc/LLVM (SipHash ~20.8x is compile-turnaround on this host)"
+  not_4="computational soundness of Merkle (C4 is tamper-evidence + independent SHA-256 recompute + output-tamper reject, not zk)"
+}
+
+.p{
+  lin="src/lin_compound_jumprate.lin v2"
+  c11="test/oracles/compound_jumprate_c11.c"
+  harness="python3 test/prove_compound_jumprate_external.py"
+  third_oracle="python3 test/prove_melhorias_independent.py"
+}
+
+.c{
+  first_fail="C4 FAIL on first attempt because transpile/c/bin/lin_c_receipt was not built"
+  fix="make rationalist-proof now depends on c0-xver (lin_c_receipt + lin_c0), not c0 alone"
+  meaning="missing binary, not false Merkle math"
+}
+
+.v{
+  method="PINNED_COMMIT && PYTHON_BIGINT_REMAINDER && FAIL_CLOSED_Q && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish PASS"
+}

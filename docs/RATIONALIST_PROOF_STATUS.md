@@ -19,9 +19,10 @@ Run the proof yourself (Python 3 + `cc`, no Zig):
 ```bash
 make -C transpile/c all
 python3 test/prove_all_claims_external.py --iterations 10000
-# or, when network is available:
-python3 test/prove_all_claims_external.py --iterations 10000 --fetch
-```
+# or:
+make rationalist-proof
+# (builds lin_c0 AND lin_c_receipt; C4 is tamper-evidence + re-execution, not zk)
+
 
 Latest rationalist output:
 
@@ -145,6 +146,8 @@ fail-closed profile**: it does not change what `lin_c0 info`/`vm` report.
 | "LIN is faster than LLVM/C/Rust" | **NOT PROVEN** — no benchmark here |
 | "OpenSSL SHA-256 executes in LinVM" | **NOT PROVEN** — the OpenSSL file is only pinned/verified for provenance |
 | "Full Uniswap protocol is now protected/replaced" | **NOT PROVEN** — only the three pure math functions are executed; routing addresses, storage, EVM, reentrancy, etc. are outside this test |
+| "Compound JumpRate clone is mainnet uint256 / cToken parity" | **NOT PROVEN** — experimental nonnegative-i64 profile with 128-bit `(a*b)/d`; storage params as arguments. That is the real delta. Not an EVM replacement |
+| "C4 Merkle soundness / zk" | **NOT PROVEN** — C4 recomputes a SHA-256 receipt root and rejects output tamper. First C4 fail in a prior run was a missing `lin_c_receipt` binary (`make -C transpile/c all`), not false math. `make rationalist-proof` now builds that binary |
 | "Heaps are eliminated in all upstream repos" | **NOT PROVEN** — only the compiler host and the selected LIN modules are observed; upstream C/Solidity is not rewritten by this proof |
 
 The proof harness encodes these as `NP1` and prints the `NOT-PROVEN` line rather
