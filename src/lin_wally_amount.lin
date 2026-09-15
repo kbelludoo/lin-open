@@ -1,0 +1,96 @@
+@LIN:L1c:0.2
+@FROM_C{
+  source="ElementsProject/libwally-core include/wally_transaction.h + src/transaction.c"
+  tag="release_1.5.6"
+  commit="0c41f38fb1c201786e9c3ac9eae4f5f80c051399"
+  license="MIT (c) Jon Griffiths / Blockstream"
+  scope="satoshi cap + overflow-checked add/sub (no pointers)"
+  class="EXPERIMENTAL"
+  not="full_libwally_tx_psbt_encode"
+  core_oracle="bitcoin/bitcoin src/consensus/amount.h v27.1 CAmount/MoneyRange"
+}
+
+// Scalar monetary kernel from libwally's published constants:
+//   WALLY_SATOSHI_PER_BTC = 100000000
+//   WALLY_BTC_MAX         = 21000000
+//   WALLY_SATOSHI_MAX     = BTC_MAX * SATOSHI_PER_BTC  (recomputable)
+// Overflow check matches wally_tx_get_total_output_satoshi:
+//   v = a + b; reject if v < a or v > SATOSHI_MAX.
+// LIN improvement vs libwally uint64: signed i64 domain is Bitcoin Core
+// CAmount, so negatives fail-closed (MoneyRange) instead of wrapping to a
+// huge unsigned value. Pointer tx/psbt APIs stay rejected (REJ_C_POINTER).
+
+!wally_satoshi_per_btc(): int {
+  ^100000000;
+}
+
+!wally_btc_max(): int {
+  ^21000000;
+}
+
+!wally_satoshi_max(): int {
+  ^(21000000 * 100000000);
+}
+
+!wally_satoshi_in_range(satoshi: int): int {
+  ?(satoshi < 0){ ^-2; };
+  ?(satoshi > (21000000 * 100000000)){ ^-2; };
+  ^0;
+}
+
+!wally_money_range(satoshi: int): int {
+  ^wally_satoshi_in_range(satoshi);
+}
+
+!wally_btc_to_satoshi(btc: int): int {
+  v = 0;
+  ?(btc < 0){ ^-2; };
+  ?(btc > 21000000){ ^-2; };
+  v = btc * 100000000;
+  ?(v < 0){ ^-2; };
+  ^v;
+}
+
+!wally_satoshi_add(a: int, b: int): int {
+  v = 0;
+  ?(a < 0){ ^-2; };
+  ?(b < 0){ ^-2; };
+  ?(a > (21000000 * 100000000)){ ^-2; };
+  ?(b > (21000000 * 100000000)){ ^-2; };
+  v = a + b;
+  ?(v < a){ ^-2; };
+  ?(v > (21000000 * 100000000)){ ^-2; };
+  ^v;
+}
+
+!wally_satoshi_sub(a: int, b: int): int {
+  ?(a < 0){ ^-2; };
+  ?(b < 0){ ^-2; };
+  ?(b > a){ ^-2; };
+  ^(a - b);
+}
+
+!wally_fee_satoshi(vin: int, vout: int): int {
+  ^wally_satoshi_sub(vin, vout);
+}
+
+!wally_amount_gate(): int {
+  ?(wally_satoshi_per_btc() != 100000000){ ^0; };
+  ?(wally_btc_max() != 21000000){ ^0; };
+  ?(wally_satoshi_max() != 2100000000000000){ ^0; };
+  ?(wally_satoshi_in_range(0) != 0){ ^0; };
+  ?(wally_money_range(2100000000000000) != 0){ ^0; };
+  ?(wally_satoshi_in_range(-1) != -2){ ^0; };
+  ?(wally_satoshi_in_range(2100000000000001) != -2){ ^0; };
+  ?(wally_btc_to_satoshi(1) != 100000000){ ^0; };
+  ?(wally_btc_to_satoshi(21) != 2100000000){ ^0; };
+  ?(wally_btc_to_satoshi(21000001) != -2){ ^0; };
+  ?(wally_satoshi_add(1, 1) != 2){ ^0; };
+  ?(wally_satoshi_add(2100000000000000, 1) != -2){ ^0; };
+  ?(wally_satoshi_sub(100, 40) != 60){ ^0; };
+  ?(wally_satoshi_sub(40, 100) != -2){ ^0; };
+  ?(wally_fee_satoshi(100000000, 99999000) != 1000){ ^0; };
+  ^1;
+}
+
+=ex{wally_satoshi_per_btc, wally_btc_max, wally_satoshi_max, wally_satoshi_in_range, wally_money_range, wally_btc_to_satoshi, wally_satoshi_add, wally_satoshi_sub, wally_fee_satoshi, wally_amount_gate}

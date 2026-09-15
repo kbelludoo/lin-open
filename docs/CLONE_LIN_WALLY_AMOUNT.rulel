@@ -1,0 +1,45 @@
+@RULEL:CLONE_LIN_WALLY_AMOUNT:1.0.0
+~R{.p=paths .u=usage .o=oracles .c=claims .n=not_claimed .l=links}
+.o{
+  upstream="https://github.com/ElementsProject/libwally-core"
+  tag="release_1.5.6"
+  commit="0c41f38fb1c201786e9c3ac9eae4f5f80c051399"
+  header="include/wally_transaction.h"
+  header_sha256="02f09466ce2e7bc8f326f762efde701d02c84334018cb4bc5fa8d909be851007"
+  tx_c="src/transaction.c"
+  tx_c_sha256="c9e1504610735267d7048c56d49da1935a29c128eeb10d9d0b7416a9eae23619"
+  license="MIT (c) Jon Griffiths / Blockstream"
+  core_amount="https://github.com/bitcoin/bitcoin/blob/v27.1/src/consensus/amount.h"
+  core_amount_sha256="cb7bd951877f3fea5a0c280d4bb907a8403437add81e3d5b898879b78fdc877e"
+  gcc="gcc -O2 -fPIC -shared of the scalar extract"
+  python="stdlib int oracle of COIN / MAX_MONEY / overflow-add"
+  compiler0="transpile/c/bin/lin_c0 (C11 host, no Zig)"
+}
+.c{
+  C_WALLY_1="WALLY_SATOSHI_PER_BTC=1e8 and WALLY_BTC_MAX=21e6 match the pinned header"
+  C_WALLY_2="SATOSHI_MAX = 21e6 * 1e8 = 2100000000000000 recomputes in gcc, Python, and lin_c0"
+  C_WALLY_3="Bitcoin Core v27.1 COIN/MAX_MONEY/MoneyRange agree bit-exact with the LIN kernel"
+  C_WALLY_4="overflow add: gcc == Python == lin_c0; MAX+1 and negative fail-closed to WALLY_EINVAL=-2"
+  C_WALLY_5="pointer APIs wally_tx_get_total_output_satoshi / wally_tx_output_set_satoshi stay REJ_C_POINTER"
+  C_WALLY_6="lin_from_c v2 inlines object-like #define, strips UL/LL, lowers ||/&&, rejects printf/assert"
+  C_WALLY_7="Compiler 0 in-RAM compile: lin_c0 vm + LINBC1 roundtrip CONSENSUS on wally_amount_gate"
+}
+.n{
+  full_libwally="NOT proven — tx/psbt/script/secp are pointer-heavy and stay rejected"
+  uint256="NOT claimed — native i64 is Bitcoin Core CAmount, not EVM uint256"
+  wallet_replacement="NOT claimed — not Green, Jade, or bitcoind"
+  libtcc_jit="only if libtcc is present; otherwise bytecode VM is the Compiler 0 path"
+}
+.u{
+  prove="python3 test/prove_wally_amount_external.py"
+  c0="make -C transpile/c c0 && ./transpile/c/bin/lin_c0 vm src/lin_wally_amount.lin wally_amount_gate"
+}
+.l{
+  clone_lin="https://github.com/kbelludoo/clone-lin-wally-amount"
+  lin_open_kernel="src/lin_wally_amount.lin"
+  lin_open_proof="test/prove_wally_amount_external.py"
+}
+.p{
+  class="EXPERIMENTAL"
+  commercial="Every Bitcoin wallet that speaks satoshis uses 1e8 and the 21e6 cap. LIN's i64 is the same type as Core CAmount. This slice proves the cap and overflow-checked add/sub, not a wallet."
+}
