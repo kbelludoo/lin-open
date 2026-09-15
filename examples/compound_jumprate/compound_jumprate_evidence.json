@@ -10,7 +10,7 @@
     {
       "id": "UPSTREAM-SHA",
       "status": "PASS",
-      "description": "git clone of compound-protocol matches pinned bytes",
+      "description": "compound-protocol at pinned commit matches fixture bytes",
       "note": "commit=a3214f67b73310d547e00fc578e8355911c9d376 blob=4d6828c39ed737c0c48508adc414b919ab6c2a55"
     },
     {
@@ -64,8 +64,14 @@
     {
       "id": "PY-BORROW-50",
       "status": "PASS",
-      "description": "Python bigint borrow rate at 50% util matches LIN/C11",
+      "description": "Python oracle borrow rate at 50% util matches LIN/C11",
       "note": "rate=11891171993"
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "128-bit product: (1e18*1e18)/2e18 = 5e17; naive signed-i64 wraps",
+      "note": "i64_wrap=-5527149226598858752 bigint=500000000000000000"
     },
     {
       "id": "I64-WRAP",
@@ -74,27 +80,51 @@
       "note": "i64_wrap=-5527149226598858752 bigint=500000000000000000"
     },
     {
-      "id": "C0-JIT",
+      "id": "Q-OVF",
       "status": "PASS",
-      "description": "lin_c0 roundtrip-jit CONSENSUS on cjr_test_suite (in-memory libtcc)",
+      "description": "uint64 profile: (1e18*1e18)/1 fail-closes to 0 (not silent wrap)",
       "note": ""
+    },
+    {
+      "id": "FAIL-CLOSED-UFL",
+      "status": "PASS",
+      "description": "cash+borrows < reserves: LIN/C11 return 0; Solidity 0.8 would revert (documented difference)",
+      "note": ""
+    },
+    {
+      "id": "MULT-REORDER",
+      "status": "PASS",
+      "description": "blocks*kink overflows uint64; LIN reorder is floor-identical to Solidity uint256 formula",
+      "note": "mb=23782343987"
+    },
+    {
+      "id": "JUMP-90",
+      "status": "PASS",
+      "description": "above-kink borrow rate three-way consensus and r90 > r50",
+      "note": "rate=70871385082"
+    },
+    {
+      "id": "SUPPLY-50",
+      "status": "PASS",
+      "description": "supply rate at 50% util, 10% reserve factor, three-way",
+      "note": "rate=5351027396"
     },
     {
       "id": "EXPLICIT-ARGS",
       "status": "PASS",
-      "description": "LIN clone takes IRM parameters as arguments (no hidden storage / msg.sender)",
-      "note": ""
+      "description": "same cash/borrows, different kink argument => different borrow rate (params are not hidden storage)",
+      "note": "kink80=11891171993 kink40=61358447487"
     },
     {
-      "id": "WIDE-MULDIV",
-      "status": "PASS",
-      "description": "clone uses 128-bit product muldiv (naive i64 a*b/d would wrap on 1e18*1e18)",
-      "note": ""
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
     },
     {
-      "id": "SOL-EMIT",
+      "id": "SOL-PURE-SCOPE",
       "status": "PASS",
-      "description": "lin_from_solidity.lin now emits LIN and expands 1eN literals",
+      "description": "sol_from_sol is for eligible pure fns; JumpRate clone is hand-written (view+storage, not transpiled IRM)",
       "note": ""
     }
   ],
@@ -109,8 +139,17 @@
   "lin_clone": "src/lin_compound_jumprate.lin",
   "c11_oracle": "test/oracles/compound_jumprate_c11.c",
   "compiler0": "transpile/c/bin/lin_c0",
+  "python_oracle": "test/oracles/compound_jumprate_py.py",
   "class": "EXPERIMENTAL",
   "borrow_rate_50_util": 11891171993,
+  "borrow_rate_90_util": 70871385082,
+  "supply_rate_50_rf10": 5351027396,
   "multiplier_per_block": 23782343987,
-  "jump_per_block": 518455098934
+  "jump_per_block": 518455098934,
+  "not_claimed": [
+    "full Solidity uint256 / mainnet cToken parity",
+    "LIN replaces Compound, Uniswap, or the EVM",
+    "general superiority vs solc/LLVM",
+    "computational soundness of Merkle (C4 is tamper-evidence + reexecution, not zk)"
+  ]
 }

@@ -1,6 +1,11 @@
 {
-  "schema": "LIN_INDEPENDENT_REPROOF_1.0",
+  "schema": "LIN_INDEPENDENT_REPROOF_1.1",
   "class": "EXPERIMENTAL",
+  "real_improvements": [
+    "IRM storage parameters are explicit function arguments",
+    "(a*b)/d uses a 128-bit product on the uint64 profile",
+    "quotient that does not fit uint64 fail-closes to 0"
+  ],
   "claims": [
     {
       "id": "PIN-SHA",
@@ -29,48 +34,73 @@
     {
       "id": "MULDIV-3WAY",
       "status": "PASS",
-      "description": "4/4 muldiv: Python bigint == LIN vm == C11 __int128",
+      "description": "4/4 muldiv: Python oracle == LIN vm == C11 __int128",
       "note": ""
     },
     {
-      "id": "I64-WRAP",
+      "id": "WIDE-MULDIV",
       "status": "PASS",
-      "description": "naive signed-i64 1e18*1e18 wraps; Python/LIN 128-bit muldiv does not",
-      "note": "i64=-5527149226598858752 bigint_half=500000000000000000"
+      "description": "real melhoria: (1e18*1e18)/2e18 = 5e17 via 128-bit product; signed i64 wraps",
+      "note": "i64=-5527149226598858752 bigint=500000000000000000"
+    },
+    {
+      "id": "Q-OVF",
+      "status": "PASS",
+      "description": "quotient overflow fail-closes to 0 (uint64 profile, not silent wrap)",
+      "note": "value=0"
+    },
+    {
+      "id": "FAIL-CLOSED-UFL",
+      "status": "PASS",
+      "description": "cash+borrows < reserves: LIN/C11 return 0; Solidity 0.8 reverts (difference, not parity)",
+      "note": "value=0"
     },
     {
       "id": "MULT-REORDER",
       "status": "PASS",
-      "description": "Solidity (a*BASE)/(blocks*kink) equals LIN reorder on this vector",
+      "description": "blocks*kink overflows uint64; LIN reorder is floor-identical to Solidity formula",
       "note": "mb=23782343987"
     },
     {
       "id": "UTIL-50",
       "status": "PASS",
-      "description": "50% utilization = 0.5e18 on Python, LIN, formula",
-      "note": ""
+      "description": "50% utilization = 0.5e18 on Python, LIN, C11",
+      "note": "value=500000000000000000"
     },
     {
       "id": "BORROW-50",
       "status": "PASS",
       "description": "borrow@50% three-way consensus",
-      "note": "rate=11891171993"
+      "note": "value=11891171993"
     },
     {
       "id": "EXPLICIT-ARGS",
       "status": "PASS",
-      "description": "LIN takes IRM params as arguments; Solidity reads storage + msg.sender",
-      "note": ""
+      "description": "real melhoria: same market, different kink argument => different rate (not hidden storage)",
+      "note": "kink80=11891171993 kink40=61358447487"
+    },
+    {
+      "id": "JUMP-90",
+      "status": "PASS",
+      "description": "above-kink borrow@90% three-way and greater than borrow@50%",
+      "note": "rate=70871385082"
     },
     {
       "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "roundtrip-jit not exercised",
+      "note": "@RULEL:LIN_JIT_ROUNDTRIP:1.0.0\n.verdict{ status=\"DIVERGENCE\" why=\"jit_error\" code=\"LIBTCC_UNAVAILABLE\" }\n"
+    },
+    {
+      "id": "C4-BIN",
       "status": "PASS",
-      "description": "lin_c0 roundtrip-jit CONSENSUS on cjr_test_suite",
+      "description": "lin_c_receipt present; C4 is tamper-evidence + reexecution, not zk",
       "note": ""
     }
   ],
   "numbers": {
     "borrow_rate_50_util": 11891171993,
+    "borrow_rate_90_util": 70871385082,
     "multiplier_per_block": 23782343987,
     "jump_per_block": 518455098934,
     "i64_wrap_1e18_sq": -5527149226598858752,
@@ -80,7 +110,8 @@
   },
   "not_claimed": [
     "full Solidity uint256 / mainnet cToken parity",
-    "LIN replaces Compound on Ethereum",
-    "general speed vs solc/EVM/LLVM"
+    "LIN replaces Compound, Uniswap, or the EVM",
+    "general wall-clock superiority vs solc/LLVM (SipHash ~20.8x is compile-turnaround on one host)",
+    "computational soundness of Merkle receipts (C4 is tamper-evidence + independent SHA-256 reexecution, not zk)"
   ]
 }
