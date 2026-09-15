@@ -1,0 +1,45 @@
+@RULEL:RUST_BITCOIN_FEERATE_CLONE:1.0.0
+~R{.p=profile .u=upstream .c=claims .n=not .h=hashes .k=clone}
+.p{
+  status="EXPERIMENTAL"
+  class="fee_kernel_not_wallet"
+  compiler0="transpile/c/bin/lin_c0"
+  lin="src/lin_rust_bitcoin_feerate.lin"
+  transpiler="src/lin_from_rust.lin version=2"
+}
+.u{
+  repo="https://github.com/rust-bitcoin/rust-bitcoin"
+  commit="1cbf4bd62ea99c558c6d8ef794edbd984a2a4684"
+  license="CC0-1.0"
+  files="units/src/fee_rate/mod.rs units/src/amount/unsigned.rs units/src/fee.rs units/src/weight.rs"
+  core="https://github.com/bitcoin/bitcoin v27.1 src/policy/feerate.cpp src/consensus/amount.h"
+}
+.c{
+  C_RB_1="Amount::MAX == 21000000 * 100000000 == Core MAX_MONEY"
+  C_RB_2="FeeRate from_sat_per_kwu/vb/kvb constructors"
+  C_RB_3="mul_by_weight ceil(sat_mvb * wu / 4000000) including 381 wu * 864 sat/kwu = 330"
+  C_RB_4="gcc -O2 == Python == lin_c0 vm"
+  C_RB_5="Core GetFee(vbytes) diverges when wu % 4 != 0; LIN reports both"
+  C_RB_6="lin_from_rust v2 source + Python dual of underscore/&& rules; C0 int-only cannot exec string transpilers"
+  C_RB_7="lin_c0 roundtrip CONSENSUS on rb_feerate_gate"
+}
+.n{
+  full_rust_bitcoin="not claimed"
+  wallet="not claimed"
+  u128_identity_beyond_i64="fail-closed overflow; wallet-scale rates only"
+  core_ieee754="Core uses std::ceil(double); LIN uses integer ceil"
+  libtcc="honest skip if absent"
+}
+.h{
+  feerate_mod_rs="sha256:cbb0c13c54a808aa80de9652196e4f13f3f47bc3985e96b5c6fa7aeb6b705ecc"
+  amount_unsigned_rs="sha256:056757adc8f3ed6bc09dadf368fd027d04fcd7a721fb502fed23c8225cd790ef"
+  fee_rs="sha256:ed7832bce17677cb76e2447ff516b7a2a4df83d8746cc010ba73993722d115e3"
+  weight_rs="sha256:923a636c3eb748b6d820c338aadee97a0406a42aa85a00877de989196bbd3f7d"
+  core_feerate_cpp="sha256:dcee0d3c510936032addb0735dfb1e5389dcd4f8cf31e6867b94e2e14c6cb561"
+  core_amount_h="sha256:cb7bd951877f3fea5a0c280d4bb907a8403437add81e3d5b898879b78fdc877e"
+  rust_bitcoin_commit="1cbf4bd62ea99c558c6d8ef794edbd984a2a4684"
+}
+.k{
+  clone_lin="https://github.com/kbelludoo/clone-lin-rust-bitcoin-feerate"
+  prove="python3 test/prove_rust_bitcoin_feerate_external.py"
+}

@@ -1,12 +1,12 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
-  purpose="extract_pure_math_rust_no_std_functions_to_lin"
+  version=2
+  purpose="emit_pure_scalar_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  adds="numeric_underscore_strip parenless_if &&_is_not_borrow let_to_assign"
 }
 
-// 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
 !rs_is_kw(nm: string): int {
   ?(starts_lit(nm, 0, "fn") == 1 && nm.length == 2) { ^1 };
   ?(starts_lit(nm, 0, "let") == 1 && nm.length == 3) { ^1 };
@@ -18,10 +18,10 @@
   ?(starts_lit(nm, 0, "while") == 1 && nm.length == 5) { ^1 };
   ?(starts_lit(nm, 0, "loop") == 1 && nm.length == 4) { ^1 };
   ?(starts_lit(nm, 0, "match") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "const") == 1 && nm.length == 5) { ^1 };
   ^0;
 }
 
-// 2. Identificação de tipos inteiros primitivos Rust
 !rs_is_type(nm: string): int {
   ?(starts_lit(nm, 0, "u128") == 1 && nm.length == 4) { ^1 };
   ?(starts_lit(nm, 0, "u64") == 1 && nm.length == 3) { ^1 };
@@ -34,14 +34,28 @@
   ?(starts_lit(nm, 0, "i16") == 1 && nm.length == 3) { ^1 };
   ?(starts_lit(nm, 0, "i8") == 1 && nm.length == 2) { ^1 };
   ?(starts_lit(nm, 0, "usize") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "isize") == 1 && nm.length == 5) { ^1 };
   ?(starts_lit(nm, 0, "bool") == 1 && nm.length == 4) { ^1 };
   ^0;
 }
 
-// 3. Critérios fail-closed de rejeição de código Rust não-puro
+// Count `&` that is not the first char of `&&`. v1 treated `a && b` as a borrow.
+!rs_has_borrow(s: string): int {
+  n = s.length;
+  i = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) == 38){
+      ?(i + 1 < n && s.charCodeAt(i + 1) == 38){ i = i + 2; continue };
+      ^1;
+    };
+    i = i + 1;
+  };
+  ^0;
+}
+
 !rs_reason(sig: string, body: string): string {
   ?(rg_count_lit(sig, "&mut") > 0) { ^"REJ_RUST_MUTABLE_REF" };
-  ?(rg_count_lit(sig, "&") > 0) { ^"REJ_RUST_BORROW" };
+  ?(rs_has_borrow(sig) == 1 || rs_has_borrow(body) == 1) { ^"REJ_RUST_BORROW" };
   ?(rg_count_lit(body, "unsafe") > 0) { ^"REJ_RUST_UNSAFE" };
   ?(rg_count_lit(body, "alloc") > 0) { ^"REJ_RUST_DYNAMIC_ALLOC" };
   ?(rg_count_lit(body, "Vec") > 0) { ^"REJ_RUST_DYNAMIC_ALLOC" };
@@ -50,24 +64,273 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "Option") > 0 || rg_count_lit(body, "None") > 0) { ^"REJ_RUST_OPTION" };
+  ?(rg_count_lit(sig, "Result") > 0) { ^"REJ_RUST_RESULT" };
   ^"OK";
 }
 
-// 4. Teste de conformidade de parser Rust (funções pure no_std)
+!rs_strip_num_us(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) == 95 && i > 0 && i + 1 < n){
+      ?(s.charCodeAt(i - 1) >= 48 && s.charCodeAt(i - 1) <= 57){
+        ?(s.charCodeAt(i + 1) >= 48 && s.charCodeAt(i + 1) <= 57){ i = i + 1; continue };
+      };
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!rs_strip_types(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  id = "";
+  while (i < n) {
+    id = read_ident(s, i);
+    ?(id.length > 0){
+      ?(rs_is_type(id) == 1){ i = i + id.length; i = skip_ws(s, i); continue };
+      out = out + id;
+      i = i + id.length;
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!rs_prep(src: string): string {
+  ^rs_strip_num_us(jss_trim(jss_strip_comments(src)));
+}
+
+!rs_stmt(st: string): string {
+  e = jss_trim(st);
+  n = e.length;
+  out = "";
+  p = 0;
+  cl = 0;
+  k = 0;
+  ?(n == 0){ ^out };
+  ?(starts_lit(e, 0, "return") == 1 && (n == 6 || is_ident(e.charCodeAt(6)) == false)){
+    out = out + "^";
+    out = out + jss_trim(slice2(e, 6, n));
+    ^out;
+  };
+  ?(starts_lit(e, 0, "if") == 1 && n > 2 && is_ident(e.charCodeAt(2)) == false){
+    p = skip_ws(e, 2);
+    ?(p < n && e.charCodeAt(p) == 40){
+      cl = match_paren(e, p);
+      ?(cl > p){
+        out = out + "?(";
+        out = out + slice2(e, p + 1, cl);
+        out = out + "){ ";
+        out = out + rs_brace_body(slice2(e, cl + 1, n));
+        out = out + " }";
+        ^out;
+      };
+    };
+    k = p;
+    while (k < n && e.charCodeAt(k) != 123){ k = k + 1 };
+    ?(k < n){
+      out = out + "?(";
+      out = out + jss_trim(slice2(e, p, k));
+      out = out + "){ ";
+      out = out + rs_brace_body(slice2(e, k, n));
+      out = out + " }";
+      ^out;
+    };
+  };
+  ?(starts_lit(e, 0, "let") == 1 && n > 3 && is_ident(e.charCodeAt(3)) == false){
+    p = skip_ws(e, 3);
+    ?(starts_lit(e, p, "mut") == 1 && (p + 3 >= n || is_ident(e.charCodeAt(p + 3)) == false)){
+      p = skip_ws(e, p + 3);
+    };
+    id = read_ident(e, p);
+    ?(id.length > 0){
+      p = skip_ws(e, p + id.length);
+      ?(p < n && e.charCodeAt(p) == 58){
+        p = skip_ws(e, p + 1);
+        tid = read_ident(e, p);
+        ?(tid.length > 0){ p = skip_ws(e, p + tid.length) };
+      };
+      ?(p < n && e.charCodeAt(p) == 61){
+        out = out + id;
+        out = out + " = ";
+        out = out + jss_trim(slice2(e, p + 1, n));
+        ^out;
+      };
+    };
+  };
+  ^e;
+}
+
+!rs_brace_body(s: string): string {
+  t = jss_trim(s);
+  n = t.length;
+  while (n >= 2 && t.charCodeAt(0) == 123 && t.charCodeAt(n - 1) == 125){
+    t = jss_trim(slice2(t, 1, n - 1));
+    n = t.length;
+  };
+  ?(n == 0){ ^"" };
+  ^rs_body(t);
+}
+
+!rs_body(b: string): string {
+  t = jss_trim(rs_strip_types(b));
+  out = "";
+  n = t.length;
+  i = 0;
+  st = 0;
+  d = 0;
+  c = 0;
+  seg = "";
+  conv = "";
+  while (i <= n) {
+    ?(i < n){ c = t.charCodeAt(i) } : { c = 59 };
+    ?(c == 123){ d = d + 1 };
+    ?(c == 125){ d = d - 1 };
+    ?(d == 0 && (c == 59 || i == n)){
+      seg = jss_trim(slice2(t, st, i));
+      ?(seg.length > 0){
+        conv = rs_stmt(seg);
+        ?(conv.length > 0){
+          out = out + "  ";
+          out = out + conv;
+          out = out + ";";
+          out = out + rgs_ch(10);
+        };
+      };
+      st = i + 1;
+    };
+    i = i + 1;
+  };
+  ^out;
+}
+
+!rs_pdecl(params: string): string {
+  out = "";
+  n = params.length;
+  i = 0;
+  seen = 0;
+  id = "";
+  last = "";
+  while (i < n) {
+    id = read_ident(params, i);
+    ?(id.length > 0){
+      ?(rs_is_type(id) == 0 && rs_is_kw(id) == 0){ last = id };
+      i = i + id.length;
+      continue;
+    };
+    ?(params.charCodeAt(i) == 44 || i + 1 >= n){
+      ?(last.length > 0){
+        ?(seen == 1){ out = out + ", " };
+        out = out + last;
+        out = out + ": int";
+        seen = 1;
+        last = "";
+      };
+    };
+    i = i + 1;
+  };
+  ?(last.length > 0){
+    ?(seen == 1){ out = out + ", " };
+    out = out + last;
+    out = out + ": int";
+  };
+  ^out;
+}
+
+!rs_fn(nm: string, params: string, body: string): string {
+  out = "";
+  out = out + "!";
+  out = out + nm;
+  out = out + "(";
+  out = out + rs_pdecl(params);
+  out = out + "): int {";
+  out = out + rgs_ch(10);
+  out = out + rs_body(body);
+  out = out + "}";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+!rs_from_rust(src: string): string {
+  pass = jss_trim(rs_prep(src));
+  out = "";
+  out = jss_ln(out, "@LIN:L1c:0.2");
+  out = jss_ln(out, "@FROM_RUST{source=transpiled scope=scalar_no_std}");
+  out = jss_ln(out, "");
+  n = pass.length;
+  i = 0;
+  cl = 0;
+  b = 0;
+  cb = 0;
+  nm = "";
+  pr = "";
+  bd = "";
+  reason = "";
+  names = "";
+  while (i < n) {
+    ?(starts_lit(pass, i, "fn") == 1 && (i == 0 || is_ident(pass.charCodeAt(i - 1)) == false) && i + 2 <= n && (i + 2 == n || is_ident(pass.charCodeAt(i + 2)) == false)){
+      b = skip_ws(pass, i + 2);
+      nm = read_ident(pass, b);
+      ?(nm.length > 0 && rs_is_kw(nm) == 0){
+        b = skip_ws(pass, b + nm.length);
+        ?(b < n && pass.charCodeAt(b) == 40){
+          cl = match_paren(pass, b);
+          ?(cl > b){
+            pr = slice2(pass, b + 1, cl);
+            b = skip_ws(pass, cl + 1);
+            ?(b < n && pass.charCodeAt(b) == 45 && b + 1 < n && pass.charCodeAt(b + 1) == 62){
+              b = skip_ws(pass, b + 2);
+              while (b < n && (is_ident(pass.charCodeAt(b)) == true || pass.charCodeAt(b) == 58 || pass.charCodeAt(b) == 60 || pass.charCodeAt(b) == 62)){ b = b + 1 };
+              b = skip_ws(pass, b);
+            };
+            ?(b < n && pass.charCodeAt(b) == 123){
+              cb = match_brace(pass, b);
+              ?(cb > b){
+                bd = slice2(pass, b + 1, cb);
+                reason = rs_reason(slice2(pass, i, cl + 1), bd);
+                ?(starts_lit(reason, 0, "OK") == 1 && reason.length == 2){
+                  out = out + rs_fn(nm, pr, bd);
+                  names = rgs_csv_add(names, nm);
+                };
+                i = cb + 1;
+                continue;
+              };
+            };
+          };
+        };
+      };
+    };
+    i = i + 1;
+  };
+  out = out + "=ex{";
+  out = out + names;
+  out = out + "}";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
 !rs_parse_test_gate(): int {
   sig_ok = "pub fn compute_fee(amount: u64, fee_bps: u64) -> u64";
-  body_ok = "let fee = (amount * fee_bps) / 10000; return fee;";
-
-  sig_bad = "pub fn allocate_vec(n: usize) -> Vec<u8>";
-  body_bad = "let mut v = Vec::with_capacity(n); v";
-
+  body_ok = "if amount > 0 && fee_bps > 0 { return (amount * fee_bps) / 10000; } return 0;";
   r1 = rs_reason(sig_ok, body_ok);
-  ?(r1.length != 2) { ^0 }; // "OK"
-
-  r2 = rs_reason(sig_bad, body_bad);
-  ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
-
+  ?(starts_lit(r1, 0, "OK") == 0 || r1.length != 2) { ^0 };
+  r2 = rs_reason("fn allocate_vec(n: usize) -> Vec<u8>", "let mut v = Vec::with_capacity(n); v");
+  ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 };
+  r3 = rs_reason("fn peek(x: &u64) -> u64", "return *x;");
+  ?(starts_lit(r3, 0, "REJ_RUST_BORROW") == 0) { ^0 };
+  src = "pub fn rb_coin() -> u64 { return 1_000_000_00; }";
+  em = rs_from_rust(src);
+  ?(rg_count_lit(em, "!rb_coin(): int") == 0) { ^0 };
+  ?(rg_count_lit(em, "^100000000") == 0) { ^0 };
   ^1;
 }
 
-=ex{rs_is_kw, rs_is_type, rs_reason, rs_parse_test_gate}
+=ex{rs_is_kw, rs_is_type, rs_reason, rs_has_borrow, rs_from_rust, rs_parse_test_gate, rs_strip_num_us}

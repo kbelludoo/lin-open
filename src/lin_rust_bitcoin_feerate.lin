@@ -1,0 +1,148 @@
+@LIN:L1c:0.2
+@FROM_RUST{
+  source="rust-bitcoin/rust-bitcoin units/src/fee_rate/mod.rs + units/src/amount/unsigned.rs + units/src/fee.rs + units/src/weight.rs"
+  commit="1cbf4bd62ea99c558c6d8ef794edbd984a2a4684"
+  license="CC0-1.0"
+  scope="FeeRate::mul_by_weight integer-ceil + Amount::MAX_MONEY (no serde, no float)"
+  class="EXPERIMENTAL"
+  not="full_rust_bitcoin_wallet_psbt_script"
+  core_oracle="bitcoin/bitcoin v27.1 src/policy/feerate.cpp GetFee + src/consensus/amount.h"
+}
+
+// rust-bitcoin FeeRate stores sat per 1_000_000 vB (sat/MvB).
+// from_sat_per_kwu(k) => k * 4000
+// from_sat_per_vb(v)  => v * 1_000_000
+// from_sat_per_kvb(k) => k * 1000
+// mul_by_weight: ceil(sat_mvb * wu / 4_000_000), error if > Amount::MAX
+// Amount::MAX = 21_000_000 * 100_000_000
+// Weight::from_vb(vb) = vb * WITNESS_SCALE_FACTOR (4)
+//
+// LIN domain is signed i64. Products that wrap fail-closed (-1).
+// rust-bitcoin uses u128 for the product; this kernel matches whenever
+// sat_mvb * wu fits in i64 (wallet-scale rates). Larger products reject.
+//
+// Bitcoin Core v27.1 GetFee uses std::ceil(double). LIN implements the
+// integer ceil of (sat_per_kvb * vbytes / 1000) plus the 1-sat minimum.
+// That matches Core on values that fit the IEEE-754 mantissa, and is the
+// intended policy. rust-bitcoin and Core DIVERGE when wu % 4 != 0 because
+// Core takes integer vbytes.
+
+!rb_coin(): int {
+  ^100000000;
+}
+
+!rb_btc_max(): int {
+  ^21000000;
+}
+
+!rb_max_money(): int {
+  ^(21000000 * 100000000);
+}
+
+!rb_witness_scale(): int {
+  ^4;
+}
+
+!rb_mvb_per_wu_den(): int {
+  ^4000000;
+}
+
+!rb_from_sat(satoshi: int): int {
+  ?(satoshi < 0) { ^-1; };
+  ?(satoshi > (21000000 * 100000000)) { ^-1; };
+  ^satoshi;
+}
+
+!rb_overflow_mul(a: int, b: int): int {
+  p = 0;
+  ?(a < 0 || b < 0) { ^-1; };
+  ?(a == 0 || b == 0) { ^0; };
+  p = a * b;
+  ?(p < 0) { ^-1; };
+  ?(p / a != b) { ^-1; };
+  ^p;
+}
+
+!rb_ceil_div(n: int, d: int): int {
+  q = 0;
+  r = 0;
+  ?(d <= 0 || n < 0) { ^-1; };
+  ?(n == 0) { ^0; };
+  q = n / d;
+  r = n - (q * d);
+  ?(r == 0) { ^q; };
+  ^(q + 1);
+}
+
+!rb_from_sat_per_kwu(sat_kwu: int): int {
+  ^rb_overflow_mul(sat_kwu, 4000);
+}
+
+!rb_from_sat_per_vb(sat_vb: int): int {
+  ^rb_overflow_mul(sat_vb, 1000000);
+}
+
+!rb_from_sat_per_kvb(sat_kvb: int): int {
+  ^rb_overflow_mul(sat_kvb, 1000);
+}
+
+!rb_from_vb(vb: int): int {
+  ^rb_overflow_mul(vb, 4);
+}
+
+!rb_mul_by_weight(sat_mvb: int, wu: int): int {
+  num = 0;
+  fee = 0;
+  ?(sat_mvb < 0 || wu < 0) { ^-1; };
+  num = rb_overflow_mul(sat_mvb, wu);
+  ?(num < 0) { ^-1; };
+  fee = rb_ceil_div(num, 4000000);
+  ?(fee < 0) { ^-1; };
+  ?(fee > (21000000 * 100000000)) { ^-1; };
+  ^fee;
+}
+
+!rb_to_fee(sat_mvb: int, wu: int): int {
+  f = rb_mul_by_weight(sat_mvb, wu);
+  ?(f < 0) { ^(21000000 * 100000000); };
+  ^f;
+}
+
+// Integer stand-in for Bitcoin Core CFeeRate::GetFee(vbytes):
+// ceil(nSatoshisPerK * nSize / 1000), then 1 sat if rate>0 and fee==0.
+!core_get_fee(sat_per_kvb: int, vbytes: int): int {
+  num = 0;
+  fee = 0;
+  ?(sat_per_kvb < 0 || vbytes < 0) { ^-1; };
+  ?(vbytes == 0) { ^0; };
+  num = rb_overflow_mul(sat_per_kvb, vbytes);
+  ?(num < 0) { ^-1; };
+  fee = rb_ceil_div(num, 1000);
+  ?(fee < 0) { ^-1; };
+  ?(fee == 0 && sat_per_kvb > 0) { ^1; };
+  ^fee;
+}
+
+!rb_feerate_gate(): int {
+  ?(rb_coin() != 100000000) { ^0; };
+  ?(rb_max_money() != 2100000000000000) { ^0; };
+  ?(rb_from_sat(0) != 0) { ^0; };
+  ?(rb_from_sat(2100000000000000) != 2100000000000000) { ^0; };
+  ?(rb_from_sat(-1) != -1) { ^0; };
+  ?(rb_from_sat(2100000000000001) != -1) { ^0; };
+  ?(rb_from_sat_per_vb(1) != 1000000) { ^0; };
+  ?(rb_from_sat_per_kwu(1) != 4000) { ^0; };
+  ?(rb_from_sat_per_vb(1) / 4000 != 250) { ^0; };
+  ?(rb_from_sat_per_vb(3) / 4000 != 750) { ^0; };
+  ?(rb_from_vb(3) != 12) { ^0; };
+  ?(rb_mul_by_weight(rb_from_sat_per_vb(2), rb_from_vb(3)) != 6) { ^0; };
+  ?(rb_mul_by_weight(rb_from_sat_per_vb(10), rb_from_vb(10)) != 100) { ^0; };
+  ?(rb_mul_by_weight(rb_from_sat_per_kwu(864), 381) != 330) { ^0; };
+  ?(rb_mul_by_weight(rb_from_sat_per_kvb(10), 500) != 2) { ^0; };
+  ?(rb_mul_by_weight(rb_from_sat_per_kvb(101), 4000) != 101) { ^0; };
+  ?(core_get_fee(10, 500) != 5) { ^0; };
+  ?(core_get_fee(1, 1) != 1) { ^0; };
+  ^1;
+}
+
+=ex{rb_coin, rb_btc_max, rb_max_money, rb_witness_scale, rb_mvb_per_wu_den, rb_from_sat, rb_overflow_mul, rb_ceil_div, rb_from_sat_per_kwu, rb_from_sat_per_vb, rb_from_sat_per_kvb, rb_from_vb, rb_mul_by_weight, rb_to_fee, core_get_fee, rb_feerate_gate}
