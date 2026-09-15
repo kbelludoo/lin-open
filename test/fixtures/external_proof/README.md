@@ -10,6 +10,7 @@ independent proof harness. They are **test fixtures**, not vendored libraries.
 | `openssl_sha256.c` | [openssl/openssl](https://github.com/openssl/openssl) | Apache-2.0 |
 | `qoi.h` | [phoboslab/qoi](https://github.com/phoboslab/qoi) | MIT |
 | `tinyexpr.c` | [codeplea/tinyexpr](https://github.com/codeplea/tinyexpr) | zlib |
+| `SafeMath.sol` | [OpenZeppelin/openzeppelin-contracts@v4.9.6](https://github.com/OpenZeppelin/openzeppelin-contracts) | MIT |
 
 They are only pinned so an auditor can hash the exact bytes and, with `--fetch`,
 re-download them from the GitHub Contents API. No upstream code is compiled or

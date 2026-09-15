@@ -1,12 +1,12 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=1
+  version=2
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2_EMITS_LIN"
+  tuple_returns="flatten_to_sel_arg"
 }
 
-// 1. Identificação de palavras-chave do Solidity
 !sol_is_kw(nm: string): int {
   ?(starts_lit(nm, 0, "function") == 1 && nm.length == 8) { ^1 };
   ?(starts_lit(nm, 0, "returns") == 1 && nm.length == 7) { ^1 };
@@ -22,7 +22,6 @@
   ^0;
 }
 
-// 2. Identificação de tipos inteiros do Solidity
 !sol_is_type(nm: string): int {
   ?(starts_lit(nm, 0, "uint256") == 1 && nm.length == 7) { ^1 };
   ?(starts_lit(nm, 0, "uint") == 1 && nm.length == 4) { ^1 };
@@ -34,11 +33,11 @@
   ?(starts_lit(nm, 0, "int256") == 1 && nm.length == 6) { ^1 };
   ?(starts_lit(nm, 0, "int") == 1 && nm.length == 3) { ^1 };
   ?(starts_lit(nm, 0, "bool") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "unchecked") == 1 && nm.length == 9) { ^1 };
+  ?(starts_lit(nm, 0, "memory") == 1 && nm.length == 6) { ^1 };
   ^0;
 }
 
-// 3. Análise de elegibilidade fail-closed
-// Apenas funções matematicamente puras são aceitas para transpilação LIN
 !sol_reason(sig: string, body: string): string {
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
@@ -47,25 +46,310 @@
   ?(rg_count_lit(body, "assembly") > 0) { ^"REJ_SOLIDITY_INLINE_ASM" };
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
+  ?(rg_count_lit(sig, "string") > 0) { ^"REJ_SOLIDITY_STRING" };
+  ?(rg_count_lit(sig, "bytes") > 0) { ^"REJ_SOLIDITY_BYTES" };
+  ?(rg_count_lit(body, "require") > 0) { ^"REJ_SOLIDITY_REQUIRE" };
+  ?(rg_count_lit(body, "?") > 0) { ^"REJ_SOLIDITY_TERNARY" };
   ?(rg_count_lit(sig, "pure") == 0) { ^"REJ_SOLIDITY_NON_PURE" };
   ^"OK";
 }
 
-// 4. Teste de conformidade de parser Solidity
+!sol_tuple_ret(sig: string): int {
+  k = 0;
+  n = sig.length;
+  while (k < n) {
+    ?(starts_lit(sig, k, "returns") == 1 && (k + 7 >= n || is_ident(sig.charCodeAt(k + 7)) == false)) {
+      rest = slice2(sig, k, n);
+      ?(rg_count_lit(rest, ",") > 0) { ^1 };
+      ^0;
+    };
+    k = k + 1;
+  };
+  ^0;
+}
+
+!sol_word(s: string, w: string, v: string): string {
+  out = "";
+  n = s.length;
+  wl = w.length;
+  i = 0;
+  keep = 0;
+  while (i < n) {
+    ?(starts_lit(s, i, w) == 1){
+      keep = 1;
+      ?(i > 0 && is_ident(s.charCodeAt(i - 1)) == true){ keep = 0 };
+      ?(i + wl < n && is_ident(s.charCodeAt(i + wl)) == true){ keep = 0 };
+      ?(keep == 1){
+        out = out + v;
+        i = i + wl;
+        continue;
+      };
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!sol_strip_types(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  id = "";
+  while (i < n) {
+    id = read_ident(s, i);
+    ?(id.length > 0){
+      ?(sol_is_type(id) == 1){ i = i + id.length; i = skip_ws(s, i); continue };
+      out = out + id;
+      i = i + id.length;
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!sol_tuple_return(e: string): string {
+  t = jss_trim(e);
+  n = t.length;
+  ?(starts_lit(t, 0, "return") == 1 && (n == 6 || is_ident(t.charCodeAt(6)) == false)){
+    p = skip_ws(t, 6);
+    ?(p < n && t.charCodeAt(p) == 40){
+      cl = match_paren(t, p);
+      ?(cl > p){
+        inner = jss_trim(slice2(t, p + 1, cl));
+        cpos = -1;
+        k = 0;
+        d = 0;
+        while (k < inner.length) {
+          ?(inner.charCodeAt(k) == 40){ d = d + 1 };
+          ?(inner.charCodeAt(k) == 41){ d = d - 1 };
+          ?(d == 0 && inner.charCodeAt(k) == 44){ cpos = k; break };
+          k = k + 1;
+        };
+        ?(cpos >= 0){
+          a = jss_trim(slice2(inner, 0, cpos));
+          b = jss_trim(slice2(inner, cpos + 1, inner.length));
+          out = "";
+          out = out + "?(sel == 0) { ^";
+          out = out + a;
+          out = out + "; }; ^";
+          out = out + b;
+          ^out;
+        };
+      };
+    };
+  };
+  ^t;
+}
+
+!sol_stmt(st: string): string {
+  e = jss_trim(sol_tuple_return(st));
+  n = e.length;
+  out = "";
+  ?(n == 0){ ^out };
+  ?(starts_lit(e, 0, "return") == 1 && (n == 6 || is_ident(e.charCodeAt(6)) == false)){
+    out = out + "^";
+    out = out + jss_trim(slice2(e, 6, n));
+    ^out;
+  };
+  ?(starts_lit(e, 0, "if") == 1 && n > 2 && is_ident(e.charCodeAt(2)) == false){
+    p = skip_ws(e, 2);
+    ?(p < n && e.charCodeAt(p) == 40){
+      cl = match_paren(e, p);
+      ?(cl > p){
+        rest = jss_trim(slice2(e, cl + 1, n));
+        rn = rest.length;
+        while (rn >= 2 && rest.charCodeAt(0) == 123 && rest.charCodeAt(rn - 1) == 125){
+          rest = jss_trim(slice2(rest, 1, rn - 1));
+          rn = rest.length;
+        };
+        out = out + "?(";
+        out = out + slice2(e, p + 1, cl);
+        out = out + "){ ";
+        out = out + sol_stmt(rest);
+        out = out + " }";
+        ^out;
+      };
+    };
+  };
+  ^e;
+}
+
+!sol_body(b: string): string {
+  t = jss_trim(sol_strip_types(sol_word(sol_word(b, "true", "1"), "false", "0")));
+  n = t.length;
+  while (n >= 2 && t.charCodeAt(0) == 123 && t.charCodeAt(n - 1) == 125){
+    t = jss_trim(slice2(t, 1, n - 1));
+    n = t.length;
+  };
+  out = "";
+  i = 0;
+  st = 0;
+  d = 0;
+  seg = "";
+  conv = "";
+  while (i <= n) {
+    ?(i == n || (d == 0 && t.charCodeAt(i) == 59)){
+      seg = jss_trim(slice2(t, st, i));
+      ?(seg.length > 0){
+        conv = sol_stmt(seg);
+        ?(conv.length > 0){
+          out = out + "  ";
+          out = out + conv;
+          out = out + ";";
+          out = out + rgs_ch(10);
+        };
+      };
+      st = i + 1;
+      i = i + 1;
+      continue;
+    };
+    ?(i < n && (t.charCodeAt(i) == 40 || t.charCodeAt(i) == 123)){ d = d + 1 };
+    ?(i < n && (t.charCodeAt(i) == 41 || t.charCodeAt(i) == 125)){
+      d = d - 1;
+      ?(d == 0 && t.charCodeAt(i) == 125){
+        seg = jss_trim(slice2(t, st, i + 1));
+        ?(seg.length > 0){
+          conv = sol_stmt(seg);
+          ?(conv.length > 0){
+            out = out + "  ";
+            out = out + conv;
+            out = out + ";";
+            out = out + rgs_ch(10);
+          };
+        };
+        st = i + 1;
+      };
+    };
+    i = i + 1;
+  };
+  ^out;
+}
+
+!sol_pdecl(params: string, tuple: int): string {
+  out = "";
+  n = params.length;
+  i = 0;
+  seen = 0;
+  last = "";
+  id = "";
+  while (i < n) {
+    id = read_ident(params, i);
+    ?(id.length > 0){
+      ?(sol_is_type(id) == 0 && sol_is_kw(id) == 0){ last = id };
+      i = i + id.length;
+      continue;
+    };
+    ?(params.charCodeAt(i) == 44 || i + 1 >= n){
+      ?(last.length > 0){
+        ?(seen == 1){ out = out + ", " };
+        out = out + last;
+        out = out + ": int";
+        seen = 1;
+        last = "";
+      };
+    };
+    i = i + 1;
+  };
+  ?(last.length > 0){
+    ?(seen == 1){ out = out + ", " };
+    out = out + last;
+    out = out + ": int";
+    seen = 1;
+  };
+  ?(tuple == 1){
+    ?(seen == 1){ out = out + ", " };
+    out = out + "sel: int";
+  };
+  ^out;
+}
+
+!sol_fn(nm: string, params: string, body: string, tuple: int): string {
+  out = "";
+  out = out + "!";
+  out = out + nm;
+  out = out + "(";
+  out = out + sol_pdecl(params, tuple);
+  out = out + "): int {";
+  out = out + rgs_ch(10);
+  out = out + sol_body(body);
+  out = out + "}";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+!sol_from_sol(src: string): string {
+  pass = jss_trim(jss_strip_comments(src));
+  out = "";
+  out = jss_ln(out, "@LIN:L1c:0.2");
+  out = jss_ln(out, "@FROM_SOLIDITY{source=transpiled scope=pure_scalar_tuple_sel}");
+  out = jss_ln(out, "");
+  n = pass.length;
+  i = 0;
+  names = "";
+  while (i < n) {
+    ?(starts_lit(pass, i, "function") == 1 && (i == 0 || is_ident(pass.charCodeAt(i - 1)) == false) && (i + 8 >= n || is_ident(pass.charCodeAt(i + 8)) == false)){
+      p = skip_ws(pass, i + 8);
+      nm = read_ident(pass, p);
+      ?(nm.length > 0){
+        p = skip_ws(pass, p + nm.length);
+        ?(p < n && pass.charCodeAt(p) == 40){
+          cl = match_paren(pass, p);
+          ?(cl > p){
+            b = skip_ws(pass, cl + 1);
+            while (b < n && pass.charCodeAt(b) != 123){ b = b + 1 };
+            ?(b < n && pass.charCodeAt(b) == 123){
+              cb = match_brace(pass, b);
+              ?(cb > b){
+                sig = slice2(pass, i, b);
+                pr = slice2(pass, p + 1, cl);
+                bd = slice2(pass, b + 1, cb);
+                reason = sol_reason(sig, bd);
+                ?(starts_lit(reason, 0, "OK") == 1 && reason.length == 2){
+                  out = out + sol_fn(nm, pr, bd, sol_tuple_ret(sig));
+                  names = rgs_csv_add(names, nm);
+                };
+                i = cb + 1;
+                continue;
+              };
+            };
+          };
+        };
+      };
+    };
+    i = i + 1;
+  };
+  out = out + "=ex{";
+  out = out + names;
+  out = out + "}";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
 !sol_parse_test_gate(): int {
   sig_ok = "function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut)";
   body_ok = "require(amountIn > 0); uint amountInWithFee = amountIn.mul(997); return amountInWithFee;";
-  
   sig_bad = "function mint() external payable returns (bool)";
   body_bad = "require(msg.value > 0); return true;";
-
   r1 = sol_reason(sig_ok, body_ok);
-  ?(r1.length != 2) { ^0 }; // Deve ser "OK"
-
+  ?(r1.length != 2) { ^0 };
   r2 = sol_reason(sig_bad, body_bad);
-  ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // Deve começar com REJ_
-
+  ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 };
+  sig_str = "function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256)";
+  r3 = sol_reason(sig_str, "return a - b;");
+  ?(starts_lit(r3, 0, "REJ_SOLIDITY_STRING") == 0) { ^0 };
   ^1;
 }
 
-=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate}
+!sol_emit_tryadd_gate(): int {
+  src = "function tryAdd(uint256 a, uint256 b) internal pure returns (bool, uint256) { uint256 c = a + b; if (c < a) return (false, 0); return (true, c); }";
+  got = sol_from_sol(src);
+  ?(rg_count_lit(got, "!tryAdd(a: int, b: int, sel: int)") == 0) { ^0 };
+  ?(rg_count_lit(got, "?(sel == 0)") == 0) { ^0 };
+  ?(rg_count_lit(got, "?(c < a)") == 0) { ^0 };
+  ^1;
+}
+
+=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_from_sol, sol_fn, sol_emit_tryadd_gate, sol_tuple_ret}
