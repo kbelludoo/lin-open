@@ -114,11 +114,31 @@ static void test_for_malformed_header(void) {
     c0_arena_free(arena);
 }
 
+static void test_if_assign_optional_semi(void) {
+    static const char source[] =
+        "!pick(v: int) -> int {"
+        "  w = 7;"
+        "  ?(v < 8){ w = 3 };"
+        "  ^w;"
+        "}";
+    int64_t arg = 2;
+    int64_t value = 0;
+
+    CHECK(run_source(source, "pick", &arg, 1, &value) == LIN_OK,
+          "if-block assignment without inner semicolon compiles");
+    CHECK(value == 3, "?(v < 8){ w = 3 } stores 3 when v=2");
+    arg = 9;
+    CHECK(run_source(source, "pick", &arg, 1, &value) == LIN_OK,
+          "if-block assignment false branch still compiles");
+    CHECK(value == 7, "?(v < 8){ w = 3 } keeps 7 when v=9");
+}
+
 int main(void) {
     test_for_and_division();
     test_empty_for_clauses();
     test_division_by_zero_runtime();
     test_for_malformed_header();
+    test_if_assign_optional_semi();
 
     printf("C0 feature tests: %d passed, %d failed\n", pass_count, fail_count);
     return fail_count == 0 ? 0 : 1;

@@ -91,6 +91,20 @@ expect "gpu_map_mix 5" \
        ".result{ fn=\"gpu_map_mix\" value=8 steps=" \
        "$C0" vm "$CORPUS" gpu_map_mix 5
 
+printf '\n-- clone-lin sipa/bech32 polymod (BIP-173) --\n'
+expect "bech32 coverage 8/8" \
+       ".coverage{ total=8 eligible=8 rejected=0 }" \
+       "$C0" info "$ROOT/src/lin_bech32_polymod.lin"
+expect "bech32_polymod_step(1)==32" \
+       ".result{ fn=\"bech32_polymod_step\" value=32" \
+       "$C0" vm "$ROOT/src/lin_bech32_polymod.lin" bech32_polymod_step 1
+expect "bech32_gate_a12uel5l BIP-173 vector" \
+       ".result{ fn=\"bech32_gate_a12uel5l\" value=1" \
+       "$C0" vm "$ROOT/src/lin_bech32_polymod.lin" bech32_gate_a12uel5l
+expect "bech32_gate == 1" \
+       ".result{ fn=\"bech32_gate\" value=1" \
+       "$C0" vm "$ROOT/src/lin_bech32_polymod.lin" bech32_gate
+
 printf '\n-- fonte -> imagem LINBC1 -> loader -> execução (mesmo resultado) --\n'
 expect "roundtrip: exec direto == exec via imagem" \
        ".verdict{ status=\"CONSENSUS\"" \

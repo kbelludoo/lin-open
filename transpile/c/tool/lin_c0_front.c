@@ -1128,7 +1128,9 @@ static void c0_stmt(C0Comp *c) {
     if (c0_at_punct(c, "#")) { c0_fail(c, "VM_REJ_FOR_LOOP"); return; }
     c0_assign(c);
     if (c->reject != NULL) return;
-    if (!c0_accept_punct(c, ";")) c0_fail(c, "VM_REJ_PARSE");
+    /* LIN idiom: `?(cond){ x = y }` omits the semicolon before `}`.
+     * Return already treats `;` as optional; assignment must match. */
+    if (!c0_accept_punct(c, ";") && !c0_at_punct(c, "}")) c0_fail(c, "VM_REJ_PARSE");
 }
 
 /* =====================================================================

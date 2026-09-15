@@ -1,0 +1,95 @@
+@LIN:L1c:0.2
+@FROM_C{
+  source="sipa/bech32 ref/c/segwit_addr.c"
+  commit="7a7d7ab158db7078a333384e0e918c90dbc42917"
+  sha256="aa73529c41142d2a9fed384676910943692236eda2ec583f96a95b5283c3042d"
+  license="MIT"
+  scope="bech32_polymod_step plus fail-closed charset"
+  class="EXPERIMENTAL"
+  not="full_segwit_addr_encode_decode"
+}
+
+// Transpiled from Pieter Wuille's MIT bech32_polymod_step (BIP-173/350).
+// C `>>` lowered as unsigned `_lia_ushr`; hex+UL suffixes decimalised;
+// uint32 return masked with extra parens so XOR is not stolen by `&`.
+!bech32_polymod_step(pre: int): int {
+  b = _lia_ushr(pre, 25);
+  ^((_lia_shl((pre & 33554431), 5) ^ (-((_lia_ushr(b, 0)) & 1) & 996825010) ^ (-((_lia_ushr(b, 1)) & 1) & 642813549) ^ (-((_lia_ushr(b, 2)) & 1) & 513874426) ^ (-((_lia_ushr(b, 3)) & 1) & 1027748829) ^ (-((_lia_ushr(b, 4)) & 1) & 705979059)) & 4294967295);
+}
+
+!bech32_fold(chk: int, v: int): int {
+  ^((bech32_polymod_step(chk) ^ v) & 4294967295);
+}
+
+// C uses assert(0) on unknown encoding. LIN fail-closes to 0.
+!bech32_final_constant(enc: int): int {
+  ?(enc == 1){ ^1 };
+  ?(enc == 2){ ^734539939 };
+  ^0;
+}
+
+// Packed BIP-173 charset "qpzry9x8gf2tvdw0s3jn54khce6mua7l" — no C pointer table.
+!bech32_charset_fwd(v: int): int {
+  ?(v < 0){ ^0 };
+  ?(v > 31){ ^0 };
+  w = 7797808436786652515;
+  ?(v < 8){ w = 4069065457103695985 };
+  ?(v >= 8 && v < 16){ w = 3492370495967487591 };
+  ?(v >= 16 && v < 24){ w = 7524165006542910323 };
+  ^(_lia_ushr(w, (v & 7) * 8) & 255);
+}
+
+// Inverse of charset without C's charset_rev[128] sparse table.
+!bech32_charset_rev(ch: int): int {
+  c = ch;
+  ?(c >= 65 && c <= 90){ c = c + 32 };
+  ?(c < 48 || c > 122){ ^-1 };
+  i = 0;
+  while (i < 32) {
+    ?(bech32_charset_fwd(i) == c){ ^i };
+    i = i + 1;
+  };
+  ^-1;
+}
+
+// BIP-173 valid checksum "A12UEL5L" (hrp expand of "a" + charset 2uel5l).
+!bech32_gate_a12uel5l(): int {
+  chk = 1;
+  chk = bech32_fold(chk, 3);
+  chk = bech32_fold(chk, 0);
+  chk = bech32_fold(chk, 1);
+  chk = bech32_fold(chk, 10);
+  chk = bech32_fold(chk, 28);
+  chk = bech32_fold(chk, 25);
+  chk = bech32_fold(chk, 31);
+  chk = bech32_fold(chk, 20);
+  chk = bech32_fold(chk, 31);
+  ?(chk == 1){ ^1 };
+  ^0;
+}
+
+!bech32_gate_charset(): int {
+  ?(bech32_charset_fwd(0) != 113){ ^0 };
+  ?(bech32_charset_fwd(10) != 50){ ^0 };
+  ?(bech32_charset_fwd(31) != 108){ ^0 };
+  ?(bech32_charset_fwd(32) != 0){ ^0 };
+  ?(bech32_charset_rev(113) != 0){ ^0 };
+  ?(bech32_charset_rev(50) != 10){ ^0 };
+  ?(bech32_charset_rev(108) != 31){ ^0 };
+  ?(bech32_charset_rev(33) != -1){ ^0 };
+  ?(bech32_final_constant(1) != 1){ ^0 };
+  ?(bech32_final_constant(2) != 734539939){ ^0 };
+  ?(bech32_final_constant(0) != 0){ ^0 };
+  ^1;
+}
+
+!bech32_gate(): int {
+  ?(bech32_gate_a12uel5l() != 1){ ^0 };
+  ?(bech32_gate_charset() != 1){ ^0 };
+  ?(bech32_polymod_step(0) != 0){ ^0 };
+  ?(bech32_polymod_step(1) != 32){ ^0 };
+  ?(bech32_polymod_step(33554432) != 996825010){ ^0 };
+  ^1;
+}
+
+=ex{bech32_polymod_step, bech32_fold, bech32_final_constant, bech32_charset_fwd, bech32_charset_rev, bech32_gate_a12uel5l, bech32_gate_charset, bech32_gate}
