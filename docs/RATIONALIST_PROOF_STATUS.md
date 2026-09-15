@@ -153,6 +153,38 @@ Verifies end-to-end integration between LIN bytecode packaging (`linp_c0`), layo
 - **Tamper Detection**: Single bit-flips in sector payloads, layout bytecode, or WAL frames fail closed and are immediately rejected.
 - **Standalone Execution**: `python3 test/prove_floppy_external.py` runs entirely out-of-tree in `/tmp`, preserving zero repository pollution.
 
+### C9 — 512-bit numeric coprocessor (FullMath intermediate, 2026-09-15)
+
+This is the prerequisite under uint256 `mulDiv(a,b,d)=(a*b)/d`: the product is up
+to 511 bits, so a 256-bit-only engine either lies or returns `-2` on phantom
+overflow (`P >= 2^256` with quotient still in range). The coprocessor is
+`src/lin_u512_coprocessor.lin`. It does **not** close `settle_u256_word`
+EXACT/OVERPAID or LCR2 steps.
+
+```bash
+make u512-coprocessor-proof
+# or:
+python3 test/prove_u512_coprocessor_external.py        # 200 random full-range
+python3 test/prove_u512_coprocessor_external.py --ci   # smaller random subset
+python3 test/prove_u512_coprocessor_external.py --verify-receipt examples/u512_coprocessor/u512_coprocessor_evidence.json
+```
+
+What this run proves, and what it does not:
+
+| Check | Oracle |
+|---|---|
+| 256×256→512 mul with carry | Python `int` XOR C11 64-limb XOR C11 32-limb XOR LIN 16-limb |
+| 512-bit unsigned `cmp`/`ge` (division loop) | same |
+| 512/256→256 restoring div, `q*d+r==n`, `0<=r<d` | same |
+| guards `d==0 → -1`, `q>=2^256 → -2` | same |
+| LNR1 Merkle receipt + 1-bit tamper | Python `hashlib` only |
+| `settle_u256_word` vs `ref_amount_out` EXACT/OVERPAID | **NOT PROVEN** |
+| LCR2 records with real LinVM steps | **NOT PROVEN** |
+
+Pinned upstream: `test/fixtures/external_proof/FullMath.sol`
+(`sha256:959c52e1…44880e`, Uniswap/v3-core). Event:
+`docs/events/EVENT_U512_COPROCESSOR_2026_09_15.rulel`.
+
 ---
 
 ## 2. What is NOT proven (and must not be sold as proven)
@@ -190,8 +222,10 @@ Status of the remaining gaps:
    digests (status `FROZEN_CANDIDATE`, awaiting maintainer blessing).
 4. ❌ one independent external review — **open** (not automatable from here).
 
-Until those exist, this document is the honest maximum: **seven reproducible
-claims**, one explicit `NOT-PROVEN` scope line.
+Until those exist, this document is the honest maximum: **eight reproducible
+claims** (C1–C8 plus C9 in `test/prove_u512_coprocessor_external.py`), one
+explicit `NOT-PROVEN` scope line. C9 proves the 512-bit intermediate; it does
+not close uint256 settlement end-to-end.
 
 ## 4. Standalone CLI
 

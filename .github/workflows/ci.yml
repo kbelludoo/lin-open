@@ -118,6 +118,9 @@ jobs:
       - name: Run Rationalist External Proof (10k vectors)
         run: python3 test/prove_all_claims_external.py --iterations 10000
 
+      - name: U512 numeric coprocessor (FullMath intermediate)
+        run: python3 test/prove_u512_coprocessor_external.py
+
       - name: Verify Batch Receipts (2000 + 157 LCR2 Merkle)
         run: make verify-batch-receipt
 
