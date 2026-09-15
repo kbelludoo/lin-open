@@ -1,0 +1,86 @@
+{
+  "schema": "LIN_INDEPENDENT_REPROOF_1.0",
+  "class": "EXPERIMENTAL",
+  "claims": [
+    {
+      "id": "PIN-SHA",
+      "status": "PASS",
+      "description": "BaseJumpRateModelV2.sol sha256 recomputed this run",
+      "note": ""
+    },
+    {
+      "id": "PIN-BLOB",
+      "status": "PASS",
+      "description": "git hash-object matches pinned blob",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 vs limb clone selftest",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of JumpRate clone",
+      "note": ""
+    },
+    {
+      "id": "MULDIV-3WAY",
+      "status": "PASS",
+      "description": "4/4 muldiv: Python bigint == LIN vm == C11 __int128",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 1e18*1e18 wraps; Python/LIN 128-bit muldiv does not",
+      "note": "i64=-5527149226598858752 bigint_half=500000000000000000"
+    },
+    {
+      "id": "MULT-REORDER",
+      "status": "PASS",
+      "description": "Solidity (a*BASE)/(blocks*kink) equals LIN reorder on this vector",
+      "note": "mb=23782343987"
+    },
+    {
+      "id": "UTIL-50",
+      "status": "PASS",
+      "description": "50% utilization = 0.5e18 on Python, LIN, formula",
+      "note": ""
+    },
+    {
+      "id": "BORROW-50",
+      "status": "PASS",
+      "description": "borrow@50% three-way consensus",
+      "note": "rate=11891171993"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN takes IRM params as arguments; Solidity reads storage + msg.sender",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on cjr_test_suite",
+      "note": ""
+    }
+  ],
+  "numbers": {
+    "borrow_rate_50_util": 11891171993,
+    "multiplier_per_block": 23782343987,
+    "jump_per_block": 518455098934,
+    "i64_wrap_1e18_sq": -5527149226598858752,
+    "bigint_half_util": 500000000000000000,
+    "fixture_sha256": "9cd2fe5f7b88748c336bf2988c475da517ffd4909057b53df138b80f162fb34f",
+    "fixture_git_blob": "4d6828c39ed737c0c48508adc414b919ab6c2a55"
+  },
+  "not_claimed": [
+    "full Solidity uint256 / mainnet cToken parity",
+    "LIN replaces Compound on Ethereum",
+    "general speed vs solc/EVM/LLVM"
+  ]
+}
