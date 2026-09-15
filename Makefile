@@ -293,8 +293,12 @@ verify-forge-gas: c0 verify-batch-receipt
 #
 #   make rationalist-proof            # local pinned upstream (offline)
 #   make rationalist-proof FETCH=1    # re-download upstream via GitHub API
+#
+# `make -C transpile/c xver` builds lin_c_receipt (C11, no Zig). Root `make xver`
+# depends on build-cpu/Zig and is the wrong dependency for C4.
 .PHONY: rationalist-proof verify-cli install-cli
 rationalist-proof: c0
+	@$(MAKE) -C transpile/c xver
 ifneq ($(FETCH),)
 	@python3 test/prove_all_claims_external.py --iterations 10000 --fetch
 else

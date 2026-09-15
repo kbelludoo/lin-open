@@ -30,6 +30,8 @@
   transpiler_delta="src/lin_from_solidity.lin v2: sol_from_sol emit + 1eN expansion; src/lin_from_c.lin adds size_t/bool/uint"
   improvement_1="getBorrowRateInternal is view-on-storage in Solidity; LIN takes base/mult/jump/kink as arguments"
   improvement_2="borrows * 1e18 overflows i64; LIN uses schoolbook 128-bit muldiv matching C11 __int128"
+  improvement_2b="quotient that does not fit uint64 fail-closes to 0 (no silent wrap); remainder a*b=q*d+r is checked by Python bigint"
+  improvement_3="cash+borrows-reserves underflow: Solidity 0.8 reverts; LIN fail-closed returns 0 (cjr_util_ok=0 vs borrows==0 util_ok=1)"
   improvement_3="cash+borrows-reserves underflow: Solidity 0.8 reverts; LIN fail-closed returns 0 (documented)"
   improvement_4="(mult_year * BASE) / blocksPerYear overflows uint64; LIN does (mult_year * BASE / kink) / blocksPerYear which is floor-identical and fits"
 }
@@ -52,6 +54,8 @@
   not_claimed_1="full uint256 / mainnet cToken parity"
   not_claimed_2="LIN is faster than the EVM or solc"
   not_claimed_3="this clone is a production IRM replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Compound, Uniswap, or the EVM"
 }
 
 .v{

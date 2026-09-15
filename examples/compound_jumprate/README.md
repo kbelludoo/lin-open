@@ -12,18 +12,32 @@ JumpRateModel. The LIN clone itself is `src/lin_compound_jumprate.lin` in lin-op
 - **Harness:** `python3 test/prove_compound_jumprate_external.py`
 - **Independent third oracle (this run):** `python3 test/prove_melhorias_independent.py` (Python bigint vs LIN vs C11)
 - **Event receipt:** `docs/events/EVENT_COMPOUND_JUMPRATE_CLONE_LIN.rulel`
+- **Harden event:** `docs/events/EVENT_COMPOUND_JUMPRATE_HARDEN_2026_09_15.rulel`
 - **Independent re-proof event:** `docs/events/EVENT_INDEPENDENT_REPROOF_2026_09_15.rulel`
+- **View-storage lift (experimental):** `src/lin_sol_view_lift.lin` — extra args only, not 128-bit muldiv
 
 ## What is claimed
 
 Experimental, uint64-scale reproduction of Compound's utilization and jump-rate
-formulas, with 128-bit `(a*b)/d`, checked against an independent C11 `__int128`
-oracle and Compiler 0 (interpreted LinVM and, when libtcc is present, in-memory
-JIT). Storage parameters are function arguments.
+formulas. The real deltas versus the Solidity IRM in this profile are:
+
+1. Storage parameters (`baseRatePerBlock`, `multiplierPerBlock`,
+   `jumpMultiplierPerBlock`, `kink`) are function arguments, not hidden
+   contract storage / `msg.sender`.
+2. `(a*b)/d` uses a 128-bit product (schoolbook limbs in LIN, `__int128` in
+   the C11 oracle). If the quotient does not fit in uint64 the clone
+   fail-closes to 0 instead of wrapping. Remainder identity `a*b = q*d + r`
+   is checked by an independent Python bigint oracle.
 
 ## What is not claimed
 
-Mainnet uint256 parity, EVM replacement, or TVL impact.
+- Solidity **uint256** / mainnet **cToken** parity
+- LIN replacing Compound, Uniswap, or the EVM
+- General superiority vs solc/LLVM (a SipHash ~20.8× figure is
+  compile-turnaround on one host, not a kernel benchmark)
+- Computational soundness of Merkle / zk (C4 is tamper-evidence plus
+  re-execution of `lin_c_receipt`; the first C4 fail on PR 79 was a missing
+  binary, not false math)
 
 Machine-written evidence for a given run is in `compound_jumprate_evidence.json`
-(produced by the harness; do not hand-edit).
+and `independent_reproof.json` (produced by the harness; do not hand-edit).
