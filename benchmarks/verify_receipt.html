@@ -18,9 +18,9 @@
 <body>
 <h1>Independent LIN Compute-Receipt Verifier</h1>
 <p class="note">
-  Zero-trust: this page verifies a LIN receipt <b>without the LIN compiler</b>, using only the
-  browser's native WebCrypto SHA-256 (NIST FIPS 180-4). Nothing is uploaded — everything runs
-  locally. Accepts the JSON export or the native RULEL format.
+  Independent verification: this page verifies the Merkle root integrity of a LIN receipt <b>without the LIN compiler</b>,
+  using only the browser's native WebCrypto SHA-256 (NIST FIPS 180-4). Nothing is uploaded — everything runs locally.
+  Note: This checks that the record has not been tampered with post-execution; to verify execution correctness, provide the source code to confirm the artifact hash and re-execute.
 </p>
 <p class="note">
   Open format: <code>merkle_root = SHA-256( SHA-256(source) ‖ output‖LE ‖ steps‖LE ‖ sp_at_ret‖LE ‖ input‖LE )</code>
@@ -139,8 +139,8 @@ async function main() {
       ok = ok && srcOk;
     }
     out.textContent = lines.join('\n') + '\n\n' +
-      (ok ? '[PASS] Receipt validated by an independent open-source verifier (WebCrypto)'
-          : '[FAIL] Receipt forged or tampered!');
+      (ok ? '[PASS] Log integrity verified (WebCrypto): Merkle root matches record fields.'
+          : '[FAIL] Merkle root or source mismatch: calculated does not match claimed!');
     out.className = ok ? 'pass' : 'fail';
   } catch (e) {
     out.textContent = '[FAIL] ' + e.message;

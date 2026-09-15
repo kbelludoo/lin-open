@@ -1,16 +1,54 @@
+// ==============================================================================
+// examples/amm_swap.lin — Automated Market Maker (Uniswap v2 Constant Product)
+// Demonstração de cálculo financeiro determinístico off-chain com prova criptográfica.
+// ==============================================================================
 @LIN:L1c:0.2
 @AMM_ENGINE{version=1.0 model=constant_product_xy_k}
 
+!math_div(n: int, d: int) -> int {
+  ?(d <= 0) { ^0; };
+  ?(n <= 0) { ^0; };
+  q = 0;
+  r = 0;
+  i = 63;
+  while (i >= 0) {
+    r = _lia_shl(r, 1) | (_lia_ushr(n, i) & 1);
+    ?(r >= d) {
+      r = r - d;
+      q = q | _lia_shl(1, i);
+    };
+    i = i - 1;
+  };
+  ^q;
+}
+
+// Calcula a quantidade de tokens a receber em um swap com taxa configurável (bps):
+// Exemplo: fee_bps = 30 (0.30% de taxa padrão do Uniswap v2)
 !calculate_swap_out(reserve_in: int, reserve_out: int, amount_in: int, fee_bps: int) -> int {
-  // fee_bps = 30 (0.30% de taxa) -> multiplicador = 9970
   fee_mult = 10000 - fee_bps;
   in_com_taxa = amount_in * fee_mult;
   
   numerador = in_com_taxa * reserve_out;
   denominador = (reserve_in * 10000) + in_com_taxa;
   
-  tokens_saida = numerador / denominador;
+  tokens_saida = math_div(numerador, denominador);
   ^tokens_saida;
 }
 
-=ex{calculate_swap_out}
+// Valida matematicamente se a invariante K do par foi preservada:
+// (R_in + A_in) * (R_out - A_out) >= R_in * R_out
+// Retorna 1 se legítimo, 0 se violação/fraude.
+!verify_invariant_k(reserve_in: int, reserve_out: int, amount_in: int, amount_out: int) -> int {
+  k_antes = reserve_in * reserve_out;
+  novo_rin = reserve_in + amount_in;
+  novo_rout = reserve_out - amount_out;
+  k_depois = novo_rin * novo_rout;
+  
+  aprovado = 0;
+  ?(k_depois >= k_antes) {
+    aprovado = 1;
+  };
+  ^aprovado;
+}
+
+=ex{calculate_swap_out, verify_invariant_k}

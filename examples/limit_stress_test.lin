@@ -1,0 +1,56 @@
+// ==============================================================================
+// examples/limit_stress_test.lin — Boundary & Stress-Testing Probe Suite
+// Projetado especificamente para testar os limites físicos da LinVM e do compilador.
+// ==============================================================================
+@LIN:L1c:0.2
+@LIMIT_STRESS_TEST{version=1.0 target=boundary_exploration}
+
+// 1. Limite de Profundidade de Recursão (LIN_VM_MAX_DEPTH = 192)
+!probe_recursion_depth(n: int) -> int {
+  ?(n <= 1) { ^1; };
+  next_n = n - 1;
+  sub = probe_recursion_depth(next_n);
+  ^sub + 1;
+}
+
+// 2. Limite de Aritmética e Overflow de 64-bits
+!probe_arithmetic_limits(mode: int) -> int {
+  // mode 1: INT64_MAX + 1 (Wrapping para INT64_MIN)
+  max_i64 = 9223372036854775807;
+  ?(mode == 1) {
+    res = max_i64 + 1;
+    ^res;
+  };
+
+  // mode 2: INT64_MIN - 1 (Wrapping para INT64_MAX)
+  min_i64 = 0 - 9223372036854775807 - 1;
+  ?(mode == 2) {
+    res = min_i64 - 1;
+    ^res;
+  };
+
+  // mode 3: O caso fatal do x86 (INT64_MIN % -1 dispara SIGFPE se não for protegido)
+  ?(mode == 3) {
+    res = min_i64 % (0 - 1);
+    ^res;
+  };
+
+  // mode 4: Divisão por zero (Trava de segurança fail-closed)
+  ?(mode == 4) {
+    res = 42 % 0;
+    ^res;
+  };
+
+  ^0;
+}
+
+// 3. Limite de Passos / Instruções (Loop longo para testar LIN_VM_STEP_LIMIT)
+!probe_step_counter(max_iterations: int) -> int {
+  counter = 0;
+  while (counter < max_iterations) {
+    counter = counter + 1;
+  };
+  ^counter;
+}
+
+=ex{probe_recursion_depth, probe_arithmetic_limits, probe_step_counter}

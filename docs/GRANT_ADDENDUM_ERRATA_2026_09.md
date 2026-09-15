@@ -31,7 +31,7 @@ The Solidity on-chain anchor contract ([`contracts/LinReceiptVerifier.sol`](../c
 | **`settleBatch` (already anchored root)** | 50,233 | 0.00100 ETH | $0.00151 |
 | **`settleBatchWithInclusionProof` (fresh root)** | **87,831** | 0.00176 ETH | **$0.00264** |
 | **`settleBatchWithInclusionProof` (anchored root)** | 67,931 | 0.00136 ETH | $0.00204 |
-| **L1 Individual Swaps (Dataset 2,000 sum)** | 1,164,504,079 | 23.290 ETH | $34.94 |
+| **L1 Individual Swaps (Dataset 2,000 sum)** | 1,164,504,079 | 23.290 ETH ($69,870 total) | $34.94 / swap |
 
 *Key finding:* The previous theoretical "25k–45k" estimate underestimated EVM state storage costs (`SSTORE` of new 32-byte roots). The empirical gas is 70k–88k. However, because actual L1 router/multicall swaps average ~582k gas per transaction, anchoring 2,000 swaps in a single batch still achieves an empirical **13,258× to 16,604× reduction** in on-chain gas consumption.
 

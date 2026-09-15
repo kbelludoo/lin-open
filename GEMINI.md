@@ -1,7 +1,7 @@
 @RULEL:GEMINI:1.4.1
 ~R{.p=paths .u=usage .r=rules .f=forbid .a=allow .h=hashes .g=grammar}
 .r{R0=ALWAYS_WRITE_IN_LIN(.lin)_OR_RULEL(.rulel);R1=ZERO_NEW_ZIG_FILES;R2=STAGE0_ZIG_FROZEN_BOOTSTRAP_ONLY;R3=VERIFY_BEFORE_COMMIT(lin verify)}
-.f{NEW_ZIG_FILES hand_TS hand_JS typed_locals(val:int=0) unsupported_division(/)}
+.f{NEW_ZIG_FILES hand_TS hand_JS typed_locals(val:int=0) unsupported_division(/) bypass crossmodel}
 .a{code=.lin rules=.rulel Stage0_Zig=minimal_rocm_opencl_runtime_only}
 .g{fn="!name(param: int) -> int { ... }" locals="untyped_only (x = 0;)" branch="?(cond) { ... }" return="^expr;" export="=ex{fn1, fn2}"}
 .p{

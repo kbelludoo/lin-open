@@ -20,13 +20,16 @@ Resultados obtidos com o dataset canônico de 2.000 swaps reais da Ethereum Main
 
 | Métrica | Ethereum EVM (Original) | LIN (LinVM + GPU AMD RX 6600) | Vantagem Competitiva de LIN |
 |---|:---:|:---:|:---:|
-| **Throughput de Execução** | ~15 a 30 TPS | **459.960 TPS** | 🚀 **> 22.000x mais rápido** |
-| **Tempo para 2.000 Swaps** | ~100 a 133 segundos | **0,0043 segundos (4,3 ms)** | ⚡ Liquidação instantânea |
-| **Latência Média por Swap** | ~12.000 ms (12 seg de bloco) | **0,0022 ms (2,2 microssegundos)** | ⚡ 5.400.000x menor latência |
-| **Custo de Gas por Lote** | ~US$ 30.000,00 (em pico) | **US$ 0,00 (Zero)** | 💰 Economia de 100% de gas |
-| **Segurança de Memória** | Reentrancy / Out-of-Gas | **Bounds-Checked / Heap-Free** | 🛡️ Imune a estouro de buffer |
-| **Auditabilidade Off-Chain** | Inexistente (requer re-execução) | **Compute Receipt SHA-256** | 🔒 Verificação em O(1) com Merkle |
+| **Throughput de Execução** | ~15 a 30 TPS | **1,17M swaps/s (kernel) · 9,1k (wall frio)** | 🚀 **> 39.000× (kernel) / > 300× (wall frio)** |
+| **Tempo para 2.000 Swaps** | ~100 a 133 segundos | **1,70 ms (kernel) · 218 ms (wall frio)** | ⚡ Liquidação instantânea |
+| **Latência Média por Swap** | ~12.000 ms (12 seg de bloco) | **0,85 µs (kernel) · 109 µs (wall)** | ⚡ Sub-microssegundo no silício |
+| **Custo de Gas por Lote** | 1.164.504.079 gas (L1 sum ≈ US$ 34,94/swap) | **70.133 gas (`settleBatch` ≈ US$ 0,0021/swap)** | 💰 **13.258× a 16.604× redução de gas** |
+| **Segurança de Memória** | Reentrancy / Out-of-Gas | **Bounds-Checked / Heap-Free (0 alocações)** | 🛡️ Imune a estouro de buffer |
+| **Auditabilidade Off-Chain** | Inexistente (requer re-execução) | **Compute Receipt SHA-256 (LCR2)** | 🔒 Verificação em O(1) na EVM |
 | **Detecção de Fraude / MEV** | Vulnerável a Front-Running | **Classificação Pré-Liquidação** | 🛡️ Bloqueia desvios do invariante $k$ |
+| **Paridade de Dados** | Baseline L1 | **2.000/2.000 exatos (corpus aritmético)**<br>88,5% exato / 0 K-violations (corpus não-filtrado N=157) | 🎯 Paridade formal sem sobre-reivindicação (R5) |
+
+> **Nota de Correção (Errata 09/2026):** Esta documentação adota estritamente os números canônicos da Errata Técnica de Setembro de 2026 ([`docs/GRANT_ADDENDUM_ERRATA_2026_09.md`](GRANT_ADDENDUM_ERRATA_2026_09.md)), substituindo estimativas teóricas preliminares anteriores ("459.000+ TPS / 4,3 ms / US$ 0,00") pelas medições físicas em silício AMD Radeon RX 6600 (Kernel: 1,70 ms / Wall-clock frio: 218 ms) e recibos live Anvil/Foundry 1.8.1 (70.133 gas no `settleBatch`).
 
 ---
 
@@ -39,7 +42,7 @@ Resultados obtidos com o dataset canônico de 2.000 swaps reais da Ethereum Main
 
 2. **Aceleração Paralela na GPU (Silício AMD Radeon RX 6600):**
    - O lote de 2.000 swaps é empacotado em um buffer contíguo de 256 KB (128 bytes por swap).
-   - A GPU executa a liquidação de todo o lote em **4,3 milissegundos**, confirmando 100% de paridade bit-a-bit contra os logs da rede Ethereum.
+   - A GPU executa a liquidação de todo o lote em **1,70 ms (kernel GPU) / 218 ms (wall-clock frio total)**, confirmando 2.000/2.000 exatos no corpus aritmético canônico (e 88,5% de match exato com 0 violações de $k$ no corpus não-filtrado de 157 swaps).
 
 3. **Prova Criptográfica Zero-Trust (LinVM C0):**
    - A CPU valida as restrições anti-fraude e emite um recibo canônico `@RULEL:COMPUTE_RECEIPT:1.0.0`.

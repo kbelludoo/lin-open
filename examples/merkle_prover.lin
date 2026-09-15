@@ -1,30 +1,41 @@
+// ==============================================================================
+// examples/merkle_prover.lin — Verificador Criptográfico de Inclusão em Merkle Tree
+// Permite auditar inclusão de transações em lotes sem baixar todo o banco de dados.
+// ==============================================================================
 @LIN:L1c:0.2
 @MERKLE_PROVER{version=1.0 target=cryptographic_inclusion_proof}
 
+// Função de hash determinística de 32-bits para pares de nós da árvore
 !hash_pair(left: int, right: int) -> int {
   v = (left * 2146129197) ^ (right * 2221712011);
   v = (v ^ _lia_shr(v, 16)) * 16843009;
   ^(v ^ _lia_shr(v, 15)) & 4294967295;
 }
 
+// Verifica a prova de inclusão de 3 níveis (árvore de até 8 elementos):
+// leaf: Hash do item que queremos provar que existe
+// s0, s1, s2: Hashes irmãos (siblings) em cada nível da árvore até a raiz
+// path_bits: Direção do caminho (0 = nó atual está na esquerda, 1 = na direita)
+// expected_root: Raiz pública e confiável do lote
+// Retorna: 1 se a prova for matematicamente válida, 0 se for rejeitada / adulterada.
 !verify_inclusion_3(leaf: int, s0: int, s1: int, s2: int, path_bits: int, expected_root: int) -> int {
   curr = leaf;
 
-  // Passo 1: Nivel 0
+  // Passo 1: Nível 0
   ?( (path_bits & 1) == 0 ) {
     curr = hash_pair(curr, s0);
   } : {
     curr = hash_pair(s0, curr);
   };
 
-  // Passo 2: Nivel 1
+  // Passo 2: Nível 1
   ?( (_lia_shr(path_bits, 1) & 1) == 0 ) {
     curr = hash_pair(curr, s1);
   } : {
     curr = hash_pair(s1, curr);
   };
 
-  // Passo 3: Nivel 2
+  // Passo 3: Nível 2
   ?( (_lia_shr(path_bits, 2) & 1) == 0 ) {
     curr = hash_pair(curr, s2);
   } : {

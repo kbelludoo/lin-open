@@ -1,0 +1,41 @@
+@RULEL:FLOPPY_EXTERNAL_PROOF:1.0.0
+~P{.r=roots .h=hashes .s=specs .e=engines .p=properties}
+// Formal specification for external rationalist tri-runtime proof
+// (Python stdlib <-> Native C11 <-> Node.js Web Standards).
+// Zero-byte bootloader + LinVM settlement durable store.
+
+.roots{
+  code_root="75366e5cb034b36aa96321acd96ffe61638c8809cf06321f4e656eadd589e9bb"
+  job_linpbc="5da8f929f87021b39ad5fbd681d4ca89f9dbaf92e76ba781b1704c011d4fa01f"
+  laybc="f03b560df9c2d21c3c8870707273c495d595523ce41ec2b7be9f48708ea6598c"
+  img_linbc1="4fd10f6846cb16751a7e5754df9c799f1bbbea1f1eac6791a3574328a4311dd4"
+  state_merkle_root_8tx="466c815efcf301dc5ad065213f0e3a952b7f451e233c6b5dc1c1be50ad5a98e1"
+}
+.specs{
+  payload_raw_bytes=3728
+  deflate_bytes=1172
+  base64url_chars=1563
+  chunk_size=64
+  disks_count=25
+  laybc_bytes=999
+  lay_nodes=31
+  lay_strings=25
+  batch_txs=8
+  batch_applied=6
+  batch_rejected=2
+  wal_frames=24
+  active_keys=17
+  boot_latency_target_ms=2.0
+}
+.engines{
+  c11_native="transpile/c/linp_c0, transpile/c/lint_c0, transpile/c/store_c0, settlement_store_host"
+  python_oracle="test/prove_floppy_external.py, transpile/c/store_c0/oracle_store.py"
+  node_engine="Node.js v18+ DecompressionStream('deflate-raw'), crypto.subtle.digest('SHA-256')"
+}
+.properties{
+  zero_wasm=true
+  zero_disk_pollution=true
+  unmocked_fsync=true
+  crash_invariance=true
+  tamper_resistance=true
+}

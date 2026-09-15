@@ -40,7 +40,7 @@ static void test_context_and_call_propagation(void) {
     };
     VmFn fns[2];
     VmModule module;
-    LinVmContext ctx;
+    LinVmContext ctx = {0};
     VmExecResult result;
     uint64_t steps = 0;
     LinErr error;
@@ -76,7 +76,7 @@ static void test_custom_step_limit(void) {
     };
     VmFn fns[2];
     VmModule module;
-    LinVmContext ctx;
+    LinVmContext ctx = {0};
     VmExecResult result;
     uint64_t steps = 0;
 
@@ -144,7 +144,7 @@ static void test_abi_call_and_profile_gate(void) {
     LinAbiContext abi;
     VmFn fn;
     VmModule module;
-    LinVmContext ctx;
+    LinVmContext ctx = {0};
     VmExecResult result;
     uint64_t steps;
 
@@ -195,11 +195,117 @@ static void test_abi_call_and_profile_gate(void) {
           "ABI-1 rejects ABI_CALL");
 }
 
+#include <pthread.h>
+
+static void test_caller_callee_array_isolation(void) {
+    /* LRT-03 proof: Callee's array must never overwrite caller's array.
+     * Naive shared static pool causes caller to read 999 instead of 111.
+     * With per-depth frame storage, caller reads pristine 111. */
+    static const uint16_t arr1[1] = { 1 };
+    static const VmIns callee_code[] = {
+        { OP_PUSH_CONST, 0 },    /* arr index 0 */
+        { OP_PUSH_CONST, 999 },  /* arr[0] = 999 */
+        { OP_STORE_INDEX, 0 },   /* local 0 is arr */
+        { OP_PUSH_CONST, 0 },
+        { OP_RET, 0 }
+    };
+    static const VmIns caller_code[] = {
+        { OP_PUSH_CONST, 0 },    /* arr index 0 */
+        { OP_PUSH_CONST, 111 },  /* arr[0] = 111 */
+        { OP_STORE_INDEX, 0 },   /* local 0 is arr */
+        { OP_CALL, 1 },          /* call callee (fn 1) */
+        { OP_POP, 0 },           /* discard callee return */
+        { OP_PUSH_CONST, 0 },    /* arr index 0 */
+        { OP_LOAD_INDEX, 0 },    /* load arr[0] */
+        { OP_RET, 0 }
+    };
+    VmFn fns[2];
+    VmModule module;
+    LinVmContext ctx = {0};
+    VmExecResult result;
+    uint64_t steps = 0;
+
+    init_fn(&fns[0], "caller", caller_code, sizeof(caller_code) / sizeof(caller_code[0]));
+    fns[0].nlocals = 1;
+    fns[0].arr_n = arr1;
+    fns[0].arr_n_len = 1;
+
+    init_fn(&fns[1], "callee", callee_code, sizeof(callee_code) / sizeof(callee_code[0]));
+    fns[1].nlocals = 1;
+    fns[1].arr_n = arr1;
+    fns[1].arr_n_len = 1;
+
+    module.fns = fns;
+    module.fns_len = 2;
+
+    ctx.module = &module;
+    ctx.regions = NULL;
+    ctx.abi = NULL;
+    ctx.steps = &steps;
+    ctx.step_limit = 1000;
+    ctx.profile = LIN_VM_PROFILE_LINVM1;
+    ctx.abi_version = LIN_HOST_ABI_1;
+    ctx.frames = NULL;
+
+    LinErr err = vm_exec_ctx(&ctx, 0, NULL, 0, 0, &result);
+    CHECK(err == LIN_OK, "array isolation execution succeeds");
+    CHECK(result.val == 111, "caller array pristine (111 != 999, naive shared pool refuted)");
+}
+
+typedef struct {
+    const VmModule *module;
+    LinErr result_err;
+    uint64_t steps;
+} ThreadTestArgs;
+
+static void *recursion_thread_entry(void *arg) {
+    ThreadTestArgs *targs = (ThreadTestArgs *)arg;
+    VmExecResult r;
+    targs->result_err = vm_exec(targs->module, 0, NULL, 0, 0, &targs->steps, &r);
+    return NULL;
+}
+
+static void test_small_stack_recursion_128k(void) {
+    /* LRT-03 proof: Deep recursion inside a 128 KiB stack thread must fail closed
+     * with error.VmDepth without hitting SIGSEGV / stack exhaustion. */
+    static const VmIns recursive_code[] = {
+        { OP_CALL, 0 }, /* recurse to fn 0 */
+        { OP_RET, 0 }
+    };
+    VmFn fn;
+    VmModule module;
+    init_fn(&fn, "bomb", recursive_code, sizeof(recursive_code) / sizeof(recursive_code[0]));
+    module.fns = &fn;
+    module.fns_len = 1;
+
+    pthread_t th;
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    int rc = pthread_attr_setstacksize(&attr, 128 * 1024);
+    CHECK(rc == 0, "pthread_attr_setstacksize 128 KiB succeeds");
+
+    ThreadTestArgs args;
+    args.module = &module;
+    args.result_err = LIN_OK;
+    args.steps = 0;
+
+    rc = pthread_create(&th, &attr, recursion_thread_entry, &args);
+    pthread_attr_destroy(&attr);
+    CHECK(rc == 0, "spawn 128 KiB thread succeeds");
+
+    if (rc == 0) {
+        pthread_join(th, NULL);
+        CHECK(args.result_err == LIN_ERR_VM_DEPTH, "128 KiB thread fails closed with error.VmDepth (zero SIGSEGV)");
+    }
+}
+
 int main(void) {
     test_context_and_call_propagation();
     test_custom_step_limit();
     test_legacy_wrapper_and_invalid_context();
     test_abi_call_and_profile_gate();
+    test_caller_callee_array_isolation();
+    test_small_stack_recursion_128k();
 
     printf("context tests: %d passed, %d failed\n", pass_count, fail_count);
     return fail_count == 0 ? 0 : 1;

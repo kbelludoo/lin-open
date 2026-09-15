@@ -18,6 +18,7 @@ typedef struct {
     LinStr src;
     size_t pos;
     AstArena arena;
+    uint16_t depth;
 } Parser;
 
 /* Zig `Parser.init(source)` */

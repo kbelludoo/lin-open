@@ -23,6 +23,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Gate: Enforce no bypass or crossmodel artifacts
+        run: |
+          if git ls-files | grep -Ei 'bypass|crossmodel'; then
+            echo "ERROR: Bypass artifacts are strictly forbidden in the lin repository!"
+            exit 1
+          fi
+
       - name: Install Zig ${{ env.ZIG_VERSION }}
         uses: goto-bus-stop/setup-zig@v2
         with:

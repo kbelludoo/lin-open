@@ -1,0 +1,696 @@
+@LIN:L1c:0.2
+@LIN_FROM_HTML{version=3 purpose=transpile_layout_subset_html_to_lay emits=LAY}
+// Transpilador da irma lint escrito EM LIN (espelho de lin_from_js.lin).
+// Paridade byte-a-byte com o oraculo Python transpile_html_to_lay.py no
+// corpus pinado (mesmo subset, mesmos rejeitos, mesma forma canonica).
+// Construcao: descida recursiva (lh_node) com posicoes decimais; variaveis
+// locais resolvem o texto-tardio sem pilhas auxiliares.
+// Autocontido: auxiliares lh_* definidos aqui (zero deps externas).
+
+!lh_eq(a: string, b: string): int {
+  ?(a.length != b.length){ ^0 };
+  ?(starts_lit(a, 0, b) == 1){ ^1 };
+  ^0;
+}
+
+!lh_slice(s: string, a: int, b: int): string {
+  out = "";
+  i = a;
+  ?(i < 0){ i = 0 };
+  while (i < b && i < s.length) {
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!lh_trim(s: string): string {
+  n = s.length;
+  a = 0;
+  while (a < n && (s.charCodeAt(a) == 32 || s.charCodeAt(a) == 9 || s.charCodeAt(a) == 10 || s.charCodeAt(a) == 13)){ a = a + 1 };
+  b = n;
+  while (b > a && (s.charCodeAt(b - 1) == 32 || s.charCodeAt(b - 1) == 9 || s.charCodeAt(b - 1) == 10 || s.charCodeAt(b - 1) == 13)){ b = b - 1 };
+  ^lh_slice(s, a, b);
+}
+
+!lh_skip(s: string, i: int): int {
+  n = s.length;
+  while (i < n && (s.charCodeAt(i) == 32 || s.charCodeAt(i) == 9 || s.charCodeAt(i) == 10 || s.charCodeAt(i) == 13)){ i = i + 1 };
+  ^i;
+}
+
+!lh_upcase(s: string): string {
+  out = "";
+  i = 0;
+  while (i < s.length) {
+    c = s.charCodeAt(i);
+    ?(c >= 97 && c <= 122){ out = out + String.fromCharCode(c - 32); i = i + 1; continue };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!lh_lowcase(s: string): string {
+  out = "";
+  i = 0;
+  while (i < s.length) {
+    c = s.charCodeAt(i);
+    ?(c >= 65 && c <= 90){ out = out + String.fromCharCode(c + 32); i = i + 1; continue };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!lh_sep(): string { ^String.fromCharCode(1) }
+
+!lh_field(rec: string, idx: int): string {
+  cur = 0;
+  st = 0;
+  i = 0;
+  n = rec.length;
+  while (i <= n) {
+    ?(i == n || rec.charCodeAt(i) == 1){
+      ?(cur == idx){ ^lh_slice(rec, st, i) };
+      cur = cur + 1;
+      st = i + 1;
+    };
+    i = i + 1;
+  };
+  ^"";
+}
+
+!lh_num(v: int): string {
+  ?(v <= 0){ ^"0" };
+  out = "";
+  x = v;
+  started = 0;
+  p = 1000000000;
+  while (p >= 1) {
+    d = 0;
+    y = x;
+    while (y >= p){ y = y - p; d = d + 1 };
+    x = y;
+    ?(d > 0 || started == 1){
+      out = out + String.fromCharCode(48 + d);
+      started = 1;
+    };
+    ?(p == 1000000000){ p = 100000000 }
+    : (p == 100000000){ p = 10000000 }
+    : (p == 10000000){ p = 1000000 }
+    : (p == 1000000){ p = 100000 }
+    : (p == 100000){ p = 10000 }
+    : (p == 10000){ p = 1000 }
+    : (p == 1000){ p = 100 }
+    : (p == 100){ p = 10 }
+    : (p == 10){ p = 1 }
+    : { p = 0 };
+  };
+  ^out;
+}
+
+!lh_atoi(s: string): int {
+  v = 0;
+  i = 0;
+  while (i < s.length && s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) {
+    v = v * 10 + (s.charCodeAt(i) - 48);
+    i = i + 1;
+  };
+  ^v;
+}
+
+// Entidades que o oraculo (HTMLParser convert_charrefs) resolve.
+!lh_deent(s: string): string {
+  out = "";
+  i = 0;
+  n = s.length;
+  while (i < n) {
+    ?(s.charCodeAt(i) == 38){
+      ?(starts_lit(s, i, "&amp;") == 1){ out = out + "&"; i = i + 5; continue };
+      ?(starts_lit(s, i, "&lt;") == 1){ out = out + "<"; i = i + 4; continue };
+      ?(starts_lit(s, i, "&gt;") == 1){ out = out + ">"; i = i + 4; continue };
+      ?(starts_lit(s, i, "&quot;") == 1){ out = out + String.fromCharCode(34); i = i + 6; continue };
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!lh_kv(acc: string, first: int, k: string, v: string): string {
+  out = acc;
+  ?(first == 0){ out = out + " " };
+  out = out + k;
+  out = out + "=";
+  out = out + v;
+  ^out;
+}
+
+// Ordem canonica fixa == sorted() do oraculo.
+!lh_style_emit(v_bg: string, v_display: string, v_fg: string, v_font: string, v_flex: string, v_gap: string, v_h: string, v_margin: string, v_opacity: string, v_pad: string, v_radius: string, v_shadow: string, v_size: string, v_valign: string, v_w: string, v_weight: string, v_border: string, v_cursor: string, v_align: string, h_bg: int, h_display: int, h_fg: int, h_font: int, h_flex: int, h_gap: int, h_h: int, h_margin: int, h_opacity: int, h_pad: int, h_radius: int, h_shadow: int, h_size: int, h_valign: int, h_w: int, h_weight: int, h_border: int, h_cursor: int, h_align: int): string {
+  out = "";
+  first = 1;
+  ?(h_align == 1){ out = lh_kv(out, first, "align", v_align); first = 0 };
+  ?(h_bg == 1){ out = lh_kv(out, first, "bg", v_bg); first = 0 };
+  ?(h_border == 1){ out = lh_kv(out, first, "border", v_border); first = 0 };
+  ?(h_cursor == 1){ out = lh_kv(out, first, "cursor", v_cursor); first = 0 };
+  ?(h_display == 1){ out = lh_kv(out, first, "display", v_display); first = 0 };
+  ?(h_fg == 1){ out = lh_kv(out, first, "fg", v_fg); first = 0 };
+  ?(h_flex == 1){ out = lh_kv(out, first, "flex", v_flex); first = 0 };
+  ?(h_font == 1){ out = lh_kv(out, first, "font", v_font); first = 0 };
+  ?(h_gap == 1){ out = lh_kv(out, first, "gap", v_gap); first = 0 };
+  ?(h_h == 1){ out = lh_kv(out, first, "h", v_h); first = 0 };
+  ?(h_margin == 1){ out = lh_kv(out, first, "margin", v_margin); first = 0 };
+  ?(h_opacity == 1){ out = lh_kv(out, first, "opacity", v_opacity); first = 0 };
+  ?(h_pad == 1){ out = lh_kv(out, first, "pad", v_pad); first = 0 };
+  ?(h_radius == 1){ out = lh_kv(out, first, "radius", v_radius); first = 0 };
+  ?(h_shadow == 1){ out = lh_kv(out, first, "shadow", v_shadow); first = 0 };
+  ?(h_size == 1){ out = lh_kv(out, first, "size", v_size); first = 0 };
+  ?(h_valign == 1){ out = lh_kv(out, first, "valign", v_valign); first = 0 };
+  ?(h_w == 1){ out = lh_kv(out, first, "w", v_w); first = 0 };
+  ?(h_weight == 1){ out = lh_kv(out, first, "weight", v_weight); first = 0 };
+  ^out;
+}
+
+// "k: v; ..." inline -> forma canonica ordenada; LINT_REJ_CSS se prop desconhecida.
+!lh_style_map(raw: string): string {
+  v_bg = ""; v_display = ""; v_fg = ""; v_font = ""; v_flex = ""; v_gap = "";
+  v_h = ""; v_margin = ""; v_opacity = ""; v_pad = ""; v_radius = ""; v_shadow = "";
+  v_size = ""; v_valign = ""; v_w = ""; v_weight = ""; v_border = ""; v_cursor = ""; v_align = "";
+  h_bg = 0; h_display = 0; h_fg = 0; h_font = 0; h_flex = 0; h_gap = 0;
+  h_h = 0; h_margin = 0; h_opacity = 0; h_pad = 0; h_radius = 0; h_shadow = 0;
+  h_size = 0; h_valign = 0; h_w = 0; h_weight = 0; h_border = 0; h_cursor = 0; h_align = 0;
+  i = 0;
+  n = raw.length;
+  while (i < n) {
+    i = lh_skip(raw, i);
+    ?(i >= n){ ^lh_style_emit(v_bg, v_display, v_fg, v_font, v_flex, v_gap, v_h, v_margin, v_opacity, v_pad, v_radius, v_shadow, v_size, v_valign, v_w, v_weight, v_border, v_cursor, v_align, h_bg, h_display, h_fg, h_font, h_flex, h_gap, h_h, h_margin, h_opacity, h_pad, h_radius, h_shadow, h_size, h_valign, h_w, h_weight, h_border, h_cursor, h_align) };
+    st = i;
+    while (i < n && raw.charCodeAt(i) != 59 && raw.charCodeAt(i) != 58){ i = i + 1 };
+    ?(i >= n || raw.charCodeAt(i) != 58){ ^"LINT_REJ_CSS" };
+    k = lh_trim(lh_slice(raw, st, i));
+    i = i + 1;
+    st = i;
+    while (i < n && raw.charCodeAt(i) != 59){ i = i + 1 };
+    v = lh_trim(lh_slice(raw, st, i));
+    ?(i < n){ i = i + 1 };
+    ?(k.length == 0){ ^"LINT_REJ_CSS" };
+    ku = lh_upcase(k);
+    ?(lh_eq(ku, "BACKGROUND") == 1){ v_bg = v; h_bg = 1; continue };
+    ?(lh_eq(ku, "COLOR") == 1){ v_fg = v; h_fg = 1; continue };
+    ?(lh_eq(ku, "FONT-FAMILY") == 1){ v_font = v; h_font = 1; continue };
+    ?(lh_eq(ku, "FONT-SIZE") == 1){ v_size = v; h_size = 1; continue };
+    ?(lh_eq(ku, "PADDING") == 1){ v_pad = v; h_pad = 1; continue };
+    ?(lh_eq(ku, "MARGIN") == 1){ v_margin = v; h_margin = 1; continue };
+    ?(lh_eq(ku, "WIDTH") == 1){ v_w = v; h_w = 1; continue };
+    ?(lh_eq(ku, "HEIGHT") == 1){ v_h = v; h_h = 1; continue };
+    ?(lh_eq(ku, "DISPLAY") == 1){ v_display = v; h_display = 1; continue };
+    ?(lh_eq(ku, "BORDER") == 1){ v_border = v; h_border = 1; continue };
+    ?(lh_eq(ku, "BORDER-RADIUS") == 1){ v_radius = v; h_radius = 1; continue };
+    ?(lh_eq(ku, "TEXT-ALIGN") == 1){ v_align = v; h_align = 1; continue };
+    ?(lh_eq(ku, "ALIGN-ITEMS") == 1){ v_valign = v; h_valign = 1; continue };
+    ?(lh_eq(ku, "GAP") == 1){ v_gap = v; h_gap = 1; continue };
+    ?(lh_eq(ku, "FLEX-DIRECTION") == 1){ v_flex = v; h_flex = 1; continue };
+    ?(lh_eq(ku, "FONT-WEIGHT") == 1){ v_weight = v; h_weight = 1; continue };
+    ?(lh_eq(ku, "TEXT-SHADOW") == 1){ v_shadow = v; h_shadow = 1; continue };
+    ?(lh_eq(ku, "CURSOR") == 1){ v_cursor = v; h_cursor = 1; continue };
+    ?(lh_eq(ku, "OPACITY") == 1){ v_opacity = v; h_opacity = 1; continue };
+    ^"LINT_REJ_CSS";
+  };
+  ^lh_style_emit(v_bg, v_display, v_fg, v_font, v_flex, v_gap, v_h, v_margin, v_opacity, v_pad, v_radius, v_shadow, v_size, v_valign, v_w, v_weight, v_border, v_cursor, v_align, h_bg, h_display, h_fg, h_font, h_flex, h_gap, h_h, h_margin, h_opacity, h_pad, h_radius, h_shadow, h_size, h_valign, h_w, h_weight, h_border, h_cursor, h_align);
+}
+
+// "x" esta em lista separada por espacos (== "x" in cls.split()).
+!lh_has_cls(cls: string, w: string): int {
+  i = 0;
+  n = cls.length;
+  while (i <= n) {
+    i = lh_skip(cls, i);
+    ?(i >= n){ ^0 };
+    st = i;
+    while (i < n && cls.charCodeAt(i) != 32 && cls.charCodeAt(i) != 9 && cls.charCodeAt(i) != 10 && cls.charCodeAt(i) != 13){ i = i + 1 };
+    ?(lh_eq(lh_slice(cls, st, i), w) == 1){ ^1 };
+  };
+  ^0;
+}
+
+// 1 se wrapper ignorado (html,head,body,meta,title,link).
+!lh_is_wrap(tu: string): int {
+  ?(lh_eq(tu, "HTML") == 1){ ^1 };
+  ?(lh_eq(tu, "HEAD") == 1){ ^1 };
+  ?(lh_eq(tu, "BODY") == 1){ ^1 };
+  ?(lh_eq(tu, "META") == 1){ ^1 };
+  ?(lh_eq(tu, "TITLE") == 1){ ^1 };
+  ?(lh_eq(tu, "LINK") == 1){ ^1 };
+  ^0;
+}
+
+// Tag html -> tag lay; "" = wrapper; "?" = rejeitar.
+!lh_lay_tag(t: string, cls: string): string {
+  u = lh_upcase(t);
+  ?(lh_is_wrap(u) == 1){ ^"" };
+  ?(lh_eq(u, "DIV") == 1){
+    ?(lh_has_cls(cls, "row") == 1){ ^"ROW" };
+    ?(lh_has_cls(cls, "col") == 1){ ^"COL" };
+    ^"DIV";
+  };
+  ?(lh_eq(u, "H1") == 1){ ^"H1" };
+  ?(lh_eq(u, "H2") == 1){ ^"H2" };
+  ?(lh_eq(u, "H3") == 1){ ^"H3" };
+  ?(lh_eq(u, "P") == 1){ ^"P" };
+  ?(lh_eq(u, "PRE") == 1){ ^"PRE" };
+  ?(lh_eq(u, "BUTTON") == 1){ ^"BUTTON" };
+  ?(lh_eq(u, "INPUT") == 1){ ^"INPUT" };
+  ?(lh_eq(u, "SPAN") == 1){ ^"SPAN" };
+  ?(lh_eq(u, "A") == 1){ ^"A" };
+  ?(lh_eq(u, "IMG") == 1){ ^"IMG" };
+  ?(lh_eq(u, "SECTION") == 1){ ^"SECTION" };
+  ^"?";
+}
+
+// Regiao de attrs -> "cls\x01style\x01ACTION\x02CLASS\x02alt\x02href\x02id\x02placeholder\x02src" ou LINT_REJ_*.
+!lh_attrs(region: string): string {
+  cls = "";
+  styleraw = "";
+  r_action = "";
+  r_alt = "";
+  r_href = "";
+  r_id = "";
+  r_ph = "";
+  r_src = "";
+  i = 0;
+  n = region.length;
+  while (i < n) {
+    i = lh_skip(region, i);
+    ?(i >= n){ ^lh_attr_rec(cls, styleraw, r_action, r_alt, r_href, r_id, r_ph, r_src) };
+    ?(region.charCodeAt(i) == 47){ i = i + 1; continue };
+    st = i;
+    while (i < n && region.charCodeAt(i) != 61 && region.charCodeAt(i) != 32 && region.charCodeAt(i) != 9 && region.charCodeAt(i) != 10){ i = i + 1 };
+    k = lh_lowcase(lh_slice(region, st, i));
+    ?(k.length == 0){ ^"LINT_REJ_ATTR" };
+    si = lh_skip(region, i);
+    ?(si >= n || region.charCodeAt(si) != 61){ ^"LINT_REJ_ATTR" };
+    si = lh_skip(region, si + 1);
+    v = "";
+    ?(si < n && region.charCodeAt(si) == 34){
+      si = si + 1;
+      st = si;
+      while (si < n && region.charCodeAt(si) != 34){ si = si + 1 };
+      v = lh_slice(region, st, si);
+      ?(si < n){ si = si + 1 };
+    } : {
+      st = si;
+      while (si < n && region.charCodeAt(si) != 32 && region.charCodeAt(si) != 9 && region.charCodeAt(si) != 10){ si = si + 1 };
+      v = lh_slice(region, st, si);
+    };
+    i = si;
+    ?(lh_eq(k, "class") == 1){ cls = v; continue };
+    ?(lh_eq(k, "style") == 1){ styleraw = v; continue };
+    ?(lh_eq(k, "action") == 1){
+      ?(lh_eq(v, "mount") == 1){ r_action = v; continue };
+      ?(lh_eq(v, "clear") == 1){ r_action = v; continue };
+      ?(lh_eq(v, "increment") == 1){ r_action = v; continue };
+      ^"LINT_REJ_ACTION";
+    };
+    ?(lh_eq(k, "id") == 1){ r_id = v; continue };
+    ?(lh_eq(k, "placeholder") == 1){ r_ph = v; continue };
+    ?(lh_eq(k, "href") == 1){ r_href = v; continue };
+    ?(lh_eq(k, "src") == 1){ r_src = v; continue };
+    ?(lh_eq(k, "alt") == 1){ r_alt = v; continue };
+    ^"LINT_REJ_ATTR";
+  };
+  ^lh_attr_rec(cls, styleraw, r_action, r_alt, r_href, r_id, r_ph, r_src);
+}
+
+!lh_attr_rec(cls: string, styleraw: string, r_action: string, r_alt: string, r_href: string, r_id: string, r_ph: string, r_src: string): string {
+  rc = "";
+  ?(cls.length > 0 && lh_has_cls(cls, "row") == 0 && lh_has_cls(cls, "col") == 0){ rc = cls };
+  out = cls;
+  out = out + lh_sep();
+  out = out + styleraw;
+  out = out + lh_sep();
+  out = lh_suf(out, "ACTION", r_action);
+  ?(rc.length > 0){ out = lh_suf(out, "CLASS", rc) };
+  out = lh_suf(out, "alt", r_alt);
+  out = lh_suf(out, "href", r_href);
+  out = lh_suf(out, "id", r_id);
+  out = lh_suf(out, "placeholder", r_ph);
+  out = lh_suf(out, "src", r_src);
+  ^out;
+}
+
+!lh_suf(acc: string, k: string, v: string): string {
+  out = acc;
+  ?(v.length == 0){ ^out };
+  ?(out.length > 0 && out.charCodeAt(out.length - 1) != 1){ out = out + " " };
+  out = out + k;
+  out = out + "=";
+  out = out + v;
+  ^out;
+}
+
+!lh_indent(lv: int): string {
+  out = "";
+  i = 0;
+  while (i < lv) { out = out + "    "; i = i + 1 };
+  ^out;
+}
+
+// Avanca k ate '>' respeitando aspas; -1 se acabar.
+!lh_tag_end(s: string, k: int): int {
+  n = s.length;
+  while (k < n) {
+    ?(s.charCodeAt(k) == 34){
+      k = k + 1;
+      while (k < n && s.charCodeAt(k) != 34){ k = k + 1 };
+      ?(k < n){ k = k + 1 };
+      continue;
+    };
+    ?(s.charCodeAt(k) == 62){ ^k };
+    k = k + 1;
+  };
+  ^-1;
+}
+
+// "<script" / "<style" seguido de espaco, >, / ou fim (== regex <tag[\s>]).
+!lh_tagword(html: string, w: string): int {
+  i = 0;
+  n = html.length;
+  while (i < n) {
+    ?(html.charCodeAt(i) == 60){
+      p = i + 1;
+      ok = 1;
+      q = 0;
+      while (q < w.length) {
+        c1 = html.charCodeAt(p + q);
+        ?(c1 < 0 || c1 >= 128){ ok = 0 };
+        lc = c1;
+        ?(c1 >= 65 && c1 <= 90){ lc = c1 + 32 };
+        ?(lc != w.charCodeAt(q)){ ok = 0 };
+        q = q + 1;
+      };
+      ?(ok == 1){
+        c = html.charCodeAt(p + w.length);
+        ?(c == 32 || c == 9 || c == 10 || c == 62 || c == 47){ ^1 };
+      };
+    };
+    i = i + 1;
+  };
+  ^0;
+}
+
+!lh_comment_end(s: string, k: int): int {
+  n = s.length;
+  while (k + 2 < n) {
+    ?(s.charCodeAt(k) == 45 && s.charCodeAt(k + 1) == 45 && s.charCodeAt(k + 2) == 62){ ^(k + 3) };
+    k = k + 1;
+  };
+  ^-1;
+}
+
+// Valor bruto do attr `want` (minusculo) na regiao, ou "" se ausente.
+// Retorna "\x01"+valor quando acha (achado distinguivel de vazio).
+!lh_attr_raw(region: string, want: string): string {
+  i = 0;
+  n = region.length;
+  while (i < n) {
+    i = lh_skip(region, i);
+    ?(i >= n){ ^"" };
+    ?(region.charCodeAt(i) == 47){ i = i + 1; continue };
+    st = i;
+    while (i < n && region.charCodeAt(i) != 61 && region.charCodeAt(i) != 32 && region.charCodeAt(i) != 9 && region.charCodeAt(i) != 10){ i = i + 1 };
+    k = lh_lowcase(lh_slice(region, st, i));
+    si = lh_skip(region, i);
+    ?(si >= n || region.charCodeAt(si) != 61){ i = si; continue };
+    si = lh_skip(region, si + 1);
+    v = "";
+    ?(si < n && region.charCodeAt(si) == 34){
+      si = si + 1;
+      st = si;
+      while (si < n && region.charCodeAt(si) != 34){ si = si + 1 };
+      v = lh_slice(region, st, si);
+      ?(si < n){ si = si + 1 };
+    } : {
+      st = si;
+      while (si < n && region.charCodeAt(si) != 32 && region.charCodeAt(si) != 9 && region.charCodeAt(si) != 10){ si = si + 1 };
+      v = lh_slice(region, st, si);
+    };
+    i = si;
+    ?(lh_eq(k, want) == 1){
+      out = String.fromCharCode(1);
+      out = out + v;
+      ^out;
+    };
+  };
+  ^"";
+}
+
+// Abre em pos ('<' de open). Retorna LINT_REJ_* | "SKIP\x01apos" | "OK\x01lay\x01style\x01sufix\x01apos\x01void".
+// Ordem de validacao == oraculo: style, tag, attrs.
+!lh_open(html: string, pos: int): string {
+  n = html.length;
+  j = pos + 1;
+  while (j < n && html.charCodeAt(j) != 32 && html.charCodeAt(j) != 9 && html.charCodeAt(j) != 10 && html.charCodeAt(j) != 62 && html.charCodeAt(j) != 47){ j = j + 1 };
+  tag = lh_slice(html, pos + 1, j);
+  k = lh_tag_end(html, j);
+  ?(k < 0){ ^"LINT_REJ_TAG" };
+  tu = lh_upcase(tag);
+  ?(lh_is_wrap(tu) == 1){ ^lh_skip_at(k) };
+  region = lh_slice(html, j, k);
+  sraw = lh_attr_raw(region, "style");
+  sm = "";
+  ?(sraw.length > 0){
+    sm = lh_style_map(lh_slice(sraw, 1, sraw.length));
+    ?(starts_lit(sm, 0, "LINT_REJ") == 1){ ^sm };
+  };
+  craw = lh_attr_raw(region, "class");
+  cls = "";
+  ?(craw.length > 0){ cls = lh_slice(craw, 1, craw.length) };
+  lay = lh_lay_tag(tag, cls);
+  ?(lh_eq(lay, "?") == 1){ ^"LINT_REJ_TAG" };
+  rec = lh_attrs(region);
+  ?(starts_lit(rec, 0, "LINT_REJ") == 1){ ^rec };
+  sufix = lh_field(rec, 2);
+  selfclose = 0;
+  ?(k > j && html.charCodeAt(k - 1) == 47){ selfclose = 1 };
+  voidel = 0;
+  ?(selfclose == 1){ voidel = 1 };
+  ?(lh_eq(lay, "INPUT") == 1){ voidel = 1 };
+  ?(lh_eq(lay, "IMG") == 1){ voidel = 1 };
+  out = "OK";
+  out = out + lh_sep();
+  out = out + lay;
+  out = out + lh_sep();
+  out = out + sm;
+  out = out + lh_sep();
+  out = out + sufix;
+  out = out + lh_sep();
+  out = out + lh_num(k + 1);
+  out = out + lh_sep();
+  ?(voidel == 1){ out = out + "1" } : { out = out + "0" };
+  ^out;
+}
+
+!lh_skip_at(k: int): string {
+  out = "SKIP";
+  out = out + lh_sep();
+  out = out + lh_num(k + 1);
+  ^out;
+}
+
+// No com filhos: pos no '<' do open, depth p/ indent. Retorna LINT_REJ_* ou "OK\x01apos\x01linhas".
+!lh_node(html: string, pos: int, depth: int): string {
+  n = html.length;
+  ?(depth > 64){ ^"LINT_REJ_DEPTH" };
+  op = lh_open(html, pos);
+  ?(starts_lit(op, 0, "LINT_REJ") == 1){ ^op };
+  ?(starts_lit(op, 0, "SKIP") == 1){ ^op };
+  lay = lh_field(op, 1);
+  sm = lh_field(op, 2);
+  sufix = lh_field(op, 3);
+  i = lh_atoi(lh_field(op, 4));
+  voidel = lh_field(op, 5);
+  lhead = lh_indent(depth);
+  lhead = lhead + lay;
+  ltail = "";
+  ?(sm.length > 0){ ltail = ltail + " STYLE "; ltail = ltail + sm };
+  ?(sufix.length > 0){ ltail = ltail + " "; ltail = ltail + sufix };
+  nl = String.fromCharCode(10);
+  qt = String.fromCharCode(34);
+  ?(lh_eq(voidel, "1") == 1){
+    line = lhead;
+    line = line + ltail;
+    line = line + nl;
+    ^lh_okpos(i, line);
+  };
+  ltext = "";
+  hastext = 0;
+  kids = "";
+  while (i < n) {
+    ?(html.charCodeAt(i) != 60){
+      tx = i;
+      while (tx < n && html.charCodeAt(tx) != 60){ tx = tx + 1 };
+      txt = lh_deent(lh_trim(lh_slice(html, i, tx)));
+      ?(txt.length > 0){
+        ?(hastext == 1){ ^"LINT_REJ_MIXED" };
+        ?(txt.length > 500){ ^"LINT_REJ_TEXT" };
+        ltext = ltext + " ";
+        ltext = ltext + qt;
+        ltext = ltext + txt;
+        ltext = ltext + qt;
+        hastext = 1;
+      };
+      i = tx;
+      continue;
+    };
+    ?(starts_lit(html, i, "<!--") == 1){
+      j = lh_comment_end(html, i + 4);
+      ?(j < 0){ i = n; continue };
+      i = j;
+      continue;
+    };
+    ?(starts_lit(html, i, "<!") == 1){
+      j = lh_tag_end(html, i + 2);
+      ?(j < 0){ i = n; continue };
+      i = j + 1;
+      continue;
+    };
+    ?(starts_lit(html, i, "</") == 1){
+      j = lh_tag_end(html, i + 2);
+      ?(j < 0){ i = n; continue };
+      cn = lh_upcase(lh_trim(lh_slice(html, i + 2, j)));
+      ?(lh_is_wrap(cn) == 1){ i = j + 1; continue };
+      match = 0;
+      ?(lh_eq(cn, lay) == 1){ match = 1 };
+      ?(lh_eq(cn, "DIV") == 1 && (lh_eq(lay, "ROW") == 1 || lh_eq(lay, "COL") == 1 || lh_eq(lay, "DIV") == 1)){ match = 1 };
+      ?(match == 1){
+        line = lhead;
+        line = line + ltext;
+        line = line + ltail;
+        line = line + nl;
+        line = line + kids;
+        ^lh_okpos(j + 1, line);
+      };
+      i = j + 1;
+      continue;
+    };
+    sub = lh_node(html, i, depth + 1);
+    ?(starts_lit(sub, 0, "LINT_REJ") == 1){ ^sub };
+    ?(starts_lit(sub, 0, "SKIP") == 1){ i = lh_atoi(lh_field(sub, 1)); continue };
+    kids = kids + lh_field(sub, 2);
+    i = lh_atoi(lh_field(sub, 1));
+  };
+  ^"LINT_REJ_UNCLOSED";
+}
+
+!lh_okpos(apos: int, lines: string): string {
+  out = "OK";
+  out = out + lh_sep();
+  out = out + lh_num(apos);
+  out = out + lh_sep();
+  out = out + lines;
+  ^out;
+}
+
+// Entrada: html layout-subset. Saida: .lay canonico ou LINT_REJ_*.
+!lint_html(html: string): string {
+  ?(lh_tagword(html, "script") == 1){ ^"LINT_REJ_SCRIPT" };
+  ?(lh_tagword(html, "style") == 1){ ^"LINT_REJ_STYLE" };
+  nl = String.fromCharCode(10);
+  n = html.length;
+  i = 0;
+  hasroot = 0;
+  rootstyle = "";
+  roottext = 0;
+  rootvoid = 1;
+  rootclosed = 0;
+  rootlay = "";
+  depth = 0;
+  kids = "";
+  while (i < n) {
+    ?(html.charCodeAt(i) != 60){
+      tx = i;
+      while (tx < n && html.charCodeAt(tx) != 60){ tx = tx + 1 };
+      txt = lh_deent(lh_trim(lh_slice(html, i, tx)));
+      ?(txt.length > 0){
+        ?(hasroot == 0){ ^"LINT_REJ_OUTSIDE" };
+        ?(rootvoid == 1){ ^"LINT_REJ_OUTSIDE" };
+        ?(rootclosed == 1){ ^"LINT_REJ_OUTSIDE" };
+        ?(roottext == 1){ ^"LINT_REJ_MIXED" };
+        roottext = 1;
+      };
+      i = tx;
+      continue;
+    };
+    ?(starts_lit(html, i, "<!--") == 1){
+      j = lh_comment_end(html, i + 4);
+      ?(j < 0){ i = n; continue };
+      i = j;
+      continue;
+    };
+    ?(starts_lit(html, i, "<!") == 1){
+      j = lh_tag_end(html, i + 2);
+      ?(j < 0){ i = n; continue };
+      i = j + 1;
+      continue;
+    };
+    ?(starts_lit(html, i, "</") == 1){
+      j = lh_tag_end(html, i + 2);
+      ?(j < 0){ i = n; continue };
+      cn = lh_upcase(lh_trim(lh_slice(html, i + 2, j)));
+      ?(lh_is_wrap(cn) == 1){ i = j + 1; continue };
+      ?(depth == 0){
+        mroot = 0;
+        ?(lh_eq(cn, rootlay) == 1){ mroot = 1 };
+        ?(lh_eq(cn, "DIV") == 1 && (lh_eq(rootlay, "ROW") == 1 || lh_eq(rootlay, "COL") == 1 || lh_eq(rootlay, "DIV") == 1)){ mroot = 1 };
+        ?(hasroot == 1 && mroot == 1){ rootclosed = 1 };
+        i = j + 1;
+        continue;
+      };
+      ?(depth == 1){
+        mroot = 0;
+        ?(lh_eq(cn, rootlay) == 1){ mroot = 1 };
+        ?(lh_eq(cn, "DIV") == 1 && (lh_eq(rootlay, "ROW") == 1 || lh_eq(rootlay, "COL") == 1 || lh_eq(rootlay, "DIV") == 1)){ mroot = 1 };
+        ?(mroot == 1){ rootclosed = 1; depth = 0 };
+      };
+      i = j + 1;
+      continue;
+    };
+    op = lh_open(html, i);
+    ?(starts_lit(op, 0, "LINT_REJ") == 1){ ^op };
+    ?(starts_lit(op, 0, "SKIP") == 1){ i = lh_atoi(lh_field(op, 1)); continue };
+    ?(hasroot == 1 && depth == 0){ ^"LINT_REJ_ROOTS" };
+    ?(hasroot == 0){
+      hasroot = 1;
+      rootlay = lh_field(op, 1);
+      rootstyle = lh_field(op, 2);
+      ?(lh_eq(lh_field(op, 5), "1") == 1){ rootvoid = 1 } : { rootvoid = 0 };
+      ?(rootvoid == 0){ depth = 1 };
+      i = lh_atoi(lh_field(op, 4));
+      continue;
+    };
+    sub = lh_node(html, i, depth);
+    ?(starts_lit(sub, 0, "LINT_REJ") == 1){ ^sub };
+    kids = kids + lh_field(sub, 2);
+    i = lh_atoi(lh_field(sub, 1));
+  };
+  ?(hasroot == 0){ ^"LINT_REJ_EMPTY" };
+  ?(depth > 0){ ^"LINT_REJ_UNCLOSED" };
+  ?(rootvoid == 0 && rootclosed == 0){ ^"LINT_REJ_UNCLOSED" };
+  out = "@LAY:1.0";
+  out = out + nl;
+  out = out + "VIEW app";
+  out = out + nl;
+  ?(rootstyle.length > 0){
+    out = out + "STYLE ";
+    out = out + rootstyle;
+    out = out + nl;
+  };
+  out = out + kids;
+  out = out + "END";
+  out = out + nl;
+  ^out;
+}
+
+=ex{lint_html, lh_eq, lh_slice, lh_trim, lh_upcase, lh_lowcase, lh_num, lh_atoi, lh_deent, lh_style_map, lh_lay_tag, lh_attrs, lh_field, lh_indent, lh_open, lh_node}

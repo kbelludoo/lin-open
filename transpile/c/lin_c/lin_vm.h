@@ -85,6 +85,22 @@ typedef struct {
     size_t sp_at_ret;
 } VmExecResult;
 
+/* Per-frame storage moved off the native C stack to support small stack hosts */
+typedef struct {
+    int64_t locals[LIN_VM_MAX_LOCALS];
+    int64_t stack[LIN_VM_MAX_STACK];
+    int64_t pool[LIN_VM_MAX_ARRS][LIN_VM_MAX_ARR_LEN];
+    uint16_t pool_len[LIN_VM_MAX_ARRS];
+    size_t pool_used;
+} VmFrame;
+
+typedef struct {
+    VmFrame frames[LIN_VM_MAX_DEPTH + 1];
+} VmFrameStore;
+
+VmFrameStore *lin_vm_frames_alloc(void);
+void lin_vm_frames_free(VmFrameStore *s);
+
 /* Per-execution state shared by every frame, including OP_CALL children.
  * The module, regions and ABI context are borrowed; the caller owns them.
  * `steps` is shared across the complete call tree and `step_limit` is the
@@ -97,6 +113,7 @@ typedef struct {
     uint64_t step_limit;
     uint8_t profile;
     uint8_t abi_version;
+    VmFrameStore *frames;
 } LinVmContext;
 
 /* Zero-allocation substitute for Zig's `ArrayList(VmIns)`. See LIN_LOWER_CAP. */

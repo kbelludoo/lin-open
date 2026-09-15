@@ -12,6 +12,7 @@
 void parser_init(Parser *p, LinStr src) {
     p->src = src;
     p->pos = 0;
+    p->depth = 0;
     ast_arena_init(&p->arena);
 }
 
@@ -34,7 +35,9 @@ static uint8_t get_precedence(TokKind kind) {
     }
 }
 
-static LinErr parse_primary(Parser *p, uint16_t *out_node) {
+static LinErr parse_primary(Parser *p, uint16_t *out_node);
+
+static LinErr parse_primary_impl(Parser *p, uint16_t *out_node) {
     Token tok;
     lin_next_token(p->src.p, p->src.len, &p->pos, &tok);
     uint16_t idx;
@@ -124,6 +127,16 @@ static LinErr parse_primary(Parser *p, uint16_t *out_node) {
     default:
         return LIN_ERR_UNEXPECTED_PRIMARY;
     }
+}
+
+static LinErr parse_primary(Parser *p, uint16_t *out_node) {
+    if (p->depth > LIN_PARSER_MAX_DEPTH) {
+        return LIN_ERR_PARSE_TOO_DEEP;
+    }
+    p->depth += 1;
+    LinErr err = parse_primary_impl(p, out_node);
+    p->depth -= 1;
+    return err;
 }
 
 LinErr parse_expression(Parser *p, uint8_t min_prec, uint16_t *out_root) {

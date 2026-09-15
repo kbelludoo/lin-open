@@ -1,0 +1,46 @@
+@RULEL:PROVA_ORIGINAL_ETHEREUM_LIN:1.0.0
+~R{.p=paths .u=usage .r=rules .o=oracles .c=contracts}
+.r{
+  R0=ZERO_TRUST_INTERNAL_SCRIPTS;
+  R1=ONLY_OFFICIAL_INDUSTRY_TOOLS_FOR_VERIFICATION;
+  R2=BIT_EXACT_PARITY_AGAINST_CANONICAL_SOLIDITY_SOLC;
+  R3=ZERO_FRAUD_DISPUTABLE_ON_CHAIN;
+  R4=ONE_DIGEST_ONE_MEANING_RECOMPUTABLE;
+}
+
+.o{
+  oracle_rpc_cli="cast (Foundry / Paradigm, Rust-based official Ethereum CLI)"
+  oracle_evm_engine="forge test (solc 0.8.20 / revm Cancun EVM)"
+  oracle_canonical_lib="UniswapV2Library.sol (@uniswap/v2-periphery official repo)"
+  oracle_canonical_pair="UniswapV2Pair.sol (@uniswap/v2-core official repo)"
+  oracle_production_contract="UniswapV2Router02 on Ethereum Mainnet"
+}
+
+.c{
+  uniswap_v2_router02="0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
+  uniswap_v2_usdc_weth_pool="0xb4e16d0168e52d35cacd2c6185b44281ec28c9dc"
+  lin_receipt_verifier="contracts/LinReceiptVerifier.sol"
+  foundry_test_suite="test/forge-gas/test/Gas.t.sol"
+}
+
+.u{
+  # 1. Prova Externa ao Vivo na Ethereum Mainnet (No Real da Rede)
+  query_mainnet_reserves="cast call 0xb4e16d0168e52d35cacd2c6185b44281ec28c9dc 'getReserves()(uint112,uint112,uint32)' --rpc-url https://ethereum-rpc.publicnode.com"
+  query_mainnet_router_out="cast call 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D 'getAmountOut(uint256,uint256,uint256)(uint256)' 1000000 10016324931612 4089201265933885299007 --rpc-url https://ethereum-rpc.publicnode.com"
+
+  # 2. Prova Canonica de Compilacao e Execucao na EVM Oficial (Solc 0.8.20 / Forge)
+  run_forge_canonical_tests="PATH=\"$$HOME/.foundry/bin:$$PATH\" forge test --root test/forge-gas -vv"
+
+  # 3. Prova de Liquidacao em Massa (100.000 Swaps em GPU Fisica gfx1030)
+  run_mass_gpu_settlement="./examples/defi_settlement_proof/u256_opencl_host /tmp/swaps_100000_raw.bin"
+
+  # 4. Prova de Atestacao de Integridade Soberana (CI Gate)
+  run_ci_integrity_gate="make ci-gate"
+}
+
+.p{
+  step1_live_mainnet="Interrogar o contrato oficial UniswapV2Router02 e comprovar que 1 USDC no par real produz exatamente 407028853812571 wei WETH, identico a saida do Lin."
+  step2_solidity_compiler="Compilar CanonicalUniswapV2Library e testar paridade de getAmountOut e invariante k diretamente dentro do bytecode da EVM via Forge."
+  step3_onchain_dispute="Testar disputeFraudulentSwap provando que qualquer desvio de 1 wei em 100k swaps aciona cancelamento e slashing on-chain."
+  step4_sovereignty="Verificar consenso n-version C11/Zig e rejeicao de mutacoes adversariais via make ci-gate."
+}

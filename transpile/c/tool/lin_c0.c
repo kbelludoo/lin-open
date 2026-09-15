@@ -31,6 +31,7 @@
 #include "lin_linbc1.h"
 #include "lin_sha256.h"
 #include "lin_c0_gpu.h"
+#include "lin_c0_jit.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -841,6 +842,120 @@ static int cmd_roundtrip(C0Arena *a, int argc, char **argv) {
 }
 
 /* ------------------------------------------------------------------ */
+/* JIT (in-memory C11 compiler via libtcc)                            */
+/* ------------------------------------------------------------------ */
+
+static int cmd_jit(C0Arena *a, int argc, char **argv) {
+    const char *path;
+    char *src;
+    size_t len = 0;
+    VmModule *mod;
+    int64_t args[64];
+    size_t nargs = 0;
+    const char *fn_name = "main";
+
+    if (argc < 3) {
+        fprintf(stderr, "usage: lin_c0 jit <file.lin> [fn] [int args...]\n");
+        return 1;
+    }
+    path = argv[2];
+    src = read_file(path, &len);
+    if (!src) {
+        fprintf(stderr, "jit: cannot read %s\n", path);
+        return 1;
+    }
+    mod = c0_build(a, src, len);
+    if (!mod) {
+        fprintf(stderr, "jit: build failed for %s\n", path);
+        free(src);
+        return 1;
+    }
+    if (argc >= 4) fn_name = argv[3];
+    if (!parse_args(argc, argv, 4, args, 64, &nargs)) {
+        fprintf(stderr, "jit: bad integer argument\n");
+        free(src);
+        return 1;
+    }
+
+    LinJitResult jr;
+    if (!c0_jit_exec(mod, fn_name, args, nargs, &jr)) {
+        printf("@RULEL:LIN_JIT_RUN:1.0.0\n.error{ fn=\"%s\" reason=\"%s\" }\n",
+               fn_name, jr.err ? jr.err : "JIT_FAILED");
+        free(src);
+        return 1;
+    }
+
+    printf("@RULEL:LIN_JIT_RUN:1.0.0\n.result{ fn=\"%s\" value=%lld compile_ms=%.2f exec_us=%.2f }\n",
+           fn_name, (long long)jr.val, jr.compile_ms, jr.exec_us);
+    free(src);
+    return 0;
+}
+
+static int cmd_roundtrip_jit(C0Arena *a, int argc, char **argv) {
+    const char *path;
+    char *src;
+    size_t len = 0;
+    VmModule *mod;
+    int64_t args[64];
+    size_t nargs = 0;
+    const char *fn_name;
+
+    if (argc < 4) {
+        fprintf(stderr, "usage: lin_c0 roundtrip-jit <file.lin> <fn> [int args...]\n");
+        return 1;
+    }
+    path = argv[2];
+    fn_name = argv[3];
+    src = read_file(path, &len);
+    if (!src) {
+        fprintf(stderr, "roundtrip-jit: cannot read %s\n", path);
+        return 1;
+    }
+    mod = c0_build(a, src, len);
+    if (!mod) {
+        fprintf(stderr, "roundtrip-jit: build failed for %s\n", path);
+        free(src);
+        return 1;
+    }
+    if (!parse_args(argc, argv, 4, args, 64, &nargs)) {
+        fprintf(stderr, "roundtrip-jit: bad integer argument\n");
+        free(src);
+        return 1;
+    }
+
+    int ok = c0_jit_roundtrip(mod, fn_name, args, nargs);
+    free(src);
+    return ok ? 0 : 1;
+}
+
+static int cmd_jit_verify(C0Arena *a, int argc, char **argv) {
+    const char *path;
+    char *src;
+    size_t len = 0;
+    VmModule *mod;
+
+    if (argc < 3) {
+        fprintf(stderr, "usage: lin_c0 jit-verify <file.lin>\n");
+        return 1;
+    }
+    path = argv[2];
+    src = read_file(path, &len);
+    if (!src) {
+        fprintf(stderr, "jit-verify: cannot read %s\n", path);
+        return 1;
+    }
+    mod = c0_build(a, src, len);
+    if (!mod) {
+        fprintf(stderr, "jit-verify: build failed for %s\n", path);
+        free(src);
+        return 1;
+    }
+    int ok = c0_jit_verify_module(mod);
+    free(src);
+    return ok ? 0 : 1;
+}
+
+/* ------------------------------------------------------------------ */
 
 int main(int argc, char **argv) {
     C0Arena *a;
@@ -851,7 +966,8 @@ int main(int argc, char **argv) {
         fprintf(stderr,
                 "usage: lin_c0 --version | info <f.lin> | check <f.lin> | lint <f.lin> |\n"
                 "            vm <f.lin> [fn] [args] | receipt create|verify [args] |\n"
-                "            vmfull <f.lin> [fn] [args] | image <f.lin> [-o out] |\n"
+                "            jit <f.lin> [fn] [args] | roundtrip-jit <f.lin> <fn> [args] |\n"
+                "            jit-verify <f.lin> | vmfull <f.lin> [fn] [args] | image <f.lin> [-o out] |\n"
                 "            gpu-verify [f.lin] | run <img> <fn> [args] | roundtrip <f.lin> <fn> [args]\n");
         return 1;
     }
@@ -870,6 +986,9 @@ int main(int argc, char **argv) {
     else if (strcmp(cmd, "check") == 0) rc = cmd_check(a, argc, argv);
     else if (strcmp(cmd, "lint") == 0) rc = cmd_lint(argc, argv);
     else if (strcmp(cmd, "receipt") == 0) rc = cmd_receipt(a, argc, argv);
+    else if (strcmp(cmd, "jit") == 0) rc = cmd_jit(a, argc, argv);
+    else if (strcmp(cmd, "roundtrip-jit") == 0) rc = cmd_roundtrip_jit(a, argc, argv);
+    else if (strcmp(cmd, "jit-verify") == 0) rc = cmd_jit_verify(a, argc, argv);
     else if (strcmp(cmd, "gpu-verify") == 0) {
         const char *fpath = (argc >= 3) ? argv[2] : "examples/map_kernels.lin";
         rc = c0_gpu_verify(a, fpath);

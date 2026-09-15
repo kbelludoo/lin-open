@@ -1,10 +1,10 @@
-# LIN — Deterministic Scalar Systems Language, LinVM & Compute Receipts
+# LIN — Deterministic Scalar Systems Language, LinVM & Attested Execution Logs
 
-> **CLI version `2.0.0`** (Lineage: AIL → LIA → LIN). Zero-Trust & Zero-Simulations.
+> **CLI version `2.0.0`** (Lineage: AIL → LIA → LIN). Reproducible Computation & Tamper-Evident Attestation.
 
-**LIN** is a deterministic scalar/numeric procedural systems language with an embedded bytecode VM (`LinVM`), a heap-free flat AST arena, and cryptographic **compute receipts** that bind `(source hash, inputs, outputs, VM steps, stack depth)` into a single SHA-256 Merkle root.
+**LIN** is a deterministic scalar/numeric procedural systems language with an embedded bytecode VM (`LinVM`), a heap-free flat AST arena, and cryptographic **attested execution logs** (Merkle commitments) that bind `(source hash, inputs, outputs, VM steps, stack depth)` into a single SHA-256 Merkle root for tamper-evident logging and reproducible replay.
 
-It is purpose-built for verifiable numeric algorithms: cryptography, hashing, digital signal processing, zero-knowledge/rollup off-chain execution, and verified transpilation from C.
+It is purpose-built for reproducible numeric algorithms: cryptography, hashing, digital signal processing, off-chain co-processing with interactive dispute settlement, and verified transpilation from C.
 
 > **⚡ 60-Second Fast Verification (Zero Assumptions / Independent Oracle):**
 >
@@ -25,7 +25,11 @@ It is purpose-built for verifiable numeric algorithms: cryptography, hashing, di
 >    python3 tools/verify_gate_manifest.py
 >    ```
 
-> **Execution & Audit Boundary:** Execution core — AMM mathematics, invariants, gates, and self-hosted front-end — 100% in LIN, executed on LinVM/GPU. Production I/O and cryptographic Merkle roots run in the audited C11 host (TCB-809); Python/hashlib scripts exist strictly as cleanroom audit oracles, and every quoted figure maps directly to a reproducible shell command.
+> **Explicit Trust Model & Security Boundary:**
+> * **Tamper-Evidence vs. Computational Soundness:** A SHA-256 Merkle root provides **tamper-evident log integrity**, not computational soundness. It proves that source code, inputs, outputs, and trace metadata have not been modified after the record was minted. A malicious executor could emit a false output ($2 + 2 = 5$) and still construct a valid Merkle root. Verifying execution correctness requires either (a) independent re-execution via `--source`, or (b) an on-chain fraud dispute window.
+> * **Settlement Architecture:** Off-chain batch settlement operates under an **Optimistic Dispute Model** (`contracts/LinReceiptVerifier.sol`). Batches are anchored on L1 at minimal gas cost (70,133 gas), and any observer can challenge fraudulent swaps via `disputeFraudulentSwap` using Merkle inclusion proofs. LIN does not claim to be a zero-knowledge validity proof system (zk-SNARK/STARK).
+> * **TCB Accounting:** The author-written execution runtime core is **809 LOC** in C11 (`lin_vm.c`, `lin_linbc1.c`, `lin_sha256.c`, `lin_common.c`). The full operational trust boundary includes the host C compiler (GCC/Clang), standard library, operating system kernel, and hardware driver/firmware.
+> * **Trusting Trust & Diverse Double-Compiling:** The closed Fixed Point $C_0=C_1=C_2$ proves deterministic self-compilation closure. To mitigate Ken Thompson's *Trusting Trust* critique (1984), the Stage-0 Zig front-end is **preserved** as an independent audit witness for Diverse Double-Compiling (Wheeler, 2005).
 
 ---
 
@@ -35,23 +39,64 @@ All capabilities below are **fully verified without mock data or simulated infra
 
 | Capability | Status | Description |
 |---|:---:|---|
-| **Parse + Typecheck + Lint** | ✅ **PASS** | Strict scalar types, deterministic i64 wrap-around, 0 unhandled panics |
-| **C → LIN Transpiler (Safe Expansion)** | ✅ **PASS** | Supports scalar C, **Safe Array Lowering**, **Struct Flattening**, and **Bounded Loops** |
+| **Parse + Typecheck + Lint** | ✅ **PASS** | Strict scalar types, deterministic i64 wrap-around, 0 unhandled panics across test corpus |
+| **C → LIN Transpiler (Safe Expansion)** | ✅ **PASS** | Supports scalar C, **Safe Array Lowering**, **Struct Flattening**, and **Bounded Loops** (safety via structural restriction) |
 | **LinVM Bytecode Engine** | ✅ **PASS** | Stack-based deterministic virtual machine with gas limits and exact step counts |
-| **Compute Receipts (RULEL + JSON)** | ✅ **PASS** | Generates SHA-256 Merkle receipts validating `f(input) = output` |
-| **Independent Verification** | ✅ **PASS** | Zero-trust verification scripts in Python, Node.js, Bash+OpenSSL, and WebCrypto |
-| **LinVM0 Self-Hosting (V1 → V5)** | ✅ **PASS** | 100% Sovereign: front-end in pure LIN, closed Fixed Point $C_0=C_1=C_2$, native ELF64 emitter running on the Linux kernel, and LinVM Compiler 0 (`lin_c0`) independent of Zig |
-| **Cross-Platform Target** | ✅ **PASS** | Runs identically bit-for-bit on CPU (Host C11), Web (Wasm/JS), and GPU (OpenCL) |
-| **GPU Sovereign DeFi AMM** | ✅ **PASS** | **Deterministic AMM Co-processor** on AMD Radeon RX 6600 (Kernel: 1.7ms / 1.17M swaps/s; Wall: 218ms / 9.1k swaps/s). LIN OpenCL emitter proven in 4 classes; u256 AMM kernel executes via OpenCL C (direct LIN emission is grant Milestone 2). On-chain verifier (`contracts/LinReceiptVerifier.sol`) measured in Foundry at 70,133 gas — **13,258×–16,604× gas reduction vs L1**. |
+| **Attested Execution Logs (RULEL + JSON)** | ✅ **PASS** | Generates SHA-256 Merkle commitments binding `(source hash, inputs, outputs, VM steps, stack depth)` for tamper-evident logging and reproducible replay |
+| **Independent Log Verification** | ✅ **PASS** | Standalone log verification scripts in Python, Node.js, Bash+OpenSSL, and WebCrypto without the LIN compiler |
+| **LinVM0 Self-Hosting (V1 → V5)** | ✅ **PASS** | Front-end in pure LIN, closed Fixed Point $C_0=C_1=C_2$ (deterministic self-compilation closure), native ELF64 emitter running on the Linux kernel, and Compiler-0 (`lin_c0`) running independently on standard C11 |
+| **Cross-Platform Reproducibility** | ✅ **PASS** | Runs identically bit-for-bit across CPU (Host C11), Web (Wasm/JS), and GPU (OpenCL) |
+| **GPU AMM Co-processor** | ✅ **PASS** | **Deterministic AMM Co-processor** on AMD Radeon RX 6600 (Kernel execution: 1.7ms / 1.17M swaps/s peak; End-to-end wall-clock: 218ms / 9.1k swaps/s). On-chain anchor (`contracts/LinReceiptVerifier.sol`) measured in Foundry at 70,133 gas (~35.1 gas/swap amortized over 2,000 swaps; ~3.56× cheaper than Groth16 under an optimistic dispute model; 13,258×–16,604× when compared to full L1 EVM re-execution). |
 
-### Strict TCB Boundary
-* **Execution Runtime Core TCB:** **809 LOC** (`lin_vm.c`, `lin_linbc1.c`, `lin_sha256.c`, `lin_common.c`).
+### Strict Codebase Accounting
+* **Execution Runtime Core:** **809 LOC** (`lin_vm.c`, `lin_linbc1.c`, `lin_sha256.c`, `lin_common.c`).
 * **Compiler-0 C11 Front-End:** **1,764 LOC** (`transpile/c/lin_c/*.c`).
 * **Full Toolchain:** **6.6k LOC** (including CLI tools, linbc1 runner, receipt generators, and OpenCL emitter).
+* *Note on Trust Boundary:* The operational TCB includes the C compiler, OS kernel, and GPU driver/firmware.
 
 ---
 
-## 2. Real-World Transpilation & Golden Vectors
+## 2. Rationalist External Proof Status (What IS Proven vs. What is NOT Proven)
+
+LIN maintains an explicit rationalist proof harness (`test/prove_all_claims_external.py`), runnable with only Python 3 + `cc`:
+
+```bash
+make rationalist-proof
+# or standalone:
+python3 test/prove_all_claims_external.py --iterations 10000
+```
+
+### Verified Claims (Reproducible from this repository)
+
+| Claim ID | Focus Area | Status | Verification Detail |
+|---|---|:---:|---|
+| **C1** | Upstream Source Provenance | ✅ **PASS** | Pinned upstream files (`UniswapV2Library.sol`, `FullMath.sol`, `sha256.c`, `qoi.h`, `tinyexpr.c`, and experimental `BaseJumpRateModelV2.sol`) match published SHA-256 digests (`--fetch` re-downloads via GitHub API). |
+| **C2** | QOI Index-Hash Parity | ✅ **PASS** | `qoi_color_hash` verified exact across random vectors against `phoboslab/qoi` C specification. |
+| **C3** | TinyExpr Factorial Parity | ✅ **PASS** | `tinyexpr_fac(0..20)` matches Python `math.factorial` bit-for-bit; $n<0$ and $n>20$ fail-closed. |
+| **C4** | Independent Receipt Recomputation | ✅ **PASS** | Merkle root for $x \cdot x$ independently recomputed by Python `hashlib`; output+1 is rejected. This is tamper-evidence + re-execution of `lin_c_receipt`, not zk. The binary is built by `make -C transpile/c xver` (a missing binary is a build gap, not false math). |
+| **C5** | Compiler-0 No-Zig Self-Host | ✅ **PASS** | `verify_c0.sh` (16 checks) and `verify_c0_selfhost.sh` (30 checks) pass with no Zig toolchain required. |
+| **C6** | UniswapV2Library Math Parity | ✅ **PASS** | `get_amount_out`, `quote`, and `get_amount_in` match Python oracle over 1,000+ vectors; canonical vector $(10000, 50000, 100000) \to 16624$. |
+| **C7** | SipHash & xxHash Round Parity | ✅ **PASS** | `siphash_round` and `xxhash64_round` match Python reference oracle over 2,000 vectors via `vmfull`. |
+
+### Explicit Scope Limits (What is NOT Proven & Must Not Be Overclaimed)
+
+In compliance with rationalist auditing standards (`NP1`):
+
+| Claim | Honest Status | Why it is NOT proven |
+|---|:---:|---|
+| **"LIN saves $1.8T"** | ❌ **FALSE AS STATED** | Cumulative Uniswap trading volume was conflated with cost savings; no benchmark supports this figure. |
+| **"16,604× gas reduction as general proof"** | ⚠️ **CONDITIONAL BASELINE** | 16,599× is the ratio against re-executing all 2,000 swaps in unoptimized L1 EVM bytecode. Compared against zk-SNARK verifiers (e.g. Groth16 at ~125 gas/swap amortized), LIN's batch anchor (~35.1 gas/swap) is ~3.56× cheaper, but operates with an optimistic dispute model rather than cryptographic soundness. |
+| **"1.17M swaps/s wall-clock throughput"** | ⚠️ **PEAK KERNEL ONLY** | 1.17M swaps/s reflects 1.7 ms pure GPU compute on AMD RX 6600. End-to-end wall-clock throughput is 9,100 swaps/s (218 ms) due to PCIe transfer and driver overhead. A single CPU core running u256 delivers ~300,000 swaps/s. |
+| **"Zero-Trust without execution"** | ❌ **NOT SOUND** | Merkle receipts prove data integrity (tamper-evidence), not execution validity. Soundness requires re-execution or an active dispute game. |
+| **"LIN is faster than LLVM/C/Rust"** | ❌ **NOT PROVEN** | No general compiler benchmark against LLVM -O3 exists in this repository. A SipHash ~20.8× figure, when quoted, is compile-turnaround on one host. |
+| **"Full OpenSSL executes in LinVM"** | ❌ **NOT PROVEN** | OpenSSL `sha256.c` is pinned for provenance only; full OpenSSL is not transpiled or executed. |
+| **"Full Uniswap protocol is replaced"** | ❌ **NOT PROVEN** | Only the pure scalar arithmetic functions are transpiled and verified; state storage, ERC-20 calls, and EVM reentrancy are out of scope. |
+| **"Compound cToken / uint256 mainnet parity"** | ❌ **NOT PROVEN** | The JumpRate clone is experimental uint64-scale: explicit IRM arguments and 128-bit `(a*b)/d`, not Solidity uint256. |
+| **"Merkle receipts are zk / computationally sound"** | ❌ **NOT PROVEN** | C4 recomputes a SHA-256 root and rejects a tampered output. That is tamper-evidence plus re-execution, not a SNARK. |
+
+---
+
+## 3. Real-World Transpilation & Golden Vectors
 
 LIN is tested against production-grade C kernels with **100% bit-exact parity** against GCC/Clang:
 
@@ -64,60 +109,60 @@ LIN is tested against production-grade C kernels with **100% bit-exact parity** 
 
 ---
 
-## 3. C → LIN Transpiler: Fail-Safe Growth Model
+## 4. C → LIN Transpiler: Safety via Subset Restriction
 
-To safely transpile larger C codebases without introducing memory vulnerabilities:
+Rather than claiming general memory safety for arbitrary C, LIN enforces memory safety through strict structural restrictions:
 
-1. **Safe Array Lowering:** Fixed-size buffers (`uint8_t buf[64]`) map to bounded linear memory regions, eliminating raw pointers (`void*`) and buffer overflows.
-2. **Struct Flattening:** Composite structures (`struct Point { int x; int y; };`) decompose into scalar 64-bit words without heap allocation.
-3. **Bounded Loops & Gas Limits:** `for` and `while` loops receive strict iteration bounds (`[BOUNDED_LOOP: limit=N]`) to prevent infinite loops and denial-of-service vectors.
-4. **Golden Vector Regression:** Every transpilation feature requires bit-exact assertion against native C execution.
-
----
-
-## 4. Commercial Value & Enterprise Use Cases
-
-| Sector | Industry Problem | The LIN Solution | Tangible Commercial Benefit |
-|---|---|---|---|
-| **Cybersecurity & Compliance** | Memory corruption (*Buffer Overflows*, Undefined Behavior) in legacy C libraries. | Transpilation to mathematically verified, memory-safe LIN models. | **Up to 80% reduction in security audit turnaround.** |
-| **Web3 & Rollups (L2)** | Extreme gas costs to re-execute complex computations on EVM/L1. | Compute off-chain in LinVM; verify lightweight SHA-256 Merkle Receipts on-chain. | **~3,200× to 4,900× cheaper off-chain audit via receipts vs re-execution; 13,258×–16,604× on-chain gas reduction.** |
-| **Verifiable AI Inference** | Lack of tamper-proof proof for cloud ML inferences and model weights. | Transpiled matrix/convolution kernels generate SHA-256 integrity receipts. | **Zero-trust auditability for regulated AI & FinTech.** |
-| **Universal Portability** | High cost of maintaining separate codebases for CPU, Web, and GPU. | Single `.lin` source runs on Host C11, Browser (Wasm), and GPU (OpenCL). | **1 single codebase for 3 deployment targets.** |
+1. **Safe Array Lowering:** Fixed-size buffers (`uint8_t buf[64]`) map to bounded linear memory regions, eliminating raw pointers (`void*`) and pointer arithmetic.
+2. **Struct Flattening:** Composite structures (`struct Point { int x; int y; };`) decompose into scalar 64-bit words without dynamic heap allocation.
+3. **Bounded Loops & Gas Limits:** `for` and `while` loops receive strict iteration bounds (`[BOUNDED_LOOP: limit=N]`) to prevent non-terminating execution and denial-of-service.
+4. **Golden Vector Regression:** Every transpiled feature requires bit-exact differential testing against native C execution.
 
 ---
 
-## 5. Why Not zkVMs (RISC Zero, SP1, Jolt)?
+## 5. Measured Engineering Characteristics
 
-A standard question from technical reviewers is: *"Why develop a deterministic co-processor with Merkle compute receipts instead of writing Rust inside RISC Zero or SP1?"*
-
-| Dimension | General zkVMs (RISC Zero, SP1, Jolt) | LIN Co-processor & Compute Receipts |
+| Capability | Engineering Mechanism | Measured Metric |
 |---|---|---|
-| **Prover Computational Overhead** | Massive ($10,000\times$ to $100,000\times$ arithmetization slowdown). Proving 2,000 swaps requires high-end server GPUs, gigabytes of RAM, and minutes of prover time. | **Near-zero overhead:** Pure physical OpenCL kernel execution takes **1.7 ms on a commodity consumer GPU** (AMD RX 6600, 28 CUs). |
-| **On-Chain Verifier Gas** | Complex pairing cryptography or recursive SNARK verifiers (~250k–400k gas for Groth16/Plonk verifiers). | **70,133 gas** (`settleBatch` root anchor) and **87,831 gas** (`settleBatchWithInclusionProof` spot check). |
-| **Verifier Complexity & TCB** | Requires trusting large circuit compilers, cryptographic proving engines, and polynomial constraint libraries. | **Zero-dependency verification** via standard NIST SHA-256 (`hashlib`, WebCrypto, or C standard library) in **< 10 µs**. |
-| **Execution Model** | Zero-knowledge proof of arbitrary execution trace. | **Fail-closed deterministic co-processing:** bit-exact numerical invariants ($x \cdot y \ge k$) bound to canonical binary receipts. |
-
-LIN does **not** claim to be a zero-knowledge proof system. It is an ultra-fast, fail-closed deterministic co-processor designed for verifiable batch settlement, audit reconciliation, and instant client-side verification at commodity hardware speeds.
+| **Deterministic Portability** | Pure scalar bytecode execution across targets | 100% bit-exact agreement across CPU (C11), Web (Wasm), and GPU (OpenCL). |
+| **Optimistic L1 Settlement** | On-chain batch root anchoring + spot checks | **70,133 gas** per 2,000-swap batch (~35.1 gas/swap) on Ethereum L1. |
+| **Interactive Fraud Dispute** | On-chain invariant verification (`contracts/LinReceiptVerifier.sol`) | Any observer can challenge a fraudulent swap in a batch via Merkle inclusion proof (`disputeFraudulentSwap`). |
+| **Client-Side Verification** | NIST FIPS 180-4 SHA-256 Merkle recomputation | Verification in **< 10 µs** locally in Python, Bash, or WebCrypto (0 network calls). |
 
 ---
 
-## 6. Self-Hosting Roadmap (V1 → V5: Zero-Zig)
+## 6. Architecture Trade-offs: Deterministic Co-Processor vs. zkVMs
+
+A common question is how LIN compares to general zkVMs (RISC Zero, SP1, Jolt):
+
+| Dimension | General zkVMs (RISC Zero, SP1, Jolt) | LIN Co-processor & Attested Logs |
+|---|---|---|
+| **Prover Computational Overhead** | Significant ($10,000\times$ to $100,000\times$ arithmetization overhead). Requires high-end server GPUs and large RAM. | **Near-zero prover overhead:** Runs as physical native/GPU code. 2,000 swaps take **1.7 ms kernel time** on AMD RX 6600. |
+| **Security / Soundness Model** | **Cryptographic Validity Proof:** False execution cannot produce a valid proof, without trusting the prover. | **Optimistic Dispute Model:** Prover is trusted to emit correct roots; soundness relies on verifier re-execution or an on-chain dispute window (`disputeFraudulentSwap`). |
+| **On-Chain Verifier Gas** | Pairing cryptography / SNARK verifiers (~250k–400k gas, ~125 gas/swap amortized over 2k swaps). | **70,133 gas** batch anchor (~35.1 gas/swap amortized over 2k swaps; ~3.56× cheaper than Groth16). |
+| **Verifier Complexity & TCB** | Large circuit compilers, polynomial commitment schemes, and arithmetic gate libraries. | Minimal NIST SHA-256 Merkle check (`hashlib`, WebCrypto, or standard C library) in **< 10 µs**. |
+
+LIN does **not** claim to be a zero-knowledge proof system. It is a deterministic, fail-closed co-processor designed for verifiable batch settlement, audit reconciliation, and instant client-side replay.
+
+---
+
+## 7. Self-Hosting Roadmap & Diverse Double-Compiling
 
 ```
-[V1: Host C11] ──► [V2: Front-End in LIN] ──► [V3: LINBC1 Emitter] ──► [V4: Fixed Point C0=C1] ──► [V5: Zero-Zig]
-  C11                 Lexer + Lowerer           Binary Serializer         Self-compilation with         Zig retirement
-  deterministic      in .lin code              in pure LIN               identical Merkle              (TCB ≤ 1,500 LOC)
+[V1: Host C11] ──► [V2: Front-End in LIN] ──► [V3: LINBC1 Emitter] ──► [V4: Fixed Point C0=C1=C2] ──► [V5: Sovereign C11 + ELF64]
+  C11                 Lexer + Lowerer           Binary Serializer         Self-compilation with               Native Linux ELF64 emitter;
+  deterministic      in .lin code              in pure LIN               identical folds                     Stage-0 Zig preserved for DDC
 ```
 
 1. **V1 (Host C11 Native):** ✅ Deterministic C11 runtime in `transpile/c/` for isolated execution (29/29 expressions, 17/17 edge cases, 33/33 LINBC1).
 2. **V2 (Front-End in LIN + C11 host):** ✅ Lexer + Evaluator + Lowerer written in LIN and the `lin_c0` host that compiles/executes `.lin` without Zig (`make c0-gate`, `make c0-selfhost-gate`, `make test-c0-full`).
 3. **V3 (LINBC1 Emitter):** ✅ Complete binary serializer generating `.linbc1` bytecode images in pure LIN (`src/linvm0_compiler/lin_compiler0_unified.lin`).
 4. **V4 (Fixed Point $C_0=C_1=C_2$):** ✅ Closed! The unified compiler compiles itself inside LinVM producing deterministic images and identical folds (`test/verify_fixed_point_c0_c1_c2.sh`).
-5. **V5 (Definitive Zero-Zig & Native ELF64 Emission):** ✅ Sovereign execution by default (`make all` → `make test-lin-sovereign`), complete port of the 6 reference repositories (QOI, TinyExpr, Uniswap, SipHash) with 100% parity against the C oracles, and a native ELF64 emitter (`src/lin_elf_emitter.lin`) that executes directly on the Linux kernel without libc.
+5. **V5 (Sovereignty + Diverse Double-Compiling):** ✅ Sovereign execution by default (`make all` → `make test-lin-sovereign`), complete port of reference repositories (QOI, TinyExpr, Uniswap, SipHash), and a native ELF64 emitter (`src/lin_elf_emitter.lin`) that executes directly on the Linux kernel without libc. **Crucially, Stage-0 Zig is retained and frozen** as an independent Diverse Double-Compiling (DDC) verification witness (Wheeler, 2005) to continuously audit against trusting-trust anomalies (Thompson, 1984).
 
 ---
 
-## 7. Building & Running
+## 8. Building & Running
 
 ### Full Sovereignty (No Zig — Default)
 **No Zig compiler is required.** The default ecosystem builds and tests through LinVM / Compiler 0 (`cc`, standard C11):
@@ -147,18 +192,17 @@ make verify-gpu
 # Honest DeFi AMM co-processing benchmark (Kernel vs Wall-clock)
 make benchmark-uniswap
 
-# Solidity L1 verifier smart contract (invariant k + Merkle + LCR2)
+# Solidity L1 verifier smart contract (invariant k + Merkle + LCR2 + dispute)
 make verify-contracts
 ```
 
-### Legacy Bootstrap (Stage-0 Zig, optional/frozen)
-- The original Stage-0 compiler in `compiler/lin.zig` is kept as a frozen historical bootstrap (`R2`).
-- To build the original Stage-0 with Zig 0.13.0: `zig build -Doptimize=ReleaseFast`.
+### Independent Diverse Double-Compiling Audit (Stage-0 Zig)
+- The Stage-0 compiler in `compiler/lin.zig` is maintained as a frozen independent bootstrap and DDC audit witness (`R2`).
+- To build Stage-0 with Zig 0.13.0: `zig build -Doptimize=ReleaseFast`.
 
-### Create and Verify a Compute Receipt
+### Create and Verify an Attested Execution Log
 
-No-Zig path (Compiler-0 C11 host; the Merkle root is independently recomputed
-by the Python rationalist oracle):
+No-Zig path (Compiler-0 C11 host; the Merkle root is independently recomputed by Python stdlib):
 
 ```bash
 make -C transpile/c all
@@ -179,11 +223,7 @@ zig-out/bin/lin_native receipt verify --receipt receipt.rulel
 
 ### Rationalist external proof (no Zig, `cc` + Python only)
 
-The repository ships a conservative, externally reproducible proof harness. It
-pins/fetches real GitHub upstream sources, compares selected LIN modules against
-independent Python/C oracles, recomputes the Merkle receipt without the LIN
-runtime, and explicitly reports what is **not** proven (default `vm` runs pure
-Uniswap division, shifts require `vmfull`, and protocol security is isolated in NP1).
+The repository ships a conservative, externally reproducible proof harness. It pins/fetches real GitHub upstream sources, compares selected LIN modules against independent Python/C oracles, recomputes the Merkle receipt without the LIN runtime, and explicitly reports what is **not** proven (default `vm` runs pure Uniswap division, shifts require `vmfull`, and protocol security is isolated in NP1).
 
 ```bash
 make -C transpile/c all
@@ -220,7 +260,7 @@ python3 lin_verify.py all --iterations 10000
 
 ---
 
-## 8. Repository Layout
+## 9. Repository Layout
 
 ```
 ├── .github/               # CI workflows: ci.yml, lin_gate.yml, m1-ethereum-tx.yml
@@ -244,3 +284,4 @@ python3 lin_verify.py all --iterations 10000
 ## License
 
 MIT — See [LICENSE](LICENSE.rulel) for terms.
+
