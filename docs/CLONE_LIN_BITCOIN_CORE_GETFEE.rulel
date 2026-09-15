@@ -1,0 +1,24 @@
+@RULEL:CLONE_LIN_BITCOIN_CORE_GETFEE:1.0.0
+@TITLE="Results-only index for the Bitcoin Core GetFee clone-lin"
+@DATE="2026-09-15"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-bitcoin-core-getfee"
+
+~R{.w=where .x=exact .n=not}
+
+.w{
+  kernel="src/lin_bitcoin_core_getfee.lin"
+  event="docs/events/EVENT_BITCOIN_CORE_GETFEE_CLONE_LIN.rulel"
+  harness="python3 test/prove_bitcoin_core_getfee_external.py"
+  results_dir="examples/bitcoin_core_getfee/"
+  clone_lin="https://github.com/kbelludoo/clone-lin-bitcoin-core-getfee"
+}
+
+.x{
+  claim="Compiler 0 (C11 lin_c0) + gcc oracle + Python agree on integer GetFee and on the vsize-vs-weight gap"
+  core_ieee="wallet-scale IEEE ceil matches integer ceil (honest: not a double-bug at 0..4000 sat/kvB x 0..400 vB)"
+  gap="381 wu / 864 sat/kwu: 332 vs 330 sat (2 sat); 100 sat/vB: 9600 vs 9525 sat (75 sat)"
+}
+
+.n{
+  not="do not vendor bitcoind; fixtures are pins for hashing"
+}

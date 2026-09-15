@@ -1,0 +1,168 @@
+{
+  "schema": "LIN_BITCOIN_CORE_GETFEE_EVIDENCE_1.0",
+  "class": "EXPERIMENTAL",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned bitcoin_v27_1_feerate.cpp sha256 matches",
+      "note": ""
+    },
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned bitcoin_v27_1_amount.h sha256 matches",
+      "note": ""
+    },
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned bitcoin_v27_1_consensus.h sha256 matches",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git checkout of bitcoin/bitcoin v27.1 matches fixtures",
+      "note": "src/policy/feerate.cpp blob=eb0cba5c67a406ea9d2a3500e6be90b2f2f21b96; src/consensus/amount.h blob=f0eb4e0723c3159153c655fae17cb252102cbddb; src/consensus/consensus.h blob=384f70bc104eec7c31b8e451c70e75083352d573"
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 integer gate=1 and IEEE ceil == integer on wallet-scale grid",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_bitcoin_core_getfee.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "btc_getfee_gate == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "10/10 vectors: C11 integer == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "DOUBLE-SAME-VB",
+      "status": "PASS",
+      "description": "Core IEEE ceil(3456*96/1000.0) == integer ceil == 332 on this vector",
+      "note": ""
+    },
+    {
+      "id": "WEIGHT-GAP",
+      "status": "PASS",
+      "description": "381 wu @ 864 sat/kwu: Core vsize path 332 sat vs weight-native 330 sat (gap=2)",
+      "note": ""
+    },
+    {
+      "id": "HIGH-FEE-GAP",
+      "status": "PASS",
+      "description": "381 wu @ 100 sat/vB: Core 9600 sat vs weight-native 9525 sat (gap=75)",
+      "note": "policy rounding, not a consensus fork"
+    },
+    {
+      "id": "CTOR-TRUNC",
+      "status": "PASS",
+      "description": "CFeeRate constructor: 1 sat / 2000 vB truncates to 0 sat/kvB (not invertible with GetFee)",
+      "note": ""
+    },
+    {
+      "id": "LINBC1",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip source vs LINBC1 image CONSENSUS on gate",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "REJ-CORE-GETFEE",
+      "status": "PASS",
+      "description": "lin_from_c v2 mirror rejects Core GetFee after comment-strip (std::ceil / 1000.0)",
+      "note": "sig='(uint32_t num_bytes)' reason=REJ_C_FLOAT"
+    },
+    {
+      "id": "NO-DOUBLE-TOKEN",
+      "status": "PASS",
+      "description": "comment-stripped GetFee body has no 'double' token \u2014 v1 transpiler would have accepted it",
+      "note": ""
+    },
+    {
+      "id": "INT-C-CLEAN",
+      "status": "PASS",
+      "description": "bitcoin_getfee_integer.c has no ceil(/double/:: (transpilable subset)",
+      "note": ""
+    },
+    {
+      "id": "TR-V2",
+      "status": "PASS",
+      "description": "lin_from_c v2: ceil/floor/round/trunc + C++ ::/static_cast reject, LL suffix strip, if/else emit",
+      "note": ""
+    },
+    {
+      "id": "C0-STRING-HONEST",
+      "status": "SKIP",
+      "description": "C0 integer VM cannot execute string transpilers; rejection proved by source pin + Python mirror",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/bitcoin/bitcoin",
+    "tag": "v27.1",
+    "commit": "1088a98f5aad080cc6cca2da174f206509fcda6c",
+    "license": "MIT",
+    "files": {
+      "bitcoin_v27_1_feerate.cpp": {
+        "rel": "src/policy/feerate.cpp",
+        "sha256": "dcee0d3c510936032addb0735dfb1e5389dcd4f8cf31e6867b94e2e14c6cb561",
+        "blob": "eb0cba5c67a406ea9d2a3500e6be90b2f2f21b96"
+      },
+      "bitcoin_v27_1_amount.h": {
+        "rel": "src/consensus/amount.h",
+        "sha256": "cb7bd951877f3fea5a0c280d4bb907a8403437add81e3d5b898879b78fdc877e",
+        "blob": "f0eb4e0723c3159153c655fae17cb252102cbddb"
+      },
+      "bitcoin_v27_1_consensus.h": {
+        "rel": "src/consensus/consensus.h",
+        "sha256": "8190d21007fa10727e54a4cb75355deeb1c30a0c6984986e93cba87564772a61",
+        "blob": "384f70bc104eec7c31b8e451c70e75083352d573"
+      }
+    }
+  },
+  "lin_clone": "src/lin_bitcoin_core_getfee.lin",
+  "integer_c": "test/fixtures/external_proof/bitcoin_getfee_integer.c",
+  "c11_oracle": "test/oracles/bitcoin_core_getfee_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "vectors": {
+    "wu381_sat_kwu864_core_vsize_sat": 332,
+    "wu381_sat_kwu864_weight_native_sat": 330,
+    "gap_sat": 2,
+    "wu381_100sat_vb_core_sat": 9600,
+    "wu381_100sat_vb_native_sat": 9525,
+    "gap_100sat_vb": 75
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-bitcoin-core-getfee",
+  "not_claimed": [
+    "LIN replaces Bitcoin Core",
+    "consensus bug",
+    "IEEE vs integer disagreement on wallet-scale rates",
+    "dollar/TVL savings"
+  ]
+}
