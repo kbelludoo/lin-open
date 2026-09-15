@@ -1,7 +1,7 @@
 @RULEL:CLAUDE:1.4.0
 ~R{.p=paths .u=usage .r=rules .f=forbid .a=allow .h=hashes}
 .r{R0=ALWAYS_WRITE_IN_LIN(.lin)_OR_RULEL(.rulel);R1=ZERO_NEW_ZIG_FILES;R2=STAGE0_ZIG_FROZEN_BOOTSTRAP_ONLY}
-.f{NEW_ZIG_FILES}
+.f{NEW_ZIG_FILES bypass crossmodel}
 .a{code=.lin rules=.rulel}
 .p{
   compiler_0="compiler/lin.zig"

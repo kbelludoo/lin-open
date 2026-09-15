@@ -1,0 +1,51 @@
+@STORE_SPEC{version=1 status=pinned purpose=contrato_formal_da_store_nativa}
+~S{.magic=STRW .ver=1 .page=4096 .hash=SHA256-FIPS180-4 .lang=C11}
+// STORE nativa: durabilidade + Merkle REAL. Substitui o modelo de polinomio
+// ingenuo de src/lin_binary_merkle_provenance.lin (tag_id*104729+..., sem
+// compromisso criptografico) por SHA-256 auditavel em cada camada.
+// periodicamente. Unico primitivo hash: SHA-256 (sem BLAKE3 no P0: segundo
+// TCB sem necessidade). LIN original intocado (zero arquivos modificados).
+
+.wal_file="store.wal"
+.wal_header={ magic="STRW"(4B) ver=u16LE(1) page=u32LE(4096) reserved=0(2B) }
+.frame={
+  frame_len=u32LE(bytes apos este campo),
+  op=u8(1=PUT,2=DEL),
+  key_len=u16LE, val_len=u32LE(0 se DEL),
+  key=bytes, val=bytes,
+  sum=SHA-256(op||key_len||val_len||key||val)(32B crus)
+}
+.commit=append(frame)+fsync(fd) [fsync por commit no P0: durabilidade real,
+  IOPS medidos e reportados; group-commit e follow-up, nao promessa]
+.checkpoint_file="store.chk"
+.checkpoint={ magic="STRCHK"(6B) ver=u16LE(1) frames=u64LE root=32B sum=SHA-256(sobre campos anteriores) }
+.checkpoint_order=[1 fsync WAL][2 write+fsync checkpoint][3 segue escrita]
+.checkpoint_stale=se checkpoint.frames > frames_validos_no_WAL: checkpoint IGNORADO
+  (checkpoint nunca anda a frente do log; fail-closed para o WAL)
+.recovery=[
+  1 ler WAL do inicio; a cada frame: short-read ou sum invalido => TRUNCA tail,
+  2 replay do prefixo valido p/ memtable (PUT sobrescreve, DEL remove),
+  3 recompoe Merkle, compara com checkpoint se valido (divergencia => REJEITA),
+  4 nenhum estado fantasma: o que nao replayou nao existe
+]
+.merkle_leaves=chaves ORDENADAS (byte-wise); leaf=SHA-256(0x00||key_len u16LE||key||val_len u32LE||val)
+.merkle_parent=SHA-256(0x01||left||right)
+.merkle_odd=duplica ultimo (estilo Bitcoin, documentado, nao promovido)
+.merkle_empty=SHA-256("STR_EMPTY_v1")
+.external_verify=qualquer SHA-256 padrao (Python hashlib, OpenSSL, Go) recompoe a raiz
+  a partir do WAL; gate exige igualdade bit-a-bit com a raiz da STORE
+.limits={ key<=1024B val<=1MiB wal<=1GiB(após: checkpoint+rotacao obrigatoria),
+  single_process(flock exclusivo), page=4096, pool_limitado }
+.tests=[
+  golden vetores fixos kvs->root (C vs Python, bit-identico),
+  truncamento em TODA fronteira (header/corpo/checksum de cada frame),
+  bit-flip unitario em cada regiao,
+  torn-write (frame parcial no tail),
+  checkpoint-stale (checkpoint a frente do WAL => ignorado),
+  reopen idempotente (fecha/abre sem escrita => mesma raiz),
+  fsync real (nao O_SYNC simulado, nao mock)
+]
+.nonces=SEM nonce por folha no P0 (separacao leaf/node por prefixo basta contra
+  second-preimage; nonce so com ameaca de unlinkability declarada)
+.out_of_scope=[concorrencia multi-processo, compressao, snapshot incremental,
+  group-commit, replicacao; tudo follow-up com gate proprio]

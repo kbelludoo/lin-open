@@ -1,0 +1,329 @@
+@LIN:L1c:0.2
+@LIN_FROM_PY{version=1 purpose=transpile_pack_subset_python_to_linp emits=LINP}
+// Transpilador da irma linp escrito EM LIN (espelho de lin_from_js.lin).
+// Subset congelado (igual ao oraculo Python transpile_py_to_linp.py):
+// apenas job("nome") e pack("arq"[, algo="deflate|gzip|brotli"][, chunk=N]),
+// uma chamada por linha; # comenta; resto rejeita.
+// P0: exatamente 1 job e 1 pack. Saida canonica .linp byte-estavel.
+// Fora do subset: sentinela LINP_REJ_* (fail-closed total).
+// Autocontido: auxiliares lp_* definidos aqui (zero deps externas).
+
+!lp_eq(a: string, b: string): int {
+  ?(a.length != b.length){ ^0 };
+  ?(starts_lit(a, 0, b) == 1){ ^1 };
+  ^0;
+}
+
+!lp_slice(s: string, a: int, b: int): string {
+  out = "";
+  i = a;
+  ?(i < 0){ i = 0 };
+  while (i < b && i < s.length) {
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!lp_trim(s: string): string {
+  n = s.length;
+  a = 0;
+  while (a < n && (s.charCodeAt(a) == 32 || s.charCodeAt(a) == 9 || s.charCodeAt(a) == 10 || s.charCodeAt(a) == 13)){ a = a + 1 };
+  b = n;
+  while (b > a && (s.charCodeAt(b - 1) == 32 || s.charCodeAt(b - 1) == 9 || s.charCodeAt(b - 1) == 10 || s.charCodeAt(b - 1) == 13)){ b = b - 1 };
+  ^lp_slice(s, a, b);
+}
+
+!lp_skip(s: string, i: int): int {
+  n = s.length;
+  while (i < n && (s.charCodeAt(i) == 32 || s.charCodeAt(i) == 9 || s.charCodeAt(i) == 10 || s.charCodeAt(i) == 13)){ i = i + 1 };
+  ^i;
+}
+
+!lp_atoi(s: string): int {
+  v = 0;
+  i = 0;
+  while (i < s.length && s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) {
+    v = v * 10 + (s.charCodeAt(i) - 48);
+    i = i + 1;
+  };
+  ^v;
+}
+
+!lp_isnum(s: string): int {
+  ?(s.length == 0){ ^0 };
+  i = 0;
+  while (i < s.length) {
+    ?(s.charCodeAt(i) < 48 || s.charCodeAt(i) > 57){ ^0 };
+    i = i + 1;
+  };
+  ^1;
+}
+
+// Le string "..." em p (p no abre-aspas). Retorna "\x01"+conteudo ou "" se malformada.
+!lp_qstr(s: string, p: int): string {
+  n = s.length;
+  ?(p >= n || s.charCodeAt(p) != 34){ ^"" };
+  st = p + 1;
+  q = st;
+  while (q < n && s.charCodeAt(q) != 34){ q = q + 1 };
+  ?(q >= n){ ^"" };
+  out = String.fromCharCode(1);
+  out = out + lp_slice(s, st, q);
+  out = out + String.fromCharCode(1);
+  out = out + lp_num(q + 1);
+  ^out;
+}
+
+!lp_num(v: int): string {
+  ?(v <= 0){ ^"0" };
+  out = "";
+  x = v;
+  started = 0;
+  p = 1000000000;
+  while (p >= 1) {
+    d = 0;
+    y = x;
+    while (y >= p){ y = y - p; d = d + 1 };
+    x = y;
+    ?(d > 0 || started == 1){
+      out = out + String.fromCharCode(48 + d);
+      started = 1;
+    };
+    ?(p == 1000000000){ p = 100000000 }
+    : (p == 100000000){ p = 10000000 }
+    : (p == 10000000){ p = 1000000 }
+    : (p == 1000000){ p = 100000 }
+    : (p == 100000){ p = 10000 }
+    : (p == 10000){ p = 1000 }
+    : (p == 1000){ p = 100 }
+    : (p == 100){ p = 10 }
+    : (p == 10){ p = 1 }
+    : { p = 0 };
+  };
+  ^out;
+}
+
+// Corpo de job("...") ja validado o prefixo; i no abre-aspas.
+!lp_job_arg(s: string, i: int, n: int): string {
+  q = lp_qstr(s, i);
+  ?(q.length == 0){ ^"LINP_REJ_SYNTAX" };
+  nm = lp_mid(q);
+  nx = lp_after(q);
+  nx = lp_skip(s, nx);
+  ?(nx >= n || s.charCodeAt(nx) != 41){ ^"LINP_REJ_SYNTAX" };
+  nx = lp_skip(s, nx + 1);
+  ?(nx < n){ ^"LINP_REJ_SYNTAX" };
+  ?(nm.length == 0){ ^"LINP_REJ_JOB" };
+  ^nm;
+}
+
+// Conteudo entre os \x01 de lp_qstr.
+!lp_mid(q: string): string {
+  i = 1;
+  j = 1;
+  while (j < q.length && q.charCodeAt(j) != 1){ j = j + 1 };
+  ^lp_slice(q, i, j);
+}
+
+// Posicao (int) apos o segundo \x01 de lp_qstr.
+!lp_after(q: string): int {
+  j = 1;
+  while (j < q.length && q.charCodeAt(j) != 1){ j = j + 1 };
+  v = 0;
+  k = j + 1;
+  while (k < q.length && q.charCodeAt(k) >= 48 && q.charCodeAt(k) <= 57) {
+    v = v * 10 + (q.charCodeAt(k) - 48);
+    k = k + 1;
+  };
+  ^v;
+}
+
+// Entrada: fonte py-subset. Saida: .linp canonico ou LINP_REJ_*.
+!linp_py(src: string): string {
+  nl = String.fromCharCode(10);
+  job = "";
+  hasjob = 0;
+  file = "";
+  algo = "deflate";
+  chunk = 1800000;
+  haspack = 0;
+  i = 0;
+  n = src.length;
+  while (i <= n) {
+    j = i;
+    while (j < n && src.charCodeAt(j) != 10){ j = j + 1 };
+    line = lp_trim(lp_slice(src, i, j));
+    i = j + 1;
+    ?(line.length == 0){ continue };
+    ?(starts_lit(line, 0, "#") == 1){ continue };
+    ?(starts_lit(line, 0, "job(") == 1){
+      ?(hasjob == 1){ ^"LINP_REJ_JOB" };
+      nm = lp_job_arg(line, 4, line.length);
+      ?(starts_lit(nm, 0, "LINP_REJ") == 1){ ^nm };
+      job = nm;
+      hasjob = 1;
+      continue;
+    };
+    ?(starts_lit(line, 0, "pack(") == 1){
+      ?(haspack == 1){ ^"LINP_REJ_PACK" };
+      r = lp_pack_args(line, 5, line.length);
+      ?(starts_lit(r, 0, "LINP_REJ") == 1){ ^r };
+      file = lp_field3(r, 0);
+      algo = lp_field3(r, 1);
+      chunk = lp_atoi(lp_field3(r, 2));
+      haspack = 1;
+      continue;
+    };
+    ^"LINP_REJ_SYNTAX";
+  };
+  ?(hasjob == 0){ ^"LINP_REJ_JOB" };
+  ?(haspack == 0){ ^"LINP_REJ_PACK" };
+  out = "@LINP:1.0";
+  out = out + nl;
+  out = out + "JOB ";
+  out = out + job;
+  out = out + nl;
+  out = out + "FILE ";
+  out = out + file;
+  out = out + nl;
+  out = out + "ALGO ";
+  out = out + algo;
+  out = out + nl;
+  out = out + "CHUNK ";
+  out = out + lp_num(chunk);
+  out = out + nl;
+  out = out + "PACK";
+  out = out + nl;
+  out = out + "END";
+  out = out + nl;
+  ^out;
+}
+
+// Args de pack("f"[, algo="a"][, chunk=N]) -> "f\x01a\x01N" ou LINP_REJ_*.
+!lp_pack_args(s: string, p: int, n: int): string {
+  p = lp_skip(s, p);
+  q = lp_qstr(s, p);
+  ?(q.length == 0){ ^"LINP_REJ_SYNTAX" };
+  f = lp_mid(q);
+  p = lp_after(q);
+  ?(f.length == 0){ ^"LINP_REJ_PATH" };
+  ?(lp_badpath(f) == 1){ ^"LINP_REJ_PATH" };
+  algo = "deflate";
+  chunk = "1800000";
+  p = lp_skip(s, p);
+  ?(p < n && s.charCodeAt(p) == 41){
+    p = lp_skip(s, p + 1);
+    ?(p < n){ ^"LINP_REJ_SYNTAX" };
+    ^lp_pack3(f, algo, chunk);
+  };
+  ?(p >= n || s.charCodeAt(p) != 44){ ^"LINP_REJ_SYNTAX" };
+  p = lp_skip(s, p + 1);
+  kn = lp_ident(s, p);
+  ?(lp_eq(kn, "algo") == 1){
+    p = lp_skip(s, p + kn.length);
+    ?(p >= n || s.charCodeAt(p) != 61){ ^"LINP_REJ_SYNTAX" };
+    p = lp_skip(s, p + 1);
+    q = lp_qstr(s, p);
+    ?(q.length == 0){ ^"LINP_REJ_SYNTAX" };
+    v = lp_mid(q);
+    ?(lp_eq(v, "deflate") == 0 && lp_eq(v, "gzip") == 0 && lp_eq(v, "brotli") == 0){ ^"LINP_REJ_ALGO" };
+    algo = v;
+    p = lp_after(q);
+    p = lp_skip(s, p);
+    ?(p < n && s.charCodeAt(p) == 41){
+      p = lp_skip(s, p + 1);
+      ?(p < n){ ^"LINP_REJ_SYNTAX" };
+      ^lp_pack3(f, algo, chunk);
+    };
+    ?(p >= n || s.charCodeAt(p) != 44){ ^"LINP_REJ_SYNTAX" };
+    p = lp_skip(s, p + 1);
+    kn = lp_ident(s, p);
+  };
+  ?(lp_eq(kn, "chunk") == 0){ ^"LINP_REJ_SYNTAX" };
+  p = lp_skip(s, p + kn.length);
+  ?(p >= n || s.charCodeAt(p) != 61){ ^"LINP_REJ_SYNTAX" };
+  p = lp_skip(s, p + 1);
+  st = p;
+  while (p < n && s.charCodeAt(p) >= 48 && s.charCodeAt(p) <= 57){ p = p + 1 };
+  ?(p == st){ ^"LINP_REJ_SYNTAX" };
+  v = lp_slice(s, st, p);
+  ?(lp_badchunk(v) == 1){ ^"LINP_REJ_CHUNK" };
+  chunk = v;
+  p = lp_skip(s, p);
+  ?(p >= n || s.charCodeAt(p) != 41){ ^"LINP_REJ_SYNTAX" };
+  p = lp_skip(s, p + 1);
+  ?(p < n){ ^"LINP_REJ_SYNTAX" };
+  ^lp_pack3(f, algo, chunk);
+}
+
+!lp_pack3(f: string, a: string, c: string): string {
+  out = f;
+  out = out + String.fromCharCode(1);
+  out = out + a;
+  out = out + String.fromCharCode(1);
+  out = out + c;
+  ^out;
+}
+
+!lp_field3(r: string, idx: int): string {
+  cur = 0;
+  st = 0;
+  i = 0;
+  n = r.length;
+  while (i <= n) {
+    ?(i == n || r.charCodeAt(i) == 1){
+      ?(cur == idx){ ^lp_slice(r, st, i) };
+      cur = cur + 1;
+      st = i + 1;
+    };
+    i = i + 1;
+  };
+  ^"";
+}
+
+!lp_eq(a: string, b: string): int {
+  ?(a.length != b.length){ ^0 };
+  ?(starts_lit(a, 0, b) == 1){ ^1 };
+  ^0;
+}
+
+!lp_ident(s: string, p: int): string {
+  n = s.length;
+  st = p;
+  ?(p < n && ((s.charCodeAt(p) >= 65 && s.charCodeAt(p) <= 90) || (s.charCodeAt(p) >= 97 && s.charCodeAt(p) <= 122) || s.charCodeAt(p) == 95)){
+    p = p + 1;
+    while (p < n && ((s.charCodeAt(p) >= 65 && s.charCodeAt(p) <= 90) || (s.charCodeAt(p) >= 97 && s.charCodeAt(p) <= 122) || (s.charCodeAt(p) >= 48 && s.charCodeAt(p) <= 57) || s.charCodeAt(p) == 95)){ p = p + 1 };
+    ^lp_slice(s, st, p);
+  };
+  ^"";
+}
+
+!lp_badpath(f: string): int {
+  i = 0;
+  while (i + 1 < f.length) {
+    ?(f.charCodeAt(i) == 46 && f.charCodeAt(i + 1) == 46){ ^1 };
+    i = i + 1;
+  };
+  ?(f.length > 0 && f.charCodeAt(0) == 47){ ^1 };
+  ^0;
+}
+
+!lp_badchunk(v: string): int {
+  ?(lp_isnum(v) == 0){ ^1 };
+  c = lp_atoi(v);
+  ?(c < 64 || c > 1800000){ ^1 };
+  ^0;
+}
+
+!lp_isnum(s: string): int {
+  ?(s.length == 0){ ^0 };
+  i = 0;
+  while (i < s.length) {
+    ?(s.charCodeAt(i) < 48 || s.charCodeAt(i) > 57){ ^0 };
+    i = i + 1;
+  };
+  ^1;
+}
+
+=ex{linp_py, lp_eq, lp_pack_args, lp_field3}
