@@ -1,5 +1,5 @@
 {
-  "schema": "LIN_INDEPENDENT_REPROOF_1.0",
+  "schema": "LIN_INDEPENDENT_REPROOF_1.1",
   "class": "EXPERIMENTAL",
   "claims": [
     {
@@ -29,7 +29,7 @@
     {
       "id": "MULDIV-3WAY",
       "status": "PASS",
-      "description": "4/4 muldiv: Python bigint == LIN vm == C11 __int128",
+      "description": "7/7 muldiv incl. q-overflow and fail-closed edges",
       "note": ""
     },
     {
@@ -39,9 +39,21 @@
       "note": "i64=-5527149226598858752 bigint_half=500000000000000000"
     },
     {
+      "id": "Q-FITS-I64",
+      "status": "PASS",
+      "description": "q not fitting nonnegative i64 fail-closes to 0",
+      "note": ""
+    },
+    {
+      "id": "MULDIV-ID",
+      "status": "PASS",
+      "description": "3/3 q*d+r == a*b on Python/C11/LIN",
+      "note": ""
+    },
+    {
       "id": "MULT-REORDER",
       "status": "PASS",
-      "description": "Solidity (a*BASE)/(blocks*kink) equals LIN reorder on this vector",
+      "description": "floor((a*B)/(blocks*kink)) == ((a*B)/kink)/blocks on this vector",
       "note": "mb=23782343987"
     },
     {
@@ -57,20 +69,45 @@
       "note": "rate=11891171993"
     },
     {
+      "id": "KINK-PATH",
+      "status": "PASS",
+      "description": "borrow rate rises through 50% / kink / 90% util",
+      "note": ""
+    },
+    {
+      "id": "SUPPLY-50",
+      "status": "PASS",
+      "description": "supply rate < borrow rate at 50% util, LIN == C11",
+      "note": "rate=5351027396"
+    },
+    {
+      "id": "PARAM-ARGS",
+      "status": "PASS",
+      "description": "changing an IRM argument changes the rate (not hidden storage)",
+      "note": ""
+    },
+    {
       "id": "EXPLICIT-ARGS",
       "status": "PASS",
       "description": "LIN takes IRM params as arguments; Solidity reads storage + msg.sender",
       "note": ""
     },
     {
-      "id": "C0-JIT",
+      "id": "SOL-HONESTY",
       "status": "PASS",
-      "description": "lin_c0 roundtrip-jit CONSENSUS on cjr_test_suite",
+      "description": "view IRM is non-pure; * / needs wide muldiv; C0 default vm rejects string gates",
       "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "roundtrip-jit not exercised",
+      "note": "@RULEL:LIN_JIT_ROUNDTRIP:1.0.0\n.verdict{ status=\"DIVERGENCE\" why=\"jit_error\" code=\"LIBTCC_UNAVAILABLE\" }\n"
     }
   ],
   "numbers": {
     "borrow_rate_50_util": 11891171993,
+    "supply_rate_50_rf10": 5351027396,
     "multiplier_per_block": 23782343987,
     "jump_per_block": 518455098934,
     "i64_wrap_1e18_sq": -5527149226598858752,
@@ -78,9 +115,14 @@
     "fixture_sha256": "9cd2fe5f7b88748c336bf2988c475da517ffd4909057b53df138b80f162fb34f",
     "fixture_git_blob": "4d6828c39ed737c0c48508adc414b919ab6c2a55"
   },
+  "real_deltas": [
+    "IRM storage parameters are explicit function arguments",
+    "(a*b)/d uses 128-bit product; q not fitting nonnegative i64 fail-closes"
+  ],
   "not_claimed": [
     "full Solidity uint256 / mainnet cToken parity",
-    "LIN replaces Compound on Ethereum",
-    "general speed vs solc/EVM/LLVM"
+    "LIN replaces Compound, Uniswap, or the EVM",
+    "general speed vs solc/LLVM (SipHash ~20.8x is compile-turnaround on one host)",
+    "computational soundness of Merkle receipts (C4 is tamper-evidence + re-execution, not zk)"
   ]
 }

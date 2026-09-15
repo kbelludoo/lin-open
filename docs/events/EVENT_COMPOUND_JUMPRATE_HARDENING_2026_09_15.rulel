@@ -19,7 +19,7 @@
   delta_3="quotient that does not fit nonnegative i64 fail-closes to 0 (1e18*1e18/1)"
   delta_4="remainder identity q*d+r == a*b checked by Python bigint and C11 __int128"
   delta_5="upstream clone pins commit a3214f67 rather than live master HEAD"
-  delta_6="sol_jumprate_honesty_gate: view IRM is REJ_SOLIDITY_NON_PURE; utilizationRate * / is flagged as needing wide muldiv. Emit path still wrapping i64 — the hand-written clone is the 128-bit artifact"
+  delta_6="sol_jumprate_honesty_gate is typechecked in lin_from_solidity.lin; C0 default vm reports VM_REJ_STRING_LITERAL (string profile). Python oracle checks view+storage vs explicit args and * / needing wide muldiv. Emit path is still wrapping i64"
 }
 
 .n{

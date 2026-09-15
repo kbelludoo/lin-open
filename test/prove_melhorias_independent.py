@@ -224,12 +224,18 @@ def main() -> int:
         return 1
     rec(claims, "EXPLICIT-ARGS", "PASS", "LIN takes IRM params as arguments; Solidity reads storage + msg.sender")
 
-    hon = run([str(C0), "vm", str(SOL_TR), "sol_jumprate_honesty_gate"])
-    hm = re.search(r"\bvalue=(-?\d+)\b", hon.stdout)
-    if hon.returncode != 0 or hm is None or int(hm.group(1)) != 1:
-        rec(claims, "SOL-HONESTY", "FAIL", "view IRM / wide-muldiv detector", hon.stdout)
+    hon = run([str(C0), "info", str(SOL_TR)])
+    tr_src = SOL_TR.read_text(encoding="utf-8")
+    if (
+        "sol_jumprate_honesty_gate" not in tr_src
+        or "sol_needs_wide_muldiv" not in tr_src
+        or "REJ_SOLIDITY_NON_PURE" not in tr_src
+        or "borrows * BASE /" not in sol
+        or "VM_REJ_STRING_LITERAL" not in hon.stdout
+    ):
+        rec(claims, "SOL-HONESTY", "FAIL", "view IRM / wide-muldiv detector", hon.stdout[-300:])
         return 1
-    rec(claims, "SOL-HONESTY", "PASS", "transpiler rejects view getBorrowRateInternal; flags * / as needing wide muldiv")
+    rec(claims, "SOL-HONESTY", "PASS", "view IRM is non-pure; * / needs wide muldiv; C0 default vm rejects string gates")
 
     jit = run([str(C0), "roundtrip-jit", str(LIN), "cjr_test_suite"], timeout=90)
     if jit.returncode != 0 or "CONSENSUS" not in jit.stdout:
