@@ -1,0 +1,74 @@
+@RULEL:VALUE_PROOF_VS_ESTABLISHED:1.0.0
+~R{.q=question .a=answer .w=wrong_proof .r=right_proof .l=ladder .h=harness .n=not_proven .k=kill}
+
+# Prova de valor do LIN perante linguagens consolidadas.
+# Isto não é um manifesto. É um protocolo fail-closed: ou um cético reproduz,
+# ou o claim não pode ser vendido.
+
+.q{
+  asked="LIN tem valor? Vale continuar? Como provar contra C/Rust/Python/Solidity?"
+  date="2026-09-15"
+  rule="R5_LABEL_TOY_VS_EXPERIMENTAL_VS_REAL_WORLD_NO_OVERCLAIM"
+}
+
+.a{
+  as_general_purpose_language="NO_VALUE_UNPROVEN"
+  as_general_purpose_language_note="C, Rust, Zig, Python e Solidity já ganharam o mercado de escrever software. LIN não tem compilador competitivo, ecossistema, bibliotecas, IDE, nem benchmark geral contra LLVM -O3. Competir nesse eixo é um cemitério."
+  as_attested_numeric_coprocessor="CONDITIONAL_YES"
+  as_attested_numeric_coprocessor_note="O único valor auditável hoje é: kernel numérico determinístico + paridade bit-exact contra código canónico publicado + recibo SHA-256 recomputável por terceiros sem o compilador LIN + (opcional) âncora otimista on-chain. Isso não é uma linguagem nova. É um co-processador verificável."
+  continue="YES_ONLY_ON_THE_COPROCESSOR_AXIS"
+  continue_kill_if="selling_language_replacement OR toy_crypto_as_historic_break OR dollar_volume_as_savings"
+}
+
+.w{
+  # Comparações que destroem credibilidade. Nenhuma delas é uma prova.
+  w1="LIN vs C/Rust/Python como linguagem geral (sintaxe, DX, ecossistema)"
+  w2="LIN mais rápido que LLVM/C/Rust (nenhum bench geral existe neste repo)"
+  w3="LIN substitui Uniswap/Compound/EVM (só aritmética escalar foi clonada)"
+  w4="Merkle receipt = zk-SNARK / computational soundness"
+  w5="Quebra histórica de RSA com N=136117223861 (classe TOY; 36 bits; Pollard Rho em Python também quebra)"
+  w6="LIN saves $1.8T (volume de mercado confundido com poupança; README NP1)"
+  w7="src/lin_high_value_bounties.lin como prova de mercado (XOR/shift não é Merkle LayerZero; aritmética MEV não é Flashbots)"
+}
+
+.r{
+  # Comparações honestas. O oponente é um oráculo publicado, não um slogan.
+  r1="UniswapV2Library.getAmountOut (Solidity canónico) == Python bigint == GCC C == LIN, no domínio i64 declarado TOY"
+  r2="qoi_color_hash (phoboslab/qoi.h) == Python == LIN"
+  r3="SipHash-2-4 round (veorq/SipHash) == GCC C == LIN JIT (experimental, vmfull)"
+  r4="Recibo Merkle recomputado por Python hashlib / WebCrypto / OpenSSL; output+1 rejeitado"
+  r5="Âncora L1 70,133 gas / 2000 swaps sob modelo otimista, NÃO contra Groth16 como validade"
+  r6="Terceiro independente (sem Zig, só cc+python3) reproduz C1-C7 a partir de um git tag"
+}
+
+.l{
+  L0_repo_self="make rationalist-proof  # já existe; prova interna, autor-operada"
+  L1_stranger="um revisor clona o tag, corre make value-proof, publica os mesmos roots sem falar com o autor"
+  L2_head_to_head="make value-proof  # Python + GCC C + LIN bit-exact no kernel Uniswap; C/Rust vencem como linguagens, LIN empata no número"
+  L3_adversary="recibo com output adulterado é rejeitado; 2+2=5 com root válido NÃO conta como soundness"
+  L4_economic="um contraparte real (auditor, protocolo, seguradora) recusa um CSV e exige o recibo LIN. Sem isto, o valor é laboratório."
+}
+
+.h{
+  run="make value-proof"
+  script="test/prove_value_vs_established.py"
+  deps="python3 + cc/gcc; no Zig"
+  domain="TOY_I64 for Uniswap scalar clone; EXPERIMENTAL for receipts; REAL_WORLD not claimed"
+}
+
+.n{
+  n1="LIN é linguagem melhor que C/Rust/Python/Solidity"
+  n2="LIN é mais rápido que LLVM -O3 em geral"
+  n3="LIN executa OpenSSL completo ou o protocolo Uniswap completo"
+  n4="paridade uint256 Mainnet / cToken Compound"
+  n5="Merkle = prova de validade computacional"
+  n6="piloto comercial pago (gate_readiness_pilot.py é laboratório, não receita)"
+}
+
+.k{
+  # Sinais de que o projeto deve parar de crescer claims e cortar superfície.
+  k1="eventos com título de quebra histórica em instâncias TOY"
+  k2="bounties de alto valor que não executam o protocolo citado"
+  k3="métricas de pico de kernel vendidas como wall-clock"
+  k4="continuar a escrever frontend de linguagem em vez de um único kernel + recibo que um estranho reproduz"
+}

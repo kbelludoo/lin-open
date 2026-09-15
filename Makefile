@@ -3,7 +3,8 @@
 .PHONY: all build build-gpu build-cpu test test-cpu lint clean \
         crypto256-real crypto256-audit \
         attestation-gate guard-unit xver gate gate-attest ci-gate \
-        linvm0-gate stmt-selfhost-gate linbc1-loader-gate linbc1-mutation-gate host-v1-gate linvm-host-image-gate control-flow-crosscheck
+        linvm0-gate stmt-selfhost-gate linbc1-loader-gate linbc1-mutation-gate host-v1-gate linvm-host-image-gate control-flow-crosscheck \
+        value-proof
 
 # LIN build/test Makefile (2026-08-31)
 #
@@ -313,6 +314,13 @@ compound-jumprate-proof: c0
 independent-reproof: c0
 	@chmod +x test/prove_melhorias_independent.py
 	@python3 test/prove_melhorias_independent.py
+
+# Head-to-head value proof vs established-language oracles (Python + GCC C + LIN).
+# Does NOT claim LIN is a better language. Kernel parity + independent receipt only.
+.PHONY: value-proof
+value-proof: c0
+	@$(MAKE) -C transpile/c xver
+	@python3 test/prove_value_vs_established.py
 
 # Standalone no-Zig CLI (python3, stdlib only). `make install-cli PREFIX=~/.local`
 # puts an executable `lin-verify` on PATH.
