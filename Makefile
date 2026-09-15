@@ -307,8 +307,9 @@ compound-jumprate-proof: c0
 	@test/verify_compound_jumprate.sh
 
 independent-reproof: c0
-	@chmod +x test/prove_melhorias_independent.py
+	@chmod +x test/prove_melhorias_independent.py test/prove_compound_jumprate_edges.py
 	@python3 test/prove_melhorias_independent.py
+	@python3 test/prove_compound_jumprate_edges.py
 
 # Standalone no-Zig CLI (python3, stdlib only). `make install-cli PREFIX=~/.local`
 # puts an executable `lin-verify` on PATH.

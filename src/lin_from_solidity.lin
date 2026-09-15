@@ -4,7 +4,7 @@
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
   status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals"
+  changelog="v2: emit LIN for eligible pure functions; expand 1eN; reject view/msg.sender (JumpRate IRM is not auto-emitted)"
 }
 
 !sol_is_kw(nm: string): int {
@@ -328,6 +328,14 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  sig_view = "function getBorrowRateInternal(uint cash, uint borrows, uint reserves) internal view returns (uint)";
+  body_view = "return utilizationRate(cash, borrows, reserves);";
+  rv = sol_reason(sig_view, body_view);
+  ?(starts_lit(rv, 0, "REJ_SOLIDITY_NON_PURE") == 0) { ^0 };
+  sig_own = "function updateJumpRateModel(uint a, uint b, uint c, uint d) external";
+  body_own = "require(msg.sender == owner);";
+  ro = sol_reason(sig_own, body_own);
+  ?(starts_lit(ro, 0, "REJ_SOLIDITY_STATE") == 0) { ^0 };
   ^1;
 }
 

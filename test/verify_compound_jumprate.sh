@@ -7,4 +7,5 @@ export LIN_TCC_DIR="${LIN_TCC_DIR:-/tmp/tinycc}"
 if [ ! -x "$ROOT/transpile/c/bin/lin_c0" ]; then
   make -C "$ROOT/transpile/c" c0 || exit 2
 fi
-exec python3 "$ROOT/test/prove_compound_jumprate_external.py"
+python3 "$ROOT/test/prove_compound_jumprate_external.py" || exit $?
+exec python3 "$ROOT/test/prove_compound_jumprate_edges.py"

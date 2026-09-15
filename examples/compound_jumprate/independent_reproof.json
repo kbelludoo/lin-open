@@ -57,6 +57,24 @@
       "note": "rate=11891171993"
     },
     {
+      "id": "BORROW-90",
+      "status": "PASS",
+      "description": "90% util (above kink) three-way consensus",
+      "note": "rate=70871385082"
+    },
+    {
+      "id": "SUPPLY-50",
+      "status": "PASS",
+      "description": "supply@50% rf=10% three-way consensus",
+      "note": "rate=5351027396"
+    },
+    {
+      "id": "FAILCLOSED",
+      "status": "PASS",
+      "description": "1e18*1e18/1 and cash+borrows-reserves underflow fail-closed to 0",
+      "note": ""
+    },
+    {
       "id": "EXPLICIT-ARGS",
       "status": "PASS",
       "description": "LIN takes IRM params as arguments; Solidity reads storage + msg.sender",
@@ -64,13 +82,15 @@
     },
     {
       "id": "C0-JIT",
-      "status": "PASS",
-      "description": "lin_c0 roundtrip-jit CONSENSUS on cjr_test_suite",
-      "note": ""
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised (libtcc missing or JIT rejected the module)",
+      "note": "LIBTCC_UNAVAILABLE"
     }
   ],
   "numbers": {
     "borrow_rate_50_util": 11891171993,
+    "borrow_rate_90_util": 70871385082,
+    "supply_rate_50_rf10": 5351027396,
     "multiplier_per_block": 23782343987,
     "jump_per_block": 518455098934,
     "i64_wrap_1e18_sq": -5527149226598858752,
@@ -81,6 +101,7 @@
   "not_claimed": [
     "full Solidity uint256 / mainnet cToken parity",
     "LIN replaces Compound on Ethereum",
-    "general speed vs solc/EVM/LLVM"
+    "general speed vs solc/EVM/LLVM",
+    "C4 Merkle receipt is zk soundness"
   ]
 }

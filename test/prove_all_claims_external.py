@@ -103,6 +103,16 @@ def run(*argv: str, timeout: int = 120) -> tuple[int, str]:
     return proc.returncode, proc.stdout.strip()
 
 
+def ensure_c11_host() -> str:
+    """Build lin_c0 + lin_c_receipt when missing. C4 first-fail was a missing binary."""
+    if C0.exists() and XREC.exists():
+        return ""
+    rc, out = run("make", "-C", str(ROOT / "transpile" / "c"), "all", timeout=180)
+    if rc != 0 or not C0.exists() or not XREC.exists():
+        return f"make -C transpile/c all failed: {out}"
+    return ""
+
+
 def value_of(stdout: str) -> int | None:
     m = re.search(r"\bvalue=(-?\d+)\b", stdout)
     return int(m.group(1)) if m else None
@@ -443,7 +453,8 @@ def receipt_claims() -> tuple[str, str]:
 
     return "PASS", (
         f"x*x receipt root {fields['root']} independently recomputed by Python; "
-        "committed receipt verifies; output+1 tamper is rejected"
+        "committed receipt verifies; output+1 tamper is rejected "
+        "(tamper-evidence + reexecution, not zk soundness)"
     )
 
 
@@ -494,8 +505,9 @@ def not_proven_scope() -> str:
     return "NOT-PROVEN", (
         "Scope limits: default vm runs Uniswap division; SipHash/xxHash shifts "
         "need experimental profile-full (vmfull). Full protocol security, full "
-        "OpenSSL execution, on-chain gas savings, or performance vs LLVM/"
-        "C/Rust are NOT proven here and must not be sold as proven."
+        "OpenSSL execution, on-chain gas savings, performance vs LLVM/C/Rust, "
+        "Compound uint256/cToken mainnet parity, or zk soundness of C4 Merkle "
+        "receipts are NOT proven here and must not be sold as proven."
     )
 
 
@@ -511,6 +523,10 @@ def main() -> int:
 
     if args.iterations < 1:
         ap.error("--iterations must be >= 1")
+    host_err = ensure_c11_host()
+    if host_err:
+        print(host_err)
+        return 1
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
 
     claims = []

@@ -21,8 +21,11 @@
 #define BLOCKS_PER_YEAR 2102400ULL
 
 static uint64_t muldiv_i128(uint64_t a, uint64_t b, uint64_t d) {
+    __uint128_t q;
     if (d == 0) return 0;
-    return (uint64_t)(((__uint128_t)a * (__uint128_t)b) / (__uint128_t)d);
+    q = ((__uint128_t)a * (__uint128_t)b) / (__uint128_t)d;
+    if (q > (__uint128_t)INT64_MAX) return 0;
+    return (uint64_t)q;
 }
 
 static int u_lt(uint64_t a, uint64_t b) { return a < b; }
@@ -30,7 +33,7 @@ static int u_lt(uint64_t a, uint64_t b) { return a < b; }
 static uint64_t muldiv_limbs(uint64_t a, uint64_t b, uint64_t d) {
     uint64_t a0, a1, b0, b1, p0, p1, p2, p3, mid, t, lo, hi;
     uint64_t mid_carry, lo_carry, r_hi, r_lo, q, new_hi, new_lo;
-    uint64_t bit, ge, need_borrow;
+    uint64_t bit, ge, need_borrow, ov;
     int i;
 
     if (d == 0) return 0;
@@ -54,6 +57,7 @@ static uint64_t muldiv_limbs(uint64_t a, uint64_t b, uint64_t d) {
     r_hi = 0;
     r_lo = 0;
     q = 0;
+    ov = 0;
     for (i = 127; i >= 0; i--) {
         bit = (i >= 64) ? ((hi >> (i - 64)) & 1ULL) : ((lo >> i) & 1ULL);
         new_hi = (r_hi << 1) | (r_lo >> 63);
@@ -65,9 +69,11 @@ static uint64_t muldiv_limbs(uint64_t a, uint64_t b, uint64_t d) {
             need_borrow = u_lt(r_lo, d);
             r_lo = r_lo - d;
             if (need_borrow) r_hi = r_hi - 1;
-            if (i < 64) q = q | (1ULL << i);
+            if (i >= 63) ov = 1;
+            else q = q | (1ULL << i);
         }
     }
+    if (ov) return 0;
     return q;
 }
 
@@ -142,6 +148,24 @@ static int selftest(void) {
         != utilization(BASE_WAD, BASE_WAD, 0, muldiv_limbs)) fail++;
     if (utilization(BASE_WAD, BASE_WAD, 0, muldiv_i128) != 500000000000000000ULL) fail++;
     if (utilization(0, BASE_WAD, 0, muldiv_i128) != BASE_WAD) fail++;
+    if (utilization(0, 100, 200, muldiv_i128) != 0) fail++;
+    if (utilization(0, BASE_WAD, BASE_WAD / 2, muldiv_i128) != 2000000000000000000ULL) fail++;
+    if (muldiv_i128(BASE_WAD, BASE_WAD, 1) != 0) fail++;
+    if (muldiv_limbs(BASE_WAD, BASE_WAD, 1) != 0) fail++;
+
+    for (i = 0; i < sizeof(md) / sizeof(md[0]); i++) {
+        __uint128_t prod = (__uint128_t)md[i].a * (__uint128_t)md[i].b;
+        uint64_t q = muldiv_i128(md[i].a, md[i].b, md[i].d);
+        if (md[i].d == 0) {
+            if (q != 0) fail++;
+        } else if (prod / md[i].d > (__uint128_t)INT64_MAX) {
+            if (q != 0) fail++;
+        } else if (q != (uint64_t)(prod / md[i].d)) {
+            fail++;
+        } else if (prod != (__uint128_t)q * md[i].d + (prod % md[i].d)) {
+            fail++;
+        }
+    }
 
     mb_a = muldiv_i128(muldiv_i128(mult_year, BASE_WAD, kink), 1, BLOCKS_PER_YEAR);
     mb_b = muldiv_limbs(muldiv_limbs(mult_year, BASE_WAD, kink), 1, BLOCKS_PER_YEAR);
@@ -155,6 +179,12 @@ static int selftest(void) {
     r90b = borrow_rate(100000000000000000ULL, 900000000000000000ULL, 0, 0, mb_b, jb_b, kink, muldiv_limbs);
     if (r50a != r50b || r90a != r90b) fail++;
     if (r90a < r50a) fail++;
+    if (r50a != 11891171993ULL) fail++;
+    if (r90a != 70871385082ULL) fail++;
+    if (supply_rate(BASE_WAD, BASE_WAD, 0, 0, mb_a, jb_a, kink, 100000000000000000ULL, muldiv_i128)
+        != 5351027396ULL) fail++;
+    if (supply_rate(BASE_WAD, BASE_WAD, 0, 0, mb_a, jb_a, kink, 100000000000000000ULL, muldiv_i128)
+        != supply_rate(BASE_WAD, BASE_WAD, 0, 0, mb_b, jb_b, kink, 100000000000000000ULL, muldiv_limbs)) fail++;
 
     if (fail) {
         fprintf(stderr, "compound_jumprate_c11 selftest FAIL count=%d\n", fail);
@@ -209,6 +239,18 @@ int main(int argc, char **argv) {
         uint64_t jump = strtoull(argv[7], NULL, 10);
         uint64_t kink = strtoull(argv[8], NULL, 10);
         printf("%" PRIu64 "\n", borrow_rate(c, b, r, base, mult, jump, kink, md));
+        return 0;
+    }
+    if (strcmp(cmd, "supply") == 0 && argc == 10) {
+        uint64_t c = strtoull(argv[2], NULL, 10);
+        uint64_t b = strtoull(argv[3], NULL, 10);
+        uint64_t r = strtoull(argv[4], NULL, 10);
+        uint64_t base = strtoull(argv[5], NULL, 10);
+        uint64_t mult = strtoull(argv[6], NULL, 10);
+        uint64_t jump = strtoull(argv[7], NULL, 10);
+        uint64_t kink = strtoull(argv[8], NULL, 10);
+        uint64_t rf = strtoull(argv[9], NULL, 10);
+        printf("%" PRIu64 "\n", supply_rate(c, b, r, base, mult, jump, kink, rf, md));
         return 0;
     }
     fprintf(stderr, "bad args\n");

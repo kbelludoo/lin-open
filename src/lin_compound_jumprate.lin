@@ -1,6 +1,9 @@
 @LIN:L1c:0.2
+// STATUS (R5): EXPERIMENTAL uint64-scale — NOT mainnet uint256 / cToken parity.
+// Real deltas vs Solidity: IRM storage params are explicit arguments; (a*b)/d
+// uses a 128-bit product. Quotients that do not fit non-negative i64 return 0.
 @COMPOUND_JUMPRATE_V2{
-  version=1
+  version=2
   repo="compound-finance/compound-protocol"
   source="contracts/BaseJumpRateModelV2.sol"
   license="BSD-3-Clause"
@@ -8,7 +11,7 @@
   profile="LINVM-1"
   class="EXPERIMENTAL"
   purpose="uint64_scale_compound_jumprate_with_128bit_muldiv"
-  note="Solidity uint256 IRM; LIN matches C11 __int128 on values that fit uint64. Hidden storage params are explicit arguments."
+  note="Solidity uint256 IRM is NOT claimed. LIN matches C11 __int128 and Python bigint on values that fit signed i64."
 }
 
 !cjr_u_lt(a: int, b: int) -> int {
@@ -36,7 +39,9 @@
 }
 
 !cjr_muldiv(a: int, b: int, d: int) -> int {
-  ?(d == 0) { ^ 0; };
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(d <= 0) { ^ 0; };
   m32 = cjr_mask32();
   a0 = a & m32;
   a1 = _lia_ushr(a, 32);
@@ -59,6 +64,7 @@
   r_hi = 0;
   r_lo = 0;
   q = 0;
+  ov = 0;
   i = 127;
   while (i >= 0) {
     bit = 0;
@@ -77,10 +83,12 @@
       need_borrow = cjr_u_lt(r_lo, d);
       r_lo = r_lo - d;
       ?(need_borrow == 1) { r_hi = r_hi - 1; };
-      ?(i < 64) { q = q | _lia_shl(1, i); };
+      ?(i >= 63) { ov = 1; };
+      ?(i < 63) { q = q | _lia_shl(1, i); };
     };
     i = i - 1;
   };
+  ?(ov == 1) { ^ 0; };
   ^ q;
 }
 
@@ -91,7 +99,9 @@
 }
 
 !cjr_utilization(cash: int, borrows: int, reserves: int) -> int {
-  ?(borrows == 0) { ^ 0; };
+  ?(cash < 0) { ^ 0; };
+  ?(borrows <= 0) { ^ 0; };
+  ?(reserves < 0) { ^ 0; };
   ?(cjr_u_add_ok(cash, borrows) == 0) { ^ 0; };
   sum = cash + borrows;
   ?(cjr_u_lt(sum, reserves) == 1) { ^ 0; };
@@ -142,17 +152,24 @@
   ?(cjr_utilization(1000000000000000000, 1000000000000000000, 0) != 500000000000000000) { ^ -4; };
   ?(cjr_utilization(0, 1000000000000000000, 0) != 1000000000000000000) { ^ -5; };
   ?(cjr_muldiv(1000000000000000000, 1, 2) != 500000000000000000) { ^ -6; };
+  ?(cjr_muldiv(1000000000000000000, 1000000000000000000, 1) != 0) { ^ -7; };
+  ?(cjr_muldiv(5, 5, 0) != 0) { ^ -8; };
+  ?(cjr_utilization(0, 100, 200) != 0) { ^ -9; };
+  ?(cjr_utilization(0, 1000000000000000000, 500000000000000000) != 2000000000000000000) { ^ -10; };
+  ?(cjr_multiplier_per_block(40000000000000000, 0) != 0) { ^ -11; };
   kink = 800000000000000000;
   mb = cjr_multiplier_per_block(40000000000000000, kink);
   jb = cjr_jump_per_block(1090000000000000000);
   bb = cjr_base_per_block(0);
-  ?(bb != 0) { ^ -7; };
-  ?(mb <= 0) { ^ -8; };
-  ?(jb <= 0) { ^ -9; };
+  ?(bb != 0) { ^ -12; };
+  ?(mb != 23782343987) { ^ -13; };
+  ?(jb != 518455098934) { ^ -14; };
   r50 = cjr_borrow_rate(1000000000000000000, 1000000000000000000, 0, bb, mb, jb, kink);
   r90 = cjr_borrow_rate(100000000000000000, 900000000000000000, 0, bb, mb, jb, kink);
-  ?(r50 < 0) { ^ -10; };
-  ?(cjr_u_lt(r90, r50) == 1) { ^ -11; };
+  ?(r50 != 11891171993) { ^ -15; };
+  ?(r90 != 70871385082) { ^ -16; };
+  s50 = cjr_supply_rate(1000000000000000000, 1000000000000000000, 0, bb, mb, jb, kink, 100000000000000000);
+  ?(s50 != 5351027396) { ^ -17; };
   ^ 1;
 }
 
