@@ -177,6 +177,12 @@ linvm0-gate: build-cpu
 c0:
 	@$(MAKE) -C transpile/c c0
 
+# C4 needs lin_c_receipt; `make c0` alone left the first rationalist run FAIL
+# because the binary was missing, not because the Merkle math was false.
+.PHONY: c0-xver
+c0-xver:
+	@$(MAKE) -C transpile/c bin/lin_c_receipt c0
+
 c0-gate: c0
 	@./test/verify_c0.sh transpile/c/bin/lin_c0
 
@@ -294,7 +300,7 @@ verify-forge-gas: c0 verify-batch-receipt
 #   make rationalist-proof            # local pinned upstream (offline)
 #   make rationalist-proof FETCH=1    # re-download upstream via GitHub API
 .PHONY: rationalist-proof verify-cli install-cli
-rationalist-proof: c0
+rationalist-proof: c0-xver
 ifneq ($(FETCH),)
 	@python3 test/prove_all_claims_external.py --iterations 10000 --fetch
 else

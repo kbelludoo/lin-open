@@ -11,7 +11,7 @@
   purpose="transpile Compound protocol interest-rate math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
   class="EXPERIMENTAL"
   class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
-  operand_width="uint64 inputs, 128-bit product for (a*b)/d; Solidity uint256 is NOT claimed"
+  operand_width="nonnegative i64 inputs, 128-bit product for (a*b)/d; Solidity uint256 is NOT claimed"
   commercial_hook="JumpRateModel V2 is the IRM used by Compound v2 cTokens; making storage parameters explicit and replacing wrapping i64 multiply with 128-bit muldiv is an audit improvement, not a TVL claim"
 }
 
@@ -31,7 +31,9 @@
   improvement_1="getBorrowRateInternal is view-on-storage in Solidity; LIN takes base/mult/jump/kink as arguments"
   improvement_2="borrows * 1e18 overflows i64; LIN uses schoolbook 128-bit muldiv matching C11 __int128"
   improvement_3="cash+borrows-reserves underflow: Solidity 0.8 reverts; LIN fail-closed returns 0 (documented)"
-  improvement_4="(mult_year * BASE) / blocksPerYear overflows uint64; LIN does (mult_year * BASE / kink) / blocksPerYear which is floor-identical and fits"
+  improvement_4="(mult_year * BASE) / (blocksPerYear * kink) does not fit uint64; LIN does ((mult_year * BASE) / kink) / blocksPerYear which is floor-identical"
+  improvement_5="q that does not fit nonnegative i64 fail-closes to 0; q*d+r == a*b checked by Python bigint"
+
 }
 
 .c{
@@ -52,6 +54,7 @@
   not_claimed_1="full uint256 / mainnet cToken parity"
   not_claimed_2="LIN is faster than the EVM or solc"
   not_claimed_3="this clone is a production IRM replacement"
+  not_claimed_4="computational soundness of Merkle receipts"
 }
 
 .v{

@@ -1,14 +1,14 @@
 @LIN:L1c:0.2
 @COMPOUND_JUMPRATE_V2{
-  version=1
+  version=2
   repo="compound-finance/compound-protocol"
   source="contracts/BaseJumpRateModelV2.sol"
   license="BSD-3-Clause"
   commit="a3214f67b73310d547e00fc578e8355911c9d376"
   profile="LINVM-1"
   class="EXPERIMENTAL"
-  purpose="uint64_scale_compound_jumprate_with_128bit_muldiv"
-  note="Solidity uint256 IRM; LIN matches C11 __int128 on values that fit uint64. Hidden storage params are explicit arguments."
+  purpose="i64_nonneg_compound_jumprate_with_128bit_muldiv"
+  note="Not mainnet uint256. Real deltas: IRM storage becomes arguments; (a*b)/d uses 128-bit product; q that does not fit nonnegative i64 fail-closes to 0."
 }
 
 !cjr_u_lt(a: int, b: int) -> int {
@@ -36,7 +36,9 @@
 }
 
 !cjr_muldiv(a: int, b: int, d: int) -> int {
-  ?(d == 0) { ^ 0; };
+  ?(d <= 0) { ^ 0; };
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
   m32 = cjr_mask32();
   a0 = a & m32;
   a1 = _lia_ushr(a, 32);
@@ -59,6 +61,7 @@
   r_hi = 0;
   r_lo = 0;
   q = 0;
+  ov = 0;
   i = 127;
   while (i >= 0) {
     bit = 0;
@@ -77,10 +80,12 @@
       need_borrow = cjr_u_lt(r_lo, d);
       r_lo = r_lo - d;
       ?(need_borrow == 1) { r_hi = r_hi - 1; };
-      ?(i < 64) { q = q | _lia_shl(1, i); };
+      ?(i >= 63) { ov = 1; };
+      ?(i < 63) { q = q | _lia_shl(1, i); };
     };
     i = i - 1;
   };
+  ?(ov == 1) { ^ 0; };
   ^ q;
 }
 
@@ -153,6 +158,18 @@
   r90 = cjr_borrow_rate(100000000000000000, 900000000000000000, 0, bb, mb, jb, kink);
   ?(r50 < 0) { ^ -10; };
   ?(cjr_u_lt(r90, r50) == 1) { ^ -11; };
+  ?(cjr_muldiv(100, 200, 0) != 0) { ^ -12; };
+  ?(cjr_muldiv(1000000000000000000, 1000000000000000000, 1) != 0) { ^ -13; };
+  ?(cjr_muldiv(-1, 10, 2) != 0) { ^ -14; };
+  ?(cjr_utilization(100, 50, 200) != 0) { ^ -15; };
+  r80 = cjr_borrow_rate(200000000000000000, 800000000000000000, 0, bb, mb, jb, kink);
+  ?(cjr_u_lt(r80, r50) == 1) { ^ -16; };
+  r50b = cjr_borrow_rate(1000000000000000000, 1000000000000000000, 0, bb, mb + mb, jb, kink);
+  ?(r50b == r50) { ^ -17; };
+  ?(cjr_u_lt(r50b, r50) == 1) { ^ -18; };
+  s50 = cjr_supply_rate(1000000000000000000, 1000000000000000000, 0, bb, mb, jb, kink, 100000000000000000);
+  ?(s50 <= 0) { ^ -19; };
+  ?(cjr_u_lt(s50, r50) == 0) { ^ -20; };
   ^ 1;
 }
 

@@ -4,7 +4,7 @@
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
   status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals"
+  changelog="v2: emit LIN for eligible pure functions; expand 1eN; v2.1 JumpRate honesty gate (view rejected; * / needs wide muldiv)"
 }
 
 !sol_is_kw(nm: string): int {
@@ -331,4 +331,20 @@
   ^1;
 }
 
-=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
+!sol_needs_wide_muldiv(body: string): int {
+  ?(rg_count_lit(body, "*") == 0) { ^0 };
+  ?(rg_count_lit(body, "/") == 0) { ^0 };
+  ^1;
+}
+
+!sol_jumprate_honesty_gate(): int {
+  sig_view = "function getBorrowRateInternal(uint cash, uint borrows, uint reserves) internal view returns (uint)";
+  body_view = "return ((util * multiplierPerBlock) / BASE) + baseRatePerBlock;";
+  r = sol_reason(sig_view, body_view);
+  ?(starts_lit(r, 0, "REJ_SOLIDITY_NON_PURE") == 0) { ^0 };
+  util_body = "return borrows * 1e18 / (cash + borrows - reserves);";
+  ?(sol_needs_wide_muldiv(util_body) == 0) { ^0 };
+  ^1;
+}
+
+=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate, sol_needs_wide_muldiv, sol_jumprate_honesty_gate}

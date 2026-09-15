@@ -114,22 +114,45 @@ def ensure_c0() -> None:
         raise RuntimeError(f"make c0 failed: {proc.stdout}\n{proc.stderr}")
 
 
+def py_muldiv(a: int, b: int, d: int) -> int:
+    if d <= 0 or a < 0 or b < 0:
+        return 0
+    q = (a * b) // d
+    return 0 if q > (2**63 - 1) else q
+
+
 def ensure_upstream() -> str:
-    if not (UPSTREAM / UPSTREAM_REL).exists():
-        proc = run(
+    """Fetch the pinned commit, not live master HEAD (master can drift)."""
+    dest = UPSTREAM
+    git_dir = dest / ".git"
+    if not git_dir.exists():
+        dest.mkdir(parents=True, exist_ok=True)
+        init = run(["git", "init", str(dest)])
+        if init.returncode != 0:
+            raise RuntimeError(init.stderr)
+        run(
             [
                 "git",
-                "clone",
-                "--depth",
-                "1",
+                "-C",
+                str(dest),
+                "remote",
+                "add",
+                "origin",
                 "https://github.com/compound-finance/compound-protocol.git",
-                str(UPSTREAM),
-            ],
+            ]
+        )
+    has = run(["git", "-C", str(dest), "cat-file", "-e", f"{PINNED_COMMIT}^{{commit}}"])
+    if has.returncode != 0:
+        fetch = run(
+            ["git", "-C", str(dest), "fetch", "--depth", "1", "origin", PINNED_COMMIT],
             timeout=120,
         )
-        if proc.returncode != 0:
-            raise RuntimeError(proc.stderr)
-    proc = run(["git", "-C", str(UPSTREAM), "rev-parse", "HEAD"])
+        if fetch.returncode != 0:
+            raise RuntimeError(fetch.stderr)
+    co = run(["git", "-C", str(dest), "checkout", "--force", PINNED_COMMIT])
+    if co.returncode != 0:
+        raise RuntimeError(co.stderr)
+    proc = run(["git", "-C", str(dest), "rev-parse", "HEAD"])
     return proc.stdout.strip()
 
 
@@ -160,28 +183,21 @@ def main() -> int:
         return 1
     rec("PIN-SHA256", "PASS", "pinned BaseJumpRateModelV2.sol sha256 matches manifest")
 
-    commit = ensure_upstream()
-    live = UPSTREAM / UPSTREAM_REL
-    live_hash = sha256_file(live)
-    blob = run(["git", "-C", str(UPSTREAM), "rev-parse", f"HEAD:{UPSTREAM_REL}"]).stdout.strip()
-    if live_hash != PINNED_SHA256:
-        rec(
-            "UPSTREAM-SHA",
-            "FAIL",
-            "live clone hash differs from pin",
-            f"live={live_hash} pin={PINNED_SHA256} commit={commit}",
-        )
-    else:
-        rec(
-            "UPSTREAM-SHA",
-            "PASS",
-            "git clone of compound-protocol matches pinned bytes",
-            f"commit={commit} blob={blob}",
-        )
-    if blob != PINNED_BLOB:
-        rec("UPSTREAM-BLOB", "FAIL", "git blob sha mismatch", f"{blob} != {PINNED_BLOB}")
-    else:
-        rec("UPSTREAM-BLOB", "PASS", "git blob sha of BaseJumpRateModelV2.sol")
+    commit = PINNED_COMMIT
+    blob = PINNED_BLOB
+    try:
+        commit = ensure_upstream()
+        live = UPSTREAM / UPSTREAM_REL
+        live_hash = sha256_file(live)
+        blob = run(["git", "-C", str(UPSTREAM), "rev-parse", f"HEAD:{UPSTREAM_REL}"]).stdout.strip()
+        if live_hash != PINNED_SHA256 or commit != PINNED_COMMIT:
+            rec("UPSTREAM-SHA", "FAIL", "pinned commit bytes differ", f"live={live_hash} commit={commit}")
+        else:
+            rec("UPSTREAM-SHA", "PASS", "pinned compound-protocol commit matches fixture", f"commit={commit}")
+        rec("UPSTREAM-BLOB", "PASS" if blob == PINNED_BLOB else "FAIL", "git blob sha of BaseJumpRateModelV2.sol")
+    except Exception as exc:
+        rec("UPSTREAM-SHA", "SKIP", "could not fetch pinned commit (local pin still checked)", str(exc)[:180])
+        rec("UPSTREAM-BLOB", "SKIP", "live blob not recomputed this run")
 
     ensure_oracle()
     st = run([str(ORACLE_BIN), "selftest"])
@@ -202,6 +218,16 @@ def main() -> int:
         rec("SOL-TR-CHECK", "FAIL", "lin_from_solidity.lin check", chk2.stdout)
     else:
         rec("SOL-TR-CHECK", "PASS", "Compiler 0 check of Solidity transpiler v2 (emit path)")
+    hon = run([str(C0), "vm", str(SOL_TR), "sol_jumprate_honesty_gate"])
+    hv = value_of(hon.stdout)
+    if hon.returncode != 0 or hv != 1:
+        rec("SOL-HONESTY", "FAIL", "view IRM rejected; * / flagged as needing wide muldiv", hon.stdout)
+        return 1
+    rec(
+        "SOL-HONESTY",
+        "PASS",
+        "getBorrowRateInternal is view (rejected); utilizationRate * / needs 128-bit muldiv",
+    )
 
     gate = run([str(C0), "vm", str(LIN), "cjr_test_suite"])
     gv = value_of(gate.stdout)
@@ -229,8 +255,8 @@ def main() -> int:
         if got_lin != want:
             rec("VEC-LIN", "FAIL", f"{fn}{largs}", f"lin={got_lin} c11={want}")
             return 1
-        py = (largs[0] * largs[1] // largs[2]) if kind == "muldiv" else (
-            0 if largs[1] == 0 else (largs[1] * BASE // (largs[0] + largs[1] - largs[2]))
+        py = py_muldiv(*largs) if kind == "muldiv" else (
+            0 if largs[1] == 0 else py_muldiv(largs[1], BASE, largs[0] + largs[1] - largs[2])
         )
         if kind == "util" and largs[1] == 0:
             py = 0
@@ -240,6 +266,21 @@ def main() -> int:
         n_ok += 1
     rec("VEC-CONSENSUS", "PASS", f"{n_ok}/{n_ok} vectors: C11 i128 == limbs == LIN vm")
     rec("PY-BIGINT", "PASS", f"{n_ok}/{n_ok} vectors: Python arbitrary-precision int matches C11 and LIN")
+    q_ov = lin_vm("cjr_muldiv", BASE, BASE, 1)
+    c_ov = int(oracle(["muldiv", str(BASE), str(BASE), "1"]).splitlines()[-1])
+    if q_ov != 0 or c_ov != 0 or py_muldiv(BASE, BASE, 1) != 0:
+        rec("Q-FITS-I64", "FAIL", "1e18*1e18/1 must fail-closed (q does not fit i64)", f"lin={q_ov} c11={c_ov}")
+        return 1
+    rec("Q-FITS-I64", "PASS", "quotient that does not fit nonnegative i64 fail-closes to 0")
+    id_ok = 0
+    for a, b, d in ((100, 200, 50), (BASE, BASE, 2 * BASE), (BASE, 997, 1000)):
+        q, r, ov = [int(x) for x in oracle(["muldiv-id", str(a), str(b), str(d)]).split()]
+        prod = a * b
+        if ov != 0 or q * d + r != prod or lin_vm("cjr_muldiv", a, b, d) != q:
+            rec("MULDIV-ID", "FAIL", f"q*d+r != a*b for ({a}*{b})/{d}")
+            return 1
+        id_ok += 1
+    rec("MULDIV-ID", "PASS", f"{id_ok}/{id_ok} remainder identity q*d+r == a*b (Python/C11/LIN)")
 
     mb = lin_vm("cjr_multiplier_per_block", 40000000000000000, 800000000000000000)
     jb = lin_vm("cjr_jump_per_block", 1090000000000000000)
@@ -316,7 +357,7 @@ def main() -> int:
 
     sol_src = SOL_TR.read_text(encoding="utf-8")
     if "sol_from_sol" in sol_src and "sol_expand_exp" in sol_src:
-        rec("SOL-EMIT", "PASS", "lin_from_solidity.lin now emits LIN and expands 1eN literals")
+        rec("SOL-EMIT", "PASS", "lin_from_solidity.lin emits wrapping i64 LIN for pure fns; JumpRate clone is the 128-bit path")
     else:
         rec("SOL-EMIT", "FAIL", "emit path missing")
 
