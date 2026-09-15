@@ -45,12 +45,28 @@ PINNED_COMMIT = "a3214f67b73310d547e00fc578e8355911c9d376"
 UPSTREAM_REL = "contracts/BaseJumpRateModelV2.sol"
 
 
-def run(cmd: list[str], timeout: int = 120) -> subprocess.CompletedProcess[str]:
+def tcc_env() -> dict[str, str]:
     env = os.environ.copy()
+    pairs = [
+        ("/tmp/tinycc/lib/libtcc.so", "/tmp/tinycc/lib/tcc"),
+        ("/tmp/tinycc/libtcc.so", "/tmp/tinycc"),
+    ]
+    for lib, directory in pairs:
+        if Path(lib).exists() and Path(directory).exists():
+            env["LIN_TCC_LIB"] = lib
+            env["LIN_TCC_DIR"] = directory
+            env["LD_LIBRARY_PATH"] = (
+                directory + ":" + str(Path(lib).parent) + ":" + env.get("LD_LIBRARY_PATH", "")
+            )
+            return env
     env.setdefault("LIN_TCC_LIB", "/tmp/tinycc/libtcc.so")
     env.setdefault("LIN_TCC_DIR", "/tmp/tinycc")
+    return env
+
+
+def run(cmd: list[str], timeout: int = 120) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        cmd, capture_output=True, text=True, timeout=timeout, env=env, check=False
+        cmd, capture_output=True, text=True, timeout=timeout, env=tcc_env(), check=False
     )
 
 
@@ -270,29 +286,49 @@ def main() -> int:
                 "libtcc missing or JIT rejected the module",
             )
 
-    src = LIN.read_text(encoding="utf-8")
-    if "multiplierPerBlock" in src and "view" in src and "msg.sender" in src:
-        rec("EXPLICIT-ARGS", "FAIL", "clone still hides storage")
-    else:
-        rec(
-            "EXPLICIT-ARGS",
-            "PASS",
-            "LIN clone takes IRM parameters as arguments (no hidden storage / msg.sender)",
-        )
-    if "cjr_muldiv" in src and "_lia_ushr" in src:
+    true_wide = (BASE * BASE) // (2 * BASE)
+    wrap_wide = ((BASE * BASE) & ((1 << 64) - 1)) // (2 * BASE)
+    lin_wide = lin_vm("cjr_muldiv", BASE, BASE, 2 * BASE)
+    if lin_wide != true_wide or wrap_wide == true_wide:
         rec(
             "WIDE-MULDIV",
-            "PASS",
-            "clone uses 128-bit product muldiv (naive i64 a*b/d would wrap on 1e18*1e18)",
+            "FAIL",
+            "128-bit muldiv did not beat wrapping u64",
+            f"lin={lin_wide} py={true_wide} wrap={wrap_wide}",
+        )
+        return 1
+    rec(
+        "WIDE-MULDIV",
+        "PASS",
+        "cjr_muldiv(1e18,1e18,2e18) matches Python bigint; wrapping u64 differs",
+        f"true={true_wide} wrap_u64={wrap_wide}",
+    )
+
+    r_lo = lin_vm("cjr_borrow_rate", BASE, BASE, 0, 0, 1000, 0, BASE)
+    r_hi = lin_vm("cjr_borrow_rate", BASE, BASE, 0, 0, 2000, 0, BASE)
+    if r_lo == r_hi:
+        rec("EXPLICIT-ARGS", "FAIL", "borrow rate ignored explicit mult_block arguments")
+        return 1
+    rec(
+        "EXPLICIT-ARGS",
+        "PASS",
+        "same cash/borrows, two mult_block args produce two rates (no hidden storage)",
+        f"{r_lo} vs {r_hi}",
+    )
+
+    sol_gate = run([str(C0), "vm", str(SOL_TR), "sol_from_sol_gate"])
+    sol_src = SOL_TR.read_text(encoding="utf-8")
+    if sol_gate.returncode == 0 and value_of(sol_gate.stdout) == 1:
+        rec("SOL-EMIT", "PASS", "sol_from_sol_gate executed on Compiler 0")
+    elif "VM_REJ_STRING_LITERAL" in sol_gate.stdout and "sol_from_sol" in sol_src and "sol_expand_exp" in sol_src:
+        rec(
+            "SOL-EMIT",
+            "SKIP",
+            "emit path is in source; C0 VM refuses string literals (not an execution proof)",
+            "VM_REJ_STRING_LITERAL",
         )
     else:
-        rec("WIDE-MULDIV", "FAIL", "128-bit muldiv missing")
-
-    sol_src = SOL_TR.read_text(encoding="utf-8")
-    if "sol_from_sol" in sol_src and "sol_expand_exp" in sol_src:
-        rec("SOL-EMIT", "PASS", "lin_from_solidity.lin now emits LIN and expands 1eN literals")
-    else:
-        rec("SOL-EMIT", "FAIL", "emit path missing")
+        rec("SOL-EMIT", "FAIL", "emit path missing or unexpected VM result", sol_gate.stdout[-400:])
 
     evidence["claims"] = claims
     evidence["upstream"] = {

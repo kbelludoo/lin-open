@@ -1,0 +1,45 @@
+@RULEL:COMPOUND_JUMPRATE_IMPROVEMENTS_PROOF:1.0.0
+@CHALLENGE_ID="LIN-COMPOUND-JUMPRATE-IMPROVEMENTS-INDEPENDENT"
+@TITLE="Independent Python/C11/LIN re-proof of Compound JumpRate V2 clone improvements"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-09-15"
+@PARENT="docs/events/EVENT_COMPOUND_JUMPRATE_CLONE_LIN.rulel"
+
+~R{.s=spec .p=proven .x=executed_not_grep .n=not_proven .v=verdict}
+
+.s{
+  question="the Compound JumpRate LIN clone improvements are real and recomputable"
+  class="EXPERIMENTAL"
+  operand_width="uint64 inputs, 128-bit product for (a*b)/d"
+  oracle="python3 arbitrary-precision integer; C11 unsigned __int128; Compiler 0 lin_c0 vm + roundtrip-jit"
+  harness="tools/verify_compound_improvements_oracle.py"
+  evidence="examples/compound_jumprate/improvements_proof.json"
+}
+
+.p{
+  I-WIDE-MULDIV="(1e18*1e18)/2e18 = 5e17 in Python, C11 i128, limbs, and LIN; wrapping uint64 multiply yields 6"
+  I-UTIL-WIDE="utilization(1e18,1e18,0)=5e17; wrapping muldiv would price the market at 6"
+  I-EXPLICIT-ARGS="identical cash/borrows with mult_block=1000 vs 2000 produce 500 vs 1000 (no hidden storage)"
+  I-JUMP-KINK="jump_block ignored below kink; applied above kink; borrow90 > borrow50"
+  I-UNDERFLOW="utilization(1,1,100)==0 fail-closed (Solidity 0.8 would revert)"
+  I-MULT-OVERFLOW="(mult_year*BASE) exceeds uint64; LIN floor-matches (mult_year*BASE)/(blocksPerYear*kink)"
+  I-FORMULA="borrow50=11891171993 borrow90=70871385082 supply50_rf10=5351027396 across Python/LIN/C11"
+  I-JIT="lin_c0 roundtrip-jit CONSENSUS on cjr_test_suite when libtcc is present"
+}
+
+.x{
+  method="execution against Python bigint, not source greps"
+  replaced_greps="WIDE-MULDIV EXPLICIT-ARGS in test/prove_compound_jumprate_external.py now execute"
+}
+
+.n{
+  sol_from_sol="C0 VM returns VM_REJ_STRING_LITERAL; emit path is source-only, not executed"
+  hand_port="src/lin_compound_jumprate.lin is a hand-port, not the output of sol_from_sol on BaseJumpRateModelV2.sol"
+  uint256="full Solidity uint256 / mainnet cToken parity is not claimed"
+  tvl="no TVL or EVM-replacement claim"
+}
+
+.v{
+  on_fail="do not publish PASS"
+  gate="make compound-jumprate-proof"
+}

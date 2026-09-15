@@ -43,7 +43,10 @@
 
 .p{
   harness="test/prove_compound_jumprate_external.py"
+  independent_oracle="tools/verify_compound_improvements_oracle.py"
   evidence_json="examples/compound_jumprate/compound_jumprate_evidence.json"
+  improvements_json="examples/compound_jumprate/improvements_proof.json"
+  independent_event="docs/events/EVENT_COMPOUND_IMPROVEMENTS_INDEPENDENT_PROOF.rulel"
   clone_lin_repo="https://github.com/kbelludoo/lin-open/blob/cursor/linguagem-lin-e-valida-o-1e91/src/lin_compound_jumprate.lin"
   clone_lin_note="separate clone-lin GitHub repository could not be created from this automation; the LIN clone is published in lin-open"
 }

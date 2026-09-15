@@ -211,6 +211,18 @@ int main(int argc, char **argv) {
         printf("%" PRIu64 "\n", borrow_rate(c, b, r, base, mult, jump, kink, md));
         return 0;
     }
+    if (strcmp(cmd, "supply") == 0 && argc == 10) {
+        uint64_t c = strtoull(argv[2], NULL, 10);
+        uint64_t b = strtoull(argv[3], NULL, 10);
+        uint64_t r = strtoull(argv[4], NULL, 10);
+        uint64_t base = strtoull(argv[5], NULL, 10);
+        uint64_t mult = strtoull(argv[6], NULL, 10);
+        uint64_t jump = strtoull(argv[7], NULL, 10);
+        uint64_t kink = strtoull(argv[8], NULL, 10);
+        uint64_t rf = strtoull(argv[9], NULL, 10);
+        printf("%" PRIu64 "\n", supply_rate(c, b, r, base, mult, jump, kink, rf, md));
+        return 0;
+    }
     fprintf(stderr, "bad args\n");
     return 2;
 }

@@ -12,7 +12,10 @@ JumpRateModel. The LIN clone itself is `src/lin_compound_jumprate.lin` in lin-op
 - **Pinned fixture:** `test/fixtures/external_proof/BaseJumpRateModelV2.sol`
 - **C11 oracle:** `test/oracles/compound_jumprate_c11.c`
 - **Harness:** `python3 test/prove_compound_jumprate_external.py`
+- **Independent improvement oracle (Python bigint, not a limb clone):** `python3 tools/verify_compound_improvements_oracle.py`
+- **One command:** `make compound-jumprate-proof`
 - **Event receipt:** `docs/events/EVENT_COMPOUND_JUMPRATE_CLONE_LIN.rulel`
+- **Independent proof receipt:** `docs/events/EVENT_COMPOUND_IMPROVEMENTS_INDEPENDENT_PROOF.rulel`
 
 ## What is claimed
 
@@ -26,4 +29,8 @@ JIT). Storage parameters are function arguments.
 Mainnet uint256 parity, EVM replacement, or TVL impact.
 
 Machine-written evidence for a given run is in `compound_jumprate_evidence.json`
-(produced by the harness; do not hand-edit).
+and `improvements_proof.json` (produced by the harnesses; do not hand-edit).
+
+Discriminating vector: wrapping uint64 `(1e18*1e18)/2e18` yields **6**; Python,
+C11 `__int128` and LIN yield **500000000000000000**. That is the 128-bit muldiv
+improvement, recomputed — not grepped.
