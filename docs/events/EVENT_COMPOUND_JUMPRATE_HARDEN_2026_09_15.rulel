@@ -1,0 +1,41 @@
+@RULEL:COMPOUND_JUMPRATE_HARDEN:1.0.0
+@CHALLENGE_ID="LIN-COMPOUND-JUMPRATE-HARDEN-2026-09-15"
+@TITLE="Harden experimental JumpRate clone: explicit args + 128-bit muldiv, not uint256 parity"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-09-15"
+@PRIOR_PR="https://github.com/kbelludoo/lin-open/pull/79"
+
+~R{.s=spec .d=deltas .n=not_proved .c=c4 .v=verdict}
+
+.s{
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  real_improvement="IRM storage parameters become explicit function arguments; (a*b)/d uses a 128-bit product with fail-closed uint64 quotient overflow"
+  operand_width="uint64 inputs; 128-bit product; remainder identity a*b = q*d + r"
+}
+
+.d{
+  muldiv_overflow="quotient that does not fit uint64 returns 0 instead of wrapping the low 64 bits"
+  muldiv_rem="cjr_muldiv_rem plus C11 rem CLI; Python bigint checks a*b = q*d + r"
+  util_ok="cjr_util_ok distinguishes genuine borrows==0 from cash+borrows-reserves underflow (Solidity 0.8 reverts; LIN returns 0)"
+  view_lift="src/lin_sol_view_lift.lin: view storage identifiers become extra args; locals and calls are not lifted. Does not rewrite * / to muldiv."
+  jump_supply="independent harness adds borrow@90% (jump region) and supply@50% rf=10% three-way consensus"
+  upstream_pin="prove_compound fetches pinned commit a3214f67...; network failure is SKIP, not a live-master hash FAIL"
+}
+
+.n{
+  not_1="Solidity uint256 / Compound cToken mainnet parity"
+  not_2="LIN replacing Compound, Uniswap, or the EVM"
+  not_3="general superiority vs solc/LLVM (SipHash ~20.8x is compile-turnaround on this host)"
+  not_4="zk or computational soundness of Merkle (C4 is tamper-evidence + re-execution)"
+}
+
+.c{
+  first_fail="C4 FAIL on the first independent-reproof attempt was a missing transpile/c/bin/lin_c_receipt binary, not false math"
+  fix="prove_all_claims_external.py and make rationalist-proof now run make -C transpile/c xver (C11, no Zig). Root make xver still depends on Zig build-cpu and must not be used for C4."
+}
+
+.v{
+  method="PYTHON_BIGINT && LIN_C0_VM && C11_I128 && REM_IDENTITY && Q_OVERFLOW_FAIL_CLOSED && VIEW_LIFT_GATE"
+  on_fail="do not publish PASS"
+}
