@@ -1,0 +1,64 @@
+@RULEL:COMPOUND_JUMPRATE_CLONE_LIN:1.1.0
+@CHALLENGE_ID="LIN-COMPOUND-JUMPRATE-V2"
+@TITLE="Clone-lin of Compound JumpRateModel V2 — experimental uint64 profile"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-09-15"
+@CLONE_LIN="src/lin_compound_jumprate.lin"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="reproduce Compound JumpRate formulas on a deliberately reduced uint64 operand width, with auditable C11 and Python oracles"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for (a*b)/d; quotient that does not fit uint64 fail-closes to 0; Solidity uint256 is NOT claimed"
+  real_improvement_1="IRM parameters that Solidity reads from storage are explicit function arguments"
+  real_improvement_2="(a*b)/d uses a schoolbook 128-bit product instead of wrapping signed i64 multiply"
+}
+
+.u{
+  repo="https://github.com/compound-finance/compound-protocol"
+  path="contracts/BaseJumpRateModelV2.sol"
+  license="BSD-3-Clause"
+  commit="a3214f67b73310d547e00fc578e8355911c9d376"
+  git_blob_sha="4d6828c39ed737c0c48508adc414b919ab6c2a55"
+  file_sha256="9cd2fe5f7b88748c336bf2988c475da517ffd4909057b53df138b80f162fb34f"
+  fixture="test/fixtures/external_proof/BaseJumpRateModelV2.sol"
+  pin_policy="harness checks out the pinned commit, not floating master HEAD"
+}
+
+.l{
+  clone="src/lin_compound_jumprate.lin"
+  clone_is_hand_written="true"
+  transpiler_note="src/lin_from_solidity.lin v2 emits eligible pure functions; getBorrowRateInternal is internal view so the IRM clone is not a sol_from_sol dump"
+  documented_diff_1="cash+borrows-reserves underflow: Solidity 0.8 reverts; LIN fail-closed returns 0"
+  documented_diff_2="blocksPerYear*kink overflows uint64; LIN uses floor-identical (mult*BASE/kink)/blocks"
+  documented_diff_3="quotient >= 2^64 fail-closes to 0; Solidity uint256 would return the full quotient"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle_c11="test/oracles/compound_jumprate_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  oracle_py="test/oracles/compound_jumprate_py.py (Python int, uint64-profile fail-closed)"
+  gate="test/verify_compound_jumprate.sh"
+  independent="test/prove_melhorias_independent.py"
+}
+
+.p{
+  harness="test/prove_compound_jumprate_external.py"
+  evidence_json="examples/compound_jumprate/compound_jumprate_evidence.json"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet cToken parity"
+  not_claimed_2="LIN replaces Compound, Uniswap, or the EVM"
+  not_claimed_3="general superiority vs solc/LLVM (SipHash ~20.8x is compile-turnaround on one host)"
+  not_claimed_4="computational soundness of Merkle receipts (C4 is tamper-evidence + reexecution, not zk)"
+  not_claimed_5="this clone is a production IRM replacement"
+}
+
+.v{
+  method="PINNED_BYTES && PYTHON_ORACLE && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_BOTH && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
