@@ -1,16 +1,19 @@
 @RULEL:EVENT:RSA_CRYPTANALYSIS:1.0.0
-@TITLE="Quebra Histórica de Criptografia RSA no LIN / LinVM"
+@TITLE="Toy Pollard's Rho on a ~37-bit RSA modulus (NOT a historical break)"
 @DATE="2026-08-31"
 @AUTHOR="LIN Cryptanalysis Subsystem"
-@STATUS="CONFIRMED_AND_VERIFIED"
+@STATUS="TOY_NOT_HISTORICAL"
+@R5="TOY — N~2^37; does not break RSA-1024/2048, PKCS#1, or any deployed RSA"
 
 ~R{.t=target .f=factors .k=keys .p=plaintext .r=receipt}
 
 .t{
-  algorithm="RSA (Rivest-Shamir-Adleman)"
+  algorithm="RSA (textbook, unpadded)"
   public_modulus_N="136117223861"
   public_exponent_e="65537"
   ciphertext_C="118349743589"
+  bits_approx=37
+  not_a_claim="historical RSA break, RSA Laboratory challenges, or TLS/PKCS#1"
 }
 
 .f{
@@ -24,7 +27,7 @@
 .k{
   private_exponent_d="108704485601"
   math_proof="(e * d) mod phi == 1 -> (65537 * 108704485601) mod 136115819424 == 1"
-  status="PRIVATE_KEY_FULLY_EXPOSED"
+  status="TOY_KEY_ON_37_BIT_MODULUS"
 }
 
 .p{
@@ -38,5 +41,5 @@
   execution_environment="LinVM Deterministic Execution"
   break_time_ms="0.0421"
   merkle_receipt_root="sha256:d5c28e93ba4f09d8e7b1a642e19f72b5220c8f94cb02f7da54b69d123e4981fa"
-  status="CERTIFIED_CRYPTOGRAPHIC_BREAK_EVENT"
+  status="TOY_FACTORIZATION_DEMO"
 }

@@ -1,13 +1,13 @@
 @LIN:MODULE:2.0.0
 @HIGH_VALUE_MARKET_ENGINES{
-  sources="Uniswap V2/V3 + Flashbots MEV-Boost + LayerZero Endpoint + OpenZeppelin MerkleDrop"
-  target="Zero-Trust High-Value Financial & Cryptographic Infrastructure"
-  standard="BIP340_ERC4337_EIP712_LZv2"
+  status="TOY_I64_NOT_A_BOUNTY"
+  sources="illustrative names only — not Uniswap/LayerZero/Flashbots/OpenZeppelin implementations"
+  target="scalar i64 demos; do not file or cite as a LayerZero or MEV bounty"
+  standard="none"
 }
 
-// 1. UNISWAP V2/V3 CONSTANT PRODUCT INVARIANT WITH FEE TIER (High-Value Bounty Target)
-// Source: https://github.com/Uniswap/v2-core / Uniswap-v3-core
-// Real Risk: Overflow reentrancy, sandwich slippage, division truncation exploits ($2.1B+ historically lost)
+// 1. UNISWAP V2-SHAPED CONSTANT PRODUCT (TOY i64, not the canonical u256 engine)
+// Canonical mainnet math: examples/defi_settlement_proof/u256_settlement_engine.lin
 !uniswap_v2_swap_exact_in(amount_in: int, reserve_in: int, reserve_out: int) -> int {
   // 0.3% fee (997/1000)
   amount_in_with_fee = amount_in * 997;
@@ -23,9 +23,7 @@
   }
 }
 
-// 2. MEV FLASHBOTS SEARCHER BUNDLE PROFIT & ATOMIC BRIBE ROUTER (MEV Protection)
-// Source: https://github.com/flashbots/mev-boost
-// Real Value: Arbitrage execution across DEX pairs with atomic rollback on negative profit
+// 2. Toy i64 profit-minus-gas (NOT mev-boost, NOT a Flashbots bounty)
 !mev_bundle_profit_eval(trade_profit: int, gas_used: int, gas_price: int, bribe_pct: int) -> int {
   gross_cost = gas_used * gas_price;
   ?(trade_profit <= gross_cost) {
@@ -39,9 +37,7 @@
   }
 }
 
-// 3. LAYERZERO V2 & CHAINLINK CROSS-CHAIN DVNS MERKLE VERIFIER (Bridge Security)
-// Source: https://github.com/LayerZero-Labs/LayerZero-v2
-// Real Risk: Bridge exploits ($1.5B+ lost in Nomad, Ronin, Wormhole due to off-chain validator mismatch)
+// 3. Toy XOR/rotate packet tag (NOT LayerZero Endpoint, NOT a DVN, NOT a bounty)
 !layerzero_dvn_packet_verify(payload_hash: int, src_eid: int, dst_eid: int, nonce: int) -> int {
   magic_seed = 0x546c7a30327632;
   packet_leaf = payload_hash ^ (src_eid << 16) ^ (dst_eid << 32) ^ (nonce * magic_seed);
@@ -50,9 +46,7 @@
   ^ packet_leaf;
 }
 
-// 4. OPENZEPPELIN / AIRDROP MERKLE PROOF ROOT STEP (Token Distribution)
-// Source: https://github.com/OpenZeppelin/openzeppelin-contracts
-// Real Value: Deterministic verification of token claim rights with zero gas inflation
+// 4. Toy i64 combine step (NOT OpenZeppelin MerkleProof, NOT SHA-256)
 !merkle_proof_step(leaf: int, proof_element: int) -> int {
   ?(leaf < proof_element) {
     combined = leaf ^ ((proof_element << 13) | ((proof_element >> 51) & 8191));

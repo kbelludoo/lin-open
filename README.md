@@ -46,7 +46,7 @@ All capabilities below are **fully verified without mock data or simulated infra
 | **Independent Log Verification** | ✅ **PASS** | Standalone log verification scripts in Python, Node.js, Bash+OpenSSL, and WebCrypto without the LIN compiler |
 | **LinVM0 Self-Hosting (V1 → V5)** | ✅ **PASS** | Front-end in pure LIN, closed Fixed Point $C_0=C_1=C_2$ (deterministic self-compilation closure), native ELF64 emitter running on the Linux kernel, and Compiler-0 (`lin_c0`) running independently on standard C11 |
 | **Cross-Platform Reproducibility** | ✅ **PASS** | Runs identically bit-for-bit across CPU (Host C11), Web (Wasm/JS), and GPU (OpenCL) |
-| **GPU AMM Co-processor** | ✅ **PASS** | **Deterministic AMM Co-processor** on AMD Radeon RX 6600 (Kernel execution: 1.7ms / 1.17M swaps/s peak; End-to-end wall-clock: 218ms / 9.1k swaps/s). On-chain anchor (`contracts/LinReceiptVerifier.sol`) measured in Foundry at 70,133 gas (~35.1 gas/swap amortized over 2,000 swaps; ~3.56× cheaper than Groth16 under an optimistic dispute model; 13,258×–16,604× when compared to full L1 EVM re-execution). |
+| **GPU AMM Co-processor** | ✅ **PASS** | Deterministic AMM co-processor on AMD Radeon RX 6600. **Wall-clock** (the only figure comparable to a user-visible run): **218 ms / 9.1k swaps/s** cold end-to-end for 2,000 swaps. Kernel-only microseconds are not wall-clock and are not L1 TPS. On-chain anchor (`contracts/LinReceiptVerifier.sol`) measured in Foundry at 70,133 gas under an optimistic dispute model — not zk. |
 
 ### Strict Codebase Accounting
 * **Execution Runtime Core:** **809 LOC** (`lin_vm.c`, `lin_linbc1.c`, `lin_sha256.c`, `lin_common.c`).
@@ -64,6 +64,9 @@ LIN maintains an explicit rationalist proof harness (`test/prove_all_claims_exte
 make rationalist-proof
 # or standalone:
 python3 test/prove_all_claims_external.py --iterations 10000
+
+# Value ladder (L0-L3 laboratory). Does not substitute live --fetch (L1) or L4:
+make value-proof
 ```
 
 ### Verified Claims (Reproducible from this repository)
@@ -84,15 +87,17 @@ In compliance with rationalist auditing standards (`NP1`):
 
 | Claim | Honest Status | Why it is NOT proven |
 |---|:---:|---|
-| **"LIN saves $1.8T"** | ❌ **FALSE AS STATED** | Cumulative Uniswap trading volume was conflated with cost savings; no benchmark supports this figure. |
+| **"LIN saves $1.8T"** | ❌ **FALSE AS STATED** | Cumulative Uniswap trading volume was conflated with cost savings; volume is not savings. |
 | **"16,604× gas reduction as general proof"** | ⚠️ **CONDITIONAL BASELINE** | 16,599× is the ratio against re-executing all 2,000 swaps in unoptimized L1 EVM bytecode. Compared against zk-SNARK verifiers (e.g. Groth16 at ~125 gas/swap amortized), LIN's batch anchor (~35.1 gas/swap) is ~3.56× cheaper, but operates with an optimistic dispute model rather than cryptographic soundness. |
-| **"1.17M swaps/s wall-clock throughput"** | ⚠️ **PEAK KERNEL ONLY** | 1.17M swaps/s reflects 1.7 ms pure GPU compute on AMD RX 6600. End-to-end wall-clock throughput is 9,100 swaps/s (218 ms) due to PCIe transfer and driver overhead. A single CPU core running u256 delivers ~300,000 swaps/s. |
+| **"1.17M swaps/s wall-clock throughput"** | ❌ **FALSE AS STATED** | 1.17M is **peak kernel** on RX 6600 (1.7 ms compute, no PCIe). Wall-clock is **9,100 swaps/s** (218 ms). Do not quote kernel peak as wall or as L1 TPS. |
+| **"Historical RSA break / LayerZero bounty"** | ❌ **FALSE AS STATED** | Pollard's Rho demo is a **~37-bit toy** (`docs/events/EVENT_RSA_CRYPTANALYSIS_001.rulel`). `src/lin_high_value_bounties.lin` is TOY i64, not a LayerZero/Flashbots bounty. |
 | **"Zero-Trust without execution"** | ❌ **NOT SOUND** | Merkle receipts prove data integrity (tamper-evidence), not execution validity. Soundness requires re-execution or an active dispute game. |
-| **"LIN is faster than LLVM/C/Rust"** | ❌ **NOT PROVEN** | No general compiler benchmark against LLVM -O3 exists in this repository. A SipHash ~20.8× figure, when quoted, is compile-turnaround on one host. |
+| **"LIN replaces C/Rust/Python as a general language"** | ❌ **NOT-PROVEN** | Must stay written. Empate em kernels pinados (C1–C7) não é vitória de linguagem; omitir isto faz o reviewer descartar o `rationalist-proof`. |
 | **"Full OpenSSL executes in LinVM"** | ❌ **NOT PROVEN** | OpenSSL `sha256.c` is pinned for provenance only; full OpenSSL is not transpiled or executed. |
 | **"Full Uniswap protocol is replaced"** | ❌ **NOT PROVEN** | Only the pure scalar arithmetic functions are transpiled and verified; state storage, ERC-20 calls, and EVM reentrancy are out of scope. |
 | **"Compound cToken / uint256 mainnet parity"** | ❌ **NOT PROVEN** | The JumpRate clone is experimental uint64-scale: explicit IRM arguments and 128-bit `(a*b)/d`, not Solidity uint256. |
 | **"Merkle receipts are zk / computationally sound"** | ❌ **NOT PROVEN** | C4 recomputes a SHA-256 root and rejects a tampered output. That is tamper-evidence plus re-execution, not a SNARK. |
+| **"L4: production / third-party use"** | ❌ **NOT-PROVEN** | A stranger has not published the same Merkle root, and nobody yet refuses a CSV for lack of a receipt. `make value-proof` is L0–L3 laboratory and does not mint L4. |
 
 ---
 
@@ -268,7 +273,7 @@ python3 lin_verify.py all --iterations 10000
 ├── compiler/              # Stage-0 bootstrap compiler (frozen R2: LinVM, MIR, receipts, OpenCL)
 ├── contracts/             # Solidity L1 receipt verifier (LinReceiptVerifier.sol, Foundry-tested)
 ├── docs/                  # Specs, grant documents, event ledger (*.rulel), datasets, M1 compliance docs
-├── examples/              # Cryptanalysis gates (RSA, A5/1, ECDH, Enigma, ML-KEM) + DeFi settlement proof
+├── examples/              # Toy cryptanalysis demos (RSA~37-bit, A5/1, ECDH, Enigma, ML-KEM) + DeFi settlement proof
 ├── redteam/               # Adversarial fixtures (fake OpenCL device, spoofed host)
 ├── src/                   # Native LIN specification modules (.lin)
 │   └── linvm0_compiler/   # Self-hosted LinVM front-end in pure LIN (V2/V3)

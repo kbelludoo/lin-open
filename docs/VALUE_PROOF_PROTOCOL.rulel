@@ -1,0 +1,62 @@
+@RULEL:LIN_VALUE_PROOF:1.1.0
+~R{.q=question .v=verdict .m=measured .k=ladder .f=frontend .cut=cut .r=run .p=policy}
+# Protocolo de prova de valor — LIN vs linguagens consolidadas.
+# Status (R5): experimental / laboratorio. Nao e linguagem generalista.
+#
+# Empate + recibo independente e o produto. Paridade nao e vitoria.
+
+.q{
+  asked="LIN tem valor perante C/Rust/Python/Solidity? Vale continuar?"
+  wrong_contest="substituir C, Rust, Python ou Solidity como lingua geral"
+  right_contest="kernel numerico deterministico + recibo independente em algoritmos pinados"
+}
+
+.v{
+  continue="SIM, como co-processador auditavel — nao como lingua geral"
+  laboratory_until="L4: estranho publica o mesmo root E alguem recusa CSV sem recibo"
+  np_must_print="NP NOT-PROVEN como lingua geral; omitir faz o reviewer descartar C1-C7"
+}
+
+.m{
+  V1="16624 empata gcc/CPython/lin_c0 — nao ganha"
+  V2="sha256:a6d17453... output+1 rejeitado — tamper-evidence, NAO zk"
+  V3="pin UniswapV2Library.sol sha256:4f83e933... — unico jeito de L1 existir"
+}
+
+.k{
+  L0="N-versao local: gcc-C11 == CPython == lin_c0 (V1 empate)"
+  L1="pin upstream (V3). Live --fetch = make rationalist-proof FETCH=1"
+  L2="recibo independente (V2). hashlib, zero compilador LIN"
+  L3="frontend fail-closed REJ_* / VM_REJ_* (rejeitar alto melhora o recibo)"
+  L4="estranho publica o mesmo root + recusa de CSV sem recibo — UNICO gate mundo-real"
+  value_proof="make value-proof cobre L0-L3 (pin local em L1). NAO substitui L1-live nem L4"
+}
+
+.f{
+  thesis="sol_from_sol fail-closed com REJ_* serve a tese coprocessador"
+  kills="transpiler que promete Solidity/C geral"
+  measured="lin_c0 info src/lin_from_solidity.lin -> eligible=0, 13/13 REJECTED VM_REJ_*"
+  source_table="sol_reason: REJ_SOLIDITY_PAYABLE/STATE/ENV/INLINE_ASM/STORAGE/EVENT/NON_PURE"
+}
+
+.cut{
+  RSA_2_36="toy Pollard ~37-bit; NAO quebra historica de RSA"
+  LayerZero_bounties="lin_high_value_bounties.lin e TOY i64, nao bounty LayerZero"
+  wall_1_17M="1.17M e pico de kernel; wall-clock medido e 9.1k swaps/s"
+  volume_savings="volume Uniswap nao e poupanca; $1.8T e FALSE AS STATED"
+  poison="cada um destes anula rationalist-proof na cabeca do reviewer"
+}
+
+.r{
+  command="make value-proof"
+  standalone="python3 test/prove_value_vs_established.py"
+  live_pin="make rationalist-proof FETCH=1"
+  deps="cc + python3; make -C transpile/c all (sem Zig)"
+}
+
+.p{
+  r5="LABEL_TOY_VS_EXPERIMENTAL_VS_REAL_WORLD_NO_OVERCLAIM"
+  r4="ONE_DIGEST_ONE_MEANING_AND_RECOMPUTABLE"
+  fail_closed="V1/V2/V3/L3 FAIL => VALUE GATE FAIL"
+  l4_never_auto="L4 permanece NOT-PROVEN ate artefato de terceiro existir"
+}
