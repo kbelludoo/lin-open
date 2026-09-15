@@ -305,8 +305,9 @@ else
 	@python3 test/prove_all_claims_external.py --iterations 10000
 endif
 
-# Honest contest vs established languages (gcc C11 + CPython). Not a
-# general-language benchmark. See docs/VALUE_PROOF_PROTOCOL.rulel.
+# Honest contest vs established languages (gcc C11 + CPython). L0-L3
+# laboratory only — does not substitute live pin-fetch (L1) or L4.
+# See docs/VALUE_PROOF_PROTOCOL.rulel.
 value-proof: c0
 	@$(MAKE) -C transpile/c all
 	@python3 test/prove_value_vs_established.py

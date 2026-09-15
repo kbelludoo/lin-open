@@ -23,7 +23,7 @@ python3 examples/run_demos.py --interactive
 
 ### 1. DeFi & Automated Market Maker ([`amm_swap.lin`](./amm_swap.lin))
 * **O que faz:** Implementa o motor de swap de tokens de produto constante ($x \cdot y = k$) do Uniswap v2 com taxa ajustável (ex: 0,30%) e função de verificação da conservação de liquidez.
-* **Onde o Lin é melhor:** No Ethereum L1, processar 2.000 swaps custa **$70.000 dólares** em gás. Com Lin, o lote é resolvido off-chain e liquidado no contrato por apenas **$4,20** (16.599x mais barato), mantendo o poder de *slashing* imediato se houver qualquer tentativa de inflação de saldo.
+* **Escopo honesto:** o motor i64 deste exemplo é toy. Liquidação Mainnet usa o u256 + âncora otimista (`settleBatch` 70,133 gas). Isso não é poupança de volume Uniswap e não é 1.17M wall-clock.
 * **Como executar no terminal:**
   ```bash
   # 1. Validar tipos e sintaxe do módulo

@@ -9,13 +9,13 @@ Not the contest: replace C/Rust/Python/Solidity as a general language.
     python3 test/prove_value_vs_established.py
     make value-proof
 
-Exit 0 = W1+W2+W3 PASS and NP/U* lines printed. Exit 1 = a win condition failed.
+Exit 0 = L0-L3 PASS, NP/L4 printed. Exit 1 = a win condition failed.
+L4 is never auto-PASS. make value-proof does not substitute live pin-fetch or L4.
 """
 
 from __future__ import annotations
 
 import math
-import os
 import random
 import re
 import subprocess
@@ -24,6 +24,8 @@ import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "test" / "value_gate"))
+from ladder import C4_ROOT, cut_overclaims, l1_pin, l3_frontend  # noqa: E402
 C0 = ROOT / "transpile" / "c" / "bin" / "lin_c0"
 BC1 = ROOT / "transpile" / "c" / "bin" / "lin_bc1_run"
 XREC = ROOT / "transpile" / "c" / "bin" / "lin_c_receipt"
@@ -192,8 +194,9 @@ def w1_nversion(cbin: Path) -> tuple[str, str]:
     if py_amount_out(10000, 50000, 100000) != 16624:
         return "FAIL", "canonical Uniswap vector is not 16624 in the Python oracle"
     return "PASS", (
-        f"gcc-C11 == CPython == lin_c0 on {n_qoi} QOI + fac 0..20/edges + "
-        f"{len(vectors)} get_amount_out i64 (TOY_INT64 domain, not mainnet uint256)"
+        f"V1 16624 empate (does not win). gcc-C11 == CPython == lin_c0 on "
+        f"{n_qoi} QOI + fac 0..20/edges + {len(vectors)} get_amount_out i64 "
+        "(TOY_INT64 domain, not mainnet uint256)"
     )
 
 
@@ -201,6 +204,9 @@ def w2_receipt() -> tuple[str, str]:
     rc, out = run([str(XREC), "--expr", "x * x", "--env", "x=9"])
     if rc != 0:
         return "FAIL", f"lin_c_receipt failed: {out}"
+    m = re.search(r'root="sha256:([0-9a-f]+)"', out)
+    if not m or m.group(1) != C4_ROOT:
+        return "FAIL", f"V2 root mismatch: {out}"
     rc, _ = run(["python3", str(VERIFY_RECEIPT), str(SQ_RECEIPT)])
     if rc != 0:
         return "FAIL", "committed receipt_sqr9.json did not verify with hashlib"
@@ -214,8 +220,8 @@ def w2_receipt() -> tuple[str, str]:
     if rc == 0:
         return "FAIL", "tampered output+1 receipt was accepted"
     return "PASS", (
-        "hashlib recomputed the committed receipt; output+1 rejected. "
-        "This is tamper-evidence, not zk/computational soundness."
+        f"V2 sha256:{C4_ROOT[:8]}... output+1 rejected. "
+        "Tamper-evidence, not zk/computational soundness."
     )
 
 
@@ -249,15 +255,14 @@ def w3_u256() -> tuple[str, str]:
 
 def main() -> int:
     print("=" * 78)
-    print("  LIN VALUE GATE vs established languages")
-    print("  Contest: deterministic kernel + independent receipt")
-    print("  NOT the contest: replace C/Rust/Python/Solidity as a general language")
+    print("  LIN VALUE GATE  (empate + recibo = produto; NP obrigatorio)")
+    print("  L0-L3 = laboratorio. L4 = mundo real. Este comando nao substitui L1-live/L4.")
     print("=" * 78)
 
     rows: list[Row] = []
     host_err = ensure_host()
     if host_err:
-        rows.append(Row("W1", "N-version gcc == Python == lin_c0", "FAIL", host_err))
+        rows.append(Row("L0", "V1 N-version gcc == Python == lin_c0", "FAIL", host_err))
         print(rows[0].line())
         print("\nRESULT: FAIL")
         return 1
@@ -266,41 +271,32 @@ def main() -> int:
         cbin = Path(td) / "oracle_c11"
         cerr = build_c_oracle(cbin)
         if cerr:
-            rows.append(Row("W1", "N-version gcc == Python == lin_c0", "FAIL", cerr))
+            rows.append(Row("L0", "V1 N-version gcc == Python == lin_c0", "FAIL", cerr))
         else:
-            rows.append(Row("W1", "N-version gcc == Python == lin_c0", *w1_nversion(cbin)))
+            rows.append(Row("L0", "V1 16624 empate gcc == Python == lin_c0", *w1_nversion(cbin)))
 
-    rows.append(Row("W2", "Independent hashlib receipt + tamper reject", *w2_receipt()))
+    rows.append(Row("L1", "V3 pin UniswapV2Library.sol sha256:4f83e933...", *l1_pin()))
+    rows.append(Row("L2", "V2 a6d17453... output+1 rejected (not zk)", *w2_receipt()))
+    rows.append(Row("L3", "sol_from_sol fail-closed REJ_* / VM_REJ_*", *l3_frontend(run)))
+    rows.append(Row("CUT", "RSA 2^36 / LayerZero bounty / 1.17M-as-wall / volume-savings", *cut_overclaims()))
     rows.append(Row("W3", "u256 Uniswap math: LinVM == Python bigint", *w3_u256()))
     rows.append(Row(
-        "W4",
-        "Scope honesty printed by this gate",
-        "PASS",
-        "NP/U* lines below are mandatory; omitting them is an overclaim",
+        "L4",
+        "Stranger publishes the same root AND CSV refused without receipt",
+        "NOT-PROVEN",
+        "Laboratory until both exist. make value-proof cannot mint L4.",
     ))
     rows.append(Row(
         "NP1",
         "LIN as a general-purpose language vs C/Rust/Python",
         "NOT-PROVEN",
-        "No stdlib, no package ecosystem, no LLVM-O3 benchmark, subset C/Solidity only",
-    ))
-    rows.append(Row(
-        "U1",
-        "Independent external human review",
-        "NOT-PROVEN",
-        "Open item in GRANT_PROPOSAL M3 / RATIONALIST_PROOF_STATUS",
-    ))
-    rows.append(Row(
-        "U3",
-        "Faster than LLVM/C/Rust",
-        "NOT-PROVEN",
-        "Forbidden claim (README NP table). Parity is not speed.",
+        "Must stay printed. Omitting this makes a reviewer dump C1-C7 with the hype.",
     ))
     rows.append(Row(
         "U4",
         "Merkle receipts are zk / computationally sound",
         "NOT-PROVEN",
-        "Optimistic dispute + re-execution. A lying executor can mint a valid root.",
+        "V2 is tamper-evidence. A lying executor can mint a valid root.",
     ))
 
     for r in rows:
@@ -311,8 +307,8 @@ def main() -> int:
     if failures:
         print(f"RESULT: FAIL ({len(failures)} win-condition(s) broken)")
         return 1
-    print("VERDICT: CONTINUE as an auditable numeric co-processor; do not sell as a language replacement.")
-    print("RESULT: PASS (W1-W4) with explicit NOT-PROVEN (NP1/U1/U3/U4)")
+    print("VERDICT: CONTINUE as an auditable coprocessor. L4 still laboratory.")
+    print("RESULT: PASS L0-L3 + CUT; NOT-PROVEN L4/NP1/U4")
     return 0
 
 

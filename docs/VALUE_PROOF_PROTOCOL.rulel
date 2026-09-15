@@ -1,10 +1,9 @@
-@RULEL:LIN_VALUE_PROOF:1.0.0
-~R{.q=question .v=verdict .c=contest .w=wins .l=losses .u=unproven .r=run .p=policy}
+@RULEL:LIN_VALUE_PROOF:1.1.0
+~R{.q=question .v=verdict .m=measured .k=ladder .f=frontend .cut=cut .r=run .p=policy}
 # Protocolo de prova de valor — LIN vs linguagens consolidadas.
-# Status epistemico (R5): experimental / piloto. Nao e linguagem generalista.
+# Status (R5): experimental / laboratorio. Nao e linguagem generalista.
 #
-# Este arquivo trava a pergunta "o LIN tem valor?" a um concurso auditavel.
-# Marketing, grants e PRs devem citar o gate, nao prosa livre.
+# Empate + recibo independente e o produto. Paridade nao e vitoria.
 
 .q{
   asked="LIN tem valor perante C/Rust/Python/Solidity? Vale continuar?"
@@ -13,51 +12,51 @@
 }
 
 .v{
-  continue="SIM, como co-processador auditavel de kernels escalares — nao como lingua geral"
-  stop_if="W1 ou W2 ou W3 falham, ou um claim de lingua-geral e vendido como prova"
-  independent_review="AINDA ABERTO (nao automatizavel; GRANT_PROPOSAL M3)"
+  continue="SIM, como co-processador auditavel — nao como lingua geral"
+  laboratory_until="L4: estranho publica o mesmo root E alguem recusa CSV sem recibo"
+  np_must_print="NP NOT-PROVEN como lingua geral; omitir faz o reviewer descartar C1-C7"
 }
 
-.c{
-  established_oracles="gcc-C11 + CPython stdlib + Python int (uint256)"
-  lin_engines="lin_c0 vm (i64) + lin_bc1_run u256_settlement_engine.linbc"
-  independent_verifier="benchmarks/verify_receipt.py (hashlib, zero LIN compiler)"
-  soundness="tamper-evidence + re-execucao / disputa otimista — NAO zk"
+.m{
+  V1="16624 empata gcc/CPython/lin_c0 — nao ganha"
+  V2="sha256:a6d17453... output+1 rejeitado — tamper-evidence, NAO zk"
+  V3="pin UniswapV2Library.sol sha256:4f83e933... — unico jeito de L1 existir"
 }
 
-.w{
-  W1="N-versao bit-exact: gcc-C11 == CPython == lin_c0 nos kernels pinados"
-  W2="recibo Merkle recomputado por hashlib; output+1 rejeitado"
-  W3="uint256 Uniswap getAmountOut: LinVM == Python bigint nos vetores dourados"
-  W4="o proprio gate imprime o que NAO esta provado (NP/U*)"
+.k{
+  L0="N-versao local: gcc-C11 == CPython == lin_c0 (V1 empate)"
+  L1="pin upstream (V3). Live --fetch = make rationalist-proof FETCH=1"
+  L2="recibo independente (V2). hashlib, zero compilador LIN"
+  L3="frontend fail-closed REJ_* / VM_REJ_* (rejeitar alto melhora o recibo)"
+  L4="estranho publica o mesmo root + recusa de CSV sem recibo — UNICO gate mundo-real"
+  value_proof="make value-proof cobre L0-L3 (pin local em L1). NAO substitui L1-live nem L4"
 }
 
-.l{
-  L1="divergencia vs oraculo C ou Python no dominio pinado"
-  L2="verificador aceita recibo adulterado"
-  L3="claim exige confiar no compilador LIN sem oraculo independente"
-  L4="overclaim: mais rapido que LLVM, substitui Uniswap, Merkle e zk, economia $1.8T"
+.f{
+  thesis="sol_from_sol fail-closed com REJ_* serve a tese coprocessador"
+  kills="transpiler que promete Solidity/C geral"
+  measured="lin_c0 info src/lin_from_solidity.lin -> eligible=0, 13/13 REJECTED VM_REJ_*"
+  source_table="sol_reason: REJ_SOLIDITY_PAYABLE/STATE/ENV/INLINE_ASM/STORAGE/EVENT/NON_PURE"
 }
 
-.u{
-  U1="revisao humana externa independente"
-  U2="utilizador de producao terceiro (DAO, auditor, grant reviewer rodando o comando)"
-  U3="LIN mais rapido que LLVM/C/Rust em geral — NOT PROVEN"
-  U4="soundness computacional (SNARK/STARK) — NOT PROVEN; modelo e disputa otimista"
-  U5="kernel u256 de settlement emitido de .lin puro na GPU — OpenCL u256 ainda e handwritten"
+.cut{
+  RSA_2_36="toy Pollard ~37-bit; NAO quebra historica de RSA"
+  LayerZero_bounties="lin_high_value_bounties.lin e TOY i64, nao bounty LayerZero"
+  wall_1_17M="1.17M e pico de kernel; wall-clock medido e 9.1k swaps/s"
+  volume_savings="volume Uniswap nao e poupanca; $1.8T e FALSE AS STATED"
+  poison="cada um destes anula rationalist-proof na cabeca do reviewer"
 }
 
 .r{
   command="make value-proof"
   standalone="python3 test/prove_value_vs_established.py"
+  live_pin="make rationalist-proof FETCH=1"
   deps="cc + python3; make -C transpile/c all (sem Zig)"
-  kernels="qoi_color_hash, tinyexpr_fac, get_amount_out i64 (TOY), settle_u256 golden"
-  labels="i64 Uniswap = TOY_INT64; canonical mainnet math = u256_settlement_engine.lin"
 }
 
 .p{
   r5="LABEL_TOY_VS_EXPERIMENTAL_VS_REAL_WORLD_NO_OVERCLAIM"
   r4="ONE_DIGEST_ONE_MEANING_AND_RECOMPUTABLE"
-  fail_closed="qualquer W1/W2/W3 FAIL => VALUE GATE FAIL"
-  not_a_language_win="paridade com C/Python prova correcao do kernel, nao superioridade da lingua"
+  fail_closed="V1/V2/V3/L3 FAIL => VALUE GATE FAIL"
+  l4_never_auto="L4 permanece NOT-PROVEN ate artefato de terceiro existir"
 }

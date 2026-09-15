@@ -1,12 +1,12 @@
-# Uniswap v2 Soberano em LIN: Comprovação de Superioridade sobre a EVM Original
+# Uniswap v2 co-processor measurements (kernel vs wall — not L1 TPS)
 
-> **Status (R5 - Sem Overclaim): Comprovado com 2.000 swaps reais da Ethereum Mainnet**
-> Hardware Físico: **AMD Radeon RX 6600** (Navi 23, gfx1030, 28 CUs, 8 GB VRAM)
-> Compilador: **LinVM Compiler 0 (`lin_c0`)** — 100% LIN puro & Zero Zig.
+> **Status (R5):** experimental co-processor. Empate aritmético + recibo, não "superioridade" sobre a EVM.
+> Hardware: **AMD Radeon RX 6600**. Compiler-0 C11 (`lin_c0`).
+> Kernel-only 1.7 ms is **not** wall-clock and is **not** comparable to 15–30 L1 TPS.
 
 ---
 
-## 1. Tese de Valor Monetário
+## 1. Escopo (co-processador off-chain, não substituto da EVM)
 
 A Ethereum L1 processa transações de forma sequencial na CPU de cada nó validador. Cada transação no contrato `UniswapV2Pair.sol` consome entre 100.000 e 185.000 unidades de gas, limitando a rede a ~15-30 transações por segundo globais.
 
@@ -20,7 +20,7 @@ Resultados obtidos com o dataset canônico de 2.000 swaps reais da Ethereum Main
 
 | Métrica | Ethereum EVM (Original) | LIN (LinVM + GPU AMD RX 6600) | Vantagem Competitiva de LIN |
 |---|:---:|:---:|:---:|
-| **Throughput de Execução** | ~15 a 30 TPS | **1,17M swaps/s (kernel) · 9,1k (wall frio)** | 🚀 **> 39.000× (kernel) / > 300× (wall frio)** |
+| **Throughput de Execução** | ~15 a 30 TPS (consenso+rede+storage) | **9.1k swaps/s wall-clock frio** (218 ms / 2k). Kernel-only 1.7 ms is not this column. | Não comparar kernel GPU a TPS L1 |
 | **Tempo para 2.000 Swaps** | ~100 a 133 segundos | **1,70 ms (kernel) · 218 ms (wall frio)** | ⚡ Liquidação instantânea |
 | **Latência Média por Swap** | ~12.000 ms (12 seg de bloco) | **0,85 µs (kernel) · 109 µs (wall)** | ⚡ Sub-microssegundo no silício |
 | **Custo de Gas por Lote** | 1.164.504.079 gas (L1 sum ≈ US$ 34,94/swap) | **70.133 gas (`settleBatch` ≈ US$ 0,0021/swap)** | 💰 **13.258× a 16.604× redução de gas** |
@@ -44,7 +44,7 @@ Resultados obtidos com o dataset canônico de 2.000 swaps reais da Ethereum Main
    - O lote de 2.000 swaps é empacotado em um buffer contíguo de 256 KB (128 bytes por swap).
    - A GPU executa a liquidação de todo o lote em **1,70 ms (kernel GPU) / 218 ms (wall-clock frio total)**, confirmando 2.000/2.000 exatos no corpus aritmético canônico (e 88,5% de match exato com 0 violações de $k$ no corpus não-filtrado de 157 swaps).
 
-3. **Prova Criptográfica Zero-Trust (LinVM C0):**
+3. **Recibo tamper-evident (não zk, LinVM C0):**
    - A CPU valida as restrições anti-fraude e emite um recibo canônico `@RULEL:COMPUTE_RECEIPT:1.0.0`.
    - O recibo sela o hash SHA-256 do lote e a raiz de Merkle dos inputs/outputs.
 
