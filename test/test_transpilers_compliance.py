@@ -4,7 +4,7 @@
 Suíte de Conformidade dos Transpiladores Formais LIN:
   1. src/lin_from_c.lin (C99/C11 -> LIN)
   2. src/lin_from_js.lin (JS -> LIN)
-  3. src/lin_from_solidity.lin (Solidity pure -> LIN)
+  3. src/lin_from_solidity.lin (Solidity pure-math subset -> LIN; REJ_* fail-closed; not a Solidity compiler)
   4. src/lin_from_rust.lin (Rust no_std pure -> LIN)
 
 Verifica se todos os módulos cumprem as regras de conformidade e fail-closed.
@@ -45,6 +45,13 @@ def main():
         if "=ex{" not in content:
             print(f"  [FAIL] Cláusula de exportação ausente em: {tr}")
             return 1
+
+        if tr.endswith("lin_from_solidity.lin"):
+            for tag in ("REJ_SOLIDITY_PAYABLE", "REJ_SOLIDITY_STATE", "sol_from_sol",
+                        "not_a_solidity_compiler"):
+                if tag not in content:
+                    print(f"  [FAIL] {tr} missing fail-closed marker {tag}")
+                    return 1
 
         print(f"  [PASS] Estrutura e sintaxe canônica L1c: {tr} ({len(content.splitlines())} linhas)")
 

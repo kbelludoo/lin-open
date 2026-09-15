@@ -1,6 +1,10 @@
-# Grant Proposal — Lin-Audit: Reproducible Ethereum Transaction Verifier & Deterministic DeFi State Reconciliation
+# Grant Proposal — Lin-Audit: Auditable Scalar Coprocessor + Receipts
 
-**Project Title:** Lin-Audit — A Minimalist, Reproducible Verification Toolkit for Ethereum Transactions, Block Inclusion, and Deterministic DeFi State Reconciliation
+> **LIN não executa seu sistema. Prova um kernel numérico pequeno com receipt stdlib + disputa otimista.**
+>
+> LIN does not run your system. It proves a small numeric kernel with a stdlib receipt and an optimistic dispute.
+
+**Project Title:** Lin-Audit — Reproducible Ethereum Transaction Verifier & Deterministic DeFi State Reconciliation (LIN coprocessor, not a general language)
 
 **Category:** Public Goods, Developer Tooling, Cryptography, Verification Infrastructure
 
@@ -15,6 +19,16 @@
 Automated Market Makers (AMMs) and decentralized protocols on Ethereum settle billions of dollars in transaction volume. Today, verifying off-chain trading data or reconciling historical state transitions forces developers, researchers, and institutional auditors to either:
 1. Re-simulate blocks inside full archive nodes (expensive, high operational overhead, heavy hardware requirements); or
 2. Blindly trust third-party centralized indexers, JSON-RPC endpoints, and ad-hoc floating-point Python/JS scripts.
+
+LIN is not a replacement for C, Rust, or Python. The right comparison is:
+
+| Auditor job today | LIN coprocessor |
+|---|---|
+| Ad-hoc **Python/RPC** script | **LCR2 receipt** (208 B) + stdlib `hashlib` / WebCrypto verify |
+| **zkVM** (RISC Zero, SP1) expensive prover | **Optimistic** and cheap: native/GPU execute, SHA-256 batch anchor |
+| **L1 re-execution** of every swap | **One Merkle root** (Anvil **70,133 gas** `settleBatch`) + dispute |
+
+Pinned (not estimated): LCR2 208 B; 2000/2000 + 157/157 verify; **`steps_bound=false`**; audit verify **5.29 µs** vs re-exec **26.372 ms** (block B=4); Anvil **70,133 / 87,831** gas; **$0.00210/swap** @ 20 gwei, $3k ETH. See [`docs/LIN_VALUE_PROPOSITION.md`](docs/LIN_VALUE_PROPOSITION.md).
 
 The objective of **Lin-Audit** is:
 > **To build an open-source, reproducible toolkit capable of recalculating Ethereum transaction hashes from raw bytes, verifying their inclusion in finalized blocks, and generating independent cryptographic receipts for deterministic DeFi state reconciliation within the confined LinVM.**
@@ -68,7 +82,7 @@ To maintain rigorous technical integrity and avoid overclaiming:
 | A deterministic multiword arithmetic engine (`uint256`) for AMM math | NOT a full EVM emulator or general-purpose smart contract verifier |
 | A multi-source incremental ingestor with checkpointing and reorg guards | NOT an attempt to index all 2.7+ billion transactions of Ethereum history |
 | A provable receipts engine (LCR4) binding execution inputs and outputs | NOT a Zero-Knowledge (ZK) rollup or SNARK prover |
-| A rigorously benchmarked tool with published sensitivity resolution bounds | NOT claiming "faster than LLVM" or "100% fraud detection for sub-threshold wei" |
+| A rigorously benchmarked tool with published sensitivity resolution bounds | NOT claiming compiler speed vs other languages; see README §2 NOT PROVEN table (CI gate) |
 
 ---
 
@@ -160,3 +174,19 @@ The grant funds independent research and development at modest rates:
 2. **Defensive DeFi Analytics:** Distinguishes genuine AMM swaps from aggregator slippage, MEV sandwich extraction, and fee-on-transfer token anomalies with exact mathematical proofs.
 3. **Reproducible Public Datasets:** Publishes unpruned, verified datasets of on-chain activity for academic and industrial research.
 4. **100% Open Source:** Licensed under MIT/Apache 2.0 with all benchmarks reproducible with standard compilers.
+
+## 7. Pinned metrics & one auditor command
+
+Numbers are copied from `docs/GRANT_EVIDENCE_2026_09.rulel` and `docs/GRANT_ADDENDUM_ERRATA_2026_09.md`:
+
+- LCR2 record **208 B**; batch **2000/2000 + 157/157**; **`steps_bound=false`**
+- Verify vs re-exec (block B=4): **5.29 µs** vs **26.372 ms** (~4986×)
+- Anvil (not Mainnet): **70,133 gas** `settleBatch`; **87,831 gas** with inclusion proof; **$0.00210/swap**
+- i64 toy `get_amount_out(10000,50000,100000)` = **16624 / 36 steps** (`src/lin_uniswap_v2_library.lin`, **TOY**). Canonical engine is `u256_settlement_engine.lin` (`make swap-steps`).
+
+```bash
+make -C transpile/c all    # cc only, no Zig
+make audit                 # dataset.json -> root + manifest + verify
+python3 lin_verify.py receipt benchmarks/fixtures/receipt_sqr9.json
+```
+

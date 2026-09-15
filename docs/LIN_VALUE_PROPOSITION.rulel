@@ -1,0 +1,46 @@
+@RULEL:LIN_VALUE_PROPOSITION:1.0.0
+~R{.s=subject .p=position .r=rivals .m=metrics .f=forbid}
+.s{
+  spec="LIN-VALUE-PROPOSITION-1"
+  status="POSITIONING_FREEZE"
+  class="experimental_pilot_not_general_language"
+}
+.p{
+  title="auditable scalar coprocessor + receipts"
+  one_liner_pt="LIN não executa seu sistema. Prova um kernel numérico pequeno com receipt stdlib + disputa otimista."
+  one_liner_en="LIN does not run your system. It proves a small numeric kernel with a stdlib receipt and an optimistic dispute."
+  solidity="pure_math_subset_fail_closed_explicit_REJ_star_not_a_compiler"
+  toy_amm="src/lin_uniswap_v2_library.lin TOY_INT64_PROTOTYPE_NOT_FOR_MAINNET_VALUES"
+  canonical_amm="examples/defi_settlement_proof/u256_settlement_engine.lin"
+}
+.r{
+  python_rpc="ad-hoc script + trusted indexer"
+  lin_receipt="LCR2 stdlib verify"
+  zkvm="expensive validity prover"
+  lin_optimistic="cheap optimistic dispute"
+  l1_reexec="per-swap EVM"
+  lin_batch="one Merkle anchor"
+  never="vs LLVM/Rust/C speed"
+}
+.m{
+  lcr2_bytes=208
+  batch_2000="2000/2000"
+  batch_157="157/157"
+  steps_bound=false
+  audit_verify_block_4_us=5.29
+  audit_reexec_block_4_ms=26.372
+  anvil_settle_batch_gas=70133
+  anvil_settle_with_proof_gas=87831
+  cost_per_swap_usd=0.00210
+  tcb_runtime_loc=809
+  toy_get_amount_out_canonical_value=16624
+  toy_get_amount_out_canonical_steps=36
+}
+.f{
+  savings_1_8T="FALSE_AS_STATED"
+  faster_than_llvm="NOT_PROVEN"
+  full_openssl="NOT_PROVEN"
+  full_uniswap="NOT_PROVEN"
+  merkle_is_zk="NOT_PROVEN"
+  gate="test/gate_forbidden_overclaims.py"
+}

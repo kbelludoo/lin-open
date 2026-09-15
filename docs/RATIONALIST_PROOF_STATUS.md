@@ -191,7 +191,9 @@ Status of the remaining gaps:
 4. ❌ one independent external review — **open** (not automatable from here).
 
 Until those exist, this document is the honest maximum: **seven reproducible
-claims**, one explicit `NOT-PROVEN` scope line.
+claims**, one explicit `NOT-PROVEN` scope line. Grant positioning (coprocessor,
+not general language) is `docs/LIN_VALUE_PROPOSITION.md`. The NOT PROVEN table
+in `README.md` §2 is a CI gate (`test/gate_forbidden_overclaims.py`).
 
 ## 4. Standalone CLI
 

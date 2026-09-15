@@ -23,6 +23,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Gate forbidden overclaims (NOT PROVEN table is the only home)
+        run: python3 test/gate_forbidden_overclaims.py
+
       - name: Gate: Enforce no bypass or crossmodel artifacts
         run: |
           if git ls-files | grep -Ei 'bypass|crossmodel'; then
@@ -107,6 +110,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Gate forbidden overclaims (NOT PROVEN table is the only home)
+        run: python3 test/gate_forbidden_overclaims.py
+
       - name: Install dependencies (cc, python3, opencl headers/pocl)
         run: |
           sudo apt-get update
@@ -120,6 +126,9 @@ jobs:
 
       - name: Verify Batch Receipts (2000 + 157 LCR2 Merkle)
         run: make verify-batch-receipt
+
+      - name: Publish i64 TOY vs u256 limb swap steps
+        run: make swap-steps
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
