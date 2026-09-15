@@ -1,6 +1,6 @@
 @LIN:L1c:0.2
 @COMPOUND_JUMPRATE_V2{
-  version=1
+  version=2
   repo="compound-finance/compound-protocol"
   source="contracts/BaseJumpRateModelV2.sol"
   license="BSD-3-Clause"
@@ -8,7 +8,7 @@
   profile="LINVM-1"
   class="EXPERIMENTAL"
   purpose="uint64_scale_compound_jumprate_with_128bit_muldiv"
-  note="Solidity uint256 IRM; LIN matches C11 __int128 on values that fit uint64. Hidden storage params are explicit arguments."
+  note="Real improvements vs wrapping i64: explicit IRM args + 128-bit product. Quotient that does not fit uint64 fail-closes to 0. Not mainnet uint256 parity."
 }
 
 !cjr_u_lt(a: int, b: int) -> int {
@@ -59,6 +59,7 @@
   r_hi = 0;
   r_lo = 0;
   q = 0;
+  overflow_q = 0;
   i = 127;
   while (i >= 0) {
     bit = 0;
@@ -77,10 +78,12 @@
       need_borrow = cjr_u_lt(r_lo, d);
       r_lo = r_lo - d;
       ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { overflow_q = 1; };
       ?(i < 64) { q = q | _lia_shl(1, i); };
     };
     i = i - 1;
   };
+  ?(overflow_q == 1) { ^ 0; };
   ^ q;
 }
 
@@ -153,6 +156,13 @@
   r90 = cjr_borrow_rate(100000000000000000, 900000000000000000, 0, bb, mb, jb, kink);
   ?(r50 < 0) { ^ -10; };
   ?(cjr_u_lt(r90, r50) == 1) { ^ -11; };
+  ?(cjr_muldiv(1, 1, 0) != 0) { ^ -12; };
+  ?(cjr_utilization(1, 1, 10) != 0) { ^ -13; };
+  ?(cjr_muldiv(1000000000000000000, 1000000000000000000, 1) != 0) { ^ -14; };
+  ?(cjr_muldiv(1000000000000000000, 1000000000000000000, 2000000000000000000) != 500000000000000000) { ^ -15; };
+  kink_lo = 400000000000000000;
+  r50_lo = cjr_borrow_rate(1000000000000000000, 1000000000000000000, 0, bb, mb, jb, kink_lo);
+  ?(r50_lo == r50) { ^ -16; };
   ^ 1;
 }
 

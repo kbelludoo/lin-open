@@ -307,7 +307,7 @@ compound-jumprate-proof: c0
 	@test/verify_compound_jumprate.sh
 
 independent-reproof: c0
-	@chmod +x test/prove_melhorias_independent.py
+	@chmod +x test/prove_melhorias_independent.py test/oracles/compound_jumprate_py.py
 	@python3 test/prove_melhorias_independent.py
 
 # Standalone no-Zig CLI (python3, stdlib only). `make install-cli PREFIX=~/.local`
