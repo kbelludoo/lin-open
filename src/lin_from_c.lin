@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN changelog="v2: REJ_C_CXX; ceil/floor/round/trunc as REJ_C_FLOAT; strip C11 U/L/LL suffixes"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -39,8 +39,71 @@
   ?(rg_count_lit(sig, "union") > 0 || rg_count_lit(body, "union") > 0){ ^"REJ_C_UNION" };
   ?(rg_count_lit(sig, "float") > 0 || rg_count_lit(body, "float") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(sig, "double") > 0 || rg_count_lit(body, "double") > 0){ ^"REJ_C_FLOAT" };
+  ?(rg_count_lit(body, "ceil(") > 0){ ^"REJ_C_FLOAT" };
+  ?(rg_count_lit(body, "floor(") > 0){ ^"REJ_C_FLOAT" };
+  ?(rg_count_lit(body, "round(") > 0){ ^"REJ_C_FLOAT" };
+  ?(rg_count_lit(body, "trunc(") > 0){ ^"REJ_C_FLOAT" };
+  ?(rg_count_lit(sig, "::") > 0 || rg_count_lit(body, "::") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(body, "class ") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(body, "template") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(body, "namespace") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(body, "static_cast") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(body, "reinterpret_cast") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(body, "dynamic_cast") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(body, "const_cast") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(body, "throw ") > 0){ ^"REJ_C_CXX" };
   ?(rg_count_lit(body, "goto") > 0){ ^"REJ_C_GOTO" };
   ^"OK";
+}
+
+!cfs_reason_gate(): int {
+  r1 = cfs_reason("int add(int a, int b)", "return a + b;");
+  ?(r1.length != 2) { ^0 };
+  r2 = cfs_reason("int f(int x)", "return ceil(x);");
+  ?(starts_lit(r2, 0, "REJ_C_FLOAT") == 0) { ^0 };
+  r3 = cfs_reason("int f()", "return Foo::bar();");
+  ?(starts_lit(r3, 0, "REJ_C_CXX") == 0) { ^0 };
+  ^1;
+}
+
+!cfs_is_int_suffix_ch(c: int): int {
+  ?(c == 85 || c == 117) { ^1 };
+  ?(c == 76 || c == 108) { ^1 };
+  ^0;
+}
+
+!cfs_strip_int_suffix(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  c = 0;
+  st = 0;
+  while (i < n) {
+    c = s.charCodeAt(i);
+    ?(c == 34) {
+      out = out + s.charAt(i);
+      i = i + 1;
+      while (i < n && s.charCodeAt(i) != 34) {
+        out = out + s.charAt(i);
+        i = i + 1;
+      };
+      ?(i < n) {
+        out = out + s.charAt(i);
+        i = i + 1;
+      };
+      continue;
+    };
+    ?(c >= 48 && c <= 57) {
+      st = i;
+      while (i < n && s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) { i = i + 1 };
+      out = out + slice2(s, st, i);
+      while (i < n && cfs_is_int_suffix_ch(s.charCodeAt(i)) == 1) { i = i + 1 };
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
 }
 
 !cfs_atom_left(s: string, at: int): int {
@@ -646,7 +709,7 @@
 }
 
 !cfs_prep(src: string): string {
-  ^jss_rewrite_hex(jss_strip_comments(src));
+  ^cfs_strip_int_suffix(jss_rewrite_hex(jss_strip_comments(src)));
 }
 
 !cfs_from_c(src: string): string {
@@ -756,4 +819,4 @@
   ^out;
 }
 
-=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type}
+=ex{cfs_from_c, cfs_report, cfs_reason, cfs_reason_gate, cfs_fn, cfs_strip_casts, cfs_strip_int_suffix, cfs_all_type}

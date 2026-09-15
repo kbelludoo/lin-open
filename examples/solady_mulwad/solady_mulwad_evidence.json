@@ -1,0 +1,122 @@
+{
+  "schema": "LIN_SOLADY_MULWAD_EVIDENCE_1.0",
+  "class": "EXPERIMENTAL",
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-solady-mulwad",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned wad excerpt sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned solady commit matches full-file sha256",
+      "note": "commit=2afba69bf67b78dd4abeadcc696052b3a6f71499 blob=12a83024751cd5fb7a12a7c22cc0bd5badd1846d"
+    },
+    {
+      "id": "EXCERPT-IN-FULL",
+      "status": "PASS",
+      "description": "pinned wad excerpt is contained in live FixedPointMathLib.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_solady_mulwad.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "sdy_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "ASM-UPSTREAM",
+      "status": "PASS",
+      "description": "upstream mulWad/divWad bodies are Yul assembly",
+      "note": ""
+    },
+    {
+      "id": "ASM-REJ",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin fail-closes Yul assembly (no fake emit)",
+      "note": ""
+    },
+    {
+      "id": "HALF-EXP",
+      "status": "PASS",
+      "description": "solidity transpiler expands 1eN and 0.5eN integer literals",
+      "note": ""
+    },
+    {
+      "id": "C-REJ-CXX",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 rejects C++ tokens and ceil/floor as float",
+      "note": ""
+    },
+    {
+      "id": "C-SUFFIX",
+      "status": "PASS",
+      "description": "lin_from_c.lin strips C11 U/L/LL suffixes before emit",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "10/10 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (2e18*3e18) wraps; 128-bit mulWad does not",
+      "note": "i64_wrap=3730592787825950720 bigint=6000000000000000000"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "CLONE-LIN",
+      "status": "PASS",
+      "description": "separate clone-lin repository URL recorded",
+      "note": "https://github.com/kbelludoo/clone-lin-solady-mulwad"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/Vectorized/solady",
+    "commit": "2afba69bf67b78dd4abeadcc696052b3a6f71499",
+    "path": "src/utils/FixedPointMathLib.sol",
+    "git_blob_sha": "12a83024751cd5fb7a12a7c22cc0bd5badd1846d",
+    "file_sha256": "d322e2a0b1f43dbd80a3cf26a40d1ca1cc19cf03737f1e8513485e266b47e9c3",
+    "excerpt_sha256": "f4a6afa9b3f5031f14554542be6471fa4413386d745d04b089c1b5c6b5f2cc2d",
+    "license": "MIT"
+  },
+  "lin_clone": "src/lin_solady_mulwad.lin",
+  "c11_oracle": "test/oracles/solady_mulwad_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "canonical_mulwad_2x3": 6000000000000000000
+}
