@@ -229,8 +229,17 @@ def main() -> int:
         if got_lin != want:
             rec("VEC-LIN", "FAIL", f"{fn}{largs}", f"lin={got_lin} c11={want}")
             return 1
+        py = (largs[0] * largs[1] // largs[2]) if kind == "muldiv" else (
+            0 if largs[1] == 0 else (largs[1] * BASE // (largs[0] + largs[1] - largs[2]))
+        )
+        if kind == "util" and largs[1] == 0:
+            py = 0
+        if py != want:
+            rec("VEC-PY", "FAIL", f"python bigint {fn}{largs}", f"py={py} c11={want}")
+            return 1
         n_ok += 1
     rec("VEC-CONSENSUS", "PASS", f"{n_ok}/{n_ok} vectors: C11 i128 == limbs == LIN vm")
+    rec("PY-BIGINT", "PASS", f"{n_ok}/{n_ok} vectors: Python arbitrary-precision int matches C11 and LIN")
 
     mb = lin_vm("cjr_multiplier_per_block", 40000000000000000, 800000000000000000)
     jb = lin_vm("cjr_jump_per_block", 1090000000000000000)
@@ -254,6 +263,23 @@ def main() -> int:
         rec("BORROW-50", "FAIL", "50% util borrow rate", f"lin={r50} c11={want50}")
         return 1
     rec("BORROW-50", "PASS", "parameterized getBorrowRate at 50% util matches C11", f"rate={r50}")
+    py50 = (BASE * mb) // (2 * BASE) + bb
+    if py50 != r50:
+        rec("PY-BORROW-50", "FAIL", "python bigint borrow@50%", f"py={py50} lin={r50}")
+        return 1
+    rec("PY-BORROW-50", "PASS", "Python bigint borrow rate at 50% util matches LIN/C11", f"rate={py50}")
+    wrapped = (BASE * BASE) & ((1 << 64) - 1)
+    if wrapped >= 2**63:
+        wrapped -= 2**64
+    if wrapped == (BASE * BASE) // (2 * BASE):
+        rec("I64-WRAP", "FAIL", "signed i64 product unexpectedly equalled bigint muldiv")
+        return 1
+    rec(
+        "I64-WRAP",
+        "PASS",
+        "naive signed-i64 (1e18*1e18) wraps; 128-bit muldiv does not",
+        f"i64_wrap={wrapped} bigint={(BASE * BASE) // (2 * BASE)}",
+    )
 
     jit_ok = lin_roundtrip_jit("cjr_test_suite")
     if jit_ok:
