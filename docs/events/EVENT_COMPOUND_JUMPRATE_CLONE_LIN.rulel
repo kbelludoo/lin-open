@@ -1,0 +1,63 @@
+@RULEL:COMPOUND_JUMPRATE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-COMPOUND-JUMPRATE-V2"
+@TITLE="Clone-lin of Compound JumpRateModel V2 with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-09-15"
+@CLONE_LIN="https://github.com/kbelludoo/lin-open/blob/cursor/linguagem-lin-e-valida-o-1e91/src/lin_compound_jumprate.lin"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Compound protocol interest-rate math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for (a*b)/d; Solidity uint256 is NOT claimed"
+  commercial_hook="JumpRateModel V2 is the IRM used by Compound v2 cTokens; making storage parameters explicit and replacing wrapping i64 multiply with 128-bit muldiv is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/compound-finance/compound-protocol"
+  path="contracts/BaseJumpRateModelV2.sol"
+  license="BSD-3-Clause"
+  commit="a3214f67b73310d547e00fc578e8355911c9d376"
+  git_blob_sha="4d6828c39ed737c0c48508adc414b919ab6c2a55"
+  file_sha256="9cd2fe5f7b88748c336bf2988c475da517ffd4909057b53df138b80f162fb34f"
+  fixture="test/fixtures/external_proof/BaseJumpRateModelV2.sol"
+}
+
+.l{
+  clone="src/lin_compound_jumprate.lin"
+  transpiler_delta="src/lin_from_solidity.lin v2: sol_from_sol emit + 1eN expansion; src/lin_from_c.lin adds size_t/bool/uint"
+  improvement_1="getBorrowRateInternal is view-on-storage in Solidity; LIN takes base/mult/jump/kink as arguments"
+  improvement_2="borrows * 1e18 overflows i64; LIN uses schoolbook 128-bit muldiv matching C11 __int128"
+  improvement_3="cash+borrows-reserves underflow: Solidity 0.8 reverts; LIN fail-closed returns 0 (documented)"
+  improvement_4="(mult_year * BASE) / blocksPerYear overflows uint64; LIN does (mult_year * BASE / kink) / blocksPerYear which is floor-identical and fits"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/compound_jumprate_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_compound_jumprate.sh"
+}
+
+.p{
+  harness="test/prove_compound_jumprate_external.py"
+  independent_oracle="tools/verify_compound_improvements_oracle.py"
+  evidence_json="examples/compound_jumprate/compound_jumprate_evidence.json"
+  improvements_json="examples/compound_jumprate/improvements_proof.json"
+  independent_event="docs/events/EVENT_COMPOUND_IMPROVEMENTS_INDEPENDENT_PROOF.rulel"
+  clone_lin_repo="https://github.com/kbelludoo/lin-open/blob/cursor/linguagem-lin-e-valida-o-1e91/src/lin_compound_jumprate.lin"
+  clone_lin_note="separate clone-lin GitHub repository could not be created from this automation; the LIN clone is published in lin-open"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet cToken parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production IRM replacement"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

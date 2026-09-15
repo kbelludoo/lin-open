@@ -1,0 +1,93 @@
+{
+  "schema": "LIN_COMPOUND_IMPROVEMENTS_PROOF_1.0",
+  "class": "EXPERIMENTAL",
+  "oracle": "python3 arbitrary-precision (a*b)//d \u2014 not a limb clone",
+  "claims": [
+    {
+      "id": "I-PIN",
+      "status": "PASS",
+      "description": "fixture sha256 matches Compound pin",
+      "note": "9cd2fe5f7b88748c336bf2988c475da517ffd4909057b53df138b80f162fb34f"
+    },
+    {
+      "id": "I-C0",
+      "status": "PASS",
+      "description": "Compiler 0 present (C11, no Zig)",
+      "note": ""
+    },
+    {
+      "id": "I-C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 oracle selftest",
+      "note": ""
+    },
+    {
+      "id": "I-WIDE-MULDIV",
+      "status": "PASS",
+      "description": "1e18*1e18/2e18: Python==(C11 i128)==limbs==LIN, wrapping u64 differs",
+      "note": "true=500000000000000000 wrap_u64=6 (discriminating: wrap!=true)"
+    },
+    {
+      "id": "I-UTIL-WIDE",
+      "status": "PASS",
+      "description": "utilization(1e18,1e18,0)=5e17; wrapping muldiv would yield 6",
+      "note": ""
+    },
+    {
+      "id": "I-EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "same market, two mult_block args => two rates (no hidden storage)",
+      "note": "500 vs 1000"
+    },
+    {
+      "id": "I-JUMP-KINK",
+      "status": "PASS",
+      "description": "jump_block unused below kink; used above kink; r90>r50",
+      "note": ""
+    },
+    {
+      "id": "I-UNDERFLOW",
+      "status": "PASS",
+      "description": "utilization(1,1,100)==0 (Solidity 0.8 would revert on underflow)",
+      "note": ""
+    },
+    {
+      "id": "I-MULT-OVERFLOW",
+      "status": "PASS",
+      "description": "(mult_year*BASE) does not fit uint64; LIN floor-matches Solidity (x)/(blocks*kink)",
+      "note": "product=40000000000000000000000000000000000 u64max=18446744073709551615 multiplierPerBlock=23782343987"
+    },
+    {
+      "id": "I-FORMULA",
+      "status": "PASS",
+      "description": "utilization/borrow/supply: Python bigint == LIN vm == C11 __int128",
+      "note": "borrow50=11891171993 borrow90=70871385082 supply50_rf10=5351027396"
+    },
+    {
+      "id": "I-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on cjr_test_suite",
+      "note": ""
+    },
+    {
+      "id": "I-SOL-EMIT",
+      "status": "SKIP",
+      "description": "Solidity emit path is present in source but C0 VM refuses string literals",
+      "note": "VM_REJ_STRING_LITERAL \u2014 not an execution proof of sol_from_sol"
+    }
+  ],
+  "vectors": {
+    "wide_muldiv_true": 500000000000000000,
+    "wide_muldiv_wrap_u64": 6,
+    "borrow_50": 11891171993,
+    "borrow_90": 70871385082,
+    "supply_50_rf10": 5351027396,
+    "multiplier_per_block": 23782343987
+  },
+  "not_claimed": [
+    "full Solidity uint256 / mainnet cToken parity",
+    "LIN replaces Compound or the EVM",
+    "wall-clock superiority vs solc",
+    "executed sol_from_sol on BaseJumpRateModelV2.sol (hand-port + VM_REJ_STRING_LITERAL)"
+  ]
+}

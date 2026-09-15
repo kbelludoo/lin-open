@@ -301,6 +301,11 @@ else
 	@python3 test/prove_all_claims_external.py --iterations 10000
 endif
 
+.PHONY: compound-jumprate-proof
+compound-jumprate-proof: c0
+	@chmod +x test/verify_compound_jumprate.sh test/prove_compound_jumprate_external.py tools/verify_compound_improvements_oracle.py
+	@test/verify_compound_jumprate.sh
+
 # Standalone no-Zig CLI (python3, stdlib only). `make install-cli PREFIX=~/.local`
 # puts an executable `lin-verify` on PATH.
 verify-cli: c0
