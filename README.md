@@ -138,7 +138,7 @@ Rather than claiming a general C or Solidity compiler, LIN accepts a **pure-math
 | **Optimistic batch anchor** | On-chain Merkle root + spot checks (Anvil/Foundry) | **70,133 gas** / 2,000-swap batch (~35.1 gas/swap; **$0.00210/swap** @ 20 gwei, $3k ETH). **Not Mainnet.** |
 | **Interactive Fraud Dispute** | On-chain invariant verification (`contracts/LinReceiptVerifier.sol`) | Any observer can challenge a fraudulent swap in a batch via Merkle inclusion proof (`disputeFraudulentSwap`). |
 | **Client-Side Verification** | NIST FIPS 180-4 SHA-256 Merkle recomputation | Block B=4: **5.29 µs** verify vs **26.372 ms** re-exec (~4986×). Single-receipt path is `< 10 µs` in Python/WebCrypto. **`steps_bound=false`** on LCR2 batch records. |
-| **i64 toy vs u256 limbs** | Same `getAmountOut` formula, different width | Toy: canonical vector **16624 in 36 steps** (`lin_uniswap_v2_library.lin`, **TOY**, overflows Mainnet). Canonical: `u256_settlement_engine.lin` (`make swap-steps`). |
+| **i64 toy vs u256 limbs** | Same `getAmountOut` formula, different width | Toy: **16624 in 36 steps** (`lin_uniswap_v2_library.lin`, **TOY**). u256: **233670** steps per `settle_u256_word` status call on the same vector (`make swap-steps`). Do not ship the toy. |
 
 ---
 

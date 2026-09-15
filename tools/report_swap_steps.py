@@ -24,6 +24,8 @@ U256 = ROOT / "examples" / "defi_settlement_proof" / "u256_settlement_engine.lin
 # Canonical UniswapV2Library vector (fits in i64).
 AIN, RIN, ROUT, WANT = 10000, 50000, 100000, 16624
 TOY_STEPS_PINNED = 36
+U256_STATUS_STEPS_PINNED = 233670
+U256_WORD_STEPS_PINNED = 233706
 
 
 def parse_result(stdout: str) -> tuple[int | None, int | None]:
@@ -103,6 +105,10 @@ def main() -> int:
     print(f"  steps_bound=false on LCR2 batch receipts (make audit); do not mix toy steps into receipts")
     if full != WANT:
         print(f"FAIL: u256 value {full} != {WANT}")
+        return 1
+    if status_steps != U256_STATUS_STEPS_PINNED or any(s != U256_WORD_STEPS_PINNED for s in per_word):
+        print(f"FAIL: u256 steps drifted (status={status_steps} want {U256_STATUS_STEPS_PINNED}, "
+              f"words={per_word} want {U256_WORD_STEPS_PINNED})")
         return 1
     return 0
 

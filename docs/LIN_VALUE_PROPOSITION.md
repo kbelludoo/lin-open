@@ -38,7 +38,7 @@ LIN does not execute your application, replace C/Rust/Python, transpile general 
 | vs L1 re-exec | 13,258×–16,604× | same | **CONDITIONAL BASELINE**, not a general proof |
 | TCB (execution runtime) | **809 LOC** C11 | `transpile/c/lin_c/{lin_vm,lin_linbc1,lin_sha256,lin_common}.c` | Host compiler/OS/GPU driver sit outside |
 | i64 toy `get_amount_out(10000,50000,100000)` | value **16624**, **36 steps** | `src/lin_uniswap_v2_library.lin` | **TOY** — overflows Mainnet 18-decimal reserves |
-| u256 limb engine | canonical engine | `examples/defi_settlement_proof/u256_settlement_engine.lin` | Emulated 16×16-bit limbs; see `make swap-steps` |
+| u256 limb engine (same vector) | value **16624**, **233670** steps (`settle_u256_word` status) / **233706** per limb word / **1168494** sum of 5 ABI calls | `make swap-steps` | Emulated 16×16-bit limbs; this is the honest bottleneck. Do not ship the toy. |
 
 Independent verify without trusting the author: `python3 lin_verify.py receipt benchmarks/fixtures/receipt_sqr9.json` and `benchmarks/verify_receipt.html`.
 

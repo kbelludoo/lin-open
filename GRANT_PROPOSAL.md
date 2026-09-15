@@ -182,7 +182,7 @@ Numbers are copied from `docs/GRANT_EVIDENCE_2026_09.rulel` and `docs/GRANT_ADDE
 - LCR2 record **208 B**; batch **2000/2000 + 157/157**; **`steps_bound=false`**
 - Verify vs re-exec (block B=4): **5.29 µs** vs **26.372 ms** (~4986×)
 - Anvil (not Mainnet): **70,133 gas** `settleBatch`; **87,831 gas** with inclusion proof; **$0.00210/swap**
-- i64 toy `get_amount_out(10000,50000,100000)` = **16624 / 36 steps** (`src/lin_uniswap_v2_library.lin`, **TOY**). Canonical engine is `u256_settlement_engine.lin` (`make swap-steps`).
+- i64 toy `get_amount_out(10000,50000,100000)` = **16624 / 36 steps** (`src/lin_uniswap_v2_library.lin`, **TOY**). Canonical u256 engine on the same vector: **233670** steps per `settle_u256_word` status call (`make swap-steps`). Do not ship the toy.
 
 ```bash
 make -C transpile/c all    # cc only, no Zig
