@@ -1,0 +1,28 @@
+@RULEL:CLONE_LIN_SOLADY_MULWAD:1.0.0
+~R{.u=upstream .k=kernel .p=proof .n=nonclaim}
+
+.u{
+  repo="https://github.com/Vectorized/solady"
+  file="src/utils/FixedPointMathLib.sol"
+  commit="2afba69bf67b78dd4abeadcc696052b3a6f71499"
+  sha256="d322e2a0b1f43dbd80a3cf26a40d1ca1cc19cf03737f1e8513485e266b47e9c3"
+  blob="12a83024751cd5fb7a12a7c22cc0bd5badd1846d"
+  license="MIT"
+}
+
+.k{
+  lin_open="src/lin_solady_mulwad.lin"
+  clone_lin="https://github.com/kbelludoo/clone-lin-solady-mulwad"
+  class="EXPERIMENTAL"
+}
+
+.p{
+  cmd="python3 test/prove_solady_mulwad_external.py"
+  evidence="examples/solady_mulwad/solady_mulwad_evidence.json"
+}
+
+.n{
+  uint256=false
+  yul_auto_lower=false
+  tvl_claim=false
+}

@@ -1,0 +1,64 @@
+@RULEL:SOLADY_MULWAD_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-SOLADY-MULWAD"
+@TITLE="Clone-lin of Solady FixedPointMathLib mulWad/divWad with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-09-15"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-solady-mulwad"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="clone Solady wad mul/div into deterministic LIN, compile in memory with C11 compiler 0, publish results and proofs in lin-open, kernel copy in clone-lin"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for (a*b)/d; Solidity uint256 is NOT claimed"
+  commercial_hook="Solady FixedPointMathLib is MIT wad math used across DeFi vaults and Morpho-style markets; attested off-chain mulWad is an audit co-processor, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/Vectorized/solady"
+  path="src/utils/FixedPointMathLib.sol"
+  license="MIT"
+  commit="2afba69bf67b78dd4abeadcc696052b3a6f71499"
+  git_blob_sha="12a83024751cd5fb7a12a7c22cc0bd5badd1846d"
+  file_sha256="d322e2a0b1f43dbd80a3cf26a40d1ca1cc19cf03737f1e8513485e266b47e9c3"
+  excerpt="test/fixtures/external_proof/FixedPointMathLib_wad.sol"
+  excerpt_sha256="f4a6afa9b3f5031f14554542be6471fa4413386d745d04b089c1b5c6b5f2cc2d"
+}
+
+.l{
+  clone="src/lin_solady_mulwad.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-solady-mulwad"
+  transpiler_delta="src/lin_from_solidity.lin: 0.5eN expansion + mulWad assembly reject gate; src/lin_from_c.lin v2: REJ_C_CXX, ceil/floor as REJ_C_FLOAT, strip U/L/LL suffixes"
+  improvement_1="upstream mulWad is Yul assembly; transpiler fail-closes with REJ_SOLIDITY_INLINE_ASM instead of emitting a fake body"
+  improvement_2="(x*y)/WAD uses schoolbook 128-bit product matching C11 __int128; naive i64 (2e18*3e18) wraps"
+  improvement_3="quotient that does not fit uint64 fail-closes to 0 (no silent wrap); remainder identity checked by Python bigint"
+  improvement_4="div-by-zero on divWad/divWadUp is fail-closed (Solidity reverts); mulWad(y=0) matches Solady (result 0, ok)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/solady_mulwad_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_solady_mulwad.sh"
+}
+
+.p{
+  harness="test/prove_solady_mulwad_external.py"
+  evidence_json="examples/solady_mulwad/solady_mulwad_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-solady-mulwad"
+  canonical_vector="mulWad(2e18, 3e18) = 6e18"
+}
+
+.n{
+  not_claimed_1="full uint256 / on-chain Solady parity"
+  not_claimed_2="LIN is faster than solc or the EVM"
+  not_claimed_3="automatic Yul assembly lowering"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Solady, Morpho, or ERC-4626 vaults"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS && ASM_REJECT"
+  on_fail="do not publish a PASS status"
+}

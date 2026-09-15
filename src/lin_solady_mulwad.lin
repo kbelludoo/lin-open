@@ -1,0 +1,203 @@
+@LIN:L1c:0.2
+@SOLADY_MULWAD{
+  version=1
+  repo="Vectorized/solady"
+  source="src/utils/FixedPointMathLib.sol"
+  license="MIT"
+  commit="2afba69bf67b78dd4abeadcc696052b3a6f71499"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_solady_mulwad_divwad_with_128bit_product"
+  note="Not uint256. Upstream mulWad is Yul assembly (REJ_SOLIDITY_INLINE_ASM). LIN uses schoolbook 128-bit (x*y)/WAD, fail-closed if quotient exceeds uint64."
+}
+
+!sdy_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!sdy_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(sdy_u_lt(s, a));
+}
+
+!sdy_u_add_ok(a: int, b: int) -> int {
+  ?(sdy_u_add_carry(a, b) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!sdy_mask32() -> int {
+  ^ 4294967295;
+}
+
+!sdy_wad() -> int {
+  ^ 1000000000000000000;
+}
+
+!sdy_muldiv_part(a: int, b: int, d: int, want: int) -> int {
+  ?(d == 0) {
+    ?(want == 2) { ^ 1; };
+    ^ 0;
+  };
+  m32 = sdy_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = sdy_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = sdy_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(sdy_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = sdy_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want == 1) { ^ r_lo; };
+  ?(want == 2) { ^ ov; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!sdy_muldiv(a: int, b: int, d: int) -> int {
+  ^ sdy_muldiv_part(a, b, d, 0);
+}
+
+!sdy_muldiv_rem(a: int, b: int, d: int) -> int {
+  ^ sdy_muldiv_part(a, b, d, 1);
+}
+
+!sdy_muldiv_ov(a: int, b: int, d: int) -> int {
+  ^ sdy_muldiv_part(a, b, d, 2);
+}
+
+!sdy_mulwad_ok(x: int, y: int) -> int {
+  ?(y == 0) { ^ 1; };
+  ?(sdy_muldiv_ov(x, y, sdy_wad()) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!sdy_mulwad(x: int, y: int) -> int {
+  ?(sdy_mulwad_ok(x, y) == 0) { ^ 0; };
+  ^ sdy_muldiv(x, y, sdy_wad());
+}
+
+!sdy_mulwad_up_ok(x: int, y: int) -> int {
+  ?(y == 0) { ^ 1; };
+  ?(sdy_muldiv_ov(x, y, sdy_wad()) == 1) { ^ 0; };
+  q = sdy_muldiv(x, y, sdy_wad());
+  r = sdy_muldiv_rem(x, y, sdy_wad());
+  ?(r == 0) { ^ 1; };
+  ^ sdy_u_add_ok(q, 1);
+}
+
+!sdy_mulwad_up(x: int, y: int) -> int {
+  ?(sdy_mulwad_up_ok(x, y) == 0) { ^ 0; };
+  q = sdy_muldiv(x, y, sdy_wad());
+  r = sdy_muldiv_rem(x, y, sdy_wad());
+  ?(r == 0) { ^ q; };
+  ^ q + 1;
+}
+
+!sdy_divwad_ok(x: int, y: int) -> int {
+  ?(y == 0) { ^ 0; };
+  ?(sdy_muldiv_ov(x, sdy_wad(), y) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!sdy_divwad(x: int, y: int) -> int {
+  ?(sdy_divwad_ok(x, y) == 0) { ^ 0; };
+  ^ sdy_muldiv(x, sdy_wad(), y);
+}
+
+!sdy_divwad_up_ok(x: int, y: int) -> int {
+  ?(y == 0) { ^ 0; };
+  ?(sdy_muldiv_ov(x, sdy_wad(), y) == 1) { ^ 0; };
+  q = sdy_muldiv(x, sdy_wad(), y);
+  r = sdy_muldiv_rem(x, sdy_wad(), y);
+  ?(r == 0) { ^ 1; };
+  ^ sdy_u_add_ok(q, 1);
+}
+
+!sdy_divwad_up(x: int, y: int) -> int {
+  ?(sdy_divwad_up_ok(x, y) == 0) { ^ 0; };
+  q = sdy_muldiv(x, sdy_wad(), y);
+  r = sdy_muldiv_rem(x, sdy_wad(), y);
+  ?(r == 0) { ^ q; };
+  ^ q + 1;
+}
+
+!sdy_test_suite() -> int {
+  w = sdy_wad();
+  ?(w != 1000000000000000000) { ^ -1; };
+  ?(sdy_mulwad(w + w, w + w + w) != w + w + w + w + w + w) { ^ -2; };
+  ?(sdy_mulwad(1, 1) != 0) { ^ -3; };
+  ?(sdy_mulwad(w, 1) != 1) { ^ -4; };
+  ?(sdy_mulwad(0, w + w) != 0) { ^ -5; };
+  ?(sdy_mulwad_ok(0, 0) != 1) { ^ -6; };
+  ?(sdy_mulwad_up(1, 1) != 1) { ^ -7; };
+  ?(sdy_mulwad_up(w + w, w + w + w) != w + w + w + w + w + w) { ^ -8; };
+  ?(sdy_divwad(w + w + w + w + w + w, w + w) != w + w + w) { ^ -9; };
+  ?(sdy_divwad(1, w + w) != 0) { ^ -10; };
+  ?(sdy_divwad_up(1, w + w) != 1) { ^ -11; };
+  ?(sdy_divwad_ok(1, 0) != 0) { ^ -12; };
+  ?(sdy_divwad(1, 0) != 0) { ^ -13; };
+  ?(sdy_muldiv(100, 200, 50) != 400) { ^ -14; };
+  ?(sdy_muldiv_rem(7, 9, 4) != 3) { ^ -15; };
+  ^ 1;
+}
+
+=ex{
+  sdy_u_lt,
+  sdy_u_add_carry,
+  sdy_u_add_ok,
+  sdy_mask32,
+  sdy_wad,
+  sdy_muldiv_part,
+  sdy_muldiv,
+  sdy_muldiv_rem,
+  sdy_muldiv_ov,
+  sdy_mulwad_ok,
+  sdy_mulwad,
+  sdy_mulwad_up_ok,
+  sdy_mulwad_up,
+  sdy_divwad_ok,
+  sdy_divwad,
+  sdy_divwad_up_ok,
+  sdy_divwad_up,
+  sdy_test_suite
+}
