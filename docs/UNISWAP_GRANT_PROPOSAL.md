@@ -23,7 +23,7 @@ Today, reconciliation relies on ad-hoc off-chain scripts (Python/JavaScript) usi
 ## 3. Proposed Solution: The Lin-Audit Framework
 Lin-Audit provides a **deterministic, zero-dependency bytecode engine (LinVM)** specifically optimized for multiword integer arithmetic (`uint256`) and formal state reconciliation.
 
-> **Execution & Audit Boundary:** Execution core — AMM mathematics, invariants, gates, and self-hosted front-end — 100% in LIN, executed on LinVM/GPU. Production I/O and cryptographic Merkle roots run in the audited C11 host (TCB-809); Python/hashlib scripts exist strictly as cleanroom audit oracles.
+> **Execution & Audit Boundary:** Execution core — AMM mathematics, invariants, gates, and self-hosted front-end — 100% in LIN, executed on LinVM/GPU. Production I/O and cryptographic Merkle roots run in the audited minimal C11 host; Python/hashlib scripts exist strictly as cleanroom audit oracles.
 
 ### Key Capabilities:
 - **Bit-Exact Parity:** 100% mathematical equivalence to the canonical Uniswap `getAmountOut` formula ($x \cdot y = k$ with exact 0.3% fee deduction).
