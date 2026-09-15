@@ -10,6 +10,8 @@ independent proof harness. They are **test fixtures**, not vendored libraries.
 | `openssl_sha256.c` | [openssl/openssl](https://github.com/openssl/openssl) | Apache-2.0 |
 | `qoi.h` | [phoboslab/qoi](https://github.com/phoboslab/qoi) | MIT |
 | `tinyexpr.c` | [codeplea/tinyexpr](https://github.com/codeplea/tinyexpr) | zlib |
+| `bitcoin_consensus_amount.h` | [bitcoin/bitcoin v27.1 amount.h](https://github.com/bitcoin/bitcoin/blob/v27.1/src/consensus/amount.h) | MIT |
+| `wally_amount_scalar.c` | scalar extract of [libwally-core 1.5.6](https://github.com/ElementsProject/libwally-core) satoshi cap | MIT |
 
 They are only pinned so an auditor can hash the exact bytes and, with `--fetch`,
 re-download them from the GitHub Contents API. No upstream code is compiled or

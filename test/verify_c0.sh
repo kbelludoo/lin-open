@@ -91,6 +91,20 @@ expect "gpu_map_mix 5" \
        ".result{ fn=\"gpu_map_mix\" value=8 steps=" \
        "$C0" vm "$CORPUS" gpu_map_mix 5
 
+printf '\n-- clone-lin ElementsProject/libwally-core satoshi cap --\n'
+expect "wally amount coverage 10/10" \
+       ".coverage{ total=10 eligible=10 rejected=0 }" \
+       "$C0" info "$ROOT/src/lin_wally_amount.lin"
+expect "wally_satoshi_per_btc == 100000000" \
+       ".result{ fn=\"wally_satoshi_per_btc\" value=100000000" \
+       "$C0" vm "$ROOT/src/lin_wally_amount.lin" wally_satoshi_per_btc
+expect "wally_satoshi_max == 21e6*1e8" \
+       ".result{ fn=\"wally_satoshi_max\" value=2100000000000000" \
+       "$C0" vm "$ROOT/src/lin_wally_amount.lin" wally_satoshi_max
+expect "wally_amount_gate == 1" \
+       ".result{ fn=\"wally_amount_gate\" value=1" \
+       "$C0" vm "$ROOT/src/lin_wally_amount.lin" wally_amount_gate
+
 printf '\n-- fonte -> imagem LINBC1 -> loader -> execução (mesmo resultado) --\n'
 expect "roundtrip: exec direto == exec via imagem" \
        ".verdict{ status=\"CONSENSUS\"" \
