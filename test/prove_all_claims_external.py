@@ -447,6 +447,20 @@ def receipt_claims() -> tuple[str, str]:
     )
 
 
+def floppy_claims() -> tuple[str, str]:
+    floppy_proof = ROOT / "test" / "prove_floppy_external.py"
+    if not floppy_proof.exists():
+        return "FAIL", f"{floppy_proof} missing"
+    rc, out = run("python3", floppy_proof)
+    if rc != 0:
+        return "FAIL", f"prove_floppy_external.py failed (rc={rc}):\n{out}"
+    return "PASS", (
+        "FloppyURL + Settlement Store tri-runtime parity verified (Python ↔ C11 ↔ Node.js): "
+        "LINP 25 sectors (root=75366e5c...), LINT layout (sha=f03b560d...), STORE 8-swap WAL replay "
+        "(merkle=466c815e...), DecompressionStream (<2ms), zero-WASM attested"
+    )
+
+
 def selfhost_claims() -> tuple[str, str]:
     if not C0.exists():
         return "SKIP", "lin_c0 not built"
@@ -521,6 +535,7 @@ def main() -> int:
     claims.append(Claim("C5", "Compiler-0 no-Zig self-host gates", *selfhost_claims()))
     claims.append(Claim("C6", "UniswapV2Library scalar math parity (default vm)", *uniswap_claims(args.iterations)))
     claims.append(Claim("C7", "SipHash/xxHash round parity (profile-full)", *hashing_claims(args.iterations)))
+    claims.append(Claim("C8", "FloppyURL + Settlement Store tri-runtime pipeline", *floppy_claims()))
     np_status, np_note = not_proven_scope()
     claims.append(Claim("NP1", "Full protocol/security/performance proof", np_status, np_note))
 

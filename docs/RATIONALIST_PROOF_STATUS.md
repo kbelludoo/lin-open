@@ -40,6 +40,8 @@ Latest rationalist output:
           get_amount_out/quote/get_amount_in match Python oracle
 [PASS] C7  SipHash/xxHash round parity (profile-full)
           SipHash-2-4 and xxHash64 round match Python oracle
+[PASS] C8  FloppyURL + Settlement Store tri-runtime pipeline
+          LINP (75366e5c...) + LINT (f03b560d...) + STORE (466c815e...) bit-exact across Python, C11, and Node.js
 [NOT-PROVEN] NP1  Full protocol/security/performance proof
 ```
 
@@ -134,6 +136,18 @@ transpile/c/bin/lin_c0 vmfull src/lin_siphash_xxhash_qoi.lin xxhash64_round 1 2
 
 The `vmfull` mode is **experimental and intentionally separate from the default
 fail-closed profile**: it does not change what `lin_c0 info`/`vm` report.
+
+### C8 — FloppyURL + Settlement Store tri-runtime pipeline (Python ↔ C11 ↔ Node.js)
+
+Verifies end-to-end integration between LIN bytecode packaging (`linp_c0`), layout compilation (`lint_c0`), and native append-only WAL state durability (`store_c0`), cross-attested across three independent runtimes (Python 3 stdlib, Native C11, and Node.js Web Standards).
+
+- **LINP Package Root**: `settlement_engine.lin` (3,728 B) $\to$ raw deflate (1,172 B) $\to$ 25 virtual sectors v2. Root: `75366e5cb034b36aa96321acd96ffe61638c8809cf06321f4e656eadd589e9bb`. Bytecode: `5da8f929f87021b39ad5fbd681d4ca89f9dbaf92e76ba781b1704c011d4fa01f`.
+- **Zero-Byte Sovereignty**: Zero `.wasm` files, zero `.wasm` references. Browser-native `DecompressionStream('deflate-raw')` decompresses in **0.28–0.36 ms** ($<2.0\text{ ms}$ target).
+- **LINT Layout Bytecode**: 4 canonical UI panels $\to$ 999 bytes (`LAY1`, 31 nodes, 25 strings). SHA-256: `f03b560df9c2d21c3c8870707273c495d595523ce41ec2b7be9f48708ea6598c`. Bit-exact determinism across runs; validated by Python AST parser.
+- **STORE Durability**: LinVM AMM swap batch (8 txs, 6 applied, 2 rejected, 24 WAL frames, 17 active keys) with physical `fsync` per commit. C11 state Merkle root matches Python oracle bit-for-bit: `466c815efcf301dc5ad065213f0e3a952b7f451e233c6b5dc1c1be50ad5a98e1`.
+- **Crash Recovery**: Mid-batch crash kill (`--crash-after 5`, `SIGKILL` exit 137) restores exact 15-frame prefix without ghost balances.
+- **Tamper Detection**: Single bit-flips in sector payloads, layout bytecode, or WAL frames fail closed and are immediately rejected.
+- **Standalone Execution**: `python3 test/prove_floppy_external.py` runs entirely out-of-tree in `/tmp`, preserving zero repository pollution.
 
 ---
 
