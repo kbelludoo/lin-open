@@ -1,7 +1,11 @@
 # Ethereum Ecosystem Support Program (ESP) — Project Inquiry
 
+> **LIN não executa seu sistema. Prova um kernel numérico pequeno com receipt stdlib + disputa otimista.**
+>
+> LIN does not run your system. It proves a small numeric kernel with a stdlib receipt and an optimistic dispute.
+
 ## 1. Project Title & Applicant Information
-- **Project Name:** Lin-Audit: Reproducible Ethereum Transaction Verifier & Deterministic DeFi State Reconciliation
+- **Project Name:** Lin-Audit: Auditable Scalar Coprocessor — Ethereum Tx Verifier & DeFi Receipts
 - **Applicant:** Lin Core Contributors
 - **Repository:** [github.com/kbelludoo/lin-open](https://github.com/kbelludoo/lin-open) (Public Open Source Repository)
 - **Track:** Cryptography & Infrastructure / Developer Tooling & Verification

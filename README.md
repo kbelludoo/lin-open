@@ -1,19 +1,28 @@
-# LIN — Deterministic Scalar Systems Language, LinVM & Attested Execution Logs
+# LIN — Auditable Scalar Coprocessor + Receipts
 
-> **CLI version `2.0.0`** (Lineage: AIL → LIA → LIN). Reproducible Computation & Tamper-Evident Attestation.
+> **LIN não executa seu sistema. Prova um kernel numérico pequeno com receipt stdlib + disputa otimista.**
+>
+> LIN does not run your system. It proves a small numeric kernel with a stdlib receipt and an optimistic dispute.
 
-**LIN** is a deterministic scalar/numeric procedural systems language with an embedded bytecode VM (`LinVM`), a heap-free flat AST arena, and cryptographic **attested execution logs** (Merkle commitments) that bind `(source hash, inputs, outputs, VM steps, stack depth)` into a single SHA-256 Merkle root for tamper-evident logging and reproducible replay.
+> **CLI version `2.0.0`** (Lineage: AIL → LIA → LIN). Positioning: [`docs/LIN_VALUE_PROPOSITION.md`](docs/LIN_VALUE_PROPOSITION.md).
 
-It is purpose-built for reproducible numeric algorithms: cryptography, hashing, digital signal processing, off-chain co-processing with interactive dispute settlement, and verified transpilation from C.
+**LIN** is an auditable scalar coprocessor: a heap-free numeric kernel (`LinVM`) that binds `(source hash, inputs, outputs, VM steps, stack depth)` into a SHA-256 Merkle receipt. An independent verifier (Python stdlib, WebCrypto, or C) recomputes the root. On-chain settlement is an **optimistic dispute** window, not a zk validity proof.
+
+It does **not** run your application or replace C/Rust/Python. It proves a small numeric kernel — typically Uniswap V2 `getAmountOut` on emulated `uint256` limbs — with a stdlib receipt and an optional L1 batch anchor. Transpilation from C/Solidity is a **fail-closed pure-math subset** (`REJ_*`), not a general compiler.
+
+| Auditor job today | LIN coprocessor |
+|---|---|
+| Ad-hoc **Python/JS + RPC** script | **LCR2 receipt** (208 B) + `hashlib` / WebCrypto verify |
+| **zkVM** expensive prover | **Optimistic** and cheap (execute native/GPU, SHA-256 anchor) |
+| **L1 re-execution** of every swap | **One batch Merkle root** + spot-check dispute |
 
 > **⚡ 60-Second Fast Verification (Zero Assumptions / Independent Oracle):**
 >
 > 1. **Public GitHub Actions CI:** [Workflow Runs](https://github.com/kbelludoo/lin-open/actions) — three workflows: `CI` (Zig build + self-hosted suites + sovereign no-Zig host), `LIN Gate` (Merkle attestation of the protected toolchain), `M1 Ethereum Tx Verifier` (RLP/Keccak compliance + mutation suite).
-> 2. **Audit 2,000 Real Mainnet Swaps & the 157-Swap Unfiltered Corpus — LCR2 Merkle roots (< 1s, Python stdlib):**
+> 2. **One auditor command** (`dataset.json` → LCR2 root + manifest + verify; no Zig, `cc` + Python 3). LCR2 is 208 B/record; **`steps_bound=false`** (steps field is 0). 2000/2000 + 157/157 in ~0.1 s:
 >    ```bash
->    make verify-batch-receipt
->    # (emits deterministic binary records + JSON manifests, then verifies
->    #  LCR2 Merkle roots, per-record SHA-256 and the big-int oracle: 2000/2000 + 157/157)
+>    make audit
+>    make verify-batch-receipt   # both corpora, same emit/verify path
 >    ```
 > 3. **Live On-Chain Gas Audit (Foundry Unit Tests + Anvil Receipts):**
 >    ```bash
@@ -27,7 +36,7 @@ It is purpose-built for reproducible numeric algorithms: cryptography, hashing, 
 
 > **Explicit Trust Model & Security Boundary:**
 > * **Tamper-Evidence vs. Computational Soundness:** A SHA-256 Merkle root provides **tamper-evident log integrity**, not computational soundness. It proves that source code, inputs, outputs, and trace metadata have not been modified after the record was minted. A malicious executor could emit a false output ($2 + 2 = 5$) and still construct a valid Merkle root. Verifying execution correctness requires either (a) independent re-execution via `--source`, or (b) an on-chain fraud dispute window.
-> * **Settlement Architecture:** Off-chain batch settlement operates under an **Optimistic Dispute Model** (`contracts/LinReceiptVerifier.sol`). Batches are anchored on L1 at minimal gas cost (70,133 gas), and any observer can challenge fraudulent swaps via `disputeFraudulentSwap` using Merkle inclusion proofs. LIN does not claim to be a zero-knowledge validity proof system (zk-SNARK/STARK).
+> * **Settlement Architecture:** Off-chain batch settlement operates under an **Optimistic Dispute Model** (`contracts/LinReceiptVerifier.sol`). Batches are anchored at **70,133 gas** (`settleBatch`, fresh root) measured on **Anvil/Foundry** (not Mainnet); amortized **$0.00210/swap** @ 20 gwei, $3k ETH, ÷2,000. Any observer can challenge a fraudulent swap via `disputeFraudulentSwap`. LIN is not a zk-SNARK/STARK.
 > * **TCB Accounting:** The author-written execution runtime core is **809 LOC** in C11 (`lin_vm.c`, `lin_linbc1.c`, `lin_sha256.c`, `lin_common.c`). The full operational trust boundary includes the host C compiler (GCC/Clang), standard library, operating system kernel, and hardware driver/firmware.
 > * **Trusting Trust & Diverse Double-Compiling:** The closed Fixed Point $C_0=C_1=C_2$ proves deterministic self-compilation closure. To mitigate Ken Thompson's *Trusting Trust* critique (1984), the Stage-0 Zig front-end is **preserved** as an independent audit witness for Diverse Double-Compiling (Wheeler, 2005).
 
@@ -46,7 +55,7 @@ All capabilities below are **fully verified without mock data or simulated infra
 | **Independent Log Verification** | ✅ **PASS** | Standalone log verification scripts in Python, Node.js, Bash+OpenSSL, and WebCrypto without the LIN compiler |
 | **LinVM0 Self-Hosting (V1 → V5)** | ✅ **PASS** | Front-end in pure LIN, closed Fixed Point $C_0=C_1=C_2$ (deterministic self-compilation closure), native ELF64 emitter running on the Linux kernel, and Compiler-0 (`lin_c0`) running independently on standard C11 |
 | **Cross-Platform Reproducibility** | ✅ **PASS** | Runs identically bit-for-bit across CPU (Host C11), Web (Wasm/JS), and GPU (OpenCL) |
-| **GPU AMM Co-processor** | ✅ **PASS** | **Deterministic AMM Co-processor** on AMD Radeon RX 6600 (Kernel execution: 1.7ms / 1.17M swaps/s peak; End-to-end wall-clock: 218ms / 9.1k swaps/s). On-chain anchor (`contracts/LinReceiptVerifier.sol`) measured in Foundry at 70,133 gas (~35.1 gas/swap amortized over 2,000 swaps; ~3.56× cheaper than Groth16 under an optimistic dispute model; 13,258×–16,604× when compared to full L1 EVM re-execution). |
+| **GPU AMM Co-processor** | ✅ **PASS** | Deterministic AMM co-processor on AMD Radeon RX 6600 (**kernel** 1.7 ms / 1.17M swaps/s peak; **wall-clock** 218 ms / 9.1k swaps/s). Anvil/Foundry anchor 70,133 gas (~35.1 gas/swap over 2,000; ~3.56× cheaper than Groth16 under optimistic dispute; 13,258×–16,604× vs L1 re-execution is a **conditional baseline**, not a general proof). |
 
 ### Strict Codebase Accounting
 * **Execution Runtime Core:** **809 LOC** (`lin_vm.c`, `lin_linbc1.c`, `lin_sha256.c`, `lin_common.c`).
@@ -84,11 +93,11 @@ In compliance with rationalist auditing standards (`NP1`):
 
 | Claim | Honest Status | Why it is NOT proven |
 |---|:---:|---|
-| **"LIN saves $1.8T"** | ❌ **FALSE AS STATED** | Cumulative Uniswap trading volume was conflated with cost savings; no benchmark supports this figure. |
+| **"LIN saves $1.8T"** | ❌ **FALSE AS STATED** | Cumulative Uniswap trading volume was conflated with cost savings; no benchmark supports this figure. Reintroducing this as a positive claim fails CI (`test/gate_forbidden_overclaims.py`). |
 | **"16,604× gas reduction as general proof"** | ⚠️ **CONDITIONAL BASELINE** | 16,599× is the ratio against re-executing all 2,000 swaps in unoptimized L1 EVM bytecode. Compared against zk-SNARK verifiers (e.g. Groth16 at ~125 gas/swap amortized), LIN's batch anchor (~35.1 gas/swap) is ~3.56× cheaper, but operates with an optimistic dispute model rather than cryptographic soundness. |
 | **"1.17M swaps/s wall-clock throughput"** | ⚠️ **PEAK KERNEL ONLY** | 1.17M swaps/s reflects 1.7 ms pure GPU compute on AMD RX 6600. End-to-end wall-clock throughput is 9,100 swaps/s (218 ms) due to PCIe transfer and driver overhead. A single CPU core running u256 delivers ~300,000 swaps/s. |
 | **"Zero-Trust without execution"** | ❌ **NOT SOUND** | Merkle receipts prove data integrity (tamper-evidence), not execution validity. Soundness requires re-execution or an active dispute game. |
-| **"LIN is faster than LLVM/C/Rust"** | ❌ **NOT PROVEN** | No general compiler benchmark against LLVM -O3 exists in this repository. A SipHash ~20.8× figure, when quoted, is compile-turnaround on one host. |
+| **"LIN is faster than LLVM/C/Rust"** | ❌ **NOT PROVEN** | No general compiler benchmark against LLVM -O3 exists in this repository. Speed vs LLVM/C/Rust is the wrong ring; do not reintroduce it. |
 | **"Full OpenSSL executes in LinVM"** | ❌ **NOT PROVEN** | OpenSSL `sha256.c` is pinned for provenance only; full OpenSSL is not transpiled or executed. |
 | **"Full Uniswap protocol is replaced"** | ❌ **NOT PROVEN** | Only the pure scalar arithmetic functions are transpiled and verified; state storage, ERC-20 calls, and EVM reentrancy are out of scope. |
 | **"Compound cToken / uint256 mainnet parity"** | ❌ **NOT PROVEN** | The JumpRate clone is experimental uint64-scale: explicit IRM arguments and 128-bit `(a*b)/d`, not Solidity uint256. |
@@ -109,14 +118,15 @@ LIN is tested against production-grade C kernels with **100% bit-exact parity** 
 
 ---
 
-## 4. C → LIN Transpiler: Safety via Subset Restriction
+## 4. C / Solidity → LIN: Safety via Subset Restriction (fail-closed)
 
-Rather than claiming general memory safety for arbitrary C, LIN enforces memory safety through strict structural restrictions:
+Rather than claiming a general C or Solidity compiler, LIN accepts a **pure-math subset** and rejects the rest with explicit `REJ_*` codes (`src/lin_from_c.lin`, `src/lin_from_solidity.lin` / `sol_from_sol`):
 
 1. **Safe Array Lowering:** Fixed-size buffers (`uint8_t buf[64]`) map to bounded linear memory regions, eliminating raw pointers (`void*`) and pointer arithmetic.
 2. **Struct Flattening:** Composite structures (`struct Point { int x; int y; };`) decompose into scalar 64-bit words without dynamic heap allocation.
 3. **Bounded Loops & Gas Limits:** `for` and `while` loops receive strict iteration bounds (`[BOUNDED_LOOP: limit=N]`) to prevent non-terminating execution and denial-of-service.
 4. **Golden Vector Regression:** Every transpiled feature requires bit-exact differential testing against native C execution.
+5. **Solidity:** only eligible `pure`/`view` scalar math. Payable, `msg.sender`, storage, events, and inline assembly are `REJ_SOLIDITY_*`. This is reject-high, not "Solidity → LIN".
 
 ---
 
@@ -125,24 +135,25 @@ Rather than claiming general memory safety for arbitrary C, LIN enforces memory 
 | Capability | Engineering Mechanism | Measured Metric |
 |---|---|---|
 | **Deterministic Portability** | Pure scalar bytecode execution across targets | 100% bit-exact agreement across CPU (C11), Web (Wasm), and GPU (OpenCL). |
-| **Optimistic L1 Settlement** | On-chain batch root anchoring + spot checks | **70,133 gas** per 2,000-swap batch (~35.1 gas/swap) on Ethereum L1. |
+| **Optimistic batch anchor** | On-chain Merkle root + spot checks (Anvil/Foundry) | **70,133 gas** / 2,000-swap batch (~35.1 gas/swap; **$0.00210/swap** @ 20 gwei, $3k ETH). **Not Mainnet.** |
 | **Interactive Fraud Dispute** | On-chain invariant verification (`contracts/LinReceiptVerifier.sol`) | Any observer can challenge a fraudulent swap in a batch via Merkle inclusion proof (`disputeFraudulentSwap`). |
-| **Client-Side Verification** | NIST FIPS 180-4 SHA-256 Merkle recomputation | Verification in **< 10 µs** locally in Python, Bash, or WebCrypto (0 network calls). |
+| **Client-Side Verification** | NIST FIPS 180-4 SHA-256 Merkle recomputation | Block B=4: **5.29 µs** verify vs **26.372 ms** re-exec (~4986×). Single-receipt path is `< 10 µs` in Python/WebCrypto. **`steps_bound=false`** on LCR2 batch records. |
+| **i64 toy vs u256 limbs** | Same `getAmountOut` formula, different width | Toy: **16624 in 36 steps** (`lin_uniswap_v2_library.lin`, **TOY**). u256: **233670** steps per `settle_u256_word` status call on the same vector (`make swap-steps`). Do not ship the toy. |
 
 ---
 
-## 6. Architecture Trade-offs: Deterministic Co-Processor vs. zkVMs
+## 6. Right rivals: Python/RPC, zkVM, L1 re-execution
 
-A common question is how LIN compares to general zkVMs (RISC Zero, SP1, Jolt):
+A reviewer should not compare LIN to C/Rust. The jobs it replaces (or sits beside) are:
 
-| Dimension | General zkVMs (RISC Zero, SP1, Jolt) | LIN Co-processor & Attested Logs |
-|---|---|---|
-| **Prover Computational Overhead** | Significant ($10,000\times$ to $100,000\times$ arithmetization overhead). Requires high-end server GPUs and large RAM. | **Near-zero prover overhead:** Runs as physical native/GPU code. 2,000 swaps take **1.7 ms kernel time** on AMD RX 6600. |
-| **Security / Soundness Model** | **Cryptographic Validity Proof:** False execution cannot produce a valid proof, without trusting the prover. | **Optimistic Dispute Model:** Prover is trusted to emit correct roots; soundness relies on verifier re-execution or an on-chain dispute window (`disputeFraudulentSwap`). |
-| **On-Chain Verifier Gas** | Pairing cryptography / SNARK verifiers (~250k–400k gas, ~125 gas/swap amortized over 2k swaps). | **70,133 gas** batch anchor (~35.1 gas/swap amortized over 2k swaps; ~3.56× cheaper than Groth16). |
-| **Verifier Complexity & TCB** | Large circuit compilers, polynomial commitment schemes, and arithmetic gate libraries. | Minimal NIST SHA-256 Merkle check (`hashlib`, WebCrypto, or standard C library) in **< 10 µs**. |
+| Dimension | Python/RPC script | zkVM (RISC Zero, SP1, Jolt) | L1 re-execution | LIN coprocessor |
+|---|---|---|---|---|
+| **What you trust** | Indexer + interpreter | Validity proof | Canonical chain | Re-exec or dispute window |
+| **Prover cost** | None (also no proof) | $10,000\times$–$100,000\times$ arithmetization | Full EVM gas | Near-native / 1.7 ms kernel / 2k swaps |
+| **Verify** | Re-run the script | Groth16 ~125 gas/swap amortized | Pay L1 again | SHA-256 root, **5.29 µs**/block B=4; Anvil **70,133 gas** |
+| **Soundness** | None | Cryptographic | Consensus | **Optimistic** (tamper-evidence + dispute), **not zk** |
 
-LIN does **not** claim to be a zero-knowledge proof system. It is a deterministic, fail-closed co-processor designed for verifiable batch settlement, audit reconciliation, and instant client-side replay.
+LIN does **not** claim to be a zero-knowledge proof system. It is a fail-closed scalar coprocessor for batch receipts and audit reconciliation.
 
 ---
 
@@ -173,6 +184,11 @@ make all
 
 # Or directly:
 make test-lin-sovereign
+
+# One auditor command: dataset.json -> LCR2 208B records + Merkle root + verify
+# (no Zig; cc + python3). steps_bound=false.
+make audit
+make swap-steps              # i64 TOY steps vs u256 limb engine (do not mix)
 
 # Full verification of all 83 .lin files and the cryptographic receipts
 make test-c0-full
@@ -231,7 +247,8 @@ python3 test/prove_all_claims_external.py --iterations 10000
 python3 test/prove_all_claims_external.py --iterations 10000 --fetch   # re-download upstream
 ```
 
-See `docs/RATIONALIST_PROOF_STATUS.md` for the full claim/limit table.
+See `docs/RATIONALIST_PROOF_STATUS.md` for the full claim/limit table and
+`docs/LIN_VALUE_PROPOSITION.md` for grant positioning (coprocessor, not language).
 
 ### Standalone `lin-verify` CLI (stdlib, no Zig)
 
@@ -256,6 +273,9 @@ python3 lin_verify.py selfhost
 
 # Full rationalist proof
 python3 lin_verify.py all --iterations 10000
+
+# One auditor command (LCR2 batch, steps_bound=false)
+python3 tools/lin_auditor.py --dataset test/pilot_harness/mainnet_real_swaps_2000.json
 ```
 
 ---

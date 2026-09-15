@@ -1,7 +1,11 @@
 # Uniswap Foundation Grants Application: Lin-Audit
 
+> **LIN não executa seu sistema. Prova um kernel numérico pequeno com receipt stdlib + disputa otimista.**
+>
+> LIN does not run your system. It proves a small numeric kernel with a stdlib receipt and an optimistic dispute.
+
 ## 1. Project Overview
-- **Project Name:** Lin-Audit (Verifiable AMM Settlement & Reconciliation Engine)
+- **Project Name:** Lin-Audit (Auditable Scalar Coprocessor + AMM Receipts)
 - **Target Track:** Developer Tools / Infrastructure & Protocol Analytics
 - **Requested Amount:** $45,000 USD (Non-dilutive Grant)
 - **Project Duration:** 3 Months (3 Milestones)
@@ -21,9 +25,15 @@ Today, reconciliation relies on ad-hoc off-chain scripts (Python/JavaScript) usi
 ---
 
 ## 3. Proposed Solution: The Lin-Audit Framework
-Lin-Audit provides a **deterministic, zero-dependency bytecode engine (LinVM)** specifically optimized for multiword integer arithmetic (`uint256`) and formal state reconciliation.
+Lin-Audit is an **auditable scalar coprocessor** (not a general-purpose language). It proves a small Uniswap V2 numeric kernel with stdlib Merkle receipts and an optimistic dispute window.
 
-> **Execution & Audit Boundary:** Execution core — AMM mathematics, invariants, gates, and self-hosted front-end — 100% in LIN, executed on LinVM/GPU. Production I/O and cryptographic Merkle roots run in the audited minimal C11 host; Python/hashlib scripts exist strictly as cleanroom audit oracles.
+| Auditor job today | LIN coprocessor |
+|---|---|
+| Ad-hoc **Python/RPC** script | **LCR2 receipt** (208 B) + `hashlib` verify |
+| **zkVM** expensive prover | **Optimistic** cheap execute + SHA-256 anchor |
+| **L1 re-execution** | **Batch Merkle root** (Anvil **70,133 gas**) |
+
+> **Execution & Audit Boundary:** Execution core — AMM mathematics, invariants, gates, and self-hosted front-end — 100% in LIN, executed on LinVM/GPU. Production I/O and cryptographic Merkle roots run in the audited minimal C11 host; Python/hashlib scripts exist strictly as cleanroom audit oracles. **`steps_bound=false`** on LCR2 batch records.
 
 ### Key Capabilities:
 - **Bit-Exact Parity:** 100% mathematical equivalence to the canonical Uniswap `getAmountOut` formula ($x \cdot y = k$ with exact 0.3% fee deduction).

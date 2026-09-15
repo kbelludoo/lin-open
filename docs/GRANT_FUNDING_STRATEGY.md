@@ -1,12 +1,12 @@
 # Estratégia de Funding (Grants) — LIN
 
+> **LIN não executa seu sistema. Prova um kernel numérico pequeno com receipt stdlib + disputa otimista.**
+
 > Objetivo: monetizar o LIN via capital não-dilutivo (grants) antes de qualquer
-> preço comercial. Este documento define os alvos, a ordem de ataque e o que
-> depende do mantenedor vs. o que já está feito. Posicionamento honesto: LIN é
-> **computação determinística + receipts Merkle reproduzíveis externamente** —
-> NÃO é um ZKVM e NÃO deve competir com RISC Zero/SP1/Jolt. O encaixe nos
-> programas abaixo é "developer tooling + formal verification + provable
-> execution", não "novo sistema de prova ZK".
+> preço comercial. Posicionamento: LIN é um **coprocessador escalar auditável**
+> (receipts Merkle stdlib + disputa otimista) — NÃO é um ZKVM e NÃO compete
+> com Rust/C. Rivais corretos: script Python/RPC, prover zkVM caro, reexecução L1.
+> Documento canônico: [`LIN_VALUE_PROPOSITION.md`](LIN_VALUE_PROPOSITION.md).
 
 ---
 
