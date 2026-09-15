@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN note="v2: reject IEEE ceil/floor/round/trunc and C++ ::/casts/namespace even when comments hid double; strip C11 integer suffixes; emit if/else"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -39,8 +39,45 @@
   ?(rg_count_lit(sig, "union") > 0 || rg_count_lit(body, "union") > 0){ ^"REJ_C_UNION" };
   ?(rg_count_lit(sig, "float") > 0 || rg_count_lit(body, "float") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(sig, "double") > 0 || rg_count_lit(body, "double") > 0){ ^"REJ_C_FLOAT" };
+  ?(rg_count_lit(body, "ceil(") > 0){ ^"REJ_C_FLOAT" };
+  ?(rg_count_lit(body, "floor(") > 0){ ^"REJ_C_FLOAT" };
+  ?(rg_count_lit(body, "round(") > 0){ ^"REJ_C_FLOAT" };
+  ?(rg_count_lit(body, "trunc(") > 0){ ^"REJ_C_FLOAT" };
+  ?(rg_count_lit(body, ".0") > 0){ ^"REJ_C_FLOAT" };
+  ?(rg_count_lit(sig, "::") > 0 || rg_count_lit(body, "::") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(body, "class ") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(body, "template") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(body, "static_cast") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(body, "reinterpret_cast") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(body, "dynamic_cast") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(body, "const_cast") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(body, "namespace") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(body, "throw ") > 0){ ^"REJ_C_CXX" };
   ?(rg_count_lit(body, "goto") > 0){ ^"REJ_C_GOTO" };
   ^"OK";
+}
+
+!cfs_strip_int_suffix(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  c = 0;
+  while (i < n) {
+    c = s.charCodeAt(i);
+    ?(c >= 48 && c <= 57){
+      while (i < n && s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57){
+        out = out + s.charAt(i);
+        i = i + 1;
+      };
+      while (i < n && (s.charCodeAt(i) == 76 || s.charCodeAt(i) == 108 || s.charCodeAt(i) == 85 || s.charCodeAt(i) == 117)){
+        i = i + 1;
+      };
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
 }
 
 !cfs_atom_left(s: string, at: int): int {
@@ -327,6 +364,11 @@
   ?(n == 0){ ^out };
   p = 0;
   cl = 0;
+  rest = "";
+  then_b = "";
+  else_b = "";
+  br = 0;
+  after = "";
   ?(starts_lit(e, 0, "return") == 1 && (n == 6 || is_ident(e.charCodeAt(6)) == false)){
     out = out + "^";
     out = out + cfs_shifts(jss_trim(slice2(e, 6, n)));
@@ -337,11 +379,29 @@
     ?(p < n && e.charCodeAt(p) == 40){
       cl = match_paren(e, p);
       ?(cl > p){
+        rest = jss_trim(slice2(e, cl + 1, n));
+        then_b = rest;
+        else_b = "";
+        ?(rest.length > 0 && rest.charCodeAt(0) == 123){
+          br = match_brace(rest, 0);
+          ?(br > 0){
+            then_b = slice2(rest, 0, br + 1);
+            after = jss_trim(slice2(rest, br + 1, rest.length));
+            ?(starts_lit(after, 0, "else") == 1 && (after.length == 4 || is_ident(after.charCodeAt(4)) == false)){
+              else_b = jss_trim(slice2(after, 4, after.length));
+            };
+          };
+        };
         out = out + "?(";
         out = out + cfs_shifts(slice2(e, p + 1, cl));
         out = out + "){ ";
-        out = out + cfs_brace_body(slice2(e, cl + 1, n));
+        out = out + cfs_brace_body(then_b);
         out = out + " }";
+        ?(else_b.length > 0){
+          out = out + " : { ";
+          out = out + cfs_brace_body(else_b);
+          out = out + " }";
+        };
         ^out;
       };
     };
@@ -646,7 +706,7 @@
 }
 
 !cfs_prep(src: string): string {
-  ^jss_rewrite_hex(jss_strip_comments(src));
+  ^cfs_strip_int_suffix(jss_rewrite_hex(jss_strip_comments(src)));
 }
 
 !cfs_from_c(src: string): string {
@@ -756,4 +816,4 @@
   ^out;
 }
 
-=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type}
+=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type, cfs_strip_int_suffix}
