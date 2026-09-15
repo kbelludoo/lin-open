@@ -114,23 +114,34 @@ def ensure_c0() -> None:
         raise RuntimeError(f"make c0 failed: {proc.stdout}\n{proc.stderr}")
 
 
-def ensure_upstream() -> str:
-    if not (UPSTREAM / UPSTREAM_REL).exists():
-        proc = run(
-            [
-                "git",
-                "clone",
-                "--depth",
-                "1",
-                "https://github.com/compound-finance/compound-protocol.git",
-                str(UPSTREAM),
-            ],
-            timeout=120,
-        )
-        if proc.returncode != 0:
-            raise RuntimeError(proc.stderr)
-    proc = run(["git", "-C", str(UPSTREAM), "rev-parse", "HEAD"])
-    return proc.stdout.strip()
+def ensure_upstream() -> tuple[str, str, str]:
+    """Fetch the pinned commit. SKIP on network failure; fixture pin still holds."""
+    url = "https://github.com/compound-finance/compound-protocol.git"
+    if not (UPSTREAM / ".git").exists():
+        UPSTREAM.mkdir(parents=True, exist_ok=True)
+        init = run(["git", "init", str(UPSTREAM)])
+        if init.returncode != 0:
+            return "SKIP", "", "git init failed"
+        run(["git", "-C", str(UPSTREAM), "remote", "add", "origin", url])
+    fetch = run(
+        ["git", "-C", str(UPSTREAM), "fetch", "--depth", "1", "origin", PINNED_COMMIT],
+        timeout=120,
+    )
+    if fetch.returncode != 0:
+        note = (fetch.stderr or fetch.stdout or "fetch failed").strip()[:240]
+        return "SKIP", "", note
+    co = run(["git", "-C", str(UPSTREAM), "checkout", "--force", "FETCH_HEAD"])
+    if co.returncode != 0:
+        return "SKIP", "", "checkout of pinned commit failed"
+    live = UPSTREAM / UPSTREAM_REL
+    if not live.exists():
+        return "SKIP", "", f"{UPSTREAM_REL} missing after checkout"
+    commit = run(["git", "-C", str(UPSTREAM), "rev-parse", "HEAD"]).stdout.strip()
+    blob = run(["git", "-C", str(UPSTREAM), "rev-parse", f"HEAD:{UPSTREAM_REL}"]).stdout.strip()
+    live_hash = sha256_file(live)
+    if live_hash != PINNED_SHA256 or blob != PINNED_BLOB:
+        return "FAIL", commit, f"live={live_hash} blob={blob}"
+    return "PASS", commit, blob
 
 
 def main() -> int:
@@ -160,28 +171,28 @@ def main() -> int:
         return 1
     rec("PIN-SHA256", "PASS", "pinned BaseJumpRateModelV2.sol sha256 matches manifest")
 
-    commit = ensure_upstream()
-    live = UPSTREAM / UPSTREAM_REL
-    live_hash = sha256_file(live)
-    blob = run(["git", "-C", str(UPSTREAM), "rev-parse", f"HEAD:{UPSTREAM_REL}"]).stdout.strip()
-    if live_hash != PINNED_SHA256:
-        rec(
-            "UPSTREAM-SHA",
-            "FAIL",
-            "live clone hash differs from pin",
-            f"live={live_hash} pin={PINNED_SHA256} commit={commit}",
-        )
-    else:
+    up_status, commit, up_note = ensure_upstream()
+    blob = PINNED_BLOB
+    if up_status == "PASS":
+        blob = up_note
         rec(
             "UPSTREAM-SHA",
             "PASS",
-            "git clone of compound-protocol matches pinned bytes",
+            "git fetch of pinned compound-protocol commit matches fixture",
             f"commit={commit} blob={blob}",
         )
-    if blob != PINNED_BLOB:
-        rec("UPSTREAM-BLOB", "FAIL", "git blob sha mismatch", f"{blob} != {PINNED_BLOB}")
-    else:
         rec("UPSTREAM-BLOB", "PASS", "git blob sha of BaseJumpRateModelV2.sol")
+    elif up_status == "SKIP":
+        rec(
+            "UPSTREAM-SHA",
+            "SKIP",
+            "live fetch of pinned commit unavailable; fixture pin still holds",
+            up_note,
+        )
+        rec("UPSTREAM-BLOB", "SKIP", "live blob not recomputed this run")
+    else:
+        rec("UPSTREAM-SHA", "FAIL", "pinned commit bytes differ from fixture", up_note)
+        rec("UPSTREAM-BLOB", "FAIL", "git blob sha mismatch", up_note)
 
     ensure_oracle()
     st = run([str(ORACLE_BIN), "selftest"])
@@ -297,8 +308,10 @@ def main() -> int:
             )
 
     src = LIN.read_text(encoding="utf-8")
-    if "multiplierPerBlock" in src and "view" in src and "msg.sender" in src:
-        rec("EXPLICIT-ARGS", "FAIL", "clone still hides storage")
+    sig = "cjr_borrow_rate(cash: int, borrows: int, reserves: int, base_block: int, mult_block: int, jump_block: int, kink: int)"
+    sol = pinned.read_text(encoding="utf-8")
+    if sig not in src or "internal view" not in sol or "msg.sender" not in sol:
+        rec("EXPLICIT-ARGS", "FAIL", "expected explicit LIN args vs Solidity storage/view")
     else:
         rec(
             "EXPLICIT-ARGS",

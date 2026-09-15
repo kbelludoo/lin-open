@@ -33,6 +33,12 @@
       "note": ""
     },
     {
+      "id": "MULDIV-REM",
+      "status": "PASS",
+      "description": "4/4 remainder: a*b = q*d + r with r < d on Python/LIN/C11",
+      "note": ""
+    },
+    {
       "id": "I64-WRAP",
       "status": "PASS",
       "description": "naive signed-i64 1e18*1e18 wraps; Python/LIN 128-bit muldiv does not",
@@ -57,6 +63,36 @@
       "note": "rate=11891171993"
     },
     {
+      "id": "Q-OVERFLOW",
+      "status": "PASS",
+      "description": "quotient 1e36 does not fit uint64; LIN/C11 fail-closed to 0",
+      "note": ""
+    },
+    {
+      "id": "BORROW-90",
+      "status": "PASS",
+      "description": "jump-region borrow@90% three-way consensus",
+      "note": "rate=70871385082"
+    },
+    {
+      "id": "SUPPLY-50",
+      "status": "PASS",
+      "description": "supply@50% rf=10% three-way consensus",
+      "note": "rate=5351027396"
+    },
+    {
+      "id": "UTIL-UNDERFLOW",
+      "status": "PASS",
+      "description": "Solidity 0.8 would revert cash+borrows-reserves underflow; LIN returns 0 and util_ok=0",
+      "note": ""
+    },
+    {
+      "id": "VIEW-LIFT",
+      "status": "PASS",
+      "description": "view storage names become extra args; locals and calls are not lifted (LIN module typechecks; C0 vm rejects string literals so the scan is re-run in Python)",
+      "note": "kink,multiplierPerBlock,BASE,baseRatePerBlock"
+    },
+    {
       "id": "EXPLICIT-ARGS",
       "status": "PASS",
       "description": "LIN takes IRM params as arguments; Solidity reads storage + msg.sender",
@@ -64,13 +100,15 @@
     },
     {
       "id": "C0-JIT",
-      "status": "PASS",
-      "description": "lin_c0 roundtrip-jit CONSENSUS on cjr_test_suite",
-      "note": ""
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised (libtcc missing or module rejected)",
+      "note": "@RULEL:LIN_JIT_ROUNDTRIP:1.0.0\n.verdict{ status=\"DIVERGENCE\" why=\"jit_error\" code=\"LIBTCC_UNAVAILABLE\" }\n"
     }
   ],
   "numbers": {
     "borrow_rate_50_util": 11891171993,
+    "borrow_rate_90_util": 70871385082,
+    "supply_rate_50_rf10": 5351027396,
     "multiplier_per_block": 23782343987,
     "jump_per_block": 518455098934,
     "i64_wrap_1e18_sq": -5527149226598858752,
@@ -80,7 +118,8 @@
   },
   "not_claimed": [
     "full Solidity uint256 / mainnet cToken parity",
-    "LIN replaces Compound on Ethereum",
-    "general speed vs solc/EVM/LLVM"
+    "LIN replaces Compound, Uniswap, or the EVM",
+    "general speed vs solc/EVM/LLVM (SipHash ~20.8x is compile-turnaround on one host)",
+    "zk / computational soundness of Merkle (C4 is tamper-evidence + re-execution)"
   ]
 }

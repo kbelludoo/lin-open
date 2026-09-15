@@ -87,6 +87,10 @@ declared contract.
 emits a canonical Merkle root. `python3 benchmarks/verify_receipt.py`
 recomputes that root from public fields with `hashlib` — no LIN runtime involved.
 A committed receipt verifies, and an `output + 1` tamper is rejected.
+This is tamper-evidence plus re-execution of the C11 emitter — not zk and
+not computational soundness of execution. If `bin/lin_c_receipt` is missing,
+build it with `make -C transpile/c xver` (C11, no Zig). A first-run C4 FAIL
+from a missing binary is a harness gap, not a false math claim.
 
 ### C5 — Compiler-0 no-Zig gates
 

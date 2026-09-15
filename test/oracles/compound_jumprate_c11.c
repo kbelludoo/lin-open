@@ -21,19 +21,33 @@
 #define BLOCKS_PER_YEAR 2102400ULL
 
 static uint64_t muldiv_i128(uint64_t a, uint64_t b, uint64_t d) {
+    __uint128_t q;
     if (d == 0) return 0;
-    return (uint64_t)(((__uint128_t)a * (__uint128_t)b) / (__uint128_t)d);
+    q = ((__uint128_t)a * (__uint128_t)b) / (__uint128_t)d;
+    if (q > UINT64_MAX) return 0; /* fail-closed: not uint256 wrap */
+    return (uint64_t)q;
+}
+
+static uint64_t muldiv_rem_i128(uint64_t a, uint64_t b, uint64_t d) {
+    if (d == 0) return 0;
+    return (uint64_t)(((__uint128_t)a * (__uint128_t)b) % (__uint128_t)d);
 }
 
 static int u_lt(uint64_t a, uint64_t b) { return a < b; }
 
-static uint64_t muldiv_limbs(uint64_t a, uint64_t b, uint64_t d) {
+static void muldiv_limbs_qr(uint64_t a, uint64_t b, uint64_t d,
+                            uint64_t *q_out, uint64_t *r_out, int *ov_out) {
     uint64_t a0, a1, b0, b1, p0, p1, p2, p3, mid, t, lo, hi;
     uint64_t mid_carry, lo_carry, r_hi, r_lo, q, new_hi, new_lo;
     uint64_t bit, ge, need_borrow;
-    int i;
+    int i, ov;
 
-    if (d == 0) return 0;
+    if (d == 0) {
+        *q_out = 0;
+        *r_out = 0;
+        *ov_out = 1;
+        return;
+    }
     a0 = a & 0xffffffffULL;
     a1 = a >> 32;
     b0 = b & 0xffffffffULL;
@@ -54,6 +68,7 @@ static uint64_t muldiv_limbs(uint64_t a, uint64_t b, uint64_t d) {
     r_hi = 0;
     r_lo = 0;
     q = 0;
+    ov = 0;
     for (i = 127; i >= 0; i--) {
         bit = (i >= 64) ? ((hi >> (i - 64)) & 1ULL) : ((lo >> i) & 1ULL);
         new_hi = (r_hi << 1) | (r_lo >> 63);
@@ -65,10 +80,27 @@ static uint64_t muldiv_limbs(uint64_t a, uint64_t b, uint64_t d) {
             need_borrow = u_lt(r_lo, d);
             r_lo = r_lo - d;
             if (need_borrow) r_hi = r_hi - 1;
+            if (i >= 64) ov = 1;
             if (i < 64) q = q | (1ULL << i);
         }
     }
+    *q_out = ov ? 0 : q;
+    *r_out = r_lo;
+    *ov_out = ov;
+}
+
+static uint64_t muldiv_limbs(uint64_t a, uint64_t b, uint64_t d) {
+    uint64_t q, r;
+    int ov;
+    muldiv_limbs_qr(a, b, d, &q, &r, &ov);
     return q;
+}
+
+static uint64_t muldiv_rem_limbs(uint64_t a, uint64_t b, uint64_t d) {
+    uint64_t q, r;
+    int ov;
+    muldiv_limbs_qr(a, b, d, &q, &r, &ov);
+    return r;
 }
 
 static uint64_t utilization(uint64_t cash, uint64_t borrows, uint64_t reserves,
@@ -122,6 +154,8 @@ static int selftest(void) {
         {123456789ULL, 987654321ULL, 42},
         {0, 100, 5},
         {UINT64_C(0xffffffff), UINT64_C(0xffffffff), 1},
+        {BASE_WAD, BASE_WAD, 1}, /* quotient 1e36 does not fit uint64 → 0 */
+        {7, 9, 2},
     };
     size_t i;
     uint64_t kink = 800000000000000000ULL;
@@ -142,6 +176,12 @@ static int selftest(void) {
         != utilization(BASE_WAD, BASE_WAD, 0, muldiv_limbs)) fail++;
     if (utilization(BASE_WAD, BASE_WAD, 0, muldiv_i128) != 500000000000000000ULL) fail++;
     if (utilization(0, BASE_WAD, 0, muldiv_i128) != BASE_WAD) fail++;
+    if (muldiv_i128(BASE_WAD, BASE_WAD, 1) != 0) fail++;
+    if (muldiv_limbs(BASE_WAD, BASE_WAD, 1) != 0) fail++;
+    if (muldiv_rem_i128(7, 9, 2) != 1) fail++;
+    if (muldiv_rem_limbs(7, 9, 2) != 1) fail++;
+    if (muldiv_rem_i128(100, 200, 50) != muldiv_rem_limbs(100, 200, 50)) fail++;
+    if (utilization(1, 1, 3, muldiv_i128) != 0) fail++;
 
     mb_a = muldiv_i128(muldiv_i128(mult_year, BASE_WAD, kink), 1, BLOCKS_PER_YEAR);
     mb_b = muldiv_limbs(muldiv_limbs(mult_year, BASE_WAD, kink), 1, BLOCKS_PER_YEAR);
@@ -193,6 +233,15 @@ int main(int argc, char **argv) {
         printf("%" PRIu64 "\n", md(a, b, d));
         return 0;
     }
+    if (strcmp(cmd, "rem") == 0 && argc == 5) {
+        uint64_t a = strtoull(argv[2], NULL, 10);
+        uint64_t b = strtoull(argv[3], NULL, 10);
+        uint64_t d = strtoull(argv[4], NULL, 10);
+        printf("%" PRIu64 "\n",
+               (md == muldiv_limbs) ? muldiv_rem_limbs(a, b, d)
+                                    : muldiv_rem_i128(a, b, d));
+        return 0;
+    }
     if (strcmp(cmd, "util") == 0 && argc == 5) {
         uint64_t c = strtoull(argv[2], NULL, 10);
         uint64_t b = strtoull(argv[3], NULL, 10);
@@ -209,6 +258,19 @@ int main(int argc, char **argv) {
         uint64_t jump = strtoull(argv[7], NULL, 10);
         uint64_t kink = strtoull(argv[8], NULL, 10);
         printf("%" PRIu64 "\n", borrow_rate(c, b, r, base, mult, jump, kink, md));
+        return 0;
+    }
+    if (strcmp(cmd, "supply") == 0 && argc == 10) {
+        uint64_t c = strtoull(argv[2], NULL, 10);
+        uint64_t b = strtoull(argv[3], NULL, 10);
+        uint64_t r = strtoull(argv[4], NULL, 10);
+        uint64_t base = strtoull(argv[5], NULL, 10);
+        uint64_t mult = strtoull(argv[6], NULL, 10);
+        uint64_t jump = strtoull(argv[7], NULL, 10);
+        uint64_t kink = strtoull(argv[8], NULL, 10);
+        uint64_t rf = strtoull(argv[9], NULL, 10);
+        printf("%" PRIu64 "\n",
+               supply_rate(c, b, r, base, mult, jump, kink, rf, md));
         return 0;
     }
     fprintf(stderr, "bad args\n");

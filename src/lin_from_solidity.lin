@@ -4,7 +4,7 @@
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
   status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals"
+  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
 }
 
 !sol_is_kw(nm: string): int {
@@ -18,6 +18,7 @@
   ?(starts_lit(nm, 0, "require") == 1 && nm.length == 7) { ^1 };
   ?(starts_lit(nm, 0, "return") == 1 && nm.length == 6) { ^1 };
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2) { ^1 };
+  ?(starts_lit(nm, 0, "else") == 1 && nm.length == 4) { ^1 };
   ?(starts_lit(nm, 0, "while") == 1 && nm.length == 5) { ^1 };
   ^0;
 }
@@ -45,8 +46,9 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
-  ?(rg_count_lit(sig, "pure") == 0) { ^"REJ_SOLIDITY_NON_PURE" };
-  ^"OK";
+  ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
+  ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
+  ^"REJ_SOLIDITY_NON_PURE";
 }
 
 !sol_parse_test_gate(): int {
@@ -58,6 +60,10 @@
   ?(r1.length != 2) { ^0 };
   r2 = sol_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 };
+  sig_view = "function getBorrowRateInternal(uint cash, uint borrows, uint reserves) internal view returns (uint)";
+  body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
+  r3 = sol_reason(sig_view, body_view);
+  ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
   ^1;
 }
 

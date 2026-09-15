@@ -38,6 +38,7 @@
   not_4="computational soundness of Merkle receipts (tamper-evidence only; C4 proves independent SHA-256 recompute + output-tamper reject)"
   not_5="SipHash ASan vs LIN OOB clamp is a measured harness contrast, not a memory-safety theorem for all programs"
   first_c4_fail="C4 FAIL until make -C transpile/c all produced bin/lin_c_receipt — missing binary, not a false math claim"
+  c4_fix="rationalist-proof and receipt_claims now build lin_c_receipt via make -C transpile/c xver (no Zig)"
 }
 
 .h{

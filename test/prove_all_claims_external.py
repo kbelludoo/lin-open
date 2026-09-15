@@ -407,7 +407,13 @@ def hashing_claims(iterations: int) -> tuple[str, str]:
 
 def receipt_claims() -> tuple[str, str]:
     if not XREC.exists():
-        return "FAIL", f"{XREC} missing; run `make -C transpile/c all`"
+        # Root `make xver` pulls Zig via build-cpu. C4 only needs the C11 emitter.
+        rc_b, out_b = run("make", "-C", str(ROOT / "transpile" / "c"), "xver")
+        if rc_b != 0 or not XREC.exists():
+            return "FAIL", (
+                f"{XREC} missing after `make -C transpile/c xver` "
+                f"(rc={rc_b}): {out_b}"
+            )
 
     rc, out = run(XREC, "--expr", "x * x", "--env", "x=9")
     if rc != 0:
@@ -443,7 +449,9 @@ def receipt_claims() -> tuple[str, str]:
 
     return "PASS", (
         f"x*x receipt root {fields['root']} independently recomputed by Python; "
-        "committed receipt verifies; output+1 tamper is rejected"
+        "committed receipt verifies; output+1 tamper is rejected. "
+        "C4 is tamper-evidence + re-execution of lin_c_receipt, not zk/"
+        "computational soundness of Merkle."
     )
 
 
@@ -494,8 +502,12 @@ def not_proven_scope() -> str:
     return "NOT-PROVEN", (
         "Scope limits: default vm runs Uniswap division; SipHash/xxHash shifts "
         "need experimental profile-full (vmfull). Full protocol security, full "
-        "OpenSSL execution, on-chain gas savings, or performance vs LLVM/"
-        "C/Rust are NOT proven here and must not be sold as proven."
+        "OpenSSL execution, on-chain gas savings, performance vs LLVM/"
+        "C/Rust, Solidity uint256 / Compound cToken mainnet parity, replacing "
+        "Compound/Uniswap/EVM, or zk/computational soundness of Merkle receipts "
+        "are NOT proven here and must not be sold as proven. C4 is tamper-evidence "
+        "plus independent SHA-256 recompute; a missing lin_c_receipt binary is a "
+        "build gap, not a false math claim."
     )
 
 

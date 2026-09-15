@@ -10,7 +10,7 @@
     {
       "id": "UPSTREAM-SHA",
       "status": "PASS",
-      "description": "git clone of compound-protocol matches pinned bytes",
+      "description": "git fetch of pinned compound-protocol commit matches fixture",
       "note": "commit=a3214f67b73310d547e00fc578e8355911c9d376 blob=4d6828c39ed737c0c48508adc414b919ab6c2a55"
     },
     {
@@ -75,9 +75,9 @@
     },
     {
       "id": "C0-JIT",
-      "status": "PASS",
-      "description": "lin_c0 roundtrip-jit CONSENSUS on cjr_test_suite (in-memory libtcc)",
-      "note": ""
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
     },
     {
       "id": "EXPLICIT-ARGS",
