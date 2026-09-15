@@ -127,7 +127,10 @@
     i = i + 1;
   };
 
-  // Verificação de overflow: limbs 16..31 devem ser estritamente zero
+  // High-256 reject: this is NOT FullMath.mulDiv. A real uint256 (a*b)/d
+  // keeps the 512-bit product and divides 512/256 (see src/lin_u512_coprocessor.lin).
+  // Rejecting numerator[16..31]!=0 yields ^-2 on phantom overflow (P>=2^256)
+  // even when the quotient still fits in 256 bits.
   i = 16;
   while (i < 32) {
     ?(numerator[i] != 0) { ^-2; };

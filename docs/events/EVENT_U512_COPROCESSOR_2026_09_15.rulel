@@ -1,0 +1,51 @@
+@RULEL:U512_NUMERIC_COPROCESSOR:1.0.0
+@CHALLENGE_ID="LIN-U512-COPROCESSOR-2026-09-15"
+@TITLE="512-bit numeric coprocessor with independent Python/C11 proofs and LNR1 receipt"
+@STATUS="EXPERIMENTAL_FULLMATH_WIDTH"
+@DATE="2026-09-15"
+@CLASS="EXPERIMENTAL"
+
+~R{.s=spec .p=proved .n=not_proved .h=hashes .v=verdict}
+
+.s{
+  purpose="prove the 512-bit intermediate that real uint256 mulDiv walks on: 256x256->512 mul with carry, 512-bit ge for restoring division, 512/256->256 div with remainder identity q*d+r==n, against Python bigint on the full 256-bit operand range"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm at native width, not a deployed protocol replacement | REAL_WORLD = as deployed on Ethereum mainnet"
+  commercial_hook="LIN as a numeric coprocessor that emits an auditable LNR1 Merkle receipt an external verifier recomputes with hashlib; not a Uniswap replacement"
+  engine="src/lin_u512_coprocessor.lin (16-bit limbs, no native / )"
+}
+
+.p{
+  mul="256x256->512 schoolbook, carry out of 512 fail-closed"
+  div="restoring 512/256 using 32-limb ge; quotient that does not fit uint256 returns -2; d==0 returns -1"
+  identity="when status=1, Python int checks q*d+r==n and 0<=r<d"
+  phantom="2^255 * 2 / 3 uses product 2^256 (high limb set) and must APPROVE; this is the case settle_u256_word currently rejects with -2"
+  oracles="Python arbitrary-precision int XOR C11 64-bit limbs XOR C11 32-bit limbs XOR LIN 16-bit limbs"
+  receipt="LNR1 240-byte records, domain LIN:U512:LEAF:1 / LIN:U512:NODE:1, 1-bit tamper diverges"
+  harness="python3 test/prove_u512_coprocessor_external.py"
+}
+
+.n{
+  not_1="settle_u256_word vs ref_amount_out on EXACT_INPUT / OVERPAID_INPUT (still mandatory)"
+  not_2="LCR2 208-byte leaves with real LinVM steps for those settlement classes"
+  not_3="LIN replaces Uniswap v2/v3, FullMath on chain, or the EVM"
+  not_4="zk or computational soundness of Merkle (tamper-evidence + independent recompute only)"
+  not_5="the existing tools/audit_u512_uniswap_v2.py loop is not this proof; it does not call LIN per swap"
+}
+
+.h{
+  fullmath_sol_sha256="959c52e1c860bfbede3e33c8d04910c11038973173aa3478547cbad2e444880e"
+  fullmath_sol_blob="9985059e267c488ee8bb421ea65e09ad85f970b4"
+  upstream_repo="Uniswap/v3-core"
+  upstream_path="contracts/libraries/FullMath.sol"
+  ci_lnr1_root="sha256:0f7422c901f9a354102a03b4adb0a9229e1ab55cdedcc8cf09dcba35d02e04c1"
+  ci_mode="python3 test/prove_u512_coprocessor_external.py (seed=512256, 20 structured + 200 random)"
+  test_suite_steps="7450328"
+  vector_leaves="220"
+  auditor="python3 test/prove_u512_coprocessor_external.py --verify-receipt examples/u512_coprocessor/u512_coprocessor_evidence.json"
+}
+
+.v{
+  method="PINNED_FULLMATH && PYTHON_BIGINT && C11_64_XOR_32 && LIN_C0_IMAGE_RUN && Q_D_PLUS_R && LNR1_TAMPER"
+  on_fail="do not publish PASS"
+}
