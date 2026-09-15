@@ -70,10 +70,10 @@ python3 test/prove_all_claims_external.py --iterations 10000
 
 | Claim ID | Focus Area | Status | Verification Detail |
 |---|---|:---:|---|
-| **C1** | Upstream Source Provenance | ✅ **PASS** | 5 pinned upstream files (`UniswapV2Library.sol`, `FullMath.sol`, `sha256.c`, `qoi.h`, `tinyexpr.c`) match published SHA-256 digests (`--fetch` re-downloads via GitHub API). |
+| **C1** | Upstream Source Provenance | ✅ **PASS** | 6 pinned upstream files (`UniswapV2Library.sol`, `FullMath.sol`, `sha256.c`, `qoi.h`, `tinyexpr.c`, `BaseJumpRateModelV2.sol`) match published SHA-256 digests (`--fetch` re-downloads via GitHub API). Compound is provenance + experimental uint64 IRM, not uint256 parity. |
 | **C2** | QOI Index-Hash Parity | ✅ **PASS** | `qoi_color_hash` verified exact across random vectors against `phoboslab/qoi` C specification. |
 | **C3** | TinyExpr Factorial Parity | ✅ **PASS** | `tinyexpr_fac(0..20)` matches Python `math.factorial` bit-for-bit; $n<0$ and $n>20$ fail-closed. |
-| **C4** | Independent Receipt Recomputation | ✅ **PASS** | Merkle root for $x \cdot x$ independently recomputed by Python `hashlib`; output alteration is rejected. |
+| **C4** | Independent Receipt Recomputation | ✅ **PASS** | Merkle root for $x \cdot x$ independently recomputed by Python `hashlib`; output alteration is rejected. Tamper-evidence + reexecution, **not** zk soundness. Missing `lin_c_receipt` is a build gap (`make -C transpile/c all`), not a math fail. |
 | **C5** | Compiler-0 No-Zig Self-Host | ✅ **PASS** | `verify_c0.sh` (16 checks) and `verify_c0_selfhost.sh` (30 checks) pass with no Zig toolchain required. |
 | **C6** | UniswapV2Library Math Parity | ✅ **PASS** | `get_amount_out`, `quote`, and `get_amount_in` match Python oracle over 1,000+ vectors; canonical vector $(10000, 50000, 100000) \to 16624$. |
 | **C7** | SipHash & xxHash Round Parity | ✅ **PASS** | `siphash_round` and `xxhash64_round` match Python reference oracle over 2,000 vectors via `vmfull`. |
@@ -88,9 +88,10 @@ In compliance with rationalist auditing standards (`NP1`):
 | **"16,604× gas reduction as general proof"** | ⚠️ **CONDITIONAL BASELINE** | 16,599× is the ratio against re-executing all 2,000 swaps in unoptimized L1 EVM bytecode. Compared against zk-SNARK verifiers (e.g. Groth16 at ~125 gas/swap amortized), LIN's batch anchor (~35.1 gas/swap) is ~3.56× cheaper, but operates with an optimistic dispute model rather than cryptographic soundness. |
 | **"1.17M swaps/s wall-clock throughput"** | ⚠️ **PEAK KERNEL ONLY** | 1.17M swaps/s reflects 1.7 ms pure GPU compute on AMD RX 6600. End-to-end wall-clock throughput is 9,100 swaps/s (218 ms) due to PCIe transfer and driver overhead. A single CPU core running u256 delivers ~300,000 swaps/s. |
 | **"Zero-Trust without execution"** | ❌ **NOT SOUND** | Merkle receipts prove data integrity (tamper-evidence), not execution validity. Soundness requires re-execution or an active dispute game. |
-| **"LIN is faster than LLVM/C/Rust"** | ❌ **NOT PROVEN** | No general compiler benchmark against LLVM -O3 exists in this repository. |
+| **"LIN is faster than LLVM/C/Rust"** | ❌ **NOT PROVEN** | No general compiler benchmark against LLVM -O3 exists in this repository. A SipHash compile-turnaround ratio on one host is not a kernel claim. |
 | **"Full OpenSSL executes in LinVM"** | ❌ **NOT PROVEN** | OpenSSL `sha256.c` is pinned for provenance only; full OpenSSL is not transpiled or executed. |
 | **"Full Uniswap protocol is replaced"** | ❌ **NOT PROVEN** | Only the pure scalar arithmetic functions are transpiled and verified; state storage, ERC-20 calls, and EVM reentrancy are out of scope. |
+| **"Compound cToken / uint256 mainnet parity"** | ❌ **NOT PROVEN** | JumpRate clone is experimental uint64 + 128-bit `(a*b)/d` with explicit IRM arguments. Not a production IRM and not EVM replacement. |
 
 ---
 

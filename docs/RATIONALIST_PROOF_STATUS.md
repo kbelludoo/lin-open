@@ -27,7 +27,7 @@ Latest rationalist output:
 
 ```text
 [PASS] C1  Upstream source provenance
-          5 pinned upstream files matched published SHA-256
+          6 pinned upstream files matched published SHA-256
 [PASS] C2  QOI index-hash parity  (qoi.h -> LIN -> C0)
           qoi_color_hash: N random vectors exact vs qoi.h spec
 [PASS] C3  TinyExpr factorial parity (0..20, fail-closed edges)
@@ -55,6 +55,7 @@ Files are pinned under `test/fixtures/external_proof/` and re-fetched with
 | `openssl/openssl` | `crypto/sha/sha256.c` | `3a967cf8…49f21` |
 | `phoboslab/qoi` | `qoi.h` | `7de6fca1…09375a` |
 | `codeplea/tinyexpr` | `tinyexpr.c` | `0d7121f2…12f004` |
+| `compound-finance/compound-protocol` | `contracts/BaseJumpRateModelV2.sol` | `9cd2fe5f…2fb34f` |
 
 ### C2 — QOI hash parity (a real repo algorithm)
 
@@ -87,6 +88,11 @@ declared contract.
 emits a canonical Merkle root. `python3 benchmarks/verify_receipt.py`
 recomputes that root from public fields with `hashlib` — no LIN runtime involved.
 A committed receipt verifies, and an `output + 1` tamper is rejected.
+
+This is **tamper-evidence plus reexecution**, not a zk proof of computational
+soundness. A first-run C4 FAIL caused by a missing `bin/lin_c_receipt` is a
+build gap (`make -C transpile/c all`); the harness now builds that binary when
+absent.
 
 ### C5 — Compiler-0 no-Zig gates
 
@@ -145,6 +151,8 @@ fail-closed profile**: it does not change what `lin_c0 info`/`vm` report.
 | "LIN is faster than LLVM/C/Rust" | **NOT PROVEN** — no benchmark here |
 | "OpenSSL SHA-256 executes in LinVM" | **NOT PROVEN** — the OpenSSL file is only pinned/verified for provenance |
 | "Full Uniswap protocol is now protected/replaced" | **NOT PROVEN** — only the three pure math functions are executed; routing addresses, storage, EVM, reentrancy, etc. are outside this test |
+| "Compound cToken / uint256 mainnet parity" | **NOT PROVEN** — JumpRate clone is experimental uint64 + 128-bit muldiv with explicit arguments |
+| "C4 Merkle receipt is zk soundness" | **NOT PROVEN** — C4 is independent SHA-256 recompute + output-tamper reject |
 | "Heaps are eliminated in all upstream repos" | **NOT PROVEN** — only the compiler host and the selected LIN modules are observed; upstream C/Solidity is not rewritten by this proof |
 
 The proof harness encodes these as `NP1` and prints the `NOT-PROVEN` line rather

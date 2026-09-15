@@ -1,0 +1,46 @@
+@RULEL:INDEPENDENT_REPROOF_MELHORIAS:1.1.0
+@CHALLENGE_ID="LIN-INDEPENDENT-REPROOF-2026-09-15"
+@TITLE="Independent re-execution of recent LIN melhorias (Compound + Floppy + SipHash + JIT + C1-C7 + redteam)"
+@STATUS="REPRODUCED_THIS_RUN"
+@DATE="2026-09-15"
+@CLASS="MIXED_EXPERIMENTAL_AND_PINNED"
+
+~R{.s=scope .p=proved_this_run .n=not_proved .h=hashes .v=verdict}
+
+.s{
+  purpose="re-run existing harnesses on a clean Compiler-0 C11 host plus a Python bigint third oracle; do not trust committed evidence JSON"
+  prior_agent="bc-38db3af4-3bef-4217-bc7d-b32f5ecaebc3"
+  prior_pr="https://github.com/kbelludoo/lin-open/pull/79"
+  host="transpile/c/bin/lin_c0 (C11, no Zig) + gcc + python3 + libtcc from TinyCC"
+}
+
+.p{
+  compound_delta="explicit IRM args + 128-bit muldiv; jump-path and supply-rate three-way; fail-closed i64 overflow"
+  compound_independent="test/prove_melhorias_independent.py (Python int vs LIN vm vs C11 __int128)"
+  compound_edges="test/prove_compound_jumprate_edges.py (BORROW-90, SUPPLY-50, FAILCLOSED, FUZZ-MULDIV, REORDER, SOL-GATE)"
+  compound_borrow_50="11891171993 (Python == LIN == C11)"
+  compound_borrow_90="70871385082 (util > kink)"
+  compound_supply_50_rf10="5351027396"
+  i64_wrap="signed i64 of 1e18*1e18 = -5527149226598858752; bigint (1e18*1e18)/(2e18) = 5e17; (1e18*1e18)/1 fail-closed 0"
+  rationalist="test/prove_all_claims_external.py builds lin_c_receipt when missing; C4 is tamper-evidence + reexecution, not zk"
+}
+
+.n{
+  not_1="full Solidity uint256 / mainnet Compound cToken parity"
+  not_2="LIN replaces Compound, Uniswap, or EVM in production"
+  not_3="general wall-clock superiority vs solc/LLVM/C/Rust (SipHash 20.8x is compile-turnaround on this host, not a kernel benchmark)"
+  not_4="computational soundness of Merkle receipts (tamper-evidence only; C4 proves independent SHA-256 recompute + output-tamper reject)"
+  not_5="SipHash ASan vs LIN OOB clamp is a measured harness contrast, not a memory-safety theorem for all programs"
+  first_c4_fail="C4 FAIL until make -C transpile/c all produced bin/lin_c_receipt — missing binary, not a false math claim; harness now builds it"
+}
+
+.h{
+  jumprate_sol_sha256="9cd2fe5f7b88748c336bf2988c475da517ffd4909057b53df138b80f162fb34f"
+  jumprate_sol_blob="4d6828c39ed737c0c48508adc414b919ab6c2a55"
+  compound_protocol_commit="a3214f67b73310d547e00fc578e8355911c9d376"
+}
+
+.v{
+  method="RECOMPUTE_HASHES && PYTHON_BIGINT && LIN_C0_VM && C11_I128 && JUMP_SUPPLY_FAILCLOSED && OPTIONAL_JIT_CONSENSUS && REPLAY_EXISTING_HARNESSES"
+  on_fail="do not publish PASS"
+}

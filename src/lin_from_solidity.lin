@@ -1,12 +1,12 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=1
+  version=2
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: emit LIN for eligible pure functions; expand 1eN; reject view/msg.sender (JumpRate IRM is not auto-emitted)"
 }
 
-// 1. Identificação de palavras-chave do Solidity
 !sol_is_kw(nm: string): int {
   ?(starts_lit(nm, 0, "function") == 1 && nm.length == 8) { ^1 };
   ?(starts_lit(nm, 0, "returns") == 1 && nm.length == 7) { ^1 };
@@ -22,23 +22,20 @@
   ^0;
 }
 
-// 2. Identificação de tipos inteiros do Solidity
 !sol_is_type(nm: string): int {
   ?(starts_lit(nm, 0, "uint256") == 1 && nm.length == 7) { ^1 };
-  ?(starts_lit(nm, 0, "uint") == 1 && nm.length == 4) { ^1 };
   ?(starts_lit(nm, 0, "uint128") == 1 && nm.length == 7) { ^1 };
   ?(starts_lit(nm, 0, "uint64") == 1 && nm.length == 6) { ^1 };
   ?(starts_lit(nm, 0, "uint32") == 1 && nm.length == 6) { ^1 };
   ?(starts_lit(nm, 0, "uint16") == 1 && nm.length == 6) { ^1 };
   ?(starts_lit(nm, 0, "uint8") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "uint") == 1 && nm.length == 4) { ^1 };
   ?(starts_lit(nm, 0, "int256") == 1 && nm.length == 6) { ^1 };
   ?(starts_lit(nm, 0, "int") == 1 && nm.length == 3) { ^1 };
   ?(starts_lit(nm, 0, "bool") == 1 && nm.length == 4) { ^1 };
   ^0;
 }
 
-// 3. Análise de elegibilidade fail-closed
-// Apenas funções matematicamente puras são aceitas para transpilação LIN
 !sol_reason(sig: string, body: string): string {
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
@@ -47,25 +44,299 @@
   ?(rg_count_lit(body, "assembly") > 0) { ^"REJ_SOLIDITY_INLINE_ASM" };
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
+  ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
   ?(rg_count_lit(sig, "pure") == 0) { ^"REJ_SOLIDITY_NON_PURE" };
   ^"OK";
 }
 
-// 4. Teste de conformidade de parser Solidity
 !sol_parse_test_gate(): int {
   sig_ok = "function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut)";
   body_ok = "require(amountIn > 0); uint amountInWithFee = amountIn.mul(997); return amountInWithFee;";
-  
   sig_bad = "function mint() external payable returns (bool)";
   body_bad = "require(msg.value > 0); return true;";
-
   r1 = sol_reason(sig_ok, body_ok);
-  ?(r1.length != 2) { ^0 }; // Deve ser "OK"
-
+  ?(r1.length != 2) { ^0 };
   r2 = sol_reason(sig_bad, body_bad);
-  ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // Deve começar com REJ_
-
+  ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 };
   ^1;
 }
 
-=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate}
+!sol_parse_uint(s: string, a: int, b: int) -> int {
+  v = 0;
+  k = a;
+  while (k < b) {
+    v = v * 10 + (s.charCodeAt(k) - 48);
+    k = k + 1;
+  };
+  ^v;
+}
+
+!sol_expand_exp(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  st = 0;
+  en = 0;
+  expn = 0;
+  z = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) {
+      ?(i > 0 && is_ident(s.charCodeAt(i - 1)) == true) {
+        out = out + s.charAt(i);
+        i = i + 1;
+        continue;
+      };
+      st = i;
+      while (i < n && s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) { i = i + 1 };
+      ?(i < n && (s.charCodeAt(i) == 101 || s.charCodeAt(i) == 69) && i + 1 < n && s.charCodeAt(i + 1) >= 48 && s.charCodeAt(i + 1) <= 57) {
+        i = i + 1;
+        en = i;
+        while (i < n && s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) { i = i + 1 };
+        out = out + slice2(s, st, en - 1);
+        expn = sol_parse_uint(s, en, i);
+        z = 0;
+        while (z < expn) {
+          out = out + "0";
+          z = z + 1;
+        };
+        continue;
+      };
+      out = out + slice2(s, st, i);
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!sol_strip_types(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  id = "";
+  while (i < n) {
+    ?(s.charCodeAt(i) == 34) {
+      out = out + s.charAt(i);
+      i = i + 1;
+      while (i < n && s.charCodeAt(i) != 34) { out = out + s.charAt(i); i = i + 1 };
+      ?(i < n) { out = out + s.charAt(i); i = i + 1 };
+      continue;
+    };
+    id = read_ident(s, i);
+    ?(id.length > 0) {
+      ?(sol_is_type(id) == 1) { i = i + id.length; i = skip_ws(s, i); continue };
+      out = out + id;
+      i = i + id.length;
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!sol_stmt(st: string): string {
+  e = jss_trim(st);
+  n = e.length;
+  out = "";
+  p = 0;
+  cl = 0;
+  ?(n == 0) { ^out };
+  ?(starts_lit(e, 0, "return") == 1 && (n == 6 || is_ident(e.charCodeAt(6)) == false)) {
+    out = out + "^";
+    out = out + jss_trim(slice2(e, 6, n));
+    ^out;
+  };
+  ?(starts_lit(e, 0, "if") == 1 && n > 2 && is_ident(e.charCodeAt(2)) == false) {
+    p = skip_ws(e, 2);
+    ?(p < n && e.charCodeAt(p) == 40) {
+      cl = match_paren(e, p);
+      ?(cl > p) {
+        out = out + "?(";
+        out = out + slice2(e, p + 1, cl);
+        out = out + ") { ";
+        out = out + sol_stmt(jss_trim(slice2(e, cl + 1, n)));
+        out = out + " }";
+        ^out;
+      };
+    };
+  };
+  ^e;
+}
+
+!sol_body(b: string): string {
+  t = jss_trim(sol_strip_types(sol_expand_exp(b)));
+  out = "";
+  n = t.length;
+  i = 0;
+  st = 0;
+  d = 0;
+  c = 0;
+  seg = "";
+  conv = "";
+  while (i <= n) {
+    ?(i == n || (d == 0 && t.charCodeAt(i) == 59)) {
+      seg = jss_trim(slice2(t, st, i));
+      ?(seg.length > 0) {
+        conv = sol_stmt(seg);
+        ?(conv.length > 0) {
+          out = out + "  ";
+          out = out + conv;
+          out = out + ";";
+          out = out + rgs_ch(10);
+        };
+      };
+      st = i + 1;
+      i = i + 1;
+      continue;
+    };
+    c = t.charCodeAt(i);
+    ?(c == 40 || c == 123 || c == 91) { d = d + 1 };
+    ?(c == 41 || c == 125 || c == 93) {
+      d = d - 1;
+      ?(d == 0 && c == 125) {
+        seg = jss_trim(slice2(t, st, i + 1));
+        ?(seg.length > 0) {
+          conv = sol_stmt(seg);
+          ?(conv.length > 0) {
+            out = out + "  ";
+            out = out + conv;
+            out = out + ";";
+            out = out + rgs_ch(10);
+          };
+        };
+        st = i + 1;
+      };
+    };
+    i = i + 1;
+  };
+  ^out;
+}
+
+!sol_pdecl(params: string): string {
+  out = "";
+  n = params.length;
+  i = 0;
+  seen = 0;
+  id = "";
+  last = "";
+  while (i < n) {
+    id = read_ident(params, i);
+    ?(id.length > 0) {
+      ?(sol_is_type(id) == 0 && sol_is_kw(id) == 0) { last = id };
+      i = i + id.length;
+      continue;
+    };
+    ?(params.charCodeAt(i) == 44 || i + 1 >= n) {
+      ?(last.length > 0) {
+        ?(seen == 1) { out = out + ", " };
+        out = out + last;
+        out = out + ": int";
+        seen = 1;
+        last = "";
+      };
+    };
+    i = i + 1;
+  };
+  ?(last.length > 0) {
+    ?(seen == 1) { out = out + ", " };
+    out = out + last;
+    out = out + ": int";
+  };
+  ^out;
+}
+
+!sol_fn(nm: string, params: string, body: string): string {
+  out = "";
+  out = out + "!";
+  out = out + nm;
+  out = out + "(";
+  out = out + sol_pdecl(params);
+  out = out + ") -> int {";
+  out = out + rgs_ch(10);
+  out = out + sol_body(body);
+  out = out + "}";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+!sol_from_sol(src: string): string {
+  pass = jss_trim(jss_strip_comments(src));
+  out = "";
+  out = jss_ln(out, "@LIN:L1c:0.2");
+  out = jss_ln(out, "@FROM_SOLIDITY{source=transpiled scope=pure_integer_math}");
+  out = jss_ln(out, "");
+  n = pass.length;
+  i = 0;
+  p = 0;
+  cl = 0;
+  b = 0;
+  cb = 0;
+  nm = "";
+  pr = "";
+  bd = "";
+  sig = "";
+  reason = "";
+  names = "";
+  while (i < n) {
+    ?(starts_lit(pass, i, "function") == 1 && (i == 0 || is_ident(pass.charCodeAt(i - 1)) == false) && (i + 8 >= n || is_ident(pass.charCodeAt(i + 8)) == false)) {
+      p = skip_ws(pass, i + 8);
+      nm = read_ident(pass, p);
+      ?(nm.length > 0) {
+        p = skip_ws(pass, p + nm.length);
+        ?(p < n && pass.charCodeAt(p) == 40) {
+          cl = match_paren(pass, p);
+          ?(cl > p) {
+            b = skip_ws(pass, cl + 1);
+            while (b < n && pass.charCodeAt(b) != 123) { b = b + 1 };
+            ?(b < n && pass.charCodeAt(b) == 123) {
+              cb = match_brace(pass, b);
+              ?(cb > b) {
+                pr = slice2(pass, p + 1, cl);
+                bd = slice2(pass, b + 1, cb);
+                sig = slice2(pass, i, b);
+                reason = sol_reason(sig, bd);
+                ?(starts_lit(reason, 0, "OK") == 1 && reason.length == 2) {
+                  out = out + sol_fn(nm, pr, bd);
+                  names = rgs_csv_add(names, nm);
+                };
+                i = cb + 1;
+                continue;
+              };
+            };
+          };
+        };
+      };
+    };
+    i = i + 1;
+  };
+  out = out + "=ex{";
+  out = out + names;
+  out = out + "}";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+!sol_from_sol_gate(): int {
+  src = "function utilizationRate(uint cash, uint borrows, uint reserves) public pure returns (uint) { if (borrows == 0) { return 0; } return borrows * 1e18 / (cash + borrows - reserves); }";
+  out = sol_from_sol(src);
+  ?(starts_lit(out, 0, "@LIN") == 0) { ^0 };
+  ?(rg_count_lit(out, "utilizationRate") == 0) { ^0 };
+  ?(rg_count_lit(out, "1000000000000000000") == 0) { ^0 };
+  ?(rg_count_lit(out, "1e18") > 0) { ^0 };
+  exp = sol_expand_exp("1e2");
+  ?(starts_lit(exp, 0, "100") == 0) { ^0 };
+  ?(exp.length != 3) { ^0 };
+  sig_view = "function getBorrowRateInternal(uint cash, uint borrows, uint reserves) internal view returns (uint)";
+  body_view = "return utilizationRate(cash, borrows, reserves);";
+  rv = sol_reason(sig_view, body_view);
+  ?(starts_lit(rv, 0, "REJ_SOLIDITY_NON_PURE") == 0) { ^0 };
+  sig_own = "function updateJumpRateModel(uint a, uint b, uint c, uint d) external";
+  body_own = "require(msg.sender == owner);";
+  ro = sol_reason(sig_own, body_own);
+  ?(starts_lit(ro, 0, "REJ_SOLIDITY_STATE") == 0) { ^0 };
+  ^1;
+}
+
+=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
