@@ -1,0 +1,104 @@
+{
+  "schema": "LIN_COMPOUND_JUMPRATE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned BaseJumpRateModelV2.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git clone of compound-protocol matches pinned bytes",
+      "note": "commit=a3214f67b73310d547e00fc578e8355911c9d376 blob=4d6828c39ed737c0c48508adc414b919ab6c2a55"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of BaseJumpRateModelV2.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_compound_jumprate.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v2 (emit path)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "cjr_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "6/6 vectors: C11 i128 == limbs == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "BORROW-50",
+      "status": "PASS",
+      "description": "parameterized getBorrowRate at 50% util matches C11",
+      "note": "rate=11891171993"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on cjr_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes IRM parameters as arguments (no hidden storage / msg.sender)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv (naive i64 a*b/d would wrap on 1e18*1e18)",
+      "note": ""
+    },
+    {
+      "id": "SOL-EMIT-SRC",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin contains emit + 1eN expansion (source-level)",
+      "note": ""
+    },
+    {
+      "id": "SOL-EMIT-C0",
+      "status": "SKIP",
+      "description": "C0 integer VM refuses string literals (VM_REJ_STRING_LITERAL); emit is not executed here",
+      "note": "@RULEL:LIN_VM_RUN:1.0.0\n.refused{ fn=\"sol_from_sol_gate\" reason=\"VM_REJ_STRING_LITERAL\" }\n"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/compound-finance/compound-protocol",
+    "commit": "a3214f67b73310d547e00fc578e8355911c9d376",
+    "path": "contracts/BaseJumpRateModelV2.sol",
+    "git_blob_sha": "4d6828c39ed737c0c48508adc414b919ab6c2a55",
+    "file_sha256": "9cd2fe5f7b88748c336bf2988c475da517ffd4909057b53df138b80f162fb34f",
+    "license": "BSD-3-Clause"
+  },
+  "lin_clone": "src/lin_compound_jumprate.lin",
+  "c11_oracle": "test/oracles/compound_jumprate_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "borrow_rate_50_util": 11891171993,
+  "multiplier_per_block": 23782343987,
+  "jump_per_block": 518455098934
+}

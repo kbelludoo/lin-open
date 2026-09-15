@@ -1,0 +1,174 @@
+@LIN:L1c:0.2
+@COMPOUND_JUMPRATE_V2{
+  version=1
+  repo="compound-finance/compound-protocol"
+  source="contracts/BaseJumpRateModelV2.sol"
+  license="BSD-3-Clause"
+  commit="a3214f67b73310d547e00fc578e8355911c9d376"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_compound_jumprate_with_128bit_muldiv"
+  note="Solidity uint256 IRM; LIN matches C11 __int128 on values that fit uint64. Hidden storage params are explicit arguments."
+}
+
+!cjr_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!cjr_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(cjr_u_lt(s, a));
+}
+
+!cjr_mask32() -> int {
+  ^ 4294967295;
+}
+
+!cjr_base() -> int {
+  ^ 1000000000000000000;
+}
+
+!cjr_blocks_per_year() -> int {
+  ^ 2102400;
+}
+
+!cjr_muldiv(a: int, b: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  m32 = cjr_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = cjr_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = cjr_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(cjr_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = cjr_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ^ q;
+}
+
+!cjr_u_add_ok(a: int, b: int) -> int {
+  s = a + b;
+  ?(cjr_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!cjr_utilization(cash: int, borrows: int, reserves: int) -> int {
+  ?(borrows == 0) { ^ 0; };
+  ?(cjr_u_add_ok(cash, borrows) == 0) { ^ 0; };
+  sum = cash + borrows;
+  ?(cjr_u_lt(sum, reserves) == 1) { ^ 0; };
+  denom = sum - reserves;
+  ?(denom == 0) { ^ 0; };
+  ^ cjr_muldiv(borrows, cjr_base(), denom);
+}
+
+!cjr_borrow_rate(cash: int, borrows: int, reserves: int, base_block: int, mult_block: int, jump_block: int, kink: int) -> int {
+  util = cjr_utilization(cash, borrows, reserves);
+  base = cjr_base();
+  ?(cjr_u_lt(kink, util) == 0) {
+    ^ cjr_muldiv(util, mult_block, base) + base_block;
+  };
+  normal = cjr_muldiv(kink, mult_block, base) + base_block;
+  excess = util - kink;
+  ^ cjr_muldiv(excess, jump_block, base) + normal;
+}
+
+!cjr_supply_rate(cash: int, borrows: int, reserves: int, base_block: int, mult_block: int, jump_block: int, kink: int, reserve_factor: int) -> int {
+  base = cjr_base();
+  ?(cjr_u_lt(base, reserve_factor) == 1) { ^ 0; };
+  one_minus = base - reserve_factor;
+  br = cjr_borrow_rate(cash, borrows, reserves, base_block, mult_block, jump_block, kink);
+  rate_to_pool = cjr_muldiv(br, one_minus, base);
+  util = cjr_utilization(cash, borrows, reserves);
+  ^ cjr_muldiv(util, rate_to_pool, base);
+}
+
+!cjr_base_per_block(base_year: int) -> int {
+  ^ cjr_muldiv(base_year, 1, cjr_blocks_per_year());
+}
+
+!cjr_jump_per_block(jump_year: int) -> int {
+  ^ cjr_muldiv(jump_year, 1, cjr_blocks_per_year());
+}
+
+!cjr_multiplier_per_block(mult_year: int, kink: int) -> int {
+  ?(kink == 0) { ^ 0; };
+  tmp = cjr_muldiv(mult_year, cjr_base(), kink);
+  ^ cjr_muldiv(tmp, 1, cjr_blocks_per_year());
+}
+
+!cjr_test_suite() -> int {
+  ?(cjr_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(cjr_muldiv(7, 9, 1) != 63) { ^ -2; };
+  ?(cjr_utilization(100, 0, 0) != 0) { ^ -3; };
+  ?(cjr_utilization(1000000000000000000, 1000000000000000000, 0) != 500000000000000000) { ^ -4; };
+  ?(cjr_utilization(0, 1000000000000000000, 0) != 1000000000000000000) { ^ -5; };
+  ?(cjr_muldiv(1000000000000000000, 1, 2) != 500000000000000000) { ^ -6; };
+  kink = 800000000000000000;
+  mb = cjr_multiplier_per_block(40000000000000000, kink);
+  jb = cjr_jump_per_block(1090000000000000000);
+  bb = cjr_base_per_block(0);
+  ?(bb != 0) { ^ -7; };
+  ?(mb <= 0) { ^ -8; };
+  ?(jb <= 0) { ^ -9; };
+  r50 = cjr_borrow_rate(1000000000000000000, 1000000000000000000, 0, bb, mb, jb, kink);
+  r90 = cjr_borrow_rate(100000000000000000, 900000000000000000, 0, bb, mb, jb, kink);
+  ?(r50 < 0) { ^ -10; };
+  ?(cjr_u_lt(r90, r50) == 1) { ^ -11; };
+  ^ 1;
+}
+
+=ex{
+  cjr_u_lt,
+  cjr_u_add_carry,
+  cjr_mask32,
+  cjr_base,
+  cjr_blocks_per_year,
+  cjr_muldiv,
+  cjr_u_add_ok,
+  cjr_utilization,
+  cjr_borrow_rate,
+  cjr_supply_rate,
+  cjr_base_per_block,
+  cjr_jump_per_block,
+  cjr_multiplier_per_block,
+  cjr_test_suite
+}

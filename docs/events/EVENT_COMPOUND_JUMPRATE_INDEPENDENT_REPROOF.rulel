@@ -1,0 +1,44 @@
+@RULEL:COMPOUND_JUMPRATE_INDEPENDENT_REPROOF:1.0.0
+@CHALLENGE_ID="LIN-COMPOUND-JUMPRATE-V2-REPROOF"
+@TITLE="Independent reproduction of Compound JumpRate LIN improvements"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-09-15"
+@REPRODUCES="docs/events/EVENT_COMPOUND_JUMPRATE_CLONE_LIN.rulel"
+
+~R{.s=spec .p=proofs .i=improvements .n=non_goals .v=verdict}
+
+.s{
+  purpose="re-run Compound JumpRate V2 clone proofs on a second machine without trusting the previous evidence JSON"
+  class="EXPERIMENTAL"
+  operand_width="uint64 inputs, 128-bit product; Solidity uint256 is NOT claimed"
+}
+
+.p{
+  pin="test/fixtures/external_proof/BaseJumpRateModelV2.sol sha256=9cd2fe5f7b88748c336bf2988c475da517ffd4909057b53df138b80f162fb34f"
+  live_clone="git clone compound-finance/compound-protocol HEAD=a3214f67b73310d547e00fc578e8355911c9d376 blob=4d6828c39ed737c0c48508adc414b919ab6c2a55"
+  original_harness="test/prove_compound_jumprate_external.py"
+  independent_harness="test/prove_compound_improvements_independent.py"
+  python_oracle="arbitrary-precision (a*b)//d, not a copy of the 32-bit limb divider"
+  wrap_control="((a*b) mod 2^64)//d for a=b=1e18 d=2e18 MUST diverge from exact"
+}
+
+.i{
+  explicit_args="cjr_borrow_rate takes base/mult/jump/kink; changing only mult_block changes the rate"
+  wide_muldiv="LIN cjr_muldiv(1e18,1e18,2e18)==5e17; wrapping uint64 product does not"
+  year_rewrite="(mult_year*1e18) overflows uint64; (mult_year*1e18/kink)/blocksPerYear matches exact floor"
+  underflow="cash+borrows<reserves returns 0 (Solidity 0.8 reverts; documented, not claimed equivalent)"
+  sol_emit_src="lin_from_solidity.lin v2 contains sol_from_sol + 1eN expand (source)"
+  sol_emit_c0="NOT executed: lin_c0 integer VM returns VM_REJ_STRING_LITERAL for sol_from_sol_gate"
+  jit="roundtrip-jit CONSENSUS when libtcc + libtcc1.a are on LIN_TCC_DIR"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet cToken parity"
+  not_claimed_2="EVM/solc replacement or TVL impact"
+}
+
+.v{
+  method="PIN_EQ_LIVE && PYTHON_EXACT_NE_U64_WRAP && LIN_EQ_PYTHON && OPTIONAL_JIT"
+  sol_emit="source-level only on C0; string VM not claimed"
+  on_fail="do not publish a PASS status"
+}
