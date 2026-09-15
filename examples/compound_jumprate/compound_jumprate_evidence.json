@@ -50,10 +50,28 @@
       "note": ""
     },
     {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "6/6 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
       "id": "BORROW-50",
       "status": "PASS",
       "description": "parameterized getBorrowRate at 50% util matches C11",
       "note": "rate=11891171993"
+    },
+    {
+      "id": "PY-BORROW-50",
+      "status": "PASS",
+      "description": "Python bigint borrow rate at 50% util matches LIN/C11",
+      "note": "rate=11891171993"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (1e18*1e18) wraps; 128-bit muldiv does not",
+      "note": "i64_wrap=-5527149226598858752 bigint=500000000000000000"
     },
     {
       "id": "C0-JIT",
