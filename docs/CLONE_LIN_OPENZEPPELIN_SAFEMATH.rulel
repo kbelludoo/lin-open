@@ -1,0 +1,33 @@
+@RULEL:CLONE_LIN_OPENZEPPELIN_SAFEMATH:1.0.0
+~R{.o=oracles .c=scope .p=proofs}
+.o{
+  upstream="https://github.com/OpenZeppelin/openzeppelin-contracts"
+  tag="v4.9.6"
+  commit="dc44c9f1a4c3b10af99492eed84f83ed244203f6"
+  file="contracts/utils/math/SafeMath.sol"
+  sha256="fc16aa4564878e1bb65740239d0c1422451cd32136306626ac37f5d5e0606a7b"
+  license="MIT"
+  clone_lin="https://github.com/kbelludoo/clone-lin-openzeppelin-safemath"
+  lin_open_proofs="https://github.com/kbelludoo/lin-open"
+}
+.c{
+  class="EXPERIMENTAL"
+  kernel="src/lin_openzeppelin_safemath.lin"
+  transpiler="src/lin_from_solidity.lin"
+  compiler0="transpile/c/bin/lin_c0"
+  not="openzeppelin_safemath_onchain_uint256_replacement"
+  domain_scalar="nonneg_i64_overflow_at_2_pow_63"
+  domain_u256="4x_uint64_limbs_overflow_at_2_pow_256"
+}
+.p{
+  harness="python3 test/prove_openzeppelin_safemath_external.py"
+  gcc_oracle="test/oracles/openzeppelin_safemath_oracle.c"
+  fixture="test/fixtures/external_proof/SafeMath.sol"
+  P1="pinned_sha256_matches_v4_9_6"
+  P2="fail_closed_string_assembly_ternary"
+  P3="emitted_tryAdd_compiles_in_ram"
+  P4="scalar_try_star_vs_python_2_63"
+  P5="u256_tryAdd_tryMul_vs_python_and_gcc"
+  P6="lin_c0_source_vs_linbc1_image_consensus"
+  P7="redteam_missing_semicolon_VM_REJ_PARSE"
+}

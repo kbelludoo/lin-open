@@ -1,0 +1,194 @@
+@LIN:L1c:0.2
+@FROM_SOLIDITY{
+  source="OpenZeppelin/openzeppelin-contracts"
+  file="contracts/utils/math/SafeMath.sol"
+  tag="v4.9.6"
+  commit="dc44c9f1a4c3b10af99492eed84f83ed244203f6"
+  sha256="fc16aa4564878e1bb65740239d0c1422451cd32136306626ac37f5d5e0606a7b"
+  license="MIT"
+  class="EXPERIMENTAL"
+  not="openzeppelin_safemath_full_uint256_library_replacement"
+}
+
+// Scalar try* kernels: OpenZeppelin SafeMath control flow, domain [0, 2^63-1].
+// Overflow bound is 2^63, NOT 2^256 (R5). sel=0 success (1/0); sel=1 result.
+// Tuple returns (bool, uint256) flatten to the extra `sel` argument.
+
+!tryAdd(a: int, b: int, sel: int): int {
+  c = a + b;
+  ?(c < a) {
+    ?(sel == 0) { ^0 };
+    ^0;
+  };
+  ?(sel == 0) { ^1 };
+  ^c;
+}
+
+!trySub(a: int, b: int, sel: int): int {
+  ?(b > a) {
+    ?(sel == 0) { ^0 };
+    ^0;
+  };
+  ?(sel == 0) { ^1 };
+  ^(a - b);
+}
+
+!tryMul(a: int, b: int, sel: int): int {
+  ?(a == 0) {
+    ?(sel == 0) { ^1 };
+    ^0;
+  };
+  ?(b != 0 && a > 9223372036854775807 / b) {
+    ?(sel == 0) { ^0 };
+    ^0;
+  };
+  c = a * b;
+  ?(sel == 0) { ^1 };
+  ^c;
+}
+
+!tryDiv(a: int, b: int, sel: int): int {
+  ?(b == 0) {
+    ?(sel == 0) { ^0 };
+    ^0;
+  };
+  ?(sel == 0) { ^1 };
+  ^(a / b);
+}
+
+!tryMod(a: int, b: int, sel: int): int {
+  ?(b == 0) {
+    ?(sel == 0) { ^0 };
+    ^0;
+  };
+  ?(sel == 0) { ^1 };
+  ^(a % b);
+}
+
+// u256 tryAdd/tryMul: 4 little-endian uint64 words, 16-bit limbs.
+// Bit-exact vs Python int overflow at 2^256. EXPERIMENTAL, not a token.
+
+!oz_wlimb(w: int, k: int): int {
+  ^(_lia_ushr(w, 16 * k) & 65535);
+}
+
+!oz_pack4(l0: int, l1: int, l2: int, l3: int): int {
+  ^(((l0 & 65535) | _lia_shl(l1 & 65535, 16)) | (_lia_shl(l2 & 65535, 32) | _lia_shl(l3 & 65535, 48)));
+}
+
+!tryAdd_u256(a0: int, a1: int, a2: int, a3: int, b0: int, b1: int, b2: int, b3: int, sel: int): int {
+  a: [16]int;
+  b: [16]int;
+  c: [16]int;
+  i = 0;
+  while (i < 4) {
+    a[i] = oz_wlimb(a0, i);
+    a[4 + i] = oz_wlimb(a1, i);
+    a[8 + i] = oz_wlimb(a2, i);
+    a[12 + i] = oz_wlimb(a3, i);
+    b[i] = oz_wlimb(b0, i);
+    b[4 + i] = oz_wlimb(b1, i);
+    b[8 + i] = oz_wlimb(b2, i);
+    b[12 + i] = oz_wlimb(b3, i);
+    i = i + 1;
+  };
+  carry = 0;
+  i = 0;
+  while (i < 16) {
+    t = a[i] + b[i] + carry;
+    c[i] = t & 65535;
+    carry = _lia_ushr(t, 16);
+    i = i + 1;
+  };
+  ?(sel == 0) { ^((carry == 0)) };
+  ?(carry != 0) { ^0 };
+  ?(sel == 1) { ^oz_pack4(c[0], c[1], c[2], c[3]) };
+  ?(sel == 2) { ^oz_pack4(c[4], c[5], c[6], c[7]) };
+  ?(sel == 3) { ^oz_pack4(c[8], c[9], c[10], c[11]) };
+  ^oz_pack4(c[12], c[13], c[14], c[15]);
+}
+
+!tryMul_u256(a0: int, a1: int, a2: int, a3: int, b0: int, b1: int, b2: int, b3: int, sel: int): int {
+  a: [16]int;
+  b: [16]int;
+  p: [32]int;
+  i = 0;
+  while (i < 16) {
+    a[i] = 0;
+    b[i] = 0;
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 32) {
+    p[i] = 0;
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 4) {
+    a[i] = oz_wlimb(a0, i);
+    a[4 + i] = oz_wlimb(a1, i);
+    a[8 + i] = oz_wlimb(a2, i);
+    a[12 + i] = oz_wlimb(a3, i);
+    b[i] = oz_wlimb(b0, i);
+    b[4 + i] = oz_wlimb(b1, i);
+    b[8 + i] = oz_wlimb(b2, i);
+    b[12 + i] = oz_wlimb(b3, i);
+    i = i + 1;
+  };
+  az = 1;
+  i = 0;
+  while (i < 16) {
+    ?(a[i] != 0) { az = 0; };
+    i = i + 1;
+  };
+  ?(az == 1) {
+    ?(sel == 0) { ^1 };
+    ^0;
+  };
+  i = 0;
+  while (i < 16) {
+    carry = 0;
+    j = 0;
+    while (j < 16) {
+      k = i + j;
+      t = p[k] + a[i] * b[j] + carry;
+      p[k] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      j = j + 1;
+    };
+    p[i + 16] = p[i + 16] + carry;
+    i = i + 1;
+  };
+  hi = 0;
+  i = 16;
+  while (i < 32) {
+    ?(p[i] != 0) { hi = 1; };
+    i = i + 1;
+  };
+  ?(sel == 0) { ^((hi == 0)) };
+  ?(hi != 0) { ^0 };
+  ?(sel == 1) { ^oz_pack4(p[0], p[1], p[2], p[3]) };
+  ?(sel == 2) { ^oz_pack4(p[4], p[5], p[6], p[7]) };
+  ?(sel == 3) { ^oz_pack4(p[8], p[9], p[10], p[11]) };
+  ^oz_pack4(p[12], p[13], p[14], p[15]);
+}
+
+!oz_gate(): int {
+  ?(tryAdd(2, 3, 0) != 1) { ^0 };
+  ?(tryAdd(2, 3, 1) != 5) { ^0 };
+  ?(tryAdd(9223372036854775807, 1, 0) != 0) { ^0 };
+  ?(trySub(5, 3, 1) != 2) { ^0 };
+  ?(trySub(3, 5, 0) != 0) { ^0 };
+  ?(tryMul(0, 99, 1) != 0) { ^0 };
+  ?(tryMul(7, 6, 1) != 42) { ^0 };
+  ?(tryDiv(10, 3, 1) != 3) { ^0 };
+  ?(tryDiv(10, 0, 0) != 0) { ^0 };
+  ?(tryMod(10, 3, 1) != 1) { ^0 };
+  ?(tryAdd_u256(1, 0, 0, 0, 2, 0, 0, 0, 0) != 1) { ^0 };
+  ?(tryAdd_u256(1, 0, 0, 0, 2, 0, 0, 0, 1) != 3) { ^0 };
+  ?(tryMul_u256(0, 0, 0, 0, 9, 0, 0, 0, 0) != 1) { ^0 };
+  ?(tryMul_u256(7, 0, 0, 0, 6, 0, 0, 0, 1) != 42) { ^0 };
+  ^1;
+}
+
+=ex{tryAdd, trySub, tryMul, tryDiv, tryMod, tryAdd_u256, tryMul_u256, oz_gate, oz_wlimb, oz_pack4}
