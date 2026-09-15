@@ -1,7 +1,5 @@
 # Compound JumpRateModel V2 — LIN clone (results only)
 
-# Compound JumpRateModel V2 — LIN clone (results only)
-
 This directory holds **results and proofs** for the LIN clone of Compound v2's
 JumpRateModel. The LIN clone itself is `src/lin_compound_jumprate.lin` in lin-open
 (a separate clone-lin GitHub repository was not available in this run).
@@ -12,6 +10,7 @@ JumpRateModel. The LIN clone itself is `src/lin_compound_jumprate.lin` in lin-op
 - **Pinned fixture:** `test/fixtures/external_proof/BaseJumpRateModelV2.sol`
 - **C11 oracle:** `test/oracles/compound_jumprate_c11.c`
 - **Harness:** `python3 test/prove_compound_jumprate_external.py`
+- **Independent re-proof (Python exact, not C11 limbs):** `python3 test/prove_compound_improvements_independent.py`
 - **Event receipt:** `docs/events/EVENT_COMPOUND_JUMPRATE_CLONE_LIN.rulel`
 
 ## What is claimed

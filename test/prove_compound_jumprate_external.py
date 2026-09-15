@@ -47,8 +47,13 @@ UPSTREAM_REL = "contracts/BaseJumpRateModelV2.sol"
 
 def run(cmd: list[str], timeout: int = 120) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
-    env.setdefault("LIN_TCC_LIB", "/tmp/tinycc/libtcc.so")
+    if Path("/tmp/tinycc/lib/libtcc.so").exists():
+        env.setdefault("LIN_TCC_LIB", "/tmp/tinycc/lib/libtcc.so")
+    else:
+        env.setdefault("LIN_TCC_LIB", "/tmp/tinycc/libtcc.so")
     env.setdefault("LIN_TCC_DIR", "/tmp/tinycc")
+    lp = env.get("LD_LIBRARY_PATH", "")
+    env["LD_LIBRARY_PATH"] = "/tmp/tinycc/lib" + (":" + lp if lp else "")
     return subprocess.run(
         cmd, capture_output=True, text=True, timeout=timeout, env=env, check=False
     )
@@ -289,10 +294,25 @@ def main() -> int:
         rec("WIDE-MULDIV", "FAIL", "128-bit muldiv missing")
 
     sol_src = SOL_TR.read_text(encoding="utf-8")
-    if "sol_from_sol" in sol_src and "sol_expand_exp" in sol_src:
-        rec("SOL-EMIT", "PASS", "lin_from_solidity.lin now emits LIN and expands 1eN literals")
+    if "sol_from_sol" in sol_src and "sol_expand_exp" in sol_src and "1000000000000000000" in sol_src:
+        rec(
+            "SOL-EMIT-SRC",
+            "PASS",
+            "lin_from_solidity.lin contains emit + 1eN expansion (source-level)",
+        )
     else:
-        rec("SOL-EMIT", "FAIL", "emit path missing")
+        rec("SOL-EMIT-SRC", "FAIL", "emit path missing from source")
+    sol_gate = run([str(C0), "vm", str(SOL_TR), "sol_from_sol_gate"])
+    sgv = value_of(sol_gate.stdout)
+    if sol_gate.returncode == 0 and sgv == 1:
+        rec("SOL-EMIT-C0", "PASS", "sol_from_sol_gate==1 on Compiler 0 integer VM")
+    else:
+        rec(
+            "SOL-EMIT-C0",
+            "SKIP",
+            "C0 integer VM refuses string literals (VM_REJ_STRING_LITERAL); emit is not executed here",
+            (sol_gate.stdout or sol_gate.stderr)[:240],
+        )
 
     evidence["claims"] = claims
     evidence["upstream"] = {

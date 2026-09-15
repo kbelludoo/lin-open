@@ -74,10 +74,16 @@
       "note": ""
     },
     {
-      "id": "SOL-EMIT",
+      "id": "SOL-EMIT-SRC",
       "status": "PASS",
-      "description": "lin_from_solidity.lin now emits LIN and expands 1eN literals",
+      "description": "lin_from_solidity.lin contains emit + 1eN expansion (source-level)",
       "note": ""
+    },
+    {
+      "id": "SOL-EMIT-C0",
+      "status": "SKIP",
+      "description": "C0 integer VM refuses string literals (VM_REJ_STRING_LITERAL); emit is not executed here",
+      "note": "@RULEL:LIN_VM_RUN:1.0.0\n.refused{ fn=\"sol_from_sol_gate\" reason=\"VM_REJ_STRING_LITERAL\" }\n"
     }
   ],
   "upstream": {
