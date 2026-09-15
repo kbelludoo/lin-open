@@ -296,7 +296,7 @@ verify-forge-gas: c0 verify-batch-receipt
 #
 # `make -C transpile/c xver` builds lin_c_receipt (C11, no Zig). Root `make xver`
 # depends on build-cpu/Zig and is the wrong dependency for C4.
-.PHONY: rationalist-proof verify-cli install-cli
+.PHONY: rationalist-proof value-proof verify-cli install-cli
 rationalist-proof: c0
 	@$(MAKE) -C transpile/c xver
 ifneq ($(FETCH),)
@@ -304,6 +304,12 @@ ifneq ($(FETCH),)
 else
 	@python3 test/prove_all_claims_external.py --iterations 10000
 endif
+
+# Honest contest vs established languages (gcc C11 + CPython). Not a
+# general-language benchmark. See docs/VALUE_PROOF_PROTOCOL.rulel.
+value-proof: c0
+	@$(MAKE) -C transpile/c all
+	@python3 test/prove_value_vs_established.py
 
 .PHONY: compound-jumprate-proof independent-reproof
 compound-jumprate-proof: c0
