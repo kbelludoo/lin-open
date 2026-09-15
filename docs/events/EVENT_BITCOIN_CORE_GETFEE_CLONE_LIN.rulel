@@ -1,0 +1,68 @@
+@RULEL:BITCOIN_CORE_GETFEE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-BITCOIN-CORE-GETFEE-V27-1"
+@TITLE="Clone-lin of Bitcoin Core v27.1 CFeeRate::GetFee with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL"
+@DATE="2026-09-15"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-bitcoin-core-getfee"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="fail-closed integer ceil of Bitcoin Core policy GetFee, plus an explicit vsize-vs-weight fee gap, compiled in memory with C11 compiler 0"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed by bitcoind wallets on mainnet"
+  operand_width="signed i64 CAmount domain; overflow of sat*vbytes fail-closes to -1"
+  commercial_hook="fee-audit / RBF / package-relay tools that mix Core integer-vsize GetFee with weight-native ceil (rust-bitcoin style) disagree by 2 sat on 381 wu @ 864 sat/kwu and by 75 sat at 100 sat/vB; LIN makes the rounding policy explicit. Not a TVL claim."
+}
+
+.u{
+  repo="https://github.com/bitcoin/bitcoin"
+  tag="v27.1"
+  commit="1088a98f5aad080cc6cca2da174f206509fcda6c"
+  path_getfee="src/policy/feerate.cpp"
+  path_amount="src/consensus/amount.h"
+  path_consensus="src/consensus/consensus.h"
+  path_vsize="src/policy/policy.cpp GetVirtualTransactionSize(int64_t,int64_t,unsigned)"
+  license="MIT"
+  feerate_git_blob="eb0cba5c67a406ea9d2a3500e6be90b2f2f21b96"
+  feerate_sha256="dcee0d3c510936032addb0735dfb1e5389dcd4f8cf31e6867b94e2e14c6cb561"
+  amount_sha256="cb7bd951877f3fea5a0c280d4bb907a8403437add81e3d5b898879b78fdc877e"
+  fixture="test/fixtures/external_proof/bitcoin_v27_1_feerate.cpp"
+}
+
+.l{
+  clone="src/lin_bitcoin_core_getfee.lin"
+  integer_c="test/fixtures/external_proof/bitcoin_getfee_integer.c"
+  transpiler_delta="src/lin_from_c.lin v2: REJ_C_FLOAT on ceil(/floor(/round(/trunc( and .0 even when comments stripped the word double; REJ_C_CXX on ::/class/template/static_cast; strip C11 U/L/LL suffixes; if/else emit"
+  improvement_1="Core GetFee body after comment-strip has no 'double' token; v1 cfs_reason would have returned OK and attempted to emit C++. v2 fail-closes."
+  improvement_2="integer ceil(sat_kvb * vbytes / 1000) with i64 overflow fail-closed, plus Core 1-sat bump"
+  improvement_3="GetVirtualTransactionSize(weight) = (wu+3)/4 made explicit next to weight-native ceil(sat_kwu * wu / 1000)"
+  improvement_4="CFeeRate(fee, vsize) constructor truncation (1 sat / 2000 vB -> 0 sat/kvB) is a documented non-inverse of GetFee"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/bitcoin_core_getfee_c11.c (gcc -O2 -std=c11 -lm)"
+  gate="test/verify_bitcoin_core_getfee.sh"
+}
+
+.p{
+  harness="test/prove_bitcoin_core_getfee_external.py"
+  evidence_json="examples/bitcoin_core_getfee/bitcoin_core_getfee_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-bitcoin-core-getfee"
+  vectors="381 wu @ 864 sat/kwu -> Core vsize 332 sat / weight-native 330 sat; 100 sat/vB -> 9600 vs 9525"
+}
+
+.n{
+  not_claimed_1="LIN replaces bitcoind, Bitcoin Core wallet, or rust-bitcoin"
+  not_claimed_2="this is a consensus bug (GetFee is policy)"
+  not_claimed_3="IEEE ceil disagrees with integer ceil on wallet-scale rates (C11 selftest requires they agree on 0..4000 x 0..400)"
+  not_claimed_4="dollar savings, TVL, or general speed vs gcc/LLVM"
+  not_claimed_5="negative fee-rate Core behaviour (LIN fail-closes to -1)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_GATE && LIN_C0_VM_EQ_C11_EQ_PYTHON && LINBC1_CONSENSUS && CFS_REASON_MIRROR_REJ_CORE_GETFEE"
+  on_fail="do not publish a PASS status"
+}

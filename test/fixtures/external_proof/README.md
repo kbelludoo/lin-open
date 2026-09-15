@@ -11,6 +11,11 @@ independent proof harness. They are **test fixtures**, not vendored libraries.
 | `qoi.h` | [phoboslab/qoi](https://github.com/phoboslab/qoi) | MIT |
 | `tinyexpr.c` | [codeplea/tinyexpr](https://github.com/codeplea/tinyexpr) | zlib |
 | `BaseJumpRateModelV2.sol` | [compound-finance/compound-protocol](https://github.com/compound-finance/compound-protocol) | BSD-3-Clause |
+| `bitcoin_v27_1_feerate.cpp` | [bitcoin/bitcoin](https://github.com/bitcoin/bitcoin) v27.1 `src/policy/feerate.cpp` | MIT |
+| `bitcoin_v27_1_amount.h` | [bitcoin/bitcoin](https://github.com/bitcoin/bitcoin) v27.1 `src/consensus/amount.h` | MIT |
+| `bitcoin_v27_1_consensus.h` | [bitcoin/bitcoin](https://github.com/bitcoin/bitcoin) v27.1 `src/consensus/consensus.h` | MIT |
+| `bitcoin_v27_1_vsize_slice.cpp` | [bitcoin/bitcoin](https://github.com/bitcoin/bitcoin) v27.1 `GetVirtualTransactionSize` slice | MIT |
+| `bitcoin_getfee_integer.c` | original C11 integer extract (not upstream) | MIT algorithm, LIN oracle |
 
 They are only pinned so an auditor can hash the exact bytes and, with `--fetch`,
 re-download them from the GitHub Contents API. No upstream code is compiled or
