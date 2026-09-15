@@ -62,22 +62,22 @@
       "note": ""
     },
     {
-      "id": "EXPLICIT-ARGS",
-      "status": "PASS",
-      "description": "LIN clone takes IRM parameters as arguments (no hidden storage / msg.sender)",
-      "note": ""
-    },
-    {
       "id": "WIDE-MULDIV",
       "status": "PASS",
-      "description": "clone uses 128-bit product muldiv (naive i64 a*b/d would wrap on 1e18*1e18)",
-      "note": ""
+      "description": "cjr_muldiv(1e18,1e18,2e18) matches Python bigint; wrapping u64 differs",
+      "note": "true=500000000000000000 wrap_u64=6"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "same cash/borrows, two mult_block args produce two rates (no hidden storage)",
+      "note": "500 vs 1000"
     },
     {
       "id": "SOL-EMIT",
-      "status": "PASS",
-      "description": "lin_from_solidity.lin now emits LIN and expands 1eN literals",
-      "note": ""
+      "status": "SKIP",
+      "description": "emit path is in source; C0 VM refuses string literals (not an execution proof)",
+      "note": "VM_REJ_STRING_LITERAL"
     }
   ],
   "upstream": {
