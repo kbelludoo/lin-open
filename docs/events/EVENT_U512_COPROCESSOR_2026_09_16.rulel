@@ -1,0 +1,66 @@
+@RULEL:U512_COPROCESSOR:1.0.0
+@CHALLENGE_ID="LIN-U512-COPROCESSOR-2026-09-16"
+@TITLE="512-bit numeric coprocessor with LNR1/LCR2 auditable receipts"
+@STATUS="EXPERIMENTAL_FULLMATH_WIDTH"
+@DATE="2026-09-16"
+
+~R{.s=sell .e=engine .o=oracles .p=proved_this_run .n=not_proved .h=hashes .v=verdict}
+
+.s{
+  product="LIN is a numeric coprocessor that emits an auditable compute receipt"
+  not_a="Uniswap replacement, deployed pool, or CRT/mulmod FullMath clone"
+  why_512="mulDiv(a,b,d)=(a*b)/d with a,b,d < 2^256 requires a 512-bit product; without it, u256 silently lies or ^-2 where FullMath width would approve"
+  class="EXPERIMENTAL"
+  class_definition="TOY=teaching slice | EXPERIMENTAL=real published width (FullMath product) on this host | REAL_WORLD=as deployed on Ethereum"
+}
+
+.e{
+  lin="src/lin_u512_coprocessor.lin"
+  limbs="16-bit x 16 = 256-bit operands; numerator/remainder 32 limbs = 512-bit"
+  ops="u512_mul_word 256x256->512; u512_ge 512-bit; u512_div_word 512/256 restoring with 32-limb ge; remainder identity q*d+r==n; guards -1 (d=0) -2 (q overflow)"
+  amm="u512_get_amount_out_word runs getAmountOut through that mulDiv"
+  settler="examples/defi_settlement_proof/u256_settlement_engine.lin remains SafeMath: high limbs of fee*rout must be 0"
+}
+
+.o{
+  python="int (stdlib) remainder identity"
+  c11="test/oracles/u512_coprocessor_c11.c 64-bit schoolbook + __int128 partial products, independent of 16-bit LIN limbs"
+  host="test/oracles/u512_lin_host.c in-process vm_exec (same interpreter as lin_c0 run)"
+  cli="lin_c0 run image u512_muldiv_word 7 0 0 0 9 0 0 0 2 0 0 0 0 -> value=31"
+  auditor="python3 examples/u512_coprocessor/verify_u512_receipt.py examples/u512_coprocessor/u512_coprocessor_evidence.json (no LIN binary)"
+  fullmath_pin="test/fixtures/external_proof/FullMath.sol sha256:959c52e1c860bfbede3e33c8d04910c11038973173aa3478547cbad2e444880e (width provenance only)"
+}
+
+.p{
+  mul="7/7 256x256->512 LIN==C11==Python"
+  ge="6/6 512-bit unsigned compare"
+  div="5/5 including d=0 -> -1, (2^512-1)/(2^256-1) -> -2, remainder identity"
+  muldiv="10/10 including 2^255*2/3 q=0x5555..5555 r=1 and 4 full-range randoms seed 20260916"
+  phantom_amm="ain=1 rin=1 rout=ceil(2^256/997) APPROVES on coprocessor steps=4704086"
+  self_gate="value=1 steps=4525997"
+  e2e_exact="settle_u256_word EXACT_INPUT lin==ref==onchain=348299652 steps=1113359 LCR2"
+  e2e_overpaid="settle_u256_word OVERPAID_INPUT lin==ref=145611106349087342 onchain=145610814998826432 (neq) steps=1152244"
+  guards="settle_u256_word zero -> -1; 256-bit numerator overflow -> -2; phantom still -2"
+}
+
+.n{
+  not_1="CRT/mulmod assembly parity with FullMath.sol"
+  not_2="full 2000-swap + 157-unfiltered coprocessor campaign"
+  not_3="replacing settle_u256_word body with FullMath width (still required for that settler)"
+  not_4="zk / computational soundness of Merkle (tamper-evidence + independent recompute of LNR1/LCR2)"
+  not_5="LIN replaces Uniswap, Compound, or the EVM"
+}
+
+.h{
+  linbc1_loader="sha256:34383e4a8fa60f13f5289f4d47d2349b870691b71a2474aa088a7bd044683521"
+  lnr1_merkle="sha256:670ce740b5590a7468498ed9f1c5c65e1bceb0627211392fefc5bb0ad6f3b1f9"
+  lcr2_merkle="sha256:89e2e1ecda29a2bd5eed234d608434c95c53ba5bc65442f93e0359c864ad6f68"
+  u256_img="sha256:4f4d12882a326d1c0d6f3b3d62c25185c71370e48c01e0e393b02b73b22250dd"
+  fullmath="sha256:959c52e1c860bfbede3e33c8d04910c11038973173aa3478547cbad2e444880e"
+}
+
+.v{
+  method="PYTHON_BIGINT && C11_U64_SCHOOLBOOK && LIN_C0_IMAGE && LNR1_MERKLE && LCR2_REAL_STEPS && CLI_SPOT && TAMPER_REJECT"
+  gate="make u512-coprocessor-proof"
+  on_fail="do not publish PASS"
+}

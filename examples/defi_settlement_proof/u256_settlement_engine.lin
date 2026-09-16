@@ -127,7 +127,9 @@
     i = i + 1;
   };
 
-  // Verificação de overflow: limbs 16..31 devem ser estritamente zero
+  // High 256 bits of fee*reserve_out must be zero (Uniswap V2 SafeMath width).
+  // FullMath-width mulDiv (512-bit intermediate, phantom overflow OK) lives in
+  // src/lin_u512_coprocessor.lin — this settler still fail-closes ^-2 here.
   i = 16;
   while (i < 32) {
     ?(numerator[i] != 0) { ^-2; };
