@@ -1,0 +1,189 @@
+@LIN:L1c:0.2
+@OZ_MATH_V5{
+  version=1
+  repo="OpenZeppelin/openzeppelin-contracts"
+  source="contracts/utils/math/Math.sol"
+  license="MIT"
+  tag="v5.0.2"
+  commit="dbb6104ce834628e473d2173bbc9d47f81a9eec3"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_openzeppelin_ceilDiv_average_tryAdd_max_min"
+  note="Not Solidity uint256. Real deltas: div-by-zero and overflow fail-close instead of panic/wrap; try* tuples become explicit ok+value; bitwise average instead of (a+b)/2."
+}
+
+!ozm_nn(a: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ^ 1;
+}
+
+!ozm_add_ok(a: int, b: int) -> int {
+  ?(ozm_nn(a) == 0) { ^ 0; };
+  ?(ozm_nn(b) == 0) { ^ 0; };
+  s = a + b;
+  ?(s < 0) { ^ 0; };
+  ?(s < a) { ^ 0; };
+  ^ 1;
+}
+
+!ozm_add(a: int, b: int) -> int {
+  ?(ozm_add_ok(a, b) == 0) { ^ 0; };
+  ^ a + b;
+}
+
+!ozm_sub_ok(a: int, b: int) -> int {
+  ?(ozm_nn(a) == 0) { ^ 0; };
+  ?(ozm_nn(b) == 0) { ^ 0; };
+  ?(b > a) { ^ 0; };
+  ^ 1;
+}
+
+!ozm_sub(a: int, b: int) -> int {
+  ?(ozm_sub_ok(a, b) == 0) { ^ 0; };
+  ^ a - b;
+}
+
+!ozm_mul_ok(a: int, b: int) -> int {
+  ?(ozm_nn(a) == 0) { ^ 0; };
+  ?(ozm_nn(b) == 0) { ^ 0; };
+  ?(a == 0) { ^ 1; };
+  ?(b == 0) { ^ 1; };
+  lim = 9223372036854775807 / a;
+  ?(b > lim) { ^ 0; };
+  ^ 1;
+}
+
+!ozm_mul(a: int, b: int) -> int {
+  ?(ozm_mul_ok(a, b) == 0) { ^ 0; };
+  ^ a * b;
+}
+
+!ozm_div_ok(a: int, b: int) -> int {
+  ?(ozm_nn(a) == 0) { ^ 0; };
+  ?(b <= 0) { ^ 0; };
+  ^ 1;
+}
+
+!ozm_div(a: int, b: int) -> int {
+  ?(ozm_div_ok(a, b) == 0) { ^ 0; };
+  ^ a / b;
+}
+
+!ozm_mod_ok(a: int, b: int) -> int {
+  ^ ozm_div_ok(a, b);
+}
+
+!ozm_mod(a: int, b: int) -> int {
+  ?(ozm_mod_ok(a, b) == 0) { ^ 0; };
+  ^ a % b;
+}
+
+!ozm_max_ok(a: int, b: int) -> int {
+  ?(ozm_nn(a) == 0) { ^ 0; };
+  ?(ozm_nn(b) == 0) { ^ 0; };
+  ^ 1;
+}
+
+!ozm_max(a: int, b: int) -> int {
+  ?(ozm_max_ok(a, b) == 0) { ^ 0; };
+  ?(a > b) { ^ a; };
+  ^ b;
+}
+
+!ozm_min(a: int, b: int) -> int {
+  ?(ozm_max_ok(a, b) == 0) { ^ 0; };
+  ?(a < b) { ^ a; };
+  ^ b;
+}
+
+!ozm_avg_ok(a: int, b: int) -> int {
+  ^ ozm_max_ok(a, b);
+}
+
+!ozm_average(a: int, b: int) -> int {
+  ?(ozm_avg_ok(a, b) == 0) { ^ 0; };
+  ^ (a & b) + ((a ^ b) / 2);
+}
+
+!ozm_naive_avg(a: int, b: int) -> int {
+  ^ (a + b) / 2;
+}
+
+!ozm_ceil_ok(a: int, b: int) -> int {
+  ?(ozm_nn(a) == 0) { ^ 0; };
+  ?(b <= 0) { ^ 0; };
+  ^ 1;
+}
+
+!ozm_ceil_div(a: int, b: int) -> int {
+  ?(ozm_ceil_ok(a, b) == 0) { ^ 0; };
+  ?(a == 0) { ^ 0; };
+  ^ ((a - 1) / b) + 1;
+}
+
+!ozm_naive_ceil(a: int, b: int) -> int {
+  ?(b == 0) { ^ 0; };
+  ^ (a + b - 1) / b;
+}
+
+!ozm_test_suite() -> int {
+  ?(ozm_ceil_div(0, 1) != 0) { ^ -1; };
+  ?(ozm_ceil_div(1, 1) != 1) { ^ -2; };
+  ?(ozm_ceil_div(1, 2) != 1) { ^ -3; };
+  ?(ozm_ceil_div(2, 2) != 1) { ^ -4; };
+  ?(ozm_ceil_div(3, 2) != 2) { ^ -5; };
+  ?(ozm_ceil_div(5, 2) != 3) { ^ -6; };
+  ?(ozm_ceil_div(10, 3) != 4) { ^ -7; };
+  ?(ozm_ceil_div(1000, 3) != 334) { ^ -8; };
+  ?(ozm_ceil_ok(10, 0) != 0) { ^ -9; };
+  ?(ozm_ceil_div(10, 0) != 0) { ^ -10; };
+  ?(ozm_average(0, 0) != 0) { ^ -11; };
+  ?(ozm_average(1, 1) != 1) { ^ -12; };
+  ?(ozm_average(1, 2) != 1) { ^ -13; };
+  ?(ozm_average(2, 2) != 2) { ^ -14; };
+  ?(ozm_average(3, 5) != 4) { ^ -15; };
+  ?(ozm_max(3, 9) != 9) { ^ -16; };
+  ?(ozm_min(3, 9) != 3) { ^ -17; };
+  ?(ozm_add(4, 5) != 9) { ^ -18; };
+  ?(ozm_sub(9, 4) != 5) { ^ -19; };
+  ?(ozm_sub_ok(4, 9) != 0) { ^ -20; };
+  ?(ozm_div(10, 3) != 3) { ^ -21; };
+  ?(ozm_div_ok(10, 0) != 0) { ^ -22; };
+  ?(ozm_mod(10, 3) != 1) { ^ -23; };
+  ?(ozm_mul(7, 9) != 63) { ^ -24; };
+  ?(ozm_mul_ok(0, 99) != 1) { ^ -25; };
+  half = 4611686018427387904;
+  ?(ozm_average(half, half) != half) { ^ -26; };
+  ?(ozm_naive_avg(half, half) == half) { ^ -27; };
+  ?(ozm_ceil_div(half, half) != 1) { ^ -28; };
+  ?(ozm_add_ok(half, half) != 0) { ^ -29; };
+  ?(ozm_nn(-1) != 0) { ^ -30; };
+  imax = 9223372036854775807;
+  ?(ozm_ceil_div(imax, 2) != half) { ^ -31; };
+  ?(ozm_naive_ceil(imax, 2) == ozm_ceil_div(imax, 2)) { ^ -32; };
+  ^ 1;
+}
+
+=ex{
+  ozm_nn,
+  ozm_add_ok,
+  ozm_add,
+  ozm_sub_ok,
+  ozm_sub,
+  ozm_mul_ok,
+  ozm_mul,
+  ozm_div_ok,
+  ozm_div,
+  ozm_mod_ok,
+  ozm_mod,
+  ozm_max_ok,
+  ozm_max,
+  ozm_min,
+  ozm_avg_ok,
+  ozm_average,
+  ozm_naive_avg,
+  ozm_ceil_ok,
+  ozm_ceil_div,
+  ozm_naive_ceil,
+  ozm_test_suite
+}
