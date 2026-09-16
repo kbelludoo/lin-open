@@ -1,0 +1,139 @@
+{
+  "schema": "LIN_EIP1559_BASEFEE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned eip1559.go sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "PIN-BLOB",
+      "status": "PASS",
+      "description": "pinned eip1559.go git blob sha1 matches GitHub",
+      "note": ""
+    },
+    {
+      "id": "PIN-PARAMS",
+      "status": "PASS",
+      "description": "pinned protocol_params excerpt has elasticity=2 denom=8 initial=1e9",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned go-ethereum commit matches fixture",
+      "note": "tag=v1.14.12 commit=293a300d64be3d9a1c2cc92c26fcff4089deadcd blob=a90bd744b2757b5ad167622038f6ebdc48f8ba6b"
+    },
+    {
+      "id": "UPSTREAM-PARAMS",
+      "status": "PASS",
+      "description": "live protocol_params.go contains pinned elasticity/denom/initial",
+      "note": ""
+    },
+    {
+      "id": "GO-FORMULA",
+      "status": "PASS",
+      "description": "pinned Go contains CalcBaseFee with target-equal / increase / decrease",
+      "note": ""
+    },
+    {
+      "id": "C-SUBSET",
+      "status": "PASS",
+      "description": "C restatement is scalar (no struct/pointer body); eligible for lin_from_c",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree on canonical vectors",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_eip1559_basefee.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 (if/else emit path)",
+      "note": ""
+    },
+    {
+      "id": "C-TR-V2",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2: braced if/else emit, U/L suffix strip, & and C++ reject",
+      "note": ""
+    },
+    {
+      "id": "SUFFIX-NEED",
+      "status": "PASS",
+      "description": "C restatement uses ULL suffixes; v2 transpiler strips them",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "eip_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "8/8 vectors: C11 i128 == limbs == LIN vm == Python bigint",
+      "note": ""
+    },
+    {
+      "id": "WIDE-FEE",
+      "status": "PASS",
+      "description": "full block at parent=1e13 wei: LIN==C11==Python == 11250000000000",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive uint64 (1e13*15e6) wraps; 128-bit muldiv does not",
+      "note": "naive_delta=20217061752 bigint_delta=1250000000000"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes elasticity/denom/london as arguments (no hidden ChainConfig)",
+      "note": ""
+    },
+    {
+      "id": "GETH-PTR",
+      "status": "PASS",
+      "description": "upstream CalcBaseFee is pointerful; LIN scalar clone drops Header/Config objects",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/ethereum/go-ethereum",
+    "tag": "v1.14.12",
+    "commit": "293a300d64be3d9a1c2cc92c26fcff4089deadcd",
+    "path": "consensus/misc/eip1559/eip1559.go",
+    "git_blob_sha": "a90bd744b2757b5ad167622038f6ebdc48f8ba6b",
+    "file_sha256": "aafcf793817199d0ae5349659a49278fa65bd3dd5afffb6a5a4096fcda916d77",
+    "license": "LGPL-3.0",
+    "params_path": "params/protocol_params.go",
+    "elasticity": 2,
+    "base_fee_change_denominator": 8,
+    "initial_base_fee": 1000000000
+  },
+  "lin_clone": "src/lin_eip1559_basefee.lin",
+  "c11_oracle": "test/oracles/eip1559_basefee_c11.c",
+  "c_subset": "test/fixtures/external_proof/eip1559_integer.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-eip1559-basefee",
+  "canonical_full_block_1gwei": 1125000000
+}

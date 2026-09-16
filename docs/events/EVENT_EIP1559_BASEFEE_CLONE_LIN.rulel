@@ -1,0 +1,67 @@
+@RULEL:EIP1559_BASEFEE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-EIP1559-BASEFEE-GETH-V1.14.12"
+@TITLE="Clone-lin of go-ethereum CalcBaseFee (EIP-1559) with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-eip1559-basefee"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Ethereum EIP-1559 base-fee math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for (fee*gas_delta)/target; Geth big.Int / uint256 is NOT claimed"
+  commercial_hook="EIP-1559 prices every Ethereum transaction after London; a deterministic fail-closed co-processor for the fee-market formula is an audit tool, not a TVL or gas-savings claim"
+}
+
+.u{
+  repo="https://github.com/ethereum/go-ethereum"
+  path="consensus/misc/eip1559/eip1559.go"
+  params_path="params/protocol_params.go"
+  license="LGPL-3.0"
+  tag="v1.14.12"
+  commit="293a300d64be3d9a1c2cc92c26fcff4089deadcd"
+  git_blob_sha="a90bd744b2757b5ad167622038f6ebdc48f8ba6b"
+  file_sha256="aafcf793817199d0ae5349659a49278fa65bd3dd5afffb6a5a4096fcda916d77"
+  fixture="test/fixtures/external_proof/eip1559.go"
+  elasticity=2
+  base_fee_change_denominator=8
+  initial_base_fee=1000000000
+  canonical_full_block_1gwei=1125000000
+}
+
+.l{
+  clone="src/lin_eip1559_basefee.lin"
+  c_subset="test/fixtures/external_proof/eip1559_integer.c"
+  transpiler_delta="src/lin_from_c.lin v2: braced if/else emit as ?(c){t}:{e}; strip U/L suffixes; lone & in signatures is REJ_C_POINTER; ::/static_cast/optional is REJ_C_CXX; ceil/floor/.0 is REJ_C_FLOAT. Did not mutate gated transpile/c/"
+  improvement_1="CalcBaseFee(config *ChainConfig, parent *Header) becomes explicit integers elasticity/denom/london"
+  improvement_2="parent.BaseFee.Mul(gasUsedDelta) is big.Int in Geth and wrapping uint64 in the C restatement; LIN uses 128-bit muldiv, fail-closed if the quotient exceeds uint64"
+  improvement_3="negatives and zero elasticity/denom fail-closed (Geth panics or relies on header validity)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/eip1559_basefee_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_eip1559_basefee.sh"
+}
+
+.p{
+  harness="test/prove_eip1559_basefee_external.py"
+  evidence_json="examples/eip1559_basefee/eip1559_basefee_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-eip1559-basefee"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet Geth node parity"
+  not_claimed_2="LIN is faster than gc or the EVM"
+  not_claimed_3="this clone is a production execution-layer replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Ethereum, go-ethereum, or the fee market"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

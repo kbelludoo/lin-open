@@ -1,0 +1,173 @@
+@LIN:L1c:0.2
+@EIP1559_BASEFEE{
+  version=1
+  repo="ethereum/go-ethereum"
+  source="consensus/misc/eip1559/eip1559.go"
+  license="LGPL-3.0"
+  tag="v1.14.12"
+  commit="293a300d64be3d9a1c2cc92c26fcff4089deadcd"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_eip1559_calc_base_fee_with_128bit_muldiv"
+  note="Not a Geth node. Not uint256. Real deltas: chain-config constants are arguments; (fee*gas_delta)/target uses a 128-bit product; negatives and zero elasticity/denom fail-closed."
+}
+
+!eip_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!eip_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(eip_u_lt(s, a));
+}
+
+!eip_mask32() -> int {
+  ^ 4294967295;
+}
+
+!eip_muldiv_part(a: int, b: int, d: int, want_rem: int) -> int {
+  ?(d <= 0) { ^ 0; };
+  ?(a < 0 || b < 0) { ^ 0; };
+  m32 = eip_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = eip_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = eip_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(eip_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = eip_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!eip_muldiv(a: int, b: int, d: int) -> int {
+  ^ eip_muldiv_part(a, b, d, 0);
+}
+
+!eip_initial_base_fee() -> int {
+  ^ 1000000000;
+}
+
+!eip_default_elasticity() -> int {
+  ^ 2;
+}
+
+!eip_default_denom() -> int {
+  ^ 8;
+}
+
+!eip_inputs_ok(parent_gas_limit: int, parent_gas_used: int, parent_base_fee: int, elasticity: int, denom: int, london: int) -> int {
+  ?(parent_gas_limit < 0) { ^ 0; };
+  ?(parent_gas_used < 0) { ^ 0; };
+  ?(parent_base_fee < 0) { ^ 0; };
+  ?(elasticity <= 0) { ^ 0; };
+  ?(denom <= 0) { ^ 0; };
+  ?(london < 0) { ^ 0; };
+  ^ 1;
+}
+
+!eip_parent_gas_target(parent_gas_limit: int, elasticity: int) -> int {
+  ?(elasticity <= 0) { ^ 0; };
+  ?(parent_gas_limit < 0) { ^ 0; };
+  ^ parent_gas_limit / elasticity;
+}
+
+!eip_fee_delta(parent_base_fee: int, gas_used_delta: int, parent_gas_target: int, denom: int) -> int {
+  ?(parent_gas_target <= 0) { ^ 0; };
+  ?(denom <= 0) { ^ 0; };
+  ?(parent_base_fee < 0 || gas_used_delta < 0) { ^ 0; };
+  x = eip_muldiv(parent_base_fee, gas_used_delta, parent_gas_target);
+  ^ eip_muldiv(x, 1, denom);
+}
+
+!eip_calc_base_fee(parent_gas_limit: int, parent_gas_used: int, parent_base_fee: int, elasticity: int, denom: int, london: int) -> int {
+  ?(eip_inputs_ok(parent_gas_limit, parent_gas_used, parent_base_fee, elasticity, denom, london) == 0) { ^ 0; };
+  ?(london == 0) { ^ eip_initial_base_fee(); };
+  target = eip_parent_gas_target(parent_gas_limit, elasticity);
+  ?(parent_gas_used == target) { ^ parent_base_fee; };
+  ?(eip_u_lt(target, parent_gas_used) == 1) {
+    delta = eip_fee_delta(parent_base_fee, parent_gas_used - target, target, denom);
+    ?(eip_u_lt(delta, 1) == 1) { delta = 1; };
+    sum = parent_base_fee + delta;
+    ?(eip_u_lt(sum, parent_base_fee) == 1) { ^ 0; };
+    ^ sum;
+  };
+  delta = eip_fee_delta(parent_base_fee, target - parent_gas_used, target, denom);
+  ?(eip_u_lt(parent_base_fee, delta) == 1) { ^ 0; };
+  ^ parent_base_fee - delta;
+}
+
+!eip_test_suite() -> int {
+  ?(eip_initial_base_fee() != 1000000000) { ^ -1; };
+  ?(eip_default_elasticity() != 2) { ^ -2; };
+  ?(eip_default_denom() != 8) { ^ -3; };
+  ?(eip_muldiv(100, 200, 50) != 400) { ^ -4; };
+  ?(eip_parent_gas_target(30000000, 2) != 15000000) { ^ -5; };
+  ?(eip_calc_base_fee(30000000, 15000000, 1000000000, 2, 8, 1) != 1000000000) { ^ -6; };
+  ?(eip_calc_base_fee(30000000, 30000000, 1000000000, 2, 8, 1) != 1125000000) { ^ -7; };
+  ?(eip_calc_base_fee(30000000, 0, 1000000000, 2, 8, 1) != 875000000) { ^ -8; };
+  ?(eip_calc_base_fee(30000000, 15000001, 1000, 2, 8, 1) != 1001) { ^ -9; };
+  ?(eip_calc_base_fee(30000000, 30000000, 1000000000, 2, 8, 0) != 1000000000) { ^ -10; };
+  ?(eip_inputs_ok(30000000, -1, 1000000000, 2, 8, 1) != 0) { ^ -11; };
+  ?(eip_calc_base_fee(30000000, -1, 1000000000, 2, 8, 1) != 0) { ^ -12; };
+  ?(eip_calc_base_fee(30000000, 0, 100, 2, 8, 1) != 88) { ^ -13; };
+  ^ 1;
+}
+
+=ex{
+  eip_u_lt,
+  eip_u_add_carry,
+  eip_mask32,
+  eip_muldiv_part,
+  eip_muldiv,
+  eip_initial_base_fee,
+  eip_default_elasticity,
+  eip_default_denom,
+  eip_inputs_ok,
+  eip_parent_gas_target,
+  eip_fee_delta,
+  eip_calc_base_fee,
+  eip_test_suite
+}
