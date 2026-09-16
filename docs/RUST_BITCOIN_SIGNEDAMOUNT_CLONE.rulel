@@ -1,0 +1,73 @@
+@RULEL:RUST_BITCOIN_SIGNEDAMOUNT_CLONE:1.0.0
+@CHALLENGE_ID="LIN-RUST-BITCOIN-SIGNEDAMOUNT-V1"
+@TITLE="Clone-lin of rust-bitcoin SignedAmount 21M cap with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SAT"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-rust-bitcoin-signedamount"
+
+~R{.s=spec .u=upstream .x=cross .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile rust-bitcoin SignedAmount 21M-BTC cap into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Bitcoin mainnet consensus"
+  operand_width="i64 satoshis; 128-bit abs product for checked_mul; not a wallet"
+  commercial_hook="SignedAmount is the debit/credit dual of Amount::MAX used by rust-bitcoin wallets and accounting; making the 21M cap fail-closed with an explicit ok channel (0 sat is valid) is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/rust-bitcoin/rust-bitcoin"
+  path="units/src/amount/signed.rs"
+  license="CC0-1.0"
+  commit="1cbf4bd62ea99c558c6d8ef794edbd984a2a4684"
+  git_blob_sha="8f510f16cdd0d8cd3b53a3b522a17035e388b873"
+  file_sha256="08e2010b1fb71e179b36e01bee1a55fd61003d85153339b22f15dd37b5c80c92"
+  fixture="test/fixtures/external_proof/rust_bitcoin_signed.rs"
+}
+
+.x{
+  repo="https://github.com/bitcoin/bitcoin"
+  tag="v27.1"
+  commit="1088a98f5aad080cc6cca2da174f206509fcda6c"
+  path="src/consensus/amount.h"
+  license="MIT"
+  git_blob_sha="f0eb4e0723c3159153c655fae17cb252102cbddb"
+  file_sha256="cb7bd951877f3fea5a0c280d4bb907a8403437add81e3d5b898879b78fdc877e"
+  fixture="test/fixtures/external_proof/bitcoin_core_amount.h"
+  divergence="Core MoneyRange is [0, MAX_MONEY]; rust-bitcoin SignedAmount is [-MAX, MAX]. -1 sat: rust-bitcoin OK, Core reject."
+}
+
+.l{
+  clone="src/lin_rust_bitcoin_signedamount.lin"
+  transpiler_delta="src/lin_from_rust.lin v2: rs_from_rs emit + 21_000_000 underscore strip + REJ_RUST_MACRO/TRY; src/lin_from_c.lin v2: REJ_C_CXX, ceil/floor REJ_C_FLOAT, strip U/L/LL"
+  improvement_1="explicit sa_from_sat_ok: 0 sat is a valid amount so failure cannot share the 0 value channel"
+  improvement_2="checked_mul uses 128-bit abs product; naive i64 MAX*4393 wraps to -9221444073709551616"
+  improvement_3="MAX+1 sat fail-closes (naive i64 accepts 2100000000000001 as in-range)"
+  improvement_4="core_money_range is a named Cross-oracle so the Core vs rust-bitcoin negative-sat divergence is a proof, not a silent mismatch"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/rust_bitcoin_signedamount_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_rust_bitcoin_signedamount.sh"
+}
+
+.p{
+  harness="test/prove_rust_bitcoin_signedamount_external.py"
+  evidence_json="examples/rust_bitcoin_signedamount/signedamount_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-rust-bitcoin-signedamount"
+}
+
+.n{
+  not_claimed_1="LIN is a Bitcoin wallet, rust-bitcoin, or Bitcoin Core"
+  not_claimed_2="Lightning / PSBT / script / network"
+  not_claimed_3="wall-clock superiority vs rustc"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="that rust-bitcoin and Core agree on negative amounts"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS && HONEST_CORE_DIVERGENCE"
+  on_fail="do not publish a PASS status"
+}

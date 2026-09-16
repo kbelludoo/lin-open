@@ -165,3 +165,17 @@ equivalente funcional ao ACC 261473 do referencial v1 — o que importa e a pari
 
 Suite apos esta etapa: **26 passed / 0 failed**.
 Artefatos: /tmp/opencode/linmem2/ (fontes emitidos + drivers + medicoes).
+
+---
+
+## 2026-09-16 — rust-bitcoin SignedAmount clone-lin (Compiler 0 C11)
+
+Classe: **EXPERIMENTAL** (i64 satoshi, nao carteira, nao Bitcoin Core).
+
+- Upstream pin: `rust-bitcoin/rust-bitcoin` `units/src/amount/signed.rs` commit `1cbf4bd62ea99c558c6d8ef794edbd984a2a4684` sha256 `08e2010b1fb71e179b36e01bee1a55fd61003d85153339b22f15dd37b5c80c92` (CC0-1.0)
+- Cross-oracle: Bitcoin Core v27.1 `src/consensus/amount.h` — MoneyRange `[0, MAX]`; rust-bitcoin SignedAmount `[-MAX, MAX]`
+- LIN: `src/lin_rust_bitcoin_signedamount.lin` — cap 21e6 BTC, canal `*_ok` (0 sat e valido), mul 128-bit
+- Transpilador: `lin_from_rust.lin` v2 emit + strip `21_000_000`; `lin_from_c.lin` v2 REJ_C_CXX / ceil-as-float / suffix ULL
+- Clone-lin: https://github.com/kbelludoo/clone-lin-rust-bitcoin-signedamount
+- Gate: `make rust-bitcoin-signedamount-proof`
+

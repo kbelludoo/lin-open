@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN changelog="v2: REJ_C_CXX; ceil/floor/round/trunc as REJ_C_FLOAT; strip U/L/LL suffixes"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -39,7 +39,13 @@
   ?(rg_count_lit(sig, "union") > 0 || rg_count_lit(body, "union") > 0){ ^"REJ_C_UNION" };
   ?(rg_count_lit(sig, "float") > 0 || rg_count_lit(body, "float") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(sig, "double") > 0 || rg_count_lit(body, "double") > 0){ ^"REJ_C_FLOAT" };
+  ?(rg_count_lit(body, "ceil(") > 0 || rg_count_lit(body, "floor(") > 0){ ^"REJ_C_FLOAT" };
+  ?(rg_count_lit(body, "round(") > 0 || rg_count_lit(body, "trunc(") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(body, "goto") > 0){ ^"REJ_C_GOTO" };
+  ?(rg_count_lit(sig, "class ") > 0 || rg_count_lit(body, "class ") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(sig, "template") > 0 || rg_count_lit(body, "template") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(sig, "namespace") > 0 || rg_count_lit(body, "namespace") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(body, "::") > 0){ ^"REJ_C_CXX" };
   ^"OK";
 }
 
@@ -645,8 +651,50 @@
   ^read_ident(s, st);
 }
 
+!cfs_strip_int_suffix(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  c = 0;
+  while (i < n) {
+    c = s.charCodeAt(i);
+    ?(c >= 48 && c <= 57){
+      ?(i > 0 && is_ident(s.charCodeAt(i - 1)) == true){
+        out = out + s.charAt(i);
+        i = i + 1;
+        continue;
+      };
+      while (i < n && s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57){
+        out = out + s.charAt(i);
+        i = i + 1;
+      };
+      while (i < n && (s.charCodeAt(i) == 85 || s.charCodeAt(i) == 117 || s.charCodeAt(i) == 76 || s.charCodeAt(i) == 108)){
+        i = i + 1;
+      };
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!cfs_host_gate(): int {
+  r1 = cfs_reason("int foo()", "int x = 1; return x;");
+  ?(r1.length != 2){ ^0 };
+  r2 = cfs_reason("int foo()", "return std::max(1, 2);");
+  ?(starts_lit(r2, 0, "REJ_C_CXX") == 0){ ^0 };
+  r3 = cfs_reason("int foo()", "return ceil(x);");
+  ?(starts_lit(r3, 0, "REJ_C_FLOAT") == 0){ ^0 };
+  s = cfs_strip_int_suffix("return 21ULL + 3UL + 4LL;");
+  ?(rg_count_lit(s, "ULL") > 0){ ^0 };
+  ?(rg_count_lit(s, "21") == 0){ ^0 };
+  ?(rg_count_lit(s, "3") == 0){ ^0 };
+  ^1;
+}
+
 !cfs_prep(src: string): string {
-  ^jss_rewrite_hex(jss_strip_comments(src));
+  ^cfs_strip_int_suffix(jss_rewrite_hex(jss_strip_comments(src)));
 }
 
 !cfs_from_c(src: string): string {
@@ -756,4 +804,4 @@
   ^out;
 }
 
-=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type}
+=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type, cfs_strip_int_suffix, cfs_host_gate}

@@ -314,6 +314,11 @@ independent-reproof: c0
 	@chmod +x test/prove_melhorias_independent.py
 	@python3 test/prove_melhorias_independent.py
 
+.PHONY: rust-bitcoin-signedamount-proof
+rust-bitcoin-signedamount-proof: c0
+	@chmod +x test/verify_rust_bitcoin_signedamount.sh test/prove_rust_bitcoin_signedamount_external.py
+	@test/verify_rust_bitcoin_signedamount.sh
+
 # Standalone no-Zig CLI (python3, stdlib only). `make install-cli PREFIX=~/.local`
 # puts an executable `lin-verify` on PATH.
 verify-cli: c0

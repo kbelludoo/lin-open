@@ -1,0 +1,253 @@
+@LIN:L1c:0.2
+@RUST_BITCOIN_SIGNEDAMOUNT{
+  version=1
+  repo="rust-bitcoin/rust-bitcoin"
+  source="units/src/amount/signed.rs"
+  license="CC0-1.0"
+  commit="1cbf4bd62ea99c558c6d8ef794edbd984a2a4684"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="signed_21m_btc_cap_with_fail_closed_ok_channel_and_128bit_mul"
+  note="Not a wallet. rust-bitcoin SignedAmount is i64 with MAX=21e6 BTC; LIN adds an explicit ok flag (0 sat is a valid amount) and 128-bit abs product so MAX*4393 does not wrap. Bitcoin Core MoneyRange is [0, MAX] and DIVERGES on negative sats."
+}
+
+!sa_coin() -> int {
+  ^ 100000000;
+}
+
+!sa_max() -> int {
+  ^ 21000000 * sa_coin();
+}
+
+!sa_min() -> int {
+  ^ 0 - sa_max();
+}
+
+!sa_in_range(sat: int) -> int {
+  ?(sat > sa_max()) { ^ 0; };
+  ?(sat < sa_min()) { ^ 0; };
+  ^ 1;
+}
+
+!core_money_range(sat: int) -> int {
+  ?(sat < 0) { ^ 0; };
+  ?(sat > sa_max()) { ^ 0; };
+  ^ 1;
+}
+
+!sa_from_sat_ok(sat: int) -> int {
+  ^ sa_in_range(sat);
+}
+
+!sa_from_sat(sat: int) -> int {
+  ?(sa_from_sat_ok(sat) == 0) { ^ 0; };
+  ^ sat;
+}
+
+!sa_abs(sat: int) -> int {
+  ?(sa_in_range(sat) == 0) { ^ 0; };
+  ?(sat < 0) { ^ 0 - sat; };
+  ^ sat;
+}
+
+!sa_signum(sat: int) -> int {
+  ?(sa_in_range(sat) == 0) { ^ 0; };
+  ?(sat > 0) { ^ 1; };
+  ?(sat < 0) { ^ 0 - 1; };
+  ^ 0;
+}
+
+!sa_is_positive(sat: int) -> int {
+  ?(sat > 0 && sa_in_range(sat) == 1) { ^ 1; };
+  ^ 0;
+}
+
+!sa_is_negative(sat: int) -> int {
+  ?(sat < 0 && sa_in_range(sat) == 1) { ^ 1; };
+  ^ 0;
+}
+
+!sa_checked_add_ok(a: int, b: int) -> int {
+  ?(sa_in_range(a) == 0) { ^ 0; };
+  ?(sa_in_range(b) == 0) { ^ 0; };
+  ^ sa_in_range(a + b);
+}
+
+!sa_checked_add(a: int, b: int) -> int {
+  ?(sa_checked_add_ok(a, b) == 0) { ^ 0; };
+  ^ a + b;
+}
+
+!sa_checked_sub_ok(a: int, b: int) -> int {
+  ?(sa_in_range(a) == 0) { ^ 0; };
+  ?(sa_in_range(b) == 0) { ^ 0; };
+  ^ sa_in_range(a - b);
+}
+
+!sa_checked_sub(a: int, b: int) -> int {
+  ?(sa_checked_sub_ok(a, b) == 0) { ^ 0; };
+  ^ a - b;
+}
+
+!sa_positive_sub_ok(a: int, b: int) -> int {
+  ?(sa_is_negative(a) == 1) { ^ 0; };
+  ?(sa_is_negative(b) == 1) { ^ 0; };
+  ?(sa_in_range(a) == 0) { ^ 0; };
+  ?(sa_in_range(b) == 0) { ^ 0; };
+  ?(a < b) { ^ 0; };
+  ^ 1;
+}
+
+!sa_positive_sub(a: int, b: int) -> int {
+  ?(sa_positive_sub_ok(a, b) == 0) { ^ 0; };
+  ^ a - b;
+}
+
+!sa_mask32() -> int {
+  ^ 4294967295;
+}
+
+!sa_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!sa_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(sa_u_lt(s, a));
+}
+
+!sa_umul_part(a: int, b: int, want_hi: int) -> int {
+  m32 = sa_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = sa_u_add_carry(p1, p2);
+  t = _lia_shl(mid & m32, 32);
+  lo = p0 + t;
+  lo_carry = sa_u_add_carry(p0, t);
+  hi = p3 + _lia_ushr(mid, 32);
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  ?(want_hi == 1) { ^ hi; };
+  ^ lo;
+}
+
+!sa_checked_mul_ok(a: int, b: int) -> int {
+  ?(sa_in_range(a) == 0) { ^ 0; };
+  ua = a;
+  ub = b;
+  ?(a < 0) { ua = 0 - a; };
+  ?(b < 0) { ub = 0 - b; };
+  hi = sa_umul_part(ua, ub, 1);
+  lo = sa_umul_part(ua, ub, 0);
+  ?(hi != 0) { ^ 0; };
+  ?(sa_u_lt(sa_max(), lo) == 1) { ^ 0; };
+  mag = lo;
+  ?(a < 0 && b >= 0) { mag = 0 - lo; };
+  ?(a >= 0 && b < 0) { mag = 0 - lo; };
+  ^ sa_in_range(mag);
+}
+
+!sa_checked_mul(a: int, b: int) -> int {
+  ?(sa_checked_mul_ok(a, b) == 0) { ^ 0; };
+  ua = a;
+  ub = b;
+  ?(a < 0) { ua = 0 - a; };
+  ?(b < 0) { ub = 0 - b; };
+  lo = sa_umul_part(ua, ub, 0);
+  ?(a < 0 && b >= 0) { ^ 0 - lo; };
+  ?(a >= 0 && b < 0) { ^ 0 - lo; };
+  ^ lo;
+}
+
+!sa_checked_div_ok(a: int, b: int) -> int {
+  ?(b == 0) { ^ 0; };
+  ?(sa_in_range(a) == 0) { ^ 0; };
+  ^ sa_in_range(a / b);
+}
+
+!sa_checked_div(a: int, b: int) -> int {
+  ?(sa_checked_div_ok(a, b) == 0) { ^ 0; };
+  ^ a / b;
+}
+
+!sa_from_btc(whole: int) -> int {
+  ^ sa_checked_mul(whole, sa_coin());
+}
+
+!sa_from_btc_ok(whole: int) -> int {
+  ^ sa_checked_mul_ok(whole, sa_coin());
+}
+
+!sa_test_suite() -> int {
+  ?(sa_coin() != 100000000) { ^ -1; };
+  ?(sa_max() != 2100000000000000) { ^ -2; };
+  ?(sa_min() != 0 - 2100000000000000) { ^ -3; };
+  ?(sa_from_sat_ok(0) != 1) { ^ -4; };
+  ?(sa_from_sat_ok(sa_max()) != 1) { ^ -5; };
+  ?(sa_from_sat_ok(sa_min()) != 1) { ^ -6; };
+  ?(sa_from_sat_ok(sa_max() + 1) != 0) { ^ -7; };
+  ?(sa_from_sat_ok(sa_min() - 1) != 0) { ^ -8; };
+  ?(core_money_range(0 - 1) != 0) { ^ -9; };
+  ?(sa_from_sat_ok(0 - 1) != 1) { ^ -10; };
+  ?(sa_checked_add(100, 200) != 300) { ^ -11; };
+  ?(sa_checked_add_ok(sa_max(), 1) != 0) { ^ -12; };
+  ?(sa_checked_add(sa_max(), 1) != 0) { ^ -13; };
+  ?(sa_checked_sub(sa_min(), 1) != 0) { ^ -14; };
+  ?(sa_checked_sub_ok(sa_min(), 1) != 0) { ^ -15; };
+  ?(sa_checked_add(sa_min(), sa_max()) != 0) { ^ -16; };
+  ?(sa_abs(0 - 5) != 5) { ^ -17; };
+  ?(sa_signum(0 - 5) != 0 - 1) { ^ -18; };
+  ?(sa_checked_mul(sa_coin(), 2) != 200000000) { ^ -19; };
+  ?(sa_checked_mul_ok(sa_max(), 4393) != 0) { ^ -20; };
+  ?(sa_checked_mul(sa_max(), 4393) != 0) { ^ -21; };
+  ?(sa_from_btc(1) != sa_coin()) { ^ -22; };
+  ?(sa_positive_sub_ok(5, 3) != 1) { ^ -23; };
+  ?(sa_positive_sub_ok(3, 5) != 0) { ^ -24; };
+  ?(sa_positive_sub_ok(0 - 1, 0) != 0) { ^ -25; };
+  ?(sa_checked_div(100, 0) != 0) { ^ -26; };
+  ?(sa_checked_div_ok(100, 0) != 0) { ^ -27; };
+  ?(core_money_range(sa_max()) != 1) { ^ -28; };
+  ?(core_money_range(sa_min()) != 0) { ^ -29; };
+  ^ 1;
+}
+
+=ex{
+  sa_coin,
+  sa_max,
+  sa_min,
+  sa_in_range,
+  core_money_range,
+  sa_from_sat_ok,
+  sa_from_sat,
+  sa_abs,
+  sa_signum,
+  sa_is_positive,
+  sa_is_negative,
+  sa_checked_add_ok,
+  sa_checked_add,
+  sa_checked_sub_ok,
+  sa_checked_sub,
+  sa_positive_sub_ok,
+  sa_positive_sub,
+  sa_mask32,
+  sa_u_lt,
+  sa_u_add_carry,
+  sa_umul_part,
+  sa_checked_mul_ok,
+  sa_checked_mul,
+  sa_checked_div_ok,
+  sa_checked_div,
+  sa_from_btc,
+  sa_from_btc_ok,
+  sa_test_suite
+}
