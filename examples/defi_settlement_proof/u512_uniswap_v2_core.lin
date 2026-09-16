@@ -29,11 +29,13 @@
   reserve_out: [16]int;
   fee_amount: [16]int;
   denominator: [16]int;
-  remainder: [16]int;
+  remainder: [32]int;
   quotient: [16]int;
   numerator: [32]int;
 
-  // 1. Inicialização de buffers
+  // 1. Inicialização de buffers. remainder is 32 limbs (512-bit ge),
+  //    matching src/lin_u512_coprocessor.lin — a 16-limb rem + 1-bit carry
+  //    drops 2^256 when carry=1 and rem_low >= denominator.
   i = 0;
   while (i < 16) {
     amount[i] = 0;
@@ -41,13 +43,13 @@
     reserve_out[i] = 0;
     fee_amount[i] = 0;
     denominator[i] = 0;
-    remainder[i] = 0;
     quotient[i] = 0;
     i = i + 1;
   };
   i = 0;
   while (i < 32) {
     numerator[i] = 0;
+    remainder[i] = 0;
     i = i + 1;
   };
 
@@ -137,23 +139,25 @@
     pos = bit & 15;
     in_bit = (_lia_ushr(numerator[limb], pos) & 1);
 
-    // Desloca remainder à esquerda por 1 bit e insere in_bit
+    // Desloca remainder à esquerda por 1 bit e insere in_bit (32 limbs)
     carry = in_bit;
     j = 0;
-    while (j < 16) {
+    while (j < 32) {
       t = remainder[j] * 2 + carry;
       remainder[j] = t & 65535;
       carry = _lia_ushr(t, 16);
       j = j + 1;
     };
 
-    // Compara remainder (16 limbs) com denominator (16 limbs)
+    // ge 512-bit remainder vs 256-bit denominator (high limbs of den = 0)
     cmp = 0;
-    j = 15;
+    j = 31;
     while (j >= 0) {
+      dj = 0;
+      ?(j < 16) { dj = denominator[j]; };
       ?(cmp == 0) {
-        ?(remainder[j] > denominator[j]) { cmp = 1; }
-        : (remainder[j] < denominator[j]) { cmp = 0 - 1; };
+        ?(remainder[j] > dj) { cmp = 1; }
+        : (remainder[j] < dj) { cmp = 0 - 1; };
       };
       j = j - 1;
     };
@@ -161,7 +165,6 @@
     take = 0;
     ?((carry == 1) | (cmp >= 0)) { take = 1; };
     ?(take == 1) {
-      // Se quotient exceder 256 bits (bit >= 256), ocorreu overflow
       ?(bit >= 256) {
         ^0 - 2;
       };
@@ -171,8 +174,10 @@
 
       borrow = 0;
       j = 0;
-      while (j < 16) {
-        t = remainder[j] - denominator[j] - borrow;
+      while (j < 32) {
+        dj = 0;
+        ?(j < 16) { dj = denominator[j]; };
+        t = remainder[j] - dj - borrow;
         ?(t < 0) {
           remainder[j] = t + 65536;
           borrow = 1;
