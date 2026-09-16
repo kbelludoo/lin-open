@@ -1,0 +1,29 @@
+@RULEL:U512_COPROCESSOR_README:1.1.0
+~MARKDOWN_SPEC
+# LIN u512 numeric coprocessor
+
+LIN is sold here as a **numeric coprocessor with an auditable receipt**, not as a Uniswap replacement.
+
+- Engine: `src/lin_u512_coprocessor.lin`
+- Oracles: Python `int` + C11 (`test/oracles/u512_coprocessor_c11.c`)
+- Harness: `make u512-coprocessor-proof`
+- Auditor (no LIN): `python3 examples/u512_coprocessor/verify_u512_receipt.py examples/u512_coprocessor/u512_coprocessor_evidence.json`
+- Event: `docs/events/EVENT_U512_COPROCESSOR_2026_09_16.rulel`
+
+## Proved this run (EXPERIMENTAL, FullMath width)
+
+- mul 256×256→512 with carry (including `2^255 * 2 = 2^256`)
+- unsigned 512-bit `ge` for the restoring-division loop
+- div 512/256→256 with remainder identity `q*d+r == a*b`
+- guards `-1` (d=0) and `-2` (quotient overflow)
+- phantom `2^255 * 2 / 3` APPROVES (`q=0x555…5`, `r=1`)
+- `u512_get_amount_out_word` wires that mulDiv into Uniswap v2 `getAmountOut`
+- phantom AMM (`fee*reserve_out >= 2^256`): coprocessor APPROVES, `settle_u256_word` still `^-2`
+
+## Not proved
+
+- full 2000/157 `settle_u256_word` vs `ref_amount_out` LCR2 campaign (slice is 1 EXACT + 1 OVERPAID)
+- CRT / `mulmod` assembly parity with `FullMath.sol`
+- replacing the body of `settle_u256_word` with the 512-bit divider
+
+The 512-bit intermediate is off the suspect list. Wiring it into the existing settler remains required.
