@@ -1,0 +1,147 @@
+{
+  "schema": "LIN_ETH_BASE_REWARD_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned phase0+altair beacon-chain.md sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned files contain integer_squareroot and Altair helpers",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned consensus-specs commit matches fixtures",
+      "note": "commit=b5c3b619887c7850a8c1d3540b471092be73ad84 blobs=5658ed2c236568f7be1cf26e8d2c496ed5179564,4edfbeb763146fe33750de82e118b6bf1bde890e"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of phase0+altair beacon-chain.md",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 spec Babylonian XOR overflow-safe avg_floor",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_eth_base_reward.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "ebr_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-ISQRT",
+      "status": "PASS",
+      "description": "8/8 isqrt vectors: C11 == Python spec == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "ISQRT-U64MAX",
+      "status": "PASS",
+      "description": "UINT64_MAX \u2192 4294967295 (spec special case; LIN encodes as i64 -1)",
+      "note": "value=4294967295"
+    },
+    {
+      "id": "VEC-REWARD",
+      "status": "PASS",
+      "description": "6/6 Altair+Phase0 reward vectors: C11 == Python == LIN",
+      "note": "altair_1v_32eth=11448672"
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "Python spec helpers match C11 and LIN on every vector above",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (overflow_eb*64) wraps; LIN ebr_mul_ok fail-closes",
+      "note": "i64_wrap=-9223372036854775744"
+    },
+    {
+      "id": "ZERO-TOTAL",
+      "status": "PASS",
+      "description": "LIN fail-closes total_balance=0 (spec get_total_balance mins at 1 ETH; C UB otherwise)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes effective_balance and total_balance as arguments (no BeaconState)",
+      "note": ""
+    },
+    {
+      "id": "SAFE-ISQRT",
+      "status": "PASS",
+      "description": "isqrt uses overflow-safe floor((a+b)/2); UINT64_MAX is a named special case",
+      "note": ""
+    },
+    {
+      "id": "SOL-EMIT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3: OK_VIEW emit, 10**N expand, REJ ** leftover",
+      "note": ""
+    },
+    {
+      "id": "C-EMIT",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2: U/L suffix strip, CXX reject, UINT64_MAX_SQRT expand",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/ethereum/consensus-specs",
+    "tag": "v1.5.0",
+    "commit": "b5c3b619887c7850a8c1d3540b471092be73ad84",
+    "license": "CC0-1.0",
+    "phase0": {
+      "path": "specs/phase0/beacon-chain.md",
+      "git_blob_sha": "5658ed2c236568f7be1cf26e8d2c496ed5179564",
+      "file_sha256": "95519084a4689b0bbbbaa9db9fb1d6e48d6c7be83a8dd21bc82a83cf96a6254a"
+    },
+    "altair": {
+      "path": "specs/altair/beacon-chain.md",
+      "git_blob_sha": "4edfbeb763146fe33750de82e118b6bf1bde890e",
+      "file_sha256": "2ea769c3a23139225997efc75efed8914f8fd949ec02991fa62d026017a278d9"
+    }
+  },
+  "lin_clone": "src/lin_eth_base_reward.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-eth-basereward",
+  "c11_oracle": "test/oracles/eth_base_reward_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "canonical_altair_1_validator_32eth_gwei": 11448672
+}

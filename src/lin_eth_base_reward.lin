@@ -1,0 +1,127 @@
+@LIN:L1c:0.2
+@ETH_CONSENSUS_BASE_REWARD{
+  version=1
+  repo="ethereum/consensus-specs"
+  source_isqrt="specs/phase0/beacon-chain.md integer_squareroot"
+  source_reward="specs/altair/beacon-chain.md get_base_reward / get_base_reward_per_increment"
+  license="CC0-1.0"
+  commit="b5c3b619887c7850a8c1d3540b471092be73ad84"
+  tag="v1.5.0"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_gwei_altair_base_reward_with_overflow_safe_isqrt"
+  note="Not a beacon node. Operand width matches spec uint64 Gwei for n>=0 plus UINT64_MAX as i64 -1. Altair increment accounting is what post-Altair mainnet still uses; Electra 2048 ETH max effective balance is not a special case here."
+}
+
+!ebr_u64_max_sqrt() -> int {
+  ^ 4294967295;
+}
+
+!ebr_base_reward_factor() -> int {
+  ^ 64;
+}
+
+!ebr_eb_increment() -> int {
+  ^ 1000000000;
+}
+
+!ebr_max_eb_phase0() -> int {
+  ^ 32000000000;
+}
+
+!ebr_half(x: int) -> int {
+  ^ _lia_ushr(x, 1) + (x & 1);
+}
+
+!ebr_avg_floor(a: int, b: int) -> int {
+  ^ _lia_ushr(a, 1) + _lia_ushr(b, 1) + (a & b & 1);
+}
+
+!ebr_mul_ok(a: int, b: int) -> int {
+  ?(b == 0) { ^ 1; };
+  ?(a == 0) { ^ 1; };
+  z = a * b;
+  ?(z / b != a) { ^ 0; };
+  ?(a > 0 && b > 0 && z < 0) { ^ 0; };
+  ^ 1;
+}
+
+!ebr_isqrt(n: int) -> int {
+  ?(n < 0) {
+    ?(n == -1) { ^ ebr_u64_max_sqrt(); };
+    ^ 0;
+  };
+  ?(n == 0) { ^ 0; };
+  x = n;
+  y = ebr_half(x);
+  while (y < x) {
+    x = y;
+    ?(x == 0) { ^ 0; };
+    y = ebr_avg_floor(x, n / x);
+  };
+  ^ x;
+}
+
+!ebr_base_reward_per_increment(total_balance: int) -> int {
+  ?(total_balance <= 0) { ^ 0; };
+  s = ebr_isqrt(total_balance);
+  ?(s == 0) { ^ 0; };
+  inc = ebr_eb_increment();
+  f = ebr_base_reward_factor();
+  ?(ebr_mul_ok(inc, f) == 0) { ^ 0; };
+  ^ (inc * f) / s;
+}
+
+!ebr_base_reward(effective_balance: int, total_balance: int) -> int {
+  ?(effective_balance < 0) { ^ 0; };
+  ?(total_balance <= 0) { ^ 0; };
+  inc = ebr_eb_increment();
+  steps = effective_balance / inc;
+  p = ebr_base_reward_per_increment(total_balance);
+  ?(ebr_mul_ok(steps, p) == 0) { ^ 0; };
+  ^ steps * p;
+}
+
+!ebr_phase0_base_reward(effective_balance: int, total_balance: int) -> int {
+  ?(effective_balance < 0) { ^ 0; };
+  ?(total_balance <= 0) { ^ 0; };
+  s = ebr_isqrt(total_balance);
+  ?(s == 0) { ^ 0; };
+  f = ebr_base_reward_factor();
+  ?(ebr_mul_ok(effective_balance, f) == 0) { ^ 0; };
+  ^ ((effective_balance * f) / s) / 4;
+}
+
+!ebr_test_suite() -> int {
+  ?(ebr_isqrt(0) != 0) { ^ -1; };
+  ?(ebr_isqrt(1) != 1) { ^ -2; };
+  ?(ebr_isqrt(15) != 3) { ^ -3; };
+  ?(ebr_isqrt(16) != 4) { ^ -4; };
+  ?(ebr_isqrt(1000000) != 1000) { ^ -5; };
+  ?(ebr_isqrt(-1) != 4294967295) { ^ -6; };
+  ?(ebr_isqrt(-2) != 0) { ^ -7; };
+  ?(ebr_isqrt(32000000000) != 178885) { ^ -8; };
+  ?(ebr_base_reward_per_increment(0) != 0) { ^ -9; };
+  ?(ebr_base_reward_per_increment(32000000000) != 357771) { ^ -10; };
+  ?(ebr_base_reward(32000000000, 32000000000) != 11448672) { ^ -11; };
+  ?(ebr_base_reward(0, 32000000000) != 0) { ^ -12; };
+  ?(ebr_phase0_base_reward(32000000000, 32000000000) != 2862174) { ^ -13; };
+  ?(ebr_mul_ok(144115188075855873, 64) != 0) { ^ -14; };
+  ?(ebr_base_reward(16000000000, 32000000000) != 5724336) { ^ -15; };
+  ^ 1;
+}
+
+=ex{
+  ebr_u64_max_sqrt,
+  ebr_base_reward_factor,
+  ebr_eb_increment,
+  ebr_max_eb_phase0,
+  ebr_half,
+  ebr_avg_floor,
+  ebr_mul_ok,
+  ebr_isqrt,
+  ebr_base_reward_per_increment,
+  ebr_base_reward,
+  ebr_phase0_base_reward,
+  ebr_test_suite
+}
