@@ -1,0 +1,69 @@
+@RULEL:EIP4844_BLOBFEE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-EIP4844-BLOBFEE-GETH-V1.14.12"
+@TITLE="Clone-lin of go-ethereum fakeExponential / CalcBlobFee (EIP-4844) with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-eip4844-blobfee"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Ethereum EIP-4844 blob-fee math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for (accum*numerator)/denominator; Geth big.Int / uint256 is NOT claimed"
+  commercial_hook="EIP-4844 prices blob data-availability for every rollup after Cancun; a deterministic fail-closed co-processor for fakeExponential is an audit tool for L2 DA cost, not a TVL or gas-savings claim"
+}
+
+.u{
+  repo="https://github.com/ethereum/go-ethereum"
+  path="consensus/misc/eip4844/eip4844.go"
+  params_path="params/protocol_params.go"
+  license="LGPL-3.0"
+  tag="v1.14.12"
+  commit="293a300d64be3d9a1c2cc92c26fcff4089deadcd"
+  git_blob_sha="2dad9a0cd3de18ac8db0dde8ba7101300b11d6d9"
+  file_sha256="23af9802a9d2acc3818dba2768bc81da37fb857dd67590a27e3e13edaae02868"
+  fixture="test/fixtures/external_proof/eip4844.go"
+  min_blob_gasprice=1
+  update_fraction=3338477
+  blob_gas_per_blob=131072
+  target_blob_gas=393216
+  canonical_zero_excess=1
+  canonical_10mib_excess=23
+}
+
+.l{
+  clone="src/lin_eip4844_blobfee.lin"
+  c_subset="test/fixtures/external_proof/eip4844_integer.c"
+  transpiler_delta="src/lin_from_c.lin v2: braced if/else emit as ?(c){t}:{e}; strip U/L suffixes; lone & in signatures is REJ_C_POINTER; ::/static_cast/optional is REJ_C_CXX; ceil/floor/.0 is REJ_C_FLOAT. Did not mutate gated transpile/c/"
+  improvement_1="CalcBlobFee(excessBlobGas uint64) becomes explicit integers min_price/update_frac (Geth hides minBlobGasPrice and blobGaspriceUpdateFraction as package-level *big.Int)"
+  improvement_2="accum.Mul(numerator) is big.Int in Geth and wrapping uint64 in the C restatement; LIN uses 128-bit muldiv, fail-closed if the quotient exceeds uint64. Geth TestFakeExponential (1,50e6,2225652) wraps uint64 on an intermediate product"
+  improvement_3="negatives, zero denominator, and uint64 add overflow fail-closed (Geth panics or relies on header validity)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/eip4844_blobfee_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_eip4844_blobfee.sh"
+}
+
+.p{
+  harness="test/prove_eip4844_blobfee_external.py"
+  evidence_json="examples/eip4844_blobfee/eip4844_blobfee_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-eip4844-blobfee"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet Geth node parity"
+  not_claimed_2="LIN is faster than gc or the EVM"
+  not_claimed_3="this clone is a production execution-layer replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Ethereum, go-ethereum, or the blob fee market"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

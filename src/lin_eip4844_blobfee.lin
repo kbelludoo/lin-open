@@ -1,0 +1,187 @@
+@LIN:L1c:0.2
+@EIP4844_BLOBFEE{
+  version=1
+  repo="ethereum/go-ethereum"
+  source="consensus/misc/eip4844/eip4844.go"
+  license="LGPL-3.0"
+  tag="v1.14.12"
+  commit="293a300d64be3d9a1c2cc92c26fcff4089deadcd"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_eip4844_fake_exponential_with_128bit_muldiv"
+  note="Not a Geth node. Not uint256. Real deltas: minBlobGasPrice/updateFraction/target are arguments; Taylor (accum*numerator)/denominator uses a 128-bit product; negatives, zero denom, and uint64 overflow fail-closed."
+}
+
+!bb_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!bb_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(bb_u_lt(s, a));
+}
+
+!bb_mask32() -> int {
+  ^ 4294967295;
+}
+
+!bb_muldiv_part(a: int, b: int, d: int, want_rem: int) -> int {
+  ?(d <= 0) { ^ 0; };
+  ?(a < 0 || b < 0) { ^ 0; };
+  m32 = bb_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = bb_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = bb_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(bb_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = bb_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!bb_muldiv(a: int, b: int, d: int) -> int {
+  ^ bb_muldiv_part(a, b, d, 0);
+}
+
+!bb_min_blob_gasprice() -> int {
+  ^ 1;
+}
+
+!bb_update_fraction() -> int {
+  ^ 3338477;
+}
+
+!bb_blob_gas_per_blob() -> int {
+  ^ 131072;
+}
+
+!bb_target_blob_gas() -> int {
+  ^ 393216;
+}
+
+!bb_inputs_ok(factor: int, numerator: int, denominator: int) -> int {
+  ?(factor < 0) { ^ 0; };
+  ?(numerator < 0) { ^ 0; };
+  ?(denominator <= 0) { ^ 0; };
+  ^ 1;
+}
+
+!bb_calc_excess(parent_excess: int, parent_used: int, target: int) -> int {
+  ?(parent_excess < 0 || parent_used < 0 || target < 0) { ^ 0; };
+  sum = parent_excess + parent_used;
+  ?(bb_u_lt(sum, parent_excess) == 1) { ^ 0; };
+  ?(bb_u_lt(sum, target) == 1) { ^ 0; };
+  ^ sum - target;
+}
+
+!bb_fake_exp(factor: int, numerator: int, denominator: int) -> int {
+  ?(bb_inputs_ok(factor, numerator, denominator) == 0) { ^ 0; };
+  output = 0;
+  accum = bb_muldiv(factor, denominator, 1);
+  ?(factor != 0 && denominator != 0 && accum == 0) { ^ 0; };
+  i = 1;
+  while (bb_u_lt(0, accum) == 1) {
+    sum = output + accum;
+    ?(bb_u_lt(sum, output) == 1) { ^ 0; };
+    output = sum;
+    accum = bb_muldiv(accum, numerator, denominator);
+    accum = bb_muldiv(accum, 1, i);
+    i = i + 1;
+  };
+  ^ bb_muldiv(output, 1, denominator);
+}
+
+!bb_calc_blob_fee(excess: int, min_price: int, update_frac: int) -> int {
+  ?(excess < 0 || min_price < 0 || update_frac <= 0) { ^ 0; };
+  ^ bb_fake_exp(min_price, excess, update_frac);
+}
+
+!bb_cancun_blob_fee(excess: int) -> int {
+  ^ bb_calc_blob_fee(excess, bb_min_blob_gasprice(), bb_update_fraction());
+}
+
+!bb_test_suite() -> int {
+  ?(bb_min_blob_gasprice() != 1) { ^ -1; };
+  ?(bb_update_fraction() != 3338477) { ^ -2; };
+  ?(bb_blob_gas_per_blob() != 131072) { ^ -3; };
+  ?(bb_target_blob_gas() != 393216) { ^ -4; };
+  ?(bb_muldiv(100, 200, 50) != 400) { ^ -5; };
+  ?(bb_fake_exp(1, 0, 1) != 1) { ^ -6; };
+  ?(bb_fake_exp(38493, 0, 1000) != 38493) { ^ -7; };
+  ?(bb_fake_exp(0, 1234, 2345) != 0) { ^ -8; };
+  ?(bb_fake_exp(1, 2, 1) != 6) { ^ -9; };
+  ?(bb_fake_exp(1, 4, 2) != 6) { ^ -10; };
+  ?(bb_fake_exp(1, 3, 1) != 16) { ^ -11; };
+  ?(bb_cancun_blob_fee(0) != 1) { ^ -12; };
+  ?(bb_cancun_blob_fee(2314057) != 1) { ^ -13; };
+  ?(bb_cancun_blob_fee(2314058) != 2) { ^ -14; };
+  ?(bb_cancun_blob_fee(10485760) != 23) { ^ -15; };
+  ?(bb_calc_excess(0, 0, 393216) != 0) { ^ -16; };
+  ?(bb_calc_excess(0, 393216, 393216) != 0) { ^ -17; };
+  ?(bb_calc_excess(0, 524288, 393216) != 131072) { ^ -18; };
+  ?(bb_inputs_ok(1, -1, 3338477) != 0) { ^ -19; };
+  ?(bb_fake_exp(1, -1, 3338477) != 0) { ^ -20; };
+  ?(bb_fake_exp(1, 2, 0) != 0) { ^ -21; };
+  ^ 1;
+}
+
+=ex{
+  bb_u_lt,
+  bb_u_add_carry,
+  bb_mask32,
+  bb_muldiv_part,
+  bb_muldiv,
+  bb_min_blob_gasprice,
+  bb_update_fraction,
+  bb_blob_gas_per_blob,
+  bb_target_blob_gas,
+  bb_inputs_ok,
+  bb_calc_excess,
+  bb_fake_exp,
+  bb_calc_blob_fee,
+  bb_cancun_blob_fee,
+  bb_test_suite
+}
