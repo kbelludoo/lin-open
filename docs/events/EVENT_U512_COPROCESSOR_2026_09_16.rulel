@@ -1,0 +1,58 @@
+@RULEL:U512_COPROCESSOR:1.0.0
+@CHALLENGE_ID="LIN-U512-COPROCESSOR-2026-09-16"
+@TITLE="LIN as numeric coprocessor: 512-bit mul/div with LNR1 auditable receipt"
+@STATUS="REPRODUCED_THIS_RUN"
+@DATE="2026-09-16"
+@CLASS="EXPERIMENTAL"
+
+~R{.s=scope .p=proved_this_run .n=not_proved .h=hashes .v=verdict}
+
+.s{
+  purpose="sell LIN as a numeric coprocessor with an independently recomputable receipt, not as a Uniswap replacement"
+  engine="src/lin_u512_coprocessor.lin"
+  width="16-bit limbs; 256x256->512 mul; 32-limb remainder ge; 512/256 restoring div"
+  spec_width="Uniswap V3 FullMath.mulDiv mathematical width (a*b/d with 512-bit product). Not CRT/mulmod assembly."
+  receipt="LNR1 240-byte records; domains LIN:U512:LEAF:1 and LIN:U512:NODE:1"
+  auditor="python3 examples/u512_coprocessor/verify_u512_receipt.py (stdlib only, no LIN)"
+  harness="make u512-coprocessor-proof"
+}
+
+.p{
+  mul="2^128 * 2^128 = 2^256 (LIN mul_word p4=1, steps=9710)"
+  ge="512-bit ge: 2^256>=1 -> 1 (steps=1365); 1>=2 -> 0 (steps=1581)"
+  div_identity="q*d+r==n on LIN 512/256 including (2^256-1)/1 and 2^255*2/3"
+  muldiv_spot="7*9/2 = 31 r=1 steps=979653"
+  full_range="2^255*2/3 q=0x5555..repeating r=1 steps=1111755 APPROVE"
+  phantom="mulDiv(997, ceil(2^256/997), 1997) APPROVES steps=1099969; settle_u256_word still -2 steps=11417 (SafeMath width)"
+  guards="d=0 -> -1 steps=1253; (2^256-1)^2/1 -> -2 steps=12500"
+  self_gate="u512_self_gate value=1 steps=2953157"
+  c11="16-bit schoolbook == 64-bit __int128; 4000 selftest + 10000 random + 2507 Python int batch, 0 divergences"
+  e2e_exact="settle_u256_word EXACT_INPUT lin==ref==onchain=348299652 steps=222643 (LCR2 steps_bound=true)"
+  e2e_overpaid="OVERPAID_INPUT lin==ref=145611106349087342 onchain=145610814998826432 steps=230420"
+  amm_fix="examples/defi_settlement_proof/u512_uniswap_v2_core.lin remainder is 32-limb ge (canonical 1000/10000/20000 -> 1813)"
+  auditor="LNR1 merkle recomputed; tampered q rejected"
+}
+
+.n{
+  not_1="FullMath.sol CRT/mulmod assembly parity"
+  not_2="LIN replaces Uniswap, FullMath, or the EVM"
+  not_3="full 2000-swap prefiltered + 157 unfiltered campaign (slice is 1 EXACT + 1 OVERPAID)"
+  not_4="computational soundness / zk of Merkle (tamper-evidence + independent identity only)"
+  not_5="replacing settle_u256_word SafeMath-width body (phantom still -2 there; 512 intermediate is off the suspect list)"
+}
+
+.h{
+  fullmath_sol_sha256="sha256:959c52e1c860bfbede3e33c8d04910c11038973173aa3478547cbad2e444880e"
+  linbc1_file_sha256="sha256:111154a497017623f06631bb1424057cbb7a8292f2523258a8cbd774f004a7f4"
+  linbc1_loader="sha256:ee735c2f09195dcdd7e07823e89bac3a44bb3879c4a61e7d7ed09033bcc9388e"
+  lnr1_merkle="sha256:03e6492ba37b97bbc53ed3f0833120313bc6d0ef3830887675ac6127b9c3f57e"
+  lcr2_e2e_merkle="sha256:a088a768a12d5f8e91d53c79dc0d78216a2f6c854538e4a26714dcaf06a82a68"
+  image_bytes=15765
+  self_gate_steps=2953157
+}
+
+.v{
+  method="PYTHON_BIGINT && C11_16BIT && C11_U64_I128 && LIN_C0_LINBC1 && LNR1_AUDITOR && LCR2_E2E_SLICE && PHANTOM_WIDTH_SPLIT"
+  on_fail="do not publish PASS"
+  class="EXPERIMENTAL"
+}

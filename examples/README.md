@@ -19,6 +19,9 @@ python3 examples/run_demos.py --interactive
 
 ---
 
+### 0. Coprocessador numérico u512 ([`u512_coprocessor/`](./u512_coprocessor/README.md))
+Motor `src/lin_u512_coprocessor.lin`: mulDiv com intermediário 512 bits e recibo LNR1 que um auditor recompute sem LIN. Classe EXPERIMENTAL (largura FullMath, não substitui Uniswap). `make u512-coprocessor-proof`.
+
 ## Índice dos Exemplos Práticos
 
 ### 1. DeFi & Automated Market Maker ([`amm_swap.lin`](./amm_swap.lin))

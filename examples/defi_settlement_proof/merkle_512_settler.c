@@ -40,7 +40,7 @@ int settle_u512_reference(
     uint16_t reserve_out[16] = {0};
     uint16_t fee_amount[16] = {0};
     uint16_t denominator[16] = {0};
-    uint16_t remainder[16] = {0};
+    uint16_t remainder[32] = {0};
     uint16_t quotient[16] = {0};
     uint16_t numerator[32] = {0}; // 32 limbs de 16 bits = 512 BITS!
 
@@ -94,35 +94,35 @@ int settle_u512_reference(
         }
     }
 
-    // 4. Divisão restauradora de 512 bits por 256 bits: numerator (512b) / denominator (256b)
+    // 4. Divisão restauradora 512/256 com remainder de 32 limbs (ge em 512 bits)
+    uint32_t hi = 0;
     for (int bit = 511; bit >= 0; bit--) {
         int limb = bit >> 4;
         int pos = bit & 15;
         uint16_t in_bit = (uint16_t)((numerator[limb] >> pos) & 1);
-
-        // Desloca remainder à esquerda por 1 bit e insere in_bit
         carry = in_bit;
-        for (int j = 0; j < 16; j++) {
+        for (int j = 0; j < 32; j++) {
             uint32_t t = (uint32_t)remainder[j] * 2 + carry;
             remainder[j] = (uint16_t)(t & 0xffff);
             carry = t >> 16;
         }
-
-        // Compara remainder (16 limbs) com denominator (16 limbs)
-        int cmp = 0;
-        for (int j = 15; j >= 0; j--) {
-            if (remainder[j] > denominator[j]) { cmp = 1; break; }
-            else if (remainder[j] < denominator[j]) { cmp = -1; break; }
+        hi = hi * 2 + carry;
+        int cmp = (hi != 0) ? 1 : 0;
+        if (cmp == 0) {
+            for (int j = 31; j >= 0; j--) {
+                uint16_t dj = (j < 16) ? denominator[j] : 0;
+                if (remainder[j] > dj) { cmp = 1; break; }
+                if (remainder[j] < dj) { cmp = -1; break; }
+            }
         }
-
-        if (carry == 1 || cmp >= 0) {
-            if (bit >= 256) return -2; // overflow do quociente além de 256 bits
+        if (cmp >= 0) {
+            if (bit >= 256) return -2;
             int qlimb = bit >> 4;
             quotient[qlimb] |= (uint16_t)(1 << pos);
-
             uint32_t borrow = 0;
-            for (int j = 0; j < 16; j++) {
-                int32_t t = (int32_t)remainder[j] - (int32_t)denominator[j] - (int32_t)borrow;
+            for (int j = 0; j < 32; j++) {
+                int32_t dj = (j < 16) ? (int32_t)denominator[j] : 0;
+                int32_t t = (int32_t)remainder[j] - dj - (int32_t)borrow;
                 if (t < 0) {
                     remainder[j] = (uint16_t)(t + 65536);
                     borrow = 1;
@@ -131,6 +131,7 @@ int settle_u512_reference(
                     borrow = 0;
                 }
             }
+            hi -= borrow;
         }
     }
 
