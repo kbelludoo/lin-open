@@ -1,0 +1,141 @@
+{
+  "schema": "LIN_EIP4844_BLOBFEE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned eip4844.go sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "PIN-BLOB",
+      "status": "PASS",
+      "description": "pinned eip4844.go git blob sha1 matches GitHub",
+      "note": ""
+    },
+    {
+      "id": "PIN-PARAMS",
+      "status": "PASS",
+      "description": "pinned protocol_params excerpt has min=1 frac=3338477 blob_gas=1<<17",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned go-ethereum commit matches fixture",
+      "note": "tag=v1.14.12 commit=293a300d64be3d9a1c2cc92c26fcff4089deadcd blob=2dad9a0cd3de18ac8db0dde8ba7101300b11d6d9"
+    },
+    {
+      "id": "UPSTREAM-PARAMS",
+      "status": "PASS",
+      "description": "live protocol_params.go contains pinned blob constants",
+      "note": ""
+    },
+    {
+      "id": "GO-FORMULA",
+      "status": "PASS",
+      "description": "pinned Go contains fakeExponential Taylor loop and CalcBlobFee",
+      "note": ""
+    },
+    {
+      "id": "C-SUBSET",
+      "status": "PASS",
+      "description": "C restatement is scalar (no struct/pointer body); eligible for lin_from_c",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree on Geth vectors",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_eip4844_blobfee.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 (if/else emit path)",
+      "note": ""
+    },
+    {
+      "id": "C-TR-V2",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2: braced if/else emit, U/L suffix strip, & and C++ reject",
+      "note": ""
+    },
+    {
+      "id": "SUFFIX-NEED",
+      "status": "PASS",
+      "description": "C restatement uses ULL suffixes; v2 transpiler strips them",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "bb_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "18/18 Geth vectors: C11 i128 == limbs == LIN vm == Python bigint",
+      "note": ""
+    },
+    {
+      "id": "GETH-WIDE",
+      "status": "PASS",
+      "description": "Geth published vector fakeExponential(1,50e6,2225652)==5709098764",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive uint64 (accum*50e6) wraps on a Geth Taylor step; 128-bit muldiv does not",
+      "note": "accum=397375631695 naive=638930754242 bigint=8927173513536 prod_bits=65"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes min_price/update_frac as arguments (no hidden params big.Int)",
+      "note": ""
+    },
+    {
+      "id": "GETH-PTR",
+      "status": "PASS",
+      "description": "upstream CalcBlobFee is pointerful big.Int; LIN scalar clone drops Header objects",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/ethereum/go-ethereum",
+    "tag": "v1.14.12",
+    "commit": "293a300d64be3d9a1c2cc92c26fcff4089deadcd",
+    "path": "consensus/misc/eip4844/eip4844.go",
+    "git_blob_sha": "2dad9a0cd3de18ac8db0dde8ba7101300b11d6d9",
+    "file_sha256": "23af9802a9d2acc3818dba2768bc81da37fb857dd67590a27e3e13edaae02868",
+    "license": "LGPL-3.0",
+    "params_path": "params/protocol_params.go",
+    "min_blob_gasprice": 1,
+    "update_fraction": 3338477,
+    "blob_gas_per_blob": 131072,
+    "target_blob_gas": 393216
+  },
+  "lin_clone": "src/lin_eip4844_blobfee.lin",
+  "c11_oracle": "test/oracles/eip4844_blobfee_c11.c",
+  "c_subset": "test/fixtures/external_proof/eip4844_integer.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-eip4844-blobfee",
+  "canonical_zero_excess": 1,
+  "canonical_10mib_excess": 23
+}
