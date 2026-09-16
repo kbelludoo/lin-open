@@ -1,0 +1,65 @@
+@RULEL:OZ_SQRT_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-OZ-MATH-SQRT-V1"
+@TITLE="Clone-lin of OpenZeppelin Math.sqrt/log2 with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-oz-sqrt"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile OpenZeppelin integer sqrt/log2 into deterministic LIN, compile in memory with C11 compiler 0, and publish auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="non-negative i64 inputs; Solidity uint256 is NOT claimed"
+  commercial_hook="Math.sqrt is the integer square root used across OpenZeppelin vault/ERC-4626-adjacent math and many DeFi oracles; explicit rounding and remainder-safe x^2 < a is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/OpenZeppelin/openzeppelin-contracts"
+  path="contracts/utils/math/Math.sol"
+  license="MIT"
+  tag="v5.0.2"
+  commit="dbb6104ce834628e473d2173bbc9d47f81a9eec3"
+  git_blob_sha="9681524529b34f34033ae97064a2700bfc4eec00"
+  file_sha256="a6ee779fc42e6bf01b5e6a963065706e882b016affbedfd8be19a71ea48e6e15"
+  excerpt="test/fixtures/external_proof/Math_sqrt_log2.sol"
+  excerpt_sha256="c01c219d2ea425653f0bd8ba58c74368cbe0fd1cbd3e3a9424a10dfb4258726d"
+}
+
+.l{
+  clone="src/lin_oz_sqrt.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: strip unchecked{}; lower << >> and >>= to _lia_shl/_lia_ushr; while; ternary return; REJ_SOLIDITY_POW leftover **; REJ_SOLIDITY_ENUM Rounding. src/lin_from_c.lin v2: libc sqrt( and long double are REJ_C_FLOAT"
+  improvement_1="Rounding is an explicit int (odd=up, matching unsignedRoundsUp); Solidity enum overload is fail-closed"
+  improvement_2="OZ log2 tests value>>128 and value>>64; those shifts are UB on C uint64_t. LIN/C11 skip them on the i64 profile"
+  improvement_3="ceil path uses remainder-safe ozs_sq_lt instead of wrapping result*result < a"
+  improvement_4="negative inputs fail-closed to 0; Newton step fail-closes on result==0 rather than dividing by zero"
+  improvement_5="default lin_c0 vm rejects << >> (VM_REJ_SHIFT); clone uses _lia_shl/_lia_ushr so in-memory compile runs"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/oz_sqrt_c11.c (gcc -O2 -std=c11, integer Newton, no libc sqrt)"
+  gate="test/verify_oz_sqrt.sh"
+}
+
+.p{
+  harness="test/prove_oz_sqrt_external.py"
+  evidence_json="examples/oz_sqrt/oz_sqrt_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-oz-sqrt"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet OpenZeppelin parity"
+  not_claimed_2="LIN is faster than solc or the EVM"
+  not_claimed_3="this clone is a production Math.sol replacement"
+  not_claimed_4="IEEE-754 / libc sqrt"
+  not_claimed_5="Math.mulDiv assembly (REJ_SOLIDITY_INLINE_ASM)"
+  not_claimed_6="lin_c0 executes sol_from_sol (string-literal modules remain VM_REJ_STRING_LITERAL)"
+}
+
+.v{
+  method="PINNED_BYTES && LIVE_SUBSTRING && C11_EQ_LIN_EQ_PY_ISQRT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

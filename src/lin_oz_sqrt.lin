@@ -1,0 +1,133 @@
+@LIN:L1c:0.2
+@OZ_MATH_SQRT{
+  version=1
+  repo="OpenZeppelin/openzeppelin-contracts"
+  source="contracts/utils/math/Math.sol"
+  license="MIT"
+  tag="v5.0.2"
+  commit="dbb6104ce834628e473d2173bbc9d47f81a9eec3"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_openzeppelin_log2_newton_sqrt"
+  note="Not Solidity uint256. Non-negative i64 operands. OZ >>128/>>64 skipped: C uint64 shift-by-width is UB. Rounding is an explicit 0/1 int, not an enum. Square-compare is remainder-safe, not a wrapping multiply."
+}
+
+!ozs_min(a: int, b: int) -> int {
+  ?(a < b) { ^ a; };
+  ^ b;
+}
+
+!ozs_rounds_up(rounding: int) -> int {
+  q = rounding / 2;
+  m = rounding - (q * 2);
+  ?(m == 1) { ^ 1; };
+  ?(m == -1) { ^ 1; };
+  ^ 0;
+}
+
+!ozs_log2(value: int) -> int {
+  ?(value <= 0) { ^ 0; };
+  result = 0;
+  ?( _lia_ushr(value, 32) > 0 ) {
+    value = _lia_ushr(value, 32);
+    result = result + 32;
+  };
+  ?( _lia_ushr(value, 16) > 0 ) {
+    value = _lia_ushr(value, 16);
+    result = result + 16;
+  };
+  ?( _lia_ushr(value, 8) > 0 ) {
+    value = _lia_ushr(value, 8);
+    result = result + 8;
+  };
+  ?( _lia_ushr(value, 4) > 0 ) {
+    value = _lia_ushr(value, 4);
+    result = result + 4;
+  };
+  ?( _lia_ushr(value, 2) > 0 ) {
+    value = _lia_ushr(value, 2);
+    result = result + 2;
+  };
+  ?( _lia_ushr(value, 1) > 0 ) {
+    result = result + 1;
+  };
+  ^ result;
+}
+
+!ozs_newton_step(a: int, result: int) -> int {
+  ?(result == 0) { ^ 0; };
+  ^ _lia_ushr(result + (a / result), 1);
+}
+
+!ozs_sqrt(a: int) -> int {
+  ?(a <= 0) { ^ 0; };
+  lg = ozs_log2(a);
+  result = _lia_shl(1, _lia_ushr(lg, 1));
+  ?(result == 0) { ^ 0; };
+  result = ozs_newton_step(a, result);
+  result = ozs_newton_step(a, result);
+  result = ozs_newton_step(a, result);
+  result = ozs_newton_step(a, result);
+  result = ozs_newton_step(a, result);
+  result = ozs_newton_step(a, result);
+  result = ozs_newton_step(a, result);
+  ?(result == 0) { ^ 0; };
+  ^ ozs_min(result, a / result);
+}
+
+!ozs_sq_lt(result: int, a: int) -> int {
+  ?(a <= 0) { ^ 0; };
+  ?(result <= 0) { ^ 1; };
+  q = a / result;
+  r = a - (q * result);
+  ?(q > result) { ^ 1; };
+  ?(q == result) {
+    ?(r != 0) { ^ 1; };
+    ^ 0;
+  };
+  ^ 0;
+}
+
+!ozs_sqrt_round(a: int, rounding: int) -> int {
+  result = ozs_sqrt(a);
+  ?(ozs_rounds_up(rounding) == 0) { ^ result; };
+  ?(ozs_sq_lt(result, a) == 0) { ^ result; };
+  ^ result + 1;
+}
+
+!ozs_test_suite() -> int {
+  ?(ozs_min(3, 5) != 3) { ^ -1; };
+  ?(ozs_sqrt(0) != 0) { ^ -2; };
+  ?(ozs_sqrt(1) != 1) { ^ -3; };
+  ?(ozs_sqrt(10) != 3) { ^ -4; };
+  ?(ozs_sqrt(81) != 9) { ^ -5; };
+  ?(ozs_sqrt(82) != 9) { ^ -6; };
+  ?(ozs_log2(0) != 0) { ^ -7; };
+  ?(ozs_log2(1) != 0) { ^ -8; };
+  ?(ozs_log2(2) != 1) { ^ -9; };
+  ?(ozs_log2(1024) != 10) { ^ -10; };
+  ?(ozs_sqrt_round(10, 1) != 4) { ^ -11; };
+  ?(ozs_sqrt_round(9, 1) != 3) { ^ -12; };
+  ?(ozs_sqrt_round(10, 0) != 3) { ^ -13; };
+  ?(ozs_sqrt(1000000000000000000) != 1000000000) { ^ -14; };
+  ?(ozs_sqrt(4611686018427387904) != 2147483648) { ^ -15; };
+  ?(ozs_sqrt(9223372036854775807) != 3037000499) { ^ -16; };
+  ?(ozs_rounds_up(0) != 0) { ^ -17; };
+  ?(ozs_rounds_up(1) != 1) { ^ -18; };
+  ?(ozs_rounds_up(2) != 0) { ^ -19; };
+  ?(ozs_rounds_up(3) != 1) { ^ -20; };
+  ?(ozs_sq_lt(3, 10) != 1) { ^ -21; };
+  ?(ozs_sq_lt(3, 9) != 0) { ^ -22; };
+  ^ 1;
+}
+
+=ex{
+  ozs_min,
+  ozs_rounds_up,
+  ozs_log2,
+  ozs_newton_step,
+  ozs_sqrt,
+  ozs_sq_lt,
+  ozs_sqrt_round,
+  ozs_test_suite
+}

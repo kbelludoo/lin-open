@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN changelog="v2: REJ_C_FLOAT on libc sqrt( and long double; integer Newton sqrt stays eligible"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -39,8 +39,20 @@
   ?(rg_count_lit(sig, "union") > 0 || rg_count_lit(body, "union") > 0){ ^"REJ_C_UNION" };
   ?(rg_count_lit(sig, "float") > 0 || rg_count_lit(body, "float") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(sig, "double") > 0 || rg_count_lit(body, "double") > 0){ ^"REJ_C_FLOAT" };
+  ?(cfs_call_of(body, "sqrt") == 1 || cfs_call_of(body, "sqrtf") == 1 || cfs_call_of(body, "sqrtl") == 1){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(body, "goto") > 0){ ^"REJ_C_GOTO" };
   ^"OK";
+}
+
+!cfs_call_of(s: string, nm: string): int {
+  n = s.length;
+  m = nm.length;
+  i = 0;
+  while (i < n) {
+    ?(starts_lit(s, i, nm) == 1 && i + m < n && s.charCodeAt(i + m) == 40 && (i == 0 || is_ident(s.charCodeAt(i - 1)) == false)) { ^1 };
+    i = i + 1;
+  };
+  ^0;
 }
 
 !cfs_atom_left(s: string, at: int): int {
