@@ -1,0 +1,141 @@
+{
+  "schema": "LIN_OZ_SQRT_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned Math_sqrt_log2.sol sha256 matches harness",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of OpenZeppelin v5.0.2 Math.sol matches pin",
+      "note": "commit=dbb6104ce834628e473d2173bbc9d47f81a9eec3 blob=9681524529b34f34033ae97064a2700bfc4eec00"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of contracts/utils/math/Math.sol",
+      "note": ""
+    },
+    {
+      "id": "EXCERPT-IN-LIVE",
+      "status": "PASS",
+      "description": "excerpt function signatures are substrings of live Math.sol",
+      "note": ""
+    },
+    {
+      "id": "NEWTON-IN-LIVE",
+      "status": "PASS",
+      "description": "live Math.sol still has log2 initial guess + 7 Newton steps",
+      "note": ""
+    },
+    {
+      "id": "EXCERPT-NO-ASM",
+      "status": "PASS",
+      "description": "sqrt/log2 excerpt has no inline assembly (mulDiv is out of scope)",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 oracle selftest (no libc sqrt)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_oz_sqrt.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler (sqrt( is REJ_C_FLOAT)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "ozs_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "22/22 vectors: C11 == LIN vm == Python isqrt/bit_length",
+      "note": ""
+    },
+    {
+      "id": "VEC-ROUND",
+      "status": "PASS",
+      "description": "ceil/floor rounding: C11 == LIN == Python (odd enum rounds up)",
+      "note": ""
+    },
+    {
+      "id": "SAFE-SQ",
+      "status": "PASS",
+      "description": "ceil path uses remainder-safe ozs_sq_lt, not wrapping multiply",
+      "note": ""
+    },
+    {
+      "id": "NO-SHIFT-TOK",
+      "status": "PASS",
+      "description": "clone uses _lia_shl/_lia_ushr (default lin_c0 vm rejects << >>)",
+      "note": ""
+    },
+    {
+      "id": "SOL-SHIFTS",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3: shifts, unchecked strip, POW/ENUM reject",
+      "note": ""
+    },
+    {
+      "id": "C-SQRT-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes libc sqrt( as REJ_C_FLOAT",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ROUND",
+      "status": "PASS",
+      "description": "LIN clone takes rounding as int; Solidity enum is REJ_SOLIDITY_ENUM",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/OpenZeppelin/openzeppelin-contracts",
+    "tag": "v5.0.2",
+    "commit": "dbb6104ce834628e473d2173bbc9d47f81a9eec3",
+    "path": "contracts/utils/math/Math.sol",
+    "git_blob_sha": "9681524529b34f34033ae97064a2700bfc4eec00",
+    "file_sha256": "a6ee779fc42e6bf01b5e6a963065706e882b016affbedfd8be19a71ea48e6e15",
+    "excerpt_sha256": "c01c219d2ea425653f0bd8ba58c74368cbe0fd1cbd3e3a9424a10dfb4258726d",
+    "license": "MIT"
+  },
+  "lin_clone": "src/lin_oz_sqrt.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-oz-sqrt",
+  "c11_oracle": "test/oracles/oz_sqrt_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "sqrt(10)": 3,
+    "sqrt_round(10,1)": 4,
+    "sqrt(1e18)": 1000000000,
+    "sqrt(2^62)": 2147483648,
+    "sqrt(INT64_MAX)": 3037000499
+  }
+}
