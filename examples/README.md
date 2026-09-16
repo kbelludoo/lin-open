@@ -3,6 +3,9 @@
 Este diretório contém exemplos reais, práticos e executáveis do ecossistema LIN.
 Diferente de linguagens convencionais (onde o código é executado e o resultado precisa ser aceito por "confiança cega"), no LIN toda computação é determinística e gera um **Recibo Criptográfico SHA-256 (LCR)** auditável por qualquer pessoa, regulador ou contrato inteligente sem confiar no servidor.
 
+**Produto atual (EXPERIMENTAL):** co-processador numérico u512 com recibo LNR1 — `mulDiv(a,b,d)=(a*b)/d` com intermediário de 512 bits, oráculos Python/C11, auditor sem LIN. Não substitui Uniswap. Ver [`u512_coprocessor/README.md`](./u512_coprocessor/README.md) e `make u512-coprocessor-proof`.
+
+
 ---
 
 ## Como Rodar as Demonstrações (1 Comando)
