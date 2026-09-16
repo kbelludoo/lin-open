@@ -1,0 +1,159 @@
+{
+  "schema": "LIN_LND_COMPUTEFEE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned lnd_cached_edge_policy.go sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned lnd_inbound_fee.go sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned lnd_inbound_fee_test.go sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned lnd tag matches fixtures",
+      "note": "commit=572b561bf05f03dfe6135110970c4d858c3482dc"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of ComputeFee / CalcFee sources",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_lnd_computefee.lin",
+      "note": ""
+    },
+    {
+      "id": "GO-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_go.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "lnf_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "11/11 vectors: C11 i128 == limbs == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "Python arbitrary-precision int matches C11 and LIN on fee/inbound goldens",
+      "note": ""
+    },
+    {
+      "id": "OZ-INBOUND",
+      "status": "PASS",
+      "description": "lnd inbound_fee_test.go goldens: +6/+6 and -6/-6 with toward-zero rounding",
+      "note": ""
+    },
+    {
+      "id": "GO-WRAP",
+      "status": "PASS",
+      "description": "naive Go uint64 (2^32*2^32)/1e6 wraps; LIN 128-bit muldiv does not",
+      "note": "go_wrap=0 lin=18446744073709"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes base/ppm/amt as arguments (no hidden receiver fields)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv (Go amt*ppm wraps uint64)",
+      "note": ""
+    },
+    {
+      "id": "GO-EMIT",
+      "status": "PASS",
+      "description": "lin_from_go.lin emits LIN, expands 1eN, strips numeric underscores",
+      "note": ""
+    },
+    {
+      "id": "RS-EMIT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2: && is not a borrow; emit + underscore/as-cast strip",
+      "note": ""
+    },
+    {
+      "id": "C-CXX-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 fail-closes C++ :: and signature &",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/lightningnetwork/lnd",
+    "tag": "v0.21.3-beta",
+    "commit": "572b561bf05f03dfe6135110970c4d858c3482dc",
+    "license": "MIT",
+    "files": {
+      "cached_edge_policy.go": {
+        "path": "graph/db/models/cached_edge_policy.go",
+        "git_blob_sha": "90c8d56c3992af17a58c1d21f3c156e9ffbce0a2",
+        "file_sha256": "22b438d786fa529bf336a66b9c885987e2c168b07c91a3981e95c49f1f5a292e"
+      },
+      "inbound_fee.go": {
+        "path": "graph/db/models/inbound_fee.go",
+        "git_blob_sha": "7158b49076818f8c86e35d94f302277394a24f29",
+        "file_sha256": "49feaf334359376dee1ab78ab78443544d8ec1bed5baa8c470be91a92840f150"
+      },
+      "inbound_fee_test.go": {
+        "path": "graph/db/models/inbound_fee_test.go",
+        "git_blob_sha": "58adfb4d9f6e1393db2d6c4d8d99fa2abfc324d1",
+        "file_sha256": "287ecbac5450aa3405e68eb89d9578a95ebc2260c7013d54a51e81096688af6c"
+      }
+    }
+  },
+  "lin_clone": "src/lin_lnd_computefee.lin",
+  "c11_oracle": "test/oracles/lnd_computefee_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-lnd-computefee",
+  "bolt07": "fee = base_msat + (amt_msat * fee_proportional_millionths) / 1_000_000"
+}

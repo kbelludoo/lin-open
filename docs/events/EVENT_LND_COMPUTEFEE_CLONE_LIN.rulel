@@ -1,0 +1,66 @@
+@RULEL:LND_COMPUTEFEE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-LND-BOLT07-COMPUTEFEE"
+@TITLE="Clone-lin of lnd BOLT07 ComputeFee with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-lnd-computefee"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile lnd HTLC forwarding-fee math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed by a Lightning node"
+  operand_width="uint64 inputs, 128-bit product for (a*b)/1e6; Go uint64 wrap is NOT reproduced"
+  commercial_hook="BOLT07 fees are how Lightning routing nodes price forwarded HTLCs; making receiver fields explicit and replacing wrapping uint64 multiply with 128-bit muldiv is an audit improvement, not a TVL or routing-node claim"
+}
+
+.u{
+  repo="https://github.com/lightningnetwork/lnd"
+  tag="v0.21.3-beta"
+  commit="572b561bf05f03dfe6135110970c4d858c3482dc"
+  path_fee="graph/db/models/cached_edge_policy.go"
+  path_inbound="graph/db/models/inbound_fee.go"
+  license="MIT"
+  git_blob_fee="90c8d56c3992af17a58c1d21f3c156e9ffbce0a2"
+  git_blob_inbound="7158b49076818f8c86e35d94f302277394a24f29"
+  file_sha256_fee="22b438d786fa529bf336a66b9c885987e2c168b07c91a3981e95c49f1f5a292e"
+  file_sha256_inbound="49feaf334359376dee1ab78ab78443544d8ec1bed5baa8c470be91a92840f150"
+  fixture_fee="test/fixtures/external_proof/lnd_cached_edge_policy.go"
+  fixture_inbound="test/fixtures/external_proof/lnd_inbound_fee.go"
+}
+
+.l{
+  clone="src/lin_lnd_computefee.lin"
+  transpiler_delta="src/lin_from_go.lin v1 emit+1eN+underscores; src/lin_from_rust.lin v2 &&-not-borrow + rs_from_rs; src/lin_from_c.lin v2 REJ_C_CXX_SCOPE/REJ_C_REFERENCE"
+  improvement_1="ComputeFee is a method on CachedEdgePolicy; LIN takes base/ppm/amt as arguments"
+  improvement_2="Go (amt*ppm)/1e6 wraps uint64; LIN uses schoolbook 128-bit muldiv matching C11 __int128"
+  improvement_3="quotient or fee-add that does not fit uint64 fail-closes to 0"
+  improvement_4="inbound CalcFee keeps Go toward-zero rounding and the +/-10x rate cap from inbound_fee.go"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/lnd_computefee_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_lnd_computefee.sh"
+}
+
+.p{
+  harness="test/prove_lnd_computefee_external.py"
+  evidence_json="examples/lnd_computefee/lnd_computefee_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-lnd-computefee"
+}
+
+.n{
+  not_claimed_1="LIN is an lnd / LDK routing node"
+  not_claimed_2="gossip, onion, or HTLC state-machine parity"
+  not_claimed_3="LIN is faster than Go or LLVM"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Lightning, Bitcoin, or the EVM"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

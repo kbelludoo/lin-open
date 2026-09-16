@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN changelog="v2: REJ_C_CXX_SCOPE for :: ; REJ_C_REFERENCE for & in signature"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -35,6 +35,8 @@
 !cfs_reason(sig: string, body: string): string {
   ?(rg_count_lit(sig, "*") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(body, "->") > 0){ ^"REJ_C_POINTER" };
+  ?(rg_count_lit(sig, "::") > 0 || rg_count_lit(body, "::") > 0){ ^"REJ_C_CXX_SCOPE" };
+  ?(rg_count_lit(sig, "&") > 0){ ^"REJ_C_REFERENCE" };
   ?(rg_count_lit(sig, "struct") > 0 || rg_count_lit(body, "struct") > 0){ ^"REJ_C_STRUCT" };
   ?(rg_count_lit(sig, "union") > 0 || rg_count_lit(body, "union") > 0){ ^"REJ_C_UNION" };
   ?(rg_count_lit(sig, "float") > 0 || rg_count_lit(body, "float") > 0){ ^"REJ_C_FLOAT" };
