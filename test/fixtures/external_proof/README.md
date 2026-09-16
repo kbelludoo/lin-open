@@ -11,6 +11,9 @@ independent proof harness. They are **test fixtures**, not vendored libraries.
 | `qoi.h` | [phoboslab/qoi](https://github.com/phoboslab/qoi) | MIT |
 | `tinyexpr.c` | [codeplea/tinyexpr](https://github.com/codeplea/tinyexpr) | zlib |
 | `BaseJumpRateModelV2.sol` | [compound-finance/compound-protocol](https://github.com/compound-finance/compound-protocol) | BSD-3-Clause |
+| `eip4844.go` | [ethereum/go-ethereum](https://github.com/ethereum/go-ethereum) | LGPL-3.0 |
+| `eip7918_scalar.c` | original pointer-free C11 subset (not Geth) | CC0-1.0 (this tree) |
+| `eip7918_scalar.go` | original pointer-free Go subset (not Geth) | CC0-1.0 (this tree) |
 
 They are only pinned so an auditor can hash the exact bytes and, with `--fetch`,
 re-download them from the GitHub Contents API. No upstream code is compiled or

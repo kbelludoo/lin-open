@@ -1,0 +1,146 @@
+{
+  "schema": "LIN_GETH_EIP7918_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned eip4844.go sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned go-ethereum commit matches fixture",
+      "note": "commit=24dd23631661017452cfc7bcd07c114d3796cd65 blob=add85092c2ec0be391176b72c4431b5d1d9896b8"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of eip4844.go",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb EIP-7918 agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_geth_eip7918.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "GO-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_go.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "e7918_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "8/8 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-RESERVE",
+      "status": "PASS",
+      "description": "Python bigint BelowReservePrice == 262144 (blobGasTarget*3/9)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes excess/used/base_fee/blob_fee/target/max as arguments (no *Header)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-RESERVE",
+      "status": "PASS",
+      "description": "reserve-price compare is 128-bit product, not wrapping i64",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "BlobBaseCost*1.2e15 overflows signed i64; 128-bit reserve_gt still 1 vs blob_fee=1",
+      "note": "i64_wrap=-8616344073709551616 bigint=9830400000000000000"
+    },
+    {
+      "id": "C-EMIT-V2",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 rejects :: and lone & (&& is not a reference)",
+      "note": ""
+    },
+    {
+      "id": "GO-EMIT",
+      "status": "PASS",
+      "description": "lin_from_go.lin emits scalar Go and rejects Geth pointers/selectors",
+      "note": ""
+    },
+    {
+      "id": "C-RULES",
+      "status": "PASS",
+      "description": "Python fail-closed oracle: :: / lone & / && match lin_from_c v2",
+      "note": ""
+    },
+    {
+      "id": "SCALAR-C",
+      "status": "PASS",
+      "description": "eip7918_scalar.c is eligible under lin_from_c v2",
+      "note": ""
+    },
+    {
+      "id": "GETH-REJ",
+      "status": "PASS",
+      "description": "Geth *Header / nil / selector body is REJ_GO_* (not silently lowered)",
+      "note": ""
+    },
+    {
+      "id": "SCALAR-GO",
+      "status": "PASS",
+      "description": "eip7918_scalar.go is eligible under lin_from_go",
+      "note": ""
+    },
+    {
+      "id": "GETH-SOURCE",
+      "status": "PASS",
+      "description": "pinned Geth still uses *Header and BlobBaseCost (clone does not)",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/ethereum/go-ethereum",
+    "commit": "24dd23631661017452cfc7bcd07c114d3796cd65",
+    "path": "consensus/misc/eip4844/eip4844.go",
+    "git_blob_sha": "add85092c2ec0be391176b72c4431b5d1d9896b8",
+    "file_sha256": "c8b68e4f32cef33e9420648344edc8fa3bb5d5cb42de22fbf0b34bea5dbdf63c",
+    "license": "LGPL-3.0"
+  },
+  "lin_clone": "src/lin_geth_eip7918.lin",
+  "c11_oracle": "test/oracles/geth_eip7918_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "below_reserve_prague": 262144,
+  "geth_test_bpo1": 5617366,
+  "geth_test_bpo3": 20107103
+}

@@ -1,0 +1,32 @@
+@RULEL:GETH_EIP7918_CLONE:1.0.0
+# Results-only record. The LIN clone lives in src/lin_geth_eip7918.lin.
+# Separate clone-lin copy: https://github.com/kbelludoo/clone-lin-geth-eip7918
+
+~R{.u=upstream .g=goldens .i=improvements .n=not_claimed}
+
+.u{
+  repo="ethereum/go-ethereum"
+  file="consensus/misc/eip4844/eip4844.go"
+  commit="24dd23631661017452cfc7bcd07c114d3796cd65"
+  license="LGPL-3.0"
+  class="EXPERIMENTAL"
+}
+
+.g{
+  prague_below_reserve="parent_excess=0 used=6*131072 base_fee=1e9 -> 262144 (blobGasTarget*3/9)"
+  prague_above_reserve="same used, base_fee=1 -> 0 (Cancun formula, not below target)"
+  bpo1="5149252,1310720,base_fee=30,target=9,max=14,frac=8832827 -> 5617366"
+  bpo3="19251039,2490368,base_fee=50,target=21,max=32,frac=20609697 -> 20107103"
+  fake_exp="(1,50000000,2225652)=5709098764 matches Geth TestFakeExponential"
+}
+
+.i{
+  explicit_args="no *types.Header / *big.Int"
+  wide_mul="128-bit reserve compare and muldiv"
+  fail_closed="uint64 overflow and fakeExponential non-fit return 0"
+}
+
+.n{
+  not_big_int="Geth unbounded big.Int is not claimed"
+  not_mainnet="not a replica of every Osaka mainnet header"
+}

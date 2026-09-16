@@ -1,0 +1,203 @@
+@LIN:L1c:0.2
+@LIN_FROM_GO{
+  version=1
+  purpose="extract_pure_scalar_go_functions_to_lin"
+  profile="LINVM-1"
+  status="EXPERIMENTAL_V1"
+  note="Geth *Header / *big.Int / selectors are REJ. Eligible subset is uint64 locals only."
+}
+
+!go_is_kw(nm: string): int {
+  ?(starts_lit(nm, 0, "func") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "return") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2) { ^1 };
+  ?(starts_lit(nm, 0, "else") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "for") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "range") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "package") == 1 && nm.length == 7) { ^1 };
+  ^0;
+}
+
+!go_is_type(nm: string): int {
+  ?(starts_lit(nm, 0, "uint64") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "uint32") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "uint16") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "uint8") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "int64") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "int32") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "int16") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "int8") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "uint") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "int") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "bool") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "byte") == 1 && nm.length == 4) { ^1 };
+  ^0;
+}
+
+!go_count_ref(s: string): int {
+  n = s.length;
+  i = 0;
+  c = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) == 38) {
+      ?(i + 1 < n && s.charCodeAt(i + 1) == 38) { i = i + 2; continue };
+      c = c + 1;
+    };
+    i = i + 1;
+  };
+  ^c;
+}
+
+!go_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "*") > 0) { ^"REJ_GO_POINTER" };
+  ?(go_count_ref(sig) > 0 || go_count_ref(body) > 0) { ^"REJ_GO_ADDRESS" };
+  ?(rg_count_lit(sig, "[]") > 0 || rg_count_lit(body, "[]") > 0) { ^"REJ_GO_SLICE" };
+  ?(rg_count_lit(body, "chan ") > 0 || rg_count_lit(sig, "chan ") > 0) { ^"REJ_GO_CHANNEL" };
+  ?(rg_count_lit(body, "interface") > 0) { ^"REJ_GO_INTERFACE" };
+  ?(rg_count_lit(body, "map[") > 0) { ^"REJ_GO_MAP" };
+  ?(rg_count_lit(body, "make(") > 0) { ^"REJ_GO_HEAP" };
+  ?(rg_count_lit(body, "new(") > 0) { ^"REJ_GO_HEAP" };
+  ?(rg_count_lit(body, "defer ") > 0) { ^"REJ_GO_DEFER" };
+  ?(rg_count_lit(body, "go ") > 0) { ^"REJ_GO_GOROUTINE" };
+  ?(rg_count_lit(body, "nil") > 0) { ^"REJ_GO_POINTER" };
+  ?(rg_count_lit(body, ".") > 0) { ^"REJ_GO_SELECTOR" };
+  ?(rg_count_lit(sig, "float64") > 0 || rg_count_lit(body, "float64") > 0) { ^"REJ_GO_FLOAT" };
+  ?(rg_count_lit(sig, "float32") > 0 || rg_count_lit(body, "float32") > 0) { ^"REJ_GO_FLOAT" };
+  ^"OK";
+}
+
+!go_parse_test_gate(): int {
+  sig_ok = "func ScaledExcess(used uint64, max uint64, target uint64) uint64";
+  body_ok = "return used * (max - target) / max";
+  r1 = go_reason(sig_ok, body_ok);
+  ?(r1.length != 2) { ^0 };
+  sig_bad = "func calcExcessBlobGas(isOsaka bool, bcfg BlobConfig, parent *types.Header) uint64";
+  body_bad = "if parent.ExcessBlobGas != nil { return *parent.ExcessBlobGas }";
+  r2 = go_reason(sig_bad, body_bad);
+  ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 };
+  ^1;
+}
+
+!go_pdecl(params: string): string {
+  out = "";
+  n = params.length;
+  i = 0;
+  seen = 0;
+  id = "";
+  last = "";
+  while (i < n) {
+    id = read_ident(params, i);
+    ?(id.length > 0) {
+      ?(go_is_type(id) == 0 && go_is_kw(id) == 0) { last = id };
+      i = i + id.length;
+      continue;
+    };
+    ?(params.charCodeAt(i) == 44 || i + 1 >= n) {
+      ?(last.length > 0) {
+        ?(seen == 1) { out = out + ", " };
+        out = out + last;
+        out = out + ": int";
+        seen = 1;
+        last = "";
+      };
+    };
+    i = i + 1;
+  };
+  ?(last.length > 0) {
+    ?(seen == 1) { out = out + ", " };
+    out = out + last;
+    out = out + ": int";
+  };
+  ^out;
+}
+
+!go_stmt(st: string): string {
+  e = jss_trim(st);
+  n = e.length;
+  ?(n == 0) { ^""; };
+  ?(starts_lit(e, 0, "return") == 1 && (n == 6 || is_ident(e.charCodeAt(6)) == false)) {
+    ^ "^" + jss_trim(slice2(e, 6, n));
+  };
+  ?(starts_lit(e, 0, "if") == 1 && n > 2 && is_ident(e.charCodeAt(2)) == false) {
+    p = skip_ws(e, 2);
+    ?(p < n && e.charCodeAt(p) == 123) {
+      ^ "?(" + slice2(e, 2, p) + ") { " + go_stmt(jss_trim(slice2(e, p + 1, n))) + " }";
+    };
+  };
+  ^e;
+}
+
+!go_fn(nm: string, params: string, body: string): string {
+  out = "";
+  out = out + "!";
+  out = out + nm;
+  out = out + "(";
+  out = out + go_pdecl(params);
+  out = out + ") -> int {";
+  out = out + rgs_ch(10);
+  out = out + "  ";
+  out = out + go_stmt(jss_trim(body));
+  out = out + ";";
+  out = out + rgs_ch(10);
+  out = out + "}";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+!go_from_go(src: string): string {
+  pass = jss_trim(jss_strip_comments(src));
+  out = "";
+  out = jss_ln(out, "@LIN:L1c:0.2");
+  out = jss_ln(out, "@FROM_GO{source=transpiled scope=scalar_uint64}");
+  out = jss_ln(out, "");
+  n = pass.length;
+  i = 0;
+  names = "";
+  while (i < n) {
+    ?(starts_lit(pass, i, "func") == 1 && (i == 0 || is_ident(pass.charCodeAt(i - 1)) == false) && (i + 4 >= n || is_ident(pass.charCodeAt(i + 4)) == false)) {
+      p = skip_ws(pass, i + 4);
+      nm = read_ident(pass, p);
+      ?(nm.length > 0) {
+        p = skip_ws(pass, p + nm.length);
+        ?(p < n && pass.charCodeAt(p) == 40) {
+          cl = match_paren(pass, p);
+          ?(cl > p) {
+            b = skip_ws(pass, cl + 1);
+            while (b < n && pass.charCodeAt(b) != 123) { b = b + 1 };
+            ?(b < n && pass.charCodeAt(b) == 123) {
+              cb = match_brace(pass, b);
+              ?(cb > b) {
+                pr = slice2(pass, p + 1, cl);
+                bd = slice2(pass, b + 1, cb);
+                sig = slice2(pass, i, b);
+                reason = go_reason(sig, bd);
+                ?(starts_lit(reason, 0, "OK") == 1 && reason.length == 2) {
+                  out = out + go_fn(nm, pr, bd);
+                  names = rgs_csv_add(names, nm);
+                };
+                i = cb + 1;
+                continue;
+              };
+            };
+          };
+        };
+      };
+    };
+    i = i + 1;
+  };
+  out = out + "=ex{";
+  out = out + names;
+  out = out + "}";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+!go_from_go_gate(): int {
+  src = "func ScaledExcess(used uint64, max uint64, target uint64) uint64 { return used * (max - target) / max }";
+  out = go_from_go(src);
+  ?(starts_lit(out, 0, "@LIN") == 0) { ^0 };
+  ?(rg_count_lit(out, "ScaledExcess") == 0) { ^0 };
+  ^1;
+}
+
+=ex{go_is_kw, go_is_type, go_count_ref, go_reason, go_parse_test_gate, go_from_go, go_from_go_gate}

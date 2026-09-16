@@ -1,0 +1,281 @@
+@LIN:L1c:0.2
+@GETH_EIP7918{
+  version=1
+  repo="ethereum/go-ethereum"
+  source="consensus/misc/eip4844/eip4844.go"
+  license="LGPL-3.0"
+  commit="24dd23631661017452cfc7bcd07c114d3796cd65"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_osaka_eip7918_reserve_price_excess_blob_gas"
+  note="Not Geth big.Int. Header pointers become arguments. (a*b)/d uses 128-bit product; fakeExponential intermediates that do not fit uint64 fail-closed to 0 (min blob fee is 1)."
+}
+
+!e7918_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!e7918_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(e7918_u_lt(s, a));
+}
+
+!e7918_mask32() -> int {
+  ^ 4294967295;
+}
+
+!e7918_gas_per_blob() -> int {
+  ^ 131072;
+}
+
+!e7918_blob_base_cost() -> int {
+  ^ 8192;
+}
+
+!e7918_cancun_target() -> int { ^ 3; };
+!e7918_cancun_max() -> int { ^ 6; };
+!e7918_cancun_frac() -> int { ^ 3338477; };
+!e7918_prague_target() -> int { ^ 6; };
+!e7918_prague_max() -> int { ^ 9; };
+!e7918_prague_frac() -> int { ^ 5007716; };
+
+!e7918_muldiv_part(a: int, b: int, d: int, want_rem: int) -> int {
+  ?(d == 0) { ^ 0; };
+  m32 = e7918_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = e7918_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = e7918_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(e7918_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = e7918_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 2) { ^ ov; };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!e7918_muldiv(a: int, b: int, d: int) -> int {
+  ^ e7918_muldiv_part(a, b, d, 0);
+}
+
+!e7918_muldiv_ov(a: int, b: int, d: int) -> int {
+  ?(d == 0) { ^ 1; };
+  ^ e7918_muldiv_part(a, b, d, 2);
+}
+
+!e7918_mul_hi(a: int, b: int) -> int {
+  m32 = e7918_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = e7918_u_add_carry(p1, p2);
+  t = _lia_shl(mid & m32, 32);
+  lo = p0 + t;
+  lo_carry = e7918_u_add_carry(p0, t);
+  hi = p3 + _lia_ushr(mid, 32);
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  ^ hi;
+}
+
+!e7918_mul_lo(a: int, b: int) -> int {
+  m32 = e7918_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  mid = p1 + p2;
+  t = _lia_shl(mid & m32, 32);
+  ^ p0 + t;
+}
+
+!e7918_u128_gt(ahi: int, alo: int, bhi: int, blo: int) -> int {
+  ?(ahi != bhi) {
+    ?(e7918_u_lt(bhi, ahi) == 1) { ^ 1; };
+    ^ 0;
+  };
+  ^(e7918_u_lt(blo, alo));
+}
+
+!e7918_reserve_gt(base_cost: int, base_fee: int, blob_fee: int, gas: int) -> int {
+  ^(e7918_u128_gt(e7918_mul_hi(base_cost, base_fee), e7918_mul_lo(base_cost, base_fee), e7918_mul_hi(blob_fee, gas), e7918_mul_lo(blob_fee, gas)));
+}
+
+!e7918_add128(hi: int, lo: int, x: int) -> int {
+  s = lo + x;
+  c = e7918_u_add_carry(lo, x);
+  nhi = hi + c;
+  ?(c == 1 && e7918_u_lt(nhi, hi) == 1) { ^ -1; };
+  ^ nhi;
+}
+
+!e7918_fake_exp(factor: int, numerator: int, denominator: int) -> int {
+  ?(denominator == 0) { ^ 0; };
+  ?(factor < 0 || numerator < 0 || denominator < 0) { ^ 0; };
+  ?(e7918_muldiv_ov(factor, denominator, 1) == 1) { ^ 0; };
+  accum = e7918_muldiv(factor, denominator, 1);
+  out_lo = 0;
+  out_hi = 0;
+  i = 1;
+  while (i <= 256) {
+    ?(accum == 0) {
+      ?(out_hi != 0) { ^ 0; };
+      ^ e7918_muldiv(out_lo, 1, denominator);
+    };
+    nlo = out_lo + accum;
+    nhi = e7918_add128(out_hi, out_lo, accum);
+    ?(nhi < 0) { ^ 0; };
+    out_lo = nlo;
+    out_hi = nhi;
+    ?(e7918_muldiv_ov(accum, numerator, denominator) == 1) { ^ 0; };
+    t = e7918_muldiv(accum, numerator, denominator);
+    ?(e7918_muldiv_ov(t, 1, i) == 1) { ^ 0; };
+    accum = e7918_muldiv(t, 1, i);
+    i = i + 1;
+  };
+  ^ 0;
+}
+
+!e7918_blob_fee(excess: int, fraction: int) -> int {
+  ^ e7918_fake_exp(1, excess, fraction);
+}
+
+!e7918_scaled_excess(used: int, maxv: int, target: int) -> int {
+  ?(maxv == 0) { ^ 0; };
+  ?(e7918_u_lt(maxv, target) == 1) { ^ 0; };
+  ^ e7918_muldiv(used, maxv - target, maxv);
+}
+
+!e7918_cancun(parent_excess: int, parent_used: int, target: int) -> int {
+  gas = e7918_gas_per_blob();
+  ?(e7918_muldiv_ov(target, gas, 1) == 1) { ^ 0; };
+  target_gas = e7918_muldiv(target, gas, 1);
+  ?(e7918_u_add_carry(parent_excess, parent_used) == 1) { ^ 0; };
+  s = parent_excess + parent_used;
+  ?(e7918_u_lt(s, target_gas) == 1) { ^ 0; };
+  ^ s - target_gas;
+}
+
+!e7918_osaka(parent_excess: int, parent_used: int, base_fee: int, blob_fee: int, target: int, maxv: int) -> int {
+  gas = e7918_gas_per_blob();
+  cost = e7918_blob_base_cost();
+  ?(e7918_muldiv_ov(target, gas, 1) == 1) { ^ 0; };
+  target_gas = e7918_muldiv(target, gas, 1);
+  ?(e7918_u_add_carry(parent_excess, parent_used) == 1) { ^ 0; };
+  s = parent_excess + parent_used;
+  ?(e7918_u_lt(s, target_gas) == 1) { ^ 0; };
+  ?(e7918_reserve_gt(cost, base_fee, blob_fee, gas) == 1) {
+    sc = e7918_scaled_excess(parent_used, maxv, target);
+    ?(e7918_u_add_carry(parent_excess, sc) == 1) { ^ 0; };
+    ^ parent_excess + sc;
+  };
+  ^ s - target_gas;
+}
+
+!e7918_osaka_from_excess(parent_excess: int, parent_used: int, base_fee: int, target: int, maxv: int, fraction: int) -> int {
+  bf = e7918_blob_fee(parent_excess, fraction);
+  ?(bf == 0) { ^ 0; };
+  ^ e7918_osaka(parent_excess, parent_used, base_fee, bf, target, maxv);
+}
+
+!e7918_test_suite() -> int {
+  ?(e7918_fake_exp(1, 0, 1) != 1) { ^ -1; };
+  ?(e7918_fake_exp(1, 2, 1) != 6) { ^ -2; };
+  ?(e7918_fake_exp(1, 4, 1) != 49) { ^ -3; };
+  ?(e7918_fake_exp(0, 1234, 2345) != 0) { ^ -4; };
+  ?(e7918_blob_fee(0, e7918_cancun_frac()) != 1) { ^ -5; };
+  ?(e7918_blob_fee(2314057, e7918_cancun_frac()) != 1) { ^ -6; };
+  ?(e7918_blob_fee(2314058, e7918_cancun_frac()) != 2) { ^ -7; };
+  ?(e7918_cancun(0, 0, 3) != 0) { ^ -8; };
+  ?(e7918_cancun(0, e7918_gas_per_blob(), 3) != 0) { ^ -9; };
+  ?(e7918_cancun(0, 3 * e7918_gas_per_blob(), 3) != 0) { ^ -10; };
+  ?(e7918_cancun(0, 4 * e7918_gas_per_blob(), 3) != e7918_gas_per_blob()) { ^ -11; };
+  used6 = 6 * e7918_gas_per_blob();
+  ?(e7918_osaka_from_excess(0, used6, 1000000000, 6, 9, e7918_prague_frac()) != 262144) { ^ -12; };
+  ?(e7918_osaka_from_excess(0, used6, 1, 6, 9, e7918_prague_frac()) != 0) { ^ -13; };
+  ?(e7918_osaka_from_excess(5149252, 1310720, 30, 9, 14, 8832827) != 5617366) { ^ -14; };
+  ?(e7918_osaka_from_excess(19251039, 2490368, 50, 21, 32, 20609697) != 20107103) { ^ -15; };
+  ?(e7918_fake_exp(1, 50000000, 2225652) != 5709098764) { ^ -16; };
+  ?(e7918_muldiv(100, 200, 50) != 400) { ^ -17; };
+  ^ 1;
+}
+
+=ex{
+  e7918_u_lt,
+  e7918_u_add_carry,
+  e7918_mask32,
+  e7918_gas_per_blob,
+  e7918_blob_base_cost,
+  e7918_cancun_target,
+  e7918_cancun_max,
+  e7918_cancun_frac,
+  e7918_prague_target,
+  e7918_prague_max,
+  e7918_prague_frac,
+  e7918_muldiv_part,
+  e7918_muldiv,
+  e7918_muldiv_ov,
+  e7918_mul_hi,
+  e7918_mul_lo,
+  e7918_u128_gt,
+  e7918_reserve_gt,
+  e7918_add128,
+  e7918_fake_exp,
+  e7918_blob_fee,
+  e7918_scaled_excess,
+  e7918_cancun,
+  e7918_osaka,
+  e7918_osaka_from_excess,
+  e7918_test_suite
+}
