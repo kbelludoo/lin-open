@@ -127,7 +127,8 @@
     i = i + 1;
   };
 
-  // Verificação de overflow: limbs 16..31 devem ser estritamente zero
+  // SafeMath width: limbs 16..31 must be zero. A 512-bit product is not
+  // an error in mulDiv; it is rejected here. See src/lin_u512_coprocessor.lin.
   i = 16;
   while (i < 32) {
     ?(numerator[i] != 0) { ^-2; };
