@@ -1,0 +1,63 @@
+@RULEL:RUST_BITCOIN_WEIGHTCEIL_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-RUST-BITCOIN-WEIGHTCEIL-V1"
+@TITLE="Clone-lin of rust-bitcoin Amount::div_by_weight_ceil with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/lin-open/blob/cursor/linguagem-lin-e-valida-o-873d/src/lin_rust_bitcoin_weightceil.lin"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile rust-bitcoin minimum-sufficient fee-rate math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed in rust-bitcoin wallets"
+  operand_width="i64 satoshis; 128-bit product for (sats*4000000).div_ceil(wu); rust-bitcoin u128/u64 FeeRate is NOT claimed"
+  commercial_hook="Amount/Weight `/` uses floor and can underpay the sufficient ceil by 1 sat/MvB (329/381 wu: 3454068 vs 3454069). LIN names ceil, fail-closes overflow, and exposes the underpay gap as rwc_floor_underpay. Not a TVL claim."
+}
+
+.u{
+  repo="https://github.com/rust-bitcoin/rust-bitcoin"
+  path="units/src/amount/unsigned.rs"
+  license="CC0-1.0"
+  commit="1cbf4bd62ea99c558c6d8ef794edbd984a2a4684"
+  git_blob_sha="0cfb8343787c893fe36aea38fc3b4c066ac2bedd"
+  file_sha256="056757adc8f3ed6bc09dadf368fd027d04fcd7a721fb502fed23c8225cd790ef"
+  fixture="test/fixtures/external_proof/rust_bitcoin_amount_unsigned.rs"
+  goldens="sat(1)/1000 wu = 4000 sat/MvB; sat(329)/381 wu floor=3454068 ceil=3454069; Weight::ZERO and Amount::MAX/1 wu are errors"
+}
+
+.l{
+  clone="src/lin_rust_bitcoin_weightceil.lin"
+  transpiler_delta="src/lin_from_rust.lin v2: && is not a borrow; 4_000_000 underscore strip; rs_from_rs emit. src/lin_from_c.lin v2: REJ_C_CXX_SCOPE for ::, REJ_C_REFERENCE for lone &"
+  improvement_1="ops::Div<Weight> for Amount is floor; LIN makes ceil the named sufficient-rate kernel"
+  improvement_2="(sats*4e6) overflows i64 on MAX_MONEY; LIN uses 128-bit product and fail-closes if FeeRate does not fit i64"
+  improvement_3="ceil increment that would wrap i64 (q+1 <= 0) fail-closes to -1 instead of a negative rate"
+  improvement_4="rwc_floor_underpay is 1 iff floor would underpay ceil by exactly 1 sat/MvB"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/rust_bitcoin_weightceil_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_rust_bitcoin_weightceil.sh"
+}
+
+.p{
+  harness="test/prove_rust_bitcoin_weightceil_external.py"
+  evidence_json="examples/rust_bitcoin_weightceil/rust_bitcoin_weightceil_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/lin-open/blob/cursor/linguagem-lin-e-valida-o-873d/src/lin_rust_bitcoin_weightceil.lin"
+  clone_lin_note="separate clone-lin GitHub repository could not be created from this automation (createRepository 403); the LIN clone is published in lin-open"
+}
+
+.n{
+  not_claimed_1="full rust-bitcoin wallet / PSBT / script / network"
+  not_claimed_2="u64 FeeRate / u128 product as in rustc (LIN is i64 + 128-bit schoolbook)"
+  not_claimed_3="LIN is faster than rustc"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces rust-bitcoin or Bitcoin Core"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && RUST_BITCOIN_GOLDENS && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
