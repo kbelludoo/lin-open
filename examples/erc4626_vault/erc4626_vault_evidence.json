@@ -1,0 +1,128 @@
+{
+  "schema": "LIN_ERC4626_VAULT_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned ERC4626.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of OpenZeppelin v5.0.2 matches fixture",
+      "note": "commit=dbb6104ce834628e473d2173bbc9d47f81a9eec3 blob=ec6087231cb5e9a8c9a91d3eec8583fb89e1e168"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of ERC4626.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_erc4626_vault.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 gates",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "e4626_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "8/8 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "Python arbitrary-precision int matches C11 and LIN on convert vectors",
+      "note": ""
+    },
+    {
+      "id": "INFLATION-VEC",
+      "status": "PASS",
+      "description": "donation-after-1-share: victim 1e12 assets mints 1 share (virtual +1)",
+      "note": "shares=1"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (1e18*1e18) wraps; 128-bit muldiv of convert does not",
+      "note": "i64_wrap=-5527149226598858752 bigint_emptyish=999999999999999999"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes supply/totalAssets/offset as arguments (no hidden vault storage)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv (naive i64 a*b/d wraps on 1e18*1e18)",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity fail-closes ** and .mulDiv (ERC-4626 convert is not silently emitted)",
+      "note": ""
+    },
+    {
+      "id": "C-REJECT",
+      "status": "PASS",
+      "description": "lin_from_c v2: lone-& reject, U/L suffix strip, C++/float fail-closed",
+      "note": ""
+    },
+    {
+      "id": "SCALAR-C",
+      "status": "PASS",
+      "description": "erc4626_scalar.c is pointer-free integer C (pow10/virtuals; 128-bit convert is the other oracle)",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/OpenZeppelin/openzeppelin-contracts",
+    "tag": "v5.0.2",
+    "commit": "dbb6104ce834628e473d2173bbc9d47f81a9eec3",
+    "path": "contracts/token/ERC20/extensions/ERC4626.sol",
+    "git_blob_sha": "ec6087231cb5e9a8c9a91d3eec8583fb89e1e168",
+    "file_sha256": "bc3eb01a42e08f33e8591a726e28c7107b6c4fedd6be0d9d2d1c049853698be8",
+    "license": "MIT"
+  },
+  "lin_clone": "src/lin_erc4626_vault.lin",
+  "c11_oracle": "test/oracles/erc4626_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "donation_victim_shares": 1,
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-erc4626-vault"
+}

@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: fail-close ** (pow) and .mulDiv library calls so ERC-4626 convert is not silently emitted; v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,10 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(body, "**") > 0) { ^"REJ_SOLIDITY_POW" };
+  ?(rg_count_lit(body, ".mulDiv") > 0) { ^"REJ_SOLIDITY_LIBRARY_CALL" };
+  ?(rg_count_lit(body, "totalSupply") > 0) { ^"REJ_SOLIDITY_STATE" };
+  ?(rg_count_lit(body, "totalAssets") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +68,10 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_4626 = "function _convertToShares(uint256 assets) internal view returns (uint256)";
+  body_4626 = "return assets.mulDiv(totalSupply() + 10 ** _decimalsOffset(), totalAssets() + 1);";
+  r4 = sol_reason(sig_4626, body_4626);
+  ?(starts_lit(r4, 0, "REJ_") == 0) { ^0 };
   ^1;
 }
 
