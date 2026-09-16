@@ -1,0 +1,37 @@
+@RULEL:U512_COPROCESSOR:1.2.0
+@TITLE="LIN as a numeric coprocessor with an auditable receipt"
+@CLASS="EXPERIMENTAL"
+
+~R{.s=sell .p=prove .n=not .r=run}
+
+.s{
+  claim="LIN is a deterministic numeric coprocessor: 256x256->512 mulDiv with a 240-byte LNR1 receipt an auditor recomputes with Python hashlib, Node.js crypto, and C11 lin_sha256 + q*d+r identity — without trusting LinVM advertising"
+  not_a_pool="this is not a Uniswap replacement and not FullMath CRT/mulmod"
+}
+
+.p{
+  engine="src/lin_u512_coprocessor.lin"
+  oracles="Python int + C11 16-bit schoolbook + C11 64-bit __int128 (n=520 batch) + Node.js BigInt + C11 LNR1 auditor"
+  mul="256x256->512 including (2^256-1)^2 = 2^512-2^257+1; leftover carry after 32 limbs fail-closes"
+  remainder="q*d+r==n and r<d on every APPROVE (C11 reconstructs without Python)"
+  guards="-1 d=0, -2 q overflow"
+  phantom="coprocessor APPROVES mulDiv(997, ceil(2^256/997), 1997); settle_u256_word still -2 (SafeMath width). 512-bit intermediate is off the suspect list"
+  e2e="1 EXACT_INPUT + 1 OVERPAID_INPUT: settle_u256_word == ref_amount_out with real LCR2 steps. Full 2000/157 campaign still required"
+  auditor_py="python3 examples/u512_coprocessor/verify_u512_receipt.py examples/u512_coprocessor/u512_coprocessor_evidence.json --self-test --lcr2"
+  auditor_js="node examples/u512_coprocessor/verify_u512_receipt.js examples/u512_coprocessor/u512_coprocessor_evidence.json --self-test"
+  auditor_c="examples/u512_coprocessor/verify_u512_receipt_c11 lnr1 examples/u512_coprocessor/u512_lnr1.vec"
+  width_spec="test/fixtures/external_proof/FullMath.sol sha256:959c52e1c860bfbede3e33c8d04910c11038973173aa3478547cbad2e444880e (width only)"
+}
+
+.n{
+  not_1="FullMath.sol CRT / mulmod assembly equivalence"
+  not_2="deployed pool or mainnet replacement"
+  not_3="zk / computational soundness of Merkle (tamper-evidence + identity only)"
+  not_4="2000/157 coprocessor campaign"
+  not_5="replacing settle_u256_word SafeMath-width body"
+}
+
+.r{
+  make="make u512-coprocessor-proof"
+  spot="./transpile/c/bin/lin_c0 vm src/lin_u512_coprocessor.lin u512_muldiv_u64 7 9 2"
+}

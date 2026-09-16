@@ -1,0 +1,218 @@
+@LIN:L1c:0.2
+@LIN_U512_COPROCESSOR{
+  version=1
+  class="EXPERIMENTAL"
+  purpose="uint256_muldiv_with_correct_512bit_product"
+  abi="u256_le_words_16bit_limbs"
+  note="Numeric coprocessor with auditable receipt. Proves 256x256->512 mul, leftover-carry fail-closed, 512-bit ge, restoring 512/256 div, remainder identity q*d+r==n. Not a Uniswap replacement, not FullMath CRT/mulmod, not a deployed pool."
+}
+
+// u512_muldiv_word
+// a,b,d: four little-endian i64 words of a uint256 (bit63 set => negative i64).
+// out_word_idx:
+//   -3 -> 1 if unsigned (a*b) >= d, else 0  (512-bit ge of product vs 256-bit d)
+//   -1 -> status: 1 APPROVE, -1 d=0, -2 quotient exceeds uint256
+//    0..3 -> quotient words (uint256)
+//    4..7 -> remainder words (uint256, r < d on APPROVE)
+//    8..15 -> product words (uint512, eight u64)
+!u512_muldiv_word(
+  a0: int, a1: int, a2: int, a3: int,
+  b0: int, b1: int, b2: int, b3: int,
+  d0: int, d1: int, d2: int, d3: int,
+  out_word_idx: int
+) -> int {
+  a: [16]int;
+  b: [16]int;
+  d: [16]int;
+  n: [32]int;
+  rem: [32]int;
+  q: [16]int;
+
+  i = 0;
+  while (i < 16) {
+    a[i] = 0;
+    b[i] = 0;
+    d[i] = 0;
+    q[i] = 0;
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 32) {
+    n[i] = 0;
+    rem[i] = 0;
+    i = i + 1;
+  };
+
+  i = 0;
+  while (i < 4) {
+    a[i] = _lia_ushr(a0, 16 * i) & 65535;
+    a[4 + i] = _lia_ushr(a1, 16 * i) & 65535;
+    a[8 + i] = _lia_ushr(a2, 16 * i) & 65535;
+    a[12 + i] = _lia_ushr(a3, 16 * i) & 65535;
+    b[i] = _lia_ushr(b0, 16 * i) & 65535;
+    b[4 + i] = _lia_ushr(b1, 16 * i) & 65535;
+    b[8 + i] = _lia_ushr(b2, 16 * i) & 65535;
+    b[12 + i] = _lia_ushr(b3, 16 * i) & 65535;
+    d[i] = _lia_ushr(d0, 16 * i) & 65535;
+    d[4 + i] = _lia_ushr(d1, 16 * i) & 65535;
+    d[8 + i] = _lia_ushr(d2, 16 * i) & 65535;
+    d[12 + i] = _lia_ushr(d3, 16 * i) & 65535;
+    i = i + 1;
+  };
+
+  i = 0;
+  while (i < 16) {
+    carry = 0;
+    j = 0;
+    while (j < 16) {
+      k = i + j;
+      t = n[k] + a[i] * b[j] + carry;
+      n[k] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      j = j + 1;
+    };
+    k = i + 16;
+    while (k < 32 && carry != 0) {
+      t = n[k] + carry;
+      n[k] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      k = k + 1;
+    };
+    i = i + 1;
+  };
+  // P < 2^512 so leftover carry after 32 limbs must be 0.
+  ?(carry != 0) {
+    ?(out_word_idx == -1) { ^-2; };
+    ^0;
+  };
+
+  ?(out_word_idx >= 8) {
+    base = (out_word_idx - 8) * 4;
+    w = (n[base] & 65535) |
+        _lia_shl(n[base + 1] & 65535, 16) |
+        _lia_shl(n[base + 2] & 65535, 32) |
+        _lia_shl(n[base + 3] & 65535, 48);
+    ^w;
+  };
+
+  ?(out_word_idx == -3) {
+    cmp = 0;
+    j = 31;
+    while (j >= 0) {
+      dj = 0;
+      ?(j < 16) { dj = d[j]; };
+      ?(cmp == 0) {
+        ?(n[j] > dj) { cmp = 1; }
+        : (n[j] < dj) { cmp = -1; };
+      };
+      j = j - 1;
+    };
+    ?(cmp >= 0) { ^1; };
+    ^0;
+  };
+
+  ?(d0 == 0 && d1 == 0 && d2 == 0 && d3 == 0) {
+    ?(out_word_idx == -1) { ^-1; };
+    ^0;
+  };
+
+  bit = 511;
+  while (bit >= 0) {
+    limb = _lia_ushr(bit, 4);
+    pos = bit & 15;
+    carry = (_lia_ushr(n[limb], pos) & 1);
+    j = 0;
+    while (j < 32) {
+      t = rem[j] * 2 + carry;
+      rem[j] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      j = j + 1;
+    };
+    cmp = 0;
+    j = 31;
+    while (j >= 0) {
+      dj = 0;
+      ?(j < 16) { dj = d[j]; };
+      ?(cmp == 0) {
+        ?(rem[j] > dj) { cmp = 1; }
+        : (rem[j] < dj) { cmp = -1; };
+      };
+      j = j - 1;
+    };
+    take = 0;
+    ?((carry == 1) | (cmp >= 0)) { take = 1; };
+    ?(take == 1) {
+      ?(bit >= 256) {
+        ?(out_word_idx == -1) { ^-2; };
+        ^0;
+      };
+      qlimb = _lia_ushr(bit, 4);
+      q[qlimb] = q[qlimb] | _lia_shl(1, pos);
+      borrow = 0;
+      j = 0;
+      while (j < 32) {
+        dj = 0;
+        ?(j < 16) { dj = d[j]; };
+        t = rem[j] - dj - borrow;
+        ?(t < 0) {
+          rem[j] = t + 65536;
+          borrow = 1;
+        } : {
+          rem[j] = t;
+          borrow = 0;
+        };
+        j = j + 1;
+      };
+    };
+    bit = bit - 1;
+  };
+
+  ?(out_word_idx == -1) { ^1; };
+
+  src_base = 0;
+  ?(out_word_idx >= 4) { src_base = (out_word_idx - 4) * 4; };
+  ?(out_word_idx < 4) { src_base = out_word_idx * 4; };
+  ?(out_word_idx >= 4) {
+    w = (rem[src_base] & 65535) |
+        _lia_shl(rem[src_base + 1] & 65535, 16) |
+        _lia_shl(rem[src_base + 2] & 65535, 32) |
+        _lia_shl(rem[src_base + 3] & 65535, 48);
+    ^w;
+  };
+  w = (q[src_base] & 65535) |
+      _lia_shl(q[src_base + 1] & 65535, 16) |
+      _lia_shl(q[src_base + 2] & 65535, 32) |
+      _lia_shl(q[src_base + 3] & 65535, 48);
+  ^w;
+}
+
+!u512_muldiv_u64(a: int, b: int, d: int) -> int {
+  st = u512_muldiv_word(a, 0, 0, 0, b, 0, 0, 0, d, 0, 0, 0, -1);
+  ?(st != 1) { ^st; };
+  ^ u512_muldiv_word(a, 0, 0, 0, b, 0, 0, 0, d, 0, 0, 0, 0);
+}
+
+!u512_self_gate() -> int {
+  ?(u512_muldiv_u64(7, 9, 2) != 31) { ^-1; };
+  ?(u512_muldiv_word(7, 0, 0, 0, 9, 0, 0, 0, 2, 0, 0, 0, 4) != 1) { ^-2; };
+  ?(u512_muldiv_word(1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, -1) != -1) { ^-3; };
+  m = 0 - 1;
+  ?(u512_muldiv_word(m, m, m, m, m, m, m, m, 1, 0, 0, 0, -1) != -2) { ^-4; };
+  hi = _lia_shl(1, 63);
+  ?(u512_muldiv_word(0, 0, 0, hi, 2, 0, 0, 0, 3, 0, 0, 0, -1) != 1) { ^-5; };
+  rep = 6148914691236517205;
+  ?(u512_muldiv_word(0, 0, 0, hi, 2, 0, 0, 0, 3, 0, 0, 0, 0) != rep) { ^-6; };
+  ?(u512_muldiv_word(0, 0, 0, hi, 2, 0, 0, 0, 3, 0, 0, 0, 3) != rep) { ^-7; };
+  ?(u512_muldiv_word(0, 0, 0, hi, 2, 0, 0, 0, 3, 0, 0, 0, 4) != 1) { ^-8; };
+  ?(u512_muldiv_word(3, 0, 0, 0, 3, 0, 0, 0, 10, 0, 0, 0, -3) != 0) { ^-9; };
+  ?(u512_muldiv_word(3, 0, 0, 0, 4, 0, 0, 0, 12, 0, 0, 0, -3) != 1) { ^-10; };
+  ?(u512_muldiv_word(7, 0, 0, 0, 9, 0, 0, 0, 1, 0, 0, 0, 8) != 63) { ^-11; };
+  ?(u512_muldiv_u64(997000, 20000, 10997000) != 1813) { ^-12; };
+  // (2^256-1)^2 = 2^512 - 2^257 + 1  => lo=1, hi=2^256-2. Product path, no div.
+  ?(u512_muldiv_word(m, m, m, m, m, m, m, m, 1, 0, 0, 0, 8) != 1) { ^-13; };
+  ?(u512_muldiv_word(m, m, m, m, m, m, m, m, 1, 0, 0, 0, 12) != 0 - 2) { ^-14; };
+  ?(u512_muldiv_word(m, m, m, m, m, m, m, m, 1, 0, 0, 0, 15) != m) { ^-15; };
+  ^1;
+}
+
+=ex{u512_muldiv_word, u512_muldiv_u64, u512_self_gate}
