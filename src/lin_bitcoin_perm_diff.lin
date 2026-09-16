@@ -1,0 +1,239 @@
+@LIN:L1c:0.2
+@BITCOIN_PERM_DIFF{
+  version=1
+  repo="bitcoin/bitcoin"
+  source="src/pow.cpp"
+  license="MIT"
+  tag="v27.1"
+  commit="1088a98f5aad080cc6cca2da174f206509fcda6c"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="scalar_header_sync_difficulty_transition_and_timespan_clamp"
+  note="Off-window nBits equality and timespan clamp are i64-exact vs Bitcoin Core. Compact 4x bound is a 64-bit subset (nSize<=8); mainnet 0x1d00ffff returns WIDTH=2, not a uint256 claim."
+}
+
+!pdt_mainnet_timespan() -> int {
+  ^ 1209600;
+}
+
+!pdt_mainnet_interval() -> int {
+  ^ 2016;
+}
+
+!pdt_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!pdt_mask32() -> int {
+  ^ 4294967295;
+}
+
+!pdt_clamp_timespan(actual: int, target_timespan: int) -> int {
+  ?(target_timespan <= 0) { ^ 0; };
+  ?(target_timespan > 2305843009213693951) { ^ 0; };
+  lo = target_timespan / 4;
+  hi = target_timespan * 4;
+  out = actual;
+  ?(out < lo) { out = lo; };
+  ?(out > hi) { out = hi; };
+  ^ out;
+}
+
+!pdt_on_retarget(height: int, interval: int) -> int {
+  ?(interval <= 0) { ^ 0; };
+  ?(height < 0) { ^ 0; };
+  ?(height % interval == 0) { ^ 1; };
+  ^ 0;
+}
+
+!pdt_off_window_ok(old_nbits: int, new_nbits: int) -> int {
+  ?(old_nbits == new_nbits) { ^ 1; };
+  ^ 0;
+}
+
+!pdt_compact_fits(ncompact: int) -> int {
+  ?(ncompact < 0) { ^ 0; };
+  nsize = _lia_ushr(ncompact, 24) & 255;
+  nword = ncompact & 8388607;
+  ?(nsize > 8) { ^ 0; };
+  ?(nword == 0) { ^ 0; };
+  ?(ncompact & 8388608) { ^ 0; };
+  ^ 1;
+}
+
+!pdt_setcompact(ncompact: int) -> int {
+  ?(pdt_compact_fits(ncompact) == 0) { ^ 0; };
+  nsize = _lia_ushr(ncompact, 24) & 255;
+  nword = ncompact & 8388607;
+  ?(nsize <= 3) { ^ _lia_ushr(nword, 8 * (3 - nsize)); };
+  ^ _lia_shl(nword, 8 * (nsize - 3));
+}
+
+!pdt_bitlen(n: int) -> int {
+  ?(n <= 0) { ^ 0; };
+  b = 0;
+  x = n;
+  while (x > 0) {
+    x = _lia_ushr(x, 1);
+    b = b + 1;
+  };
+  ^ b;
+}
+
+!pdt_getcompact(n: int) -> int {
+  ?(n <= 0) { ^ 0; };
+  bits = pdt_bitlen(n);
+  nsize = (bits + 7) / 8;
+  ncompact = 0;
+  ?(nsize <= 3) { ncompact = _lia_shl(n, 8 * (3 - nsize)); };
+  ?(nsize > 3) { ncompact = _lia_ushr(n, 8 * (nsize - 3)); };
+  ?(ncompact & 8388608) {
+    ncompact = _lia_ushr(ncompact, 8);
+    nsize = nsize + 1;
+  };
+  ncompact = ncompact | _lia_shl(nsize, 24);
+  ^ ncompact & pdt_mask32();
+}
+
+!pdt_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(pdt_u_lt(s, a));
+}
+
+!pdt_muldiv(a: int, b: int, d: int) -> int {
+  ?(d <= 0) { ^ 0; };
+  ?(a < 0 || b < 0) { ^ 0; };
+  m32 = pdt_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = pdt_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = pdt_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(pdt_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = pdt_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!pdt_timespan_bound(old_nbits: int, new_nbits: int, timespan: int, pow_limit: int) -> int {
+  ?(pdt_compact_fits(old_nbits) == 0) { ^ 0; };
+  ?(pdt_compact_fits(new_nbits) == 0) { ^ 0; };
+  ?(timespan <= 0) { ^ 0; };
+  old_t = pdt_setcompact(old_nbits);
+  new_t = pdt_setcompact(new_nbits);
+  ?(old_t == 0 || new_t == 0) { ^ 0; };
+  lo = timespan / 4;
+  hi = timespan * 4;
+  largest = pdt_muldiv(old_t, hi, timespan);
+  smallest = pdt_muldiv(old_t, lo, timespan);
+  ?(pow_limit > 0) {
+    ?(pdt_u_lt(pow_limit, largest) == 1) { largest = pow_limit; };
+    ?(pdt_u_lt(pow_limit, smallest) == 1) { smallest = pow_limit; };
+  };
+  max_rt = pdt_setcompact(pdt_getcompact(largest));
+  min_rt = pdt_setcompact(pdt_getcompact(smallest));
+  ?(pdt_u_lt(max_rt, new_t) == 1) { ^ 0; };
+  ?(pdt_u_lt(new_t, min_rt) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!pdt_permitted(allow_min: int, height: int, interval: int, timespan: int, old_nbits: int, new_nbits: int, pow_limit: int) -> int {
+  ?(allow_min != 0) { ^ 1; };
+  ?(interval <= 0) { ^ 0; };
+  ?(height < 0) { ^ 0; };
+  ?(pdt_on_retarget(height, interval) == 0) {
+    ^ pdt_off_window_ok(old_nbits, new_nbits);
+  };
+  ?(pdt_compact_fits(old_nbits) == 0) { ^ 2; };
+  ?(pdt_compact_fits(new_nbits) == 0) { ^ 2; };
+  ^ pdt_timespan_bound(old_nbits, new_nbits, timespan, pow_limit);
+}
+
+!pdt_test_suite() -> int {
+  T = pdt_mainnet_timespan();
+  I = pdt_mainnet_interval();
+  ?(T != 1209600) { ^ -1; };
+  ?(I != 2016) { ^ -2; };
+  ?(pdt_clamp_timespan(1022578, T) != 1022578) { ^ -3; };
+  ?(pdt_clamp_timespan(289434, T) != 302400) { ^ -4; };
+  ?(pdt_clamp_timespan(6048000, T) != 4838400) { ^ -5; };
+  ?(pdt_on_retarget(32256, I) != 1) { ^ -6; };
+  ?(pdt_on_retarget(32255, I) != 0) { ^ -7; };
+  ?(32255 % I != 2015) { ^ -8; };
+  ?(pdt_off_window_ok(486604799, 486604799) != 1) { ^ -9; };
+  ?(pdt_off_window_ok(486604799, 486604798) != 0) { ^ -10; };
+  ?(pdt_permitted(1, 32255, I, T, 1, 2, 0) != 1) { ^ -11; };
+  ?(pdt_permitted(0, 32255, I, T, 486604799, 486604799, 0) != 1) { ^ -12; };
+  ?(pdt_permitted(0, 32255, I, T, 486604799, 486604798, 0) != 0) { ^ -13; };
+  ?(pdt_permitted(0, 32256, I, T, 486604799, 486604799, 0) != 2) { ^ -14; };
+  old = 67174399;
+  ?(pdt_compact_fits(old) != 1) { ^ -15; };
+  ?(pdt_setcompact(old) != 16776960) { ^ -16; };
+  ?(pdt_muldiv(16776960, 4, 1) != 67107840) { ^ -17; };
+  ?(pdt_timespan_bound(old, old, T, 0) != 1) { ^ -18; };
+  four = pdt_getcompact(67107840);
+  ?(pdt_timespan_bound(old, four, T, 0) != 1) { ^ -19; };
+  five = pdt_getcompact(83884800);
+  ?(pdt_timespan_bound(old, five, T, 0) != 0) { ^ -20; };
+  ^(pdt_permitted(0, 2016, I, T, old, old, 0));
+}
+
+=ex{
+  pdt_mainnet_timespan,
+  pdt_mainnet_interval,
+  pdt_u_lt,
+  pdt_mask32,
+  pdt_clamp_timespan,
+  pdt_on_retarget,
+  pdt_off_window_ok,
+  pdt_compact_fits,
+  pdt_setcompact,
+  pdt_bitlen,
+  pdt_getcompact,
+  pdt_u_add_carry,
+  pdt_muldiv,
+  pdt_timespan_bound,
+  pdt_permitted,
+  pdt_test_suite
+}

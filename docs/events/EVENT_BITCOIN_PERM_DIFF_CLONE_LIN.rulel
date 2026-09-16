@@ -1,0 +1,63 @@
+@RULEL:BITCOIN_PERM_DIFF_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-BITCOIN-PERM-DIFF-V27-1"
+@TITLE="Clone-lin of Bitcoin Core PermittedDifficultyTransition with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_WIDTH"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-bitcoin-core-permdiff"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Bitcoin Core header-sync difficulty transition into deterministic LIN, compile in memory with C11 compiler 0, publish proofs in lin-open and the LIN copy in a separate clone-lin repo"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Bitcoin mainnet uint256 compact"
+  operand_width="i64 timespan/window/nBits-equality are full-width vs Core; compact 4x bound is nSize<=8 only"
+  commercial_hook="PermittedDifficultyTransition is the header-sync nBits gate (headerssync.cpp); off-window equality is the 2015/2016-block case. This is an audit of that scalar gate, not a TVL or hashrate claim."
+}
+
+.u{
+  repo="https://github.com/bitcoin/bitcoin"
+  path="src/pow.cpp"
+  license="MIT"
+  tag="v27.1"
+  commit="1088a98f5aad080cc6cca2da174f206509fcda6c"
+  git_blob_sha="1e8d53de8bb87b0b9a30ff6439881cc2c40e38a4"
+  file_sha256="a997ebc9e89ec0ed0f98fe56e7ece7c0a799746d36be5c0951ca6fd264280a33"
+  fixture="test/fixtures/external_proof/bitcoin_core_v27_1_pow.cpp"
+  published_vectors="src/test/pow_tests.cpp get_next_work / lower_limit_actual / upper_limit_actual block times"
+}
+
+.l{
+  clone="src/lin_bitcoin_perm_diff.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-bitcoin-core-permdiff"
+  transpiler_delta="src/lin_from_c.lin v2: REJ_C_CXX_SCOPE for :: and REJ_C_REFERENCE for lone & in signatures (Consensus::Params& was previously misclassified as OK)"
+  improvement_1="Consensus::Params storage (fPowAllowMinDifficultyBlocks, nPowTargetTimespan, DifficultyAdjustmentInterval) is function arguments, not a C++ reference to a hidden struct"
+  improvement_2="timespan clamp fail-closes if target_timespan<=0 or target_timespan > INT64_MAX/4 instead of signed overflow"
+  improvement_3="mainnet compact nBits (nSize=0x1d) returns WIDTH=2 instead of silently pretending a uint256 4x compare ran on i64"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/bitcoin_perm_diff_c11.c (gcc -O2 -std=c11, __int128 muldiv)"
+  gate="test/verify_bitcoin_perm_diff.sh"
+}
+
+.p{
+  harness="test/prove_bitcoin_perm_diff_external.py"
+  evidence_json="examples/bitcoin_perm_diff/bitcoin_perm_diff_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-bitcoin-core-permdiff"
+}
+
+.n{
+  not_claimed_1="uint256 compact target compare / mainnet GetCompact(SetCompact) of 0x1d00ffff"
+  not_claimed_2="LIN replaces bitcoind header sync or consensus"
+  not_claimed_3="this clone is a production difficulty-adjustment replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="dollar savings, hashrate, or TVL attributed to LIN"
+}
+
+.v{
+  method="PINNED_BYTES && PUBLISHED_POW_TESTS_TIMESPAN && C11_EQ_PYTHON_EQ_LIN_C0 && OPTIONAL_JIT_CONSENSUS && WIDTH_FAILCLOSED_ON_MAINNET_NBITS"
+  on_fail="do not publish a PASS status"
+}

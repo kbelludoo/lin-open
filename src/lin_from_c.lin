@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN changelog="v2: fail-closed C++ scope :: and lone & references (Bitcoin Core Consensus::Params&); scalar C remains OK"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -32,15 +32,59 @@
   ^0;
 }
 
+!cfs_has_cxx_scope(s: string): int {
+  ?(rg_count_lit(s, "::") > 0){ ^1 };
+  ^0;
+}
+
+!cfs_has_ref(sig: string): int {
+  n = sig.length;
+  i = 0;
+  while (i < n) {
+    ?(sig.charCodeAt(i) == 38){
+      prev_and = 0;
+      next_and = 0;
+      ?(i > 0 && sig.charCodeAt(i - 1) == 38){ prev_and = 1 };
+      ?(i + 1 < n && sig.charCodeAt(i + 1) == 38){ next_and = 1 };
+      ?(prev_and == 0 && next_and == 0){ ^1 };
+    };
+    i = i + 1;
+  };
+  ^0;
+}
+
 !cfs_reason(sig: string, body: string): string {
   ?(rg_count_lit(sig, "*") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(body, "->") > 0){ ^"REJ_C_POINTER" };
+  ?(cfs_has_cxx_scope(sig) == 1 || cfs_has_cxx_scope(body) == 1){ ^"REJ_C_CXX_SCOPE" };
+  ?(cfs_has_ref(sig) == 1){ ^"REJ_C_REFERENCE" };
   ?(rg_count_lit(sig, "struct") > 0 || rg_count_lit(body, "struct") > 0){ ^"REJ_C_STRUCT" };
   ?(rg_count_lit(sig, "union") > 0 || rg_count_lit(body, "union") > 0){ ^"REJ_C_UNION" };
   ?(rg_count_lit(sig, "float") > 0 || rg_count_lit(body, "float") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(sig, "double") > 0 || rg_count_lit(body, "double") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(body, "goto") > 0){ ^"REJ_C_GOTO" };
   ^"OK";
+}
+
+!cfs_reason_gate(): int {
+  sig_ok = "int64_t pdt_clamp_timespan(int64_t actual, int64_t target_timespan)";
+  body_ok = "if (actual < target_timespan / 4) actual = target_timespan / 4; return actual;";
+  r1 = cfs_reason(sig_ok, body_ok);
+  ?(r1.length != 2){ ^0 };
+  ?(starts_lit(r1, 0, "OK") == 0){ ^0 };
+  sig_scope = "bool PermittedDifficultyTransition(const Consensus::Params params, int64_t height)";
+  body_scope = "return old_nbits == new_nbits;";
+  r2 = cfs_reason(sig_scope, body_scope);
+  ?(starts_lit(r2, 0, "REJ_C_CXX_SCOPE") == 0){ ^0 };
+  sig_ref = "int64_t foo(int64_t& x, int64_t y)";
+  body_ref = "return x + y;";
+  r3 = cfs_reason(sig_ref, body_ref);
+  ?(starts_lit(r3, 0, "REJ_C_REFERENCE") == 0){ ^0 };
+  sig_ptr = "unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast)";
+  body_ptr = "return pindexLast->nBits;";
+  r4 = cfs_reason(sig_ptr, body_ptr);
+  ?(starts_lit(r4, 0, "REJ_C_POINTER") == 0){ ^0 };
+  ^1;
 }
 
 !cfs_atom_left(s: string, at: int): int {
@@ -756,4 +800,4 @@
   ^out;
 }
 
-=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type}
+=ex{cfs_from_c, cfs_report, cfs_reason, cfs_reason_gate, cfs_has_ref, cfs_has_cxx_scope, cfs_fn, cfs_strip_casts, cfs_all_type}
