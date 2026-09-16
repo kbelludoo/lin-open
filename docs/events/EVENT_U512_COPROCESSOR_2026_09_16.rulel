@@ -1,0 +1,100 @@
+@RULEL:U512_COPROCESSOR_EVENT:1.8.0
+@CHALLENGE_ID="LIN-U512-COPROCESSOR-2026-09-16"
+@TITLE="512-bit intermediate proved as numeric coprocessor with auditable receipt"
+@STATUS="REPRODUCED_THIS_RUN"
+@DATE="2026-09-16"
+@CLASS="EXPERIMENTAL"
+
+~R{.s=scope .p=proved .n=not_proved .m=measured .h=hashes .v=verdict}
+
+.s{
+  product="LIN as a numeric coprocessor with an auditable receipt, not a Uniswap replacement"
+  why="u256 mulDiv(a,b,d)=(a*b)/d with a,b,d up to 2^256-1 needs a correct 512-bit product; otherwise the SafeMath-width settler lies or returns -2 where width-correct math approves"
+  engine="src/lin_u512_coprocessor.lin (16-bit limbs) + 32-limb remainder ge in examples/defi_settlement_proof/u512_uniswap_v2_core.lin"
+  make="make u512-coprocessor-proof"
+  harness="python3 test/prove_u512_coprocessor_external.py → 64/64 PASS this run"
+  delta="schema 1.8: Perl Math::BigInt::Calc is a ninth math oracle (pure-Perl backend, not a silent GMP wrapper); LIP1 now includes all 9 LCR2-full settlement leaves so packed 208-byte records bind to ref_amount_out_full (EXACT/OVERPAID/PHANTOM_APPROVE/guards) without LinVM; C11 binary LIP1 PHANTOM_APPROVE receipt against the LCR2-full root; Perl recomputes mulDiv(fee,rout,den) on the 6 LCR2 vectors and the 6+phantom LCR2-full vectors; zero-LIN Python AND Node AND Perl inclusion auditors print lcr2_inclusion 8 and lcr2_full_inclusion 9"
+}
+
+.p{
+  mul="256x256->512 schoolbook, leftover-carry fail-closed; (2^256-1)^2 lo=1 hi=2^256-2 published leaf; MUL 7*9=63 steps=9824"
+  div="512/256 restoring div, remainder 32 limbs, 512-bit ge, q*d+r==n and r<d; 7*9/2 q=31 r=1 steps=987074; 2^255*2/3 q=0x5555555555555555 r=1 steps=1118732"
+  ge="u512_ge_word + LGE1 8-leaf power-of-two tree: 2^256>=2^256-1 → 1 steps=1365; reverse → 0 steps=1373; 0>=0 → 1; (2^256-1)^2 >= 2^511 → 1; reverse → 0; equals; 2^512-1>=1; OpenSSL BN_ucmp, Node BigInt, Go math/big.Cmp, Java BigInteger.compareTo, GNU MP mpz_cmp, and Perl Math::BigInt agree"
+  identity="LRI1 8-leaf power-of-two tree binds the 512-bit product n plus d,q,r. Outsider (Python int / Node BigInt / Java BigInteger / GNU MP / Perl Math::BigInt::Calc) checks n==a*b and q*d+r==n and r<d without LinVM. Leaves: 7*9/2 r=1 steps=987074; 2^255*2/3 r=1 steps=1118684; getAmountOut 1813 r=2439000 steps=977389; phantom 997*ceil(2^256/997)/1997 r=672 steps=1106942; n<d q=0 r=1 steps=981724; wrap-borrow 2*2^255/(2^256-1)=1 r=1 steps=821254; 3*5/4 r=3 steps=983864; 100*200/50 r=0 steps=984936"
+  inclusion="LIP1: 34 published inclusion proofs (8 LRI1 + 8 LGE1 + LNR1 max_sq + 8 LCR2 E2E + 9 LCR2-full). Path walks domain-separated SHA-256. C11 lin_sha256 verifies the 188-byte phantom remainder-identity receipt (nsib=3) against LRI1 root AND a binary LCR2 EXACT receipt against LCR2 root AND a binary LCR2-full PHANTOM_APPROVE receipt (nsib=4) against LCR2-full root. 1-bit sibling tamper rejected. Zero-LIN Python AND Node AND Perl auditors bind packed LRI1 bytes to a,b via n==a*b and q*d+r==n, packed LCR2 bytes to ref_amount_out (EXACT aout==ref==onchain, OVERPAID aout==ref!=onchain, GUARD_ZERO -1, GUARD_OVERFLOW -2), and packed LCR2-full bytes to ref_amount_out_full (EXACT/OVERPAID plus PHANTOM_APPROVE where SafeMath is -2 and FullMath approves) with steps!=0"
+  guards="-1 on d=0 (coprocessor) and zero amount_in (both LCR2 trees); -2 on q overflow (2^255*2/1), SafeMath-width phantom (LCR2), and ain=2^256-1 fee overflow (LCR2-full)"
+  oracles="Python int + C11 16-bit schoolbook + C11 64-bit __int128 identity64 + Node.js BigInt + OpenSSL BIGNUM + Go math/big + Java BigInteger + GNU MP mpz + Perl Math::BigInt::Calc (n=1060 batch, WIDTH_CONSENSUS NODE_BIGINT_CONSENSUS OPENSSL_BN_CONSENSUS GO_BIGINT_CONSENSUS JAVA_BIGINT_CONSENSUS GMP_MPZ_CONSENSUS PERL_BIGINT_CONSENSUS); wrap-borrow regression 2*2^255/(2^256-1)=1 r=1; GMP_MPZ_CONSENSUS and PERL_BIGINT_CONSENSUS on 6 LCR2 EXACT/OVERPAID mulDiv(fee,rout,den); Perl also on 6 LCR2-full + PHANTOM_APPROVE"
+  lin="Compiler-0 lin_c0 vm; u512_self_gate=1 steps=6710747; getAmountOut muldiv=1813 steps=977437"
+  phantom="ain=1,rin=1,rout=ceil(2^256/997): coprocessor mulDiv(997,rout,1997) APPROVES steps=1106942; settle_u512_swap APPROVES steps=1098245 q=0x20d135b66ae990fc484cea55e38a936bcf497445394d4cc984add428823e4d; settle_u256_word -2 steps=11481. 512-bit intermediate off the suspect list; replacing the SafeMath-width settler body remains required for that ABI"
+  uniswap_core="settle_u512_swap(1000,10000,20000) word0=1813 steps=968269 after 32-limb remainder ge"
+  receipt="LNR1 240-byte records, domains LIN:U512:LEAF:1 / LIN:U512:NODE:1; 14 published leaves; LCR2 208-byte records, domains LIN:LEAF:1 / LIN:NODE:1; 8 published LCR2 leaves; 9 published LCR2-full leaves; LGE1 208-byte records, domains LIN:U512:GE:LEAF:1 / LIN:U512:GE:NODE:1; 8 published ge leaves; LRI1 240-byte records, domains LIN:U512:RI:LEAF:1 / LIN:U512:RI:NODE:1; 8 published remainder-identity leaves; 34 LIP1 inclusion proofs; quad-auditor Python hashlib == Node crypto == C11 lin_sha256 == OpenSSL dgst; 1-bit leaf tamper rejected; zero-LIN Python AND Node AND Perl verifiers recompute five campaign merkles and LIP1 paths from the JSON"
+  lcr2="3 EXACT_INPUT (lin==coprocessor==ref==onchain) + 3 OVERPAID_INPUT (lin==coprocessor==ref, onchain diverges); GUARD_ZERO steps=1570; GUARD_OVERFLOW steps=11481. Packed records are LIP1-included. Full 2000/157 campaign still required"
+  lcr2_full="same 3 EXACT + 3 OVERPAID via settle_u512_swap == ref_amount_out_full (steps=929722/951223/946903/949069/951286/964003); PHANTOM_APPROVE steps=1098245; GUARD_ZERO steps=1619; GUARD_FEE_OVERFLOW steps=2033. All 9 packed records are LIP1-included"
+}
+
+.n{
+  not_1="FullMath.sol CRT / mulmod assembly parity (width pin only)"
+  not_2="a deployed Uniswap v2/v3 pool"
+  not_3="the full 2000-swap + 157-unfiltered campaign"
+  not_4="that 512 proof closes the SafeMath-width u256 settler by itself"
+  not_5="zk or computational soundness of Merkle (tamper-evidence + re-execution)"
+}
+
+.m{
+  host="lin_c0 C11, gcc -std=c11, python3, node BigInt + crypto, openssl dgst + libcrypto.so.3 BN via dlopen, go math/big, javac java.math.BigInteger, libgmp.so.10 mpz via dlopen, perl Math::BigInt::Calc + JSON::PP + Digest::SHA; no Zig"
+  c11_selftest="SELFTEST_PASS identity_2_255_x2_div3 q*d+r==n plus ge512 and identity64 (no Python)"
+  node_selftest="SELFTEST_PASS node_bigint q*d+r==n ge512"
+  openssl_bn_selftest="SELFTEST_PASS openssl_bn q*d+r==n ge512"
+  go_selftest="SELFTEST_PASS go_math_big q*d+r==n ge512"
+  java_selftest="SELFTEST_PASS java_bigint q*d+r==n ge512"
+  gmp_selftest="SELFTEST_PASS gmp_mpz q*d+r==n ge512"
+  perl_selftest="SELFTEST_PASS perl_bigint q*d+r==n ge512 backend=Math::BigInt::Calc"
+  gate="64/64 PASS"
+  published_leaves=14
+  published_lcr2_leaves=8
+  published_lcr2_full_leaves=9
+  published_lge1_leaves=8
+  published_lri1_leaves=8
+  published_lip1_proofs=34
+}
+
+.h{
+  lin_src="sha256:2a66456eae1227cb9ec3571da3258313cd4a5c6c787c42d3877a67152e96bd4b"
+  oracle_c="sha256:f236f7b7faa04741c6694fd26c0f63012179d1cb740ffc6f605c9ab7133e7ca0"
+  oracle_js="sha256:00c4e815f0aeae19b4b02c501d904f00c4a36b6ab4d6b6e8228167e0555d6b1c"
+  oracle_bn="sha256:18050fafb873e0cbd0229b02d641dbc0f9ffac9d9efffed578fe103fd0f27a8f"
+  oracle_go="sha256:f21256fa8fb11b8f1923e210c2311bf11c10e63f5328b7bf6976e9a99510145e"
+  oracle_java="sha256:275dca1e87de22b9d1511a08ffb0b467a32e1ad6967f74f7cdd1760053faed04"
+  oracle_gmp="sha256:74d9fe7663d172ae126ea872df0a3f8d19c1cf4777a7943a1d9f236a07aff6c0"
+  oracle_perl="sha256:1e5d089c4b8d0cee57bd0f09a7441a06ba77421300bb86ea3aee601b94c74762"
+  auditor_c="sha256:4d9044d3a976e62dc71f960c91b2ea42d3914be817d0a78fe10ee56da9af3466"
+  harness="sha256:d4ff64cc59de13001ce13eaff454a9a1e1889c18d23fda00b73e3484f38f0ba8"
+  lib="sha256:0af1ef9fd6330e629fdee3e2eb9d082b803415e77cd796ae52ceb882000e6c38"
+  fullwidth="sha256:7e6111e4c512a82f876495117fe32875263d33618197a53b1fa743a9476b9dce"
+  ge="sha256:387c28ed2da051062aa2df161b7c2e3d5fc0070621986762d8632ce750bfeb98"
+  identity="sha256:4b27b57782d3784494224eeb5f5122e617677989e27432e45894a461369c7f63"
+  inclusion="sha256:85dd4d1c35f9b12670ec60f8bcee71ae0db2fa2c26486ce5fb7b7019065bb5a0"
+  gmp_py="sha256:ce542d8a4cadd37a87ea6039d3a0eccbd346913b06b7660bc25a979fee9fb8fb"
+  perl_py="sha256:97a544297235a6deca0eb1d0d65a3aaf93c2c46632cd568d1e955a77fd473bf8"
+  verifier_py="sha256:f36d15e269ad37da4e80b6b53f17a6b25a0ce311f9bdfb72e7118bfcba6ecabb"
+  verifier_js="sha256:d3591fbe1a96979c185135ed12cf872085bc96650c22f5d4a4daeb96c5103787"
+  verifier_inc_py="sha256:7665931d00c647006e407f431b5535180db52a5fdcce526932dd7055876ba142"
+  verifier_inc_js="sha256:58db33c4d14549c94b8b1c0db2730016c85819a3d5f2877fc13f6b327334e6f1"
+  verifier_inc_pl="sha256:5dc0ba433d0c4122f65282df9d4067475cbf9c0dcd92e8c81655005cb9ed4641"
+  u512_uniswap_lin="sha256:3db82be5c109f8c0405ab2085937ca7c633eaca7dbb54457d3282c034d35b5e3"
+  u256_lin="sha256:e4f6ca30296967ec5d6d50f5cd5b8e3efd5ee9ae6c5ee6cd40313ff3c0256a91"
+  u256_linbc1="sha256:f1984b2de15bc79bf6418842afaee8ece86ea956cbdc9f7338837802402bc7e7"
+  u512_linbc1="sha256:773a7ad4e8956c62834926ab8bcccee3651d91adc4a4c9c0b150c8d9ba5dce47"
+  lnr1_merkle="sha256:f140dcbcde99052d0d415dfb22336e951f1efc2b0c29c8327af35f1a671b8d7a"
+  lcr2_merkle="sha256:6a64103b587eec28b6dee714026803c707d4a963a6dceefaecabd2de5b1763fb"
+  lcr2_full_merkle="sha256:ea3b11158e1163a6ee880c1c0d3eeefec9b8b4a61f59c284a02e4d91660d6b5e"
+  lge1_merkle="sha256:bcd89d286a41e5ed8d31a0a3979e23744ea754e9e423982f6fcfbed7d0dfff68"
+  lri1_merkle="sha256:c10b87f0546b9927b15f5362cbb9dd03c220aa8a79b9178518647130fafd8b94"
+  evidence_json="sha256:996c331b2243f4212f28afd3460ed2dffb18b101d4cb468e6870f4ca03417a54"
+  fullmath_sol="sha256:959c52e1c860bfbede3e33c8d04910c11038973173aa3478547cbad2e444880e"
+}
+
+.v{
+  method="PYTHON_BIGINT && NODE_BIGINT && C11_LIMB16 && C11_U64_I128_IDENTITY64 && OPENSSL_BN && GO_MATH_BIG && JAVA_BIGINT && GMP_MPZ && PERL_BIGINT_CALC && LIN_C0_VM && LNR1_QUAD_AUDITOR && OPENSSL_DGST && LCR2_SETTLER_EQ_COPROCESSOR && GMP_LCR2_EXACT_OVERPAID && PERL_LCR2_EXACT_OVERPAID && PERL_LCR2_FULL_PHANTOM && LCR2_FULL_SETTLE_U512 && LGE1_GE512 && LRI1_REMAINDER_IDENTITY && LIP1_INCLUSION && LIP1_LCR2_E2E && LIP1_LCR2_FULL_E2E && CAMPAIGN_MERKLE_FROM_LEAVES && LCR2_MERKLE_FROM_LEAVES && LCR2_FULL_MERKLE_FROM_LEAVES && LGE1_MERKLE_FROM_LEAVES && LRI1_MERKLE_FROM_LEAVES && TAMPER_REJECT && PY_AND_NODE_AND_PERL_ZERO_LIN_VERIFIERS && PY_AND_NODE_AND_PERL_LIP1_AUDITORS && C11_LIP1_PHANTOM_RECEIPT && C11_LIP1_LCR2_EXACT_RECEIPT && C11_LIP1_LCR2_FULL_PHANTOM_RECEIPT"
+  on_fail="do not publish PASS"
+}
