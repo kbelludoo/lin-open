@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: emit OK_VIEW; expand 10**N (N<=18); leftover ** REJ_SOLIDITY_POW; ternary return; strip unchecked; REJ_SOLIDITY_MULTI_RET / LIBRARY_CALL; brace-strip if"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,9 +46,18 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(body, "**") > 0) { ^"REJ_SOLIDITY_POW" };
+  ?(rg_count_lit(sig, "returns (bool") > 0) { ^"REJ_SOLIDITY_MULTI_RET" };
+  ?(rg_count_lit(body, ".mul(") > 0 || rg_count_lit(body, ".div(") > 0) { ^"REJ_SOLIDITY_LIBRARY_CALL" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
+}
+
+!sol_ok_emit(reason: string): int {
+  ?(starts_lit(reason, 0, "OK") == 1 && reason.length == 2) { ^1 };
+  ?(starts_lit(reason, 0, "OK_VIEW") == 1 && reason.length == 7) { ^1 };
+  ^0;
 }
 
 !sol_parse_test_gate(): int {
@@ -116,6 +125,97 @@
   ^out;
 }
 
+!sol_strip_unchecked(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  keep = 0;
+  while (i < n) {
+    ?(starts_lit(s, i, "unchecked") == 1 && (i + 9 >= n || is_ident(s.charCodeAt(i + 9)) == false) && (i == 0 || is_ident(s.charCodeAt(i - 1)) == false)) {
+      i = i + 9;
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+    keep = 1;
+  };
+  ^out;
+}
+
+!sol_expand_pow(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  st = 0;
+  base = 0;
+  expn = 0;
+  z = 0;
+  en = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) {
+      ?(i > 0 && is_ident(s.charCodeAt(i - 1)) == true) {
+        out = out + s.charAt(i);
+        i = i + 1;
+        continue;
+      };
+      st = i;
+      while (i < n && s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) { i = i + 1 };
+      ?(i + 1 < n && s.charCodeAt(i) == 42 && s.charCodeAt(i + 1) == 42) {
+        base = sol_parse_uint(s, st, i);
+        i = i + 2;
+        en = i;
+        while (i < n && s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) { i = i + 1 };
+        ?(i > en && base == 10) {
+          expn = sol_parse_uint(s, en, i);
+          ?(expn >= 0 && expn <= 18) {
+            out = out + "1";
+            z = 0;
+            while (z < expn) { out = out + "0"; z = z + 1 };
+            continue;
+          };
+        };
+        out = out + slice2(s, st, i);
+        continue;
+      };
+      out = out + slice2(s, st, i);
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!sol_ternary_q(s: string) -> int {
+  n = s.length;
+  i = 0;
+  d = 0;
+  c = 0;
+  while (i < n) {
+    c = s.charCodeAt(i);
+    ?(c == 40 || c == 91) { d = d + 1 };
+    ?(c == 41 || c == 93) { d = d - 1 };
+    ?(d == 0 && c == 63 && (i + 1 >= n || s.charCodeAt(i + 1) != 40)) { ^i };
+    i = i + 1;
+  };
+  ^-1;
+}
+
+!sol_ternary_colon(s: string, q: int) -> int {
+  n = s.length;
+  i = q + 1;
+  d = 0;
+  c = 0;
+  while (i < n) {
+    c = s.charCodeAt(i);
+    ?(c == 40 || c == 91) { d = d + 1 };
+    ?(c == 41 || c == 93) { d = d - 1 };
+    ?(d == 0 && c == 58) { ^i };
+    i = i + 1;
+  };
+  ^-1;
+}
+
 !sol_strip_types(s: string): string {
   out = "";
   n = s.length;
@@ -148,10 +248,31 @@
   out = "";
   p = 0;
   cl = 0;
+  q = 0;
+  col = 0;
+  rest = "";
+  while (n >= 2 && e.charCodeAt(0) == 123 && e.charCodeAt(n - 1) == 125) {
+    e = jss_trim(slice2(e, 1, n - 1));
+    n = e.length;
+  };
   ?(n == 0) { ^out };
   ?(starts_lit(e, 0, "return") == 1 && (n == 6 || is_ident(e.charCodeAt(6)) == false)) {
+    rest = jss_trim(slice2(e, 6, n));
+    q = sol_ternary_q(rest);
+    ?(q >= 0) {
+      col = sol_ternary_colon(rest, q);
+      ?(col > q) {
+        out = out + "?(";
+        out = out + jss_trim(slice2(rest, 0, q));
+        out = out + ") { ^ ";
+        out = out + jss_trim(slice2(rest, q + 1, col));
+        out = out + "; }; ^ ";
+        out = out + jss_trim(slice2(rest, col + 1, rest.length));
+        ^out;
+      };
+    };
     out = out + "^";
-    out = out + jss_trim(slice2(e, 6, n));
+    out = out + rest;
     ^out;
   };
   ?(starts_lit(e, 0, "if") == 1 && n > 2 && is_ident(e.charCodeAt(2)) == false) {
@@ -172,7 +293,7 @@
 }
 
 !sol_body(b: string): string {
-  t = jss_trim(sol_strip_types(sol_expand_exp(b)));
+  t = jss_trim(sol_strip_types(sol_expand_pow(sol_expand_exp(sol_strip_unchecked(b)))));
   out = "";
   n = t.length;
   i = 0;
@@ -300,10 +421,10 @@
               cb = match_brace(pass, b);
               ?(cb > b) {
                 pr = slice2(pass, p + 1, cl);
-                bd = slice2(pass, b + 1, cb);
+                bd = sol_expand_pow(sol_expand_exp(sol_strip_unchecked(slice2(pass, b + 1, cb))));
                 sig = slice2(pass, i, b);
                 reason = sol_reason(sig, bd);
-                ?(starts_lit(reason, 0, "OK") == 1 && reason.length == 2) {
+                ?(sol_ok_emit(reason) == 1) {
                   out = out + sol_fn(nm, pr, bd);
                   names = rgs_csv_add(names, nm);
                 };
@@ -334,7 +455,21 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  p10 = sol_expand_pow("10**2");
+  ?(starts_lit(p10, 0, "100") == 0) { ^0 };
+  ?(p10.length != 3) { ^0 };
+  leftover = sol_expand_pow("x**2");
+  ?(rg_count_lit(leftover, "**") == 0) { ^0 };
+  rpow = sol_reason("function log10(uint value) internal pure returns (uint)", "if (value >= 10 ** 64) { value /= 10 ** 64; }");
+  ?(starts_lit(rpow, 0, "REJ_SOLIDITY_POW") == 0) { ^0 };
+  rasm = sol_reason("function mulDiv(uint x, uint y, uint d) internal pure returns (uint)", "assembly { let mm := mulmod(x, y, not(0)) }");
+  ?(starts_lit(rasm, 0, "REJ_SOLIDITY_INLINE_ASM") == 0) { ^0 };
+  rtuple = sol_reason("function tryAdd(uint a, uint b) internal pure returns (bool, uint256)", "unchecked { uint c = a + b; return (true, c); }");
+  ?(starts_lit(rtuple, 0, "REJ_SOLIDITY_MULTI_RET") == 0) { ^0 };
+  tmax = sol_stmt("return a > b ? a : b");
+  ?(rg_count_lit(tmax, "?(") == 0) { ^0 };
+  ?(sol_ok_emit("OK_VIEW") == 0) { ^0 };
   ^1;
 }
 
-=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
+=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_expand_pow, sol_from_sol, sol_from_sol_gate, sol_ok_emit}

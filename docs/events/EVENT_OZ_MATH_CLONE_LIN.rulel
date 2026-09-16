@@ -1,0 +1,64 @@
+@RULEL:OZ_MATH_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-OZ-MATH-CEILDIV-V5"
+@TITLE="Clone-lin of OpenZeppelin Math.ceilDiv/average with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-oz-math"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile OpenZeppelin Math v5.0.2 ceilDiv/average/try*/max/min into deterministic LIN, compile in memory with C11 compiler 0, publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="non-negative i64 (0..2^63-1); Solidity uint256 is NOT claimed"
+  commercial_hook="OpenZeppelin Math is the standard library behind ERC-4626 share rounding and token amount ceilings; bitwise average and distributed ceilDiv are the overflow-safe forms auditors already expect"
+}
+
+.u{
+  repo="https://github.com/OpenZeppelin/openzeppelin-contracts"
+  tag="v5.0.2"
+  path="contracts/utils/math/Math.sol"
+  license="MIT"
+  commit="dbb6104ce834628e473d2173bbc9d47f81a9eec3"
+  git_blob_sha="9681524529b34f34033ae97064a2700bfc4eec00"
+  file_sha256="a6ee779fc42e6bf01b5e6a963065706e882b016affbedfd8be19a71ea48e6e15"
+  excerpt_sha256="6019779a847dd3239d457f7f255f7592475c214c04e07cb898f9a77207c4d22f"
+  fixture="test/fixtures/external_proof/Math.sol"
+}
+
+.l{
+  clone="src/lin_oz_math.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-oz-math"
+  transpiler_delta="src/lin_from_solidity.lin v3: 10**N expand, leftover ** REJ_SOLIDITY_POW, ternary return, OK_VIEW emit, REJ_SOLIDITY_MULTI_RET / INLINE_ASM; src/lin_from_c.lin v2: U/L suffix strip, REJ_C_CXX, ceil(/floor( REJ_C_FLOAT"
+  improvement_1="tryAdd/trySub/tryDiv tuples become explicit ozm_*_ok + ozm_* (no hidden bool,uint256 pair)"
+  improvement_2="ceilDiv(b==0) fail-closes to 0 with ozm_ceil_ok=0; Solidity 0.8 panics on return a/b"
+  improvement_3="average uses OZ bitwise (a&b)+((a^b)/2); naive signed (a+b)/2 wraps at 2^62+2^62"
+  improvement_4="ceilDiv uses OZ (a-1)/b+1; naive (a+b-1)/b wraps on INT64_MAX/2"
+  improvement_5="Math.mulDiv assembly is rejected (REJ_SOLIDITY_INLINE_ASM), not silently emitted"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/oz_math_c11.c (gcc -O2 -std=c11)"
+  gate="test/verify_oz_math.sh"
+}
+
+.p{
+  harness="test/prove_oz_math_external.py"
+  evidence_json="examples/oz_math/oz_math_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-oz-math"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet OpenZeppelin Math parity"
+  not_claimed_2="transpile or bit-exact CRT/mulmod of Math.mulDiv assembly"
+  not_claimed_3="LIN is faster than solc or replaces OpenZeppelin/EVM"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+}
+
+.v{
+  method="PINNED_BYTES && EXCERPT_SUBSTRING && PYTHON_INT && C11 && LIN_C0_VM && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

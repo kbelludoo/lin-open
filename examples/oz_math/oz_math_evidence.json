@@ -1,0 +1,145 @@
+{
+  "schema": "LIN_OZ_MATH_EVIDENCE_1.0",
+  "class": "EXPERIMENTAL",
+  "claims": [
+    {
+      "id": "PIN-FIXTURE",
+      "status": "PASS",
+      "description": "pinned Math.sol excerpt fixture sha256",
+      "note": ""
+    },
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "verbatim tryAdd..ceilDiv excerpt sha256",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned openzeppelin-contracts v5.0.2 matches full-file pin",
+      "note": "commit=dbb6104ce834628e473d2173bbc9d47f81a9eec3 blob=9681524529b34f34033ae97064a2700bfc4eec00"
+    },
+    {
+      "id": "UPSTREAM-SUBSTR",
+      "status": "PASS",
+      "description": "excerpt is a substring of live contracts/utils/math/Math.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 oracle selftest (ceilDiv/average/try*/wrap)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_oz_math.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "ozm_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "28/28 vectors: C11 == Python int == lin_c0 vm",
+      "note": ""
+    },
+    {
+      "id": "AVG-WRAP",
+      "status": "PASS",
+      "description": "naive signed (2^62+2^62)/2 wraps; OZ bitwise average does not",
+      "note": "naive=-4611686018427387904 bitwise=4611686018427387904"
+    },
+    {
+      "id": "CEIL-WRAP",
+      "status": "PASS",
+      "description": "naive (INT64_MAX+2-1)/2 wraps; OZ (a-1)/b+1 does not",
+      "note": "naive=-4611686018427387904 oz=4611686018427387904"
+    },
+    {
+      "id": "DIV0",
+      "status": "PASS",
+      "description": "ceilDiv(b=0) fail-closes to 0 (Solidity panics on a/b)",
+      "note": ""
+    },
+    {
+      "id": "TRYADD",
+      "status": "PASS",
+      "description": "tryAdd overflow is explicit ozm_add_ok=0 (no dual-return tuple)",
+      "note": ""
+    },
+    {
+      "id": "SOL-V3",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3: 10**N, leftover ** reject, tuple reject, ternary, OK_VIEW",
+      "note": ""
+    },
+    {
+      "id": "MULDIV-REJ",
+      "status": "PASS",
+      "description": "Math.mulDiv assembly is REJ_SOLIDITY_INLINE_ASM (not claimed)",
+      "note": ""
+    },
+    {
+      "id": "NO-ASM-KERNEL",
+      "status": "PASS",
+      "description": "cloned ceilDiv/average/max/min/try* excerpt contains no assembly",
+      "note": ""
+    },
+    {
+      "id": "C-V2",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2: U/L suffix strip, REJ_C_CXX, ceil(/floor( \u2192 REJ_C_FLOAT",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes operands as arguments (no library using-for / storage)",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/OpenZeppelin/openzeppelin-contracts",
+    "tag": "v5.0.2",
+    "commit": "dbb6104ce834628e473d2173bbc9d47f81a9eec3",
+    "path": "contracts/utils/math/Math.sol",
+    "git_blob_sha": "9681524529b34f34033ae97064a2700bfc4eec00",
+    "file_sha256": "a6ee779fc42e6bf01b5e6a963065706e882b016affbedfd8be19a71ea48e6e15",
+    "excerpt_sha256": "6019779a847dd3239d457f7f255f7592475c214c04e07cb898f9a77207c4d22f",
+    "license": "MIT"
+  },
+  "lin_clone": "src/lin_oz_math.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-oz-math",
+  "c11_oracle": "test/oracles/oz_math_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "canonical": {
+    "ceilDiv(10,3)": 4,
+    "average(3,5)": 4,
+    "ceilDiv(INT64_MAX,2)": 4611686018427387904
+  }
+}
