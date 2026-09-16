@@ -1,0 +1,44 @@
+@RULEL:U512_COPROCESSOR:1.4.0
+@TITLE="LIN numeric coprocessor: 512-bit intermediate with auditable receipt"
+@CLASS="EXPERIMENTAL"
+@DATE="2026-09-16"
+
+~R{.s=sell .p=proves .n=not_proves .h=how .g=gates}
+
+.s{
+  product="numeric coprocessor with an auditable receipt, not a Uniswap replacement"
+  why_512="real u256 mulDiv(a,b,d)=(a*b)/d has a*b up to 2^512-1; without a correct 512 intermediate the SafeMath-width u256 settler lies or returns -2 where FullMath-width would approve"
+  engine="src/lin_u512_coprocessor.lin 16-bit limbs; examples/defi_settlement_proof/u512_uniswap_v2_core.lin remainder is 32 limbs with 512-bit ge"
+}
+
+.p{
+  mul="256x256->512 schoolbook with leftover-carry fail-closed; (2^256-1)^2 lo=1 hi=2^256-2 is a published LNR1 leaf"
+  div="512/256 restoring division, remainder 32 limbs, q*d+r==n and r<d (LIN + C11 16-bit + C11 64-bit __int128 identity64 + Node.js BigInt + OpenSSL BIGNUM via dlopen libcrypto.so.3)"
+  ge="cmp/ge over 512 bits: u512_ge_word + eight published LGE1 leaves (power-of-two tree, no padding) vs Python int, Node BigInt, OpenSSL BN_ucmp, C11 lin_sha256 merkle"
+  oracles="Python int + C11 16-bit schoolbook + C11 64-bit __int128 limbs + Node.js BigInt + OpenSSL BIGNUM; WIDTH_CONSENSUS and OPENSSL_BN_CONSENSUS across the n=1060 batch"
+  receipt="LNR1 240-byte records, domains LIN:U512:LEAF:1 / LIN:U512:NODE:1; LCR2 208-byte records, domains LIN:LEAF:1 / LIN:NODE:1; LGE1 208-byte records, domains LIN:U512:GE:LEAF:1 / LIN:U512:GE:NODE:1; quad-auditor Python hashlib, Node crypto, C11 lin_sha256, OpenSSL dgst; 1-bit tamper rejected; schema 1.4 zero-LIN Python AND Node verifiers recompute FOUR campaign merkles from published leaves"
+  e2e="LCR2 slice: settle_u256_word == coprocessor mulDiv(ain*997, reserve_out, rin*1000+ain*997) == ref_amount_out on 3 EXACT_INPUT + 3 OVERPAID_INPUT with real steps; guards -1 (zero in) and -2 (256-bit width) are LCR2 leaves"
+  e2e_full="LCR2-full: settle_u512_swap == ref_amount_out_full (512-bit numerator) on the same 3 EXACT + 3 OVERPAID plus PHANTOM_APPROVE (SafeMath ref=-2, full ref approves) plus GUARD_ZERO and GUARD_FEE_OVERFLOW (ain=2^256-1)"
+  phantom="ain=1,rin=1,rout=ceil(2^256/997): coprocessor mulDiv(997,rout,1997) APPROVES; settle_u512_swap APPROVES; settle_u256_word returns -2. 512-bit intermediate is off the suspect list; replacing the SafeMath-width settler body remains required for that ABI"
+  leftover="u256 schoolbook leftover-carry after limbs 16..31 now fail-closes -2 (REVIEW_MATH defense-in-depth; product still cannot exceed 511 bits)"
+}
+
+.n{
+  not_1="FullMath.sol CRT / mulmod assembly parity"
+  not_2="a deployed Uniswap v2/v3 pool"
+  not_3="the full 2000-swap + 157-unfiltered campaign"
+  not_4="that proving 512 closes the SafeMath-width u256 settler by itself — EXACT/OVERPAID, guards, and LCR2 steps remain mandatory and are sliced; LCR2-full proves the 512-bit settlement ABI separately"
+  not_5="zk or computational soundness; receipts are tamper-evidence + re-execution"
+}
+
+.h{
+  make="make u512-coprocessor-proof"
+  harness="test/prove_u512_coprocessor_external.py"
+  auditor_py="python3 examples/u512_coprocessor/verify_u512_receipt.py examples/u512_coprocessor/u512_coprocessor_evidence.json --self-test"
+  auditor_js="node examples/u512_coprocessor/verify_u512_receipt.js examples/u512_coprocessor/u512_coprocessor_evidence.json"
+  on_fail="do not publish PASS"
+}
+
+.g{
+  fullmath_pin="sha256:959c52e1c860bfbede3e33c8d04910c11038973173aa3478547cbad2e444880e"
+}
