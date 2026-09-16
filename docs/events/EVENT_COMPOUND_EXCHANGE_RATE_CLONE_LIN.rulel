@@ -1,0 +1,65 @@
+@RULEL:COMPOUND_EXCHANGE_RATE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-COMPOUND-CTOKEN-EXRATE-V1"
+@TITLE="Clone-lin of Compound CToken exchangeRateStoredInternal with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-compound-exrate"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Compound cToken exchange-rate math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for (underlying*1e18)/supply; Solidity uint256 is NOT claimed"
+  commercial_hook="exchangeRateStoredInternal is the conversion from cToken to underlying used by every Compound v2 market; making cash/borrows/reserves/supply explicit and replacing wrapping i64 multiply with 128-bit muldiv is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/compound-finance/compound-protocol"
+  path="contracts/CToken.sol"
+  function="exchangeRateStoredInternal"
+  license="BSD-3-Clause"
+  commit="a3214f67b73310d547e00fc578e8355911c9d376"
+  git_blob_sha="b8c878c79c75855808f6e7303099a367c8bad98b"
+  file_sha256="b64790f41ef851b09856af286ce8253b95ef34fda4ae836f924a519e8f792785"
+  fixture="test/fixtures/external_proof/CToken_exchangeRateStoredInternal.sol"
+}
+
+.l{
+  clone="src/lin_compound_exchange_rate.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: emit OK_VIEW, if/else, REJ_SOLIDITY_POW / LIBRARY_CALL / totalSupply-state; src/lin_sol_view_lift.lin v2 lifts getCashPrior(); src/lin_from_c.lin v2 U/L strip + REJ_C_CXX"
+  improvement_1="Solidity reads totalSupply, totalBorrows, totalReserves, initialExchangeRateMantissa and getCashPrior() from storage/view; LIN takes them as arguments"
+  improvement_2="(cash+borrows-reserves)*1e18/supply overflows i64; LIN uses schoolbook 128-bit muldiv matching C11 __int128"
+  improvement_3="cash+borrows-reserves underflow: Solidity 0.8 reverts; LIN fail-closed returns 0 with cer_ok=0 (empty supply is cer_ok=1 and returns initial_rate)"
+  improvement_4="quotient that does not fit uint64 fail-closes to 0 (no silent wrap); remainder a*b=q*d+r is checked by Python bigint"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/compound_exchange_rate_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_compound_exchange_rate.sh"
+}
+
+.p{
+  harness="test/prove_compound_exchange_rate_external.py"
+  evidence_json="examples/compound_exchange_rate/compound_exchange_rate_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-compound-exrate"
+  canonical_empty="empty market, initial=2e17 -> 2e17"
+  canonical_par="cash=1000 supply=1000 -> 1e18"
+  canonical_borrow="cash=1000 borrows=1000 supply=1000 -> 2e18"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet cToken parity (Compound initial rates such as 2e26 do not fit uint64)"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production cToken replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Compound, Uniswap, or the EVM"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
