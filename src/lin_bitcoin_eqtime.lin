@@ -1,0 +1,173 @@
+@LIN:L1c:0.2
+@BITCOIN_GETBLOCKPROOF_EQUIVALENT_TIME{
+  version=1
+  repo="bitcoin/bitcoin"
+  source="src/chain.cpp GetBlockProofEquivalentTime"
+  license="MIT"
+  tag="v27.1"
+  commit="1088a98f5aad080cc6cca2da174f206509fcda6c"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_work_limbs_times_spacing_over_tip_proof_with_128bit_muldiv"
+  note="Not uint256 nChainWork and not a Bitcoin node. Real deltas: CBlockIndex/Params are explicit args; tip_proof==0 fail-closes; (delta*spacing)/proof uses 128-bit product; bits>63 saturates to int64 max with sign, matching Core."
+}
+
+!bpet_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!bpet_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(bpet_u_lt(s, a));
+}
+
+!bpet_mask32() -> int {
+  ^ 4294967295;
+}
+
+!bpet_i64_max() -> int {
+  ^ 9223372036854775807;
+}
+
+!bpet_spacing_btc() -> int {
+  ^ 600;
+}
+
+!bpet_proof_regtest_nbits() -> int {
+  ^ 2;
+}
+
+!bpet_ok(to_work: int, from_work: int, tip_proof: int, spacing: int) -> int {
+  ?(to_work < 0) { ^ 0; };
+  ?(from_work < 0) { ^ 0; };
+  ?(tip_proof <= 0) { ^ 0; };
+  ?(spacing < 0) { ^ 0; };
+  ^ 1;
+}
+
+!bpet_muldiv_part(a: int, b: int, d: int, mode: int) -> int {
+  ?(d == 0) { ^ 0; };
+  m32 = bpet_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = bpet_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = bpet_u_add_carry(p0, t);
+  hi = p3 + _lia_ushr(mid, 32);
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(bpet_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = bpet_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(mode == 1) { ^ r_lo; };
+  ?(mode == 2) {
+    ?(ov == 1) { ^ 1; };
+    ?(q < 0) { ^ 1; };
+    ^ 0;
+  };
+  ?(ov == 1) { ^ 0; };
+  ?(q < 0) { ^ 0; };
+  ^ q;
+}
+
+!bpet_muldiv(a: int, b: int, d: int) -> int {
+  ^ bpet_muldiv_part(a, b, d, 0);
+}
+
+!bpet_needs_sat(a: int, b: int, d: int) -> int {
+  ^ bpet_muldiv_part(a, b, d, 2);
+}
+
+!bpet_eqtime(to_work: int, from_work: int, tip_proof: int, spacing: int) -> int {
+  ?(bpet_ok(to_work, from_work, tip_proof, spacing) == 0) { ^ 0; };
+  sign = 1;
+  hi = to_work;
+  lo = from_work;
+  ?(bpet_u_lt(to_work, from_work) == 1) {
+    sign = 0 - 1;
+    hi = from_work;
+    lo = to_work;
+  };
+  delta = hi - lo;
+  ?(bpet_needs_sat(delta, spacing, tip_proof) == 1) {
+    ^ sign * bpet_i64_max();
+  };
+  q = bpet_muldiv(delta, spacing, tip_proof);
+  ^ sign * q;
+}
+
+!bpet_core_identity(h1: int, h2: int) -> int {
+  proof = bpet_proof_regtest_nbits();
+  sp = bpet_spacing_btc();
+  ^ bpet_eqtime(h1 * proof, h2 * proof, proof, sp);
+}
+
+!bpet_test_suite() -> int {
+  ?(bpet_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(bpet_eqtime(0, 0, 2, 600) != 0) { ^ -2; };
+  ?(bpet_eqtime(2, 0, 2, 600) != 600) { ^ -3; };
+  ?(bpet_eqtime(0, 2, 2, 600) != (0 - 600)) { ^ -4; };
+  ?(bpet_eqtime(200, 80, 2, 600) != 36000) { ^ -5; };
+  ?(bpet_eqtime(80, 200, 2, 600) != (0 - 36000)) { ^ -6; };
+  ?(bpet_ok(0, 0, 0, 600) != 0) { ^ -7; };
+  ?(bpet_eqtime(0, 0, 0, 600) != 0) { ^ -8; };
+  ?(bpet_core_identity(100, 40) != 36000) { ^ -9; };
+  ?(bpet_core_identity(0, 1) != (0 - 600)) { ^ -10; };
+  ?(bpet_needs_sat(4611686018427387904, 2, 1) != 1) { ^ -11; };
+  ?(bpet_eqtime(4611686018427387904, 0, 1, 2) != bpet_i64_max()) { ^ -12; };
+  ?(bpet_eqtime(0, 4611686018427387904, 1, 2) != (0 - bpet_i64_max())) { ^ -13; };
+  ?(bpet_muldiv(1000000000000000000, 10, 100) != 100000000000000000) { ^ -14; };
+  ^ 1;
+}
+
+=ex{
+  bpet_u_lt,
+  bpet_u_add_carry,
+  bpet_mask32,
+  bpet_i64_max,
+  bpet_spacing_btc,
+  bpet_proof_regtest_nbits,
+  bpet_ok,
+  bpet_muldiv_part,
+  bpet_muldiv,
+  bpet_needs_sat,
+  bpet_eqtime,
+  bpet_core_identity,
+  bpet_test_suite
+}

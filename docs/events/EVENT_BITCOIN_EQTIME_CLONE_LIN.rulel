@@ -1,0 +1,69 @@
+@RULEL:BITCOIN_EQTIME_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-BITCOIN-EQTIME-V1"
+@TITLE="Clone-lin of Bitcoin Core GetBlockProofEquivalentTime with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_WORK"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-bitcoin-core-eqtime"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Bitcoin Core GetBlockProofEquivalentTime into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on mainnet"
+  operand_width="uint64 work limbs, 128-bit product for (delta*spacing)/proof; Core arith_uint256 nChainWork is NOT claimed"
+  commercial_hook="GetBlockProofEquivalentTime converts a chain-work delta into estimated seconds at the tip difficulty; Bitcoin Core uses it to measure reorg cost in time. Explicit args + fail-closed zero-proof + 128-bit muldiv is an audit improvement, not a hashrate or TVL claim"
+}
+
+.u{
+  repo="https://github.com/bitcoin/bitcoin"
+  path="src/chain.cpp"
+  test="src/test/pow_tests.cpp GetBlockProofEquivalentTime_test"
+  license="MIT"
+  tag="v27.1"
+  commit="1088a98f5aad080cc6cca2da174f206509fcda6c"
+  git_blob_sha="82007a8a1e7f38f7b02eb299f8fc30fc61fc190e"
+  file_sha256="bbc1aa18b580d8a36ce7c416ee6cadee2c89686905912fc9a1edf6b3873992a5"
+  pow_tests_sha256="5911e49b195af6dac2e4e94f5509537555172ae9c6a4816dc06c147cd8c6d0ae"
+  pow_tests_blob="3a44d1da499852cbdf6206bbf5026a50a9610f2f"
+  chainparams_sha256="addd5cf5d04d4c71433dbc7faa1ee2706f9fa5069485b838dbf4a873905377ca"
+  nPowTargetSpacing=600
+  nbits_core_test="0x207fffff"
+  getblockproof_0x207fffff=2
+  fixture="test/fixtures/external_proof/bitcoin_v27_1_chain.cpp"
+}
+
+.l{
+  clone="src/lin_bitcoin_eqtime.lin"
+  transpiler_delta="src/lin_from_c.lin v2: REJ_C_REFERENCE / REJ_CXX_CLASS / REJ_CXX_TEMPLATE / REJ_CXX_STD / REJ_CXX_NAMESPACE + numeric cfs_rej_eqtime (typechecks; lin_c0 vm of string literals is VM_REJ_STRING_LITERAL)"
+  improvement_1="CBlockIndex& and Consensus::Params& become to_work/from_work/tip_proof/spacing arguments"
+  improvement_2="tip_proof==0 fail-closes to 0 instead of dividing arith_uint256 by GetBlockProof==0"
+  improvement_3="(delta*spacing)/proof uses 128-bit product; bits>63 saturates to int64 max with sign, matching Core"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit (SKIP this run: libtcc absent)"
+  oracle="test/oracles/bitcoin_eqtime_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_bitcoin_eqtime.sh"
+}
+
+.p{
+  harness="test/prove_bitcoin_eqtime_external.py"
+  evidence_json="examples/bitcoin_eqtime/bitcoin_eqtime_evidence.json"
+  this_run="19 PASS / 0 FAIL / 2 SKIP"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-bitcoin-core-eqtime"
+}
+
+.n{
+  not_claimed_1="full uint256 nChainWork / mainnet chain-work parity"
+  not_claimed_2="LIN is a Bitcoin node or faster than bitcoind"
+  not_claimed_3="this clone is a production fork-choice replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="cfs_from_c emit or cfs_rej_eqtime executes on lin_c0 vm"
+}
+
+.v{
+  method="PINNED_BYTES && PY_GETBLOCKPROOF_NBITS && CORE_TEST_IDENTITY && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

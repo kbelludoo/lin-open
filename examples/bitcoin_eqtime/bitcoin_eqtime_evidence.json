@@ -1,0 +1,151 @@
+{
+  "schema": "LIN_BITCOIN_EQTIME_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-CHAIN",
+      "status": "PASS",
+      "description": "pinned v27.1 src/chain.cpp sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "PIN-POWTEST",
+      "status": "PASS",
+      "description": "pinned v27.1 src/test/pow_tests.cpp sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "PIN-FN",
+      "status": "PASS",
+      "description": "pinned chain.cpp contains GetBlockProofEquivalentTime",
+      "note": ""
+    },
+    {
+      "id": "PIN-TEST",
+      "status": "PASS",
+      "description": "Core GetBlockProofEquivalentTime_test uses nBits 0x207fffff",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of bitcoin v27.1 matches fixture",
+      "note": "commit=1088a98f5aad080cc6cca2da174f206509fcda6c blob=82007a8a1e7f38f7b02eb299f8fc30fc61fc190e"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/chain.cpp",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-POW",
+      "status": "PASS",
+      "description": "live pow_tests.cpp sha256 and blob match pin",
+      "note": "blob=3a44d1da499852cbdf6206bbf5026a50a9610f2f"
+    },
+    {
+      "id": "PY-PROOF",
+      "status": "PASS",
+      "description": "Python bigint GetBlockProof(0x207fffff)==2 (Core test nBits)",
+      "note": "spacing=600"
+    },
+    {
+      "id": "PY-SPACING",
+      "status": "PASS",
+      "description": "mainnet nPowTargetSpacing=10*60 from kernel/chainparams.cpp pin",
+      "note": "sha256=addd5cf5d04d4c71433dbc7faa1ee2706f9fa5069485b838dbf4a873905377ca"
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_bitcoin_eqtime.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 (C++ fail-closed)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "bpet_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "11/11 vectors: Python == C11 i128 == limbs == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "CORE-ID",
+      "status": "PASS",
+      "description": "84 Core-test identities: eqtime == (h1-h2)*600 when nBits=0x207fffff",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (1e18*10)/100 wraps; 128-bit muldiv matches Core bigint",
+      "note": "i64_wrap=-84467440737095517 bigint=100000000000000000"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes work/proof/spacing as arguments (no CBlockIndex&)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-CXX",
+      "status": "PASS",
+      "description": "upstream function is C++ (CBlockIndex& + std::numeric_limits)",
+      "note": ""
+    },
+    {
+      "id": "CXX-REJ",
+      "status": "SKIP",
+      "description": "cfs_rej_eqtime string path did not execute on lin_c0",
+      "note": "lin_c0 vm failed: @RULEL:LIN_VM_RUN:1.0.0\n.refused{ fn=\"cfs_rej_eqtime\" reason=\"VM_REJ_STRING_LITERAL\" }\n\n"
+    },
+    {
+      "id": "CXX-EMIT",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 fail-closes C++ reference/class/template/std::",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/bitcoin/bitcoin",
+    "tag": "v27.1",
+    "commit": "1088a98f5aad080cc6cca2da174f206509fcda6c",
+    "path": "src/chain.cpp",
+    "git_blob_sha": "82007a8a1e7f38f7b02eb299f8fc30fc61fc190e",
+    "file_sha256": "bbc1aa18b580d8a36ce7c416ee6cadee2c89686905912fc9a1edf6b3873992a5",
+    "pow_tests_sha256": "5911e49b195af6dac2e4e94f5509537555172ae9c6a4816dc06c147cd8c6d0ae",
+    "pow_tests_blob": "3a44d1da499852cbdf6206bbf5026a50a9610f2f",
+    "chainparams_sha256": "addd5cf5d04d4c71433dbc7faa1ee2706f9fa5069485b838dbf4a873905377ca",
+    "license": "MIT",
+    "nbits_core_test": "0x207fffff",
+    "getblockproof_0x207fffff": 2,
+    "nPowTargetSpacing": 600
+  },
+  "lin_clone": "src/lin_bitcoin_eqtime.lin",
+  "c11_oracle": "test/oracles/bitcoin_eqtime_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-bitcoin-core-eqtime"
+}
