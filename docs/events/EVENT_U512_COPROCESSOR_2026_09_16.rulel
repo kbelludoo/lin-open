@@ -1,0 +1,75 @@
+@RULEL:U512_COPROCESSOR_EVENT:1.3.0
+@CHALLENGE_ID="LIN-U512-COPROCESSOR-2026-09-16"
+@TITLE="512-bit intermediate proved as numeric coprocessor with auditable receipt"
+@STATUS="REPRODUCED_THIS_RUN"
+@DATE="2026-09-16"
+@CLASS="EXPERIMENTAL"
+
+~R{.s=scope .p=proved .n=not_proved .m=measured .h=hashes .v=verdict}
+
+.s{
+  product="LIN as a numeric coprocessor with an auditable receipt, not a Uniswap replacement"
+  why="u256 mulDiv(a,b,d)=(a*b)/d with a,b,d up to 2^256-1 needs a correct 512-bit product; otherwise the SafeMath-width settler lies or returns -2 where width-correct math approves"
+  engine="src/lin_u512_coprocessor.lin (16-bit limbs) + 32-limb remainder ge in examples/defi_settlement_proof/u512_uniswap_v2_core.lin"
+  make="make u512-coprocessor-proof"
+  harness="python3 test/prove_u512_coprocessor_external.py → 30/30 PASS this run"
+  delta="schema 1.3: Node.js BigInt is a math oracle (not only SHA-256); zero-LIN Python AND Node verifiers recompute LNR1 + LCR2 + LCR2-full; LCR2-full is settle_u512_swap vs ref_amount_out_full including PHANTOM_APPROVE"
+}
+
+.p{
+  mul="256x256->512 schoolbook, leftover-carry fail-closed; (2^256-1)^2 lo=1 hi=2^256-2 published leaf; MUL 7*9=63 steps=9824"
+  div="512/256 restoring div, remainder 32 limbs, 512-bit ge, q*d+r==n and r<d; 7*9/2 q=31 r=1 steps=987074; 2^255*2/3 q=0x5555555555555555 r=1 steps=1118732"
+  ge="u512_ge_word: 2^256>=2^256-1 → 1; reverse → 0; 0>=0 → 1; plus ge inside the division loop; C11 ge16 self-test"
+  guards="-1 on d=0 (coprocessor) and zero amount_in (both LCR2 trees); -2 on q overflow (2^255*2/1), SafeMath-width phantom (LCR2), and ain=2^256-1 fee overflow (LCR2-full)"
+  oracles="Python int + C11 16-bit schoolbook + C11 64-bit __int128 identity64 + Node.js BigInt (n=1060 batch, WIDTH_CONSENSUS and NODE_BIGINT_CONSENSUS); wrap-borrow regression 2*2^255/(2^256-1)=1 r=1"
+  lin="Compiler-0 lin_c0 vm; u512_self_gate=1 steps=6710747; getAmountOut muldiv=1813 steps=977437"
+  phantom="ain=1,rin=1,rout=ceil(2^256/997): coprocessor mulDiv(997,rout,1997) APPROVES steps=1106942; settle_u512_swap APPROVES steps=1098245 q=0x20d135b66ae990fc484cea55e38a936bcf497445394d4cc984add428823e4d; settle_u256_word -2 steps=11481. 512-bit intermediate off the suspect list; replacing the SafeMath-width settler body remains required for that ABI"
+  uniswap_core="settle_u512_swap(1000,10000,20000) word0=1813 steps=968269 after 32-limb remainder ge"
+  receipt="LNR1 240-byte records, domains LIN:U512:LEAF:1 / LIN:U512:NODE:1; 14 published leaves; LCR2 208-byte records, domains LIN:LEAF:1 / LIN:NODE:1; 8 published LCR2 leaves; 9 published LCR2-full leaves; quad-auditor Python hashlib == Node crypto == C11 lin_sha256 == OpenSSL dgst; 1-bit leaf tamper rejected; zero-LIN Python AND Node verifiers recompute three campaign merkles from the JSON"
+  lcr2="3 EXACT_INPUT (lin==coprocessor==ref==onchain) + 3 OVERPAID_INPUT (lin==coprocessor==ref, onchain diverges); GUARD_ZERO steps=1570; GUARD_OVERFLOW steps=11481. Full 2000/157 campaign still required"
+  lcr2_full="same 3 EXACT + 3 OVERPAID via settle_u512_swap == ref_amount_out_full (steps=929722/951223/946903/949069/951286/964003); PHANTOM_APPROVE steps=1098245; GUARD_ZERO steps=1619; GUARD_FEE_OVERFLOW steps=2033"
+}
+
+.n{
+  not_1="FullMath.sol CRT / mulmod assembly parity (width pin only)"
+  not_2="a deployed Uniswap v2/v3 pool"
+  not_3="the full 2000-swap + 157-unfiltered campaign"
+  not_4="that 512 proof closes the SafeMath-width u256 settler by itself"
+  not_5="zk or computational soundness of Merkle (tamper-evidence + re-execution)"
+}
+
+.m{
+  host="lin_c0 C11, gcc -std=c11, python3, node BigInt + crypto, openssl dgst; no Zig"
+  c11_selftest="SELFTEST_PASS identity_2_255_x2_div3 q*d+r==n plus ge512 and identity64 (no Python)"
+  node_selftest="SELFTEST_PASS node_bigint q*d+r==n"
+  gate="30/30 PASS"
+  published_leaves=14
+  published_lcr2_leaves=8
+  published_lcr2_full_leaves=9
+}
+
+.h{
+  lin_src="sha256:2a66456eae1227cb9ec3571da3258313cd4a5c6c787c42d3877a67152e96bd4b"
+  oracle_c="sha256:f236f7b7faa04741c6694fd26c0f63012179d1cb740ffc6f605c9ab7133e7ca0"
+  oracle_js="sha256:d169efbf5ecff469c321dc1f48f2b2703b2c587fb1099a840a1fb2af168acc12"
+  auditor_c="sha256:b7094a9edb247f114207eff7cc02deaf354312fd01d1c7e67012865079cd3752"
+  harness="sha256:2962c50901603be13385859cd6558e6dec796da2b4366515564410d6ba887955"
+  lib="sha256:29ff29f64f75b46416164458a6707cc888eec4d3a821cf3122bdfb37eae0580f"
+  fullwidth="sha256:7e6111e4c512a82f876495117fe32875263d33618197a53b1fa743a9476b9dce"
+  verifier_py="sha256:97b1500cdc28723cc2b1b9159454a1e42177c80b924c8819696b5f6977fa1d10"
+  verifier_js="sha256:ae996504d775f1082644de4951ae38f331fc1e0b675a976f1f83b74c2b1fff83"
+  u512_uniswap_lin="sha256:3db82be5c109f8c0405ab2085937ca7c633eaca7dbb54457d3282c034d35b5e3"
+  u256_lin="sha256:e4f6ca30296967ec5d6d50f5cd5b8e3efd5ee9ae6c5ee6cd40313ff3c0256a91"
+  u256_linbc1="sha256:f1984b2de15bc79bf6418842afaee8ece86ea956cbdc9f7338837802402bc7e7"
+  u512_linbc1="sha256:773a7ad4e8956c62834926ab8bcccee3651d91adc4a4c9c0b150c8d9ba5dce47"
+  lnr1_merkle="sha256:f140dcbcde99052d0d415dfb22336e951f1efc2b0c29c8327af35f1a671b8d7a"
+  lcr2_merkle="sha256:6a64103b587eec28b6dee714026803c707d4a963a6dceefaecabd2de5b1763fb"
+  lcr2_full_merkle="sha256:ea3b11158e1163a6ee880c1c0d3eeefec9b8b4a61f59c284a02e4d91660d6b5e"
+  evidence_json="sha256:7cb56173a51b9910acd9e64a03bf7e576c59dc8a2a56214e5cda05620e283d81"
+  fullmath_sol="sha256:959c52e1c860bfbede3e33c8d04910c11038973173aa3478547cbad2e444880e"
+}
+
+.v{
+  method="PYTHON_BIGINT && NODE_BIGINT && C11_LIMB16 && C11_U64_I128_IDENTITY64 && LIN_C0_VM && LNR1_QUAD_AUDITOR && OPENSSL_DGST && LCR2_SETTLER_EQ_COPROCESSOR && LCR2_FULL_SETTLE_U512 && CAMPAIGN_MERKLE_FROM_LEAVES && LCR2_MERKLE_FROM_LEAVES && LCR2_FULL_MERKLE_FROM_LEAVES && TAMPER_REJECT && PY_AND_NODE_ZERO_LIN_VERIFIERS"
+  on_fail="do not publish PASS"
+}

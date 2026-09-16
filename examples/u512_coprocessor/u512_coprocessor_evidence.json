@@ -1,0 +1,555 @@
+{
+  "schema": "LIN_U512_COPROCESSOR_EVIDENCE_1.3",
+  "class": "EXPERIMENTAL",
+  "product": "numeric coprocessor with auditable receipt",
+  "domains": {
+    "leaf": "LIN:U512:LEAF:1",
+    "node": "LIN:U512:NODE:1"
+  },
+  "lnr1_bytes": 240,
+  "lnr1_merkle": "f140dcbcde99052d0d415dfb22336e951f1efc2b0c29c8327af35f1a671b8d7a",
+  "lcr2_bytes": 208,
+  "lcr2_run_id": 2,
+  "lcr2_domains": {
+    "leaf": "LIN:LEAF:1",
+    "node": "LIN:NODE:1"
+  },
+  "lcr2_merkle": "6a64103b587eec28b6dee714026803c707d4a963a6dceefaecabd2de5b1763fb",
+  "lcr2_full_run_id": 3,
+  "lcr2_full_merkle": "ea3b11158e1163a6ee880c1c0d3eeefec9b8b4a61f59c284a02e4d91660d6b5e",
+  "audit": "zero-LIN Python and Node verifiers recompute LNR1, LCR2, and LCR2-full merkles",
+  "pins": {
+    "lin_src": "2a66456eae1227cb9ec3571da3258313cd4a5c6c787c42d3877a67152e96bd4b",
+    "oracle_c": "f236f7b7faa04741c6694fd26c0f63012179d1cb740ffc6f605c9ab7133e7ca0",
+    "oracle_js": "d169efbf5ecff469c321dc1f48f2b2703b2c587fb1099a840a1fb2af168acc12",
+    "auditor_c": "b7094a9edb247f114207eff7cc02deaf354312fd01d1c7e67012865079cd3752",
+    "harness": "2962c50901603be13385859cd6558e6dec796da2b4366515564410d6ba887955",
+    "lib": "29ff29f64f75b46416164458a6707cc888eec4d3a821cf3122bdfb37eae0580f",
+    "fullwidth": "7e6111e4c512a82f876495117fe32875263d33618197a53b1fa743a9476b9dce",
+    "fullmath_sol": "959c52e1c860bfbede3e33c8d04910c11038973173aa3478547cbad2e444880e",
+    "u256_linbc1": "f1984b2de15bc79bf6418842afaee8ece86ea956cbdc9f7338837802402bc7e7",
+    "u512_linbc1": "773a7ad4e8956c62834926ab8bcccee3651d91adc4a4c9c0b150c8d9ba5dce47",
+    "verifier_js": "ae996504d775f1082644de4951ae38f331fc1e0b675a976f1f83b74c2b1fff83"
+  },
+  "measured": {
+    "self_gate_steps": 6710747,
+    "mul_7x9_steps": 9824,
+    "muldiv_7x9_div2_steps": 987074,
+    "two_255_x2_div3_steps": 1118732,
+    "phantom_coprocessor_steps": 1106942,
+    "phantom_u256_status": -2,
+    "phantom_u512_swap_steps": 1098245,
+    "phantom_u512_swap_q": "0x20d135b66ae990fc484cea55e38a936bcf497445394d4cc984add428823e4d",
+    "c11_batch_n": 1060,
+    "node_batch_n": 1060,
+    "published_leaves": 14,
+    "published_lcr2_leaves": 8,
+    "published_lcr2_full_leaves": 9,
+    "lcr2": [
+      {
+        "class": "EXACT_INPUT",
+        "lin": 348299652,
+        "coprocessor": 348299652,
+        "ref": 348299652,
+        "onchain": 348299652,
+        "status": 1,
+        "cop_status": 1,
+        "steps": 222743,
+        "cop_steps": 938790
+      },
+      {
+        "class": "EXACT_INPUT",
+        "lin": 127563538906205452,
+        "coprocessor": 127563538906205452,
+        "ref": 127563538906205452,
+        "onchain": 127563538906205452,
+        "status": 1,
+        "cop_status": 1,
+        "steps": 231384,
+        "cop_steps": 960211
+      },
+      {
+        "class": "EXACT_INPUT",
+        "lin": 144533220511380166,
+        "coprocessor": 144533220511380166,
+        "ref": 144533220511380166,
+        "onchain": 144533220511380166,
+        "status": 1,
+        "cop_status": 1,
+        "steps": 229644,
+        "cop_steps": 955907
+      },
+      {
+        "class": "OVERPAID_INPUT",
+        "lin": 145611106349087342,
+        "coprocessor": 145611106349087342,
+        "ref": 145611106349087342,
+        "onchain": 145610814998826432,
+        "status": 1,
+        "cop_status": 1,
+        "steps": 230520,
+        "cop_steps": 958065
+      },
+      {
+        "class": "OVERPAID_INPUT",
+        "lin": 224378752462025428,
+        "coprocessor": 224378752462025428,
+        "ref": 224378752462025428,
+        "onchain": 224378303493246816,
+        "status": 1,
+        "cop_status": 1,
+        "steps": 231447,
+        "cop_steps": 960274
+      },
+      {
+        "class": "OVERPAID_INPUT",
+        "lin": 2835803313309604,
+        "coprocessor": 2835803313309604,
+        "ref": 2835803313309604,
+        "onchain": 2835774955276470,
+        "status": 1,
+        "cop_status": 1,
+        "steps": 234468,
+        "cop_steps": 973065
+      }
+    ],
+    "lcr2_full": [
+      {
+        "class": "EXACT_INPUT",
+        "lin": 348299652,
+        "ref_full": 348299652,
+        "ref_safe": 348299652,
+        "onchain": 348299652,
+        "status": 1,
+        "steps": 929722
+      },
+      {
+        "class": "EXACT_INPUT",
+        "lin": 127563538906205452,
+        "ref_full": 127563538906205452,
+        "ref_safe": 127563538906205452,
+        "onchain": 127563538906205452,
+        "status": 1,
+        "steps": 951223
+      },
+      {
+        "class": "EXACT_INPUT",
+        "lin": 144533220511380166,
+        "ref_full": 144533220511380166,
+        "ref_safe": 144533220511380166,
+        "onchain": 144533220511380166,
+        "status": 1,
+        "steps": 946903
+      },
+      {
+        "class": "OVERPAID_INPUT",
+        "lin": 145611106349087342,
+        "ref_full": 145611106349087342,
+        "ref_safe": 145611106349087342,
+        "onchain": 145610814998826432,
+        "status": 1,
+        "steps": 949069
+      },
+      {
+        "class": "OVERPAID_INPUT",
+        "lin": 224378752462025428,
+        "ref_full": 224378752462025428,
+        "ref_safe": 224378752462025428,
+        "onchain": 224378303493246816,
+        "status": 1,
+        "steps": 951286
+      },
+      {
+        "class": "OVERPAID_INPUT",
+        "lin": 2835803313309604,
+        "ref_full": 2835803313309604,
+        "ref_safe": 2835803313309604,
+        "onchain": 2835774955276470,
+        "status": 1,
+        "steps": 964003
+      },
+      {
+        "class": "PHANTOM_APPROVE",
+        "lin": 57983019147379166461477709067945872735738600233170037075341804711023099469,
+        "ref_full": 57983019147379166461477709067945872735738600233170037075341804711023099469,
+        "ref_safe": -2,
+        "onchain": 0,
+        "status": 1,
+        "steps": 1098245
+      }
+    ]
+  },
+  "leaves": [
+    {
+      "op": "MUL",
+      "a": "0x7",
+      "b": "0x9",
+      "d": "0x0",
+      "q": "0x3f",
+      "r": "0x0",
+      "status": 1,
+      "steps": 9824
+    },
+    {
+      "op": "MULDIV",
+      "a": "0x7",
+      "b": "0x9",
+      "d": "0x2",
+      "q": "0x1f",
+      "r": "0x1",
+      "status": 1,
+      "steps": 987074
+    },
+    {
+      "op": "MUL",
+      "a": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "b": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "d": "0x0",
+      "q": "0x1",
+      "r": "0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe",
+      "status": 1,
+      "steps": 10268
+    },
+    {
+      "op": "MULDIV",
+      "a": "0x8000000000000000000000000000000000000000000000000000000000000000",
+      "b": "0x2",
+      "d": "0x3",
+      "q": "0x5555555555555555555555555555555555555555555555555555555555555555",
+      "r": "0x1",
+      "status": 1,
+      "steps": 1118732
+    },
+    {
+      "op": "MULDIV",
+      "a": "0x1",
+      "b": "0x1",
+      "d": "0x0",
+      "q": "0x0",
+      "r": "0x0",
+      "status": -1,
+      "steps": 570
+    },
+    {
+      "op": "MULDIV",
+      "a": "0x8000000000000000000000000000000000000000000000000000000000000000",
+      "b": "0x2",
+      "d": "0x1",
+      "q": "0x0",
+      "r": "0x0",
+      "status": -2,
+      "steps": 490336
+    },
+    {
+      "op": "MULDIV",
+      "a": "0xf3688",
+      "b": "0x4e20",
+      "d": "0xa7cd08",
+      "q": "0x715",
+      "r": "0x253758",
+      "status": 1,
+      "steps": 977437
+    },
+    {
+      "op": "MULDIV",
+      "a": "0x3e5",
+      "b": "0x41bbb2f80a4553f6c19ad51e8e40314cc63a07b3fef911341fd6eab024f995",
+      "d": "0x7cd",
+      "q": "0x20d135b66ae990fc484cea55e38a936bcf497445394d4cc984add428823e4d",
+      "r": "0x2a0",
+      "status": 1,
+      "steps": 1106942
+    },
+    {
+      "op": "MULDIV",
+      "a": "0x78b59248bb35d0c1f",
+      "b": "0x6a426b90704",
+      "d": "0x269d6ae1731a02a2ddd87",
+      "q": "0x14c2a184",
+      "r": "0x17fd6600672cfb0e9e8e0",
+      "status": 1,
+      "steps": 938790
+    },
+    {
+      "op": "MULDIV",
+      "a": "0xaba7a7b80df5b90e773",
+      "b": "0x26ff13198e91e97f04",
+      "d": "0xec53c5e0eabcc838ca255b",
+      "q": "0x1c5325cdecbcd0c",
+      "r": "0x29284cd25e226e09340b88",
+      "status": 1,
+      "steps": 960211
+    },
+    {
+      "op": "MULDIV",
+      "a": "0xc29050281f7d135a2a0",
+      "b": "0x26fd4de731b31db1f8",
+      "d": "0xec5ff72991b16695b37160",
+      "q": "0x2017c32c2d2f2c6",
+      "r": "0xdf53a194765768e2cfbac0",
+      "status": 1,
+      "steps": 955907
+    },
+    {
+      "op": "MULDIV",
+      "a": "0xc3ddafb139b32d1e000",
+      "b": "0x27011869d2595f4cc4",
+      "d": "0xec4901f864352cb2b41de8",
+      "q": "0x20550879d49fa6e",
+      "r": "0x73f4b1c2977e6d96e1650",
+      "status": 1,
+      "steps": 958065
+    },
+    {
+      "op": "MULDIV",
+      "a": "0x12e34022c203463ec000",
+      "b": "0x26fb4c6afef04abf32",
+      "d": "0xec72e3c7b2a9367b00bbc0",
+      "q": "0x31d27495ba4f2d4",
+      "r": "0x3db1d08d007dd5f46a8500",
+      "status": 1,
+      "steps": 960274
+    },
+    {
+      "op": "MULDIV",
+      "a": "0x1a76a0616",
+      "b": "0xdbac5ccb733821a1f7",
+      "d": "0x2410393f8f8716",
+      "q": "0xa1325e92487a4",
+      "r": "0x2b04260ae9122",
+      "status": 1,
+      "steps": 973065
+    }
+  ],
+  "lcr2_leaves": [
+    {
+      "class": "EXACT_INPUT",
+      "tx": 80,
+      "ain": "0x1efe9b29871d7b3",
+      "rin": "0x9e28bd1e3898b1df71",
+      "rout": "0x6a426b90704",
+      "aout": "0x14c2a184",
+      "steps": 222743,
+      "status": 1,
+      "coprocessor": "0x14c2a184",
+      "ref": "0x14c2a184",
+      "onchain": "0x14c2a184"
+    },
+    {
+      "class": "EXACT_INPUT",
+      "tx": 348,
+      "ain": "0x2c136d0e22e913877",
+      "rin": "0x3c7d3205be4495b9a841",
+      "rout": "0x26ff13198e91e97f04",
+      "aout": "0x1c5325cdecbcd0c",
+      "steps": 231384,
+      "status": 1,
+      "coprocessor": "0x1c5325cdecbcd0c",
+      "ref": "0x1c5325cdecbcd0c",
+      "onchain": "0x1c5325cdecbcd0c"
+    },
+    {
+      "class": "EXACT_INPUT",
+      "tx": 491,
+      "ain": "0x31f54bc998a5a2e20",
+      "rin": "0x3c7ff33c8f26c44ae0b8",
+      "rout": "0x26fd4de731b31db1f8",
+      "aout": "0x2017c32c2d2f2c6",
+      "steps": 229644,
+      "status": 1,
+      "coprocessor": "0x2017c32c2d2f2c6",
+      "ref": "0x2017c32c2d2f2c6",
+      "onchain": "0x2017c32c2d2f2c6"
+    },
+    {
+      "class": "OVERPAID_INPUT",
+      "tx": 200,
+      "ain": "0x324ae57940e2c6000",
+      "rin": "0x3c7a0d5766b0878d4841",
+      "rout": "0x27011869d2595f4cc4",
+      "aout": "0x20550879d49fa6e",
+      "steps": 230520,
+      "status": 1,
+      "coprocessor": "0x20550879d49fa6e",
+      "ref": "0x20550879d49fa6e",
+      "onchain": "0x2055043c775cdc0"
+    },
+    {
+      "class": "OVERPAID_INPUT",
+      "tx": 173,
+      "ain": "0x4d98c7cfc26d7c000",
+      "rin": "0x3c8312914bc04ea50ed8",
+      "rout": "0x26fb4c6afef04abf32",
+      "aout": "0x31d27495ba4f2d4",
+      "steps": 231447,
+      "status": 1,
+      "coprocessor": "0x31d27495ba4f2d4",
+      "ref": "0x31d27495ba4f2d4",
+      "onchain": "0x31d26e0d3050f60"
+    },
+    {
+      "class": "OVERPAID_INPUT",
+      "tx": 255,
+      "ain": "0x6cb85e",
+      "rin": "0x93b72958aa0",
+      "rout": "0xdbac5ccb733821a1f7",
+      "aout": "0xa1325e92487a4",
+      "steps": 234468,
+      "status": 1,
+      "coprocessor": "0xa1325e92487a4",
+      "ref": "0xa1325e92487a4",
+      "onchain": "0xa131f4edf48b6"
+    },
+    {
+      "class": "GUARD_ZERO",
+      "tx": 0,
+      "ain": "0x0",
+      "rin": "0x1",
+      "rout": "0x1",
+      "aout": "0x0",
+      "steps": 1570,
+      "status": -1,
+      "coprocessor": "0x0",
+      "ref": "0x0",
+      "onchain": "0x0"
+    },
+    {
+      "class": "GUARD_OVERFLOW",
+      "tx": 4294967295,
+      "ain": "0x1",
+      "rin": "0x1",
+      "rout": "0x41bbb2f80a4553f6c19ad51e8e40314cc63a07b3fef911341fd6eab024f995",
+      "aout": "0x0",
+      "steps": 11481,
+      "status": -2,
+      "coprocessor": "0x0",
+      "ref": "0x0",
+      "onchain": "0x0"
+    }
+  ],
+  "lcr2_full_leaves": [
+    {
+      "class": "EXACT_INPUT",
+      "tx": 80,
+      "ain": "0x1efe9b29871d7b3",
+      "rin": "0x9e28bd1e3898b1df71",
+      "rout": "0x6a426b90704",
+      "aout": "0x14c2a184",
+      "steps": 929722,
+      "status": 1,
+      "coprocessor": "0x14c2a184",
+      "ref": "0x14c2a184",
+      "onchain": "0x14c2a184"
+    },
+    {
+      "class": "EXACT_INPUT",
+      "tx": 348,
+      "ain": "0x2c136d0e22e913877",
+      "rin": "0x3c7d3205be4495b9a841",
+      "rout": "0x26ff13198e91e97f04",
+      "aout": "0x1c5325cdecbcd0c",
+      "steps": 951223,
+      "status": 1,
+      "coprocessor": "0x1c5325cdecbcd0c",
+      "ref": "0x1c5325cdecbcd0c",
+      "onchain": "0x1c5325cdecbcd0c"
+    },
+    {
+      "class": "EXACT_INPUT",
+      "tx": 491,
+      "ain": "0x31f54bc998a5a2e20",
+      "rin": "0x3c7ff33c8f26c44ae0b8",
+      "rout": "0x26fd4de731b31db1f8",
+      "aout": "0x2017c32c2d2f2c6",
+      "steps": 946903,
+      "status": 1,
+      "coprocessor": "0x2017c32c2d2f2c6",
+      "ref": "0x2017c32c2d2f2c6",
+      "onchain": "0x2017c32c2d2f2c6"
+    },
+    {
+      "class": "OVERPAID_INPUT",
+      "tx": 200,
+      "ain": "0x324ae57940e2c6000",
+      "rin": "0x3c7a0d5766b0878d4841",
+      "rout": "0x27011869d2595f4cc4",
+      "aout": "0x20550879d49fa6e",
+      "steps": 949069,
+      "status": 1,
+      "coprocessor": "0x20550879d49fa6e",
+      "ref": "0x20550879d49fa6e",
+      "onchain": "0x2055043c775cdc0"
+    },
+    {
+      "class": "OVERPAID_INPUT",
+      "tx": 173,
+      "ain": "0x4d98c7cfc26d7c000",
+      "rin": "0x3c8312914bc04ea50ed8",
+      "rout": "0x26fb4c6afef04abf32",
+      "aout": "0x31d27495ba4f2d4",
+      "steps": 951286,
+      "status": 1,
+      "coprocessor": "0x31d27495ba4f2d4",
+      "ref": "0x31d27495ba4f2d4",
+      "onchain": "0x31d26e0d3050f60"
+    },
+    {
+      "class": "OVERPAID_INPUT",
+      "tx": 255,
+      "ain": "0x6cb85e",
+      "rin": "0x93b72958aa0",
+      "rout": "0xdbac5ccb733821a1f7",
+      "aout": "0xa1325e92487a4",
+      "steps": 964003,
+      "status": 1,
+      "coprocessor": "0xa1325e92487a4",
+      "ref": "0xa1325e92487a4",
+      "onchain": "0xa131f4edf48b6"
+    },
+    {
+      "class": "PHANTOM_APPROVE",
+      "tx": 4294967294,
+      "ain": "0x1",
+      "rin": "0x1",
+      "rout": "0x41bbb2f80a4553f6c19ad51e8e40314cc63a07b3fef911341fd6eab024f995",
+      "aout": "0x20d135b66ae990fc484cea55e38a936bcf497445394d4cc984add428823e4d",
+      "steps": 1098245,
+      "status": 1,
+      "coprocessor": "0x20d135b66ae990fc484cea55e38a936bcf497445394d4cc984add428823e4d",
+      "ref": "0x20d135b66ae990fc484cea55e38a936bcf497445394d4cc984add428823e4d",
+      "onchain": "0x0"
+    },
+    {
+      "class": "GUARD_ZERO",
+      "tx": 0,
+      "ain": "0x0",
+      "rin": "0x1",
+      "rout": "0x1",
+      "aout": "0x0",
+      "steps": 1619,
+      "status": -1,
+      "coprocessor": "0x0",
+      "ref": "0x0",
+      "onchain": "0x0"
+    },
+    {
+      "class": "GUARD_FEE_OVERFLOW",
+      "tx": 4294967293,
+      "ain": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "rin": "0x1",
+      "rout": "0x1",
+      "aout": "0x0",
+      "steps": 2033,
+      "status": -2,
+      "coprocessor": "0x0",
+      "ref": "0x0",
+      "onchain": "0x0"
+    }
+  ],
+  "not_claimed": [
+    "FullMath CRT/mulmod assembly",
+    "deployed pool",
+    "full 2000/157 campaign",
+    "that 512 proof closes the SafeMath-width u256 settler by itself"
+  ]
+}
