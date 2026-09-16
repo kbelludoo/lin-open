@@ -1,0 +1,153 @@
+@LIN:L1c:0.2
+@OZ_MATH_LOG10_LOG256{
+  version=1
+  repo="OpenZeppelin/openzeppelin-contracts"
+  source="contracts/utils/math/Math.sol"
+  license="MIT"
+  tag="v5.0.2"
+  commit="dbb6104ce834628e473d2173bbc9d47f81a9eec3"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_openzeppelin_log10_log256_without_pow_or_enum"
+  note="Not Solidity uint256. 10^64 and 10^32 skipped (do not fit i64). Rounding enum is an explicit int. Negatives fail-closed."
+}
+
+!ozl_ok(v: int) -> int {
+  ?(v < 0) { ^ 0; };
+  ^ 1;
+}
+
+!ozl_pow10(n: int) -> int {
+  ?(n < 0) { ^ 0; };
+  ?(n > 18) { ^ 0; };
+  p = 1;
+  i = 0;
+  while (i < n) {
+    p = p * 10;
+    i = i + 1;
+  };
+  ^ p;
+}
+
+!ozl_log10(v: int) -> int {
+  ?(v < 0) { ^ 0; };
+  result = 0;
+  ?(v >= 10000000000000000) {
+    v = v / 10000000000000000;
+    result = result + 16;
+  };
+  ?(v >= 100000000) {
+    v = v / 100000000;
+    result = result + 8;
+  };
+  ?(v >= 10000) {
+    v = v / 10000;
+    result = result + 4;
+  };
+  ?(v >= 100) {
+    v = v / 100;
+    result = result + 2;
+  };
+  ?(v >= 10) {
+    result = result + 1;
+  };
+  ^ result;
+}
+
+!ozl_log10_round(v: int, round_up: int) -> int {
+  r = ozl_log10(v);
+  ?(round_up == 0) { ^ r; };
+  ?(v < 0) { ^ 0; };
+  p = ozl_pow10(r);
+  ?(p < v) { ^ r + 1; };
+  ^ r;
+}
+
+!ozl_log256(v: int) -> int {
+  ?(v < 0) { ^ 0; };
+  result = 0;
+  ?( _lia_ushr(v, 32) > 0 ) {
+    v = _lia_ushr(v, 32);
+    result = result + 4;
+  };
+  ?( _lia_ushr(v, 16) > 0 ) {
+    v = _lia_ushr(v, 16);
+    result = result + 2;
+  };
+  ?( _lia_ushr(v, 8) > 0 ) {
+    result = result + 1;
+  };
+  ^ result;
+}
+
+!ozl_log256_round(v: int, round_up: int) -> int {
+  r = ozl_log256(v);
+  ?(round_up == 0) { ^ r; };
+  ?(v < 0) { ^ 0; };
+  shift = _lia_shl(r, 3);
+  ?(shift >= 63) { ^ r; };
+  p = _lia_shl(1, shift);
+  ?(p < v) { ^ r + 1; };
+  ^ r;
+}
+
+!ozl_dec_digits(v: int) -> int {
+  ?(v < 0) { ^ 0; };
+  ?(v == 0) { ^ 1; };
+  ^ ozl_log10(v) + 1;
+}
+
+!ozl_hex_nbytes(v: int) -> int {
+  ?(v < 0) { ^ 0; };
+  ?(v == 0) { ^ 1; };
+  ^ ozl_log256(v) + 1;
+}
+
+!ozl_test_suite() -> int {
+  ?(ozl_log10(0) != 0) { ^ -1; };
+  ?(ozl_log10(1) != 0) { ^ -2; };
+  ?(ozl_log10(9) != 0) { ^ -3; };
+  ?(ozl_log10(10) != 1) { ^ -4; };
+  ?(ozl_log10(99) != 1) { ^ -5; };
+  ?(ozl_log10(100) != 2) { ^ -6; };
+  ?(ozl_log10(100000000) != 8) { ^ -7; };
+  ?(ozl_log10(10000000000000000) != 16) { ^ -8; };
+  ?(ozl_log10(1000000000000000000) != 18) { ^ -9; };
+  ?(ozl_log10(9223372036854775807) != 18) { ^ -10; };
+  ?(ozl_ok(-1) != 0) { ^ -11; };
+  ?(ozl_log10(-7) != 0) { ^ -12; };
+  ?(ozl_pow10(0) != 1) { ^ -13; };
+  ?(ozl_pow10(18) != 1000000000000000000) { ^ -14; };
+  ?(ozl_pow10(19) != 0) { ^ -15; };
+  ?(ozl_log10_round(11, 1) != 2) { ^ -16; };
+  ?(ozl_log10_round(11, 0) != 1) { ^ -17; };
+  ?(ozl_log10_round(10, 1) != 1) { ^ -18; };
+  ?(ozl_log256(0) != 0) { ^ -19; };
+  ?(ozl_log256(255) != 0) { ^ -20; };
+  ?(ozl_log256(256) != 1) { ^ -21; };
+  ?(ozl_log256(65535) != 1) { ^ -22; };
+  ?(ozl_log256(65536) != 2) { ^ -23; };
+  ?(ozl_log256(4294967296) != 4) { ^ -24; };
+  ?(ozl_log256_round(257, 1) != 2) { ^ -25; };
+  ?(ozl_log256_round(256, 1) != 1) { ^ -26; };
+  ?(ozl_dec_digits(0) != 1) { ^ -27; };
+  ?(ozl_dec_digits(1) != 1) { ^ -28; };
+  ?(ozl_dec_digits(100000000) != 9) { ^ -29; };
+  ?(ozl_dec_digits(1000000000000000000) != 19) { ^ -30; };
+  ?(ozl_hex_nbytes(255) != 1) { ^ -31; };
+  ?(ozl_hex_nbytes(256) != 2) { ^ -32; };
+  ?(ozl_dec_digits(-1) != 0) { ^ -33; };
+  ^ 1;
+}
+
+=ex{
+  ozl_ok,
+  ozl_pow10,
+  ozl_log10,
+  ozl_log10_round,
+  ozl_log256,
+  ozl_log256_round,
+  ozl_dec_digits,
+  ozl_hex_nbytes,
+  ozl_test_suite
+}
