@@ -1,27 +1,29 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: emit LIN for eligible free fns; expand 1_000 numeric underscores; strip as Type; const fn is fn; && is not a borrow; skip methods and :: paths"
 }
 
-// 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
 !rs_is_kw(nm: string): int {
   ?(starts_lit(nm, 0, "fn") == 1 && nm.length == 2) { ^1 };
   ?(starts_lit(nm, 0, "let") == 1 && nm.length == 3) { ^1 };
   ?(starts_lit(nm, 0, "mut") == 1 && nm.length == 3) { ^1 };
   ?(starts_lit(nm, 0, "pub") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "const") == 1 && nm.length == 5) { ^1 };
   ?(starts_lit(nm, 0, "return") == 1 && nm.length == 6) { ^1 };
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2) { ^1 };
   ?(starts_lit(nm, 0, "else") == 1 && nm.length == 4) { ^1 };
   ?(starts_lit(nm, 0, "while") == 1 && nm.length == 5) { ^1 };
   ?(starts_lit(nm, 0, "loop") == 1 && nm.length == 4) { ^1 };
   ?(starts_lit(nm, 0, "match") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "as") == 1 && nm.length == 2) { ^1 };
+  ?(starts_lit(nm, 0, "self") == 1 && nm.length == 4) { ^1 };
   ^0;
 }
 
-// 2. Identificação de tipos inteiros primitivos Rust
 !rs_is_type(nm: string): int {
   ?(starts_lit(nm, 0, "u128") == 1 && nm.length == 4) { ^1 };
   ?(starts_lit(nm, 0, "u64") == 1 && nm.length == 3) { ^1 };
@@ -34,14 +36,30 @@
   ?(starts_lit(nm, 0, "i16") == 1 && nm.length == 3) { ^1 };
   ?(starts_lit(nm, 0, "i8") == 1 && nm.length == 2) { ^1 };
   ?(starts_lit(nm, 0, "usize") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "isize") == 1 && nm.length == 5) { ^1 };
   ?(starts_lit(nm, 0, "bool") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "Self") == 1 && nm.length == 4) { ^1 };
   ^0;
 }
 
-// 3. Critérios fail-closed de rejeição de código Rust não-puro
+!rs_has_lone_amp(s: string): int {
+  n = s.length;
+  i = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) == 38) {
+      ?(i + 1 < n && s.charCodeAt(i + 1) == 38) { i = i + 2; continue };
+      ^1;
+    };
+    i = i + 1;
+  };
+  ^0;
+}
+
 !rs_reason(sig: string, body: string): string {
   ?(rg_count_lit(sig, "&mut") > 0) { ^"REJ_RUST_MUTABLE_REF" };
-  ?(rg_count_lit(sig, "&") > 0) { ^"REJ_RUST_BORROW" };
+  ?(rs_has_lone_amp(sig) == 1) { ^"REJ_RUST_BORROW" };
+  ?(rg_count_lit(sig, "self") > 0) { ^"REJ_RUST_METHOD" };
+  ?(rg_count_lit(sig, "::") > 0 || rg_count_lit(body, "::") > 0) { ^"REJ_RUST_PATH" };
   ?(rg_count_lit(body, "unsafe") > 0) { ^"REJ_RUST_UNSAFE" };
   ?(rg_count_lit(body, "alloc") > 0) { ^"REJ_RUST_DYNAMIC_ALLOC" };
   ?(rg_count_lit(body, "Vec") > 0) { ^"REJ_RUST_DYNAMIC_ALLOC" };
@@ -50,24 +68,327 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "async") > 0 || rg_count_lit(body, "async") > 0) { ^"REJ_RUST_ASYNC" };
   ^"OK";
 }
 
-// 4. Teste de conformidade de parser Rust (funções pure no_std)
 !rs_parse_test_gate(): int {
   sig_ok = "pub fn compute_fee(amount: u64, fee_bps: u64) -> u64";
   body_ok = "let fee = (amount * fee_bps) / 10000; return fee;";
-
+  sig_and = "pub fn gated(a: u64, b: u64) -> u64";
+  body_and = "if a > 0 && b > 0 { return a; } return b;";
   sig_bad = "pub fn allocate_vec(n: usize) -> Vec<u8>";
   body_bad = "let mut v = Vec::with_capacity(n); v";
-
+  sig_method = "pub const fn to_sat_per_vb_ceil(self) -> u64";
+  body_method = "self.0.div_ceil(1_000_000)";
+  sig_ref = "pub fn peek(x: &u64) -> u64";
   r1 = rs_reason(sig_ok, body_ok);
-  ?(r1.length != 2) { ^0 }; // "OK"
-
+  ?(r1.length != 2) { ^0 };
+  r_and = rs_reason(sig_and, body_and);
+  ?(r_and.length != 2) { ^0 };
   r2 = rs_reason(sig_bad, body_bad);
-  ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
-
+  ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 };
+  r3 = rs_reason(sig_method, body_method);
+  ?(starts_lit(r3, 0, "REJ_") == 0) { ^0 };
+  r4 = rs_reason(sig_ref, "return 0;");
+  ?(starts_lit(r4, 0, "REJ_RUST_BORROW") == 0) { ^0 };
   ^1;
 }
 
-=ex{rs_is_kw, rs_is_type, rs_reason, rs_parse_test_gate}
+!rs_strip_underscores(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) == 95 && i > 0 && i + 1 < n && s.charCodeAt(i - 1) >= 48 && s.charCodeAt(i - 1) <= 57 && s.charCodeAt(i + 1) >= 48 && s.charCodeAt(i + 1) <= 57) {
+      i = i + 1;
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!rs_strip_as(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  id = "";
+  while (i < n) {
+    ?(i + 4 <= n && starts_lit(s, i, " as ") == 1) {
+      id = read_ident(s, i + 4);
+      ?(id.length > 0 && rs_is_type(id) == 1) { i = i + 4 + id.length; continue };
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!rs_strip_types(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  id = "";
+  while (i < n) {
+    ?(s.charCodeAt(i) == 34) {
+      out = out + s.charAt(i);
+      i = i + 1;
+      while (i < n && s.charCodeAt(i) != 34) { out = out + s.charAt(i); i = i + 1 };
+      ?(i < n) { out = out + s.charAt(i); i = i + 1 };
+      continue;
+    };
+    id = read_ident(s, i);
+    ?(id.length > 0) {
+      ?(rs_is_type(id) == 1) { i = i + id.length; i = skip_ws(s, i); continue };
+      out = out + id;
+      i = i + id.length;
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!rs_stmt(st: string): string {
+  e = jss_trim(st);
+  n = e.length;
+  out = "";
+  p = 0;
+  cl = 0;
+  b = 0;
+  ?(n == 0) { ^out };
+  ?(starts_lit(e, 0, "let") == 1 && (n == 3 || is_ident(e.charCodeAt(3)) == false)) {
+    p = skip_ws(e, 3);
+    ?(starts_lit(e, p, "mut") == 1 && (p + 3 >= n || is_ident(e.charCodeAt(p + 3)) == false)) { p = skip_ws(e, p + 3) };
+    ^rs_stmt(slice2(e, p, n));
+  };
+  ?(starts_lit(e, 0, "return") == 1 && (n == 6 || is_ident(e.charCodeAt(6)) == false)) {
+    out = out + "^";
+    out = out + jss_trim(slice2(e, 6, n));
+    ^out;
+  };
+  ?(starts_lit(e, 0, "if") == 1 && n > 2 && is_ident(e.charCodeAt(2)) == false) {
+    p = skip_ws(e, 2);
+    ?(p < n && e.charCodeAt(p) == 40) {
+      cl = match_paren(e, p);
+      ?(cl > p) {
+        out = out + "?(";
+        out = out + slice2(e, p + 1, cl);
+        out = out + ") { ";
+        out = out + rs_stmt(jss_trim(slice2(e, cl + 1, n)));
+        out = out + " }";
+        ^out;
+      };
+    };
+    b = p;
+    while (b < n && e.charCodeAt(b) != 123) { b = b + 1 };
+    ?(b < n && e.charCodeAt(b) == 123) {
+      cl = match_brace(e, b);
+      ?(cl > b) {
+        out = out + "?(";
+        out = out + jss_trim(slice2(e, p, b));
+        out = out + ") { ";
+        out = out + rs_stmt(jss_trim(slice2(e, b + 1, cl)));
+        out = out + " }";
+        ^out;
+      };
+    };
+  };
+  ^e;
+}
+
+!rs_body(b: string): string {
+  t = jss_trim(rs_strip_types(rs_strip_as(rs_strip_underscores(b))));
+  out = "";
+  n = t.length;
+  i = 0;
+  st = 0;
+  d = 0;
+  c = 0;
+  seg = "";
+  conv = "";
+  while (i <= n) {
+    ?(i == n || (d == 0 && t.charCodeAt(i) == 59)) {
+      seg = jss_trim(slice2(t, st, i));
+      ?(seg.length > 0) {
+        conv = rs_stmt(seg);
+        ?(conv.length > 0) {
+          out = out + "  ";
+          out = out + conv;
+          out = out + ";";
+          out = out + rgs_ch(10);
+        };
+      };
+      st = i + 1;
+      i = i + 1;
+      continue;
+    };
+    c = t.charCodeAt(i);
+    ?(c == 40 || c == 123 || c == 91) { d = d + 1 };
+    ?(c == 41 || c == 125 || c == 93) {
+      d = d - 1;
+      ?(d == 0 && c == 125) {
+        seg = jss_trim(slice2(t, st, i + 1));
+        ?(seg.length > 0) {
+          conv = rs_stmt(seg);
+          ?(conv.length > 0) {
+            out = out + "  ";
+            out = out + conv;
+            out = out + ";";
+            out = out + rgs_ch(10);
+          };
+        };
+        st = i + 1;
+      };
+    };
+    i = i + 1;
+  };
+  ^out;
+}
+
+!rs_pdecl(params: string): string {
+  out = "";
+  n = params.length;
+  i = 0;
+  seen = 0;
+  id = "";
+  last = "";
+  while (i < n) {
+    id = read_ident(params, i);
+    ?(id.length > 0) {
+      ?(rs_is_type(id) == 0 && rs_is_kw(id) == 0) { last = id };
+      i = i + id.length;
+      continue;
+    };
+    ?(params.charCodeAt(i) == 44 || i + 1 >= n) {
+      ?(last.length > 0) {
+        ?(seen == 1) { out = out + ", " };
+        out = out + last;
+        out = out + ": int";
+        seen = 1;
+        last = "";
+      };
+    };
+    i = i + 1;
+  };
+  ?(last.length > 0) {
+    ?(seen == 1) { out = out + ", " };
+    out = out + last;
+    out = out + ": int";
+  };
+  ^out;
+}
+
+!rs_fn(nm: string, params: string, body: string): string {
+  out = "";
+  out = out + "!";
+  out = out + nm;
+  out = out + "(";
+  out = out + rs_pdecl(params);
+  out = out + ") -> int {";
+  out = out + rgs_ch(10);
+  out = out + rs_body(body);
+  out = out + "}";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+!rs_fn_start(s: string, fn_at: int): int {
+  k = fn_at;
+  t = 0;
+  p = 0;
+  a = 0;
+  id = "";
+  while (t < 8) {
+    p = k - 1;
+    while (p >= 0 && (s.charCodeAt(p) == 32 || s.charCodeAt(p) == 9 || s.charCodeAt(p) == 10)) { p = p - 1 };
+    ?(p < 0) { ^k };
+    ?(is_ident(s.charCodeAt(p)) == false) { ^k };
+    a = p;
+    while (a > 0 && is_ident(s.charCodeAt(a - 1)) == true) { a = a - 1 };
+    id = slice2(s, a, p + 1);
+    ?(starts_lit(id, 0, "pub") == 1 && id.length == 3) { k = a; t = t + 1; continue };
+    ?(starts_lit(id, 0, "const") == 1 && id.length == 5) { k = a; t = t + 1; continue };
+    ?(starts_lit(id, 0, "crate") == 1 && id.length == 5) { k = a; t = t + 1; continue };
+    ^k;
+  };
+  ^k;
+}
+
+!rs_from_rs(src: string): string {
+  pass = jss_trim(jss_strip_comments(src));
+  out = "";
+  out = jss_ln(out, "@LIN:L1c:0.2");
+  out = jss_ln(out, "@FROM_RUST{source=transpiled scope=pure_integer_math}");
+  out = jss_ln(out, "");
+  n = pass.length;
+  i = 0;
+  p = 0;
+  cl = 0;
+  b = 0;
+  cb = 0;
+  nm = "";
+  pr = "";
+  bd = "";
+  sig = "";
+  reason = "";
+  names = "";
+  while (i < n) {
+    ?(starts_lit(pass, i, "fn") == 1 && (i == 0 || is_ident(pass.charCodeAt(i - 1)) == false) && (i + 2 >= n || is_ident(pass.charCodeAt(i + 2)) == false)) {
+      p = skip_ws(pass, i + 2);
+      nm = read_ident(pass, p);
+      ?(nm.length > 0) {
+        p = skip_ws(pass, p + nm.length);
+        ?(p < n && pass.charCodeAt(p) == 40) {
+          cl = match_paren(pass, p);
+          ?(cl > p) {
+            b = skip_ws(pass, cl + 1);
+            while (b < n && pass.charCodeAt(b) != 123) { b = b + 1 };
+            ?(b < n && pass.charCodeAt(b) == 123) {
+              cb = match_brace(pass, b);
+              ?(cb > b) {
+                pr = slice2(pass, p + 1, cl);
+                bd = slice2(pass, b + 1, cb);
+                sig = slice2(pass, rs_fn_start(pass, i), b);
+                reason = rs_reason(sig, bd);
+                ?(starts_lit(reason, 0, "OK") == 1 && reason.length == 2) {
+                  out = out + rs_fn(nm, pr, bd);
+                  names = rgs_csv_add(names, nm);
+                };
+                i = cb + 1;
+                continue;
+              };
+            };
+          };
+        };
+      };
+    };
+    i = i + 1;
+  };
+  out = out + "=ex{";
+  out = out + names;
+  out = out + "}";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+!rs_from_rs_gate(): int {
+  src = "pub const fn to_sat_per_vb_ceil(n: u64) -> u64 { return (n + 1_000_000 - 1) / 1_000_000; }";
+  out = rs_from_rs(src);
+  ?(starts_lit(out, 0, "@LIN") == 0) { ^0 };
+  ?(rg_count_lit(out, "to_sat_per_vb_ceil") == 0) { ^0 };
+  ?(rg_count_lit(out, "1000000") == 0) { ^0 };
+  ?(rg_count_lit(out, "1_000_000") > 0) { ^0 };
+  exp = rs_strip_underscores("1_000_000");
+  ?(starts_lit(exp, 0, "1000000") == 0) { ^0 };
+  ?(exp.length != 7) { ^0 };
+  asx = rs_strip_as("n as u64");
+  ?(rg_count_lit(asx, " as ") > 0) { ^0 };
+  ?(rs_parse_test_gate() == 0) { ^0 };
+  ^1;
+}
+
+=ex{rs_is_kw, rs_is_type, rs_reason, rs_parse_test_gate, rs_strip_underscores, rs_strip_as, rs_from_rs, rs_from_rs_gate}
