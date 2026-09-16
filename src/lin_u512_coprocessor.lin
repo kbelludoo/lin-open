@@ -1,0 +1,221 @@
+@LIN:L1c:0.2
+@U512_NUMERIC_COPROCESSOR{
+  version=1
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="fullmath_width_muldiv_256x256_to_512"
+  note="Numeric coprocessor: (a*b)/d with 512-bit product. Not a Uniswap pool, not CRT/mulmod assembly."
+}
+
+// Unpack one 16-bit limb from four little-endian i64 words (unsigned bits).
+!u512_w4_limb(w0: int, w1: int, w2: int, w3: int, i: int) -> int {
+  ?(i < 4) { ^ _lia_ushr(w0, 16 * i) & 65535; };
+  ?(i < 8) { ^ _lia_ushr(w1, 16 * (i - 4)) & 65535; };
+  ?(i < 12) { ^ _lia_ushr(w2, 16 * (i - 8)) & 65535; };
+  ^ _lia_ushr(w3, 16 * (i - 12)) & 65535;
+}
+
+!u512_pack4(x0: int, x1: int, x2: int, x3: int) -> int {
+  ^ (x0 & 65535) |
+    _lia_shl(x1 & 65535, 16) |
+    _lia_shl(x2 & 65535, 32) |
+    _lia_shl(x3 & 65535, 48);
+}
+
+// Unsigned 512-bit compare. Words 0..3 = low 256 bits, 4..7 = high 256 bits.
+!u512_ge(
+  a0: int, a1: int, a2: int, a3: int, a4: int, a5: int, a6: int, a7: int,
+  b0: int, b1: int, b2: int, b3: int, b4: int, b5: int, b6: int, b7: int
+) -> int {
+  i = 31;
+  while (i >= 0) {
+    ?(i >= 16) {
+      al = u512_w4_limb(a4, a5, a6, a7, i - 16);
+      bl = u512_w4_limb(b4, b5, b6, b7, i - 16);
+    } : {
+      al = u512_w4_limb(a0, a1, a2, a3, i);
+      bl = u512_w4_limb(b0, b1, b2, b3, i);
+    };
+    ?(al > bl) { ^ 1; };
+    ?(al < bl) { ^ 0; };
+    i = i - 1;
+  };
+  ^ 1;
+}
+
+// 256x256 -> 512 schoolbook. out_idx 0..7 = 64-bit product words (low first).
+!u512_mul_word(
+  a0: int, a1: int, a2: int, a3: int,
+  b0: int, b1: int, b2: int, b3: int,
+  out_idx: int
+) -> int {
+  a: [16]int;
+  b: [16]int;
+  n: [32]int;
+  i = 0;
+  while (i < 16) {
+    a[i] = u512_w4_limb(a0, a1, a2, a3, i);
+    b[i] = u512_w4_limb(b0, b1, b2, b3, i);
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 16) {
+    carry = 0;
+    j = 0;
+    while (j < 16) {
+      k = i + j;
+      t = n[k] + a[i] * b[j] + carry;
+      n[k] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      j = j + 1;
+    };
+    k = i + 16;
+    while (k < 32 && carry != 0) {
+      t = n[k] + carry;
+      n[k] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      k = k + 1;
+    };
+    i = i + 1;
+  };
+  base = out_idx * 4;
+  ^ u512_pack4(n[base], n[base + 1], n[base + 2], n[base + 3]);
+}
+
+// mulDiv(a,b,d)=(a*b)/d with 512-bit product.
+// out_idx: -1 status (1 ok, -1 d=0, -2 q overflow);
+//          0..3 q words; 4..7 r words; 8..15 product words.
+!u512_muldiv_word(
+  a0: int, a1: int, a2: int, a3: int,
+  b0: int, b1: int, b2: int, b3: int,
+  d0: int, d1: int, d2: int, d3: int,
+  out_idx: int
+) -> int {
+  a: [16]int;
+  b: [16]int;
+  d: [16]int;
+  n: [32]int;
+  rem: [32]int;
+  q: [16]int;
+  i = 0;
+  while (i < 16) {
+    a[i] = u512_w4_limb(a0, a1, a2, a3, i);
+    b[i] = u512_w4_limb(b0, b1, b2, b3, i);
+    d[i] = u512_w4_limb(d0, d1, d2, d3, i);
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 16) {
+    carry = 0;
+    j = 0;
+    while (j < 16) {
+      k = i + j;
+      t = n[k] + a[i] * b[j] + carry;
+      n[k] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      j = j + 1;
+    };
+    k = i + 16;
+    while (k < 32 && carry != 0) {
+      t = n[k] + carry;
+      n[k] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      k = k + 1;
+    };
+    i = i + 1;
+  };
+  ?(out_idx >= 8) {
+    base = (out_idx - 8) * 4;
+    ^ u512_pack4(n[base], n[base + 1], n[base + 2], n[base + 3]);
+  };
+  status = 1;
+  ?(d0 == 0 && d1 == 0 && d2 == 0 && d3 == 0) { status = 0 - 1; };
+  ?(status == 1) {
+    bit = 511;
+    while (bit >= 0) {
+      limb = _lia_ushr(bit, 4);
+      pos = bit & 15;
+      in_bit = _lia_ushr(n[limb], pos) & 1;
+      carry = in_bit;
+      j = 0;
+      while (j < 32) {
+        t = rem[j] * 2 + carry;
+        rem[j] = t & 65535;
+        carry = _lia_ushr(t, 16);
+        j = j + 1;
+      };
+      cmp = 0;
+      j = 31;
+      while (j >= 0) {
+        dj = 0;
+        ?(j < 16) { dj = d[j]; };
+        ?(cmp == 0) {
+          ?(rem[j] > dj) { cmp = 1; }
+          : (rem[j] < dj) { cmp = 0 - 1; };
+        };
+        j = j - 1;
+      };
+      ?(cmp >= 0) {
+        ?(bit >= 256) { status = 0 - 2; };
+        ?(status == 1) {
+          quot_limb = _lia_ushr(bit, 4);
+          q[quot_limb] = q[quot_limb] | _lia_shl(1, pos);
+          borrow = 0;
+          j = 0;
+          while (j < 32) {
+            dj = 0;
+            ?(j < 16) { dj = d[j]; };
+            t = rem[j] - dj - borrow;
+            ?(t < 0) {
+              rem[j] = t + 65536;
+              borrow = 1;
+            } : {
+              rem[j] = t;
+              borrow = 0;
+            };
+            j = j + 1;
+          };
+        };
+      };
+      ?(status != 1) { bit = 0 - 1; };
+      ?(status == 1) { bit = bit - 1; };
+    };
+  };
+  ?(out_idx < 0) { ^ status; };
+  ?(status != 1) { ^ 0; };
+  ?(out_idx < 4) {
+    base = out_idx * 4;
+    ^ u512_pack4(q[base], q[base + 1], q[base + 2], q[base + 3]);
+  };
+  base = (out_idx - 4) * 4;
+  ^ u512_pack4(rem[base], rem[base + 1], rem[base + 2], rem[base + 3]);
+}
+
+!u512_self_gate() -> int {
+  z = 0;
+  ?(u512_mul_word(3, z, z, z, 5, z, z, z, z) != 15) { ^ 0 - 1; };
+  hi = _lia_shl(1, 63);
+  ?(u512_mul_word(z, z, z, hi, 2, z, z, z, 4) != 1) { ^ 0 - 2; };
+  m1 = 0 - 1;
+  ?(u512_ge(z, z, z, z, 1, z, z, z, m1, m1, m1, m1, z, z, z, z) != 1) { ^ 0 - 3; };
+  ?(u512_ge(1, z, z, z, z, z, z, z, 2, z, z, z, z, z, z, z) != 0) { ^ 0 - 4; };
+  ?(u512_muldiv_word(3, z, z, z, 5, z, z, z, 1, z, z, z, z) != 15) { ^ 0 - 5; };
+  ?(u512_muldiv_word(7, z, z, z, 9, z, z, z, 2, z, z, z, z) != 31) { ^ 0 - 6; };
+  ?(u512_muldiv_word(7, z, z, z, 9, z, z, z, 2, z, z, z, 4) != 1) { ^ 0 - 7; };
+  ?(u512_muldiv_word(1, z, z, z, 1, z, z, z, z, z, z, z, 0 - 1) != (0 - 1)) { ^ 0 - 8; };
+  ?(u512_muldiv_word(m1, m1, m1, m1, m1, m1, m1, m1, 1, z, z, z, 0 - 1) != (0 - 2)) { ^ 0 - 9; };
+  qpat = 6148914691236517205;
+  ?(u512_muldiv_word(z, z, z, hi, 2, z, z, z, 3, z, z, z, 0 - 1) != 1) { ^ 0 - 10; };
+  ?(u512_muldiv_word(z, z, z, hi, 2, z, z, z, 3, z, z, z, z) != qpat) { ^ 0 - 11; };
+  ?(u512_muldiv_word(z, z, z, hi, 2, z, z, z, 3, z, z, z, 4) != 1) { ^ 0 - 12; };
+  ^ 1;
+}
+
+=ex{
+  u512_w4_limb,
+  u512_pack4,
+  u512_ge,
+  u512_mul_word,
+  u512_muldiv_word,
+  u512_self_gate
+}
