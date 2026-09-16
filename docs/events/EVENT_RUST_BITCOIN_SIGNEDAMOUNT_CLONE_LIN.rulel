@@ -1,0 +1,56 @@
+@RULEL:RUST_BITCOIN_SIGNEDAMOUNT_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-RUST-BITCOIN-SIGNEDAMOUNT-V1"
+@TITLE="Clone-lin of rust-bitcoin SignedAmount with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SAT"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-rust-bitcoin-signedamount"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile rust-bitcoin SignedAmount into deterministic LIN, compile in memory with C11 compiler 0, publish only auditable results in lin-open, and keep the LIN copy in a separate clone-lin repository"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Bitcoin mainnet consensus"
+  operand_width="i64 satoshis; 128-bit abs product for checked_mul"
+  commercial_hook="21 million BTC cap is the monetary invariant of Bitcoin; SignedAmount is the accounting dual used by rust-bitcoin. Fail-closed ok-channel plus 128-bit mul is an audit improvement, not a TVL claim."
+}
+
+.u{
+  repo="https://github.com/rust-bitcoin/rust-bitcoin"
+  path="units/src/amount/signed.rs"
+  license="CC0-1.0"
+  commit="1cbf4bd62ea99c558c6d8ef794edbd984a2a4684"
+  git_blob_sha="8f510f16cdd0d8cd3b53a3b522a17035e388b873"
+  file_sha256="08e2010b1fb71e179b36e01bee1a55fd61003d85153339b22f15dd37b5c80c92"
+}
+
+.l{
+  clone="src/lin_rust_bitcoin_signedamount.lin"
+  transpiler_delta="src/lin_from_rust.lin v2 emit; src/lin_from_c.lin v2 CXX/float/suffix gates"
+  improvement_1="sa_from_sat_ok: 0 sat valid, failure is a separate flag"
+  improvement_2="checked_mul 128-bit product; naive i64 MAX*4393 wraps"
+  improvement_3="documented divergence vs Bitcoin Core MoneyRange on -1 sat"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  oracle="test/oracles/rust_bitcoin_signedamount_c11.c"
+  gate="test/verify_rust_bitcoin_signedamount.sh"
+}
+
+.p{
+  harness="python3 test/prove_rust_bitcoin_signedamount_external.py"
+  evidence_json="examples/rust_bitcoin_signedamount/signedamount_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-rust-bitcoin-signedamount"
+}
+
+.n{
+  not_claimed_1="LIN replaces rust-bitcoin or Bitcoin Core"
+  not_claimed_2="wallet / PSBT / Lightning"
+  not_claimed_3="wall-clock superiority vs rustc"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT"
+  on_fail="do not publish a PASS status"
+}

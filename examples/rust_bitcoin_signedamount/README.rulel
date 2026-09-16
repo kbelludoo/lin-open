@@ -1,0 +1,32 @@
+@RULEL:RUST_BITCOIN_SIGNEDAMOUNT_RESULTS:1.0.0
+@TITLE="SignedAmount clone-lin — results only (lin-open)"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-rust-bitcoin-signedamount"
+
+~R{.u=upstream .p=proofs .c=claimed .n=not_claimed}
+
+.u{
+  rust_bitcoin="https://github.com/rust-bitcoin/rust-bitcoin  units/src/amount/signed.rs  CC0-1.0  commit=1cbf4bd62ea99c558c6d8ef794edbd984a2a4684"
+  bitcoin_core="https://github.com/bitcoin/bitcoin  src/consensus/amount.h  MIT  tag=v27.1"
+}
+
+.p{
+  lin_in_tree="src/lin_rust_bitcoin_signedamount.lin"
+  clone_lin="https://github.com/kbelludoo/clone-lin-rust-bitcoin-signedamount"
+  fixture_rs="test/fixtures/external_proof/rust_bitcoin_signed.rs"
+  fixture_core="test/fixtures/external_proof/bitcoin_core_amount.h"
+  oracle="test/oracles/rust_bitcoin_signedamount_c11.c"
+  harness="python3 test/prove_rust_bitcoin_signedamount_external.py"
+  event="docs/events/EVENT_RUST_BITCOIN_SIGNEDAMOUNT_CLONE_LIN.rulel"
+  spec="docs/RUST_BITCOIN_SIGNEDAMOUNT_CLONE.rulel"
+}
+
+.c{
+  class="EXPERIMENTAL"
+  cap="MAX = 21_000_000 * 100_000_000 sat; MIN = -MAX"
+  deltas="explicit ok channel; 128-bit mul; honest Core MoneyRange divergence on negative sats"
+}
+
+.n{
+  not_a_wallet="this is not rust-bitcoin, not Bitcoin Core, not a wallet"
+  not_tvl="no TVL or production replacement claim"
+}

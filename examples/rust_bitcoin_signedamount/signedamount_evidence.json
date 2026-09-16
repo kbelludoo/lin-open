@@ -1,0 +1,150 @@
+{
+  "claims": [
+    {
+      "name": "PIN-RS",
+      "status": "PASS",
+      "detail": "pinned signed.rs sha256+blob",
+      "extra": "08e2010b1fb71e179b36e01bee1a55fd61003d85153339b22f15dd37b5c80c92"
+    },
+    {
+      "name": "PIN-CORE",
+      "status": "PASS",
+      "detail": "pinned Bitcoin Core v27.1 amount.h",
+      "extra": "cb7bd951877f3fea5a0c280d4bb907a8403437add81e3d5b898879b78fdc877e"
+    },
+    {
+      "name": "PIN-CONST",
+      "status": "PASS",
+      "detail": "signed.rs contains MAX=21e6*COIN and MIN=-MAX"
+    },
+    {
+      "name": "CORE-CONST",
+      "status": "PASS",
+      "detail": "Core MoneyRange is [0, MAX_MONEY] (no negatives)"
+    },
+    {
+      "name": "UPSTREAM-FETCH",
+      "status": "PASS",
+      "detail": "fetched rust-bitcoin matches pin",
+      "extra": "1cbf4bd62ea99c558c6d8ef794edbd984a2a4684"
+    },
+    {
+      "name": "RS-EMIT",
+      "status": "PASS",
+      "detail": "lin_from_rust v2 source emits LIN; python golden 21_000_000\u219221000000; identifiers preserved"
+    },
+    {
+      "name": "C-HOST",
+      "status": "PASS",
+      "detail": "lin_from_c v2: REJ_C_CXX + ceil/floor REJ_C_FLOAT + python golden ULL/UL/LL strip"
+    },
+    {
+      "name": "C0-STR-REJ",
+      "status": "PASS",
+      "detail": "lin_c0 vm fail-closes rs_from_rs_gate with VM_REJ_STRING_LITERAL (numeric VM; emit proven by source+python golden)"
+    },
+    {
+      "name": "LIN-SUITE",
+      "status": "PASS",
+      "detail": "sa_test_suite value=1"
+    },
+    {
+      "name": "MAX",
+      "status": "PASS",
+      "detail": "21_000_000 * 100_000_000 = 2100000000000000",
+      "extra": "2100000000000000"
+    },
+    {
+      "name": "MIN",
+      "status": "PASS",
+      "detail": "MIN = -MAX (negative 21M accounting dual)"
+    },
+    {
+      "name": "ZERO",
+      "status": "PASS",
+      "detail": "0 sat is valid; ok flag distinguishes failure from zero"
+    },
+    {
+      "name": "CAP-PLUS",
+      "status": "PASS",
+      "detail": "MAX+1 sat fail-closed (naive i64 would accept 2100000000000001)"
+    },
+    {
+      "name": "DIVERGE-NEG",
+      "status": "PASS",
+      "detail": "rust-bitcoin SignedAmount accepts -1 sat; Bitcoin Core MoneyRange rejects it",
+      "extra": "lin_ok=1 core_ok=0"
+    },
+    {
+      "name": "ADD-OV",
+      "status": "PASS",
+      "detail": "checked_add(MAX, 1 sat) fail-closed (21M cap, not i64 wrap)"
+    },
+    {
+      "name": "MUL-COIN2",
+      "status": "PASS",
+      "detail": "1 BTC * 2 = 200000000 sat; Python == C11 == LIN"
+    },
+    {
+      "name": "I64-WRAP-MUL",
+      "status": "PASS",
+      "detail": "naive i64 MAX*4393 wraps; 128-bit product fail-closes at 21M cap",
+      "extra": "i64_wrap=-9221444073709551616 bigint=9225300000000000000"
+    },
+    {
+      "name": "VEC-CONSENSUS",
+      "status": "PASS",
+      "detail": "15/15 vectors: Python bigint == C11 i128/limbs == LIN vm"
+    },
+    {
+      "name": "PY-BIGINT",
+      "status": "PASS",
+      "detail": "15/15 vectors: Python arbitrary-precision int matches C11 and LIN"
+    },
+    {
+      "name": "ADD-VEC",
+      "status": "PASS",
+      "detail": "checked_add vectors: Python == C11 == LIN (21M cap)"
+    },
+    {
+      "name": "OK-CHANNEL",
+      "status": "PASS",
+      "detail": "LIN exposes sa_from_sat_ok (0 sat is valid) plus core_money_range (honest Core divergence)"
+    },
+    {
+      "name": "WIDE-MUL",
+      "status": "PASS",
+      "detail": "clone uses 128-bit abs product (naive i64 MAX*4393 wraps)"
+    },
+    {
+      "name": "C0-JIT",
+      "status": "SKIP",
+      "detail": "in-memory JIT not exercised",
+      "extra": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/rust-bitcoin/rust-bitcoin",
+    "commit": "1cbf4bd62ea99c558c6d8ef794edbd984a2a4684",
+    "path": "units/src/amount/signed.rs",
+    "git_blob_sha": "8f510f16cdd0d8cd3b53a3b522a17035e388b873",
+    "file_sha256": "08e2010b1fb71e179b36e01bee1a55fd61003d85153339b22f15dd37b5c80c92",
+    "license": "CC0-1.0"
+  },
+  "cross_oracle": {
+    "repo": "https://github.com/bitcoin/bitcoin",
+    "tag": "v27.1",
+    "commit": "1088a98f5aad080cc6cca2da174f206509fcda6c",
+    "path": "src/consensus/amount.h",
+    "git_blob_sha": "f0eb4e0723c3159153c655fae17cb252102cbddb",
+    "file_sha256": "cb7bd951877f3fea5a0c280d4bb907a8403437add81e3d5b898879b78fdc877e",
+    "license": "MIT",
+    "note": "MoneyRange is [0, MAX]; rust-bitcoin SignedAmount is [-MAX, MAX]"
+  },
+  "lin_clone": "src/lin_rust_bitcoin_signedamount.lin",
+  "c11_oracle": "test/oracles/rust_bitcoin_signedamount_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "max_money_sat": 2100000000000000,
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-rust-bitcoin-signedamount"
+}
