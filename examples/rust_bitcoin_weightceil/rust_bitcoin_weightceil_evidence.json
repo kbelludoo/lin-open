@@ -1,0 +1,146 @@
+{
+  "schema": "LIN_RUST_BITCOIN_WEIGHTCEIL_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned unsigned.rs sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned rust-bitcoin commit matches fixture",
+      "note": "commit=1cbf4bd62ea99c558c6d8ef794edbd984a2a4684 blob=0cfb8343787c893fe36aea38fc3b4c066ac2bedd"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of units/src/amount/unsigned.rs",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-FNS",
+      "status": "PASS",
+      "description": "pinned source contains div_by_weight_ceil / div_ceil / 4_000_000",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv/ceil agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_rust_bitcoin_weightceil.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-EMIT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 skips && as borrow, strips 4_000_000, emits LIN",
+      "note": ""
+    },
+    {
+      "id": "C-REJ-V2",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 rejects :: and lone & in signatures",
+      "note": ""
+    },
+    {
+      "id": "SCALAR-RS",
+      "status": "PASS",
+      "description": "scalar rust fixture has && and 4_000_000 for v2",
+      "note": ""
+    },
+    {
+      "id": "SCALAR-C",
+      "status": "PASS",
+      "description": "scalar C fixture present (no pointer decls)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "rwc_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "AMP-KIND",
+      "status": "PASS",
+      "description": "Compiler 0 vm: '&'+'&' is and, lone '&' is borrow (ASCII 38)",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "11/11 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "11/11 vectors: Python bigint matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "GOLDEN-CEIL",
+      "status": "PASS",
+      "description": "published rust-bitcoin golden: 329 sats / 381 wu ceil = 3454069",
+      "note": ""
+    },
+    {
+      "id": "GOLDEN-FLOOR",
+      "status": "PASS",
+      "description": "published rust-bitcoin golden: 329 sats / 381 wu floor = 3454068",
+      "note": ""
+    },
+    {
+      "id": "UNDERPAY",
+      "status": "PASS",
+      "description": "Amount/Weight floor underpays 1 sat/MvB on 329/381; exact on 10/200",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive i64 of MAX_MONEY*4e6 wraps; 128-bit weight ceil fail-closes",
+      "note": "i64_wrap=6731446462154014720 lin_wceil=-1"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/rust-bitcoin/rust-bitcoin",
+    "commit": "1cbf4bd62ea99c558c6d8ef794edbd984a2a4684",
+    "path": "units/src/amount/unsigned.rs",
+    "git_blob_sha": "0cfb8343787c893fe36aea38fc3b4c066ac2bedd",
+    "file_sha256": "056757adc8f3ed6bc09dadf368fd027d04fcd7a721fb502fed23c8225cd790ef",
+    "license": "CC0-1.0"
+  },
+  "lin_clone": "src/lin_rust_bitcoin_weightceil.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/lin-open/blob/cursor/linguagem-lin-e-valida-o-873d/src/lin_rust_bitcoin_weightceil.lin",
+  "c11_oracle": "test/oracles/rust_bitcoin_weightceil_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "golden_ceil_329_381": 3454069,
+  "golden_floor_329_381": 3454068
+}

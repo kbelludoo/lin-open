@@ -1,0 +1,31 @@
+@RULEL:RUST_BITCOIN_WEIGHTCEIL_CLONE:1.0.0
+@TITLE="rust-bitcoin Amount::div_by_weight_ceil — experimental LIN clone"
+@CLASS="EXPERIMENTAL"
+@CLONE_LIN="https://github.com/kbelludoo/lin-open/blob/cursor/linguagem-lin-e-valida-o-873d/src/lin_rust_bitcoin_weightceil.lin"
+
+~R{.s=spec .g=goldens .d=deltas .n=not_proved}
+
+.s{
+  upstream="rust-bitcoin/rust-bitcoin units/src/amount/unsigned.rs @ 1cbf4bd62ea99c558c6d8ef794edbd984a2a4684 CC0-1.0"
+  formula="(sats * 4_000_000).div_ceil(wu) sat/MvB"
+  none_encoding="-1 (Amount::ZERO is 0)"
+}
+
+.g{
+  sat1_kwu="1 sat / 1000 wu = 4000 sat/MvB (FeeRate::from_sat_per_kwu(1))"
+  sat329_wu381_floor="3454068"
+  sat329_wu381_ceil="3454069"
+  exact="10 sats / 200 wu = 200000 both floor and ceil"
+  rem="10 sats / 300 wu floor=133333 rem=100 ceil=133334"
+}
+
+.d{
+  named_ceil="LIN exposes ceil as the sufficient-rate kernel; rust-bitcoin `/` is floor"
+  wide_mul="128-bit product; MAX_MONEY * 4e6 / 1 fail-closes"
+  wrap="q+1 that wraps i64 returns -1, not a negative FeeRate"
+}
+
+.n{
+  not_wallet="no PSBT, script, or P2P"
+  not_u64="FeeRate u64::MAX bound is i64-scale in this clone"
+}

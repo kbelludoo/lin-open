@@ -1,0 +1,211 @@
+@LIN:L1c:0.2
+@RUST_BITCOIN_WEIGHT_CEIL{
+  version=1
+  repo="rust-bitcoin/rust-bitcoin"
+  source="units/src/amount/unsigned.rs"
+  license="CC0-1.0"
+  commit="1cbf4bd62ea99c558c6d8ef794edbd984a2a4684"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="Amount::div_by_weight_ceil_sufficient_feerate"
+  note="Not a wallet. rust-bitcoin Amount/Weight uses floor; ceil is the minimum sufficient sat/MvB. 128-bit (sats*4000000).div_ceil(wu); Option None is -1; ceil increment that wraps i64 fail-closes."
+}
+
+// ASCII 38='&'. 0=not-amp, 1=logical-and, 2=lone-borrow/ref.
+!rwc_amp_kind(cur: int, nxt: int) -> int {
+  ?(cur != 38) { ^ 0; };
+  ?(nxt == 38) { ^ 1; };
+  ^ 2;
+}
+
+!rwc_amp_kind_gate() -> int {
+  ?(rwc_amp_kind(38, 38) != 1) { ^ 0; };
+  ?(rwc_amp_kind(38, 32) != 2) { ^ 0; };
+  ?(rwc_amp_kind(42, 38) != 0) { ^ 0; };
+  ^ 1;
+}
+
+!rwc_max_money() -> int {
+  ^(21000000 * 100000000);
+}
+
+!rwc_mvb_per_wu() -> int {
+  ^ 4000000;
+}
+
+!rwc_from_sat(satoshi: int) -> int {
+  ?(satoshi < 0) { ^ -1; };
+  ?(satoshi > (21000000 * 100000000)) { ^ -1; };
+  ^ satoshi;
+}
+
+!rwc_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!rwc_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(rwc_u_lt(s, a));
+}
+
+!rwc_mask32() -> int {
+  ^ 4294967295;
+}
+
+!rwc_muldiv_part(a: int, b: int, d: int, want_rem: int) -> int {
+  ?(d == 0) { ^ -1; };
+  ?(a < 0 || b < 0) { ^ -1; };
+  m32 = rwc_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = rwc_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = rwc_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(rwc_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = rwc_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ -1; };
+  ^ q;
+}
+
+!rwc_muldiv(a: int, b: int, d: int) -> int {
+  ^ rwc_muldiv_part(a, b, d, 0);
+}
+
+!rwc_muldiv_rem(a: int, b: int, d: int) -> int {
+  ^ rwc_muldiv_part(a, b, d, 1);
+}
+
+!rwc_div_by_weight_floor(satoshi: int, wu: int) -> int {
+  ?(rwc_from_sat(satoshi) < 0) { ^ -1; };
+  ?(wu <= 0) { ^ -1; };
+  ^ rwc_muldiv(satoshi, 4000000, wu);
+}
+
+!rwc_div_by_weight_rem(satoshi: int, wu: int) -> int {
+  ?(rwc_from_sat(satoshi) < 0) { ^ -1; };
+  ?(wu <= 0) { ^ -1; };
+  ^ rwc_muldiv_rem(satoshi, 4000000, wu);
+}
+
+// rust-bitcoin: (sats * 4_000_000).div_ceil(wu). Fail-closed if q+1 wraps i64.
+!rwc_div_by_weight_ceil(satoshi: int, wu: int) -> int {
+  ?(rwc_from_sat(satoshi) < 0) { ^ -1; };
+  ?(wu <= 0) { ^ -1; };
+  q = rwc_muldiv(satoshi, 4000000, wu);
+  r = rwc_muldiv_rem(satoshi, 4000000, wu);
+  ?(q < 0) { ^ -1; };
+  ?(r == 0) { ^ q; };
+  n = q + 1;
+  ?(n <= 0) { ^ -1; };
+  ^ n;
+}
+
+// 1 iff ceil is the sufficient rate: equal on exact, floor+1 when rem!=0.
+!rwc_ceil_covers_floor(satoshi: int, wu: int) -> int {
+  f = rwc_div_by_weight_floor(satoshi, wu);
+  c = rwc_div_by_weight_ceil(satoshi, wu);
+  r = rwc_div_by_weight_rem(satoshi, wu);
+  ?(f < 0 || c < 0 || r < 0) { ^ 0; };
+  ?(r == 0) {
+    ?(c != f) { ^ 0; };
+    ^ 1;
+  };
+  ?(c != (f + 1)) { ^ 0; };
+  ^ 1;
+}
+
+// 1 iff Amount/Weight floor would underpay the sufficient ceil by 1 sat/MvB.
+!rwc_floor_underpay(satoshi: int, wu: int) -> int {
+  ?(rwc_ceil_covers_floor(satoshi, wu) == 0) { ^ 0; };
+  f = rwc_div_by_weight_floor(satoshi, wu);
+  c = rwc_div_by_weight_ceil(satoshi, wu);
+  ?(c == (f + 1)) { ^ 1; };
+  ^ 0;
+}
+
+!rwc_test_suite() -> int {
+  ?(rwc_amp_kind_gate() != 1) { ^ -1; };
+  ?(rwc_max_money() != 2100000000000000) { ^ -2; };
+  ?(rwc_mvb_per_wu() != 4000000) { ^ -3; };
+  ?(rwc_from_sat(0) != 0) { ^ -4; };
+  ?(rwc_from_sat(2100000000000000) != 2100000000000000) { ^ -5; };
+  ?(rwc_from_sat(-1) != -1) { ^ -6; };
+  ?(rwc_muldiv(100, 200, 50) != 400) { ^ -7; };
+  ?(rwc_div_by_weight_ceil(1, 1000) != 4000) { ^ -8; };
+  ?(rwc_div_by_weight_floor(329, 381) != 3454068) { ^ -9; };
+  ?(rwc_div_by_weight_ceil(329, 381) != 3454069) { ^ -10; };
+  ?(rwc_div_by_weight_ceil(10, 200) != 200000) { ^ -11; };
+  ?(rwc_div_by_weight_ceil(10, 300) != 133334) { ^ -12; };
+  ?(rwc_div_by_weight_floor(10, 300) != 133333) { ^ -13; };
+  ?(rwc_div_by_weight_rem(10, 300) != 100) { ^ -14; };
+  ?(rwc_div_by_weight_ceil(10, 0) != -1) { ^ -15; };
+  ?(rwc_div_by_weight_ceil(2100000000000000, 1) != -1) { ^ -16; };
+  ?(rwc_ceil_covers_floor(329, 381) != 1) { ^ -17; };
+  ?(rwc_ceil_covers_floor(10, 200) != 1) { ^ -18; };
+  ?(rwc_floor_underpay(329, 381) != 1) { ^ -19; };
+  ?(rwc_floor_underpay(10, 200) != 0) { ^ -20; };
+  ?(rwc_muldiv(1000000000000000000, 1000000000000000000, 1) != -1) { ^ -21; };
+  ^ 1;
+}
+
+=ex{
+  rwc_amp_kind,
+  rwc_amp_kind_gate,
+  rwc_max_money,
+  rwc_mvb_per_wu,
+  rwc_from_sat,
+  rwc_u_lt,
+  rwc_u_add_carry,
+  rwc_mask32,
+  rwc_muldiv_part,
+  rwc_muldiv,
+  rwc_muldiv_rem,
+  rwc_div_by_weight_floor,
+  rwc_div_by_weight_rem,
+  rwc_div_by_weight_ceil,
+  rwc_ceil_covers_floor,
+  rwc_floor_underpay,
+  rwc_test_suite
+}
