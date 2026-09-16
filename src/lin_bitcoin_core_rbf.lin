@@ -1,0 +1,161 @@
+@LIN:L1c:0.2
+@BITCOIN_CORE_PAYS_FOR_RBF{
+  version=1
+  repo="bitcoin/bitcoin"
+  source="src/policy/rbf.cpp PaysForRBF + src/policy/feerate.cpp GetFee + src/policy/policy.h DEFAULT_INCREMENTAL_RELAY_FEE"
+  license="MIT"
+  tag="v27.1"
+  commit="1088a98f5aad080cc6cca2da174f206509fcda6c"
+  cross_oracle="btcsuite/btcd v0.24.2 mempool/policy.go calcMinRequiredTxRelayFee"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="bip125_rule3_rule4_incremental_relay_fee_scalar"
+  note="Not a mempool or wallet. Core PaysForRBF is C++ (std::optional, CFeeRate, uint256&). LIN takes integer args, integer-ceil GetFee, fail-closes negatives. btcd truncates then substitutes the full rate on a zero quotient."
+}
+
+!rbf_coin() -> int {
+  ^ 100000000;
+}
+
+!rbf_max_money() -> int {
+  ^ (21000000 * 100000000);
+}
+
+!rbf_incr_relay_default() -> int {
+  ^ 1000;
+}
+
+!rbf_max_replacements() -> int {
+  ^ 100;
+}
+
+!rbf_money_range(n: int) -> int {
+  ?(n < 0) { ^ 0; };
+  ?(n > (21000000 * 100000000)) { ^ 0; };
+  ^ 1;
+}
+
+!rbf_overflow_mul(a: int, b: int) -> int {
+  p = 0;
+  ?(a < 0) { ^ -1; };
+  ?(b < 0) { ^ -1; };
+  ?(a == 0) { ^ 0; };
+  ?(b == 0) { ^ 0; };
+  p = a * b;
+  ?(p < 0) { ^ -1; };
+  ?(p / a != b) { ^ -1; };
+  ^ p;
+}
+
+!rbf_ceil_div(n: int, d: int) -> int {
+  q = 0;
+  r = 0;
+  ?(d <= 0) { ^ -1; };
+  ?(n < 0) { ^ -1; };
+  ?(n == 0) { ^ 0; };
+  q = n / d;
+  r = n - (q * d);
+  ?(r == 0) { ^ q; };
+  ^ (q + 1);
+}
+
+!rbf_get_fee(sat_per_kvb: int, vbytes: int) -> int {
+  num = 0;
+  fee = 0;
+  ?(sat_per_kvb < 0) { ^ -1; };
+  ?(vbytes < 0) { ^ -1; };
+  ?(vbytes == 0) { ^ 0; };
+  num = rbf_overflow_mul(sat_per_kvb, vbytes);
+  ?(num < 0) { ^ -1; };
+  fee = rbf_ceil_div(num, 1000);
+  ?(fee < 0) { ^ -1; };
+  ?(fee == 0) {
+    ?(sat_per_kvb > 0) { ^ 1; };
+  };
+  ^ fee;
+}
+
+!rbf_btcd_min_fee(sat_per_kvb: int, nbytes: int) -> int {
+  min_fee = 0;
+  ?(sat_per_kvb < 0) { ^ -1; };
+  ?(nbytes < 0) { ^ -1; };
+  min_fee = rbf_overflow_mul(nbytes, sat_per_kvb);
+  ?(min_fee < 0) { ^ -1; };
+  min_fee = min_fee / 1000;
+  ?(min_fee == 0) {
+    ?(sat_per_kvb > 0) { ^ sat_per_kvb; };
+  };
+  ?(min_fee < 0) { ^ (21000000 * 100000000); };
+  ?(min_fee > (21000000 * 100000000)) { ^ (21000000 * 100000000); };
+  ^ min_fee;
+}
+
+!rbf_gap_btcd_vs_core(sat_per_kvb: int, vbytes: int) -> int {
+  core = 0;
+  btcd = 0;
+  core = rbf_get_fee(sat_per_kvb, vbytes);
+  btcd = rbf_btcd_min_fee(sat_per_kvb, vbytes);
+  ?(core < 0) { ^ -1; };
+  ?(btcd < 0) { ^ -1; };
+  ^ (btcd - core);
+}
+
+!rbf_pays_for_rbf(original_fees: int, replacement_fees: int, replacement_vsize: int, relay_sat_per_kvb: int) -> int {
+  additional = 0;
+  need = 0;
+  ?(original_fees < 0) { ^ -1; };
+  ?(replacement_fees < 0) { ^ -1; };
+  ?(replacement_vsize < 0) { ^ -1; };
+  ?(relay_sat_per_kvb < 0) { ^ -1; };
+  ?(replacement_fees < original_fees) { ^ 0; };
+  additional = replacement_fees - original_fees;
+  need = rbf_get_fee(relay_sat_per_kvb, replacement_vsize);
+  ?(need < 0) { ^ -1; };
+  ?(additional < need) { ^ 0; };
+  ^ 1;
+}
+
+!rbf_candidates_ok(n: int) -> int {
+  ?(n < 0) { ^ -1; };
+  ?(n > 100) { ^ 0; };
+  ^ 1;
+}
+
+!rbf_gate() -> int {
+  ?(rbf_coin() != 100000000) { ^ -1; };
+  ?(rbf_max_money() != 2100000000000000) { ^ -2; };
+  ?(rbf_incr_relay_default() != 1000) { ^ -3; };
+  ?(rbf_max_replacements() != 100) { ^ -4; };
+  ?(rbf_get_fee(1000, 141) != 141) { ^ -5; };
+  ?(rbf_get_fee(1000, 0) != 0) { ^ -6; };
+  ?(rbf_get_fee(1, 1) != 1) { ^ -7; };
+  ?(rbf_get_fee(3, 2) != 1) { ^ -8; };
+  ?(rbf_btcd_min_fee(3, 2) != 3) { ^ -9; };
+  ?(rbf_gap_btcd_vs_core(3, 2) != 2) { ^ -10; };
+  ?(rbf_gap_btcd_vs_core(1000, 141) != 0) { ^ -11; };
+  ?(rbf_pays_for_rbf(2000, 2140, 141, 1000) != 0) { ^ -12; };
+  ?(rbf_pays_for_rbf(2000, 2141, 141, 1000) != 1) { ^ -13; };
+  ?(rbf_pays_for_rbf(2000, 1999, 141, 1000) != 0) { ^ -14; };
+  ?(rbf_pays_for_rbf(-1, 100, 141, 1000) != -1) { ^ -15; };
+  ?(rbf_candidates_ok(100) != 1) { ^ -16; };
+  ?(rbf_candidates_ok(101) != 0) { ^ -17; };
+  ?(rbf_money_range(2141) != 1) { ^ -18; };
+  ?(rbf_get_fee(-1, 10) != -1) { ^ -19; };
+  ^ 1;
+}
+
+=ex{
+  rbf_coin,
+  rbf_max_money,
+  rbf_incr_relay_default,
+  rbf_max_replacements,
+  rbf_money_range,
+  rbf_overflow_mul,
+  rbf_ceil_div,
+  rbf_get_fee,
+  rbf_btcd_min_fee,
+  rbf_gap_btcd_vs_core,
+  rbf_pays_for_rbf,
+  rbf_candidates_ok,
+  rbf_gate
+}

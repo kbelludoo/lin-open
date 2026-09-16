@@ -1,0 +1,228 @@
+{
+  "schema": "LIN_BITCOIN_CORE_RBF_EVIDENCE_1.0",
+  "class": "EXPERIMENTAL",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned bitcoin_v27_1_rbf.cpp sha256 matches",
+      "note": ""
+    },
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned bitcoin_v27_1_rbf.h sha256 matches",
+      "note": ""
+    },
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned bitcoin_v27_1_policy.h sha256 matches",
+      "note": ""
+    },
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned bitcoin_v27_1_feerate.cpp sha256 matches",
+      "note": ""
+    },
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned bitcoin_v27_1_amount.h sha256 matches",
+      "note": ""
+    },
+    {
+      "id": "PIN-BTCD",
+      "status": "PASS",
+      "description": "pinned btcd v0.24.2 mempool/policy.go sha256 matches",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git checkout of bitcoin/bitcoin v27.1 matches fixtures",
+      "note": "src/policy/rbf.cpp blob=f0830d8f2297c231a729a4898a887202a421fbdc; src/policy/rbf.h blob=5a33ed64a376c1102a9f2cb0d3c4b66a87752e8c; src/policy/policy.h blob=6a7980c312c9bdf5398f914711571ed06a57712c; src/policy/feerate.cpp blob=eb0cba5c67a406ea9d2a3500e6be90b2f2f21b96; src/consensus/amount.h blob=f0eb4e0723c3159153c655fae17cb252102cbddb"
+    },
+    {
+      "id": "UPSTREAM-BTCD",
+      "status": "PASS",
+      "description": "git checkout of btcsuite/btcd v0.24.2 matches fixture",
+      "note": "commit=cc26860b40265e1332cca8748c5dbaf3c81cc094 blob=862767d0c899922eaf90baa074cd801e198f7cd2"
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11: integer==IEEE on wallet-scale grid; BIP-125 vectors; btcd 3sat/2B",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_bitcoin_core_rbf.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "rbf_gate == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "9/9 vectors: C11 == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "ONE-SAT-RBF",
+      "status": "PASS",
+      "description": "P2WPKH-class 141 vB @ 1 sat/vB: +140 sat extra REJECT, +141 ACCEPT (rule 4)",
+      "note": "original=2000 replacement=2140/2141 DEFAULT_INCREMENTAL_RELAY_FEE=1000"
+    },
+    {
+      "id": "RULE3-TOTAL-FEE",
+      "status": "PASS",
+      "description": "replacement total 1999 < original 2000 REJECT even if feerate looks higher (rule 3)",
+      "note": ""
+    },
+    {
+      "id": "BTCD-STRICTER",
+      "status": "PASS",
+      "description": "2 vB @ 3 sat/kvB: Core/LIN integer-ceil=1 sat; btcd truncation-then-full-rate=3 sat (gap=2)",
+      "note": "policy difference, not a consensus fork"
+    },
+    {
+      "id": "LINBC1",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip source vs LINBC1 image CONSENSUS on gate",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "V1-WOULD-ACCEPT",
+      "status": "PASS",
+      "description": "v1 cfs_reason would ACCEPT Core PaysForRBF (no * / double / struct)",
+      "note": ""
+    },
+    {
+      "id": "REJ-CORE-RBF",
+      "status": "PASS",
+      "description": "lin_from_c v2 rejects Core PaysForRBF (uint256& and/or std::optional)",
+      "note": "sig='(CAmount original_fees,\\n                                      CAmount replacement_fees,\\n                                      size_t replacement_vsize,\\n                                      CFeeRate relay_fee,\\n                                      const uint256& txid)' reason=REJ_C_POINTER"
+    },
+    {
+      "id": "REJ-CORE-GETFEE",
+      "status": "PASS",
+      "description": "lin_from_c v2 rejects Core GetFee after comment-strip (std::ceil / 1000.0)",
+      "note": ""
+    },
+    {
+      "id": "INT-C-CLEAN",
+      "status": "PASS",
+      "description": "bitcoin_rbf_integer.c has no ceil(/double/:: (transpilable subset)",
+      "note": ""
+    },
+    {
+      "id": "CAMOUNT-TYPE",
+      "status": "PASS",
+      "description": "integer extract uses Core CAmount as a lin_from_c v2 type",
+      "note": ""
+    },
+    {
+      "id": "TR-V2",
+      "status": "PASS",
+      "description": "lin_from_c v2: CAmount type, &-in-sig pointer reject, ceil/C++/optional reject, LL strip, if/else",
+      "note": ""
+    },
+    {
+      "id": "C0-STRING-HONEST",
+      "status": "SKIP",
+      "description": "C0 integer VM cannot execute string transpilers; rejection proved by source pin + Python mirror",
+      "note": ""
+    },
+    {
+      "id": "PIN-CONST",
+      "status": "PASS",
+      "description": "policy.h pins DEFAULT_INCREMENTAL_RELAY_FEE = 1000 sat/kvB",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/bitcoin/bitcoin",
+    "tag": "v27.1",
+    "commit": "1088a98f5aad080cc6cca2da174f206509fcda6c",
+    "license": "MIT",
+    "files": {
+      "bitcoin_v27_1_rbf.cpp": {
+        "rel": "src/policy/rbf.cpp",
+        "sha256": "21bceebf13658ade1aa3700d1dc88294890b4448f83d83fe18722c5e710544bf",
+        "blob": "f0830d8f2297c231a729a4898a887202a421fbdc"
+      },
+      "bitcoin_v27_1_rbf.h": {
+        "rel": "src/policy/rbf.h",
+        "sha256": "5bf37b54bb03fef87bb69146761c0ac3e4660b19ece0e26668f2315e18ce0cb9",
+        "blob": "5a33ed64a376c1102a9f2cb0d3c4b66a87752e8c"
+      },
+      "bitcoin_v27_1_policy.h": {
+        "rel": "src/policy/policy.h",
+        "sha256": "da74b4819f1726151afb682e3f42f3954eb0d453b3db85faffa98b51189e2359",
+        "blob": "6a7980c312c9bdf5398f914711571ed06a57712c"
+      },
+      "bitcoin_v27_1_feerate.cpp": {
+        "rel": "src/policy/feerate.cpp",
+        "sha256": "dcee0d3c510936032addb0735dfb1e5389dcd4f8cf31e6867b94e2e14c6cb561",
+        "blob": "eb0cba5c67a406ea9d2a3500e6be90b2f2f21b96"
+      },
+      "bitcoin_v27_1_amount.h": {
+        "rel": "src/consensus/amount.h",
+        "sha256": "cb7bd951877f3fea5a0c280d4bb907a8403437add81e3d5b898879b78fdc877e",
+        "blob": "f0eb4e0723c3159153c655fae17cb252102cbddb"
+      }
+    },
+    "cross_oracle": {
+      "repo": "https://github.com/btcsuite/btcd",
+      "tag": "v0.24.2",
+      "commit": "cc26860b40265e1332cca8748c5dbaf3c81cc094",
+      "license": "ISC",
+      "file": {
+        "file": "btcd_v0_24_2_policy.go",
+        "rel": "mempool/policy.go",
+        "sha256": "1f9ee1ef2b958aaaf91a2c3fb2056b01a2f82f5133d2ef99ed313d9669d7d66a",
+        "blob": "862767d0c899922eaf90baa074cd801e198f7cd2"
+      }
+    }
+  },
+  "lin_clone": "src/lin_bitcoin_core_rbf.lin",
+  "integer_c": "test/fixtures/external_proof/bitcoin_rbf_integer.c",
+  "c11_oracle": "test/oracles/bitcoin_core_rbf_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "vectors": {
+    "p2wpkh_vbytes": 141,
+    "incr_relay_sat_kvb": 1000,
+    "need_sat": 141,
+    "orig_2000_plus_140_sat": "REJECT",
+    "orig_2000_plus_141_sat": "ACCEPT",
+    "btcd_3sat_2B": 3,
+    "core_3sat_2B": 1,
+    "gap_sat": 2
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-bitcoin-core-rbf",
+  "not_claimed": [
+    "LIN replaces Bitcoin Core or btcd",
+    "consensus bug",
+    "IEEE vs integer disagreement on wallet-scale rates",
+    "dollar/TVL savings"
+  ]
+}

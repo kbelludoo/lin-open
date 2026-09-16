@@ -314,6 +314,11 @@ independent-reproof: c0
 	@chmod +x test/prove_melhorias_independent.py
 	@python3 test/prove_melhorias_independent.py
 
+.PHONY: bitcoin-core-rbf-proof
+bitcoin-core-rbf-proof: c0
+	@chmod +x test/verify_bitcoin_core_rbf.sh test/prove_bitcoin_core_rbf_external.py
+	@test/verify_bitcoin_core_rbf.sh
+
 # Standalone no-Zig CLI (python3, stdlib only). `make install-cli PREFIX=~/.local`
 # puts an executable `lin-verify` on PATH.
 verify-cli: c0
