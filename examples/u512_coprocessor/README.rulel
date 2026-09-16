@@ -1,0 +1,26 @@
+@RULEL:U512_COPROCESSOR:1.0.0
+@TITLE="LIN u512 numeric coprocessor — auditable LNR1 receipt"
+@class="EXPERIMENTAL"
+
+~R{.w=what .h=how .n=not}
+
+.w{
+  claim="floor((a*b)/d) with a 512-bit product, fail-closed d=0 (-1) and q>=2^256 (-2)"
+  sell_as="numeric coprocessor with an auditable receipt, not a Uniswap replacement"
+  phantom="2^255 * 2 / 3 APPROVES (product 2^256). A 256-only engine must reject that product."
+}
+
+.h{
+  prove="python3 test/prove_u512_coprocessor_external.py"
+  verify="python3 examples/u512_coprocessor/verify_u512_receipt.py examples/u512_coprocessor/u512_coprocessor_evidence.json"
+  make="make u512-coprocessor-proof"
+  oracles="Python int + test/oracles/u512_coprocessor_c11.c (__int128 64-bit limbs XOR portable 32-bit limbs) + lin_c0"
+  receipt="LNR1 240-byte records; domains LIN:U512:LEAF:1 / LIN:U512:NODE:1; auditor uses hashlib only"
+}
+
+.n{
+  not_1="settle_u256_word vs ref_amount_out EXACT/OVERPAID"
+  not_2="LCR2 real steps on mainnet swaps"
+  not_3="FullMath.sol CRT/mulmod assembly equivalence"
+  not_4="REAL_WORLD deployed pool"
+}
