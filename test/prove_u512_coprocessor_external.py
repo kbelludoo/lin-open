@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 External proof: LIN u512 numeric coprocessor vs Python bigint vs C11.
 
