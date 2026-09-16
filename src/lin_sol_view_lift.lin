@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @SOL_VIEW_LIFT{
-  version=1
+  version=2
   purpose="lift Solidity view storage identifiers to explicit LIN arguments"
   class="EXPERIMENTAL"
-  note="Does not rewrite (a*b)/d to 128-bit muldiv and does not claim uint256/cToken parity. JumpRate clone does muldiv separately."
+  changelog="v2: no-arg view calls such as getCashPrior() become extra arguments. Calls with parameters stay unlifted."
+  note="Does not rewrite (a*b)/d to 128-bit muldiv and does not claim uint256/cToken parity. Exchange-rate clone does muldiv separately."
 }
 
 !svl_is_type(nm: string): int {
@@ -71,6 +72,8 @@
   n = body.length;
   i = 0;
   j = 0;
+  k = 0;
+  cl = 0;
   id = "";
   loc = "";
   while (i < n) {
@@ -82,7 +85,19 @@
         ?(loc.length > 0) { locals = rgs_csv_add(locals, loc); i = j + loc.length; continue };
       };
       j = skip_ws(body, i + id.length);
-      ?(j < n && body.charCodeAt(j) == 40) { i = i + id.length; continue };
+      ?(j < n && body.charCodeAt(j) == 40) {
+        cl = match_paren(body, j);
+        ?(cl > j) {
+          k = skip_ws(body, j + 1);
+          ?(k == cl && svl_is_kw(id) == 0 && svl_is_type(id) == 0) {
+            ?(svl_csv_has(known, id) == 0 && svl_csv_has(locals, id) == 0 && svl_csv_has(extra, id) == 0) {
+              extra = rgs_csv_add(extra, id);
+            };
+          };
+        };
+        i = i + id.length;
+        continue;
+      };
       ?(svl_is_kw(id) == 0) {
         ?(svl_csv_has(known, id) == 0 && svl_csv_has(locals, id) == 0 && svl_csv_has(extra, id) == 0) {
           extra = rgs_csv_add(extra, id);
@@ -107,6 +122,18 @@
   ?(rg_count_lit(extra, "utilizationRate") > 0) { ^0 };
   ?(rg_count_lit(extra, "util") > 0) { ^0 };
   ?(rg_count_lit(extra, "cash") > 0) { ^0 };
+  body2 = "uint _totalSupply = totalSupply; if (_totalSupply == 0) { return initialExchangeRateMantissa; } else { uint totalCash = getCashPrior(); uint cashPlusBorrowsMinusReserves = totalCash + totalBorrows - totalReserves; uint exchangeRate = cashPlusBorrowsMinusReserves * expScale / _totalSupply; return exchangeRate; }";
+  extra2 = svl_free("", body2);
+  ?(rg_count_lit(extra2, "getCashPrior") == 0) { ^0 };
+  ?(rg_count_lit(extra2, "totalSupply") == 0) { ^0 };
+  ?(rg_count_lit(extra2, "totalBorrows") == 0) { ^0 };
+  ?(rg_count_lit(extra2, "totalReserves") == 0) { ^0 };
+  ?(rg_count_lit(extra2, "initialExchangeRateMantissa") == 0) { ^0 };
+  ?(rg_count_lit(extra2, "expScale") == 0) { ^0 };
+  ?(rg_count_lit(extra2, "_totalSupply") > 0) { ^0 };
+  ?(rg_count_lit(extra2, "totalCash") > 0) { ^0 };
+  ?(rg_count_lit(extra2, "exchangeRate") > 0) { ^0 };
+  ?(rg_count_lit(extra2, "cashPlusBorrowsMinusReserves") > 0) { ^0 };
   ^1;
 }
 

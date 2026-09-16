@@ -1,0 +1,139 @@
+{
+  "schema": "LIN_COMPOUND_EXCHANGE_RATE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "local excerpt fixture is present",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned compound-protocol CToken.sol matches pin",
+      "note": "commit=a3214f67b73310d547e00fc578e8355911c9d376 blob=b8c878c79c75855808f6e7303099a367c8bad98b sha256=b64790f41ef851b09856af286ce8253b95ef34fda4ae836f924a519e8f792785"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of contracts/CToken.sol",
+      "note": ""
+    },
+    {
+      "id": "EXCERPT-SUBSTR",
+      "status": "PASS",
+      "description": "excerpt function is an exact substring of pinned CToken.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_compound_exchange_rate.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "LIFT-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_sol_view_lift.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "cer_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "7/7 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "REM-ID",
+      "status": "PASS",
+      "description": "remainder identity sample 7*9 = 31*2 + 1",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (1e18*1e18) wraps; 128-bit (1e18*1e18)/1e18 == 1e18",
+      "note": "i64_wrap=-5527149226598858752 bigint=1000000000000000000"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes cash/borrows/reserves/supply/initial as arguments (getCashPrior lifted)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJ-V3",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 fail-closes pow, .mul, and totalSupply storage",
+      "note": ""
+    },
+    {
+      "id": "VIEW-LIFT-V2",
+      "status": "PASS",
+      "description": "view-lift v2 lifts no-arg calls (getCashPrior)",
+      "note": ""
+    },
+    {
+      "id": "C-TR-V2",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 strips U/L suffixes and rejects C++",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/compound-finance/compound-protocol",
+    "commit": "a3214f67b73310d547e00fc578e8355911c9d376",
+    "path": "contracts/CToken.sol",
+    "function": "exchangeRateStoredInternal",
+    "git_blob_sha": "b8c878c79c75855808f6e7303099a367c8bad98b",
+    "file_sha256": "b64790f41ef851b09856af286ce8253b95ef34fda4ae836f924a519e8f792785",
+    "license": "BSD-3-Clause"
+  },
+  "lin_clone": "src/lin_compound_exchange_rate.lin",
+  "c11_oracle": "test/oracles/compound_exchange_rate_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "canonical": {
+    "empty_market_initial_2e17": 200000000000000000,
+    "equal_cash_supply_1000": 1000000000000000000,
+    "cash_1000_borrows_1000_supply_1000": 2000000000000000000,
+    "underflow_cash1_borrows1_reserves3": 0
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-compound-exrate"
+}

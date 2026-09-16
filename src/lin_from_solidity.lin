@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: emit OK_VIEW as well as OK; if/else; REJ_SOLIDITY_POW / REJ_SOLIDITY_LIBRARY_CALL / storage identifiers (totalSupply,totalAssets,totalBorrows,totalReserves) as REJ_SOLIDITY_STATE. v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,15 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(body, "**") > 0) { ^"REJ_SOLIDITY_POW" };
+  ?(rg_count_lit(body, ".mul(") > 0) { ^"REJ_SOLIDITY_LIBRARY_CALL" };
+  ?(rg_count_lit(body, ".div(") > 0) { ^"REJ_SOLIDITY_LIBRARY_CALL" };
+  ?(rg_count_lit(body, ".add(") > 0) { ^"REJ_SOLIDITY_LIBRARY_CALL" };
+  ?(rg_count_lit(body, ".sub(") > 0) { ^"REJ_SOLIDITY_LIBRARY_CALL" };
+  ?(rg_count_lit(body, "totalSupply") > 0) { ^"REJ_SOLIDITY_STATE" };
+  ?(rg_count_lit(body, "totalAssets") > 0) { ^"REJ_SOLIDITY_STATE" };
+  ?(rg_count_lit(body, "totalBorrows") > 0) { ^"REJ_SOLIDITY_STATE" };
+  ?(rg_count_lit(body, "totalReserves") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -53,7 +62,7 @@
 
 !sol_parse_test_gate(): int {
   sig_ok = "function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut)";
-  body_ok = "require(amountIn > 0); uint amountInWithFee = amountIn.mul(997); return amountInWithFee;";
+  body_ok = "require(amountIn > 0); uint amountInWithFee = amountIn * 997; return amountInWithFee;";
   sig_bad = "function mint() external payable returns (bool)";
   body_bad = "require(msg.value > 0); return true;";
   r1 = sol_reason(sig_ok, body_ok);
@@ -64,6 +73,12 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  r4 = sol_reason("function f(uint x) public pure returns (uint)", "return x ** 2;");
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_POW") == 0) { ^0 };
+  r5 = sol_reason("function f(uint x) public pure returns (uint)", "return x.mul(997);");
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_LIBRARY_CALL") == 0) { ^0 };
+  r6 = sol_reason("function exchangeRateStoredInternal() internal view returns (uint)", "uint _totalSupply = totalSupply; return _totalSupply;");
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_STATE") == 0) { ^0 };
   ^1;
 }
 
@@ -148,6 +163,17 @@
   out = "";
   p = 0;
   cl = 0;
+  cb = 0;
+  rest = "";
+  then_s = "";
+  else_s = "";
+  after = "";
+  rn = 0;
+  ?(n == 0) { ^out };
+  while (n >= 2 && e.charCodeAt(0) == 123 && e.charCodeAt(n - 1) == 125) {
+    e = jss_trim(slice2(e, 1, n - 1));
+    n = e.length;
+  };
   ?(n == 0) { ^out };
   ?(starts_lit(e, 0, "return") == 1 && (n == 6 || is_ident(e.charCodeAt(6)) == false)) {
     out = out + "^";
@@ -159,11 +185,29 @@
     ?(p < n && e.charCodeAt(p) == 40) {
       cl = match_paren(e, p);
       ?(cl > p) {
+        rest = jss_trim(slice2(e, cl + 1, n));
+        then_s = rest;
+        else_s = "";
+        rn = rest.length;
+        ?(rn > 0 && rest.charCodeAt(0) == 123) {
+          cb = match_brace(rest, 0);
+          ?(cb > 0) {
+            then_s = slice2(rest, 1, cb);
+            after = jss_trim(slice2(rest, cb + 1, rn));
+            ?(starts_lit(after, 0, "else") == 1 && (after.length == 4 || is_ident(after.charCodeAt(4)) == false)) {
+              else_s = jss_trim(slice2(after, 4, after.length));
+            };
+          };
+        };
         out = out + "?(";
         out = out + slice2(e, p + 1, cl);
         out = out + ") { ";
-        out = out + sol_stmt(jss_trim(slice2(e, cl + 1, n)));
+        out = out + sol_stmt(jss_trim(then_s));
         out = out + " }";
+        ?(else_s.length > 0) {
+          out = out + "; ";
+          out = out + sol_stmt(else_s);
+        };
         ^out;
       };
     };
@@ -303,7 +347,7 @@
                 bd = slice2(pass, b + 1, cb);
                 sig = slice2(pass, i, b);
                 reason = sol_reason(sig, bd);
-                ?(starts_lit(reason, 0, "OK") == 1 && reason.length == 2) {
+                ?(starts_lit(reason, 0, "OK") == 1) {
                   out = out + sol_fn(nm, pr, bd);
                   names = rgs_csv_add(names, nm);
                 };
@@ -334,6 +378,9 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  srcv = "function peek(uint x) public view returns (uint) { return x + 1; }";
+  outv = sol_from_sol(srcv);
+  ?(rg_count_lit(outv, "peek") == 0) { ^0 };
   ^1;
 }
 
