@@ -182,3 +182,62 @@ python3 tools/ingest_mainnet_unfiltered.py --blocks 200 --out test/pilot_harness
 python3 test/pilot_harness/test_honest_parity_and_sensitivity.py --json test/pilot_harness/mainnet_unfiltered.json
 ```
 Com GPU (ROCm/OpenCL): `u256_opencl_host /tmp/swaps.bin`. Cite throughput apenas comparando lotes de tamanhos distintos (ex.: 2k, 10k, 100k).
+
+---
+
+## 6. Coprocessor numérico u512 (recibo auditável) — EXPERIMENTAL
+
+LIN vende como **coprocessor numérico com recibo**, não como substituto de Uniswap.
+`src/lin_u512_coprocessor.lin` faz `mulDiv(a,b,d)=(a*b)/d` com intermediário de 512 bits
+(16-bit limbs). Prova-se neste checkout, sem Zig:
+
+```bash
+make u512-coprocessor-proof
+python3 examples/u512_coprocessor/verify_u512_receipt.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json --self-test
+node examples/u512_coprocessor/verify_u512_receipt.js \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+```
+
+O que fecha: mul 256×256→512 com leftover-carry fail-closed; div 512/256 com remainder
+de 32 limbs e `q*d+r==n` (LIN + C11 16-bit + C11 64-bit `identity64` + C11 radix-2^32
+schoolbook + Node.js BigInt + OpenSSL BIGNUM via `dlopen libcrypto.so.3` + Go `math/big`
++ Java `BigInteger` + GNU MP `mpz` via `dlopen libgmp.so.10` + Perl `Math::BigInt::Calc`,
+não GMP + POSIX GNU `bc`); ge em 512 bits com oito folhas LGE1 publicadas (árvore
+potência de 2). Consenso Python `int` + C11 16/64 + radix-2^32 + Node BigInt + OpenSSL BN
++ Go + Java + GMP + Perl + GNU bc no lote n=1060. Merkle LNR1 (Python / Node / C11
+`lin_sha256` / OpenSSL) rejeita tamper de 1 bit. Schema 1.9: verificadores zero-LIN em
+**Python, Node e Perl** recomputam as raízes LNR1, LCR2 (largura SafeMath), LCR2-full
+(512-bit numerator via `settle_u512_swap`), LGE1 (cmp/ge 512) **e** LRI1 (identidade
+de resto: `n==a*b` e `q*d+r==n` sobre o produto de 512 bits publicado) a partir das
+folhas publicadas, **e** verificam recibos LIP1 de **todas as 8 folhas LCR2**
+(3 EXACT + 3 OVERPAID + `GUARD_ZERO` + `GUARD_OVERFLOW`) ligando os 208 bytes
+empacotados a `ref_amount_out` **e de todas as 9 folhas LCR2-full** ligando os
+208 bytes a `ref_amount_out_full` sem LinVM. C11 `lin_sha256` verifica o recibo LIP1
+de um EXACT, o phantom 512-bit LRI1 **e** o `PHANTOM_APPROVE` LCR2-full.
+GMP, Perl, radix-2^32 e GNU bc recomputam `mulDiv(fee,rout,den)` nas 6 liquidações
+EXACT/OVERPAID; Perl, radix-2^32 e GNU bc também fecham o phantom FullMath-width.
+Um auditor POSIX (`verify_u512_bc_identity.py` + `bc`) confere `q*d+r==n` nas 8
+folhas LRI1 só com decimais publicados — sem LinVM e sem gcc.
+Fatia LCR2: 3 `EXACT_INPUT` + 3 `OVERPAID_INPUT` com
+`settle_u256_word == coprocessor mulDiv(fee,rout,den) == ref_amount_out` e `steps != 0`,
+mais `GUARD_ZERO` (`-1`) e `GUARD_OVERFLOW` (`-2`). Fatia LCR2-full: os mesmos EXACT/
+OVERPAID mais `PHANTOM_APPROVE` (ref SafeMath `-2`, ref FullMath aprova) e
+`GUARD_FEE_OVERFLOW` (`ain=2^256-1`).
+
+```bash
+python3 examples/u512_coprocessor/verify_u512_inclusion.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+node examples/u512_coprocessor/verify_u512_inclusion.js \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+perl examples/u512_coprocessor/verify_u512_inclusion.pl \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_bc_identity.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+```
+
+O que **não** fecha: FullMath CRT/mulmod; pool implantado; campanha 2000/157 completa.
+O phantom `ain=1,rin=1,rout=ceil(2^256/997)` mostra o coprocessor e `settle_u512_swap`
+a **aprovar** e o settler u256 a devolver `-2` (largura SafeMath). 512 bits sai da
+lista de suspeitos; substituir o corpo do settler u256 continua obrigatório para essa
+ABI. Ver `docs/U512_COPROCESSOR.rulel`.
