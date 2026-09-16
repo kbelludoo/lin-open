@@ -1,0 +1,60 @@
+@RULEL:U512_COPROCESSOR_EVENT:1.0.0
+@CHALLENGE_ID="LIN-U512-COPROCESSOR-2026-09-16"
+@TITLE="512-bit intermediate proved as numeric coprocessor with auditable receipt"
+@STATUS="REPRODUCED_THIS_RUN"
+@DATE="2026-09-16"
+@CLASS="EXPERIMENTAL"
+
+~R{.s=scope .p=proved .n=not_proved .m=measured .h=hashes .v=verdict}
+
+.s{
+  product="LIN as a numeric coprocessor with an auditable receipt, not a Uniswap replacement"
+  why="u256 mulDiv(a,b,d)=(a*b)/d with a,b,d up to 2^256-1 needs a correct 512-bit product; otherwise the settler lies or returns -2 where width-correct math approves"
+  engine="src/lin_u512_coprocessor.lin (16-bit limbs) + 32-limb remainder ge in examples/defi_settlement_proof/u512_uniswap_v2_core.lin"
+  make="make u512-coprocessor-proof"
+  harness="python3 test/prove_u512_coprocessor_external.py → 23/23 PASS this run"
+}
+
+.p{
+  mul="256x256->512 schoolbook, leftover-carry fail-closed; (2^256-1)^2 lo=1 hi=2^256-2"
+  div="512/256 restoring div, remainder 32 limbs, 512-bit ge, q*d+r==n and r<d"
+  ge="u512_ge_word plus ge inside the division loop"
+  guards="-1 on d=0; -2 on q overflow (2^255*2/1)"
+  oracles="Python int + C11 16-bit schoolbook + C11 64-bit __int128 limbs (n=1060 batch stdin, WIDTH_CONSENSUS); wrap-borrow regression 2*2^255/(2^256-1)=1 r=1"
+  lin="Compiler-0 lin_c0 vm: 7*9=63 steps=9824; 7*9/2 q=31 r=1 steps=987074; 2^255*2/3 q=0x5555555555555555 r=1 steps=1118732; getAmountOut muldiv=1813 steps=977437; self_gate=1 steps=6710747"
+  phantom="ain=1,rin=1,rout=ceil(2^256/997): coprocessor mulDiv(997,rout,1997) APPROVES steps=1106942; settle_u256_word -2 steps=11417 (SafeMath width). 512-bit intermediate off the suspect list; replacing that settler body remains required"
+  uniswap_core="settle_u512_swap(1000,10000,20000) word0=1813 steps=968269 after 32-limb remainder ge"
+  receipt="LNR1 240-byte records, domains LIN:U512:LEAF:1 / LIN:U512:NODE:1; tri-auditor Python hashlib == Node crypto == C11 lin_sha256; 1-bit leaf tamper rejected"
+  lcr2="1 EXACT_INPUT lin==ref==onchain=348299652 steps=222679; 1 OVERPAID_INPUT lin==ref=145611106349087342 onchain=145610814998826432 steps=230456; guards -1/-2 steps=1570/11417. Full 2000/157 campaign still required"
+}
+
+.n{
+  not_1="FullMath.sol CRT / mulmod assembly parity (width pin only)"
+  not_2="a deployed Uniswap v2/v3 pool"
+  not_3="the full 2000-swap + 157-unfiltered campaign"
+  not_4="that 512 proof closes u256 by itself"
+  not_5="zk or computational soundness of Merkle (tamper-evidence + re-execution)"
+  not_6="wall-clock superiority; merkle_512_settler n=8 throughput is launch latency, not a kernel peak"
+}
+
+.m{
+  host="lin_c0 C11, gcc -std=c11, python3, node crypto; no Zig"
+  c11_selftest="SELFTEST_PASS identity_2_255_x2_div3 q*d+r==n (no Python)"
+}
+
+.h{
+  lin_src="sha256:d3240dfdbeb254bdce4f9de2111fe82618f61f1c78dae84faa584b1b6e0ae58f"
+  oracle_c="sha256:39efc6c94d7908164570c70beec7e84e162ecc3cf06e7ef1876dec5d40e2e129"
+  auditor_c="sha256:a2934163e350086e9de367b53cf269cd3f315b9367e0c6e91d481a0bd32cb605"
+  harness="sha256:9f4ee4b94e3ff149a8d4a55a3b78f863d5e43681d0999ef80aecd964888188bb"
+  u512_uniswap_lin="sha256:3db82be5c109f8c0405ab2085937ca7c633eaca7dbb54457d3282c034d35b5e3"
+  u256_linbc1="sha256:44a5fdcd64f2cdee0b0c45becbf66d752a51f018f67b3d43f578b98bbe780606"
+  lnr1_merkle="sha256:833c9e8c4a24965dff19f23cb4c249d8083dae3f7bf0fadddce136960669bc99"
+  lcr2_merkle="sha256:c936eeca54bf9bc4a63469fdf7cd8bc90632bd9817aebde269bceb9a90596f4a"
+  fullmath_sol="sha256:959c52e1c860bfbede3e33c8d04910c11038973173aa3478547cbad2e444880e"
+}
+
+.v{
+  method="PYTHON_BIGINT && C11_LIMB16 && C11_U64_I128 && LIN_C0_VM && LNR1_TRI_AUDITOR && LCR2_SLICE && TAMPER_REJECT"
+  on_fail="do not publish PASS"
+}
