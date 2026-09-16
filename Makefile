@@ -314,6 +314,12 @@ independent-reproof: c0
 	@chmod +x test/prove_melhorias_independent.py
 	@python3 test/prove_melhorias_independent.py
 
+.PHONY: u512-coprocessor-proof
+u512-coprocessor-proof: c0
+	@$(MAKE) -C transpile/c bin/lin_bc1_run
+	@chmod +x test/prove_u512_coprocessor_external.py examples/u512_coprocessor/verify_u512_receipt.py
+	@python3 test/prove_u512_coprocessor_external.py
+
 # Standalone no-Zig CLI (python3, stdlib only). `make install-cli PREFIX=~/.local`
 # puts an executable `lin-verify` on PATH.
 verify-cli: c0

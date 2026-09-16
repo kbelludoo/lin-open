@@ -24,6 +24,12 @@ It is purpose-built for reproducible numeric algorithms: cryptography, hashing, 
 >    ```bash
 >    python3 tools/verify_gate_manifest.py
 >    ```
+> 6. **Numeric coprocessor receipt (u512 mulDiv width, EXPERIMENTAL):** 256×256→512 mul, 512-bit ge, 512/256 div with remainder identity, Python bigint + C11 `__int128` oracles, LNR1 Merkle an auditor recomputes without LIN:
+>    ```bash
+>    make u512-coprocessor-proof
+>    python3 examples/u512_coprocessor/verify_u512_receipt.py examples/u512_coprocessor/u512_coprocessor_evidence.json
+>    ```
+>    This proves the 512-bit intermediate. It does **not** close the full 2000/157 u256 campaign, FullMath CRT/mulmod, or a Uniswap replacement.
 
 > **Explicit Trust Model & Security Boundary:**
 > * **Tamper-Evidence vs. Computational Soundness:** A SHA-256 Merkle root provides **tamper-evident log integrity**, not computational soundness. It proves that source code, inputs, outputs, and trace metadata have not been modified after the record was minted. A malicious executor could emit a false output ($2 + 2 = 5$) and still construct a valid Merkle root. Verifying execution correctness requires either (a) independent re-execution via `--source`, or (b) an on-chain fraud dispute window.
