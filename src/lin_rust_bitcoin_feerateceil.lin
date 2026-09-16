@@ -1,0 +1,157 @@
+@LIN:L1c:0.2
+@RUST_BITCOIN_FEE_RATE_CEIL{
+  version=1
+  repo="rust-bitcoin/rust-bitcoin"
+  source="units/src/amount/unsigned.rs"
+  license="CC0-1.0"
+  commit="1cbf4bd62ea99c558c6d8ef794edbd984a2a4684"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="Amount::div_by_fee_rate_ceil_sufficient_weight"
+  note="Not a wallet. Amount/FeeRate / is floor. Ceil is the minimum wu that covers the fee. rate=sat_mvb.div_ceil(4000); wu=(sats*1000).div_ceil(rate). Remainder ceil, not (a+d-1)/d. Option None is -1."
+}
+
+!rfc_max_money() -> int {
+  ^(21000000 * 100000000);
+}
+
+!rfc_kwu_per_mvb() -> int {
+  ^ 4000;
+}
+
+!rfc_from_sat(satoshi: int) -> int {
+  ?(satoshi < 0) { ^ -1; };
+  ?(satoshi > (21000000 * 100000000)) { ^ -1; };
+  ^ satoshi;
+}
+
+!rfc_from_sat_per_kwu(sat_kwu: int) -> int {
+  ?(sat_kwu < 0) { ^ -1; };
+  ?(sat_kwu > (9223372036854775807 / 4000)) { ^ -1; };
+  ^(sat_kwu * 4000);
+}
+
+!rfc_to_msat(satoshi: int) -> int {
+  ?(rfc_from_sat(satoshi) < 0) { ^ -1; };
+  ^(satoshi * 1000);
+}
+
+!rfc_div_floor(num: int, den: int) -> int {
+  ?(num < 0 || den <= 0) { ^ -1; };
+  ^(num / den);
+}
+
+!rfc_div_rem(num: int, den: int) -> int {
+  ?(num < 0 || den <= 0) { ^ -1; };
+  q = num / den;
+  ^(num - q * den);
+}
+
+!rfc_div_ceil(num: int, den: int) -> int {
+  ?(num < 0 || den <= 0) { ^ -1; };
+  q = num / den;
+  r = num - q * den;
+  ?(r == 0) { ^ q; };
+  n = q + 1;
+  ?(n <= 0) { ^ -1; };
+  ^ n;
+}
+
+!rfc_to_sat_per_kwu_floor(sat_mvb: int) -> int {
+  ?(sat_mvb < 0) { ^ -1; };
+  ?(sat_mvb == 0) { ^ 0; };
+  ^ rfc_div_floor(sat_mvb, 4000);
+}
+
+!rfc_to_sat_per_kwu_ceil(sat_mvb: int) -> int {
+  ?(sat_mvb < 0) { ^ -1; };
+  ?(sat_mvb == 0) { ^ 0; };
+  ^ rfc_div_ceil(sat_mvb, 4000);
+}
+
+!rfc_div_by_fee_rate_floor(satoshi: int, sat_mvb: int) -> int {
+  ?(rfc_from_sat(satoshi) < 0) { ^ -1; };
+  rate = rfc_to_sat_per_kwu_ceil(sat_mvb);
+  ?(rate <= 0) { ^ -1; };
+  msats = rfc_to_msat(satoshi);
+  ?(msats < 0) { ^ -1; };
+  ^ rfc_div_floor(msats, rate);
+}
+
+!rfc_div_by_fee_rate_ceil(satoshi: int, sat_mvb: int) -> int {
+  ?(rfc_from_sat(satoshi) < 0) { ^ -1; };
+  rate = rfc_to_sat_per_kwu_ceil(sat_mvb);
+  ?(rate <= 0) { ^ -1; };
+  msats = rfc_to_msat(satoshi);
+  ?(msats < 0) { ^ -1; };
+  ^ rfc_div_ceil(msats, rate);
+}
+
+!rfc_ceil_covers_floor(satoshi: int, sat_mvb: int) -> int {
+  f = rfc_div_by_fee_rate_floor(satoshi, sat_mvb);
+  c = rfc_div_by_fee_rate_ceil(satoshi, sat_mvb);
+  ?(f < 0 || c < 0) { ^ 0; };
+  ?(c == f) { ^ 1; };
+  ?(c == (f + 1)) { ^ 1; };
+  ^ 0;
+}
+
+!rfc_floor_underpay(satoshi: int, sat_mvb: int) -> int {
+  ?(rfc_ceil_covers_floor(satoshi, sat_mvb) == 0) { ^ 0; };
+  f = rfc_div_by_fee_rate_floor(satoshi, sat_mvb);
+  c = rfc_div_by_fee_rate_ceil(satoshi, sat_mvb);
+  ?(c == (f + 1)) { ^ 1; };
+  ^ 0;
+}
+
+!rfc_tiny_mvb_inflates(sat_mvb: int) -> int {
+  fl = rfc_to_sat_per_kwu_floor(sat_mvb);
+  cl = rfc_to_sat_per_kwu_ceil(sat_mvb);
+  ?(fl < 0 || cl < 0) { ^ 0; };
+  ?(fl == 0 && cl == 1) { ^ 1; };
+  ^ 0;
+}
+
+!rfc_test_suite() -> int {
+  ?(rfc_max_money() != 2100000000000000) { ^ -1; };
+  ?(rfc_kwu_per_mvb() != 4000) { ^ -2; };
+  ?(rfc_from_sat(0) != 0) { ^ -3; };
+  ?(rfc_from_sat(2100000000000000) != 2100000000000000) { ^ -4; };
+  ?(rfc_from_sat(-1) != -1) { ^ -5; };
+  ?(rfc_from_sat_per_kwu(2) != 8000) { ^ -6; };
+  ?(rfc_from_sat_per_kwu(3) != 12000) { ^ -7; };
+  ?(rfc_to_sat_per_kwu_ceil(8000) != 2) { ^ -8; };
+  ?(rfc_to_sat_per_kwu_floor(2000400) != 500) { ^ -9; };
+  ?(rfc_to_sat_per_kwu_ceil(2000400) != 501) { ^ -10; };
+  ?(rfc_div_by_fee_rate_ceil(1000, 8000) != 500000) { ^ -11; };
+  ?(rfc_div_by_fee_rate_floor(1000, 8000) != 500000) { ^ -12; };
+  ?(rfc_div_by_fee_rate_floor(1000, 12000) != 333333) { ^ -13; };
+  ?(rfc_div_by_fee_rate_ceil(1000, 12000) != 333334) { ^ -14; };
+  ?(rfc_div_by_fee_rate_ceil(1000, 0) != -1) { ^ -15; };
+  ?(rfc_div_by_fee_rate_floor(2100000000000000, 4000) != 2100000000000000000) { ^ -16; };
+  ?(rfc_floor_underpay(1000, 12000) != 1) { ^ -17; };
+  ?(rfc_floor_underpay(1000, 8000) != 0) { ^ -18; };
+  ?(rfc_tiny_mvb_inflates(1) != 1) { ^ -19; };
+  ?(rfc_tiny_mvb_inflates(4000) != 0) { ^ -20; };
+  ?(rfc_div_ceil(1000, 0) != -1) { ^ -21; };
+  ^ 1;
+}
+
+=ex{
+  rfc_max_money,
+  rfc_kwu_per_mvb,
+  rfc_from_sat,
+  rfc_from_sat_per_kwu,
+  rfc_to_msat,
+  rfc_div_floor,
+  rfc_div_rem,
+  rfc_div_ceil,
+  rfc_to_sat_per_kwu_floor,
+  rfc_to_sat_per_kwu_ceil,
+  rfc_div_by_fee_rate_floor,
+  rfc_div_by_fee_rate_ceil,
+  rfc_ceil_covers_floor,
+  rfc_floor_underpay,
+  rfc_tiny_mvb_inflates,
+  rfc_test_suite
+}
