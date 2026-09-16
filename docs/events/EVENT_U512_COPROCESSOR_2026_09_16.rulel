@@ -1,0 +1,59 @@
+@RULEL:U512_COPROCESSOR:1.0.0
+@CHALLENGE_ID="LIN-U512-COPROCESSOR-2026-09-16"
+@TITLE="Prove 512-bit mul/div/ge as a numeric coprocessor with an external receipt"
+@STATUS="EXPERIMENTAL_FULLMATH_WIDTH"
+@DATE="2026-09-16"
+
+~R{.s=spec .p=proved .n=not_proved .e=engines .v=verdict}
+
+.s{
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced or reconstructed width | REAL_WORLD = as deployed on Ethereum mainnet"
+  product="numeric coprocessor with auditable receipt, not a Uniswap replacement"
+  width="uint256 inputs; 512-bit product (16-bit limbs x 32); 512/256 restoring div; q in uint256 or fail-closed"
+  receipt="LNR1 240-byte records; domains LIN:U512:LEAF:1 and LIN:U512:NODE:1"
+  settler_contrast="settle_u256_word remains SafeMath-width: high 256 of product => -2. Phantom AMM coprocessor APPROVES, settler -2."
+}
+
+.p{
+  mul="256x256->512 schoolbook carry vs Python int && C11 u16 && C11 u64 __int128"
+  ge="unsigned 512-bit compare used as the division-loop predicate"
+  div="512/256->256 restoring; remainder identity q*d+r==n"
+  muldiv_guards="-1 when d=0; -2 when q>=2^256"
+  lin_self_gate="7*9/2=31 r=1; getAmountOut(1000,10000,20000)=1813; d=0; 2^128*2^128/1 overflow; ge"
+  e2e_slice="1 EXACT_INPUT + 1 OVERPAID_INPUT vs ref_amount_out; LCR2 steps; guards -1/-2"
+}
+
+.n{
+  not_1="FullMath.sol CRT/mulmod assembly bit-exact"
+  not_2="settle_u256_word closed as FullMath (512 proof removes the intermediate from the suspect list only)"
+  not_3="full 2000-swap or 157-unfiltered campaign"
+  not_4="zk or computational soundness of Merkle"
+  not_5="LIN replacing Uniswap, Compound, or the EVM"
+}
+
+.e{
+  lin="src/lin_u512_coprocessor.lin"
+  settler="examples/defi_settlement_proof/u256_settlement_engine.lin"
+  amm512="examples/defi_settlement_proof/u512_uniswap_v2_core.lin (remainder widened to 32 limbs)"
+  c11="test/oracles/u512_coprocessor_c11.c"
+  python="test/prove_u512_coprocessor_external.py"
+  auditor="examples/u512_coprocessor/verify_u512_receipt.py"
+  e2e="test/prove_u256_lcr2_e2e_slice.py"
+  harness="make u512-coprocessor-proof"
+}
+
+.v{
+  method="PYTHON_BIGINT && C11_U16_SCHOOLBOOK && C11_U64_I128 && LIN_C0_VM && LNR1_MERKLE && LCR2_E2E_SLICE"
+  on_fail="do not publish PASS"
+  this_run_linbc1_file="sha256:2b4ddd93dbc50df93e01580c6cec9018b4426dfbb1e0cca33b6895961de679f5"
+  this_run_loader="sha256:aa63f44a4f743cf960e97465e6b58bd0216946b6a2c8b93dd99b5085ee29542f"
+  this_run_lnr1_merkle="sha256:9f5d6098725f7f18c350f8ec150cb135637681001a44d9b8bfd74cebdb8d8929"
+  this_run_lcr2_merkle="sha256:a6dd061b64c5437ae5af4df932c34b20ff3b329ef0054d32da248297753da481"
+  this_run_self_gate_steps=5364249
+  this_run_spot_7_9_2="value=31 steps=976721"
+  this_run_phantom_coprocessor="status=1 steps=1097548"
+  this_run_phantom_settler="status=-2 steps=11417"
+  this_run_exact="lin==ref==onchain=348299652 steps=1113359"
+  this_run_overpaid="lin==ref=145611106349087342 onchain=145610814998826432 steps=1152244"
+}

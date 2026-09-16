@@ -310,6 +310,12 @@ compound-jumprate-proof: c0
 	@chmod +x test/verify_compound_jumprate.sh test/prove_compound_jumprate_external.py
 	@test/verify_compound_jumprate.sh
 
+.PHONY: u512-coprocessor-proof
+u512-coprocessor-proof: c0
+	@chmod +x test/verify_u512_coprocessor.sh test/prove_u512_coprocessor_external.py \
+	        test/prove_u256_lcr2_e2e_slice.py examples/u512_coprocessor/verify_u512_receipt.py
+	@test/verify_u512_coprocessor.sh
+
 independent-reproof: c0
 	@chmod +x test/prove_melhorias_independent.py
 	@python3 test/prove_melhorias_independent.py
