@@ -1,0 +1,114 @@
+{
+  "harness": "prove_bitcoin_perm_diff_external.py",
+  "claims": [
+    {
+      "id": "PIN-HASH",
+      "status": "PASS",
+      "detail": "fixture sha256 and git blob match published pins"
+    },
+    {
+      "id": "PIN-SYMBOLS",
+      "status": "PASS",
+      "detail": "PermittedDifficultyTransition + CalculateNextWorkRequired present"
+    },
+    {
+      "id": "UPSTREAM-FETCH",
+      "status": "PASS",
+      "detail": "git clone bitcoin v27.1 pow.cpp matches pin",
+      "extra": "commit=1088a98f5aad080cc6cca2da174f206509fcda6c"
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "detail": "C11 oracle selftest == 1 (published timespan + u64 4x)"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "detail": "Compiler 0 typecheck of src/lin_bitcoin_perm_diff.lin"
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "detail": "Compiler 0 check of C transpiler v2"
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "detail": "pdt_test_suite == 1 on Compiler 0 interpreter"
+    },
+    {
+      "id": "TIMESPAN",
+      "status": "PASS",
+      "detail": "3/3 published pow_tests.cpp timespan clamps: C11==LIN==Python"
+    },
+    {
+      "id": "WINDOW",
+      "status": "PASS",
+      "detail": "2016-block retarget window: 32256 on, 32255 off (2015)"
+    },
+    {
+      "id": "EQUALITY",
+      "status": "PASS",
+      "detail": "off-window nBits equality + min-diff allow + mainnet WIDTH=2"
+    },
+    {
+      "id": "U64-4X",
+      "status": "PASS",
+      "detail": "64-bit compact 4x bound: same/4x/1/4 permit, 5x/1/5 reject"
+    },
+    {
+      "id": "TRANSPILER",
+      "status": "PASS",
+      "detail": "C transpiler v2 fail-closes :: and lone &; lifted scalar C has neither"
+    },
+    {
+      "id": "C-TR-GATE",
+      "status": "SKIP",
+      "detail": "lin_c0 does not execute string-literal transpiler modules",
+      "extra": "@RULEL:LIN_VM_RUN:1.0.0\n.refused{ fn=\"cfs_reason_gate\" reason=\"VM_REJ_STRING_LITERAL\" }\n"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "detail": "in-memory JIT not exercised",
+      "extra": "libtcc missing or JIT rejected"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "detail": "LIN clone takes consensus params as arguments (no Consensus::Params&)"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/bitcoin/bitcoin",
+    "tag": "v27.1",
+    "commit": "1088a98f5aad080cc6cca2da174f206509fcda6c",
+    "path": "src/pow.cpp",
+    "git_blob_sha": "1e8d53de8bb87b0b9a30ff6439881cc2c40e38a4",
+    "file_sha256": "a997ebc9e89ec0ed0f98fe56e7ece7c0a799746d36be5c0951ca6fd264280a33",
+    "license": "MIT",
+    "clone_lin": "https://github.com/kbelludoo/clone-lin-bitcoin-core-permdiff"
+  },
+  "lin_clone": "src/lin_bitcoin_perm_diff.lin",
+  "c11_oracle": "test/oracles/bitcoin_perm_diff_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "published_timespan_vectors": [
+    {
+      "name": "get_next_work unclamped 1262152739-1261130161",
+      "actual": 1022578,
+      "clamped": 1022578
+    },
+    {
+      "name": "get_next_work_lower_limit_actual clamp to T/4",
+      "actual": 289434,
+      "clamped": 302400
+    },
+    {
+      "name": "get_next_work_upper_limit_actual clamp to 4T",
+      "actual": 6048000,
+      "clamped": 4838400
+    }
+  ]
+}
