@@ -1,0 +1,37 @@
+@RULEL:U512_COPROCESSOR:1.0.0
+@CHALLENGE_ID="LIN-U512-COPROCESSOR-2026-09-16"
+@TITLE="Numeric coprocessor: 512-bit mul/ge/div/mulDiv with external receipts; settle_u256_word LCR2 steps"
+@STATUS="EXPERIMENTAL_FULLMATH_WIDTH"
+@DATE="2026-09-16"
+
+~R{.s=spec .d=deltas .n=not_proved .v=verdict}
+
+.s{
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width OR full-width math not deployed as a pool | REAL_WORLD = as deployed on Ethereum mainnet"
+  sell="LIN as a numeric co-processor that emits an auditable receipt, not as a Uniswap replacement"
+  width="uint256 operands; 512-bit product; uint256 quotient; remainder identity q*d+r == a*b"
+  spec_pin="test/fixtures/external_proof/FullMath.sol sha256=959c52e1c860bfbede3e33c8d04910c11038973173aa3478547cbad2e444880e (Uniswap/v3-core FullMath.mulDiv width; LIN uses restoring division, not the Solidity CRT path)"
+}
+
+.d{
+  engine="src/lin_u512_coprocessor.lin: schoolbook 16x16->32, unsigned ge512, restoring 512/256, mulDiv idx ABI"
+  oracles="Python int; C11 32-bit limbs + __int128 64-bit mul consensus in test/oracles/u512_coprocessor_c11.c (not TCB)"
+  receipt_lnr1="240-byte LNR1, domains LIN:U512:LEAF:1 / LIN:U512:NODE:1; auditor hashlib + Python int"
+  phantom="2^255 * 2 / 3 product 2^256 APPROVES on the coprocessor"
+  settle_e2e="test/prove_u256_settle_lcr2_external.py: settle_u256_word vs ref_amount_out on unfiltered EXACT + OVERPAID; guards -1/-2; LCR2 steps>0 from lin_bc1_run"
+  honest_split="512-bit proof removes the intermediate from the suspect list. settle_u256_word still fail-closes high 256 of fee*reserve_out (-2), matching Uniswap V2 SafeMath, not FullMath."
+}
+
+.n{
+  not_1="LIN replacing Uniswap, Compound, or the EVM"
+  not_2="settle_u256_word computing getAmountOut when the 512-bit numerator does not fit 256 bits"
+  not_3="zk or computational soundness of Merkle (tamper-evidence + re-execution)"
+  not_4="historical tools/emit_batch_receipt.py still documents steps=0; this event's LCR2 bundle binds real VM steps"
+}
+
+.v{
+  method="PYTHON_BIGINT && C11_LIMBS && LIN_C0_IMAGE && LINBC1_STEPS && LNR1_MERKLE && LCR2_MERKLE && PINNED_FULLMATH"
+  harness="make u512-coprocessor-proof"
+  on_fail="do not publish PASS"
+}

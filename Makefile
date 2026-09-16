@@ -305,7 +305,7 @@ else
 	@python3 test/prove_all_claims_external.py --iterations 10000
 endif
 
-.PHONY: compound-jumprate-proof independent-reproof
+.PHONY: compound-jumprate-proof independent-reproof u512-coprocessor-proof
 compound-jumprate-proof: c0
 	@chmod +x test/verify_compound_jumprate.sh test/prove_compound_jumprate_external.py
 	@test/verify_compound_jumprate.sh
@@ -313,6 +313,11 @@ compound-jumprate-proof: c0
 independent-reproof: c0
 	@chmod +x test/prove_melhorias_independent.py
 	@python3 test/prove_melhorias_independent.py
+
+u512-coprocessor-proof: c0
+	@$(MAKE) -C transpile/c bin/lin_bc1_run
+	@chmod +x test/verify_u512_coprocessor.sh test/prove_u512_coprocessor_external.py test/prove_u256_settle_lcr2_external.py
+	@test/verify_u512_coprocessor.sh
 
 # Standalone no-Zig CLI (python3, stdlib only). `make install-cli PREFIX=~/.local`
 # puts an executable `lin-verify` on PATH.

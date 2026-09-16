@@ -1,0 +1,32 @@
+@RULEL:DOC:U512_COPROCESSOR:1.0.0
+@CLASS="EXPERIMENTAL"
+@DATE="2026-09-16"
+
+~R{.w=what .p=prove .n=not .r=run}
+
+.w{
+  product="LIN numeric coprocessor with an auditable receipt"
+  engine="src/lin_u512_coprocessor.lin (16-bit limbs)"
+  oracles="Python int + C11 32-bit limbs XOR __int128 64-bit mul (test/oracles/u512_coprocessor_c11.c) + Compiler-0 LINBC1"
+  receipt="LNR1 240-byte records, domains LIN:U512:LEAF:1 / LIN:U512:NODE:1"
+  settle="settle_u256_word vs ref_amount_out on EXACT/OVERPAID; LCR2 208-byte records with VM steps > 0"
+}
+
+.p{
+  mul="256x256->512"
+  ge="unsigned 512-bit compare"
+  div="512/256 restoring division, remainder identity q*d+r==n (n=a*b on LIN; arbitrary n on C11 vs Python)"
+  muldiv="FullMath width: d=0 -> -1; q>=2^256 -> -2; phantom 2^255*2/3 APPROVES"
+  settle_e2e="LIN amount_out == Python floor formula; OVERPAID may differ from on-chain amount_out"
+  auditor="python3 test/prove_u512_coprocessor_external.py --verify-receipt examples/u512_coprocessor/u512_coprocessor_evidence.json"
+}
+
+.n{
+  not_1="Uniswap V2/V3 pool replacement or mainnet deployment"
+  not_2="settle_u256_word FullMath semantics — that engine still fail-closes when fee*reserve_out >= 2^256 (SafeMath-shaped)"
+  not_3="zk / computational soundness of Merkle (tamper-evidence + independent recompute)"
+}
+
+.r{
+  cmd="make u512-coprocessor-proof"
+}

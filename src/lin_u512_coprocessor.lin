@@ -1,0 +1,237 @@
+@LIN:L1c:0.2
+@U512_NUMERIC_COPROCESSOR{
+  version=1
+  spec="Uniswap/v3-core contracts/libraries/FullMath.sol mulDiv width"
+  fixture="test/fixtures/external_proof/FullMath.sol"
+  class="EXPERIMENTAL"
+  purpose="256x256->512 mul, unsigned 512-bit ge, 512/256 restoring div, mulDiv"
+  note="Numeric coprocessor with auditable receipt. Not a deployed pool. d=0 -> -1; q>=2^256 -> -2."
+}
+
+// Unsigned compare of two i64 bit-patterns as uint64.
+!u512_u64_ge(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 1; };
+  ?(a >= 0 && b < 0) { ^ 0; };
+  ?(a >= b) { ^ 1; };
+  ^ 0;
+}
+
+// Unsigned ge of two 512-bit values packed as 8 little-endian uint64 words.
+!u512_ge512(
+  a0: int, a1: int, a2: int, a3: int, a4: int, a5: int, a6: int, a7: int,
+  b0: int, b1: int, b2: int, b3: int, b4: int, b5: int, b6: int, b7: int
+) -> int {
+  ?(a7 != b7) { ^ u512_u64_ge(a7, b7); };
+  ?(a6 != b6) { ^ u512_u64_ge(a6, b6); };
+  ?(a5 != b5) { ^ u512_u64_ge(a5, b5); };
+  ?(a4 != b4) { ^ u512_u64_ge(a4, b4); };
+  ?(a3 != b3) { ^ u512_u64_ge(a3, b3); };
+  ?(a2 != b2) { ^ u512_u64_ge(a2, b2); };
+  ?(a1 != b1) { ^ u512_u64_ge(a1, b1); };
+  ?(a0 != b0) { ^ u512_u64_ge(a0, b0); };
+  ^ 1;
+}
+
+// mulDiv(a,b,d)=(a*b)/d with 512-bit product.
+// idx: -1 status (1 ok, -1 d=0, -2 q overflow);
+//      0..3 q words; 4..7 r words; 8..15 product words (skips div).
+!u512_muldiv_word(
+  a0: int, a1: int, a2: int, a3: int,
+  b0: int, b1: int, b2: int, b3: int,
+  d0: int, d1: int, d2: int, d3: int,
+  idx: int
+) -> int {
+  a: [16]int;
+  b: [16]int;
+  d: [16]int;
+  n: [32]int;
+  rem: [16]int;
+  q: [16]int;
+
+  i = 0;
+  while (i < 16) {
+    a[i] = 0; b[i] = 0; d[i] = 0; rem[i] = 0; q[i] = 0;
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 32) { n[i] = 0; i = i + 1; };
+
+  i = 0;
+  while (i < 4) {
+    a[i] = _lia_ushr(a0, 16 * i) & 65535;
+    a[4 + i] = _lia_ushr(a1, 16 * i) & 65535;
+    a[8 + i] = _lia_ushr(a2, 16 * i) & 65535;
+    a[12 + i] = _lia_ushr(a3, 16 * i) & 65535;
+    b[i] = _lia_ushr(b0, 16 * i) & 65535;
+    b[4 + i] = _lia_ushr(b1, 16 * i) & 65535;
+    b[8 + i] = _lia_ushr(b2, 16 * i) & 65535;
+    b[12 + i] = _lia_ushr(b3, 16 * i) & 65535;
+    d[i] = _lia_ushr(d0, 16 * i) & 65535;
+    d[4 + i] = _lia_ushr(d1, 16 * i) & 65535;
+    d[8 + i] = _lia_ushr(d2, 16 * i) & 65535;
+    d[12 + i] = _lia_ushr(d3, 16 * i) & 65535;
+    i = i + 1;
+  };
+
+  // Schoolbook 16x16 -> 32 (512 bits). Limb product fits in 32 bits.
+  i = 0;
+  while (i < 16) {
+    carry = 0;
+    j = 0;
+    while (j < 16) {
+      k = i + j;
+      t = n[k] + a[i] * b[j] + carry;
+      n[k] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      j = j + 1;
+    };
+    k = i + 16;
+    while (k < 32 && carry != 0) {
+      t = n[k] + carry;
+      n[k] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      k = k + 1;
+    };
+    i = i + 1;
+  };
+
+  ?(idx >= 8 && idx <= 15) {
+    base_limb = (idx - 8) * 4;
+    w = (n[base_limb] & 65535) |
+        _lia_shl(n[base_limb + 1] & 65535, 16) |
+        _lia_shl(n[base_limb + 2] & 65535, 32) |
+        _lia_shl(n[base_limb + 3] & 65535, 48);
+    ^ w;
+  };
+
+  d_zero = (d0 == 0 && d1 == 0 && d2 == 0 && d3 == 0);
+  ?(d_zero) {
+    ?(idx == -1) { ^ -1; };
+    ^ 0;
+  };
+
+  // Restoring 512/256 division. Remainder is 256 bits + shift carry.
+  bit = 511;
+  while (bit >= 0) {
+    limb = _lia_ushr(bit, 4);
+    pos = bit & 15;
+    in_bit = (_lia_ushr(n[limb], pos) & 1);
+    carry = in_bit;
+    j = 0;
+    while (j < 16) {
+      t = rem[j] * 2 + carry;
+      rem[j] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      j = j + 1;
+    };
+    cmp = 0;
+    j = 15;
+    while (j >= 0) {
+      ?(cmp == 0) {
+        ?(rem[j] > d[j]) { cmp = 1; }
+        : (rem[j] < d[j]) { cmp = -1; };
+      };
+      j = j - 1;
+    };
+    take = 0;
+    ?((carry == 1) | (cmp >= 0)) { take = 1; };
+    ?(take == 1) {
+      ?(bit >= 256) {
+        ?(idx == -1) { ^ -2; };
+        ^ 0;
+      };
+      quot_limb = _lia_ushr(bit, 4);
+      q[quot_limb] = q[quot_limb] | _lia_shl(1, pos);
+      borrow = 0;
+      j = 0;
+      while (j < 16) {
+        t = rem[j] - d[j] - borrow;
+        ?(t < 0) {
+          rem[j] = t + 65536;
+          borrow = 1;
+        } : {
+          rem[j] = t;
+          borrow = 0;
+        };
+        j = j + 1;
+      };
+    };
+    bit = bit - 1;
+  };
+
+  ?(idx == -1) { ^ 1; };
+  ?(idx >= 0 && idx <= 3) {
+    base_limb = idx * 4;
+    w = (q[base_limb] & 65535) |
+        _lia_shl(q[base_limb + 1] & 65535, 16) |
+        _lia_shl(q[base_limb + 2] & 65535, 32) |
+        _lia_shl(q[base_limb + 3] & 65535, 48);
+    ^ w;
+  };
+  ?(idx >= 4 && idx <= 7) {
+    base_limb = (idx - 4) * 4;
+    w = (rem[base_limb] & 65535) |
+        _lia_shl(rem[base_limb + 1] & 65535, 16) |
+        _lia_shl(rem[base_limb + 2] & 65535, 32) |
+        _lia_shl(rem[base_limb + 3] & 65535, 48);
+    ^ w;
+  };
+  ^ 0;
+}
+
+!u512_test_suite() -> int {
+  ?(u512_u64_ge(1, 0) != 1) { ^ -1; };
+  ?(u512_u64_ge(0, 1) != 0) { ^ -2; };
+  ?(u512_u64_ge(0, 0) != 1) { ^ -3; };
+  neg = _lia_shl(1, 63);
+  ?(u512_u64_ge(neg, 1) != 1) { ^ -4; };
+  ?(u512_u64_ge(1, neg) != 0) { ^ -5; };
+
+  z = 0;
+  ?(u512_ge512(1, z, z, z, z, z, z, z, z, z, z, z, z, z, z, z) != 1) { ^ -6; };
+  ?(u512_ge512(z, z, z, z, z, z, z, z, 1, z, z, z, z, z, z, z) != 0) { ^ -7; };
+
+  // 100*200/50 = 400
+  ?(u512_muldiv_word(100, z, z, z, 200, z, z, z, 50, z, z, z, -1) != 1) { ^ -8; };
+  ?(u512_muldiv_word(100, z, z, z, 200, z, z, z, 50, z, z, z, 0) != 400) { ^ -9; };
+  ?(u512_muldiv_word(100, z, z, z, 200, z, z, z, 50, z, z, z, 4) != 0) { ^ -10; };
+
+  // d=0 -> -1
+  ?(u512_muldiv_word(1, z, z, z, 1, z, z, z, z, z, z, z, -1) != -1) { ^ -11; };
+
+  // 2*3 product = 6 (lo word)
+  ?(u512_muldiv_word(2, z, z, z, 3, z, z, z, 1, z, z, z, 8) != 6) { ^ -12; };
+
+  // Phantom overflow: 2^255 * 2 / 3. Product is 2^256. q = (2^256-1)/3, r=1.
+  a3 = _lia_shl(1, 63);
+  st = u512_muldiv_word(z, z, z, a3, 2, z, z, z, 3, z, z, z, -1);
+  ?(st != 1) { ^ -13; };
+  q0 = u512_muldiv_word(z, z, z, a3, 2, z, z, z, 3, z, z, z, 0);
+  q1 = u512_muldiv_word(z, z, z, a3, 2, z, z, z, 3, z, z, z, 1);
+  q2 = u512_muldiv_word(z, z, z, a3, 2, z, z, z, 3, z, z, z, 2);
+  q3 = u512_muldiv_word(z, z, z, a3, 2, z, z, z, 3, z, z, z, 3);
+  pent = 6148914691236517205;
+  ?(q0 != pent) { ^ -14; };
+  ?(q1 != pent) { ^ -15; };
+  ?(q2 != pent) { ^ -16; };
+  ?(q3 != pent) { ^ -17; };
+  r0 = u512_muldiv_word(z, z, z, a3, 2, z, z, z, 3, z, z, z, 4);
+  ?(r0 != 1) { ^ -18; };
+
+  // (2^256-1)*(2^256-1)/1 overflows uint256 quotient -> -2
+  m = 0 - 1;
+  ?(u512_muldiv_word(m, m, m, m, m, m, m, m, 1, z, z, z, -1) != -2) { ^ -19; };
+
+  // 7/3 -> q=2 r=1 via muldiv 7*1/3
+  ?(u512_muldiv_word(7, z, z, z, 1, z, z, z, 3, z, z, z, 0) != 2) { ^ -20; };
+  ?(u512_muldiv_word(7, z, z, z, 1, z, z, z, 3, z, z, z, 4) != 1) { ^ -21; };
+
+  ^ 1;
+}
+
+=ex{
+  u512_u64_ge,
+  u512_ge512,
+  u512_muldiv_word,
+  u512_test_suite
+}
