@@ -1,0 +1,136 @@
+@LIN:L1c:0.2
+@BITCOIN_CORE_SUBSIDY_V1{
+  version=1
+  repo="bitcoin/bitcoin"
+  source="src/validation.cpp GetBlockSubsidy + src/consensus/amount.h"
+  license="MIT"
+  commit="1088a98f5aad080cc6cca2da174f206509fcda6c"
+  tag="v27.1"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="mainnet_issuance_schedule_with_explicit_params_and_fail_closed_edges"
+  note="Not a node. Consensus::Params& is lifted to integer arguments. Negative height and interval<=0 fail-closed (Core -1 yields 50 BTC; Core interval 0 is UB; btcd interval 0 yields 50 BTC)."
+}
+
+!btc_coin() -> int {
+  ^ 100000000;
+}
+
+!btc_max_money() -> int {
+  ^ 21000000 * btc_coin();
+}
+
+!btc_halving_interval() -> int {
+  ^ 210000;
+}
+
+!btc_genesis_subsidy() -> int {
+  ^ 50 * btc_coin();
+}
+
+!btc_money_range(v: int) -> int {
+  ?(v < 0) { ^ 0; };
+  ?(v > btc_max_money()) { ^ 0; };
+  ^ 1;
+}
+
+!btc_subsidy_ok(height: int, interval: int) -> int {
+  ?(height < 0) { ^ 0; };
+  ?(interval <= 0) { ^ 0; };
+  ^ 1;
+}
+
+!btc_era_subsidy(era: int, genesis: int) -> int {
+  ?(genesis < 0) { ^ 0; };
+  ?(era < 0) { ^ 0; };
+  ?(era >= 64) { ^ 0; };
+  ^ _lia_ushr(genesis, era);
+}
+
+!btc_subsidy(height: int, interval: int, genesis: int) -> int {
+  ?(btc_subsidy_ok(height, interval) == 0) { ^ 0; };
+  ?(genesis < 0) { ^ 0; };
+  era = height / interval;
+  ^ btc_era_subsidy(era, genesis);
+}
+
+!btc_subsidy_main(height: int) -> int {
+  ^ btc_subsidy(height, btc_halving_interval(), btc_genesis_subsidy());
+}
+
+!btc_era_total(era: int, interval: int, genesis: int) -> int {
+  ?(interval <= 0) { ^ 0; };
+  s = btc_era_subsidy(era, genesis);
+  ^ interval * s;
+}
+
+!btc_supply_to_height(height: int, interval: int, genesis: int) -> int {
+  ?(btc_subsidy_ok(height, interval) == 0) { ^ 0; };
+  ?(genesis < 0) { ^ 0; };
+  era = height / interval;
+  pos = 0;
+  e = 0;
+  while (e < era) {
+    pos = pos + btc_era_total(e, interval, genesis);
+    e = e + 1;
+  };
+  rem = (height % interval) + 1;
+  pos = pos + rem * btc_era_subsidy(era, genesis);
+  ^ pos;
+}
+
+!btc_supply_all() -> int {
+  pos = 0;
+  e = 0;
+  while (e < 64) {
+    pos = pos + btc_era_total(e, btc_halving_interval(), btc_genesis_subsidy());
+    e = e + 1;
+  };
+  ^ pos;
+}
+
+!btc_actual_below_cap() -> int {
+  tot = btc_supply_all();
+  ?(btc_money_range(tot) == 0) { ^ 0; };
+  ?(tot >= btc_max_money()) { ^ 0; };
+  ^ 1;
+}
+
+!btc_test_suite() -> int {
+  ?(btc_coin() != 100000000) { ^ -1; };
+  ?(btc_max_money() != 2100000000000000) { ^ -2; };
+  ?(btc_subsidy_main(0) != 5000000000) { ^ -3; };
+  ?(btc_subsidy_main(209999) != 5000000000) { ^ -4; };
+  ?(btc_subsidy_main(210000) != 2500000000) { ^ -5; };
+  ?(btc_subsidy_main(419999) != 2500000000) { ^ -6; };
+  ?(btc_subsidy_main(420000) != 1250000000) { ^ -7; };
+  ?(btc_subsidy_main(840000) != 312500000) { ^ -8; };
+  ?(btc_subsidy_main(13440000) != 0) { ^ -9; };
+  ?(btc_subsidy_ok(-1, 210000) != 0) { ^ -10; };
+  ?(btc_subsidy_main(-1) != 0) { ^ -11; };
+  ?(btc_subsidy(10, 0, 5000000000) != 0) { ^ -12; };
+  ?(btc_supply_all() != 2099999997690000) { ^ -13; };
+  ?(btc_actual_below_cap() != 1) { ^ -14; };
+  ?(btc_money_range(-1) != 0) { ^ -15; };
+  ?(btc_money_range(2100000000000000) != 1) { ^ -16; };
+  ?(btc_money_range(2100000000000001) != 0) { ^ -17; };
+  ?(btc_supply_to_height(0, 210000, 5000000000) != 5000000000) { ^ -18; };
+  ^ 1;
+}
+
+=ex{
+  btc_coin,
+  btc_max_money,
+  btc_halving_interval,
+  btc_genesis_subsidy,
+  btc_money_range,
+  btc_subsidy_ok,
+  btc_era_subsidy,
+  btc_subsidy,
+  btc_subsidy_main,
+  btc_era_total,
+  btc_supply_to_height,
+  btc_supply_all,
+  btc_actual_below_cap,
+  btc_test_suite
+}
