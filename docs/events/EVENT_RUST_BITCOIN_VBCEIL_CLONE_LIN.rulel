@@ -1,0 +1,60 @@
+@RULEL:RUST_BITCOIN_VBCEIL_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-RUST-BITCOIN-FEERATE-VBCEIL"
+@TITLE="Clone-lin of rust-bitcoin FeeRate to_sat_per_vb_ceil with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-rust-bitcoin-vbceil"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile rust-bitcoin FeeRate sat/MvB unit math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed in production wallets"
+  operand_width="i64-nonneg inputs; rust-bitcoin stores sat per million vB as u64. u64::MAX is proven on the C11/Python oracles only"
+  commercial_hook="Wallets quote sat/vB; policy is sat/kwu. Ceil vs floor is relay-vs-stuck. Remainder ceil does not wrap like (n+d-1)/d at u64::MAX"
+}
+
+.u{
+  repo="https://github.com/rust-bitcoin/rust-bitcoin"
+  path="units/src/fee_rate/mod.rs"
+  license="CC0-1.0"
+  commit="cb2404331101acac9df5a07487ea6f3ed1828037"
+  git_blob_sha="e2e03fc112b8d28b80b13d449cb59d8ae4243742"
+  file_sha256="cbb0c13c54a808aa80de9652196e4f13f3f47bc3985e96b5c6fa7aeb6b705ecc"
+  fixture="test/fixtures/external_proof/rust_bitcoin_fee_rate_mod.rs"
+}
+
+.l{
+  clone="src/lin_rust_bitcoin_vbceil.lin"
+  transpiler_delta="src/lin_from_rust.lin v2: rs_from_rs emit + 1_000 underscores + as Type strip; && is not borrow; methods and :: paths fail-closed. src/lin_from_c.lin v2: REJ_C_CXX_SCOPE / REJ_C_REFERENCE"
+  improvement_1="FeeRate receiver / Self is an explicit sat_mvb argument"
+  improvement_2="div_ceil is remainder-based; C11 proves naive uint64 (n+d-1)/d wraps at u64::MAX while rem ceil matches rust/python"
+  improvement_3="from_sat_per_vb/kwu/kvb fail-closed outside u32 instead of wrapping a narrowing cast"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/rust_bitcoin_vbceil_c11.c (gcc -O2 -std=c11)"
+  gate="test/verify_rust_bitcoin_vbceil.sh"
+}
+
+.p{
+  harness="test/prove_rust_bitcoin_vbceil_external.py"
+  evidence_json="examples/rust_bitcoin_vbceil/rust_bitcoin_vbceil_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-rust-bitcoin-vbceil"
+}
+
+.n{
+  not_claimed_1="full u64 FeeRate::MAX on the LIN vm (i64 host integers)"
+  not_claimed_2="LIN is faster than rustc or LLVM"
+  not_claimed_3="this clone is a production wallet fee estimator"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces rust-bitcoin, Bitcoin Core, or the mempool"
+}
+
+.v{
+  method="PINNED_BYTES && C11_REM_CEIL_NE_NAIVE_WRAP && LIN_C0_VM_EQ_C11_EQ_PYTHON && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

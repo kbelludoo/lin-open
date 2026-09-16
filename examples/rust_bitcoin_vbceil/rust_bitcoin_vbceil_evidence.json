@@ -1,0 +1,124 @@
+{
+  "schema": "LIN_RUST_BITCOIN_VBCEIL_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned fee_rate/mod.rs sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned rust-bitcoin commit matches fixture",
+      "note": "commit=cb2404331101acac9df5a07487ea6f3ed1828037 blob=e2e03fc112b8d28b80b13d449cb59d8ae4243742"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of units/src/fee_rate/mod.rs",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-API",
+      "status": "PASS",
+      "description": "pinned rust-bitcoin exposes to_sat_per_vb_ceil via div_ceil(1e6)",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 remainder ceil matches rust-bitcoin unit tests",
+      "note": ""
+    },
+    {
+      "id": "U64-WRAP",
+      "status": "PASS",
+      "description": "naive uint64 (n+d-1)/d wraps at u64::MAX; remainder ceil matches rust/python",
+      "note": "naive=0 rem=18446744073710"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_rust_bitcoin_vbceil.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2 (emit path)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "rbv_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "11/11 vectors: C11 == LIN vm == Python (rust-bitcoin tests)",
+      "note": ""
+    },
+    {
+      "id": "BROADCAST-MIN",
+      "status": "PASS",
+      "description": "FeeRate::BROADCAST_MIN (1 sat/vB) is 250 sat/kwu floor",
+      "note": ""
+    },
+    {
+      "id": "DUST",
+      "status": "PASS",
+      "description": "FeeRate::DUST (3 sat/vB) is 750 sat/kwu floor",
+      "note": ""
+    },
+    {
+      "id": "I64-CEIL",
+      "status": "PASS",
+      "description": "i64::MAX remainder ceil matches C11 and Python bigint",
+      "note": "ceil=9223372036855"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes sat/MvB as an argument (no FeeRate receiver / Self)",
+      "note": ""
+    },
+    {
+      "id": "REM-CEIL",
+      "status": "PASS",
+      "description": "clone uses remainder div_ceil, not wrapping (n+d-1)/d",
+      "note": ""
+    },
+    {
+      "id": "RS-EMIT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 emits LIN, expands 1_000, treats && as not-borrow",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/rust-bitcoin/rust-bitcoin",
+    "commit": "cb2404331101acac9df5a07487ea6f3ed1828037",
+    "path": "units/src/fee_rate/mod.rs",
+    "git_blob_sha": "e2e03fc112b8d28b80b13d449cb59d8ae4243742",
+    "file_sha256": "cbb0c13c54a808aa80de9652196e4f13f3f47bc3985e96b5c6fa7aeb6b705ecc",
+    "license": "CC0-1.0"
+  },
+  "lin_clone": "src/lin_rust_bitcoin_vbceil.lin",
+  "c11_oracle": "test/oracles/rust_bitcoin_vbceil_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "broadcast_min_sat_mvb": 1000000,
+  "dust_sat_mvb": 3000000,
+  "i64_max_vb_ceil": 9223372036855,
+  "u64_max_naive_wrap": 0,
+  "u64_max_rem_ceil": 18446744073710
+}

@@ -1,0 +1,148 @@
+@LIN:L1c:0.2
+@RUST_BITCOIN_FEERATE_VBCEIL{
+  version=1
+  repo="rust-bitcoin/rust-bitcoin"
+  source="units/src/fee_rate/mod.rs"
+  license="CC0-1.0"
+  commit="cb2404331101acac9df5a07487ea6f3ed1828037"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="fee_rate_sat_mvb_unit_conversion_ceil_floor_i64_scale"
+  note="Not a wallet. Real deltas: FeeRate receiver is an explicit sat_mvb argument; constructors fail-closed outside u32; div_ceil uses remainder not wrapping (n+d-1)/d."
+}
+
+!rbv_mvb() -> int {
+  ^ 1000000;
+}
+
+!rbv_kwu() -> int {
+  ^ 4000;
+}
+
+!rbv_kvb() -> int {
+  ^ 1000;
+}
+
+!rbv_u32_max() -> int {
+  ^ 4294967295;
+}
+
+!rbv_u32_ok(x: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(x > rbv_u32_max()) { ^ 0; };
+  ^ 1;
+}
+
+!rbv_nn_ok(x: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ^ 1;
+}
+
+!rbv_from_sat_per_vb(sat_vb: int) -> int {
+  ?(rbv_u32_ok(sat_vb) == 0) { ^ 0; };
+  ^ sat_vb * rbv_mvb();
+}
+
+!rbv_from_sat_per_kwu(sat_kwu: int) -> int {
+  ?(rbv_u32_ok(sat_kwu) == 0) { ^ 0; };
+  ^ sat_kwu * rbv_kwu();
+}
+
+!rbv_from_sat_per_kvb(sat_kvb: int) -> int {
+  ?(rbv_u32_ok(sat_kvb) == 0) { ^ 0; };
+  ^ sat_kvb * rbv_kvb();
+}
+
+!rbv_div_floor(n: int, d: int) -> int {
+  ?(rbv_nn_ok(n) == 0) { ^ 0; };
+  ?(d <= 0) { ^ 0; };
+  ^ n / d;
+}
+
+!rbv_div_ceil(n: int, d: int) -> int {
+  ?(rbv_nn_ok(n) == 0) { ^ 0; };
+  ?(d <= 0) { ^ 0; };
+  q = n / d;
+  r = n % d;
+  ?(r == 0) { ^ q; };
+  ^ q + 1;
+}
+
+!rbv_to_sat_per_vb_floor(sat_mvb: int) -> int {
+  ^ rbv_div_floor(sat_mvb, rbv_mvb());
+}
+
+!rbv_to_sat_per_vb_ceil(sat_mvb: int) -> int {
+  ^ rbv_div_ceil(sat_mvb, rbv_mvb());
+}
+
+!rbv_to_sat_per_kwu_floor(sat_mvb: int) -> int {
+  ^ rbv_div_floor(sat_mvb, rbv_kwu());
+}
+
+!rbv_to_sat_per_kwu_ceil(sat_mvb: int) -> int {
+  ^ rbv_div_ceil(sat_mvb, rbv_kwu());
+}
+
+!rbv_to_sat_per_kvb_floor(sat_mvb: int) -> int {
+  ^ rbv_div_floor(sat_mvb, rbv_kvb());
+}
+
+!rbv_to_sat_per_kvb_ceil(sat_mvb: int) -> int {
+  ^ rbv_div_ceil(sat_mvb, rbv_kvb());
+}
+
+!rbv_broadcast_min() -> int {
+  ^ rbv_from_sat_per_vb(1);
+}
+
+!rbv_dust() -> int {
+  ^ rbv_from_sat_per_vb(3);
+}
+
+!rbv_test_suite() -> int {
+  ?(rbv_from_sat_per_vb(10) != 10000000) { ^ -1; };
+  ?(rbv_from_sat_per_kwu(2500) != 10000000) { ^ -2; };
+  ?(rbv_from_sat_per_vb(10) != rbv_from_sat_per_kwu(2500)) { ^ -3; };
+  ?(rbv_from_sat_per_kvb(11) != 11000) { ^ -4; };
+  ?(rbv_to_sat_per_vb_floor(2000400) != 2) { ^ -5; };
+  ?(rbv_to_sat_per_vb_ceil(2000400) != 3) { ^ -6; };
+  ?(rbv_to_sat_per_kwu_floor(2000400) != 500) { ^ -7; };
+  ?(rbv_to_sat_per_kwu_ceil(2000400) != 501) { ^ -8; };
+  ?(rbv_to_sat_per_kvb_floor(2000400) != 2000) { ^ -9; };
+  ?(rbv_to_sat_per_kvb_ceil(2000400) != 2001) { ^ -10; };
+  ?(rbv_to_sat_per_vb_ceil(2000000) != 2) { ^ -11; };
+  ?(rbv_to_sat_per_vb_floor(0) != 0) { ^ -12; };
+  ?(rbv_to_sat_per_vb_ceil(0) != 0) { ^ -13; };
+  ?(rbv_broadcast_min() != 1000000) { ^ -14; };
+  ?(rbv_to_sat_per_kwu_floor(rbv_broadcast_min()) != 250) { ^ -15; };
+  ?(rbv_dust() != 3000000) { ^ -16; };
+  ?(rbv_to_sat_per_kwu_floor(rbv_dust()) != 750) { ^ -17; };
+  ?(rbv_from_sat_per_vb(-1) != 0) { ^ -18; };
+  ?(rbv_div_ceil(1, 0) != 0) { ^ -19; };
+  ?(rbv_to_sat_per_vb_ceil(-7) != 0) { ^ -20; };
+  ^ 1;
+}
+
+=ex{
+  rbv_mvb,
+  rbv_kwu,
+  rbv_kvb,
+  rbv_u32_max,
+  rbv_u32_ok,
+  rbv_nn_ok,
+  rbv_from_sat_per_vb,
+  rbv_from_sat_per_kwu,
+  rbv_from_sat_per_kvb,
+  rbv_div_floor,
+  rbv_div_ceil,
+  rbv_to_sat_per_vb_floor,
+  rbv_to_sat_per_vb_ceil,
+  rbv_to_sat_per_kwu_floor,
+  rbv_to_sat_per_kwu_ceil,
+  rbv_to_sat_per_kvb_floor,
+  rbv_to_sat_per_kvb_ceil,
+  rbv_broadcast_min,
+  rbv_dust,
+  rbv_test_suite
+}

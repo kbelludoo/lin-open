@@ -11,6 +11,7 @@ independent proof harness. They are **test fixtures**, not vendored libraries.
 | `qoi.h` | [phoboslab/qoi](https://github.com/phoboslab/qoi) | MIT |
 | `tinyexpr.c` | [codeplea/tinyexpr](https://github.com/codeplea/tinyexpr) | zlib |
 | `BaseJumpRateModelV2.sol` | [compound-finance/compound-protocol](https://github.com/compound-finance/compound-protocol) | BSD-3-Clause |
+| `rust_bitcoin_fee_rate_mod.rs` | [rust-bitcoin/rust-bitcoin](https://github.com/rust-bitcoin/rust-bitcoin) `cb240433` `units/src/fee_rate/mod.rs` | CC0-1.0 |
 
 They are only pinned so an auditor can hash the exact bytes and, with `--fetch`,
 re-download them from the GitHub Contents API. No upstream code is compiled or
