@@ -1,0 +1,121 @@
+{
+  "schema": "LIN_BITCOIN_GETBLOCKPROOF_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-FILE",
+      "status": "PASS",
+      "description": "pinned GetBlockProof excerpt contains the Core kernel",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of bitcoin v27.1 matches pinned chain.cpp/SetCompact/tests",
+      "note": "commit=1088a98f5aad080cc6cca2da174f206509fcda6c blob=82007a8a1e7f38f7b02eb299f8fc30fc61fc190e"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/chain.cpp",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-FORMULA",
+      "status": "PASS",
+      "description": "live chain.cpp contains (~bnTarget / (bnTarget + 1)) + 1",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 oracle matches Core-published SetCompact hex + genesis work",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_bitcoin_blockproof.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 (C++ fail-closed)",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CXX",
+      "status": "PASS",
+      "description": "lin_from_c v2 fail-closes C++ scope/template/class/reference (GetBlockProof is C++)",
+      "note": ""
+    },
+    {
+      "id": "CXX-SNIPPET",
+      "status": "PASS",
+      "description": "Core GetBlockProof signature uses CBlockIndex&; C transpiler rejects references",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "bp_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "10/10 nBits: C11 limbs == Python 2**256//(t+1) == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "CORE-HEX",
+      "status": "PASS",
+      "description": "SetCompact matches arith_uint256_tests.cpp published hex strings",
+      "note": ""
+    },
+    {
+      "id": "GENESIS-WORK",
+      "status": "PASS",
+      "description": "genesis nBits 0x1d00ffff work == 4295032833 (0x100010001)",
+      "note": "work=4295032833"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes nBits as an argument (no CBlockIndex& receiver; Core pprev is not in the kernel)",
+      "note": ""
+    },
+    {
+      "id": "FAIL-CLOSED",
+      "status": "PASS",
+      "description": "overflow/negative/zero compact fail-closed to work=0 (Core returns 0)",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/bitcoin/bitcoin",
+    "tag": "v27.1",
+    "commit": "1088a98f5aad080cc6cca2da174f206509fcda6c",
+    "path": "src/chain.cpp GetBlockProof + src/arith_uint256.cpp SetCompact",
+    "chain_git_blob_sha": "82007a8a1e7f38f7b02eb299f8fc30fc61fc190e",
+    "chain_file_sha256": "bbc1aa18b580d8a36ce7c416ee6cadee2c89686905912fc9a1edf6b3873992a5",
+    "arith_git_blob_sha": "0d5b3d5b0e6476b88053bd74a35c5cdbef1d2ae8",
+    "arith_file_sha256": "b46d67db26cef11a9da125b98e29bd8bf77b7a5c71418ee63bb77a0125a09d06",
+    "tests_git_blob_sha": "10028c7c9345ecd7804466e821c71fbc0a060b7c",
+    "tests_file_sha256": "6785d8cb5e70e731d81c61a32cf3cb5ca9cf4ac38ee66b26b0b8941570e1d6fe",
+    "license": "MIT"
+  },
+  "lin_clone": "src/lin_bitcoin_blockproof.lin",
+  "c11_oracle": "test/oracles/bitcoin_blockproof_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "genesis_nbits": "0x1d00ffff",
+  "genesis_work": 4295032833,
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-bitcoin-core-blockproof"
+}

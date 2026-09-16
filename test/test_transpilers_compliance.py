@@ -48,6 +48,13 @@ def main():
 
         print(f"  [PASS] Estrutura e sintaxe canônica L1c: {tr} ({len(content.splitlines())} linhas)")
 
+    csrc = (ROOT / "src/lin_from_c.lin").read_text(encoding="utf-8")
+    for tok in ("REJ_C_CXX_SCOPE", "REJ_C_REFERENCE", "REJ_C_TEMPLATE", "REJ_C_CLASS", "cfs_cxx_reject_gate"):
+        if tok not in csrc:
+            print(f"  [FAIL] lin_from_c.lin v2 missing {tok}")
+            return 1
+    print("  [PASS] lin_from_c.lin v2 fail-closes C++ (::, template, class, reference)")
+
     print("=" * 80)
     print("  TODOS OS 4 TRANSPILADORES FORMAIS APROVADOS (100% CONFORMES)")
     print("=" * 80)
