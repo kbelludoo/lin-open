@@ -1,0 +1,56 @@
+@RULEL:U512_COPROCESSOR_EVENT:1.0.0
+@CHALLENGE_ID="LIN-U512-COPROCESSOR-2026-09-16"
+@TITLE="Prove 512-bit mul/ge/div as a numeric coprocessor with an external LNR1 receipt"
+@STATUS="EXPERIMENTAL_FULLMATH_WIDTH"
+@DATE="2026-09-16"
+@CLASS="EXPERIMENTAL"
+
+~R{.s=spec .p=proved .n=not_proved .h=hashes .v=verdict}
+
+.s{
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced or reconstructed width | REAL_WORLD = as deployed on Ethereum mainnet"
+  sell_as="LIN as a numeric coprocessor that emits an auditable receipt — not as a Uniswap replacement"
+  why_512="u256 mulDiv(a,b,d)=(a*b)/d with a,b,d < 2^256 needs a 512-bit product. Without a correct 512 intermediate the u256 path silently lies or returns -2 where FullMath-width math must approve."
+  engine="src/lin_u512_coprocessor.lin (16-bit limbs, 32-limb numerator, 32-limb remainder ge in the restoring loop)"
+  closed_by_this="the 512-bit intermediate is no longer a suspect: mul carry, 512 ge, 512/256 div, remainder identity"
+  still_required="settle_u256_word vs ref_amount_out on EXACT/OVERPAID, guards -1/-2 on that engine, real lin_bc1_run steps bound in LCR2"
+}
+
+.p{
+  mul="256x256->512 schoolbook; C11 __int128 64-bit limbs XOR portable 32-bit limbs XOR Python int XOR LIN fold"
+  ge="unsigned 512-bit compare, including 2^256 and 2^512-1 edges"
+  div="restoring 512/256 with 512-bit remainder ge vs d padded; q overflow at bit>=256 returns -2"
+  rem="approved vectors satisfy q*d+r == a*b and r < d"
+  guards="d=0 returns -1; q>=2^256 returns -2"
+  phantom="2^255 * 2 / 3 APPROVES; product is 2^256; q0=0x5555555555555555 r=1"
+  receipt="LNR1 240-byte records; leaf SHA-256(LIN:U512:LEAF:1 || record); node SHA-256(LIN:U512:NODE:1 || left || right)"
+  auditor="python3 examples/u512_coprocessor/verify_u512_receipt.py examples/u512_coprocessor/u512_coprocessor_evidence.json (hashlib + Python int, no LIN)"
+  spec_pin="test/fixtures/external_proof/FullMath.sol documents floor(a*b/d) with phantom overflow; this gate proves width, not the CRT/mulmod assembly"
+}
+
+.n{
+  not_1="settle_u256_word vs ref_amount_out EXACT/OVERPAID end-to-end"
+  not_2="LCR2 records binding real lin_bc1_run steps on mainnet swaps"
+  not_3="line-by-line FullMath.sol CRT / mulmod / Newton-Raphson reciprocal"
+  not_4="LIN replacing Uniswap, Compound, or the EVM"
+  not_5="computational soundness of Merkle (tamper-evidence + re-execution only)"
+}
+
+.h{
+  fullmath_sha256="sha256:959c52e1c860bfbede3e33c8d04910c11038973173aa3478547cbad2e444880e"
+  fullmath_blob="9985059e267c488ee8bb421ea65e09ad85f970b4"
+  lin_source="src/lin_u512_coprocessor.lin"
+  c11_oracle="test/oracles/u512_coprocessor_c11.c"
+  evidence="examples/u512_coprocessor/u512_coprocessor_evidence.json"
+  linbc1_img_sha256="sha256:b2eb878945cd6e719eaa7f890910b3e0a778bc09faa9ef5fc134c780abc208be"
+  lnr1_merkle="sha256:82fbcdc5ba84d951933ddf0169a20989f01bcc3f2a5a9230dd8129462e8a1d62"
+  phantom_steps=1114961
+  self_gate_steps=6802144
+}
+
+.v{
+  method="PYTHON_BIGINT && C11_I128_XOR_U32_LIMBS && LIN_C0_VM && REM_IDENTITY && PHANTOM_APPROVE && LNR1_HASHLIB_RECOMPUTE"
+  on_fail="do not publish PASS"
+  make="make u512-coprocessor-proof"
+}
