@@ -1,0 +1,80 @@
+@RULEL:U512_COPROCESSOR_EVENT:1.4.0
+@CHALLENGE_ID="LIN-U512-COPROCESSOR-2026-09-16"
+@TITLE="512-bit intermediate proved as numeric coprocessor with auditable receipt"
+@STATUS="REPRODUCED_THIS_RUN"
+@DATE="2026-09-16"
+@CLASS="EXPERIMENTAL"
+
+~R{.s=scope .p=proved .n=not_proved .m=measured .h=hashes .v=verdict}
+
+.s{
+  product="LIN as a numeric coprocessor with an auditable receipt, not a Uniswap replacement"
+  why="u256 mulDiv(a,b,d)=(a*b)/d with a,b,d up to 2^256-1 needs a correct 512-bit product; otherwise the SafeMath-width settler lies or returns -2 where width-correct math approves"
+  engine="src/lin_u512_coprocessor.lin (16-bit limbs) + 32-limb remainder ge in examples/defi_settlement_proof/u512_uniswap_v2_core.lin"
+  make="make u512-coprocessor-proof"
+  harness="python3 test/prove_u512_coprocessor_external.py → 37/37 PASS this run"
+  delta="schema 1.4: OpenSSL BIGNUM (dlopen libcrypto.so.3) is a fifth math oracle; eight published LGE1 512-bit ge leaves; zero-LIN Python AND Node verifiers recompute LNR1 + LCR2 + LCR2-full + LGE1"
+}
+
+.p{
+  mul="256x256->512 schoolbook, leftover-carry fail-closed; (2^256-1)^2 lo=1 hi=2^256-2 published leaf; MUL 7*9=63 steps=9824"
+  div="512/256 restoring div, remainder 32 limbs, 512-bit ge, q*d+r==n and r<d; 7*9/2 q=31 r=1 steps=987074; 2^255*2/3 q=0x5555555555555555 r=1 steps=1118732"
+  ge="u512_ge_word + LGE1 8-leaf power-of-two tree: 2^256>=2^256-1 → 1 steps=1365; reverse → 0 steps=1373; 0>=0 → 1; (2^256-1)^2 >= 2^511 → 1; reverse → 0; equals; 2^512-1>=1; OpenSSL BN_ucmp and Node BigInt agree"
+  guards="-1 on d=0 (coprocessor) and zero amount_in (both LCR2 trees); -2 on q overflow (2^255*2/1), SafeMath-width phantom (LCR2), and ain=2^256-1 fee overflow (LCR2-full)"
+  oracles="Python int + C11 16-bit schoolbook + C11 64-bit __int128 identity64 + Node.js BigInt + OpenSSL BIGNUM (n=1060 batch, WIDTH_CONSENSUS NODE_BIGINT_CONSENSUS OPENSSL_BN_CONSENSUS); wrap-borrow regression 2*2^255/(2^256-1)=1 r=1"
+  lin="Compiler-0 lin_c0 vm; u512_self_gate=1 steps=6710747; getAmountOut muldiv=1813 steps=977437"
+  phantom="ain=1,rin=1,rout=ceil(2^256/997): coprocessor mulDiv(997,rout,1997) APPROVES steps=1106942; settle_u512_swap APPROVES steps=1098245 q=0x20d135b66ae990fc484cea55e38a936bcf497445394d4cc984add428823e4d; settle_u256_word -2 steps=11481. 512-bit intermediate off the suspect list; replacing the SafeMath-width settler body remains required for that ABI"
+  uniswap_core="settle_u512_swap(1000,10000,20000) word0=1813 steps=968269 after 32-limb remainder ge"
+  receipt="LNR1 240-byte records, domains LIN:U512:LEAF:1 / LIN:U512:NODE:1; 14 published leaves; LCR2 208-byte records, domains LIN:LEAF:1 / LIN:NODE:1; 8 published LCR2 leaves; 9 published LCR2-full leaves; LGE1 208-byte records, domains LIN:U512:GE:LEAF:1 / LIN:U512:GE:NODE:1; 8 published ge leaves; quad-auditor Python hashlib == Node crypto == C11 lin_sha256 == OpenSSL dgst; 1-bit leaf tamper rejected; zero-LIN Python AND Node verifiers recompute four campaign merkles from the JSON"
+  lcr2="3 EXACT_INPUT (lin==coprocessor==ref==onchain) + 3 OVERPAID_INPUT (lin==coprocessor==ref, onchain diverges); GUARD_ZERO steps=1570; GUARD_OVERFLOW steps=11481. Full 2000/157 campaign still required"
+  lcr2_full="same 3 EXACT + 3 OVERPAID via settle_u512_swap == ref_amount_out_full (steps=929722/951223/946903/949069/951286/964003); PHANTOM_APPROVE steps=1098245; GUARD_ZERO steps=1619; GUARD_FEE_OVERFLOW steps=2033"
+}
+
+.n{
+  not_1="FullMath.sol CRT / mulmod assembly parity (width pin only)"
+  not_2="a deployed Uniswap v2/v3 pool"
+  not_3="the full 2000-swap + 157-unfiltered campaign"
+  not_4="that 512 proof closes the SafeMath-width u256 settler by itself"
+  not_5="zk or computational soundness of Merkle (tamper-evidence + re-execution)"
+}
+
+.m{
+  host="lin_c0 C11, gcc -std=c11, python3, node BigInt + crypto, openssl dgst + libcrypto.so.3 BN via dlopen; no Zig"
+  c11_selftest="SELFTEST_PASS identity_2_255_x2_div3 q*d+r==n plus ge512 and identity64 (no Python)"
+  node_selftest="SELFTEST_PASS node_bigint q*d+r==n ge512"
+  openssl_bn_selftest="SELFTEST_PASS openssl_bn q*d+r==n ge512"
+  gate="37/37 PASS"
+  published_leaves=14
+  published_lcr2_leaves=8
+  published_lcr2_full_leaves=9
+  published_lge1_leaves=8
+}
+
+.h{
+  lin_src="sha256:2a66456eae1227cb9ec3571da3258313cd4a5c6c787c42d3877a67152e96bd4b"
+  oracle_c="sha256:f236f7b7faa04741c6694fd26c0f63012179d1cb740ffc6f605c9ab7133e7ca0"
+  oracle_js="sha256:00c4e815f0aeae19b4b02c501d904f00c4a36b6ab4d6b6e8228167e0555d6b1c"
+  oracle_bn="sha256:18050fafb873e0cbd0229b02d641dbc0f9ffac9d9efffed578fe103fd0f27a8f"
+  auditor_c="sha256:36a16c98358daf14836ef320fde663082cfce7b6e13b3f88cfc54b5d0cd2794c"
+  harness="sha256:f2c500a0b7904bf2ec5e000928230f363f7ba15a7e5ac1b781b78516f6ff1cae"
+  lib="sha256:b5ec3d69bba2dded2d74e1f7226c514aad1d4a39ec2363fa4f5dce0bc8d0916f"
+  fullwidth="sha256:7e6111e4c512a82f876495117fe32875263d33618197a53b1fa743a9476b9dce"
+  ge="sha256:387c28ed2da051062aa2df161b7c2e3d5fc0070621986762d8632ce750bfeb98"
+  verifier_py="sha256:6f2948664f33c35ac682b3ac039bd4409772d11f785e9a01b1009f4ead30805a"
+  verifier_js="sha256:e3287acbea9163d32348eed2a5ab4c37ca5b20c9089ebfd161c1d169aa1ccf4c"
+  u512_uniswap_lin="sha256:3db82be5c109f8c0405ab2085937ca7c633eaca7dbb54457d3282c034d35b5e3"
+  u256_lin="sha256:e4f6ca30296967ec5d6d50f5cd5b8e3efd5ee9ae6c5ee6cd40313ff3c0256a91"
+  u256_linbc1="sha256:f1984b2de15bc79bf6418842afaee8ece86ea956cbdc9f7338837802402bc7e7"
+  u512_linbc1="sha256:773a7ad4e8956c62834926ab8bcccee3651d91adc4a4c9c0b150c8d9ba5dce47"
+  lnr1_merkle="sha256:f140dcbcde99052d0d415dfb22336e951f1efc2b0c29c8327af35f1a671b8d7a"
+  lcr2_merkle="sha256:6a64103b587eec28b6dee714026803c707d4a963a6dceefaecabd2de5b1763fb"
+  lcr2_full_merkle="sha256:ea3b11158e1163a6ee880c1c0d3eeefec9b8b4a61f59c284a02e4d91660d6b5e"
+  lge1_merkle="sha256:bcd89d286a41e5ed8d31a0a3979e23744ea754e9e423982f6fcfbed7d0dfff68"
+  evidence_json="sha256:d149afa4d8dc3a2058069168a10c841180cc4f710c2ddd38fb47389c3d7b4709"
+  fullmath_sol="sha256:959c52e1c860bfbede3e33c8d04910c11038973173aa3478547cbad2e444880e"
+}
+
+.v{
+  method="PYTHON_BIGINT && NODE_BIGINT && C11_LIMB16 && C11_U64_I128_IDENTITY64 && OPENSSL_BN && LIN_C0_VM && LNR1_QUAD_AUDITOR && OPENSSL_DGST && LCR2_SETTLER_EQ_COPROCESSOR && LCR2_FULL_SETTLE_U512 && LGE1_GE512 && CAMPAIGN_MERKLE_FROM_LEAVES && LCR2_MERKLE_FROM_LEAVES && LCR2_FULL_MERKLE_FROM_LEAVES && LGE1_MERKLE_FROM_LEAVES && TAMPER_REJECT && PY_AND_NODE_ZERO_LIN_VERIFIERS"
+  on_fail="do not publish PASS"
+}
