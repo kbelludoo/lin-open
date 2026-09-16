@@ -1,0 +1,78 @@
+@RULEL:BITCOIN_CORE_SUBSIDY_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-BITCOIN-CORE-SUBSIDY-V1"
+@TITLE="Clone-lin of Bitcoin Core v27.1 GetBlockSubsidy with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-bitcoin-core-subsidy"
+
+~R{.s=spec .u=upstream .x=cross .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Bitcoin Core issuance math into deterministic LIN, compile in memory with C11 compiler 0, publish only auditable results in lin-open plus a separate clone-lin copy"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm with documented edge-case improvements | REAL_WORLD = bit-identical to a running Bitcoin node including P2P/storage"
+  operand_width="int64 CAmount; 50*COIN and 21e6*COIN fit; MAX_MONEY is a cap not the issued supply"
+  commercial_hook="GetBlockSubsidy is Bitcoin's monetary policy. Independent recomputation of every era and the 2099999997690000 sat cap is audit tooling for explorers/custodians, not a TVL or price claim"
+}
+
+.u{
+  repo="https://github.com/bitcoin/bitcoin"
+  tag="v27.1"
+  commit="1088a98f5aad080cc6cca2da174f206509fcda6c"
+  path_fn="src/validation.cpp GetBlockSubsidy"
+  path_amt="src/consensus/amount.h"
+  license="MIT"
+  amount_h_git_blob_sha="f0eb4e0723c3159153c655fae17cb252102cbddb"
+  amount_h_sha256="cb7bd951877f3fea5a0c280d4bb907a8403437add81e3d5b898879b78fdc877e"
+  getblocksubsidy_sha256="fbe1792f48eca2a2d2cd7201d5cb512025bb94b28130e2778e1f10d852606ba6"
+  fixture_amt="test/fixtures/external_proof/bitcoin_core_v27_1_amount.h"
+  fixture_fn="test/fixtures/external_proof/bitcoin_core_v27_1_getblocksubsidy.cpp"
+}
+
+.x{
+  repo="https://github.com/btcsuite/btcd"
+  tag="v0.24.2"
+  commit="cc26860b40265e1332cca8748c5dbaf3c81cc094"
+  path="blockchain/validate.go CalcBlockSubsidy"
+  license="ISC"
+  fn_sha256="036427e6ef7fcbe6e7ba2870b5197878947cb12553c16de70f0fd66a979b747d"
+  interval0="btcd returns 50 BTC; LIN fail-closes 0; Core is UB"
+  height_neg_1="Core and btcd yield 50 BTC via toward-zero division; LIN fail-closes 0"
+}
+
+.l{
+  clone="src/lin_bitcoin_core_subsidy.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-bitcoin-core-subsidy"
+  transpiler_delta="src/lin_from_c.lin v2: CAmount; REJ_C_CXX; REJ_C_FLOAT ceil/floor/round/trunc; strip U/L/LL/ULL; & in signature is REJ_C_POINTER"
+  improvement_1="Consensus::Params& lifted to explicit interval and genesis arguments"
+  improvement_2="height<0 fail-closed (Core/btcd height=-1 still pays 50 BTC)"
+  improvement_3="interval<=0 fail-closed (Core division by zero UB; btcd returns 50 BTC)"
+  improvement_4="btc_supply_all + btc_actual_below_cap prove issued supply 2099999997690000 < MAX_MONEY 2100000000000000"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit when present"
+  oracle="test/oracles/bitcoin_core_subsidy_c11.c (gcc -O2 -std=c11)"
+  go_oracle="test/oracles/bitcoin_core_subsidy_btcd.go"
+  gate="test/verify_bitcoin_core_subsidy.sh"
+}
+
+.p{
+  harness="test/prove_bitcoin_core_subsidy_external.py"
+  evidence_json="examples/bitcoin_core_subsidy/bitcoin_core_subsidy_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-bitcoin-core-subsidy"
+}
+
+.n{
+  not_claimed_1="LIN is a Bitcoin full node or consensus implementation"
+  not_claimed_2="LIN replaces Bitcoin Core, btcd, or the 21M narrative as a market claim"
+  not_claimed_3="wall-clock superiority vs gcc/bitcoind"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="lin_c0 vm executes string-literal transpiler modules (VM_REJ_STRING_LITERAL still holds)"
+}
+
+.v{
+  method="PINNED_BYTES && LIVE_GITHUB_RAW && C11_SHIFT_LOOP_EQ_GUARDED && LIN_C0_VM_EQ_C11_EQ_PYTHON && OPTIONAL_BTCD_GO && OPTIONAL_JIT"
+  on_fail="do not publish a PASS status"
+}

@@ -11,6 +11,10 @@ independent proof harness. They are **test fixtures**, not vendored libraries.
 | `qoi.h` | [phoboslab/qoi](https://github.com/phoboslab/qoi) | MIT |
 | `tinyexpr.c` | [codeplea/tinyexpr](https://github.com/codeplea/tinyexpr) | zlib |
 | `BaseJumpRateModelV2.sol` | [compound-finance/compound-protocol](https://github.com/compound-finance/compound-protocol) | BSD-3-Clause |
+| `bitcoin_core_v27_1_amount.h` | [bitcoin/bitcoin](https://github.com/bitcoin/bitcoin) v27.1 `src/consensus/amount.h` | MIT |
+| `bitcoin_core_v27_1_getblocksubsidy.cpp` | [bitcoin/bitcoin](https://github.com/bitcoin/bitcoin) v27.1 `GetBlockSubsidy` excerpt | MIT |
+| `btcd_v0_24_2_calcblocksubsidy.go` | [btcsuite/btcd](https://github.com/btcsuite/btcd) v0.24.2 `CalcBlockSubsidy` excerpt | ISC |
+| `bitcoin_core_subsidy_scalar.c` | LIN-eligible scalar lift of GetBlockSubsidy (original C11, not Core) | MIT-style / original |
 
 They are only pinned so an auditor can hash the exact bytes and, with `--fetch`,
 re-download them from the GitHub Contents API. No upstream code is compiled or

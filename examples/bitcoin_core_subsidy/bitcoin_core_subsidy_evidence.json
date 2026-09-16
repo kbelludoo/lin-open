@@ -1,0 +1,163 @@
+{
+  "schema": "LIN_BITCOIN_CORE_SUBSIDY_EVIDENCE_1.0",
+  "class": "EXPERIMENTAL",
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-bitcoin-core-subsidy",
+  "claims": [
+    {
+      "id": "PIN-AMOUNT",
+      "status": "PASS",
+      "description": "pinned amount.h sha256 matches v27.1",
+      "note": ""
+    },
+    {
+      "id": "PIN-AMOUNT-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of amount.h",
+      "note": "f0eb4e0723c3159153c655fae17cb252102cbddb"
+    },
+    {
+      "id": "PIN-FN",
+      "status": "PASS",
+      "description": "pinned GetBlockSubsidy excerpt sha256",
+      "note": ""
+    },
+    {
+      "id": "PIN-BTCD",
+      "status": "PASS",
+      "description": "pinned btcd v0.24.2 CalcBlockSubsidy excerpt",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-LIVE",
+      "status": "PASS",
+      "description": "live v27.1 amount.h + GetBlockSubsidy match fixtures",
+      "note": "1088a98f5aad080cc6cca2da174f206509fcda6c"
+    },
+    {
+      "id": "BTCD-LIVE",
+      "status": "PASS",
+      "description": "live btcd v0.24.2 CalcBlockSubsidy matches fixture",
+      "note": "cc26860b40265e1332cca8748c5dbaf3c81cc094"
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 selftest: loop shift == guarded shift; supply cap gap",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_bitcoin_core_subsidy.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "btc_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "10/10 heights: Python == C11 == LIN vm == Core (h>=0)",
+      "note": ""
+    },
+    {
+      "id": "NEG-HEIGHT-LIN",
+      "status": "PASS",
+      "description": "LIN and C11-lin return 0 for height=-1",
+      "note": ""
+    },
+    {
+      "id": "NEG-HEIGHT-CORE",
+      "status": "PASS",
+      "description": "Core-faithful C11: height=-1 yields 50*COIN (toward-zero /)",
+      "note": ""
+    },
+    {
+      "id": "ZERO-INTERVAL",
+      "status": "PASS",
+      "description": "LIN interval<=0 fail-closes to 0 (Core UB; btcd returns 50 BTC)",
+      "note": ""
+    },
+    {
+      "id": "SUPPLY-ALL",
+      "status": "PASS",
+      "description": "64-era sum == 2099999997690000 sats",
+      "note": "gap_vs_MAX_MONEY=2310000"
+    },
+    {
+      "id": "CAP-GAP",
+      "status": "PASS",
+      "description": "MAX_MONEY is a sanity cap, not the issued supply (Core amount.h)",
+      "note": ""
+    },
+    {
+      "id": "I32-WRAP",
+      "status": "PASS",
+      "description": "naive int32 50*COIN wraps; LIN uses i64 CAmount",
+      "note": "i32=705032704 i64=5000000000"
+    },
+    {
+      "id": "C-TR-V2",
+      "status": "PASS",
+      "description": "C transpiler v2: REJ_C_CXX, CAmount, integer-suffix strip",
+      "note": ""
+    },
+    {
+      "id": "CORE-REF",
+      "status": "PASS",
+      "description": "Core GetBlockSubsidy takes Consensus::Params& (transpiler REJ_C_CXX/POINTER)",
+      "note": ""
+    },
+    {
+      "id": "SCALAR-LIFT",
+      "status": "PASS",
+      "description": "scalar C subset: explicit args, fail-closed height/interval, no C++",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "BTCD-GO",
+      "status": "PASS",
+      "description": "Go replica of btcd CalcBlockSubsidy(210000)==25 BTC",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/bitcoin/bitcoin",
+    "tag": "v27.1",
+    "commit": "1088a98f5aad080cc6cca2da174f206509fcda6c",
+    "path": "src/validation.cpp GetBlockSubsidy + src/consensus/amount.h",
+    "license": "MIT",
+    "amount_h_git_blob_sha": "f0eb4e0723c3159153c655fae17cb252102cbddb",
+    "amount_h_sha256": "cb7bd951877f3fea5a0c280d4bb907a8403437add81e3d5b898879b78fdc877e",
+    "getblocksubsidy_sha256": "fbe1792f48eca2a2d2cd7201d5cb512025bb94b28130e2778e1f10d852606ba6"
+  },
+  "cross_oracle": {
+    "btcd": "https://github.com/btcsuite/btcd",
+    "commit": "cc26860b40265e1332cca8748c5dbaf3c81cc094",
+    "path": "blockchain/validate.go CalcBlockSubsidy",
+    "license": "ISC",
+    "fn_sha256": "036427e6ef7fcbe6e7ba2870b5197878947cb12553c16de70f0fd66a979b747d"
+  },
+  "lin_clone": "src/lin_bitcoin_core_subsidy.lin",
+  "c11_oracle": "test/oracles/bitcoin_core_subsidy_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "total_issued_sats": 2099999997690000,
+  "max_money_sats": 2100000000000000,
+  "genesis_height_0": 5000000000,
+  "first_halving_height": 210000
+}
