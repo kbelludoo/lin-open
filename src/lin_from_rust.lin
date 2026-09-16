@@ -1,17 +1,18 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: && is not a borrow; numeric underscores stripped; const fn; as-casts stripped; Option/Self types; emit LIN for eligible fn"
 }
 
-// 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
 !rs_is_kw(nm: string): int {
   ?(starts_lit(nm, 0, "fn") == 1 && nm.length == 2) { ^1 };
   ?(starts_lit(nm, 0, "let") == 1 && nm.length == 3) { ^1 };
   ?(starts_lit(nm, 0, "mut") == 1 && nm.length == 3) { ^1 };
   ?(starts_lit(nm, 0, "pub") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "const") == 1 && nm.length == 5) { ^1 };
   ?(starts_lit(nm, 0, "return") == 1 && nm.length == 6) { ^1 };
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2) { ^1 };
   ?(starts_lit(nm, 0, "else") == 1 && nm.length == 4) { ^1 };
@@ -21,8 +22,8 @@
   ^0;
 }
 
-// 2. Identificação de tipos inteiros primitivos Rust
 !rs_is_type(nm: string): int {
+  ?(starts_lit(nm, 0, "Option") == 1 && nm.length == 6) { ^1 };
   ?(starts_lit(nm, 0, "u128") == 1 && nm.length == 4) { ^1 };
   ?(starts_lit(nm, 0, "u64") == 1 && nm.length == 3) { ^1 };
   ?(starts_lit(nm, 0, "u32") == 1 && nm.length == 3) { ^1 };
@@ -35,13 +36,27 @@
   ?(starts_lit(nm, 0, "i8") == 1 && nm.length == 2) { ^1 };
   ?(starts_lit(nm, 0, "usize") == 1 && nm.length == 5) { ^1 };
   ?(starts_lit(nm, 0, "bool") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "Self") == 1 && nm.length == 4) { ^1 };
   ^0;
 }
 
-// 3. Critérios fail-closed de rejeição de código Rust não-puro
+!rs_count_borrow(s: string): int {
+  n = s.length;
+  i = 0;
+  c = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) == 38) {
+      ?(i + 1 < n && s.charCodeAt(i + 1) == 38) { i = i + 2; continue };
+      c = c + 1;
+    };
+    i = i + 1;
+  };
+  ^c;
+}
+
 !rs_reason(sig: string, body: string): string {
-  ?(rg_count_lit(sig, "&mut") > 0) { ^"REJ_RUST_MUTABLE_REF" };
-  ?(rg_count_lit(sig, "&") > 0) { ^"REJ_RUST_BORROW" };
+  ?(rg_count_lit(sig, "&mut") > 0 || rg_count_lit(body, "&mut") > 0) { ^"REJ_RUST_MUTABLE_REF" };
+  ?(rs_count_borrow(sig) > 0 || rs_count_borrow(body) > 0) { ^"REJ_RUST_BORROW" };
   ?(rg_count_lit(body, "unsafe") > 0) { ^"REJ_RUST_UNSAFE" };
   ?(rg_count_lit(body, "alloc") > 0) { ^"REJ_RUST_DYNAMIC_ALLOC" };
   ?(rg_count_lit(body, "Vec") > 0) { ^"REJ_RUST_DYNAMIC_ALLOC" };
@@ -53,21 +68,345 @@
   ^"OK";
 }
 
-// 4. Teste de conformidade de parser Rust (funções pure no_std)
 !rs_parse_test_gate(): int {
-  sig_ok = "pub fn compute_fee(amount: u64, fee_bps: u64) -> u64";
+  sig_ok = "pub const fn compute_fee(amount: u64, fee_bps: u64) -> u64";
   body_ok = "let fee = (amount * fee_bps) / 10000; return fee;";
-
+  sig_and = "pub fn rad_checked_rem(satoshi: u64, rhs: u64) -> i64";
+  body_and = "if satoshi > 21_000_000 * 100_000_000 || rhs == 0 { return -1; } return satoshi - (satoshi / rhs) * rhs;";
   sig_bad = "pub fn allocate_vec(n: usize) -> Vec<u8>";
   body_bad = "let mut v = Vec::with_capacity(n); v";
-
+  sig_ref = "pub fn borrow_amt(a: &u64) -> u64";
+  body_ref = "return *a;";
   r1 = rs_reason(sig_ok, body_ok);
-  ?(r1.length != 2) { ^0 }; // "OK"
-
+  ?(r1.length != 2) { ^0 };
   r2 = rs_reason(sig_bad, body_bad);
-  ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
-
+  ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 };
+  r3 = rs_reason(sig_and, body_and);
+  ?(r3.length != 2) { ^0 };
+  r4 = rs_reason(sig_ref, body_ref);
+  ?(starts_lit(r4, 0, "REJ_RUST_BORROW") == 0) { ^0 };
   ^1;
 }
 
-=ex{rs_is_kw, rs_is_type, rs_reason, rs_parse_test_gate}
+!rs_strip_uscore(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  prev_d = 0;
+  nxt_d = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) == 34) {
+      out = out + s.charAt(i);
+      i = i + 1;
+      while (i < n && s.charCodeAt(i) != 34) { out = out + s.charAt(i); i = i + 1 };
+      ?(i < n) { out = out + s.charAt(i); i = i + 1 };
+      continue;
+    };
+    ?(s.charCodeAt(i) == 95) {
+      prev_d = 0;
+      nxt_d = 0;
+      ?(i > 0 && s.charCodeAt(i - 1) >= 48 && s.charCodeAt(i - 1) <= 57) { prev_d = 1 };
+      ?(i + 1 < n && s.charCodeAt(i + 1) >= 48 && s.charCodeAt(i + 1) <= 57) { nxt_d = 1 };
+      ?(prev_d == 1 && nxt_d == 1) { i = i + 1; continue };
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!rs_strip_as_cast(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  id = "";
+  t = "";
+  p = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) == 34) {
+      out = out + s.charAt(i);
+      i = i + 1;
+      while (i < n && s.charCodeAt(i) != 34) { out = out + s.charAt(i); i = i + 1 };
+      ?(i < n) { out = out + s.charAt(i); i = i + 1 };
+      continue;
+    };
+    id = read_ident(s, i);
+    ?(id.length == 2 && starts_lit(id, 0, "as") == 1) {
+      p = skip_ws(s, i + 2);
+      t = read_ident(s, p);
+      ?(t.length > 0 && rs_is_type(t) == 1) {
+        i = p + t.length;
+        continue;
+      };
+    };
+    ?(id.length > 0) {
+      out = out + id;
+      i = i + id.length;
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!rs_pdecl(params: string): string {
+  out = "";
+  n = params.length;
+  i = 0;
+  seen = 0;
+  id = "";
+  last = "";
+  while (i < n) {
+    id = read_ident(params, i);
+    ?(id.length > 0) {
+      ?(rs_is_type(id) == 0 && rs_is_kw(id) == 0) { last = id };
+      i = i + id.length;
+      continue;
+    };
+    ?(params.charCodeAt(i) == 44 || i + 1 >= n) {
+      ?(last.length > 0) {
+        ?(seen == 1) { out = out + ", " };
+        out = out + last;
+        out = out + ": int";
+        seen = 1;
+        last = "";
+      };
+    };
+    i = i + 1;
+  };
+  ?(last.length > 0) {
+    ?(seen == 1) { out = out + ", " };
+    out = out + last;
+    out = out + ": int";
+  };
+  ^out;
+}
+
+!rs_strip_types(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  id = "";
+  while (i < n) {
+    ?(s.charCodeAt(i) == 34) {
+      out = out + s.charAt(i);
+      i = i + 1;
+      while (i < n && s.charCodeAt(i) != 34) { out = out + s.charAt(i); i = i + 1 };
+      ?(i < n) { out = out + s.charAt(i); i = i + 1 };
+      continue;
+    };
+    id = read_ident(s, i);
+    ?(id.length > 0) {
+      ?(rs_is_type(id) == 1) { i = i + id.length; i = skip_ws(s, i); continue };
+      out = out + id;
+      i = i + id.length;
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!rs_stmt(st: string): string {
+  e = jss_trim(st);
+  n = e.length;
+  out = "";
+  p = 0;
+  cl = 0;
+  brace = 0;
+  ?(n == 0) { ^out };
+  ?(starts_lit(e, 0, "return") == 1 && (n == 6 || is_ident(e.charCodeAt(6)) == false)) {
+    out = out + "^";
+    out = out + jss_trim(slice2(e, 6, n));
+    ^out;
+  };
+  ?(starts_lit(e, 0, "let") == 1 && n > 3 && is_ident(e.charCodeAt(3)) == false) {
+    ^rs_stmt(slice2(e, 3, n));
+  };
+  ?(starts_lit(e, 0, "if") == 1 && n > 2 && is_ident(e.charCodeAt(2)) == false) {
+    p = skip_ws(e, 2);
+    ?(p < n && e.charCodeAt(p) == 40) {
+      cl = match_paren(e, p);
+      ?(cl > p) {
+        out = out + "?(";
+        out = out + slice2(e, p + 1, cl);
+        out = out + "){ ";
+        out = out + rs_brace_body(slice2(e, cl + 1, n));
+        out = out + " }";
+        ^out;
+      };
+    };
+    brace = p;
+    while (brace < n && e.charCodeAt(brace) != 123) { brace = brace + 1 };
+    ?(brace < n && e.charCodeAt(brace) == 123) {
+      out = out + "?(";
+      out = out + jss_trim(slice2(e, p, brace));
+      out = out + "){ ";
+      out = out + rs_brace_body(slice2(e, brace, n));
+      out = out + " }";
+      ^out;
+    };
+  };
+  ^e;
+}
+
+!rs_brace_body(s: string): string {
+  t = jss_trim(s);
+  n = t.length;
+  while (n >= 2 && t.charCodeAt(0) == 123 && t.charCodeAt(n - 1) == 125) {
+    t = jss_trim(slice2(t, 1, n - 1));
+    n = t.length;
+  };
+  ?(n == 0) { ^"" };
+  ^rs_body(t);
+}
+
+!rs_find_semi(s: string, start: int): int {
+  n = s.length;
+  k = start;
+  while (k < n) {
+    ?(s.charCodeAt(k) == 59) { ^k };
+    k = k + 1;
+  };
+  ^-1;
+}
+
+!rs_body(b: string): string {
+  t = jss_trim(rs_strip_types(b));
+  n = t.length;
+  out = "";
+  i = 0;
+  s2 = 0;
+  st = "";
+  while (i < n) {
+    ?(t.charCodeAt(i) == 32 || t.charCodeAt(i) == 9 || t.charCodeAt(i) == 10) { i = i + 1; continue };
+    ?(starts_lit(t, i, "if") == 1 && (i + 2 >= n || is_ident(t.charCodeAt(i + 2)) == false)) {
+      p = skip_ws(t, i + 2);
+      brace = p;
+      while (brace < n && t.charCodeAt(brace) != 123) { brace = brace + 1 };
+      ?(brace < n) {
+        cb = match_brace(t, brace);
+        ?(cb > brace) {
+          out = out + "  ";
+          out = out + rs_stmt(slice2(t, i, cb + 1));
+          out = out + ";";
+          out = out + rgs_ch(10);
+          i = cb + 1;
+          continue;
+        };
+      };
+    };
+    s2 = rs_find_semi(t, i);
+    ?(s2 < 0) {
+      st = jss_trim(slice2(t, i, n));
+      ?(st.length > 0) {
+        out = out + "  ";
+        out = out + rs_stmt(st);
+        out = out + ";";
+        out = out + rgs_ch(10);
+      };
+      ^out;
+    };
+    out = out + "  ";
+    out = out + rs_stmt(slice2(t, i, s2));
+    out = out + ";";
+    out = out + rgs_ch(10);
+    i = s2 + 1;
+  };
+  ^out;
+}
+
+!rs_fn(nm: string, params: string, body: string): string {
+  out = "";
+  out = out + "!";
+  out = out + nm;
+  out = out + "(";
+  out = out + rs_pdecl(params);
+  out = out + "): int {";
+  out = out + rgs_ch(10);
+  out = out + rs_body(body);
+  out = out + "}";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+!rs_from_rs(src: string): string {
+  pass = jss_trim(rs_strip_uscore(rs_strip_as_cast(jss_strip_comments(src))));
+  out = "";
+  out = jss_ln(out, "@LIN:L1c:0.2");
+  out = jss_ln(out, "@FROM_RUST{source=transpiled scope=pure_integer_math}");
+  out = jss_ln(out, "");
+  n = pass.length;
+  i = 0;
+  p = 0;
+  cl = 0;
+  b = 0;
+  cb = 0;
+  nm = "";
+  pr = "";
+  bd = "";
+  sig = "";
+  reason = "";
+  names = "";
+  while (i < n) {
+    ?(starts_lit(pass, i, "fn") == 1 && (i == 0 || is_ident(pass.charCodeAt(i - 1)) == false) && (i + 2 >= n || is_ident(pass.charCodeAt(i + 2)) == false)) {
+      p = skip_ws(pass, i + 2);
+      nm = read_ident(pass, p);
+      ?(nm.length > 0) {
+        p = skip_ws(pass, p + nm.length);
+        ?(p < n && pass.charCodeAt(p) == 40) {
+          cl = match_paren(pass, p);
+          ?(cl > p) {
+            b = skip_ws(pass, cl + 1);
+            while (b < n && pass.charCodeAt(b) != 123) { b = b + 1 };
+            ?(b < n && pass.charCodeAt(b) == 123) {
+              cb = match_brace(pass, b);
+              ?(cb > b) {
+                pr = slice2(pass, p + 1, cl);
+                bd = slice2(pass, b + 1, cb);
+                sig = slice2(pass, i, b);
+                reason = rs_reason(sig, bd);
+                ?(starts_lit(reason, 0, "OK") == 1 && reason.length == 2) {
+                  out = out + rs_fn(nm, pr, bd);
+                  names = rgs_csv_add(names, nm);
+                };
+                i = cb + 1;
+                continue;
+              };
+            };
+          };
+        };
+      };
+    };
+    i = i + 1;
+  };
+  out = out + "=ex{";
+  out = out + names;
+  out = out + "}";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+!rs_from_rs_gate(): int {
+  src = "pub const fn rfc_coin() -> u64 { return 100_000_000 as u64; }";
+  out = rs_from_rs(src);
+  ?(starts_lit(out, 0, "@LIN") == 0) { ^0 };
+  ?(rg_count_lit(out, "rfc_coin") == 0) { ^0 };
+  ?(rg_count_lit(out, "100000000") == 0) { ^0 };
+  ?(rg_count_lit(out, "100_000_000") > 0) { ^0 };
+  ?(rg_count_lit(out, " as ") > 0) { ^0 };
+  and_src = "pub fn rfc_checked_rem(satoshi: u64, rhs: u64) -> i64 { if satoshi > 1 || rhs == 0 { return -1; } return satoshi - (satoshi / rhs) * rhs; }";
+  aout = rs_from_rs(and_src);
+  ?(rg_count_lit(aout, "rfc_checked_rem") == 0) { ^0 };
+  ?(rg_count_lit(aout, "REJ_") > 0) { ^0 };
+  kwu = "pub fn rfc_kwu_per_mvb() -> u64 { return 4_000; }";
+  kout = rs_from_rs(kwu);
+  ?(rg_count_lit(kout, "rfc_kwu_per_mvb") == 0) { ^0 };
+  ?(rg_count_lit(kout, "4000") == 0) { ^0 };
+  ?(rg_count_lit(kout, "4_000") > 0) { ^0 };
+  ^1;
+}
+
+=ex{rs_is_kw, rs_is_type, rs_count_borrow, rs_reason, rs_parse_test_gate, rs_strip_uscore, rs_strip_as_cast, rs_from_rs, rs_from_rs_gate}

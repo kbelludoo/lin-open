@@ -1,0 +1,63 @@
+@RULEL:RUST_BITCOIN_FEERATECEIL_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-RUST-BITCOIN-FEERATECEIL-V1"
+@TITLE="Clone-lin of rust-bitcoin Amount::div_by_fee_rate_ceil with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-rust-bitcoin-feerateceil"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile rust-bitcoin fee-budget-to-weight ceil into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed in rust-bitcoin wallets"
+  operand_width="i64 satoshis and sat/MvB; remainder ceil; not u64::MAX FeeRate"
+  commercial_hook="Amount/FeeRate / is floor and underpays 1 wu on 1000 sat / 3 sat/kwu; ceil is the sufficient weight. 1 sat/MvB ceil-inflates to 1 sat/kwu"
+}
+
+.u{
+  repo="https://github.com/rust-bitcoin/rust-bitcoin"
+  path="units/src/amount/unsigned.rs"
+  also="units/src/fee.rs units/src/fee_rate/mod.rs"
+  license="CC0-1.0"
+  commit="1cbf4bd62ea99c558c6d8ef794edbd984a2a4684"
+  git_blob_sha="0cfb8343787c893fe36aea38fc3b4c066ac2bedd"
+  file_sha256="056757adc8f3ed6bc09dadf368fd027d04fcd7a721fb502fed23c8225cd790ef"
+  fixture="test/fixtures/external_proof/rust_bitcoin_amount_unsigned.rs"
+}
+
+.l{
+  clone="src/lin_rust_bitcoin_feerateceil.lin"
+  transpiler_delta="src/lin_from_rust.lin v2: && is not a borrow; numeric underscores; const fn; as-casts stripped; rs_from_rs emit. src/lin_from_c.lin v2: REJ_C_CXX_SCOPE and REJ_C_REFERENCE"
+  improvement_1="named ceil vs operator / which is floor (div_by_fee_rate_floor)"
+  improvement_2="remainder ceil, not (a+d-1)/d, so num+den-1 cannot wrap"
+  improvement_3="FeeRate inner sat/MvB is an explicit argument; 1 sat/MvB ceil-inflates 4000x to 1 sat/kwu is a detector not a silent newtype"
+  improvement_4="zero rate and out-of-range Amount fail-close to -1 (NumOpResult::Error)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/rust_bitcoin_feerateceil_c11.c (gcc -O2 -std=c11, remainder XOR __int128)"
+  gate="test/verify_rust_bitcoin_feerateceil.sh"
+}
+
+.p{
+  harness="test/prove_rust_bitcoin_feerateceil_external.py"
+  evidence_json="examples/rust_bitcoin_feerateceil/rust_bitcoin_feerateceil_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-rust-bitcoin-feerateceil"
+  clone_lin_note="separate clone-lin repo created this run; git push of kernel files was 403 (cursor bot). LIN clone in lin-open is the auditable copy."
+}
+
+.n{
+  not_claimed_1="full rust-bitcoin wallet / PSBT / script"
+  not_claimed_2="LIN is faster than rustc"
+  not_claimed_3="this clone is a production fee estimator"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="lin_c0 vm of string-literal transpiler modules (VM_REJ_STRING_LITERAL)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_REM_EQ_I128 && LIN_C0_VM_EQ_C11 && PYTHON_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

@@ -1,0 +1,29 @@
+@RULEL:RUST_BITCOIN_FEERATECEIL_CLONE:1.0.0
+~R{.u=upstream .k=kernel .g=goldens .t=transpiler .c=class}
+
+.u{
+  repo="rust-bitcoin/rust-bitcoin"
+  commit="1cbf4bd62ea99c558c6d8ef794edbd984a2a4684"
+  license="CC0-1.0"
+  fn="Amount::div_by_fee_rate_ceil"
+}
+
+.k{
+  file="src/lin_rust_bitcoin_feerateceil.lin"
+  formula="wu = (sats*1000).div_ceil(sat_mvb.div_ceil(4000))"
+  clone_lin="https://github.com/kbelludoo/clone-lin-rust-bitcoin-feerateceil"
+}
+
+.g{
+  exact="1000 sat / 2 sat/kwu = 500000 wu"
+  floor="1000 sat / 3 sat/kwu = 333333 wu"
+  ceil="1000 sat / 3 sat/kwu = 333334 wu"
+  max="MAX_MONEY / 1 sat/kwu = 2100000000000000000 wu"
+}
+
+.t{
+  rust="src/lin_from_rust.lin v2 as-cast + underscore + &&"
+  c="src/lin_from_c.lin v2 REJ_C_CXX_SCOPE REJ_C_REFERENCE"
+}
+
+.c{label="EXPERIMENTAL"}

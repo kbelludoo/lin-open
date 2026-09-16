@@ -1,0 +1,197 @@
+{
+  "schema": "LIN_RUST_BITCOIN_FEERATECEIL_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned unsigned.rs sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "PIN-FEE-SHA",
+      "status": "PASS",
+      "description": "pinned fee.rs sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "PIN-FR-SHA",
+      "status": "PASS",
+      "description": "pinned fee_rate/mod.rs sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned rust-bitcoin commit matches fixture",
+      "note": "commit=1cbf4bd62ea99c558c6d8ef794edbd984a2a4684 blob=0cfb8343787c893fe36aea38fc3b4c066ac2bedd"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of units/src/amount/unsigned.rs",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-FNS",
+      "status": "PASS",
+      "description": "pinned unsigned.rs contains div_by_fee_rate_ceil",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-FEE",
+      "status": "PASS",
+      "description": "pinned fee.rs contains published ceil golden 333_334",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-FR",
+      "status": "PASS",
+      "description": "pinned fee_rate/mod.rs contains to_sat_per_kwu_ceil / div_ceil(4_000)",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 remainder ceil and __int128 (a+d-1)/d agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_rust_bitcoin_feerateceil.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-EMIT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 skips && as borrow, strips 4_000, strips as-casts, emits LIN",
+      "note": ""
+    },
+    {
+      "id": "C-REJ-V2",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 rejects :: and lone & in signatures",
+      "note": ""
+    },
+    {
+      "id": "SCALAR-RS",
+      "status": "PASS",
+      "description": "scalar rust fixture has &&, 4_000, as u64, const fn for v2",
+      "note": ""
+    },
+    {
+      "id": "PY-STRIP",
+      "status": "PASS",
+      "description": "python dual: && is not borrow; 4_000 and as u64 stripped",
+      "note": ""
+    },
+    {
+      "id": "SCALAR-C",
+      "status": "PASS",
+      "description": "scalar C fixture present (no pointer / :: decls)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "rfc_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "11/11 vectors: C11 rem == i128 == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "11/11 vectors: Python bigint matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "GOLDEN-EXACT",
+      "status": "PASS",
+      "description": "published rust-bitcoin golden: 1000 sat / 2 sat/kwu = 500000 wu",
+      "note": ""
+    },
+    {
+      "id": "GOLDEN-FLOOR",
+      "status": "PASS",
+      "description": "published rust-bitcoin golden: 1000 sat / 3 sat/kwu floor = 333333 wu",
+      "note": ""
+    },
+    {
+      "id": "GOLDEN-CEIL",
+      "status": "PASS",
+      "description": "published rust-bitcoin golden: 1000 sat / 3 sat/kwu ceil = 333334 wu",
+      "note": ""
+    },
+    {
+      "id": "GOLDEN-MAX",
+      "status": "PASS",
+      "description": "published rust-bitcoin golden: MAX_MONEY / 1 sat/kwu = 2100000000000000000 wu",
+      "note": ""
+    },
+    {
+      "id": "UNDERPAY",
+      "status": "PASS",
+      "description": "Amount/FeeRate floor underpays 1 wu on 1000/3 sat/kwu; exact on 1000/2",
+      "note": ""
+    },
+    {
+      "id": "TINY-MVB",
+      "status": "PASS",
+      "description": "1 sat/MvB ceil-converts to 1 sat/kwu (4000x vs floor=0); 4000 sat/MvB is exact",
+      "note": ""
+    },
+    {
+      "id": "REM-CEIL",
+      "status": "PASS",
+      "description": "remainder ceil equals (a+d-1)/d on in-range ints; zero den fail-closes",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes Amount sats and FeeRate sat/MvB as arguments (no newtype)",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/rust-bitcoin/rust-bitcoin",
+    "commit": "1cbf4bd62ea99c558c6d8ef794edbd984a2a4684",
+    "path": "units/src/amount/unsigned.rs",
+    "git_blob_sha": "0cfb8343787c893fe36aea38fc3b4c066ac2bedd",
+    "file_sha256": "056757adc8f3ed6bc09dadf368fd027d04fcd7a721fb502fed23c8225cd790ef",
+    "fee_sha256": "ed7832bce17677cb76e2447ff516b7a2a4df83d8746cc010ba73993722d115e3",
+    "fee_rate_sha256": "cbb0c13c54a808aa80de9652196e4f13f3f47bc3985e96b5c6fa7aeb6b705ecc",
+    "license": "CC0-1.0"
+  },
+  "lin_clone": "src/lin_rust_bitcoin_feerateceil.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-rust-bitcoin-feerateceil",
+  "c11_oracle": "test/oracles/rust_bitcoin_feerateceil_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "golden_ceil_1000_3kwu": 333334,
+  "golden_floor_1000_3kwu": 333333,
+  "golden_exact_1000_2kwu": 500000
+}
