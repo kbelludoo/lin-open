@@ -310,6 +310,11 @@ compound-jumprate-proof: c0
 	@chmod +x test/verify_compound_jumprate.sh test/prove_compound_jumprate_external.py
 	@test/verify_compound_jumprate.sh
 
+.PHONY: bitcoin-eqtime-proof
+bitcoin-eqtime-proof: c0
+	@chmod +x test/verify_bitcoin_eqtime.sh test/prove_bitcoin_eqtime_external.py
+	@test/verify_bitcoin_eqtime.sh
+
 independent-reproof: c0
 	@chmod +x test/prove_melhorias_independent.py
 	@python3 test/prove_melhorias_independent.py
