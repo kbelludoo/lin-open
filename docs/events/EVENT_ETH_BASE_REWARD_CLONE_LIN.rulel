@@ -1,0 +1,67 @@
+@RULEL:ETH_BASE_REWARD_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-ETH-CONSENSUS-BASE-REWARD"
+@TITLE="Clone-lin of Ethereum consensus-spec integer_squareroot and Altair base reward with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_GWEI"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-eth-basereward"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Ethereum consensus-spec uint64 Gwei issuance math into deterministic LIN, compile in memory with C11 compiler 0, and publish auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced surface (here: helpers only, not a beacon node) | REAL_WORLD = as deployed end-to-end on mainnet"
+  operand_width="spec uint64 Gwei for n>=0; UINT64_MAX encoded as i64 -1; other negative i64 bit-patterns fail-close to 0"
+  commercial_hook="Altair get_base_reward is the per-epoch issuance primitive still used after Altair on Ethereum mainnet; making BeaconState fields explicit and replacing (x+1)/2 overflow with floor-avg is an audit improvement, not a TVL or yield claim"
+}
+
+.u{
+  repo="https://github.com/ethereum/consensus-specs"
+  license="CC0-1.0"
+  tag="v1.5.0"
+  commit="b5c3b619887c7850a8c1d3540b471092be73ad84"
+  isqrt_path="specs/phase0/beacon-chain.md"
+  isqrt_blob="5658ed2c236568f7be1cf26e8d2c496ed5179564"
+  isqrt_sha256="95519084a4689b0bbbbaa9db9fb1d6e48d6c7be83a8dd21bc82a83cf96a6254a"
+  altair_path="specs/altair/beacon-chain.md"
+  altair_blob="4edfbeb763146fe33750de82e118b6bf1bde890e"
+  altair_sha256="2ea769c3a23139225997efc75efed8914f8fd949ec02991fa62d026017a278d9"
+  fixture_phase0="test/fixtures/external_proof/beacon-chain-phase0.md"
+  fixture_altair="test/fixtures/external_proof/beacon-chain-altair.md"
+}
+
+.l{
+  clone="src/lin_eth_base_reward.lin"
+  transpiler_delta="src/lin_from_c.lin v2: U/L suffix strip, REJ_C_CXX, ceil/floor as REJ_C_FLOAT, UINT64_MAX_SQRT expand; src/lin_from_solidity.lin v3: emit OK_VIEW, expand 10**N, REJ leftover **"
+  improvement_1="get_base_reward is view-on-BeaconState in the spec; LIN takes effective_balance and total_balance as arguments"
+  improvement_2="spec (x+1)//2 overflows uint64 at UINT64_MAX (hence the special case); LIN uses overflow-safe floor((a+b)/2) plus the named UINT64_MAX case (i64 -1)"
+  improvement_3="spec get_total_balance mins at 1 ETH to avoid division by zero; LIN fail-closes total_balance==0 to 0 instead of C UB / Python exception"
+  improvement_4="checked multiply fail-closes when effective_balance*64 does not fit i64; naive signed wrap is proven different"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/eth_base_reward_c11.c (gcc -O2 -std=c11, spec Babylonian XOR overflow-safe clone)"
+  gate="test/verify_eth_base_reward.sh"
+}
+
+.p{
+  harness="test/prove_eth_base_reward_external.py"
+  evidence_json="examples/eth_base_reward/eth_base_reward_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-eth-basereward"
+  canonical="1 validator, 32 ETH effective, 32 ETH total → Altair base_reward = 11448672 Gwei"
+}
+
+.n{
+  not_claimed_1="this clone is a production beacon node or validator client"
+  not_claimed_2="Electra 2048 ETH max effective balance as a modeled special case"
+  not_claimed_3="LIN is faster than Prysm, Lighthouse, nimbus, or gcc -O2"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Ethereum consensus"
+}
+
+.v{
+  method="PINNED_BYTES && C11_SPEC_EQ_SAFE && LIN_C0_VM_EQ_C11 && PYTHON_SPEC && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

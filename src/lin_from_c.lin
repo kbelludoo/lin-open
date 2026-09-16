@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN changelog="v2: strip U/L integer suffixes; REJ_C_CXX on ::/static_cast/optional; ceil(/floor( as REJ_C_FLOAT; expand UINT64_MAX_SQRT"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -33,12 +33,16 @@
 }
 
 !cfs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "::") > 0 || rg_count_lit(body, "::") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(body, "static_cast") > 0){ ^"REJ_C_CXX" };
+  ?(rg_count_lit(sig, "optional") > 0 || rg_count_lit(body, "optional") > 0){ ^"REJ_C_CXX" };
   ?(rg_count_lit(sig, "*") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(body, "->") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(sig, "struct") > 0 || rg_count_lit(body, "struct") > 0){ ^"REJ_C_STRUCT" };
   ?(rg_count_lit(sig, "union") > 0 || rg_count_lit(body, "union") > 0){ ^"REJ_C_UNION" };
   ?(rg_count_lit(sig, "float") > 0 || rg_count_lit(body, "float") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(sig, "double") > 0 || rg_count_lit(body, "double") > 0){ ^"REJ_C_FLOAT" };
+  ?(rg_count_lit(body, "ceil(") > 0 || rg_count_lit(body, "floor(") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(body, "goto") > 0){ ^"REJ_C_GOTO" };
   ^"OK";
 }
@@ -645,8 +649,70 @@
   ^read_ident(s, st);
 }
 
+!cfs_strip_num_suffix(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  c = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) {
+      while (i < n && s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) {
+        out = out + s.charAt(i);
+        i = i + 1;
+      };
+      while (i < n) {
+        c = s.charCodeAt(i);
+        ?(c == 117 || c == 85 || c == 108 || c == 76) { i = i + 1; continue };
+        break;
+      };
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!cfs_expand_limits(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  id = "";
+  while (i < n) {
+    id = read_ident(s, i);
+    ?(id.length > 0) {
+      ?(starts_lit(id, 0, "UINT64_MAX_SQRT") == 1 && id.length == 15) {
+        out = out + "4294967295";
+        i = i + id.length;
+        continue;
+      };
+      out = out + id;
+      i = i + id.length;
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!cfs_reason_gate(): int {
+  r1 = cfs_reason("(uint64_t n)", "return n + 1;");
+  ?(r1.length != 2) { ^0 };
+  r2 = cfs_reason("(uint64_t n)", "return std::max(n, n);");
+  ?(starts_lit(r2, 0, "REJ_C_CXX") == 0) { ^0 };
+  r3 = cfs_reason("(uint64_t n)", "return ceil(n);");
+  ?(starts_lit(r3, 0, "REJ_C_FLOAT") == 0) { ^0 };
+  suf = cfs_strip_num_suffix("64ULL");
+  ?(starts_lit(suf, 0, "64") == 0) { ^0 };
+  ?(suf.length != 2) { ^0 };
+  lim = cfs_expand_limits("return UINT64_MAX_SQRT;");
+  ?(rg_count_lit(lim, "4294967295") == 0) { ^0 };
+  ^1;
+}
+
 !cfs_prep(src: string): string {
-  ^jss_rewrite_hex(jss_strip_comments(src));
+  ^cfs_expand_limits(cfs_strip_num_suffix(jss_rewrite_hex(jss_strip_comments(src))));
 }
 
 !cfs_from_c(src: string): string {
@@ -756,4 +822,4 @@
   ^out;
 }
 
-=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type}
+=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type, cfs_strip_num_suffix, cfs_expand_limits, cfs_reason_gate}
