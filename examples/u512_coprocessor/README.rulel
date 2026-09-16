@@ -1,0 +1,32 @@
+@RULEL:U512_COPROCESSOR:1.0.0
+@TITLE="LIN as a numeric coprocessor with an auditable receipt"
+@CLASS="EXPERIMENTAL"
+
+~R{.s=sell .p=proved .n=not .r=repro}
+
+.s{
+  pitch="LIN executes 256x256->512 mulDiv and emits a 240-byte LNR1 Merkle receipt an auditor recomputes with Python stdlib, without running LIN"
+  not_a="Uniswap replacement, pool, or router"
+  width="FullMath *width* (product up to 2^512-1, quotient in uint256 or fail-closed -2). Not CRT/mulmod assembly."
+}
+
+.p{
+  engine="src/lin_u512_coprocessor.lin"
+  oracles="Python int + C11 64-bit schoolbook (test/oracles/u512_coprocessor_c11.c) + Compiler-0 lin_c0"
+  receipt="LNR1 240 bytes, domains LIN:U512:LEAF:1 / LIN:U512:NODE:1"
+  e2e="LCR2 208 bytes with real LinVM steps for 1 EXACT_INPUT + 1 OVERPAID_INPUT; settle_u256_word vs ref_amount_out"
+  auditor="python3 examples/u512_coprocessor/verify_u512_receipt.py examples/u512_coprocessor/u512_coprocessor_evidence.json"
+  gate="make u512-coprocessor-proof"
+}
+
+.n{
+  not_1="CRT/mulmod bit-exact vs FullMath.sol assembly"
+  not_2="full 2000 + 157 campaign on the coprocessor"
+  not_3="settle_u256_word FullMath width (SafeMath: phantom still ^-2)"
+  not_4="zk soundness of Merkle (tamper-evidence + independent recompute)"
+}
+
+.r{
+  cmd="make u512-coprocessor-proof"
+  evidence="examples/u512_coprocessor/u512_coprocessor_evidence.json"
+}
