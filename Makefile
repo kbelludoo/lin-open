@@ -310,6 +310,16 @@ compound-jumprate-proof: c0
 	@chmod +x test/verify_compound_jumprate.sh test/prove_compound_jumprate_external.py
 	@test/verify_compound_jumprate.sh
 
+# U512 numeric coprocessor: 256x256->512 mulDiv with Python/C11/Node
+# oracles and LNR1 receipts. EXPERIMENTAL (FullMath width, not a pool).
+.PHONY: u512-coprocessor-proof
+u512-coprocessor-proof: c0
+	@$(MAKE) -C transpile/c bin/lin_bc1_run
+	@chmod +x test/verify_u512_coprocessor.sh test/prove_u512_coprocessor_external.py \
+	          examples/u512_coprocessor/verify_u512_receipt.py \
+	          examples/u512_coprocessor/verify_u512_receipt.js
+	@test/verify_u512_coprocessor.sh
+
 independent-reproof: c0
 	@chmod +x test/prove_melhorias_independent.py
 	@python3 test/prove_melhorias_independent.py
