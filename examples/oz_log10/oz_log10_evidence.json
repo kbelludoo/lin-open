@@ -1,0 +1,140 @@
+{
+  "schema": "LIN_OZ_LOG10_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned OpenZeppelin Math.sol v5.0.2 sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned log10/log256 excerpt sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned openzeppelin-contracts commit matches fixture",
+      "note": "tag=v5.0.2 commit=dbb6104ce834628e473d2173bbc9d47f81a9eec3 blob=9681524529b34f34033ae97064a2700bfc4eec00"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of contracts/utils/math/Math.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 oracle selftest (pow10/log10/log256 goldens)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_oz_log10.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3 (POW/ENUM reject)",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 (word-boundary sqrt)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "ozl_test_suite == 1 on Compiler 0 interpreter",
+      "note": "@RULEL:LIN_VM_RUN:1.0.0\n.result{ fn=\"ozl_test_suite\" value=1 steps=1587 }"
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "21/21 goldens: C11 == LIN vm == Python str/bit_length",
+      "note": ""
+    },
+    {
+      "id": "SCAN-INDEPENDENT",
+      "status": "PASS",
+      "description": "99 values: Python len(str)/bit_length == C11 == LIN",
+      "note": ""
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "decimal-digit count for 1 ETH (1e18 wei)=19, 1 BTC (1e8 sat)=9, 1 USDC (1e6)=7",
+      "note": "buffer-sizing for token amount formatting; not a TVL or gas-savings claim"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "SOL-POW",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 fail-closes Solidity ** (10**64 is not i64)",
+      "note": ""
+    },
+    {
+      "id": "SOL-ENUM",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 fail-closes enum / Rounding user types",
+      "note": ""
+    },
+    {
+      "id": "C-SQRT",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 word-boundary libc sqrt(/sqrtf(/sqrtl( is REJ_C_FLOAT",
+      "note": ""
+    },
+    {
+      "id": "C-ELIGIBLE",
+      "status": "PASS",
+      "description": "scalar C rewrite has no pointers/sqrt \u2014 eligible for cfs_reason=OK (lin_c0 does not execute cfs_from_c; string-literal VM gate)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-LOG10",
+      "status": "PASS",
+      "description": "pinned Math.sol contains log10 with 10 ** 64 (rejected for i64 emit)",
+      "note": ""
+    },
+    {
+      "id": "NO-POW-EMIT",
+      "status": "PASS",
+      "description": "LIN clone uses explicit 10^16..10^1 constants; no ** operator",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/OpenZeppelin/openzeppelin-contracts",
+    "tag": "v5.0.2",
+    "commit": "dbb6104ce834628e473d2173bbc9d47f81a9eec3",
+    "path": "contracts/utils/math/Math.sol",
+    "git_blob_sha": "9681524529b34f34033ae97064a2700bfc4eec00",
+    "file_sha256": "a6ee779fc42e6bf01b5e6a963065706e882b016affbedfd8be19a71ea48e6e15",
+    "excerpt_sha256": "2c0396e0703d1be2fbed02c40620fb5501a035ee204a8ccc8f279d8af6996432",
+    "license": "MIT"
+  },
+  "lin_clone": "src/lin_oz_log10.lin",
+  "c11_oracle": "test/oracles/oz_log10_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "commercial": {
+    "eth_wei_digits": 19,
+    "btc_sat_digits": 9,
+    "usdc_digits": 7,
+    "note": "digit counts for amount-string buffers; not a TVL claim"
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-oz-log10"
+}

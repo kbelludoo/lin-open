@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN changelog="v2: word-boundary libc sqrt(/sqrtf(/sqrtl( is REJ_C_FLOAT; identifiers containing sqrt are not rejected"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -32,6 +32,23 @@
   ^0;
 }
 
+!cfs_has_call(s: string, nm: string): int {
+  n = s.length;
+  m = nm.length;
+  i = 0;
+  p = 0;
+  while (i < n) {
+    ?(starts_lit(s, i, nm) == 1) {
+      ?(i == 0 || is_ident(s.charCodeAt(i - 1)) == false) {
+        p = skip_ws(s, i + m);
+        ?(p < n && s.charCodeAt(p) == 40) { ^1 };
+      };
+    };
+    i = i + 1;
+  };
+  ^0;
+}
+
 !cfs_reason(sig: string, body: string): string {
   ?(rg_count_lit(sig, "*") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(body, "->") > 0){ ^"REJ_C_POINTER" };
@@ -39,6 +56,9 @@
   ?(rg_count_lit(sig, "union") > 0 || rg_count_lit(body, "union") > 0){ ^"REJ_C_UNION" };
   ?(rg_count_lit(sig, "float") > 0 || rg_count_lit(body, "float") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(sig, "double") > 0 || rg_count_lit(body, "double") > 0){ ^"REJ_C_FLOAT" };
+  ?(cfs_has_call(sig, "sqrt") == 1 || cfs_has_call(body, "sqrt") == 1){ ^"REJ_C_FLOAT" };
+  ?(cfs_has_call(sig, "sqrtf") == 1 || cfs_has_call(body, "sqrtf") == 1){ ^"REJ_C_FLOAT" };
+  ?(cfs_has_call(sig, "sqrtl") == 1 || cfs_has_call(body, "sqrtl") == 1){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(body, "goto") > 0){ ^"REJ_C_GOTO" };
   ^"OK";
 }
@@ -756,4 +776,4 @@
   ^out;
 }
 
-=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type}
+=ex{cfs_from_c, cfs_report, cfs_reason, cfs_has_call, cfs_fn, cfs_strip_casts, cfs_all_type}

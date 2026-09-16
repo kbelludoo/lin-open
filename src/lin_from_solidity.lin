@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: REJ_SOLIDITY_POW for ** (10**64 does not fit i64); REJ_SOLIDITY_ENUM for enum keyword and uppercase user types in signatures (Rounding overloads). v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
 }
 
 !sol_is_kw(nm: string): int {
@@ -37,6 +37,39 @@
   ^0;
 }
 
+!sol_has_ident(s: string, nm: string): int {
+  n = s.length;
+  m = nm.length;
+  i = 0;
+  while (i < n) {
+    ?(starts_lit(s, i, nm) == 1) {
+      ?(i == 0 || is_ident(s.charCodeAt(i - 1)) == false) {
+        ?(i + m >= n || is_ident(s.charCodeAt(i + m)) == false) { ^1 };
+      };
+    };
+    i = i + 1;
+  };
+  ^0;
+}
+
+!sol_has_user_type(s: string): int {
+  n = s.length;
+  i = 0;
+  id = "";
+  c = 0;
+  while (i < n) {
+    id = read_ident(s, i);
+    ?(id.length > 0) {
+      c = id.charCodeAt(0);
+      ?(c >= 65 && c <= 90 && sol_is_type(id) == 0 && sol_is_kw(id) == 0) { ^1 };
+      i = i + id.length;
+      continue;
+    };
+    i = i + 1;
+  };
+  ^0;
+}
+
 !sol_reason(sig: string, body: string): string {
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
@@ -46,6 +79,9 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(sig, "**") > 0 || rg_count_lit(body, "**") > 0) { ^"REJ_SOLIDITY_POW" };
+  ?(sol_has_ident(sig, "enum") == 1 || sol_has_ident(body, "enum") == 1) { ^"REJ_SOLIDITY_ENUM" };
+  ?(sol_has_user_type(sig) == 1) { ^"REJ_SOLIDITY_ENUM" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +100,14 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_pow = "function log10(uint256 value) internal pure returns (uint256)";
+  body_pow = "if (value >= 10 ** 64) { value /= 10 ** 64; result += 64; }";
+  r4 = sol_reason(sig_pow, body_pow);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_POW") == 0) { ^0 };
+  sig_enum = "function log10(uint256 value, Rounding rounding) internal pure returns (uint256)";
+  body_enum = "return log10(value);";
+  r5 = sol_reason(sig_enum, body_enum);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_ENUM") == 0) { ^0 };
   ^1;
 }
 
@@ -337,4 +381,4 @@
   ^1;
 }
 
-=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
+=ex{sol_is_kw, sol_is_type, sol_has_ident, sol_has_user_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
