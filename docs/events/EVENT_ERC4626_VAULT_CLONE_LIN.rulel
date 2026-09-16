@@ -1,0 +1,68 @@
+@RULEL:ERC4626_VAULT_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-ERC4626-VAULT-V1"
+@TITLE="Clone-lin of OpenZeppelin ERC-4626 virtual-share convert with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-erc4626-vault"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile OpenZeppelin ERC-4626 convertToShares/convertToAssets into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for (a*b)/d; Solidity uint256 and Math.mulDiv assembly are NOT claimed"
+  commercial_hook="ERC-4626 is the tokenized-vault standard; OZ v4.9+ virtual shares (supply+10**offset) / (totalAssets+1) is the inflation-attack mitigation used by vaults. Making storage totals and offset explicit, and replacing wrapping i64 multiply with 128-bit muldiv, is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/OpenZeppelin/openzeppelin-contracts"
+  path="contracts/token/ERC20/extensions/ERC4626.sol"
+  license="MIT"
+  tag="v5.0.2"
+  commit="dbb6104ce834628e473d2173bbc9d47f81a9eec3"
+  git_blob_sha="ec6087231cb5e9a8c9a91d3eec8583fb89e1e168"
+  file_sha256="bc3eb01a42e08f33e8591a726e28c7107b6c4fedd6be0d9d2d1c049853698be8"
+  fixture="test/fixtures/external_proof/ERC4626.sol"
+  formula_floor="assets * (totalSupply + 10**offset) / (totalAssets + 1)"
+  formula_ceil="floor plus one if remainder != 0 (Math.unsignedRoundsUp)"
+}
+
+.l{
+  clone="src/lin_erc4626_vault.lin"
+  transpiler_delta="src/lin_from_c.lin v2: if/else emit, U/L suffix strip, lone-& reject, C++/float fail-closed; src/lin_from_solidity.lin v3: REJ_SOLIDITY_POW and REJ_SOLIDITY_LIBRARY_CALL so ERC-4626 convert is not silently emitted"
+  improvement_1="_convertToShares is view-on-storage in Solidity; LIN takes supply/totalAssets/offset as arguments"
+  improvement_2="assets * (supply+10**offset) overflows i64; LIN uses schoolbook 128-bit muldiv matching C11 __int128"
+  improvement_3="quotient that does not fit uint64 fail-closes to 0 (no silent wrap); remainder a*b=q*d+r is checked by Python bigint"
+  improvement_4="offset>18 (10**offset exceeds uint64) fail-closes; Solidity uint8 offset into uint256 pow does not"
+  improvement_5="previewDeposit = Floor, previewMint = Ceil, matching OZ Rounding enum odd=up"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/erc4626_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="python3 test/prove_erc4626_vault_external.py"
+}
+
+.p{
+  harness="test/prove_erc4626_vault_external.py"
+  evidence_json="examples/erc4626_vault/erc4626_vault_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-erc4626-vault"
+  canonical_empty="previewDeposit(1000) on empty vault offset=0 → 1000 shares"
+  canonical_donation="after 1 share and 1e12 donated assets, deposit 1e12 → 1 share"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet ERC-4626 vault parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production vault replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces OpenZeppelin, Yearn, or the EVM"
+  not_claimed_6="transpile of Math.mulDiv assembly (REJ_SOLIDITY_INLINE_ASM / REJ_SOLIDITY_LIBRARY_CALL)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PYTHON_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
