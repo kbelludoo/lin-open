@@ -1,0 +1,57 @@
+@RULEL:U512_COPROCESSOR_EVENT:1.0.0
+@CHALLENGE_ID="LIN-U512-COPROCESSOR-2026-09-16"
+@TITLE="Numeric coprocessor: 512-bit mulDiv with independent Python/C11 oracles and LNR1 receipts"
+@STATUS="REPRODUCED_THIS_RUN"
+@DATE="2026-09-16"
+@CLASS="EXPERIMENTAL"
+
+~R{.s=scope .p=proved .n=not_proved .h=hashes .v=verdict}
+
+.s{
+  purpose="sell LIN as a numeric coprocessor with an auditable receipt, not as a Uniswap replacement"
+  host="transpile/c/bin/lin_c0 + lin_bc1_run (C11, no Zig) + gcc + python3"
+  width="uint256 operands; 512-bit product; 16-bit limbs"
+  class_definition="TOY=sized down for teaching | EXPERIMENTAL=real FullMath *width* on a reduced algorithm (schoolbook, not CRT) | REAL_WORLD=as deployed"
+}
+
+.p{
+  mul="256x256->512 schoolbook with carry into 32 limbs"
+  ge="unsigned 512-bit compare of product vs 256-bit d, and of remainder vs d in the restoring loop"
+  div="restoring 512/256->256, abort -2 if quotient bit >= 256"
+  identity="q*d+r==n and r<d (Python int, C11 16-bit, C11 64-bit, LIN goldens+sample)"
+  guards="-1 d=0 (steps=10344 on 1*1/0); -2 q overflow on (2^256-1)^2/1 (steps=12656)"
+  two_pow_255="2^255 * 2 / 3 APPROVES q=0x5555.. repeating r=1"
+  canonical_amm="settle_u512_swap(1000,10000,20000)=1813 after remainder widened to 32 limbs (status steps=976379, word0 steps=976415)"
+  phantom="coprocessor mulDiv(997, ceil(2^256/997), 1997) APPROVES; settle_u256_word still -2 (SafeMath width, steps=11417). 512-bit intermediate is off the suspect list; replacing the settler body remains required"
+  e2e_exact="EXACT_INPUT lin==ref==onchain=348299652 steps=1113359"
+  e2e_overpaid="OVERPAID_INPUT lin==ref=145611106349087342 onchain=145610814998826432 steps=1152244"
+  auditor="python3 examples/u512_coprocessor/verify_u512_receipt.py --self-test rejects 1-bit leaf tamper (BAD_IDENTITY)"
+  self_gate="u512_self_gate value=1 steps=9382536"
+  cli_spot="u512_muldiv_u64(7,9,2) value=31 steps=1956660"
+  c11="SELFTEST PASS n=520 limb16==limb64"
+  py_c11="528/528 Python int == C11"
+  lin_oracle="16/16 LIN == Python on goldens+sample"
+}
+
+.n{
+  not_1="FullMath.sol CRT/mulmod assembly equivalence"
+  not_2="2000/157 mainnet campaign on the coprocessor"
+  not_3="computational soundness of Merkle (LNR1/LCR2 are tamper-evidence + identity)"
+  not_4="LIN replacing Uniswap, the EVM, or a deployed pool"
+  not_5="end-to-end replacement of settle_u256_word SafeMath-width body"
+}
+
+.h{
+  lin_src="sha256:595b5ac3e65f5517e1c918a4eed5f3bef9bb7fe13a9b8bb6b7a833467dfa858f"
+  oracle_src="sha256:63035f3a6f645d38686690344e511175110a0272021cb41a1cb6bc1d84024fde"
+  linbc1_file="sha256:071ae599fe651a5950b39baa2e8df319d5a5b8135d080ba992dada751bcb2628"
+  linbc1_loader="sha256:a73e44c19381300fa5c0cae392745c96fbfde31a02b4f2d474350fc8a9800ca8"
+  lnr1_merkle="sha256:8221027a36cdacd01e91c34bc1133cbface81d1467028eedf3674ac5988e26e8"
+  lcr2_e2e_merkle="sha256:89e2e1ecda29a2bd5eed234d608434c95c53ba5bc65442f93e0359c864ad6f68"
+}
+
+.v{
+  method="PYTHON_BIGINT && C11_LIMB16 && C11_LIMB64_I128 && LIN_BC1 && LNR1_HASHLIB && LCR2_REAL_STEPS && ONE_BIT_TAMPER_REJECT"
+  on_fail="do not publish PASS"
+  reproduce="make u512-coprocessor-proof"
+}
