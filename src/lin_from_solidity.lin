@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: expand 10**N integer powers; leftover ** is REJ_SOLIDITY_POW. v2: emit LIN for eligible pure functions; expand 1eN; view without msg.sender is OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,7 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(body, "**") > rg_count_lit(body, "10**")) { ^"REJ_SOLIDITY_POW" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -116,6 +117,37 @@
   ^out;
 }
 
+!sol_expand_pow(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  expn = 0;
+  z = 0;
+  k = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) == 49 && i + 3 < n && s.charCodeAt(i + 1) == 48 && s.charCodeAt(i + 2) == 42 && s.charCodeAt(i + 3) == 42) {
+      ?(i == 0 || is_ident(s.charCodeAt(i - 1)) == false) {
+        k = i + 4;
+        ?(k < n && s.charCodeAt(k) >= 48 && s.charCodeAt(k) <= 57) {
+          while (k < n && s.charCodeAt(k) >= 48 && s.charCodeAt(k) <= 57) { k = k + 1 };
+          expn = sol_parse_uint(s, i + 4, k);
+          out = out + "1";
+          z = 0;
+          while (z < expn) {
+            out = out + "0";
+            z = z + 1;
+          };
+          i = k;
+          continue;
+        };
+      };
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
 !sol_strip_types(s: string): string {
   out = "";
   n = s.length;
@@ -172,7 +204,7 @@
 }
 
 !sol_body(b: string): string {
-  t = jss_trim(sol_strip_types(sol_expand_exp(b)));
+  t = jss_trim(sol_strip_types(sol_expand_pow(sol_expand_exp(b))));
   out = "";
   n = t.length;
   i = 0;
@@ -334,7 +366,12 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  p10 = sol_expand_pow("return 10**2;");
+  ?(rg_count_lit(p10, "100") == 0) { ^0 };
+  ?(rg_count_lit(p10, "**") > 0) { ^0 };
+  rpow = sol_reason("function bad(uint x) internal pure returns (uint)", "return x ** 2;");
+  ?(starts_lit(rpow, 0, "REJ_SOLIDITY_POW") == 0) { ^0 };
   ^1;
 }
 
-=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
+=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_expand_pow, sol_from_sol, sol_from_sol_gate}

@@ -1,0 +1,67 @@
+@RULEL:BITCOIN_NBITS_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-BITCOIN-NBITS-V27-1"
+@TITLE="Clone-lin of Bitcoin Core v27.1 CalculateNextWorkRequired with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_COMPACT_NBITS"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-bitcoin-core-nbits"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Bitcoin difficulty retarget into deterministic LIN, compile in memory with C11 compiler 0, publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm | REAL_WORLD = as deployed full node"
+  operand_width="compact nBits uint32 in/out; 8 x uint32 limbs internally matching arith_uint256 WIDTH"
+  commercial_hook="CalculateNextWorkRequired is the mainnet difficulty retarget that couples Bitcoin issuance to hashrate; making CBlockIndex/Consensus::Params explicit and fail-closing overflow/negative compact is an audit improvement, not a hashrate or price claim"
+}
+
+.u{
+  repo="https://github.com/bitcoin/bitcoin"
+  tag="v27.1"
+  commit="1088a98f5aad080cc6cca2da174f206509fcda6c"
+  license="MIT"
+  pow_path="src/pow.cpp"
+  pow_git_blob_sha="1e8d53de8bb87b0b9a30ff6439881cc2c40e38a4"
+  pow_file_sha256="a997ebc9e89ec0ed0f98fe56e7ece7c0a799746d36be5c0951ca6fd264280a33"
+  arith_path="src/arith_uint256.cpp"
+  arith_git_blob_sha="0d5b3d5b0e6476b88053bd74a35c5cdbef1d2ae8"
+  arith_file_sha256="b46d67db26cef11a9da125b98e29bd8bf77b7a5c71418ee63bb77a0125a09d06"
+  tests_path="src/test/pow_tests.cpp"
+  tests_git_blob_sha="3a44d1da499852cbdf6206bbf5026a50a9610f2f"
+  tests_file_sha256="5911e49b195af6dac2e4e94f5509537555172ae9c6a4816dc06c147cd8c6d0ae"
+}
+
+.l{
+  clone="src/lin_bitcoin_nbits.lin"
+  transpiler_delta="src/lin_from_c.lin v2: U/L suffix strip, REJ_C_CXX, ceil(/floor( REJ_C_FLOAT; src/lin_from_solidity.lin v3: 10**N expand, leftover ** REJ_SOLIDITY_POW"
+  improvement_1="CBlockIndex* and Consensus::Params become explicit arguments (last_nbits, last_time, first_time, target_timespan, pow_limit_nbits, no_retarget)"
+  improvement_2="btc_compact_ok fail-closes overflow and negative compact instead of a flag callers may ignore (Core CheckProofOfWork overflow vector ~0x00800000)"
+  improvement_3="division by zero fail-closes to 0 (Core throws uint_error)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit (SKIP if libtcc missing)"
+  oracle="test/oracles/bitcoin_nbits_c11.c (gcc -O2 -std=c11, 8 x uint32 limbs)"
+  gate="test/verify_bitcoin_nbits.sh"
+}
+
+.p{
+  harness="test/prove_bitcoin_nbits_external.py"
+  evidence_json="examples/bitcoin_nbits/bitcoin_nbits_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-bitcoin-core-nbits"
+  goldens="pow_tests.cpp get_next_work 0x1d00d86a; pow_limit 0x1d00ffff; lower_limit 0x1c0168fd; upper_limit 0x1d00e1fd"
+}
+
+.n{
+  not_claimed_1="full Bitcoin node / P2P / wallet"
+  not_claimed_2="SHA256d CheckProofOfWork (hash compared to target)"
+  not_claimed_3="LIN is faster than Bitcoin Core or gcc"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Bitcoin"
+}
+
+.v{
+  method="PINNED_BYTES && C11_LIMBS_EQ_CORE_GOLDENS && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT"
+  on_fail="do not publish a PASS status"
+}
