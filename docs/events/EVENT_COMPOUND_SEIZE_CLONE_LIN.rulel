@@ -1,0 +1,66 @@
+@RULEL:COMPOUND_SEIZE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-COMPOUND-SEIZE-V1"
+@TITLE="Clone-lin of Compound liquidateCalculateSeizeTokens with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-compound-seize"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Compound liquidation seize-token math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for Exp mul_/div_/mul_ScalarTruncate; Solidity uint256 is NOT claimed"
+  commercial_hook="liquidateCalculateSeizeTokens sizes every Compound v2 liquidation; making oracle prices, exchangeRate and liquidationIncentive explicit and replacing wrapping i64 multiply with 128-bit muldiv is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/compound-finance/compound-protocol"
+  path="contracts/Comptroller.sol + contracts/ExponentialNoError.sol"
+  license="BSD-3-Clause"
+  commit="a3214f67b73310d547e00fc578e8355911c9d376"
+  git_blob_sha_comptroller="1d94cc756d1b52b84e4cc2ed3996cd9a7074a4ab"
+  git_blob_sha_exp="23f833760db898ebdc6b2fef9654cb9bc1dd21c3"
+  file_sha256_comptroller="89a4c77da4920d0d0e44d7591446fe15e6b0c8a4794646aa497f725dc72818d8"
+  file_sha256_exp="dd272760b2d9082db9c94f6198896402fe3681bf41fc3f9d8bba31ada290c3c5"
+  excerpt_sha256="bc0e31a964528088650047e17341bc9577ad91920a35c5e3cbd97b6a48ff568a"
+  fixture_exp="test/fixtures/external_proof/ExponentialNoError.sol"
+  fixture_excerpt="test/fixtures/external_proof/Comptroller_liquidateCalculateSeizeTokens.sol"
+}
+
+.l{
+  clone="src/lin_compound_seize.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-compound-seize"
+  transpiler_delta="src/lin_from_solidity.lin v3: emit OK_VIEW; REJ_SOLIDITY_ORACLE/CTOKEN/ADDRESS/STRUCT/POW/LIBRARY_CALL and totalSupply/totalAssets/totalBorrows/totalReserves as REJ_SOLIDITY_STATE; src/lin_sol_view_lift.lin v2 lifts no-arg calls; src/lin_from_c.lin v2 REJ_C_CXX + ceil(/floor( + U/L suffix strip"
+  improvement_1="oracle.getUnderlyingPrice, CToken.exchangeRateStored and liquidationIncentiveMantissa are function arguments, not hidden storage/oracle"
+  improvement_2="Exp mul_/div_/mul_ScalarTruncate uses 128-bit product; quotient that does not fit uint64 fail-closes to 0"
+  improvement_3="zero price matches Compound PRICE_ERROR path (seizeTokens=0) as fail-closed cls_price_ok=0"
+  improvement_4="canonical uint64-scale vector: repay=1000, incentive=1.08e18, prices=1e18, exchangeRate=0.2e18 -> 5400 collateral cTokens"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/compound_seize_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_compound_seize.sh"
+}
+
+.p{
+  harness="test/prove_compound_seize_external.py"
+  evidence_json="examples/compound_seize/compound_seize_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-compound-seize"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet cToken/oracle parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production liquidation replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Compound, Uniswap, or the EVM"
+}
+
+.v{
+  method="PINNED_BYTES && EXCERPT_SUBSTRING && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
