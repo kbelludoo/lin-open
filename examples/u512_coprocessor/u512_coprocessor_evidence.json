@@ -1,0 +1,97 @@
+{
+  "schema": "LIN_U512_COPROCESSOR_EVIDENCE_1.0",
+  "class": "EXPERIMENTAL",
+  "product": "numeric coprocessor with auditable receipt",
+  "domains": {
+    "leaf": "LIN:U512:LEAF:1",
+    "node": "LIN:U512:NODE:1"
+  },
+  "lnr1_bytes": 240,
+  "lnr1_merkle": "e624814d3478eb6efb9b6a40811663db428d2ee416b5917857cb1e45c6ab85a6",
+  "lcr2_merkle": "dd3aae1db17a7ad69ab8edb6a0d221a8525e4b66b7fdd89a6739f1f5b20b2ee2",
+  "pins": {
+    "lin_src": "2a66456eae1227cb9ec3571da3258313cd4a5c6c787c42d3877a67152e96bd4b",
+    "oracle_c": "8c766861c453f08d8aafb66d98dc35b78838a7d4d115bb21ce650af7d5f845e7",
+    "auditor_c": "a2934163e350086e9de367b53cf269cd3f315b9367e0c6e91d481a0bd32cb605",
+    "harness": "6719c0c357afb42dfd10c146067c69f71c9c25d7fbed5ba9b9e0aff3b663996d",
+    "fullmath_sol": "959c52e1c860bfbede3e33c8d04910c11038973173aa3478547cbad2e444880e",
+    "u256_linbc1": "44a5fdcd64f2cdee0b0c45becbf66d752a51f018f67b3d43f578b98bbe780606"
+  },
+  "measured": {
+    "self_gate_steps": 6710747,
+    "mul_7x9_steps": 9824,
+    "muldiv_7x9_div2_steps": 987074,
+    "two_255_x2_div3_steps": 1118732,
+    "phantom_coprocessor_steps": 1106942,
+    "phantom_u256_status": -2,
+    "c11_batch_n": 1060,
+    "lcr2": [
+      {
+        "class": "EXACT_INPUT",
+        "lin": 348299652,
+        "ref": 348299652,
+        "onchain": 348299652,
+        "status": 1,
+        "steps": 222679
+      },
+      {
+        "class": "EXACT_INPUT",
+        "lin": 127563538906205452,
+        "ref": 127563538906205452,
+        "onchain": 127563538906205452,
+        "status": 1,
+        "steps": 231320
+      },
+      {
+        "class": "EXACT_INPUT",
+        "lin": 144533220511380166,
+        "ref": 144533220511380166,
+        "onchain": 144533220511380166,
+        "status": 1,
+        "steps": 229580
+      },
+      {
+        "class": "OVERPAID_INPUT",
+        "lin": 145611106349087342,
+        "ref": 145611106349087342,
+        "onchain": 145610814998826432,
+        "status": 1,
+        "steps": 230456
+      },
+      {
+        "class": "OVERPAID_INPUT",
+        "lin": 224378752462025428,
+        "ref": 224378752462025428,
+        "onchain": 224378303493246816,
+        "status": 1,
+        "steps": 231383
+      },
+      {
+        "class": "OVERPAID_INPUT",
+        "lin": 2835803313309604,
+        "ref": 2835803313309604,
+        "onchain": 2835774955276470,
+        "status": 1,
+        "steps": 234404
+      }
+    ]
+  },
+  "leaves": [
+    {
+      "op": "MULDIV",
+      "a": "0x7",
+      "b": "0x9",
+      "d": "0x2",
+      "q": "0x1f",
+      "r": "0x1",
+      "status": 1,
+      "steps": 987074
+    }
+  ],
+  "not_claimed": [
+    "FullMath CRT/mulmod assembly",
+    "deployed pool",
+    "full 2000/157 campaign",
+    "that 512 proof closes u256 by itself"
+  ]
+}
