@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: emit OK_VIEW; REJ_SOLIDITY_ORACLE/CTOKEN/ADDRESS/STRUCT/POW/LIBRARY_CALL; totalSupply/totalAssets/totalBorrows/totalReserves as REJ_SOLIDITY_STATE. Storage lift remains src/lin_sol_view_lift.lin, not uint256 emit."
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,19 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(body, "oracle.") > 0) { ^"REJ_SOLIDITY_ORACLE" };
+  ?(rg_count_lit(body, "CToken(") > 0) { ^"REJ_SOLIDITY_CTOKEN" };
+  ?(rg_count_lit(sig, "address") > 0) { ^"REJ_SOLIDITY_ADDRESS" };
+  ?(rg_count_lit(body, "Exp({") > 0) { ^"REJ_SOLIDITY_STRUCT" };
+  ?(rg_count_lit(body, "Exp memory") > 0) { ^"REJ_SOLIDITY_STRUCT" };
+  ?(rg_count_lit(body, "**") > 0) { ^"REJ_SOLIDITY_POW" };
+  ?(rg_count_lit(body, "pow(") > 0) { ^"REJ_SOLIDITY_POW" };
+  ?(rg_count_lit(body, ".mul(") > 0) { ^"REJ_SOLIDITY_LIBRARY_CALL" };
+  ?(rg_count_lit(body, ".div(") > 0) { ^"REJ_SOLIDITY_LIBRARY_CALL" };
+  ?(rg_count_lit(body, "totalSupply") > 0) { ^"REJ_SOLIDITY_STATE" };
+  ?(rg_count_lit(body, "totalAssets") > 0) { ^"REJ_SOLIDITY_STATE" };
+  ?(rg_count_lit(body, "totalBorrows") > 0) { ^"REJ_SOLIDITY_STATE" };
+  ?(rg_count_lit(body, "totalReserves") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -53,7 +66,7 @@
 
 !sol_parse_test_gate(): int {
   sig_ok = "function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut)";
-  body_ok = "require(amountIn > 0); uint amountInWithFee = amountIn.mul(997); return amountInWithFee;";
+  body_ok = "require(amountIn > 0); uint amountInWithFee = amountIn * 997; return amountInWithFee;";
   sig_bad = "function mint() external payable returns (bool)";
   body_bad = "require(msg.value > 0); return true;";
   r1 = sol_reason(sig_ok, body_ok);
@@ -64,6 +77,14 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  r4 = sol_reason(sig_ok, "return amountIn.mul(997);");
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_LIBRARY_CALL") == 0) { ^0 };
+  r5 = sol_reason(sig_ok, "return x ** 2;");
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_POW") == 0) { ^0 };
+  r6 = sol_reason("function liquidateCalculateSeizeTokens(address a, address b, uint c) external view returns (uint, uint)", "uint p = oracle.getUnderlyingPrice(CToken(a)); return p;");
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_ORACLE") == 0) { ^0 };
+  r7 = sol_reason(sig_ok, "return totalSupply + totalBorrows;");
+  ?(starts_lit(r7, 0, "REJ_SOLIDITY_STATE") == 0) { ^0 };
   ^1;
 }
 
@@ -285,6 +306,7 @@
   sig = "";
   reason = "";
   names = "";
+  emit_ok = 0;
   while (i < n) {
     ?(starts_lit(pass, i, "function") == 1 && (i == 0 || is_ident(pass.charCodeAt(i - 1)) == false) && (i + 8 >= n || is_ident(pass.charCodeAt(i + 8)) == false)) {
       p = skip_ws(pass, i + 8);
@@ -303,7 +325,10 @@
                 bd = slice2(pass, b + 1, cb);
                 sig = slice2(pass, i, b);
                 reason = sol_reason(sig, bd);
-                ?(starts_lit(reason, 0, "OK") == 1 && reason.length == 2) {
+                emit_ok = 0;
+                ?(starts_lit(reason, 0, "OK") == 1 && reason.length == 2) { emit_ok = 1 };
+                ?(starts_lit(reason, 0, "OK_VIEW") == 1 && reason.length == 7) { emit_ok = 1 };
+                ?(emit_ok == 1) {
                   out = out + sol_fn(nm, pr, bd);
                   names = rgs_csv_add(names, nm);
                 };
@@ -334,6 +359,12 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  view_src = "function peek(uint x) public view returns (uint) { return x + 1; }";
+  view_out = sol_from_sol(view_src);
+  ?(rg_count_lit(view_out, "peek") == 0) { ^0 };
+  seize_src = "function liquidateCalculateSeizeTokens(address a, address b, uint c) external view returns (uint, uint) { uint p = oracle.getUnderlyingPrice(CToken(a)); return p; }";
+  seize_out = sol_from_sol(seize_src);
+  ?(rg_count_lit(seize_out, "liquidateCalculateSeizeTokens") > 0) { ^0 };
   ^1;
 }
 
