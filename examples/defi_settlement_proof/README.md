@@ -182,3 +182,31 @@ python3 tools/ingest_mainnet_unfiltered.py --blocks 200 --out test/pilot_harness
 python3 test/pilot_harness/test_honest_parity_and_sensitivity.py --json test/pilot_harness/mainnet_unfiltered.json
 ```
 Com GPU (ROCm/OpenCL): `u256_opencl_host /tmp/swaps.bin`. Cite throughput apenas comparando lotes de tamanhos distintos (ex.: 2k, 10k, 100k).
+
+---
+
+## 6. Coprocessor numérico u512 (recibo auditável) — EXPERIMENTAL
+
+LIN vende como **coprocessor numérico com recibo**, não como substituto de Uniswap.
+`src/lin_u512_coprocessor.lin` faz `mulDiv(a,b,d)=(a*b)/d` com intermediário de 512 bits
+(16-bit limbs). Prova-se neste checkout, sem Zig:
+
+```bash
+make u512-coprocessor-proof
+python3 examples/u512_coprocessor/verify_u512_receipt.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json --self-test
+```
+
+O que fecha: mul 256×256→512 com leftover-carry fail-closed; div 512/256 com remainder
+de 32 limbs e `q*d+r==n` (LIN + C11 16-bit + C11 64-bit `identity64`); ge em 512 bits;
+consenso Python `int` + C11 16-bit + C11 64-bit `__int128`; Merkle LNR1 (Python / Node /
+C11 `lin_sha256` / OpenSSL) rejeita tamper de 1 bit. Schema 1.2: o verificador zero-LIN
+**recomputa** as raízes LNR1 **e** LCR2 a partir das folhas publicadas (incluindo
+`GUARD_ZERO` `-1` e `GUARD_OVERFLOW` `-2`). Fatia LCR2: 3 `EXACT_INPUT` + 3
+`OVERPAID_INPUT` de `mainnet_unfiltered.json` com
+`settle_u256_word == coprocessor mulDiv(fee,rout,den) == ref_amount_out` e `steps != 0`.
+
+O que **não** fecha: FullMath CRT/mulmod; pool implantado; campanha 2000/157 completa.
+O phantom `ain=1,rin=1,rout=ceil(2^256/997)` mostra o coprocessor a **aprovar** e o
+settler u256 a devolver `-2` (largura SafeMath). 512 bits sai da lista de suspeitos;
+substituir o corpo do settler u256 continua obrigatório. Ver `docs/U512_COPROCESSOR.rulel`.
