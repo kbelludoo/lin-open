@@ -185,3 +185,6 @@ O LIN foi desenhado para ser enxuto, minimalista e imune a comportamento indefin
 | **Condicional** | `?(condicao) { ... } : { ... };` | `?(x > 0) { r = 1; } : { r = 0; };` |
 | **Variáveis Locais** | Atribuição direta sem tipo | `total = preco * qtd;` |
 | **Exportação de Funções** | `=ex{fn1, fn2}` | Última linha indicando as funções públicas |
+
+Clone-lin results (proofs only): [`compound_jumprate/`](./compound_jumprate/) · [`geth_eip7918/`](./geth_eip7918/) (Geth Osaka EIP-7918, experimental uint64-scale).
+

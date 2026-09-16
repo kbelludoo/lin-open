@@ -1,0 +1,62 @@
+@RULEL:GETH_EIP7918_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GETH-EIP7918-OSAKA"
+@TITLE="Clone-lin of Geth Osaka EIP-7918 excess-blob-gas with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-geth-eip7918"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Geth Osaka EIP-7918 blob reserve-price math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for reserve-price compare and (a*b)/d; Geth big.Int is NOT claimed"
+  commercial_hook="EIP-7918 is the Osaka blob-fee reserve price: BlobBaseCost * execution_base_fee vs blob_fee * GAS_PER_BLOB. Blob data availability pricing is a live Ethereum fee market. LIN makes Header/config pointers into explicit arguments and fail-closes uint64 overflow instead of wrapping."
+}
+
+.u{
+  repo="https://github.com/ethereum/go-ethereum"
+  path="consensus/misc/eip4844/eip4844.go"
+  license="LGPL-3.0"
+  commit="24dd23631661017452cfc7bcd07c114d3796cd65"
+  git_blob_sha="add85092c2ec0be391176b72c4431b5d1d9896b8"
+  file_sha256="c8b68e4f32cef33e9420648344edc8fa3bb5d5cb42de22fbf0b34bea5dbdf63c"
+  fixture="test/fixtures/external_proof/eip4844.go"
+}
+
+.l{
+  clone="src/lin_geth_eip7918.lin"
+  transpiler_delta="src/lin_from_c.lin v2: REJ_C_CXX_SCOPE for ::, REJ_C_REFERENCE for lone & (&& is not a reference); src/lin_from_go.lin v1: go_from_go emit + REJ_GO_POINTER/SELECTOR. Did not mutate gated transpile/c/"
+  improvement_1="calcExcessBlobGas in Geth takes *ChainConfig and *types.Header; LIN takes parent_excess, parent_used, base_fee, blob_fee, target, max"
+  improvement_2="reservePrice = BlobBaseCost * parent.BaseFee vs blobPrice uses 128-bit products"
+  improvement_3="fakeExponential intermediates that do not fit uint64 fail-closed to 0 (min blob fee is 1, so 0 is a reject sentinel)"
+  improvement_4="parent_excess + parent_used unsigned overflow fail-closes to 0 instead of wrapping"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/geth_eip7918_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_geth_eip7918.sh"
+}
+
+.p{
+  harness="test/prove_geth_eip7918_external.py"
+  evidence_json="examples/geth_eip7918/geth_eip7918_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-geth-eip7918"
+  goldens="Geth TestCalcExcessBlobGasEIP7918 BelowReservePrice=262144; TestCalcBlobFeePostOsaka BPO1=5617366 BPO3=20107103; TestFakeExponential 1,50000000,2225652=5709098764"
+}
+
+.n{
+  not_claimed_1="Geth big.Int / mainnet Osaka header parity for arbitrary excess"
+  not_claimed_2="LIN is faster than gc or the EVM"
+  not_claimed_3="this clone is a production blob-fee replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Geth, Ethereum, or proto-danksharding"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

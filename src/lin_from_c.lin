@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN changelog="v2: REJ_C_CXX_SCOPE for :: ; REJ_C_REFERENCE for lone & in signatures (&& is logical-and, not a C++ reference)"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -32,7 +32,23 @@
   ^0;
 }
 
+!cfs_count_ref(s: string): int {
+  n = s.length;
+  i = 0;
+  c = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) == 38) {
+      ?(i + 1 < n && s.charCodeAt(i + 1) == 38) { i = i + 2; continue };
+      c = c + 1;
+    };
+    i = i + 1;
+  };
+  ^c;
+}
+
 !cfs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "::") > 0 || rg_count_lit(body, "::") > 0){ ^"REJ_C_CXX_SCOPE" };
+  ?(cfs_count_ref(sig) > 0){ ^"REJ_C_REFERENCE" };
   ?(rg_count_lit(sig, "*") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(body, "->") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(sig, "struct") > 0 || rg_count_lit(body, "struct") > 0){ ^"REJ_C_STRUCT" };
@@ -41,6 +57,18 @@
   ?(rg_count_lit(sig, "double") > 0 || rg_count_lit(body, "double") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(body, "goto") > 0){ ^"REJ_C_GOTO" };
   ^"OK";
+}
+
+!cfs_reason_gate(): int {
+  r1 = cfs_reason("int f(int x, int y)", "return x && y;");
+  ?(r1.length != 2){ ^0 };
+  r2 = cfs_reason("int f(std::uint64_t x)", "return x;");
+  ?(starts_lit(r2, 0, "REJ_C_CXX_SCOPE") == 0){ ^0 };
+  r3 = cfs_reason("int f(int &x)", "return x;");
+  ?(starts_lit(r3, 0, "REJ_C_REFERENCE") == 0){ ^0 };
+  ?(cfs_count_ref("a && b") != 0){ ^0 };
+  ?(cfs_count_ref("int &x") != 1){ ^0 };
+  ^1;
 }
 
 !cfs_atom_left(s: string, at: int): int {
@@ -756,4 +784,4 @@
   ^out;
 }
 
-=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type}
+=ex{cfs_from_c, cfs_report, cfs_reason, cfs_count_ref, cfs_reason_gate, cfs_fn, cfs_strip_casts, cfs_all_type}
