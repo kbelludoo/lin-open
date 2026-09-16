@@ -1,0 +1,64 @@
+@RULEL:U512_COPROCESSOR:1.1.0
+@CHALLENGE_ID="LIN-U512-COPROCESSOR-2026-09-16"
+@TITLE="Prove 512-bit mulDiv as a numeric coprocessor with an auditable receipt, then wire getAmountOut"
+@STATUS="EXPERIMENTAL_FULLMATH_WIDTH"
+@DATE="2026-09-16"
+@CLASS="EXPERIMENTAL"
+
+~R{.s=spec .p=proved .n=not_proved .h=hashes .v=verdict}
+
+.s{
+  purpose="sell LIN as a numeric coprocessor: mulDiv(a,b,d)=(a*b)/d with a,b,d < 2^256 and a 512-bit product, plus a receipt an auditor can check without LIN"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced or isolated width | REAL_WORLD = as deployed on Ethereum mainnet"
+  algorithm="FullMath *width* (256x256->512 schoolbook + 512/256 restoring div). Not CRT, not mulmod assembly, not a deployed pool."
+  limbs="16-bit limbs in LIN; independent C11 64-bit __int128 schoolbook XOR 16-bit limb twin"
+  guards="-1 if d=0; -2 if quotient does not fit in uint256"
+  identity="q*d+r == a*b on every approved vector"
+  wiring="u512_get_amount_out_word = getAmountOut through the proved mulDiv"
+}
+
+.p{
+  mul="256x256->512 schoolbook with carry, including 2^255*2 = 2^256 (bit 256 set)"
+  ge="unsigned 512-bit cmp used by the division loop (32-limb remainder ge)"
+  div="512/256 restoring division, remainder identity, phantom 2^255*2/3 APPROVES"
+  oracles="Python int + C11 wide __int128 + C11 16-bit limbs + Compiler-0 lin_c0 vm"
+  receipt="LNR1 240-byte records, domains LIN:U512:LEAF:1 / LIN:U512:NODE:1"
+  auditor="python3 examples/u512_coprocessor/verify_u512_receipt.py (stdlib only, no LIN)"
+  wrap_lie="truncating a*b to 256 bits yields 0 for 2^255*2/3; the coprocessor does not"
+  amm_spot="coprocessor getAmountOut(1000,10000,20000)==1813"
+  amm_phantom="fee*reserve_out >= 2^256: coprocessor APPROVES vs Python; settle_u256_word still ^-2"
+  e2e_slice="1 EXACT_INPUT + 1 OVERPAID_INPUT: settle_u256_word == ref_amount_out; LCR2 records carry real VM steps"
+  harness="make u512-coprocessor-proof"
+}
+
+.n{
+  not_1="full 2000-swap / 157-swap settle_u256_word vs ref_amount_out campaign (slice is 1 EXACT + 1 OVERPAID)"
+  not_2="LCR2 campaign on those full corpora through a 512-bit settler"
+  not_3="Uniswap v2/v3 or FullMath.sol assembly replacement"
+  not_4="zk / computational soundness of merkle (tamper-evidence + independent recompute only)"
+  not_5="the existing u256 settler still ^-2 when fee*reserve_out >= 2^256; 512 proof takes the intermediate off the suspect list, not that e2e settler body"
+}
+
+.h{
+  engine="src/lin_u512_coprocessor.lin"
+  oracle="test/oracles/u512_coprocessor_c11.c"
+  evidence="examples/u512_coprocessor/u512_coprocessor_evidence.json"
+  fullmath_sha256="sha256:959c52e1c860bfbede3e33c8d04910c11038973173aa3478547cbad2e444880e"
+  linbc1_sha256="sha256:d364e3e504b1af49177a3eebb74ca77ca338a4f2e26cdd5272b8084f5d1dd7f9"
+  lnr1_merkle_sha256="sha256:02f5e4f990820e38e8250cb6ec322e3f2a9b0fb6fe191398b203e35e5ea948b7"
+  self_gate_steps=7304292
+  phantom_muldiv_steps=1112616
+  phantom_q0="0x5555555555555555"
+  phantom_r=1
+  amm_1813_steps=977670
+  phantom_amm_q="0x20d135b66ae990fc484cea55e38a936bcf497445394d4cc984add428823e4d"
+  phantom_amm_steps=5515357
+  e2e_exact_steps=1113359
+  e2e_overpaid_steps=1152244
+}
+
+.v{
+  method="PYTHON_BIGINT && C11_WIDE_EQ_LIMBS && LIN_C0_VM_SPOTS && REM_IDENTITY && AMM_WIRE && LNR1_MERKLE && TAMPER_REJECT"
+  on_fail="do not publish PASS"
+}

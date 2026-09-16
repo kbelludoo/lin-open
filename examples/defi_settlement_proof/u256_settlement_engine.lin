@@ -127,7 +127,8 @@
     i = i + 1;
   };
 
-  // Verificação de overflow: limbs 16..31 devem ser estritamente zero
+  // SafeMath-shaped: high 256 of fee*reserve_out must be zero (^ -2).
+  // FullMath-width 512/256 lives in src/lin_u512_coprocessor.lin.
   i = 16;
   while (i < 32) {
     ?(numerator[i] != 0) { ^-2; };

@@ -1,0 +1,333 @@
+{
+  "schema": "LIN_U512_COPROCESSOR_EVIDENCE_1.1",
+  "class": "EXPERIMENTAL",
+  "claim": "numeric coprocessor with auditable receipt (FullMath width + getAmountOut wiring)",
+  "not_claimed": [
+    "full 2000/157 settle_u256_word LCR2 campaign",
+    "Uniswap v2/v3 or FullMath.sol CRT/mulmod replacement",
+    "wiring 512-bit div into the existing settle_u256_word body"
+  ],
+  "fullmath_sha256": "959c52e1c860bfbede3e33c8d04910c11038973173aa3478547cbad2e444880e",
+  "linbc1_sha256": "d364e3e504b1af49177a3eebb74ca77ca338a4f2e26cdd5272b8084f5d1dd7f9",
+  "lnr1_merkle_sha256": "02f5e4f990820e38e8250cb6ec322e3f2a9b0fb6fe191398b203e35e5ea948b7",
+  "self_gate_steps": 7304292,
+  "claims": [
+    {
+      "id": "PIN-FULLMATH",
+      "status": "PASS",
+      "description": "pinned Uniswap v3 FullMath.sol (width spec, not CRT path)",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 schoolbook == 16-bit limbs + AMM 1813",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_u512_coprocessor.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-IMAGE",
+      "status": "PASS",
+      "description": "LINBC1 image emitted",
+      "note": "sha256:d364e3e504b1af49177a3eebb74ca77ca338a4f2e26cdd5272b8084f5d1dd7f9"
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "u512_self_gate == 1 (mul, 512-ge, rem identity, -1/-2, phantom, getAmountOut 1813)",
+      "note": "steps=7304292"
+    },
+    {
+      "id": "PY-C11",
+      "status": "PASS",
+      "description": "40/40 vectors: Python int == C11 (q,r,n,status)",
+      "note": ""
+    },
+    {
+      "id": "REM-ID",
+      "status": "PASS",
+      "description": "remainder identity q*d+r == a*b on every approved vector",
+      "note": ""
+    },
+    {
+      "id": "LIN-SPOT",
+      "status": "PASS",
+      "description": "LIN spots: rem, guards -1/-2, phantom q/r, MAX*MAX/MAX",
+      "note": "n=8"
+    },
+    {
+      "id": "LIN-MUL512",
+      "status": "PASS",
+      "description": "256x256->512 mul: 2^255*2 sets bit 256 (word4==1)",
+      "note": "steps=10364"
+    },
+    {
+      "id": "LIN-GE512",
+      "status": "PASS",
+      "description": "512-bit cmp/ge: 2^256>=2^256-1, not 1>=2",
+      "note": "steps=1227/2383"
+    },
+    {
+      "id": "WRAP-LIE",
+      "status": "PASS",
+      "description": "truncating a*b to 256 bits yields 0; 512-bit mulDiv yields 0x555..5 r=1",
+      "note": ""
+    },
+    {
+      "id": "LNR1-MERKLE",
+      "status": "PASS",
+      "description": "LNR1 240-byte receipts, domain-separated SHA-256 merkle",
+      "note": "root=sha256:02f5e4f990820e38e8250cb6ec322e3f2a9b0fb6fe191398b203e35e5ea948b7"
+    },
+    {
+      "id": "AMM-LIN",
+      "status": "PASS",
+      "description": "coprocessor getAmountOut(1000,10000,20000)==1813",
+      "note": "steps=977670"
+    },
+    {
+      "id": "AMM-PHANTOM-C11",
+      "status": "PASS",
+      "description": "C11 getAmountOut where fee*reserve_out >= 2^256 matches Python bigint",
+      "note": "q=0x20d135b66ae990fc484cea55e38a936bcf497445394d4cc984add428823e4d"
+    },
+    {
+      "id": "AMM-WIRE",
+      "status": "PASS",
+      "description": "512-bit getAmountOut APPROVES phantom fee*reserve_out >= 2^256 (full 256-bit q)",
+      "note": "status=1 q=0x20d135b66ae990fc484cea55e38a936bcf497445394d4cc984add428823e4d steps=5515357"
+    },
+    {
+      "id": "U256-GUARD-1",
+      "status": "PASS",
+      "description": "settle_u256_word amount_in=0 -> -1",
+      "note": "status=-1 steps=1570"
+    },
+    {
+      "id": "U256-STILL-2",
+      "status": "PASS",
+      "description": "settle_u256_word still ^-2 on phantom AMM (512 not wired into this settler)",
+      "note": "status=-2 steps=11417"
+    },
+    {
+      "id": "E2E-EXACT",
+      "status": "PASS",
+      "description": "settle_u256_word vs ref on 1 EXACT_INPUT row",
+      "note": "lin==ref steps=1113359 onchain=eq"
+    },
+    {
+      "id": "E2E-OVERP",
+      "status": "PASS",
+      "description": "settle_u256_word vs ref on 1 OVERPAID_INPUT row",
+      "note": "lin==ref steps=1152244 onchain=neq"
+    },
+    {
+      "id": "E2E-GAP",
+      "status": "PASS",
+      "description": "512-bit intermediate off the suspect list; full 2000/157 LCR2 campaign still required",
+      "note": "slice=2"
+    }
+  ],
+  "records": [
+    {
+      "id": 0,
+      "a": "0x3",
+      "b": "0x5",
+      "d": "0x1",
+      "q": "0xf",
+      "r": "0x0",
+      "n": "0xf",
+      "status": 1,
+      "steps": 7304292,
+      "raw_hex": "4c4e523101010000d364e3e504b1af49177a3eebb74ca77ca338a4f2e26cdd5272b8084f5d1dd7f900000000000000000300000000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000f000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000064746f000000000001000000000000000000000000000000"
+    },
+    {
+      "id": 1,
+      "a": "0x7",
+      "b": "0x9",
+      "d": "0x2",
+      "q": "0x1f",
+      "r": "0x1",
+      "n": "0x3f",
+      "status": 1,
+      "steps": 979947,
+      "raw_hex": "4c4e523101010000d364e3e504b1af49177a3eebb74ca77ca338a4f2e26cdd5272b8084f5d1dd7f901000000000000000700000000000000000000000000000000000000000000000000000000000000090000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000001f0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000ebf30e000000000001000000000000000000000000000000"
+    },
+    {
+      "id": 2,
+      "a": "0x64",
+      "b": "0xc8",
+      "d": "0x32",
+      "q": "0x190",
+      "r": "0x0",
+      "n": "0x4e20",
+      "status": 1,
+      "steps": 7304292,
+      "raw_hex": "4c4e523101010000d364e3e504b1af49177a3eebb74ca77ca338a4f2e26cdd5272b8084f5d1dd7f902000000000000006400000000000000000000000000000000000000000000000000000000000000c800000000000000000000000000000000000000000000000000000000000000320000000000000000000000000000000000000000000000000000000000000090010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000064746f000000000001000000000000000000000000000000"
+    },
+    {
+      "id": 3,
+      "a": "0x1",
+      "b": "0x1",
+      "d": "0x0",
+      "q": "0x0",
+      "r": "0x0",
+      "n": "0x1",
+      "status": -1,
+      "steps": 10930,
+      "raw_hex": "4c4e523101010000d364e3e504b1af49177a3eebb74ca77ca338a4f2e26cdd5272b8084f5d1dd7f9030000000000000001000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffb22a00000000000000000000000000000000000000000000"
+    },
+    {
+      "id": 4,
+      "a": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "b": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "d": "0x1",
+      "q": "0x0",
+      "r": "0x0",
+      "n": "0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0000000000000000000000000000000000000000000000000000000000000001",
+      "status": -2,
+      "steps": 13255,
+      "raw_hex": "4c4e523101010000d364e3e504b1af49177a3eebb74ca77ca338a4f2e26cdd5272b8084f5d1dd7f90400000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000feffffffffffffffc73300000000000000000000000000000000000000000000"
+    },
+    {
+      "id": 5,
+      "a": "0x8000000000000000000000000000000000000000000000000000000000000000",
+      "b": "0x2",
+      "d": "0x3",
+      "q": "0x5555555555555555555555555555555555555555555555555555555555555555",
+      "r": "0x1",
+      "n": "0x10000000000000000000000000000000000000000000000000000000000000000",
+      "status": 1,
+      "steps": 1112616,
+      "raw_hex": "4c4e523101010000d364e3e504b1af49177a3eebb74ca77ca338a4f2e26cdd5272b8084f5d1dd7f9050000000000000000000000000000000000000000000000000000000000000000000000000000800200000000000000000000000000000000000000000000000000000000000000030000000000000000000000000000000000000000000000000000000000000055555555555555555555555555555555555555555555555555555555555555550100000000000000000000000000000000000000000000000000000000000000010000000000000028fa10000000000001000000000000000000000000000000"
+    },
+    {
+      "id": 6,
+      "a": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "b": "0x1",
+      "d": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "q": "0x1",
+      "r": "0x0",
+      "n": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "status": 1,
+      "steps": 7304292,
+      "raw_hex": "4c4e523101010000d364e3e504b1af49177a3eebb74ca77ca338a4f2e26cdd5272b8084f5d1dd7f90600000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0100000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000064746f000000000001000000000000000000000000000000"
+    },
+    {
+      "id": 7,
+      "a": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "b": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "d": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "q": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "r": "0x0",
+      "n": "0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0000000000000000000000000000000000000000000000000000000000000001",
+      "status": 1,
+      "steps": 1176507,
+      "raw_hex": "4c4e523101010000d364e3e504b1af49177a3eebb74ca77ca338a4f2e26cdd5272b8084f5d1dd7f90700000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000000000000000000000000000000000000000000000000000000000000100000000000000bbf311000000000001000000000000000000000000000000"
+    }
+  ],
+  "lin_spots": [
+    {
+      "a": 7,
+      "b": 9,
+      "d": 2,
+      "idx": 0,
+      "value": 31,
+      "steps": 979947
+    },
+    {
+      "a": 7,
+      "b": 9,
+      "d": 2,
+      "idx": 4,
+      "value": 1,
+      "steps": 979949
+    },
+    {
+      "a": 1,
+      "b": 1,
+      "d": 0,
+      "idx": -1,
+      "value": -1,
+      "steps": 10930
+    },
+    {
+      "a": 115792089237316195423570985008687907853269984665640564039457584007913129639935,
+      "b": 115792089237316195423570985008687907853269984665640564039457584007913129639935,
+      "d": 1,
+      "idx": -1,
+      "value": -2,
+      "steps": 13255
+    },
+    {
+      "a": 57896044618658097711785492504343953926634992332820282019728792003956564819968,
+      "b": 2,
+      "d": 3,
+      "idx": -1,
+      "value": 1,
+      "steps": 1112616
+    },
+    {
+      "a": 57896044618658097711785492504343953926634992332820282019728792003956564819968,
+      "b": 2,
+      "d": 3,
+      "idx": 0,
+      "value": 6148914691236517205,
+      "steps": 1112664
+    },
+    {
+      "a": 57896044618658097711785492504343953926634992332820282019728792003956564819968,
+      "b": 2,
+      "d": 3,
+      "idx": 4,
+      "value": 1,
+      "steps": 1112666
+    },
+    {
+      "a": 115792089237316195423570985008687907853269984665640564039457584007913129639935,
+      "b": 115792089237316195423570985008687907853269984665640564039457584007913129639935,
+      "d": 115792089237316195423570985008687907853269984665640564039457584007913129639935,
+      "idx": 0,
+      "value": -1,
+      "steps": 1176507
+    }
+  ],
+  "lcr2_slice": [
+    {
+      "class": "EXACT_INPUT",
+      "steps": 1113359,
+      "lin_out": 348299652,
+      "ref": 348299652,
+      "onchain": 348299652,
+      "raw_hex": "4c4352320101000044a5fdcd64f2cdee0b0c45becbf66d752a51f018f67b3d43f578b98bbe7806060100000000000000000000000000000000000000000000000000000000000000000000000000000001efe9b29871d7b300000000000000000000000000000000000000000000009e28bd1e3898b1df71000000000000000000000000000000000000000000000000000006a426b907040000000000000000000000000000000000000000000000000000000014c2a1840ffd10000000000001000000000000000000000000000000"
+    },
+    {
+      "class": "OVERPAID_INPUT",
+      "steps": 1152244,
+      "lin_out": 145611106349087342,
+      "ref": 145611106349087342,
+      "onchain": 145610814998826432,
+      "raw_hex": "4c4352320101000044a5fdcd64f2cdee0b0c45becbf66d752a51f018f67b3d43f578b98bbe7806060100000000000000010000000000000000000000000000000000000000000000000000000000000324ae57940e2c6000000000000000000000000000000000000000000000003c7a0d5766b0878d4841000000000000000000000000000000000000000000000027011869d2595f4cc4000000000000000000000000000000000000000000000000020550879d49fa6ef49411000000000001000000000000000000000000000000"
+    }
+  ],
+  "domains": {
+    "leaf": "LIN:U512:LEAF:1",
+    "node": "LIN:U512:NODE:1",
+    "lcr2_leaf": "LIN:LEAF:1",
+    "lcr2_node": "LIN:NODE:1"
+  },
+  "record_bytes": 240,
+  "phantom_amm": {
+    "amount_in": 1,
+    "reserve_in": 1,
+    "reserve_out": "0x41bbb2f80a4553f6c19ad51e8e40314cc63a07b3fef911341fd6eab024f995",
+    "ref": "0x20d135b66ae990fc484cea55e38a936bcf497445394d4cc984add428823e4d",
+    "coprocessor_status": 1,
+    "u256_status": -2
+  }
+}
