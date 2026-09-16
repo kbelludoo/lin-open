@@ -305,10 +305,14 @@ else
 	@python3 test/prove_all_claims_external.py --iterations 10000
 endif
 
-.PHONY: compound-jumprate-proof independent-reproof
+.PHONY: compound-jumprate-proof independent-reproof rust-bitcoin-amountdiv-proof
 compound-jumprate-proof: c0
 	@chmod +x test/verify_compound_jumprate.sh test/prove_compound_jumprate_external.py
 	@test/verify_compound_jumprate.sh
+
+rust-bitcoin-amountdiv-proof: c0
+	@chmod +x test/verify_rust_bitcoin_amountdiv.sh test/prove_rust_bitcoin_amountdiv_external.py
+	@test/verify_rust_bitcoin_amountdiv.sh
 
 independent-reproof: c0
 	@chmod +x test/prove_melhorias_independent.py

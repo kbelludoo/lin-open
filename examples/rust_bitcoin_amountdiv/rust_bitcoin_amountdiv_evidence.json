@@ -1,0 +1,138 @@
+{
+  "schema": "LIN_RUST_BITCOIN_AMOUNTDIV_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned unsigned.rs sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned rust-bitcoin commit matches fixture",
+      "note": "commit=1cbf4bd62ea99c558c6d8ef794edbd984a2a4684 blob=0cfb8343787c893fe36aea38fc3b4c066ac2bedd"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of units/src/amount/unsigned.rs",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-FNS",
+      "status": "PASS",
+      "description": "pinned source contains checked_div, checked_rem, div_by_weight_floor",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_rust_bitcoin_amountdiv.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-EMIT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 skips && as borrow and emits LIN",
+      "note": ""
+    },
+    {
+      "id": "C-REJ-V2",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 rejects :: and lone & in signatures",
+      "note": ""
+    },
+    {
+      "id": "AMP-SKIP",
+      "status": "PASS",
+      "description": "both transpilers skip ASCII 38,38 (&&) as not-a-borrow",
+      "note": ""
+    },
+    {
+      "id": "SCALAR-RS",
+      "status": "PASS",
+      "description": "scalar rust fixture has || (and no lone &) for v2 borrow skip",
+      "note": ""
+    },
+    {
+      "id": "SCALAR-C",
+      "status": "PASS",
+      "description": "scalar C fixture present (no pointers)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "rad_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "AMP-KIND",
+      "status": "PASS",
+      "description": "Compiler 0 vm: '&'+'&' is and, lone '&' is borrow (ASCII 38)",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "13/13 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "13/13 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "REM-ID",
+      "status": "PASS",
+      "description": "checked_div/checked_rem identity sat = q*rhs + r (rhs>0)",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive i64 of MAX_MONEY*4e6 wraps; 128-bit weight floor fail-closes",
+      "note": "i64_wrap=6731446462154014720 lin_wfloor=-1"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/rust-bitcoin/rust-bitcoin",
+    "commit": "1cbf4bd62ea99c558c6d8ef794edbd984a2a4684",
+    "path": "units/src/amount/unsigned.rs",
+    "git_blob_sha": "0cfb8343787c893fe36aea38fc3b4c066ac2bedd",
+    "file_sha256": "056757adc8f3ed6bc09dadf368fd027d04fcd7a721fb502fed23c8225cd790ef",
+    "license": "CC0-1.0"
+  },
+  "lin_clone": "src/lin_rust_bitcoin_amountdiv.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-rust-bitcoin-amountdiv",
+  "c11_oracle": "test/oracles/rust_bitcoin_amountdiv_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL"
+}
