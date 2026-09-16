@@ -11,6 +11,9 @@ independent proof harness. They are **test fixtures**, not vendored libraries.
 | `qoi.h` | [phoboslab/qoi](https://github.com/phoboslab/qoi) | MIT |
 | `tinyexpr.c` | [codeplea/tinyexpr](https://github.com/codeplea/tinyexpr) | zlib |
 | `BaseJumpRateModelV2.sol` | [compound-finance/compound-protocol](https://github.com/compound-finance/compound-protocol) | BSD-3-Clause |
+| `bitcoin_v27_1_rbf.cpp` (+ rbf.h, policy.h, feerate.cpp, amount.h) | [bitcoin/bitcoin](https://github.com/bitcoin/bitcoin) v27.1 | MIT |
+| `btcd_v0_24_2_policy.go` | [btcsuite/btcd](https://github.com/btcsuite/btcd) v0.24.2 | ISC |
+| `bitcoin_rbf_integer.c` | original LIN extract (not upstream) | MIT-compatible |
 
 They are only pinned so an auditor can hash the exact bytes and, with `--fetch`,
 re-download them from the GitHub Contents API. No upstream code is compiled or

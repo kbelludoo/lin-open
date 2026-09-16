@@ -1,0 +1,75 @@
+@RULEL:BITCOIN_CORE_RBF_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-BITCOIN-CORE-PAYS-FOR-RBF-V27-1"
+@TITLE="Clone-lin of Bitcoin Core v27.1 PaysForRBF with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_POLICY"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-bitcoin-core-rbf"
+
+~R{.s=spec .u=upstream .x=cross .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Bitcoin Core BIP-125 incremental-relay fee into deterministic LIN, compile in memory with C11 compiler 0, publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on i64 operands | REAL_WORLD = as deployed in bitcoind mempool"
+  operand_width="i64 CAmount / vsize; integer-ceil GetFee; fail-closed negatives and mul overflow"
+  commercial_hook="every RBF bump on Bitcoin must pay DEFAULT_INCREMENTAL_RELAY_FEE bandwidth; a 1-satoshi underpay on a 141 vB replacement is a rejected bump, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/bitcoin/bitcoin"
+  tag="v27.1"
+  commit="1088a98f5aad080cc6cca2da174f206509fcda6c"
+  license="MIT"
+  paths="src/policy/rbf.cpp PaysForRBF; src/policy/rbf.h; src/policy/policy.h DEFAULT_INCREMENTAL_RELAY_FEE; src/policy/feerate.cpp GetFee; src/consensus/amount.h"
+  rbf_cpp_sha256="21bceebf13658ade1aa3700d1dc88294890b4448f83d83fe18722c5e710544bf"
+  rbf_cpp_blob="f0830d8f2297c231a729a4898a887202a421fbdc"
+  fixture="test/fixtures/external_proof/bitcoin_v27_1_rbf.cpp"
+}
+
+.x{
+  repo="https://github.com/btcsuite/btcd"
+  tag="v0.24.2"
+  commit="cc26860b40265e1332cca8748c5dbaf3c81cc094"
+  license="ISC"
+  path="mempool/policy.go calcMinRequiredTxRelayFee"
+  sha256="1f9ee1ef2b958aaaf91a2c3fb2056b01a2f82f5133d2ef99ed313d9669d7d66a"
+  blob="862767d0c899922eaf90baa074cd801e198f7cd2"
+  delta="btcd truncates then substitutes the full rate on a zero quotient; Core/LIN integer-ceil to 1 satoshi"
+}
+
+.l{
+  clone="src/lin_bitcoin_core_rbf.lin"
+  integer_c="test/fixtures/external_proof/bitcoin_rbf_integer.c"
+  transpiler_delta="src/lin_from_c.lin v2: CAmount type; & in signature is REJ_C_POINTER; ceil/floor/round/trunc/.0 REJ_C_FLOAT; ::/optional/static_cast REJ_C_CXX; strip U/L suffixes; emit if/else"
+  improvement_1="Core PaysForRBF is C++ std::optional + CFeeRate + uint256&; LIN takes four integers and returns 1/0/-1"
+  improvement_2="Core GetFee uses std::ceil(double); LIN uses integer ceil and fail-closes negatives"
+  improvement_3="v1 cfs_reason would ACCEPT comment-stripped PaysForRBF; v2 rejects & and ::"
+  improvement_4="btcd 2B @ 3 sat/kvB requires 3 sat; Core/LIN require 1 sat — explicit policy gap, not a fork claim"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/bitcoin_core_rbf_c11.c (gcc -O2 -std=c11 -lm)"
+  gate="test/verify_bitcoin_core_rbf.sh"
+}
+
+.p{
+  harness="test/prove_bitcoin_core_rbf_external.py"
+  evidence_json="examples/bitcoin_core_rbf/bitcoin_core_rbf_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-bitcoin-core-rbf"
+  canonical="orig=2000 repl=2140 vsize=141 rate=1000 -> REJECT; repl=2141 -> ACCEPT"
+}
+
+.n{
+  not_claimed_1="LIN replaces bitcoind, btcd, or any wallet"
+  not_claimed_2="consensus bug (PaysForRBF is mempool policy)"
+  not_claimed_3="IEEE vs integer disagreement on wallet-scale rates"
+  not_claimed_4="dollar/TVL savings or superiority vs gcc/LLVM"
+  not_claimed_5="C0 integer VM executes string transpilers (VM_REJ_STRING_LITERAL)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_IEEE_EQ_INT_WALLET_SCALE && LIN_C0_VM_EQ_C11_EQ_PYTHON && OPTIONAL_JIT_CONSENSUS && V2_REJECTS_CORE_CXX"
+  on_fail="do not publish a PASS status"
+}

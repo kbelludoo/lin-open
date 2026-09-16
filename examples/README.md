@@ -172,8 +172,12 @@ python3 examples/run_demos.py --interactive
 
 ---
 
+### 8. Bitcoin Core PaysForRBF / incremental relay ([`bitcoin_core_rbf/`](./bitcoin_core_rbf/))
+* **O que faz:** Clone experimental das regras BIP-125 #3 e #4 (`PaysForRBF`) em LIN, com teto de 1 sat/vB (`DEFAULT_INCREMENTAL_RELAY_FEE=1000`).
+* **Prova:** `make bitcoin-core-rbf-proof` — Python + C11 + `lin_c0` vm. Clone-lin: https://github.com/kbelludoo/clone-lin-bitcoin-core-rbf
+* **Não reivindicado:** substituição do bitcoind; bug de consenso; economia em dólares.
 
-## Como Escrever Código LIN (Sintaxe em 3 Minutos)
+---
 
 O LIN foi desenhado para ser enxuto, minimalista e imune a comportamento indefinido:
 
