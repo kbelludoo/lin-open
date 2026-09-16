@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN changelog="v2: fail-closed C++ (::, template, class, reference-in-sig) so Bitcoin Core C++ kernels are rejected rather than silently mangled"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -35,12 +35,28 @@
 !cfs_reason(sig: string, body: string): string {
   ?(rg_count_lit(sig, "*") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(body, "->") > 0){ ^"REJ_C_POINTER" };
+  ?(rg_count_lit(sig, "::") > 0 || rg_count_lit(body, "::") > 0){ ^"REJ_C_CXX_SCOPE" };
+  ?(rg_count_lit(sig, "template") > 0 || rg_count_lit(body, "template") > 0){ ^"REJ_C_TEMPLATE" };
+  ?(rg_count_lit(sig, "class") > 0 || rg_count_lit(body, "class") > 0){ ^"REJ_C_CLASS" };
+  ?(rg_count_lit(sig, "&") > 0){ ^"REJ_C_REFERENCE" };
   ?(rg_count_lit(sig, "struct") > 0 || rg_count_lit(body, "struct") > 0){ ^"REJ_C_STRUCT" };
   ?(rg_count_lit(sig, "union") > 0 || rg_count_lit(body, "union") > 0){ ^"REJ_C_UNION" };
   ?(rg_count_lit(sig, "float") > 0 || rg_count_lit(body, "float") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(sig, "double") > 0 || rg_count_lit(body, "double") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(body, "goto") > 0){ ^"REJ_C_GOTO" };
   ^"OK";
+}
+
+!cfs_cxx_reject_gate(): int {
+  sig = "arith_uint256 GetBlockProof(const CBlockIndex& block)";
+  body = "bnTarget.SetCompact(block.nBits, &fNegative, &fOverflow); return (~bnTarget / (bnTarget + 1)) + 1;";
+  r = cfs_reason(sig, body);
+  ?(starts_lit(r, 0, "REJ_C_REFERENCE") == 0) { ^0 };
+  sig2 = "unsigned int CalculateNextWorkRequired(const Consensus::Params& params)";
+  body2 = "return params.nPowTargetTimespan;";
+  r2 = cfs_reason(sig2, body2);
+  ?(starts_lit(r2, 0, "REJ_C_CXX_SCOPE") == 0) { ^0 };
+  ^1;
 }
 
 !cfs_atom_left(s: string, at: int): int {
@@ -756,4 +772,4 @@
   ^out;
 }
 
-=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type}
+=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type, cfs_cxx_reject_gate}

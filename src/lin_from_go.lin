@@ -1,0 +1,115 @@
+@LIN:L1c:0.2
+@LIN_FROM_GO{
+  version=1
+  purpose="extract_pure_scalar_go_functions_to_lin"
+  profile="LINVM-1"
+  status="EXPERIMENTAL_V1"
+  changelog="v1: fail-closed Go subset. Geth CalcGasLimit uses params.X selectors, method receivers, and error returns — those are rejected rather than silently mangled. Eligible funcs are scalar uint/int with no package selector."
+}
+
+!go_is_kw(nm: string): int {
+  ?(starts_lit(nm, 0, "func") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "return") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2) { ^1 };
+  ?(starts_lit(nm, 0, "else") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "for") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "range") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "go") == 1 && nm.length == 2) { ^1 };
+  ?(starts_lit(nm, 0, "defer") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "select") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "chan") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "map") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "package") == 1 && nm.length == 7) { ^1 };
+  ?(starts_lit(nm, 0, "import") == 1 && nm.length == 6) { ^1 };
+  ^0;
+}
+
+!go_is_type(nm: string): int {
+  ?(starts_lit(nm, 0, "uint64") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "uint32") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "uint16") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "uint8") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "uint") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "int64") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "int32") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "int16") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "int8") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "int") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "bool") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "byte") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "uintptr") == 1 && nm.length == 7) { ^1 };
+  ^0;
+}
+
+!go_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "*") > 0) { ^"REJ_GO_POINTER" };
+  ?(rg_count_lit(body, "*") > 0) { ^"REJ_GO_POINTER" };
+  ?(rg_count_lit(sig, "chan") > 0 || rg_count_lit(body, "chan") > 0) { ^"REJ_GO_CHAN" };
+  ?(rg_count_lit(body, "go ") > 0) { ^"REJ_GO_GOROUTINE" };
+  ?(rg_count_lit(body, "defer ") > 0) { ^"REJ_GO_DEFER" };
+  ?(rg_count_lit(body, "select") > 0) { ^"REJ_GO_SELECT" };
+  ?(rg_count_lit(sig, "map[") > 0 || rg_count_lit(body, "map[") > 0) { ^"REJ_GO_MAP" };
+  ?(rg_count_lit(sig, "interface") > 0 || rg_count_lit(body, "interface") > 0) { ^"REJ_GO_INTERFACE" };
+  ?(rg_count_lit(body, "make(") > 0) { ^"REJ_GO_MAKE" };
+  ?(rg_count_lit(body, "range ") > 0) { ^"REJ_GO_RANGE" };
+  ?(rg_count_lit(sig, "float64") > 0 || rg_count_lit(body, "float64") > 0) { ^"REJ_GO_FLOAT" };
+  ?(rg_count_lit(sig, "float32") > 0 || rg_count_lit(body, "float32") > 0) { ^"REJ_GO_FLOAT" };
+  ?(rg_count_lit(sig, "error") > 0 || rg_count_lit(body, "error") > 0) { ^"REJ_GO_ERROR" };
+  ?(rg_count_lit(body, "fmt.") > 0) { ^"REJ_GO_FMT" };
+  ?(rg_count_lit(sig, "&") > 0 || rg_count_lit(body, "&") > 0) { ^"REJ_GO_ADDRESS" };
+  ?(rg_count_lit(body, ".") > 0) { ^"REJ_GO_SELECTOR" };
+  ?(rg_count_lit(sig, ".") > 0) { ^"REJ_GO_SELECTOR" };
+  ^"OK";
+}
+
+!go_parse_test_gate(): int {
+  sig_ok = "func add(a uint64, b uint64) uint64";
+  body_ok = "return a + b";
+  r1 = go_reason(sig_ok, body_ok);
+  ?(r1.length != 2) { ^0 };
+  sig_cgl = "func CalcGasLimit(parentGasLimit, desiredLimit uint64) uint64";
+  body_cgl = "delta := parentGasLimit/params.GasLimitBoundDivisor - 1";
+  r2 = go_reason(sig_cgl, body_cgl);
+  ?(starts_lit(r2, 0, "REJ_GO_SELECTOR") == 0) { ^0 };
+  sig_ver = "func VerifyGaslimit(parentGasLimit, headerGasLimit uint64) error";
+  body_ver = "diff := int64(parentGasLimit) - int64(headerGasLimit); return fmt.Errorf(\"invalid\")";
+  r3 = go_reason(sig_ver, body_ver);
+  ?(starts_lit(r3, 0, "REJ_") == 0) { ^0 };
+  sig_m = "func (v *BlockValidator) ValidateBody(block *types.Block) error";
+  body_m = "return ErrKnownBlock";
+  r4 = go_reason(sig_m, body_m);
+  ?(starts_lit(r4, 0, "REJ_") == 0) { ^0 };
+  ^1;
+}
+
+!go_rej_code(star: int, chan_n: int, goroutine: int, selector: int, errn: int): int {
+  ?(star > 0) { ^ 1; };
+  ?(chan_n > 0) { ^ 2; };
+  ?(goroutine > 0) { ^ 3; };
+  ?(selector > 0) { ^ 4; };
+  ?(errn > 0) { ^ 5; };
+  ^ 0;
+}
+
+!go_rej_geth_calc(): int {
+  ^ go_rej_code(0, 0, 0, 1, 0);
+}
+
+!go_rej_geth_verify(): int {
+  ^ go_rej_code(0, 0, 0, 1, 1);
+}
+
+!go_rej_ok_add(): int {
+  ^ go_rej_code(0, 0, 0, 0, 0);
+}
+
+=ex{
+  go_is_kw,
+  go_is_type,
+  go_reason,
+  go_parse_test_gate,
+  go_rej_code,
+  go_rej_geth_calc,
+  go_rej_geth_verify,
+  go_rej_ok_add
+}

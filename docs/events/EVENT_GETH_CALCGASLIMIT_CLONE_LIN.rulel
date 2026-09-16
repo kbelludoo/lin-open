@@ -1,0 +1,73 @@
+@RULEL:GETH_CALCGASLIMIT_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GETH-CALCGASLIMIT-V1-14-12"
+@TITLE="Clone-lin of go-ethereum v1.14.12 CalcGasLimit / VerifyGaslimit with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_NONNEG"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-geth-gaslimit"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Geth block gas-limit adjust+verify into deterministic LIN, compile in memory with C11 compiler 0, publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="LIN i64 non-negative; Geth MaxGasLimit is 2^63-1 so the production cap fits. uint64 values above 2^63-1 are not representable in LinVM."
+  commercial_hook="every Ethereum execution-layer block gas limit is produced by CalcGasLimit and checked by VerifyGaslimit; making params explicit and fail-closing the uint64 (parent/1024)-1 wrap is an audit improvement, not a TVL or node-replacement claim"
+}
+
+.u{
+  repo="https://github.com/ethereum/go-ethereum"
+  tag="v1.14.12"
+  commit="293a300d64be3d9a1c2cc92c26fcff4089deadcd"
+  license="LGPL-3.0"
+  calc_path="core/block_validator.go CalcGasLimit"
+  calc_git_blob_sha="59783a040730e0be0e273bb24ec3ea4d59fcaef3"
+  calc_file_sha256="d191d2a0f8b5f32cfc8f3c57f71a9859b3bba43572d187c85e450fc63ce0f8bd"
+  verify_path="consensus/misc/gaslimit.go VerifyGaslimit"
+  verify_git_blob_sha="dfcabd9a802c4341dbc25ba96d76b4ccc6e550b5"
+  verify_file_sha256="27c36df89ad62c42ed0f3aca81c976363a1397f940c009bf12363f55368f6666"
+  params_path="params/protocol_params.go GasLimitBoundDivisor=1024 MinGasLimit=5000 MaxGasLimit=2^63-1"
+  params_git_blob_sha="90e7487cff16f0f482a93adac2c652b546aba97f"
+  params_file_sha256="2019832fdff9831970c4fb1b89603b6de8521d561f04bdf9d074dfa5e837b0b5"
+  tests_path="core/block_validator_test.go TestCalcGasLimit"
+  tests_git_blob_sha="8af4057693e97a9a0248fbf1c77a2d628a170bd7"
+  tests_file_sha256="83bedcdda2f6e878081e1786fcf8d2d4ee627c68ab16de07c2180cb37bc08fdf"
+  fixture_calc="test/fixtures/external_proof/geth_v1_14_12_CalcGasLimit.go"
+  fixture_verify="test/fixtures/external_proof/geth_v1_14_12_VerifyGaslimit.go"
+  goldens="parent=20000000 -> max 20019530 min 19980470; parent=40000000 -> max 40039061 min 39960939"
+}
+
+.l{
+  clone="src/lin_geth_gaslimit.lin"
+  transpiler_delta="src/lin_from_go.lin v1: REJ_GO_SELECTOR / REJ_GO_ERROR / REJ_GO_POINTER / go_rej_code; src/lin_from_c.lin v2 C++ fail-closed (REJ_C_CXX_SCOPE/REFERENCE)"
+  improvement_1="Geth reads params.GasLimitBoundDivisor and params.MinGasLimit from a package; LIN takes divisor/min as arguments"
+  improvement_2="Geth delta = parent/divisor - 1 wraps uint64 when parent < divisor; LIN gl_calc_ok=0 and returns 0"
+  improvement_3="VerifyGaslimit casts uint64 to int64 then subtracts; LIN uses non-negative abs-diff and rejects negatives"
+  improvement_4="VerifyGaslimit returns fmt.Errorf strings; LIN returns 0/1 (fail-closed boolean)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/geth_gaslimit_c11.c (gcc -O2 -std=c11; geth wrap XOR LIN fail-closed)"
+  gate="test/verify_geth_gaslimit.sh"
+}
+
+.p{
+  harness="test/prove_geth_gaslimit_external.py"
+  evidence_json="examples/geth_gaslimit/geth_gaslimit_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-geth-gaslimit"
+}
+
+.n{
+  not_claimed_1="LIN is a Geth node or replaces Ethereum consensus / block production"
+  not_claimed_2="uint64 values above Geth MaxGasLimit 2^63-1 (LinVM is i64)"
+  not_claimed_3="LIN is faster than go-ethereum or gc"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="lin_c0 executes go_from_go / cfs_from_c string modules (VM_REJ_STRING_LITERAL still fail-closes those)"
+}
+
+.v{
+  method="PINNED_BYTES && GETH_TESTCALCGASLIMIT_GOLDENS && C11_EQ_PYTHON_EQ_LIN_C0 && DELTA_UNDERFLOW_FAIL_CLOSED && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

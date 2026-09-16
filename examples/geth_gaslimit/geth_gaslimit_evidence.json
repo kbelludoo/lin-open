@@ -1,0 +1,169 @@
+{
+  "schema": "LIN_GETH_CALCGASLIMIT_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-FILE",
+      "status": "PASS",
+      "description": "pinned CalcGasLimit excerpt contains the Geth kernel",
+      "note": ""
+    },
+    {
+      "id": "PIN-VERIFY",
+      "status": "PASS",
+      "description": "pinned VerifyGaslimit excerpt contains the int64-cast check",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of geth v1.14.12 matches pinned CalcGasLimit/Verify/params/tests",
+      "note": "commit=293a300d64be3d9a1c2cc92c26fcff4089deadcd blob=59783a040730e0be0e273bb24ec3ea4d59fcaef3"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of core/block_validator.go",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-FORMULA",
+      "status": "PASS",
+      "description": "live block_validator.go contains parent/divisor - 1",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-GOLDEN",
+      "status": "PASS",
+      "description": "live TestCalcGasLimit contains 20M/40M goldens",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-CONST",
+      "status": "PASS",
+      "description": "params.GasLimitBoundDivisor=1024 MinGasLimit=5000",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 oracle matches Geth-published TestCalcGasLimit goldens",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_geth_gaslimit.lin",
+      "note": ""
+    },
+    {
+      "id": "GO-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Go transpiler v1 (selector/error fail-closed)",
+      "note": ""
+    },
+    {
+      "id": "GO-TR-REJ",
+      "status": "PASS",
+      "description": "lin_from_go v1 fail-closes package selectors, error returns, pointers",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CXX",
+      "status": "PASS",
+      "description": "lin_from_c v2 fail-closes C++ scope/template/class/reference",
+      "note": ""
+    },
+    {
+      "id": "GO-NUM-GATE",
+      "status": "PASS",
+      "description": "lin_c0 vm go_rej_geth_calc==4 (selector reject, numeric)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "gl_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "2/2 TestCalcGasLimit: C11 == Python == LIN vm == Geth goldens",
+      "note": ""
+    },
+    {
+      "id": "DELTA-WRAP",
+      "status": "PASS",
+      "description": "parent=500: Geth uint64 (0-1) wraps; LIN fail-closes to 0",
+      "note": "geth=499 lin=0"
+    },
+    {
+      "id": "MIN-GAS",
+      "status": "PASS",
+      "description": "VerifyGaslimit rejects header < 5000",
+      "note": ""
+    },
+    {
+      "id": "NEG-REJECT",
+      "status": "PASS",
+      "description": "LIN rejects negative gas limits (Geth int64(uint64) cast is a wrap hazard)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes divisor/min as arguments (Geth uses params package globals)",
+      "note": ""
+    },
+    {
+      "id": "FAIL-CLOSED",
+      "status": "PASS",
+      "description": "delta underflow (parent/divisor==0) and negatives fail-closed via gl_calc_ok",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/ethereum/go-ethereum",
+    "tag": "v1.14.12",
+    "commit": "293a300d64be3d9a1c2cc92c26fcff4089deadcd",
+    "path": "core/block_validator.go CalcGasLimit + consensus/misc/gaslimit.go VerifyGaslimit",
+    "block_validator_git_blob_sha": "59783a040730e0be0e273bb24ec3ea4d59fcaef3",
+    "block_validator_file_sha256": "d191d2a0f8b5f32cfc8f3c57f71a9859b3bba43572d187c85e450fc63ce0f8bd",
+    "gaslimit_git_blob_sha": "dfcabd9a802c4341dbc25ba96d76b4ccc6e550b5",
+    "gaslimit_file_sha256": "27c36df89ad62c42ed0f3aca81c976363a1397f940c009bf12363f55368f6666",
+    "protocol_params_git_blob_sha": "90e7487cff16f0f482a93adac2c652b546aba97f",
+    "protocol_params_file_sha256": "2019832fdff9831970c4fb1b89603b6de8521d561f04bdf9d074dfa5e837b0b5",
+    "tests_git_blob_sha": "8af4057693e97a9a0248fbf1c77a2d628a170bd7",
+    "tests_file_sha256": "83bedcdda2f6e878081e1786fcf8d2d4ee627c68ab16de07c2180cb37bc08fdf",
+    "license": "LGPL-3.0",
+    "constants": {
+      "GasLimitBoundDivisor": 1024,
+      "MinGasLimit": 5000,
+      "MaxGasLimit": 9223372036854775807
+    }
+  },
+  "lin_clone": "src/lin_geth_gaslimit.lin",
+  "go_transpiler": "src/lin_from_go.lin",
+  "c11_oracle": "test/oracles/geth_gaslimit_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": [
+    {
+      "parent": 20000000,
+      "max_increase": 20019530,
+      "min_decrease": 19980470
+    },
+    {
+      "parent": 40000000,
+      "max_increase": 40039061,
+      "min_decrease": 39960939
+    }
+  ],
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-geth-gaslimit"
+}
