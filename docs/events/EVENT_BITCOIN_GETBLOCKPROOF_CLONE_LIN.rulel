@@ -1,0 +1,65 @@
+@RULEL:BITCOIN_GETBLOCKPROOF_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-BITCOIN-GETBLOCKPROOF-V27-1"
+@TITLE="Clone-lin of Bitcoin Core v27.1 GetBlockProof with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_256BIT_LIMBS"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-bitcoin-core-blockproof"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Bitcoin Core compact-nBits chain-work math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced surface | REAL_WORLD = as deployed in bitcoind"
+  operand_width="full 256-bit compact target and work as 8x32-bit limbs; Core CBlockIndex graph is NOT claimed"
+  commercial_hook="GetBlockProof is how Bitcoin converts nBits into chain work for most-work chain selection; a deterministic LIN clone with explicit nBits and fail-closed overflow is an audit tool, not a node replacement"
+}
+
+.u{
+  repo="https://github.com/bitcoin/bitcoin"
+  tag="v27.1"
+  path="src/chain.cpp GetBlockProof + src/arith_uint256.cpp SetCompact"
+  license="MIT"
+  commit="1088a98f5aad080cc6cca2da174f206509fcda6c"
+  chain_git_blob_sha="82007a8a1e7f38f7b02eb299f8fc30fc61fc190e"
+  chain_file_sha256="bbc1aa18b580d8a36ce7c416ee6cadee2c89686905912fc9a1edf6b3873992a5"
+  arith_git_blob_sha="0d5b3d5b0e6476b88053bd74a35c5cdbef1d2ae8"
+  arith_file_sha256="b46d67db26cef11a9da125b98e29bd8bf77b7a5c71418ee63bb77a0125a09d06"
+  tests_git_blob_sha="10028c7c9345ecd7804466e821c71fbc0a060b7c"
+  tests_file_sha256="6785d8cb5e70e731d81c61a32cf3cb5ca9cf4ac38ee66b26b0b8941570e1d6fe"
+  fixture="test/fixtures/external_proof/bitcoin_v27_1_GetBlockProof.cpp"
+}
+
+.l{
+  clone="src/lin_bitcoin_blockproof.lin"
+  transpiler_delta="src/lin_from_c.lin v2: REJ_C_CXX_SCOPE / REJ_C_TEMPLATE / REJ_C_CLASS / REJ_C_REFERENCE so Core C++ is fail-closed"
+  improvement_1="CBlockIndex& / hidden pprev become an explicit nBits argument"
+  improvement_2="overflow, negative, and zero compact fail-closed to work=0 with explicit bp_overflow/bp_negative"
+  improvement_3="256-bit work is exported as 8 uint32 limbs (no silent i64 wrap of 2**256/(target+1))"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit when present"
+  oracle="test/oracles/bitcoin_blockproof_c11.c (gcc -O2 -std=c11, 8x32 limbs)"
+  gate="test/verify_bitcoin_blockproof.sh"
+}
+
+.p{
+  harness="test/prove_bitcoin_blockproof_external.py"
+  evidence_json="examples/bitcoin_blockproof/bitcoin_blockproof_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-bitcoin-core-blockproof"
+  genesis_work="4295032833"
+}
+
+.n{
+  not_claimed_1="SHA256d CheckProofOfWork or a Bitcoin node"
+  not_claimed_2="LIN replaces bitcoind chain selection"
+  not_claimed_3="wall-clock superiority vs Bitcoin Core"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+}
+
+.v{
+  method="PINNED_BYTES && CORE_SETCOMPACT_HEX && C11_LIMBS_EQ_PYTHON_BIGINT && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT"
+  on_fail="do not publish a PASS status"
+}
