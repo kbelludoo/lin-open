@@ -305,7 +305,7 @@ else
 	@python3 test/prove_all_claims_external.py --iterations 10000
 endif
 
-.PHONY: compound-jumprate-proof independent-reproof
+.PHONY: compound-jumprate-proof independent-reproof u512-coprocessor-proof
 compound-jumprate-proof: c0
 	@chmod +x test/verify_compound_jumprate.sh test/prove_compound_jumprate_external.py
 	@test/verify_compound_jumprate.sh
@@ -313,6 +313,14 @@ compound-jumprate-proof: c0
 independent-reproof: c0
 	@chmod +x test/prove_melhorias_independent.py
 	@python3 test/prove_melhorias_independent.py
+
+# Numeric coprocessor with auditable receipt (no Zig):
+#   C11 16-bit + C11 64-bit __int128 + Python int + LIN C0
+#   LNR1 quad-auditor (Python/Node/C11/OpenSSL) + LCR2 EXACT/OVERPAID slice.
+#   Class: EXPERIMENTAL (FullMath width, not CRT, not a pool).
+u512-coprocessor-proof: c0
+	@chmod +x test/prove_u512_coprocessor_external.py examples/u512_coprocessor/verify_u512_receipt.py
+	@python3 test/prove_u512_coprocessor_external.py
 
 # Standalone no-Zig CLI (python3, stdlib only). `make install-cli PREFIX=~/.local`
 # puts an executable `lin-verify` on PATH.
