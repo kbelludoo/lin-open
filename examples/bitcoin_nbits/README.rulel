@@ -1,0 +1,41 @@
+@RULEL:BITCOIN_NBITS_RESULTS:1.0.0
+@TITLE="Bitcoin Core v27.1 compact nBits retarget — results only"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-bitcoin-core-nbits"
+@CLASS="EXPERIMENTAL"
+
+~R{.u=upstream .l=lin .p=proofs .c=claims .n=not_claimed}
+
+.u{
+  repo="https://github.com/bitcoin/bitcoin"
+  tag="v27.1"
+  commit="1088a98f5aad080cc6cca2da174f206509fcda6c"
+  license="MIT"
+  files="src/pow.cpp CalculateNextWorkRequired; src/arith_uint256.cpp SetCompact/GetCompact; src/test/pow_tests.cpp goldens"
+}
+
+.l{
+  in_tree="src/lin_bitcoin_nbits.lin"
+  clone_lin="https://github.com/kbelludoo/clone-lin-bitcoin-core-nbits"
+  oracle="test/oracles/bitcoin_nbits_c11.c"
+  harness="python3 test/prove_bitcoin_nbits_external.py"
+  event="docs/events/EVENT_BITCOIN_NBITS_CLONE_LIN.rulel"
+}
+
+.p{
+  method="pinned sha256+git blob of v27.1; C11 8-limb oracle; lin_c0 vm; optional libtcc jit"
+  gold_1="get_next_work 0x1d00ffff @ 1262152739-1261130161 -> 0x1d00d86a"
+  gold_2="pow_limit -> 0x1d00ffff"
+  gold_3="lower_limit 0x1c05a3f4 -> 0x1c0168fd"
+  gold_4="upper_limit 0x1c387f6f -> 0x1d00e1fd"
+}
+
+.c{
+  commercial="Difficulty retarget is the issuance-security coupling of Bitcoin; LIN makes storage/params explicit and fail-closes overflow compact"
+  honest="This is not a price claim, TVL claim, or a Bitcoin replacement"
+}
+
+.n{
+  not_a_node="true"
+  not_sha256d_pow="true"
+  not_uint256_via_lin_c0_strings="Compiler 0 still fail-closes string-literal modules; do not claim lin_c0 executes cfs_from_c"
+}

@@ -1,0 +1,164 @@
+{
+  "schema": "LIN_BITCOIN_NBITS_EVIDENCE_1.0",
+  "class": "EXPERIMENTAL",
+  "upstream": {
+    "repo": "https://github.com/bitcoin/bitcoin",
+    "tag": "v27.1",
+    "commit": "1088a98f5aad080cc6cca2da174f206509fcda6c",
+    "license": "MIT",
+    "files": {
+      "src/pow.cpp": {
+        "sha256": "a997ebc9e89ec0ed0f98fe56e7ece7c0a799746d36be5c0951ca6fd264280a33",
+        "blob": "1e8d53de8bb87b0b9a30ff6439881cc2c40e38a4"
+      },
+      "src/arith_uint256.cpp": {
+        "sha256": "b46d67db26cef11a9da125b98e29bd8bf77b7a5c71418ee63bb77a0125a09d06",
+        "blob": "0d5b3d5b0e6476b88053bd74a35c5cdbef1d2ae8"
+      },
+      "src/test/pow_tests.cpp": {
+        "sha256": "5911e49b195af6dac2e4e94f5509537555172ae9c6a4816dc06c147cd8c6d0ae",
+        "blob": "3a44d1da499852cbdf6206bbf5026a50a9610f2f"
+      }
+    }
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-bitcoin-core-nbits",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned pow.cpp + arith_uint256.cpp + pow_tests.cpp sha256",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of bitcoin v27.1 commit matches fixtures",
+      "note": "commit=1088a98f5aad080cc6cca2da174f206509fcda6c"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of the three pinned files",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 oracle matches bitcoin/bitcoin pow_tests.cpp goldens",
+      "note": ""
+    },
+    {
+      "id": "C-TR-DELTA",
+      "status": "PASS",
+      "description": "C transpiler v2: U/L suffix strip + REJ_C_CXX + ceil/floor float reject",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-DELTA",
+      "status": "PASS",
+      "description": "Solidity transpiler v3: 10**N expand + leftover ** reject",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_bitcoin_nbits.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "CXX-REJECT",
+      "status": "PASS",
+      "description": "upstream arith_uint256.cpp is C++ (templates); C transpiler must REJ_C_CXX",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "btc_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "C11-get_next_work",
+      "status": "PASS",
+      "description": "C11 get_next_work == 0x1d00d86a",
+      "note": ""
+    },
+    {
+      "id": "LIN-get_next_work",
+      "status": "PASS",
+      "description": "lin_c0 vm get_next_work == C11 == Core golden",
+      "note": ""
+    },
+    {
+      "id": "C11-pow_limit",
+      "status": "PASS",
+      "description": "C11 pow_limit == 0x1d00ffff",
+      "note": ""
+    },
+    {
+      "id": "LIN-pow_limit",
+      "status": "PASS",
+      "description": "lin_c0 vm pow_limit == C11 == Core golden",
+      "note": ""
+    },
+    {
+      "id": "C11-lower_limit",
+      "status": "PASS",
+      "description": "C11 lower_limit == 0x1c0168fd",
+      "note": ""
+    },
+    {
+      "id": "LIN-lower_limit",
+      "status": "PASS",
+      "description": "lin_c0 vm lower_limit == C11 == Core golden",
+      "note": ""
+    },
+    {
+      "id": "C11-upper_limit",
+      "status": "PASS",
+      "description": "C11 upper_limit == 0x1d00e1fd",
+      "note": ""
+    },
+    {
+      "id": "LIN-upper_limit",
+      "status": "PASS",
+      "description": "lin_c0 vm upper_limit == C11 == Core golden",
+      "note": ""
+    },
+    {
+      "id": "OVERFLOW",
+      "status": "PASS",
+      "description": "overflow compact fail-closed (Core CheckProofOfWork vector)",
+      "note": ""
+    },
+    {
+      "id": "COMPACT-OK",
+      "status": "PASS",
+      "description": "btc_compact_ok rejects overflow; accepts genesis nBits",
+      "note": ""
+    },
+    {
+      "id": "JIT",
+      "status": "SKIP",
+      "description": "libtcc in-memory JIT not available on this host",
+      "note": ""
+    }
+  ],
+  "pass": 21,
+  "fail": 0,
+  "skip": 1,
+  "jit_ok": 0,
+  "jit_skip": 1
+}
