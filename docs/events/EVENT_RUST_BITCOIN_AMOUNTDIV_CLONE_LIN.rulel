@@ -1,0 +1,46 @@
+@RULEL:RUST_BITCOIN_AMOUNTDIV_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-RUST-BITCOIN-AMOUNTDIV"
+@TITLE="Clone-lin of rust-bitcoin Amount::checked_div with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-rust-bitcoin-amountdiv"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile rust-bitcoin Amount integer division into deterministic LIN, compile in memory with C11 compiler 0, publish results in lin-open and the LIN copy in a separate clone-lin repository"
+  class="EXPERIMENTAL"
+}
+
+.u{
+  repo="https://github.com/rust-bitcoin/rust-bitcoin"
+  path="units/src/amount/unsigned.rs"
+  license="CC0-1.0"
+  commit="1cbf4bd62ea99c558c6d8ef794edbd984a2a4684"
+  git_blob_sha="0cfb8343787c893fe36aea38fc3b4c066ac2bedd"
+  file_sha256="056757adc8f3ed6bc09dadf368fd027d04fcd7a721fb502fed23c8225cd790ef"
+}
+
+.l{
+  clone="src/lin_rust_bitcoin_amountdiv.lin"
+  goldens="checked_div(100,3)=33; checked_rem(100,3)=1; identity; wfloor(10,200)=200000; wfloor(10,300)=133333 rem=100; MAX_MONEY*4e6/1 fail-closed"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  oracle="test/oracles/rust_bitcoin_amountdiv_c11.c"
+}
+
+.p{
+  harness="test/prove_rust_bitcoin_amountdiv_external.py"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-rust-bitcoin-amountdiv"
+}
+
+.n{
+  not_claimed="wallet, PSBT, rustc superiority, string-literal transpiler vm, zk receipts"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

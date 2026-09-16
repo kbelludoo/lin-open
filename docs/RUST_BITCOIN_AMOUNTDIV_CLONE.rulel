@@ -1,0 +1,60 @@
+@RULEL:RUST_BITCOIN_AMOUNTDIV_CLONE:1.0.0
+@CHALLENGE_ID="LIN-RUST-BITCOIN-AMOUNTDIV"
+@TITLE="Clone-lin of rust-bitcoin Amount::checked_div + weight-floor remainder with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-09-16"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-rust-bitcoin-amountdiv"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile rust-bitcoin Amount integer division into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed in production wallets"
+  operand_width="i64 satoshis (MAX_MONEY fits); 128-bit product for (sats*4000000)/wu"
+  commercial_hook="Amount::checked_div splits BTC amounts; remainder is leftover sats; div_by_weight_floor is how rust-bitcoin wallets turn (fee, tx weight) into a FeeRate. Explicit remainder plus fail-closed 128-bit product is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/rust-bitcoin/rust-bitcoin"
+  path="units/src/amount/unsigned.rs"
+  license="CC0-1.0"
+  commit="1cbf4bd62ea99c558c6d8ef794edbd984a2a4684"
+  git_blob_sha="0cfb8343787c893fe36aea38fc3b4c066ac2bedd"
+  file_sha256="056757adc8f3ed6bc09dadf368fd027d04fcd7a721fb502fed23c8225cd790ef"
+  fixture="test/fixtures/external_proof/rust_bitcoin_amount_unsigned.rs"
+}
+
+.l{
+  clone="src/lin_rust_bitcoin_amountdiv.lin"
+  transpiler_delta="src/lin_from_rust.lin v2: && is not a borrow; numeric underscores stripped; rs_from_rs emit; Option is an allowed type name. src/lin_from_c.lin v2: REJ_C_CXX_SCOPE and REJ_C_REFERENCE (lone & in signatures; && is not a ref)"
+  improvement_1="Option None is explicit -1; Amount::ZERO remains 0 (no sentinel collision)"
+  improvement_2="checked_rem is a first-class function so leftover sats from integer split are auditable; identity sat=q*rhs+r is checked by Python bigint"
+  improvement_3="div_by_weight_floor uses 128-bit (sats*4e6)/wu; naive i64 of MAX_MONEY*4e6 wraps; overflow of the FeeRate (u64) fail-closes to -1"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/rust_bitcoin_amountdiv_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_rust_bitcoin_amountdiv.sh"
+}
+
+.p{
+  harness="test/prove_rust_bitcoin_amountdiv_external.py"
+  evidence_json="examples/rust_bitcoin_amountdiv/rust_bitcoin_amountdiv_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-rust-bitcoin-amountdiv"
+}
+
+.n{
+  not_claimed_1="full rust-bitcoin wallet / PSBT / script"
+  not_claimed_2="LIN replaces rust-bitcoin or Bitcoin Core"
+  not_claimed_3="wall-clock superiority vs rustc/LLVM"
+  not_claimed_4="lin_c0 vm executes string-literal transpiler modules (VM_REJ_STRING_LITERAL)"
+  not_claimed_5="zk / computational soundness of Merkle receipts"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

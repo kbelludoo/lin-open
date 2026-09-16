@@ -1,0 +1,210 @@
+@LIN:L1c:0.2
+@RUST_BITCOIN_AMOUNT_DIV{
+  version=1
+  repo="rust-bitcoin/rust-bitcoin"
+  source="units/src/amount/unsigned.rs"
+  license="CC0-1.0"
+  commit="1cbf4bd62ea99c558c6d8ef794edbd984a2a4684"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="Amount::from_sat_checked_div_checked_rem_and_div_by_weight_floor"
+  note="Not a wallet. Option None is -1 (zero is a valid Amount). Weight floor uses 128-bit (sats*4000000)/wu; naive i64 wraps on MAX_MONEY."
+}
+
+// ASCII 38='&'. 0=not-amp, 1=logical-and, 2=lone-borrow/ref.
+// Same classification lin_from_rust v2 / lin_from_c v2 use when skipping '&&'.
+!rad_amp_kind(cur: int, nxt: int) -> int {
+  ?(cur != 38) { ^ 0; };
+  ?(nxt == 38) { ^ 1; };
+  ^ 2;
+}
+
+!rad_amp_kind_gate() -> int {
+  ?(rad_amp_kind(38, 38) != 1) { ^ 0; };
+  ?(rad_amp_kind(38, 32) != 2) { ^ 0; };
+  ?(rad_amp_kind(42, 38) != 0) { ^ 0; };
+  ^ 1;
+}
+
+!rad_coin() -> int {
+  ^ 100000000;
+}
+
+!rad_btc_max() -> int {
+  ^ 21000000;
+}
+
+!rad_max_money() -> int {
+  ^(21000000 * 100000000);
+}
+
+!rad_mvb_per_wu() -> int {
+  ^ 4000000;
+}
+
+!rad_from_sat(satoshi: int) -> int {
+  ?(satoshi < 0) { ^ -1; };
+  ?(satoshi > (21000000 * 100000000)) { ^ -1; };
+  ^ satoshi;
+}
+
+!rad_checked_div(satoshi: int, rhs: int) -> int {
+  ?(rad_from_sat(satoshi) < 0) { ^ -1; };
+  ?(rhs <= 0) { ^ -1; };
+  ^(satoshi / rhs);
+}
+
+!rad_checked_rem(satoshi: int, rhs: int) -> int {
+  ?(rad_from_sat(satoshi) < 0) { ^ -1; };
+  ?(rhs <= 0) { ^ -1; };
+  ^(satoshi - (satoshi / rhs) * rhs);
+}
+
+!rad_div_rem_ok(satoshi: int, rhs: int) -> int {
+  q = 0;
+  r = 0;
+  ?(rad_from_sat(satoshi) < 0) { ^ 0; };
+  ?(rhs <= 0) { ^ 0; };
+  q = rad_checked_div(satoshi, rhs);
+  r = rad_checked_rem(satoshi, rhs);
+  ?(q < 0 || r < 0) { ^ 0; };
+  ?((q * rhs) + r != satoshi) { ^ 0; };
+  ^ 1;
+}
+
+!rad_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!rad_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(rad_u_lt(s, a));
+}
+
+!rad_mask32() -> int {
+  ^ 4294967295;
+}
+
+!rad_muldiv_part(a: int, b: int, d: int, want_rem: int) -> int {
+  ?(d == 0) { ^ -1; };
+  ?(a < 0 || b < 0) { ^ -1; };
+  m32 = rad_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = rad_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = rad_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(rad_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = rad_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ -1; };
+  ^ q;
+}
+
+!rad_muldiv(a: int, b: int, d: int) -> int {
+  ^ rad_muldiv_part(a, b, d, 0);
+}
+
+!rad_muldiv_rem(a: int, b: int, d: int) -> int {
+  ^ rad_muldiv_part(a, b, d, 1);
+}
+
+!rad_div_by_weight_floor(satoshi: int, wu: int) -> int {
+  ?(rad_from_sat(satoshi) < 0) { ^ -1; };
+  ?(wu <= 0) { ^ -1; };
+  ^ rad_muldiv(satoshi, 4000000, wu);
+}
+
+!rad_div_by_weight_rem(satoshi: int, wu: int) -> int {
+  ?(rad_from_sat(satoshi) < 0) { ^ -1; };
+  ?(wu <= 0) { ^ -1; };
+  ^ rad_muldiv_rem(satoshi, 4000000, wu);
+}
+
+!rad_test_suite() -> int {
+  ?(rad_amp_kind_gate() != 1) { ^ -1; };
+  ?(rad_coin() != 100000000) { ^ -2; };
+  ?(rad_max_money() != 2100000000000000) { ^ -3; };
+  ?(rad_from_sat(0) != 0) { ^ -4; };
+  ?(rad_from_sat(2100000000000000) != 2100000000000000) { ^ -5; };
+  ?(rad_from_sat(-1) != -1) { ^ -6; };
+  ?(rad_from_sat(2100000000000001) != -1) { ^ -7; };
+  ?(rad_checked_div(100, 0) != -1) { ^ -8; };
+  ?(rad_checked_div(100, 3) != 33) { ^ -9; };
+  ?(rad_checked_rem(100, 3) != 1) { ^ -10; };
+  ?(rad_div_rem_ok(100, 3) != 1) { ^ -11; };
+  ?(rad_checked_div(0, 7) != 0) { ^ -12; };
+  ?(rad_checked_rem(0, 7) != 0) { ^ -13; };
+  ?(rad_muldiv(100, 200, 50) != 400) { ^ -14; };
+  ?(rad_div_by_weight_floor(10, 200) != 200000) { ^ -15; };
+  ?(rad_div_by_weight_rem(10, 200) != 0) { ^ -16; };
+  ?(rad_div_by_weight_floor(10, 300) != 133333) { ^ -17; };
+  ?(rad_div_by_weight_rem(10, 300) != 100) { ^ -18; };
+  ?(rad_div_by_weight_floor(10, 0) != -1) { ^ -19; };
+  ?(rad_div_by_weight_floor(2100000000000000, 1) != -1) { ^ -20; };
+  ?(rad_muldiv(1000000000000000000, 1000000000000000000, 1) != -1) { ^ -21; };
+  ^ 1;
+}
+
+=ex{
+  rad_amp_kind,
+  rad_amp_kind_gate,
+  rad_coin,
+  rad_btc_max,
+  rad_max_money,
+  rad_mvb_per_wu,
+  rad_from_sat,
+  rad_checked_div,
+  rad_checked_rem,
+  rad_div_rem_ok,
+  rad_u_lt,
+  rad_u_add_carry,
+  rad_mask32,
+  rad_muldiv_part,
+  rad_muldiv,
+  rad_muldiv_rem,
+  rad_div_by_weight_floor,
+  rad_div_by_weight_rem,
+  rad_test_suite
+}
