@@ -1,0 +1,278 @@
+@LIN:L1c:0.2
+@LIN_FROM_GO{
+  version=2
+  purpose="extract_pure_scalar_go_functions_to_lin"
+  profile="LINVM-1"
+  status="EXPERIMENTAL_V2"
+  changelog="v1: REJ_GO_SLICE / REJ_GO_SELECTOR / REJ_GO_ERROR / REJ_GO_POINTER + go_from_go emit. v2: REJ_GO_RECEIVER for func (T) methods before pointer/selector. memoryGasCost(mem *Memory, size uint64) is REJ_GO_POINTER (lift Memory.Len/lastGasCost to integer args). Compiler 0 typechecks this module; vm of string-literal emit is VM_REJ_STRING_LITERAL."
+}
+
+!go_is_kw(nm: string): int {
+  ?(starts_lit(nm, 0, "func") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "return") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2) { ^1 };
+  ?(starts_lit(nm, 0, "else") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "for") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "range") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "var") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "const") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "package") == 1 && nm.length == 7) { ^1 };
+  ?(starts_lit(nm, 0, "error") == 1 && nm.length == 5) { ^1 };
+  ^0;
+}
+
+!go_is_type(nm: string): int {
+  ?(starts_lit(nm, 0, "uint64") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "uint32") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "uint16") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "uint8") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "int64") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "int32") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "int16") == 1 && nm.length == 5) { ^1 };
+  ?(starts_lit(nm, 0, "int8") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "byte") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "bool") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "int") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "uint") == 1 && nm.length == 4) { ^1 };
+  ^0;
+}
+
+!go_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "func (") > 0) { ^"REJ_GO_RECEIVER" };
+  ?(rg_count_lit(sig, "[]") > 0 || rg_count_lit(body, "[]") > 0) { ^"REJ_GO_SLICE" };
+  ?(rg_count_lit(sig, "error") > 0 || rg_count_lit(body, "error") > 0) { ^"REJ_GO_ERROR" };
+  ?(rg_count_lit(sig, "*") > 0) { ^"REJ_GO_POINTER" };
+  ?(rg_count_lit(body, ".") > 0) { ^"REJ_GO_SELECTOR" };
+  ?(rg_count_lit(sig, "map") > 0 || rg_count_lit(body, "map") > 0) { ^"REJ_GO_MAP" };
+  ?(rg_count_lit(body, "go ") > 0) { ^"REJ_GO_CONCURRENCY" };
+  ?(rg_count_lit(sig, "chan") > 0 || rg_count_lit(body, "chan") > 0) { ^"REJ_GO_CONCURRENCY" };
+  ?(rg_count_lit(sig, "interface") > 0) { ^"REJ_GO_INTERFACE" };
+  ^"OK";
+}
+
+!go_parse_test_gate(): int {
+  sig_ok = "func tokens(nz uint64, z uint64) uint64";
+  body_ok = "return nz * 4 + z;";
+  r1 = go_reason(sig_ok, body_ok);
+  ?(r1.length != 2) { ^0 };
+  sig_ptr = "func memoryGasCost(mem *Memory, newMemSize uint64) (uint64, error)";
+  body_ptr = "return 0, nil;";
+  r2 = go_reason(sig_ptr, body_ptr);
+  ?(starts_lit(r2, 0, "REJ_GO") == 0) { ^0 };
+  sig_sel = "func floor() uint64";
+  body_sel = "return params.MemoryGas * words;";
+  r3 = go_reason(sig_sel, body_sel);
+  ?(starts_lit(r3, 0, "REJ_GO_SELECTOR") == 0) { ^0 };
+  ^1;
+}
+
+!go_strip_types(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  id = "";
+  while (i < n) {
+    ?(s.charCodeAt(i) == 34) {
+      out = out + s.charAt(i);
+      i = i + 1;
+      while (i < n && s.charCodeAt(i) != 34) { out = out + s.charAt(i); i = i + 1 };
+      ?(i < n) { out = out + s.charAt(i); i = i + 1 };
+      continue;
+    };
+    id = read_ident(s, i);
+    ?(id.length > 0) {
+      ?(go_is_type(id) == 1) { i = i + id.length; i = skip_ws(s, i); continue };
+      out = out + id;
+      i = i + id.length;
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!go_stmt(st: string): string {
+  e = jss_trim(st);
+  n = e.length;
+  out = "";
+  p = 0;
+  cl = 0;
+  ?(n == 0) { ^out };
+  ?(starts_lit(e, 0, "return") == 1 && (n == 6 || is_ident(e.charCodeAt(6)) == false)) {
+    out = out + "^";
+    out = out + jss_trim(slice2(e, 6, n));
+    ^out;
+  };
+  ?(starts_lit(e, 0, "if") == 1 && n > 2 && is_ident(e.charCodeAt(2)) == false) {
+    p = skip_ws(e, 2);
+    ?(p < n && e.charCodeAt(p) == 40) {
+      cl = match_paren(e, p);
+      ?(cl > p) {
+        out = out + "?(";
+        out = out + slice2(e, p + 1, cl);
+        out = out + ") { ";
+        out = out + go_stmt(jss_trim(slice2(e, cl + 1, n)));
+        out = out + " }";
+        ^out;
+      };
+    };
+  };
+  ^e;
+}
+
+!go_body(b: string): string {
+  t = jss_trim(go_strip_types(b));
+  out = "";
+  n = t.length;
+  i = 0;
+  st = 0;
+  d = 0;
+  c = 0;
+  seg = "";
+  conv = "";
+  while (i <= n) {
+    ?(i == n || (d == 0 && t.charCodeAt(i) == 59)) {
+      seg = jss_trim(slice2(t, st, i));
+      ?(seg.length > 0) {
+        conv = go_stmt(seg);
+        ?(conv.length > 0) {
+          out = out + "  ";
+          out = out + conv;
+          out = out + ";";
+          out = out + rgs_ch(10);
+        };
+      };
+      st = i + 1;
+      i = i + 1;
+      continue;
+    };
+    c = t.charCodeAt(i);
+    ?(c == 40 || c == 123 || c == 91) { d = d + 1 };
+    ?(c == 41 || c == 125 || c == 93) { d = d - 1 };
+    i = i + 1;
+  };
+  ^out;
+}
+
+!go_pdecl(params: string): string {
+  out = "";
+  n = params.length;
+  i = 0;
+  seen = 0;
+  id = "";
+  name = "";
+  while (i < n) {
+    id = read_ident(params, i);
+    ?(id.length > 0) {
+      ?(go_is_type(id) == 0 && go_is_kw(id) == 0 && name.length == 0) { name = id };
+      i = i + id.length;
+      continue;
+    };
+    ?(params.charCodeAt(i) == 44 || i + 1 >= n) {
+      ?(name.length > 0) {
+        ?(seen == 1) { out = out + ", " };
+        out = out + name;
+        out = out + ": int";
+        seen = 1;
+        name = "";
+      };
+    };
+    i = i + 1;
+  };
+  ?(name.length > 0) {
+    ?(seen == 1) { out = out + ", " };
+    out = out + name;
+    out = out + ": int";
+  };
+  ^out;
+}
+
+!go_fn(nm: string, params: string, body: string): string {
+  out = "";
+  out = out + "!";
+  out = out + nm;
+  out = out + "(";
+  out = out + go_pdecl(params);
+  out = out + ") -> int {";
+  out = out + rgs_ch(10);
+  out = out + go_body(body);
+  out = out + "}";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+!go_from_go(src: string): string {
+  pass = jss_trim(jss_strip_comments(src));
+  out = "";
+  out = jss_ln(out, "@LIN:L1c:0.2");
+  out = jss_ln(out, "@FROM_GO{source=transpiled scope=pure_integer_math}");
+  out = jss_ln(out, "");
+  n = pass.length;
+  i = 0;
+  p = 0;
+  cl = 0;
+  b = 0;
+  cb = 0;
+  nm = "";
+  pr = "";
+  bd = "";
+  sig = "";
+  reason = "";
+  names = "";
+  while (i < n) {
+    ?(starts_lit(pass, i, "func") == 1 && (i == 0 || is_ident(pass.charCodeAt(i - 1)) == false) && (i + 4 >= n || is_ident(pass.charCodeAt(i + 4)) == false)) {
+      p = skip_ws(pass, i + 4);
+      ?(p < n && pass.charCodeAt(p) == 40) {
+        i = i + 4;
+        continue;
+      };
+      nm = read_ident(pass, p);
+      ?(nm.length > 0) {
+        p = skip_ws(pass, p + nm.length);
+        ?(p < n && pass.charCodeAt(p) == 40) {
+          cl = match_paren(pass, p);
+          ?(cl > p) {
+            b = skip_ws(pass, cl + 1);
+            while (b < n && pass.charCodeAt(b) != 123) { b = b + 1 };
+            ?(b < n && pass.charCodeAt(b) == 123) {
+              cb = match_brace(pass, b);
+              ?(cb > b) {
+                pr = slice2(pass, p + 1, cl);
+                bd = slice2(pass, b + 1, cb);
+                sig = slice2(pass, i, b);
+                reason = go_reason(sig, bd);
+                ?(starts_lit(reason, 0, "OK") == 1 && reason.length == 2) {
+                  out = out + go_fn(nm, pr, bd);
+                  names = rgs_csv_add(names, nm);
+                };
+                i = cb + 1;
+                continue;
+              };
+            };
+          };
+        };
+      };
+    };
+    i = i + 1;
+  };
+  out = out + "=ex{";
+  out = out + names;
+  out = out + "}";
+  out = out + rgs_ch(10);
+  ^out;
+}
+
+!go_from_go_gate(): int {
+  src = "func tokens(nz uint64, z uint64) uint64 { return nz * 4 + z; }";
+  out = go_from_go(src);
+  ?(starts_lit(out, 0, "@LIN") == 0) { ^0 };
+  ?(rg_count_lit(out, "tokens") == 0) { ^0 };
+  ?(rg_count_lit(out, "nz: int") == 0) { ^0 };
+  bad = "func memoryGasCost(mem *Memory, newMemSize uint64) (uint64, error) { return 0, nil; }";
+  out2 = go_from_go(bad);
+  ?(rg_count_lit(out2, "memoryGasCost") > 0) { ^0 };
+  ^1;
+}
+
+=ex{go_is_kw, go_is_type, go_reason, go_parse_test_gate, go_from_go, go_from_go_gate}
