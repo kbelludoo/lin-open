@@ -172,7 +172,7 @@ def ensure_upstream() -> tuple[str, str, str]:
         if init.returncode != 0:
             return "SKIP", "", "git init failed"
         run(["git", "-C", str(UPSTREAM), "remote", "add", "origin", url])
-    fetch = run(["git", "-C", str(UPSTREAM), "fetch", "--depth", 1, "origin", PINNED_TAG], timeout=180)
+    fetch = run(["git", "-C", str(UPSTREAM), "fetch", "--depth", "1", "origin", PINNED_TAG], timeout=180)
     if fetch.returncode != 0:
         return "SKIP", "", (fetch.stderr or fetch.stdout or "fetch failed").strip()[:240]
     if run(["git", "-C", str(UPSTREAM), "checkout", "--force", "FETCH_HEAD"]).returncode != 0:
