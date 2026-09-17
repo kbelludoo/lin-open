@@ -1,0 +1,132 @@
+@LIN:L1c:0.2
+@GETH_CALCREFUND{
+  version=1
+  repo="ethereum/go-ethereum"
+  source="core/state_transition.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="scalar_geth_eip3529_calcrefund_explicit_args"
+  note="Not a Geth node. Operand domain is non-negative i64 (Geth MaxGasLimit=2^63-1). Pinned calcRefund reads ChainConfig/GetRefund/gasRemaining via selectors; LIN takes used, state_refund, london as arguments. gasUsed wrap (remaining>initial) fail-closes."
+}
+
+!cr_q_pre() -> int {
+  ^ 2;
+}
+
+!cr_q_london() -> int {
+  ^ 5;
+}
+
+!cr_i64_max() -> int {
+  ^ 9223372036854775807;
+}
+
+!cr_add_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  m = cr_i64_max();
+  ?(a > m - b) { ^ 0; };
+  ^ 1;
+}
+
+!cr_gas_used(initial: int, remaining: int) -> int {
+  ?(initial < 0) { ^ 0; };
+  ?(remaining < 0) { ^ 0; };
+  ?(remaining > initial) { ^ 0; };
+  ^ initial - remaining;
+}
+
+!cr_cap(used: int, london: int) -> int {
+  ?(used < 0) { ^ 0; };
+  ?(london == 0) { ^ used / cr_q_pre(); };
+  ^ used / cr_q_london();
+}
+
+!cr_min(a: int, b: int) -> int {
+  ?(a < b) { ^ a; };
+  ^ b;
+}
+
+!cr_refund(used: int, state_refund: int, london: int) -> int {
+  ?(used < 0) { ^ 0; };
+  ?(state_refund < 0) { ^ 0; };
+  ?(london < 0) { ^ 0; };
+  cap = cr_cap(used, london);
+  ^ cr_min(cap, state_refund);
+}
+
+!cr_refund_from_gas(initial: int, remaining: int, state_refund: int, london: int) -> int {
+  used = cr_gas_used(initial, remaining);
+  ?(initial < 0) { ^ 0; };
+  ?(remaining < 0) { ^ 0; };
+  ?(remaining > initial) { ^ 0; };
+  ^ cr_refund(used, state_refund, london);
+}
+
+!cr_paid(used: int, refund: int) -> int {
+  ?(used < 0) { ^ 0; };
+  ?(refund < 0) { ^ 0; };
+  ?(refund > used) { ^ 0; };
+  ^ used - refund;
+}
+
+!cr_apply(remaining: int, refund: int) -> int {
+  ?(remaining < 0) { ^ 0; };
+  ?(refund < 0) { ^ 0; };
+  ?(cr_add_ok(remaining, refund) == 0) { ^ 0; };
+  ^ remaining + refund;
+}
+
+!cr_london_kept(used: int, state_refund: int) -> int {
+  ?(used < 0) { ^ 0; };
+  ?(state_refund < 0) { ^ 0; };
+  pre = cr_refund(used, state_refund, 0);
+  lon = cr_refund(used, state_refund, 1);
+  ?(lon > pre) { ^ 0; };
+  ^ pre - lon;
+}
+
+!cr_test_suite() -> int {
+  ?(cr_q_pre() != 2) { ^ -1; };
+  ?(cr_q_london() != 5) { ^ -2; };
+  ?(cr_gas_used(21000, 0) != 21000) { ^ -3; };
+  ?(cr_gas_used(21000, 9000) != 12000) { ^ -4; };
+  ?(cr_gas_used(21000, 21000) != 0) { ^ -5; };
+  ?(cr_gas_used(21000, 21001) != 0) { ^ -6; };
+  ?(cr_refund(21000, 0, 1) != 0) { ^ -7; };
+  ?(cr_refund(21000, 100000, 1) != 4200) { ^ -8; };
+  ?(cr_refund(21000, 100000, 0) != 10500) { ^ -9; };
+  ?(cr_refund(21000, 1000, 1) != 1000) { ^ -10; };
+  ?(cr_refund(21000, 1000, 0) != 1000) { ^ -11; };
+  ?(cr_refund(5, 100, 1) != 1) { ^ -12; };
+  ?(cr_refund(4, 100, 1) != 0) { ^ -13; };
+  ?(cr_refund(5, 100, 0) != 2) { ^ -14; };
+  ?(cr_refund(1, 100, 0) != 0) { ^ -15; };
+  ?(cr_london_kept(21000, 100000) != 6300) { ^ -16; };
+  ?(cr_paid(21000, 4200) != 16800) { ^ -17; };
+  ?(cr_apply(0, 4200) != 4200) { ^ -18; };
+  ?(cr_refund(-1, 1, 1) != 0) { ^ -19; };
+  ?(cr_refund(1, -1, 1) != 0) { ^ -20; };
+  ?(cr_refund_from_gas(21000, 0, 100000, 1) != 4200) { ^ -21; };
+  ?(cr_refund_from_gas(21000, 21001, 100000, 1) != 0) { ^ -22; };
+  ^ 1;
+}
+
+=ex{
+  cr_q_pre,
+  cr_q_london,
+  cr_i64_max,
+  cr_add_ok,
+  cr_gas_used,
+  cr_cap,
+  cr_min,
+  cr_refund,
+  cr_refund_from_gas,
+  cr_paid,
+  cr_apply,
+  cr_london_kept,
+  cr_test_suite
+}

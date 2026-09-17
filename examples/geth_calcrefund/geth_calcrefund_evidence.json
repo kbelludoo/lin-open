@@ -1,0 +1,205 @@
+{
+  "schema": "LIN_GETH_CALCREFUND_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned calcRefund.go contains EIP-3529 function + refund quotients",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of go-ethereum v1.16.9 matches pinned sha256/blob",
+      "note": "commit=95665d5703e1023995a0ff93e4ce9eb77e8a59bd blob=bf5ac07636d5111c281726a4273d149cb10d1d8e"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of core/state_transition.go",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-PARAMS",
+      "status": "PASS",
+      "description": "git blob sha of params/protocol_params.go",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 in-range refund goldens + uint64 wrap vs i64 fail-closed",
+      "note": ""
+    },
+    {
+      "id": "GO-SELFTEST",
+      "status": "PASS",
+      "description": "independent Go calcRefund goldens + gasUsed wrap vector",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_geth_calcrefund.lin",
+      "note": ""
+    },
+    {
+      "id": "GO-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Go transpiler v2 (REJ_GO_RECEIVER)",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 (REJ_C_ARRAY_PARAM)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "cr_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "12/12 in-range vectors: Python == C11 == Go == Geth-uint64 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "12/12 vectors: Python fail-closed i64 matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "EIP3529-DELTA",
+      "status": "PASS",
+      "description": "21k used + large SSTORE refund: pre-London refund 10500, London 4200; 6300 gas stays consumed",
+      "note": "user-paid gas 10500 \u2192 16800. EIP-3529 cut the maximum refund from 50% to 20% of gasUsed"
+    },
+    {
+      "id": "GETH-WRAP-USED",
+      "status": "PASS",
+      "description": "remaining=initial+1: Geth/Go uint64 gasUsed wraps to 2^64-1; LIN fail-closes used and refund to 0",
+      "note": "invariant remaining<=initial holds on mainnet; defect of the unbounded subtraction, not a consensus bug"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on cr_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes used/state_refund/london as arguments; pinned Geth reads ChainConfig and GetRefund via selectors",
+      "note": ""
+    },
+    {
+      "id": "GO-EMIT",
+      "status": "PASS",
+      "description": "lin_from_go.lin v2 emits LIN and rejects method receivers / selectors / slices",
+      "note": ""
+    },
+    {
+      "id": "C-ARRAY-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 rejects unsized [] params (lift to counts)",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/ethereum/go-ethereum",
+    "tag": "v1.16.9",
+    "commit": "95665d5703e1023995a0ff93e4ce9eb77e8a59bd",
+    "path": "core/state_transition.go",
+    "git_blob_sha": "bf5ac07636d5111c281726a4273d149cb10d1d8e",
+    "file_sha256": "449d50d372cc6ddff95f6ffa4eae29e06d38e248b24bc8501036c04f3e3f0c14",
+    "params_path": "params/protocol_params.go",
+    "params_git_blob_sha": "e8b044f45016d851af2698e94c62937218c9d736",
+    "params_file_sha256": "9dd1ccfb0c646f35b4d527f255ddee8173e99a033b0f6fc586340b6bdbfe4c14",
+    "license": "LGPL-3.0"
+  },
+  "lin_clone": "src/lin_geth_calcrefund.lin",
+  "c11_oracle": "test/oracles/geth_calcrefund_c11.c",
+  "go_oracle": "test/oracles/geth_calcrefund_go.go",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-geth-calcrefund",
+  "vectors": [
+    {
+      "used": 21000,
+      "state_refund": 0,
+      "london": 1,
+      "refund": 0
+    },
+    {
+      "used": 21000,
+      "state_refund": 100000,
+      "london": 1,
+      "refund": 4200
+    },
+    {
+      "used": 21000,
+      "state_refund": 100000,
+      "london": 0,
+      "refund": 10500
+    },
+    {
+      "used": 21000,
+      "state_refund": 1000,
+      "london": 1,
+      "refund": 1000
+    },
+    {
+      "used": 21000,
+      "state_refund": 1000,
+      "london": 0,
+      "refund": 1000
+    },
+    {
+      "used": 5,
+      "state_refund": 100,
+      "london": 1,
+      "refund": 1
+    },
+    {
+      "used": 4,
+      "state_refund": 100,
+      "london": 1,
+      "refund": 0
+    },
+    {
+      "used": 5,
+      "state_refund": 100,
+      "london": 0,
+      "refund": 2
+    },
+    {
+      "used": 1,
+      "state_refund": 100,
+      "london": 0,
+      "refund": 0
+    },
+    {
+      "used": 0,
+      "state_refund": 100,
+      "london": 1,
+      "refund": 0
+    },
+    {
+      "used": 100000,
+      "state_refund": 100000,
+      "london": 1,
+      "refund": 20000
+    },
+    {
+      "used": 100000,
+      "state_refund": 100000,
+      "london": 0,
+      "refund": 50000
+    }
+  ]
+}
