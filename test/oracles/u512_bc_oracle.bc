@@ -1,0 +1,58 @@
+/* POSIX GNU bc oracle (not TCB, not GMP). Integer mulDiv and 512-bit ge.
+ * EXPERIMENTAL: FullMath width, not CRT/mulmod. Run: bc -q thisfile
+ * Driver sets BC_LINE_LENGTH=0 so 512-bit decimals are one line. */
+scale = 0
+umax = 2^256 - 1
+
+n = 7 * 9
+q = n / 2
+r = n % 2
+if (q != 31) { print "FAIL 7*9/2 q\n"; halt }
+if (r != 1) { print "FAIL 7*9/2 r\n"; halt }
+if (q * 2 + r != n) { print "FAIL 7*9/2 identity\n"; halt }
+
+n = umax * umax
+lo = n % (umax + 1)
+hi = n / (umax + 1)
+if (lo != 1) { print "FAIL max^2 lo\n"; halt }
+if (hi != umax - 1) { print "FAIL max^2 hi\n"; halt }
+
+n = (2^255) * 2
+q = n / 3
+r = n % 3
+want = umax / 3
+if (q != want) { print "FAIL 2^255*2/3 q\n"; halt }
+if (r != 1) { print "FAIL 2^255*2/3 r\n"; halt }
+if (q * 3 + r != n) { print "FAIL 2^255*2/3 identity\n"; halt }
+
+q = 1 / 1
+/* d=0 is a driver-level guard; bc would error. q overflow: */
+n = (2^255) * 2
+q = n / 1
+if (q <= umax) { print "FAIL q overflow expect\n"; halt }
+
+n = 997000 * 20000
+q = n / 10997000
+r = n % 10997000
+if (q != 1813) { print "FAIL 1813\n"; halt }
+if (q * 10997000 + r != n) { print "FAIL 1813 identity\n"; halt }
+
+n = 2 * (2^255)
+q = n / umax
+r = n % umax
+if (q != 1) { print "FAIL wrap-borrow q\n"; halt }
+if (r != 1) { print "FAIL wrap-borrow r\n"; halt }
+if (q * umax + r != n) { print "FAIL wrap-borrow identity\n"; halt }
+
+a = 2^256
+b = umax
+if (a >= b) { } else { print "FAIL ge 2^256 vs umax\n"; halt }
+if (b >= a) { print "FAIL ge umax vs 2^256\n"; halt }
+if (0 >= 0) { } else { print "FAIL ge 0==0\n"; halt }
+
+maxsq = umax * umax
+if (maxsq >= 2^511) { } else { print "FAIL maxsq ge 2^511\n"; halt }
+if (2^511 >= maxsq) { print "FAIL 2^511 ge maxsq\n"; halt }
+
+print "SELFTEST_PASS posix_bc q*d+r==n ge512\n"
+halt

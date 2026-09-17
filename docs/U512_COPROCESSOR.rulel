@@ -1,0 +1,57 @@
+@RULEL:U512_COPROCESSOR:1.16.0
+@TITLE="LIN numeric coprocessor: 512-bit intermediate with auditable receipt"
+@CLASS="EXPERIMENTAL"
+@DATE="2026-09-17"
+
+~R{.s=sell .p=proves .n=not_proves .h=how .g=gates}
+
+.s{
+  product="numeric coprocessor with an auditable receipt, not a Uniswap replacement"
+  why_512="real u256 mulDiv(a,b,d)=(a*b)/d has a*b up to 2^512-1; without a correct 512 intermediate the SafeMath-width u256 settler lies or returns -2 where FullMath-width would approve"
+  engine="src/lin_u512_coprocessor.lin 16-bit limbs; examples/defi_settlement_proof/u512_uniswap_v2_core.lin remainder is 32 limbs with 512-bit ge"
+}
+
+.p{
+  mul="256x256->512 schoolbook with leftover-carry fail-closed; (2^256-1)^2 lo=1 hi=2^256-2 is a published LNR1 leaf; nine reconstructions agree: LIN/C11 16-bit, C11 radix-2^32, rustc radix-2^64, Python radix-2^8, Knuth D radix-2^32, FullMath CRT (prod0 wrapping 4xuint64; mm = a*b mod 2^256-1 by Mersenne rotate-and-add because 2^256≡1; prod1 = mm-prod0-[mm<prod0]), Karatsuba 128-bit split (three 128x128 via 2xu64, 64x64->128), Toom-3 86-bit 3-way (five eval products, Bodrato interpolation), AND NTT base-256 length-64 over p=998244353 (ω=3^{(p-1)/64}; coeffs ≤32·255² << p so INTT is the integer product) — CRT never forms a 512-bit schoolbook product; Karatsuba never walks the 16x16 row-major grid; Toom-3 is not 2-way Karatsuba; NTT never evaluates a 3-way split"
+  div="512/256 restoring division in the engine AND Knuth Algorithm D (TAOCP Vol.2 §4.3.1) AND FullMath Newton–Raphson (remainder via add-and-double mulmod, factor 2^k, Hensel inverse 4→256 bits, q=prod0_adj*inv) AND Barrett (mu=floor(2^512/d) from the sparse numerator 2^512, q=(n*mu)>>512, at most two 512-bit ge corrections) AND Goldschmidt (normalize Y into [2^255,2^256), F=2^257-Y, eight iterations of Toom-3 256x256, then 512-bit ge corrections so r<d) AND SRT radix-4 (Robertson digits {-2,-1,0,1,2} from ±D/2 ±3D/2 on the already-shifted remainder, 2 bits of n per step, remainder may be negative, 512-bit ge so r<d); q*d+r==n and r<d (LIN + C11 16-bit + C11 64-bit __int128 identity64 + C11 radix-2^32 + rustc radix-2^64 + Python radix-2^8 + Knuth D + CRT/Newton + Karatsuba/Barrett + Toom-3/Goldschmidt + NTT/SRT + Node.js BigInt + OpenSSL BIGNUM + Go math/big + Java BigInteger + GNU MP mpz + Perl Math::BigInt::Calc + POSIX GNU bc)"
+  ge="cmp/ge over 512 bits: u512_ge_word + eight published LGE1 leaves vs Python int, Node BigInt, OpenSSL BN_ucmp, Go math/big.Cmp, Java BigInteger.compareTo, GNU MP mpz_cmp, Perl Math::BigInt, C11 radix-2^32 ge32, rustc radix-2^64 ge_limbs, Python radix-2^8 ge_bytes, Knuth D ge_limbs, CRT ge256, Karatsuba/Barrett ge_limbs, Toom-3/Goldschmidt ge_limbs, NTT/SRT ge_limbs, POSIX GNU bc a>=b, C11 lin_sha256 merkle"
+  identity="LRI1 240-byte remainder-identity receipts: published n (512-bit product), d, q, r; outsider checks n==a*b and q*d+r==n and r<d without LinVM. Eight leaves including wrap-borrow 2*2^255/(2^256-1)=1 r=1 and phantom 997*ceil(2^256/997)/1997. Schema 1.16: POSIX GNU bc from published decimals AND rustc radix-2^64 AND Python radix-2^8 AND Knuth Algorithm D AND FullMath CRT+Newton AND Karatsuba+Barrett AND Toom-3+Goldschmidt AND NTT+SRT plus OpenSSL dgst of the LRI1 Merkle tree"
+  inclusion="LIP1 Merkle inclusion receipts: leaf bytes + sibling hashes + root. Schema 1.8/1.16 publish all 8 LCR2 settlement leaves AND all 9 LCR2-full FullMath-width leaves so an outsider verifies settle_u256_word vs ref_amount_out and settle_u512_swap vs ref_amount_out_full from packed 208-byte records without LinVM. C11 lin_sha256 verifies a binary LIP1 EXACT receipt, the phantom remainder-identity receipt, AND the LCR2-full PHANTOM_APPROVE receipt. JSON proofs verified by Python, Node, and Perl. rustc-only, radix-2^8, Knuth-D, CRT, Karatsuba/Barrett, Toom-3/Goldschmidt, and NTT/SRT auditors bind packed LCR2 EXACT/OVERPAID and PHANTOM_APPROVE via mulDiv(fee,rout,den). 1-bit sibling tamper rejected"
+  oracles="Python int + C11 16-bit schoolbook + C11 64-bit __int128 limbs + C11 radix-2^32 schoolbook + rustc radix-2^64 schoolbook + Python radix-2^8 schoolbook + Knuth Algorithm D + FullMath CRT+Newton + Karatsuba+Barrett + Toom-3+Goldschmidt + NTT+SRT + Node.js BigInt + OpenSSL BIGNUM + Go math/big + Java BigInteger + GNU MP mpz + Perl Math::BigInt::Calc + POSIX GNU bc; WIDTH_CONSENSUS NODE_BIGINT_CONSENSUS OPENSSL_BN_CONSENSUS GO_BIGINT_CONSENSUS JAVA_BIGINT_CONSENSUS GMP_MPZ_CONSENSUS PERL_BIGINT_CONSENSUS RADIX32_CONSENSUS RUST64_CONSENSUS RADIX8_CONSENSUS KNUTH_D_CONSENSUS CRT_FULLMATH_CONSENSUS KARATSUBA_BARRETT_CONSENSUS TOOM3_GOLDSCHMIDT_CONSENSUS NTT_SRT_CONSENSUS across the n=1060 batch; GMP, Perl, radix-2^32, rustc radix-2^64, Python radix-2^8, Knuth D, CRT, Karatsuba/Barrett, Toom-3/Goldschmidt, NTT/SRT, and GNU bc recompute mulDiv(fee,rout,den) on the 6 EXACT/OVERPAID LCR2 vectors; Perl, radix-2^32, rustc radix-2^64, Python radix-2^8, Knuth D, CRT, Karatsuba/Barrett, Toom-3/Goldschmidt, NTT/SRT, and GNU bc also recompute the 6 LCR2-full vectors plus PHANTOM_APPROVE (512-bit numerator)"
+  receipt="LNR1 240-byte records, domains LIN:U512:LEAF:1 / LIN:U512:NODE:1; LCR2 208-byte records, domains LIN:LEAF:1 / LIN:NODE:1; LGE1 208-byte records, domains LIN:U512:GE:LEAF:1 / LIN:U512:GE:NODE:1; LRI1 240-byte records, domains LIN:U512:RI:LEAF:1 / LIN:U512:RI:NODE:1; LIP1 inclusion path over those domains; quad-auditor Python hashlib, Node crypto, C11 lin_sha256, OpenSSL dgst; 1-bit tamper rejected; schema 1.16 zero-LIN Python AND Node AND Perl verifiers recompute FIVE campaign merkles AND LIP1 inclusion AND bind packed LCR2 bytes to ref_amount_out AND packed LCR2-full bytes to ref_amount_out_full; POSIX GNU bc binds LRI1 decimals to q*d+r==n; rustc-only auditor (FIPS SHA-256, no crates) recomputes the LRI1 Merkle root and binds LCR2/phantom; radix-2^8 auditor recomputes identity without Python int multiply and OpenSSL-dgst of LRI1 Merkle; Knuth-D auditor recomputes identity with normalized long division and OpenSSL-dgst of LRI1 Merkle; CRT auditor reconstructs n via Chinese Remainder Theorem and divides with Newton inverse, OpenSSL-dgst of LRI1 Merkle; Karatsuba+Barrett auditor reconstructs n by 128-bit split and divides with mu=floor(2^512/d), OpenSSL-dgst of LRI1 Merkle; Toom-3+Goldschmidt auditor reconstructs n by 86-bit 3-way split and divides with F=2^257-Y iterations plus 512-bit ge, OpenSSL-dgst of LRI1 Merkle; NTT+SRT auditor reconstructs n by length-64 NTT over p=998244353 and divides with SRT radix-4 digits {-2..2} plus 512-bit ge, OpenSSL-dgst of LRI1 Merkle"
+  e2e="LCR2 slice: settle_u256_word == coprocessor mulDiv(ain*997, reserve_out, rin*1000+ain*997) == ref_amount_out on 3 EXACT_INPUT + 3 OVERPAID_INPUT with real steps; guards -1 (zero in) and -2 (256-bit width) are LCR2 leaves; packed 208-byte records are LIP1-included and rebound by Python/Node/Perl/GMP/radix32/rust64/radix8/Knuth-D/CRT/Karatsuba-Barrett/Toom-3-Goldschmidt/NTT-SRT/GNU bc without LinVM"
+  e2e_full="LCR2-full: settle_u512_swap == ref_amount_out_full (512-bit numerator) on the same 3 EXACT + 3 OVERPAID plus PHANTOM_APPROVE plus GUARD_ZERO and GUARD_FEE_OVERFLOW (ain=2^256-1); all 9 leaves are LIP1-included"
+  phantom="ain=1,rin=1,rout=ceil(2^256/997): coprocessor APPROVES; settle_u512_swap APPROVES; settle_u256_word returns -2. 512-bit intermediate is off the suspect list; replacing the SafeMath-width settler body remains required for that ABI"
+  leftover="u256 schoolbook leftover-carry after limbs 16..31 now fail-closes -2 (REVIEW_MATH defense-in-depth; product still cannot exceed 511 bits)"
+}
+
+.n{
+  not_1="EVM mulmod opcode / solc FullMath.sol on-chain execution (CRT+Newton is the fifteenth auditor, Karatsuba+Barrett the sixteenth, Toom-3+Goldschmidt the seventeenth, NTT+SRT the eighteenth; the opcode is not)"
+  not_2="a deployed Uniswap v2/v3 pool"
+  not_3="the full 2000-swap + 157-unfiltered campaign"
+  not_4="that proving 512 closes the SafeMath-width u256 settler by itself — EXACT/OVERPAID, guards, and LCR2 steps remain mandatory and are sliced; LCR2-full proves the 512-bit settlement ABI separately"
+  not_5="zk or computational soundness; receipts are tamper-evidence + re-execution"
+}
+
+.h{
+  make="make u512-coprocessor-proof"
+  harness="test/prove_u512_coprocessor_external.py"
+  auditor_py="python3 examples/u512_coprocessor/verify_u512_receipt.py examples/u512_coprocessor/u512_coprocessor_evidence.json --self-test"
+  auditor_js="node examples/u512_coprocessor/verify_u512_receipt.js examples/u512_coprocessor/u512_coprocessor_evidence.json"
+  auditor_lip1_py="python3 examples/u512_coprocessor/verify_u512_inclusion.py examples/u512_coprocessor/u512_coprocessor_evidence.json"
+  auditor_lip1_js="node examples/u512_coprocessor/verify_u512_inclusion.js examples/u512_coprocessor/u512_coprocessor_evidence.json"
+  auditor_lip1_pl="perl examples/u512_coprocessor/verify_u512_inclusion.pl examples/u512_coprocessor/u512_coprocessor_evidence.json"
+  auditor_bc="python3 examples/u512_coprocessor/verify_u512_bc_identity.py examples/u512_coprocessor/u512_coprocessor_evidence.json"
+  auditor_rust="rustc --edition 2021 -O -o /tmp/verify_u512_rust64 examples/u512_coprocessor/verify_u512_rust64.rs && /tmp/verify_u512_rust64 examples/u512_coprocessor/u512_coprocessor_evidence.json"
+  auditor_radix8="python3 examples/u512_coprocessor/verify_u512_radix8.py examples/u512_coprocessor/u512_coprocessor_evidence.json"
+  auditor_knuth_d="python3 examples/u512_coprocessor/verify_u512_knuth_d.py examples/u512_coprocessor/u512_coprocessor_evidence.json"
+  auditor_crt="python3 examples/u512_coprocessor/verify_u512_crt.py examples/u512_coprocessor/u512_coprocessor_evidence.json"
+  auditor_karatsuba="python3 examples/u512_coprocessor/verify_u512_karatsuba.py examples/u512_coprocessor/u512_coprocessor_evidence.json"
+  auditor_toom3="python3 examples/u512_coprocessor/verify_u512_toom3.py examples/u512_coprocessor/u512_coprocessor_evidence.json"
+  auditor_ntt="python3 examples/u512_coprocessor/verify_u512_ntt.py examples/u512_coprocessor/u512_coprocessor_evidence.json"
+  on_fail="do not publish PASS"
+}
+
+.g{
+  fullmath_pin="sha256:959c52e1c860bfbede3e33c8d04910c11038973173aa3478547cbad2e444880e"
+}
