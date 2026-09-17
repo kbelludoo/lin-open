@@ -1,0 +1,172 @@
+@LIN:L1c:0.2
+@GETH_MEMORYGAS{
+  version=1
+  repo="ethereum/go-ethereum"
+  source="core/vm/gas_table.go"
+  helper="core/vm/common.go toWordSize"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="scalar_geth_memoryGasCost_quadratic_eip_yellow_paper"
+  note="Not a Geth node. Yellow-paper Cmem(a)=3a+a^2/512. Geth reads mem.Len/lastGasCost via *Memory; LIN takes new_size/cur_len/last as arguments. words*words uses 128-bit product (i64 square wraps before the 0x1FFFFFFFE0 cap). last>total fail-closes (Geth uint64 wraps). size>cap fail-closes (Geth returns ErrGasUintOverflow)."
+}
+
+!mg_memory_gas() -> int {
+  ^ 3;
+}
+
+!mg_quad_div() -> int {
+  ^ 512;
+}
+
+!mg_cap() -> int {
+  ^ 137438953440;
+}
+
+!mg_i64_max() -> int {
+  ^ 9223372036854775807;
+}
+
+!mg_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!mg_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(mg_u_lt(s, a));
+}
+
+!mg_muldiv(a: int, b: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  m32 = 4294967295;
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = mg_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = mg_u_add_carry(p0, t);
+  hi = p3 + _lia_ushr(mid, 32);
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(mg_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = mg_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!mg_to_word_size(size: int) -> int {
+  ?(size < 0) { ^ 0; };
+  ?(size > mg_i64_max() - 31) { ^ 0; };
+  ^ (size + 31) / 32;
+}
+
+!mg_total(words: int) -> int {
+  ?(words < 0) { ^ 0; };
+  lin = mg_muldiv(words, mg_memory_gas(), 1);
+  quad = mg_muldiv(words, words, mg_quad_div());
+  ?(mg_u_lt(mg_i64_max() - lin, quad) == 1) { ^ 0; };
+  ^ lin + quad;
+}
+
+!mg_fee(new_size: int, cur_len: int, last: int) -> int {
+  ?(new_size < 0) { ^ 0; };
+  ?(cur_len < 0) { ^ 0; };
+  ?(last < 0) { ^ 0; };
+  ?(new_size == 0) { ^ 0; };
+  ?(new_size > mg_cap()) { ^ 0; };
+  words = mg_to_word_size(new_size);
+  rounded = mg_muldiv(words, 32, 1);
+  ?(mg_u_lt(cur_len, rounded) == 0) { ^ 0; };
+  tot = mg_total(words);
+  ?(mg_u_lt(tot, last) == 1) { ^ 0; };
+  ^ tot - last;
+}
+
+!mg_new_total(new_size: int) -> int {
+  ?(new_size <= 0) { ^ 0; };
+  ?(new_size > mg_cap()) { ^ 0; };
+  ^ mg_total(mg_to_word_size(new_size));
+}
+
+!mg_test_suite() -> int {
+  ?(mg_memory_gas() != 3) { ^ -1; };
+  ?(mg_quad_div() != 512) { ^ -2; };
+  ?(mg_to_word_size(0) != 0) { ^ -3; };
+  ?(mg_to_word_size(1) != 1) { ^ -4; };
+  ?(mg_to_word_size(32) != 1) { ^ -5; };
+  ?(mg_to_word_size(33) != 2) { ^ -6; };
+  ?(mg_to_word_size(64) != 2) { ^ -7; };
+  ?(mg_fee(0, 0, 0) != 0) { ^ -8; };
+  ?(mg_fee(32, 0, 0) != 3) { ^ -9; };
+  ?(mg_fee(33, 0, 0) != 6) { ^ -10; };
+  ?(mg_fee(64, 0, 0) != 6) { ^ -11; };
+  ?(mg_fee(256, 0, 0) != 24) { ^ -12; };
+  ?(mg_fee(1024, 0, 0) != 98) { ^ -13; };
+  ?(mg_fee(2048, 0, 0) != 200) { ^ -14; };
+  ?(mg_fee(4096, 0, 0) != 416) { ^ -15; };
+  ?(mg_fee(32, 32, 3) != 0) { ^ -16; };
+  ?(mg_fee(33, 32, 3) != 3) { ^ -17; };
+  ?(mg_fee(64, 32, 3) != 3) { ^ -18; };
+  ?(mg_fee(2048, 1024, 98) != 102) { ^ -19; };
+  ?(mg_fee(64, 0, 999) != 0) { ^ -20; };
+  ?(mg_fee(137438953441, 0, 0) != 0) { ^ -21; };
+  ?(mg_fee(-1, 0, 0) != 0) { ^ -22; };
+  ?(mg_muldiv(32, 32, 512) != 2) { ^ -23; };
+  ?(mg_total(32) != 98) { ^ -24; };
+  ^ 1;
+}
+
+=ex{
+  mg_memory_gas,
+  mg_quad_div,
+  mg_cap,
+  mg_i64_max,
+  mg_u_lt,
+  mg_u_add_carry,
+  mg_muldiv,
+  mg_to_word_size,
+  mg_total,
+  mg_fee,
+  mg_new_total,
+  mg_test_suite
+}

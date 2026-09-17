@@ -1,0 +1,72 @@
+@RULEL:GETH_MEMORYGAS_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GETH-MEMORYGAS-CMEM"
+@TITLE="Clone-lin of go-ethereum memoryGasCost (Yellow Paper Cmem) with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-09-17"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-geth-memorygas"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Geth quadratic memory expansion gas into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="non-negative i64 sizes; words*words uses 128-bit product so the Geth 0x1FFFFFFFE0 uint64 square cap is in range; Geth *Memory state is NOT claimed"
+  commercial_hook="memoryGasCost is the Yellow Paper Cmem(a)=3a+a^2/512 charged on every MSTORE/CALL/RETURN expansion; making Len/lastGasCost explicit and fail-closing last>total is an audit improvement, not a node-replacement or TVL claim"
+}
+
+.u{
+  repo="https://github.com/ethereum/go-ethereum"
+  path="core/vm/gas_table.go"
+  helper_path="core/vm/common.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  git_blob_sha="c7c1274bf2f39355108ab88722b694bf502cc4b2"
+  file_sha256="c11be723771f3726bca1369a129fc8f212f7746aaa26c5b1ee3aa78e7c0a784c"
+  common_git_blob_sha="2990f5897248b3fb51533eb378dde8dc79422e1f"
+  common_file_sha256="f8eaab02fbd163bdf55fa67a99fc01cd374d8546e39ae8f7369e74313a557843"
+  params_path="params/protocol_params.go"
+  params_git_blob_sha="e8b044f45016d851af2698e94c62937218c9d736"
+  params_file_sha256="9dd1ccfb0c646f35b4d527f255ddee8173e99a033b0f6fc586340b6bdbfe4c14"
+  fixture="test/fixtures/external_proof/memoryGasCost.go"
+  helper_fixture="test/fixtures/external_proof/toWordSize.go"
+  params_fixture="test/fixtures/external_proof/memorygas_protocol_params.go"
+}
+
+.l{
+  clone="src/lin_geth_memorygas.lin"
+  transpiler_delta="src/lin_from_go.lin v2: REJ_GO_POINTER rejects memoryGasCost(*Memory); go_from_go emit typechecks (lin_c0 vm is VM_REJ_STRING_LITERAL). src/lin_from_c.lin v2 REJ_C_ARRAY_PARAM. src/lin_from_solidity.lin v3 REJ_SOLIDITY_UNCHECKED + require fail-closed. Did not mutate gated transpile/c/"
+  improvement_1="memoryGasCost is a *Memory method-like helper; LIN takes new_size/cur_len/last as arguments"
+  improvement_2="lastGasCost subtraction is overflow/underflow-checked; pinned Geth uint64-wraps when last>total"
+  improvement_2b="last=999 total=6: Geth/Go wrap; LIN returns 0. Invariant holds while Geth writes last after each expansion; not a consensus bug"
+  improvement_3="words*words at the official cap does not fit i64; LIN uses 128-bit muldiv matching Geth uint64 product"
+  improvement_4="size>0x1FFFFFFFE0 fail-closes to 0 instead of ErrGasUintOverflow"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/geth_memorygas_c11.c (gcc -O2 -std=c11, __int128 square) plus test/oracles/geth_memorygas_go.go"
+  gate="test/verify_geth_memorygas.sh"
+}
+
+.p{
+  harness="test/prove_geth_memorygas_external.py"
+  evidence_json="examples/geth_memorygas/geth_memorygas_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-geth-memorygas"
+  goldens="0->0; 32->3; 1024->98; 33from32 last3->3; 2048from1024 last98->102; last>total lin=0 geth=wrap; size>cap lin=0 geth=OVERFLOW"
+}
+
+.n{
+  not_claimed_1="LIN replaces go-ethereum or Ethereum consensus"
+  not_claimed_2="uint64 wrap of lastGasCost on mainnet"
+  not_claimed_3="this clone is a production node or wallet"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="Compiler 0 executes go_from_go string-literal emit"
+}
+
+.v{
+  method="PINNED_BYTES && PY_BIGINT_EQ_C11 && GO_UINT64_EQ_GETH && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
