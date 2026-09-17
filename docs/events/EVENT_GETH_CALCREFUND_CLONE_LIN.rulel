@@ -1,0 +1,68 @@
+@RULEL:GETH_CALCREFUND_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GETH-CALCREFUND-EIP3529"
+@TITLE="Clone-lin of go-ethereum calcRefund (EIP-3529) with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-09-17"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-geth-calcrefund"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Geth London EIP-3529 refund cap into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="non-negative i64 inputs matching Geth MaxGasLimit=2^63-1; Solidity/EVM uint64 wrap above that is NOT claimed"
+  commercial_hook="EIP-3529 calcRefund is the London refund cap every wallet and block builder must budget; making used/state_refund/london explicit and fail-closing gasUsed underflow is an audit improvement, not a TVL or node-replacement claim"
+}
+
+.u{
+  repo="https://github.com/ethereum/go-ethereum"
+  path="core/state_transition.go"
+  params_path="params/protocol_params.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  git_blob_sha="bf5ac07636d5111c281726a4273d149cb10d1d8e"
+  file_sha256="449d50d372cc6ddff95f6ffa4eae29e06d38e248b24bc8501036c04f3e3f0c14"
+  params_git_blob_sha="e8b044f45016d851af2698e94c62937218c9d736"
+  params_file_sha256="9dd1ccfb0c646f35b4d527f255ddee8173e99a033b0f6fc586340b6bdbfe4c14"
+  fixture="test/fixtures/external_proof/calcRefund.go"
+  params_fixture="test/fixtures/external_proof/eip3529_protocol_params.go"
+}
+
+.l{
+  clone="src/lin_geth_calcrefund.lin"
+  transpiler_delta="src/lin_from_go.lin v2: REJ_GO_RECEIVER before pointer/selector + go_from_go emit (typecheck; lin_c0 vm is VM_REJ_STRING_LITERAL). src/lin_from_c.lin v2 REJ_C_ARRAY_PARAM. Did not mutate gated transpile/c/"
+  improvement_1="calcRefund is a method on stateTransition; LIN takes used/state_refund/london as arguments"
+  improvement_2="gasUsed = initial-remaining is overflow/underflow-checked; pinned Geth uint64-wraps when remaining>initial"
+  improvement_2b="remaining=initial+1: Geth/Go wrap to 2^64-1; LIN fail-closes used and refund to 0. Invariant holds on mainnet; not a consensus bug"
+  improvement_3="London flag is an explicit integer instead of ChainConfig.IsLondon(blockNumber)"
+  improvement_4="cr_london_kept exposes the EIP-3529 50-to-20 percent delta as a first-class value"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/geth_calcrefund_c11.c (gcc -O2 -std=c11) plus test/oracles/geth_calcrefund_go.go"
+  gate="test/verify_geth_calcrefund.sh"
+}
+
+.p{
+  harness="test/prove_geth_calcrefund_external.py"
+  evidence_json="examples/geth_calcrefund/geth_calcrefund_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-geth-calcrefund"
+  goldens="21k/0 london=0; 21k/100k london=4200; 21k/100k pre=10500; 21k/1k=1000; 5/100 london=1; 4/100 london=0; london_kept 6300; remaining>initial used=0"
+}
+
+.n{
+  not_claimed_1="LIN replaces go-ethereum or Ethereum consensus"
+  not_claimed_2="uint64 wrap of gasUsed when remaining>initial on mainnet"
+  not_claimed_3="this clone is a production node or wallet"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="Compiler 0 executes go_from_go string-literal emit"
+}
+
+.v{
+  method="PINNED_BYTES && PY_I64_EQ_C11 && GO_UINT64_EQ_GETH && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
