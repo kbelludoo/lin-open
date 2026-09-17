@@ -305,7 +305,7 @@ else
 	@python3 test/prove_all_claims_external.py --iterations 10000
 endif
 
-.PHONY: compound-jumprate-proof independent-reproof
+.PHONY: compound-jumprate-proof independent-reproof u512-coprocessor-proof
 compound-jumprate-proof: c0
 	@chmod +x test/verify_compound_jumprate.sh test/prove_compound_jumprate_external.py
 	@test/verify_compound_jumprate.sh
@@ -313,6 +313,42 @@ compound-jumprate-proof: c0
 independent-reproof: c0
 	@chmod +x test/prove_melhorias_independent.py
 	@python3 test/prove_melhorias_independent.py
+
+# Numeric coprocessor with auditable receipt (no Zig):
+#   C11 16-bit + C11 64-bit __int128 + Python int + Node BigInt + OpenSSL BN
+#   + Go math/big + Java BigInteger + GNU MP mpz (dlopen libgmp.so.10)
+#   + Perl Math::BigInt::Calc (not GMP) + C11 radix-2^32 schoolbook
+#   + rustc radix-2^64 schoolbook (4xu64=256, 8xu64=512, carry fits u128)
+#   + Python radix-2^8 schoolbook (32 bytes=256, 64 bytes=512, carry fits u16)
+#   + Knuth Algorithm D (TAOCP §4.3.1, 8xu32=256, 16xu32=512, carry fits u64;
+#     normalized long division, not restoring bit-serial)
+#   + POSIX GNU bc (BC_LINE_LENGTH=0).
+#   LNR1 quad-auditor; LCR2 + LCR2-full + LGE1 + LRI1 remainder-identity
+#   + LIP1 Merkle inclusion (all 8 LCR2 E2E + all 9 LCR2-full leaves).
+#   Zero-LIN Python, Node, AND Perl verifiers recompute five merkles and LIP1 paths.
+#   POSIX bc rechecks LRI1 q*d+r==n from published decimals (no LinVM, no gcc).
+#   rustc-only auditor recomputes LRI1 Merkle + LCR2/phantom bind (no Python).
+#   radix-2^8 auditor recomputes identity + OpenSSL dgst LRI1 Merkle.
+#   Knuth-D auditor recomputes identity via long division + OpenSSL dgst LRI1 Merkle.
+#   FullMath CRT+Newton auditor reconstructs 512-bit product independently of restoring.
+#   Class: EXPERIMENTAL (FullMath algorithm off-chain, not EVM mulmod, not a pool).
+u512-coprocessor-proof: c0
+	@chmod +x test/prove_u512_coprocessor_external.py \
+		examples/u512_coprocessor/verify_u512_receipt.py \
+		examples/u512_coprocessor/verify_u512_receipt.js \
+		examples/u512_coprocessor/verify_u512_inclusion.py \
+		examples/u512_coprocessor/verify_u512_inclusion.js \
+		examples/u512_coprocessor/verify_u512_inclusion.pl \
+		examples/u512_coprocessor/verify_u512_bc_identity.py \
+		examples/u512_coprocessor/verify_u512_radix8.py \
+		examples/u512_coprocessor/verify_u512_knuth_d.py \
+		examples/u512_coprocessor/verify_u512_crt.py \
+		test/oracles/u512_node_oracle.js \
+		test/oracles/u512_perl_oracle.pl \
+		test/oracles/u512_radix8.py \
+		test/oracles/u512_knuth_d.py \
+		test/oracles/u512_crt_fullmath.py
+	@python3 test/prove_u512_coprocessor_external.py
 
 # Standalone no-Zig CLI (python3, stdlib only). `make install-cli PREFIX=~/.local`
 # puts an executable `lin-verify` on PATH.
