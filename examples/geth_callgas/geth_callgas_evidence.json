@@ -1,0 +1,266 @@
+{
+  "schema": "LIN_GETH_CALLGAS_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned callGas.go contains EIP-150 remaining-remaining/64 + *uint256.Int",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of go-ethereum v1.16.9 matches pinned sha256/blob",
+      "note": "commit=95665d5703e1023995a0ff93e4ce9eb77e8a59bd blob=5fe589bce696f618c46841dde27d7e78d65e54a6"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of core/vm/gas.go",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 in-range EIP-150 goldens + uint64 wrap vs i64 fail-closed",
+      "note": ""
+    },
+    {
+      "id": "GO-SELFTEST",
+      "status": "PASS",
+      "description": "independent Go callGas goldens + available<base wrap",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_geth_callgas.lin",
+      "note": ""
+    },
+    {
+      "id": "GO-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Go transpiler v3 (REJ_GO_UINT256)",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 (REJ_C_ARRAY_PARAM)",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3 (require/unchecked)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "cg_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "14/14 in-range vectors: Python == C11 == Go == Geth-uint64 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "14/14 vectors: Python bigint 63/64 matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "EIP150-63-64",
+      "status": "PASS",
+      "description": "64000 remaining requested 64000 yields 63000 (remaining-remaining/64)",
+      "note": "every CALL/DELEGATECALL/STATICCALL on post-TangerineWhistle Ethereum uses this stipend"
+    },
+    {
+      "id": "SAFE-FORM",
+      "status": "PASS",
+      "description": "LIN uses Geth x-x/64 (never overflows uint64); not the naive x*63/64 product",
+      "note": ""
+    },
+    {
+      "id": "PRE-EIP150-OV",
+      "status": "PASS",
+      "description": "pre-EIP-150 cost not uint64: Geth ErrGasUintOverflow; LIN fail-closes to 0",
+      "note": ""
+    },
+    {
+      "id": "GETH-WRAP-BASE",
+      "status": "PASS",
+      "description": "available=10 base=20 cost=5: Geth/Go return 5 (63/64 skipped after wrap); LIN fail-closes to 0",
+      "note": "gasCall callers typically hold remaining>=static; helper itself is unbounded"
+    },
+    {
+      "id": "GETH-WRAP-HI",
+      "status": "PASS",
+      "description": "available<base + cost not uint64: Geth returns wrapped stipend; LIN fail-closes to 0",
+      "note": "geth_stipend=18158513697557839863"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on cg_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes eip150/available/base/cost/cost_hi; pinned Geth takes *uint256.Int",
+      "note": ""
+    },
+    {
+      "id": "GO-EMIT",
+      "status": "PASS",
+      "description": "lin_from_go.lin v3 emits LIN and rejects *uint256.Int / receivers / slices",
+      "note": ""
+    },
+    {
+      "id": "C-ARRAY-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 rejects unsized [] params (lift to counts)",
+      "note": ""
+    },
+    {
+      "id": "SOL-REQUIRE",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects unchecked and lowers require to fail-closed",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/ethereum/go-ethereum",
+    "tag": "v1.16.9",
+    "commit": "95665d5703e1023995a0ff93e4ce9eb77e8a59bd",
+    "path": "core/vm/gas.go",
+    "git_blob_sha": "5fe589bce696f618c46841dde27d7e78d65e54a6",
+    "file_sha256": "94e6630a8bcbaccee3a8d5b23e5971a1e47863706aa18a9878124560a5693678",
+    "license": "LGPL-3.0"
+  },
+  "lin_clone": "src/lin_geth_callgas.lin",
+  "c11_oracle": "test/oracles/geth_callgas_c11.c",
+  "go_oracle": "test/oracles/geth_callgas_go.go",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-geth-callgas",
+  "vectors": [
+    {
+      "eip150": 1,
+      "available": 64000,
+      "base": 0,
+      "cost": 64000,
+      "cost_hi": 0,
+      "gas": 63000
+    },
+    {
+      "eip150": 1,
+      "available": 64000,
+      "base": 700,
+      "cost": 1000,
+      "cost_hi": 0,
+      "gas": 1000
+    },
+    {
+      "eip150": 1,
+      "available": 64,
+      "base": 0,
+      "cost": 100,
+      "cost_hi": 0,
+      "gas": 63
+    },
+    {
+      "eip150": 1,
+      "available": 0,
+      "base": 0,
+      "cost": 0,
+      "cost_hi": 0,
+      "gas": 0
+    },
+    {
+      "eip150": 1,
+      "available": 63,
+      "base": 0,
+      "cost": 63,
+      "cost_hi": 0,
+      "gas": 63
+    },
+    {
+      "eip150": 1,
+      "available": 65,
+      "base": 0,
+      "cost": 65,
+      "cost_hi": 0,
+      "gas": 64
+    },
+    {
+      "eip150": 0,
+      "available": 1000,
+      "base": 0,
+      "cost": 1000,
+      "cost_hi": 0,
+      "gas": 1000
+    },
+    {
+      "eip150": 1,
+      "available": 1000,
+      "base": 0,
+      "cost": 0,
+      "cost_hi": 1,
+      "gas": 985
+    },
+    {
+      "eip150": 1,
+      "available": 21000,
+      "base": 0,
+      "cost": 21000,
+      "cost_hi": 0,
+      "gas": 20672
+    },
+    {
+      "eip150": 1,
+      "available": 100,
+      "base": 0,
+      "cost": 50,
+      "cost_hi": 0,
+      "gas": 50
+    },
+    {
+      "eip150": 1,
+      "available": 2300,
+      "base": 0,
+      "cost": 2300,
+      "cost_hi": 0,
+      "gas": 2265
+    },
+    {
+      "eip150": 1,
+      "available": 128,
+      "base": 0,
+      "cost": 128,
+      "cost_hi": 0,
+      "gas": 126
+    },
+    {
+      "eip150": 1,
+      "available": 64,
+      "base": 0,
+      "cost": 63,
+      "cost_hi": 0,
+      "gas": 63
+    },
+    {
+      "eip150": 1,
+      "available": 100000,
+      "base": 700,
+      "cost": 50000,
+      "cost_hi": 0,
+      "gas": 50000
+    }
+  ]
+}

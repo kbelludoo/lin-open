@@ -1,0 +1,73 @@
+@LIN:L1c:0.2
+@GETH_CALLGAS{
+  version=1
+  repo="ethereum/go-ethereum"
+  source="core/vm/gas.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="scalar_geth_callGas_eip150_63_of_64"
+  note="Not a Geth node. EIP-150 stipend is remaining-remaining/64 (not remaining*63/64). Geth takes *uint256.Int; LIN takes cost/cost_hi. available<base fail-closes (Geth uint64 wraps and can skip the 63/64 cap)."
+}
+
+!cg_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!cg_stipend(available: int) -> int {
+  ?(available < 0) { ^ 0; };
+  ^ available - (available / 64);
+}
+
+!cg_callgas(eip150: int, available: int, base: int, cost: int, cost_hi: int) -> int {
+  ?(eip150 < 0) { ^ 0; };
+  ?(available < 0) { ^ 0; };
+  ?(base < 0) { ^ 0; };
+  ?(cost < 0) { ^ 0; };
+  ?(cost_hi < 0) { ^ 0; };
+  ?(eip150 != 0) {
+    ?(cg_u_lt(available, base) == 1) { ^ 0; };
+    rem = available - base;
+    gas = cg_stipend(rem);
+    ?(cost_hi != 0) { ^ gas; };
+    ?(cg_u_lt(gas, cost) == 1) { ^ gas; };
+    ^ cost;
+  };
+  ?(cost_hi != 0) { ^ 0; };
+  ^ cost;
+}
+
+!cg_test_suite() -> int {
+  ?(cg_stipend(0) != 0) { ^ -1; };
+  ?(cg_stipend(64) != 63) { ^ -2; };
+  ?(cg_stipend(64000) != 63000) { ^ -3; };
+  ?(cg_callgas(1, 64000, 0, 64000, 0) != 63000) { ^ -4; };
+  ?(cg_callgas(1, 64000, 700, 1000, 0) != 1000) { ^ -5; };
+  ?(cg_callgas(1, 64, 0, 100, 0) != 63) { ^ -6; };
+  ?(cg_callgas(1, 0, 0, 0, 0) != 0) { ^ -7; };
+  ?(cg_callgas(1, 63, 0, 63, 0) != 63) { ^ -8; };
+  ?(cg_callgas(1, 65, 0, 65, 0) != 64) { ^ -9; };
+  ?(cg_callgas(0, 1000, 0, 1000, 0) != 1000) { ^ -10; };
+  ?(cg_callgas(0, 1000, 0, 1000, 1) != 0) { ^ -11; };
+  ?(cg_callgas(1, 1000, 0, 0, 1) != 985) { ^ -12; };
+  ?(cg_callgas(1, 10, 20, 5, 0) != 0) { ^ -13; };
+  ?(cg_callgas(1, 21000, 0, 21000, 0) != 20672) { ^ -14; };
+  ?(cg_callgas(1, 100, 0, 50, 0) != 50) { ^ -15; };
+  ?(cg_callgas(1, 2300, 0, 2300, 0) != 2265) { ^ -16; };
+  ?(cg_callgas(1, 128, 0, 128, 0) != 126) { ^ -17; };
+  ?(cg_callgas(-1, 100, 0, 50, 0) != 0) { ^ -18; };
+  ?(cg_callgas(1, 64, 0, 63, 0) != 63) { ^ -19; };
+  ^ 1;
+}
+
+=ex{
+  cg_u_lt,
+  cg_stipend,
+  cg_callgas,
+  cg_test_suite
+}
