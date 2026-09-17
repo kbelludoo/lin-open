@@ -1,0 +1,121 @@
+{
+  "schema": "LIN_GETH_INTRINSICGAS_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned state_transition.go sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned go-ethereum v1.16.9 matches fixture",
+      "note": "commit=95665d5703e1023995a0ff93e4ce9eb77e8a59bd blob=bf5ac07636d5111c281726a4273d149cb10d1d8e"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of core/state_transition.go",
+      "note": ""
+    },
+    {
+      "id": "PIN-FUNCS",
+      "status": "PASS",
+      "description": "pinned file contains IntrinsicGas and toWordSize",
+      "note": ""
+    },
+    {
+      "id": "GETH-AL-UNCHECKED",
+      "status": "PASS",
+      "description": "pinned Geth adds access-list/auth-list gas without MaxUint64 guard (data path has the guard)",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 oracle canonical vectors agree with published schedule",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_geth_intrinsicgas.lin",
+      "note": ""
+    },
+    {
+      "id": "GO-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Go transpiler (typecheck; string-literal vm is not claimed)",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 (REJ_C_ARRAY_PARAM)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "ig_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "11/11 vectors: Python bigint == C11 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "WORD-SIZE",
+      "status": "PASS",
+      "description": "toWordSize (size+31)/32: Python == C11 == LIN (i64 domain)",
+      "note": ""
+    },
+    {
+      "id": "AL-OVERFLOW",
+      "status": "PASS",
+      "description": "access-list naddr*2400 above i64max: LIN/C11/Python=0; Geth-like uint64 still adds",
+      "note": "geth_uint64=9223372036854798600 naddr=3843071682022824"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes z/nz/naddr/nkeys/nauth as arguments (no []byte scan, no StorageKeys())",
+      "note": ""
+    },
+    {
+      "id": "GO-EMIT",
+      "status": "PASS",
+      "description": "lin_from_go.lin emits eligible uint64 funcs and rejects slices/selectors/error",
+      "note": ""
+    },
+    {
+      "id": "C-ARRAY-REJ",
+      "status": "PASS",
+      "description": "C transpiler now fail-closes T name[] params (decay-to-pointer)",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/ethereum/go-ethereum",
+    "tag": "v1.16.9",
+    "commit": "95665d5703e1023995a0ff93e4ce9eb77e8a59bd",
+    "path": "core/state_transition.go",
+    "git_blob_sha": "bf5ac07636d5111c281726a4273d149cb10d1d8e",
+    "file_sha256": "449d50d372cc6ddff95f6ffa4eae29e06d38e248b24bc8501036c04f3e3f0c14",
+    "license": "LGPL-3.0"
+  },
+  "lin_clone": "src/lin_geth_intrinsicgas.lin",
+  "c11_oracle": "test/oracles/geth_intrinsicgas_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-geth-intrinsicgas"
+}

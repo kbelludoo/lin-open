@@ -11,6 +11,9 @@ independent proof harness. They are **test fixtures**, not vendored libraries.
 | `qoi.h` | [phoboslab/qoi](https://github.com/phoboslab/qoi) | MIT |
 | `tinyexpr.c` | [codeplea/tinyexpr](https://github.com/codeplea/tinyexpr) | zlib |
 | `BaseJumpRateModelV2.sol` | [compound-finance/compound-protocol](https://github.com/compound-finance/compound-protocol) | BSD-3-Clause |
+| `state_transition.go` | [ethereum/go-ethereum](https://github.com/ethereum/go-ethereum) `v1.16.9` `core/state_transition.go` | LGPL-3.0 |
+| `geth_intrinsicgas_v1.16.9.go` | derived excerpt of IntrinsicGas + toWordSize (header notes pin; hash the full `state_transition.go` for audit) | LGPL-3.0 |
+| `geth_protocol_params_gas.go` | derived excerpt of IntrinsicGas constants from `params/protocol_params.go` `v1.16.9` | LGPL-3.0 |
 
 They are only pinned so an auditor can hash the exact bytes and, with `--fetch`,
 re-download them from the GitHub Contents API. No upstream code is compiled or
