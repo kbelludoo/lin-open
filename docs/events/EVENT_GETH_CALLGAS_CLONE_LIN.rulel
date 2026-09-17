@@ -1,0 +1,64 @@
+@RULEL:GETH_CALLGAS_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GETH-CALLGAS-EIP150"
+@TITLE="Clone-lin of go-ethereum callGas (EIP-150 63/64) with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-09-17"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-geth-callgas"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Geth EIP-150 call stipend into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="non-negative i64 gas; *uint256.Int is lifted to cost+cost_hi; Geth uint64 wrap of available-base is NOT claimed"
+  commercial_hook="callGas is the EIP-150 63/64 rule charged on every CALL/DELEGATECALL/STATICCALL after Tangerine Whistle; making *uint256.Int explicit and fail-closing available<base is an audit improvement, not a node-replacement or TVL claim"
+}
+
+.u{
+  repo="https://github.com/ethereum/go-ethereum"
+  path="core/vm/gas.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  git_blob_sha="5fe589bce696f618c46841dde27d7e78d65e54a6"
+  file_sha256="94e6630a8bcbaccee3a8d5b23e5971a1e47863706aa18a9878124560a5693678"
+  fixture="test/fixtures/external_proof/callGas.go"
+}
+
+.l{
+  clone="src/lin_geth_callgas.lin"
+  transpiler_delta="src/lin_from_go.lin v3: REJ_GO_UINT256 rejects callGas(*uint256.Int); go_from_go emit typechecks (lin_c0 vm is VM_REJ_STRING_LITERAL). src/lin_from_c.lin v2 REJ_C_ARRAY_PARAM. src/lin_from_solidity.lin v3 REJ_SOLIDITY_UNCHECKED + require fail-closed. Did not mutate gated transpile/c/"
+  improvement_1="callGas takes *uint256.Int; LIN takes cost and cost_hi as arguments"
+  improvement_2="available-base is underflow-checked; pinned Geth uint64-wraps when available<base"
+  improvement_2b="available=10 base=20 cost=5: Geth/Go return 5 (63/64 skipped after wrap); LIN returns 0. Not claimed as a consensus bug"
+  improvement_3="cost_hi on EIP-150 returns the stipend; pre-EIP-150 cost_hi fail-closes (Geth ErrGasUintOverflow)"
+  improvement_4="stipend is remaining-remaining/64 matching Geth, not the overflowing naive remaining*63/64"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/geth_callgas_c11.c (gcc -O2 -std=c11) plus test/oracles/geth_callgas_go.go"
+  gate="test/verify_geth_callgas.sh"
+}
+
+.p{
+  harness="test/prove_geth_callgas_external.py"
+  evidence_json="examples/geth_callgas/geth_callgas_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-geth-callgas"
+  goldens="64000->63000; 64 requested 100->63; 65->64; pre-EIP-150 passthrough; available<base lin=0 geth=skip-63/64; cost_hi EIP-150 returns stipend"
+}
+
+.n{
+  not_claimed_1="LIN replaces go-ethereum or Ethereum consensus"
+  not_claimed_2="uint64 wrap of available-base on mainnet"
+  not_claimed_3="this clone is a production node or wallet"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="Compiler 0 executes go_from_go string-literal emit"
+}
+
+.v{
+  method="PINNED_BYTES && PY_BIGINT_EQ_C11 && GO_UINT64_EQ_GETH && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

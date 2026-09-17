@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: REJ_SOLIDITY_UNCHECKED; require(cond) lowers to fail-closed ?(cond==0){^0}. v2: emit LIN for eligible pure functions; expand 1eN; OK_VIEW is classified not auto-emitted (storage lift is lin_sol_view_lift.lin)"
 }
 
 !sol_is_kw(nm: string): int {
@@ -43,6 +43,7 @@
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
   ?(rg_count_lit(body, "assembly") > 0) { ^"REJ_SOLIDITY_INLINE_ASM" };
+  ?(rg_count_lit(body, "unchecked") > 0) { ^"REJ_SOLIDITY_UNCHECKED" };
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
@@ -64,6 +65,10 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_uc = "function add(uint a, uint b) internal pure returns (uint)";
+  body_uc = "unchecked { return a + b; }";
+  r4 = sol_reason(sig_uc, body_uc);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_UNCHECKED") == 0) { ^0 };
   ^1;
 }
 
@@ -153,6 +158,18 @@
     out = out + "^";
     out = out + jss_trim(slice2(e, 6, n));
     ^out;
+  };
+  ?(starts_lit(e, 0, "require") == 1 && n > 7 && is_ident(e.charCodeAt(7)) == false) {
+    p = skip_ws(e, 7);
+    ?(p < n && e.charCodeAt(p) == 40) {
+      cl = match_paren(e, p);
+      ?(cl > p) {
+        out = out + "?(";
+        out = out + slice2(e, p + 1, cl);
+        out = out + " == 0) { ^ 0 }";
+        ^out;
+      };
+    };
   };
   ?(starts_lit(e, 0, "if") == 1 && n > 2 && is_ident(e.charCodeAt(2)) == false) {
     p = skip_ws(e, 2);
@@ -334,6 +351,10 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  req = "function gated(uint x) public pure returns (uint) { require(x > 0); return x; }";
+  outr = sol_from_sol(req);
+  ?(rg_count_lit(outr, "gated") == 0) { ^0 };
+  ?(rg_count_lit(outr, "^ 0") == 0) { ^0 };
   ^1;
 }
 
