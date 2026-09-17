@@ -1,0 +1,179 @@
+{
+  "schema": "LIN_GETH_FLOORDATA_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned FloorDataGas.go contains EIP-7623 function + token constants",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of go-ethereum v1.16.9 matches pinned sha256/blob",
+      "note": "commit=95665d5703e1023995a0ff93e4ce9eb77e8a59bd blob=bf5ac07636d5111c281726a4273d149cb10d1d8e"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of core/state_transition.go",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-PARAMS",
+      "status": "PASS",
+      "description": "git blob sha of params/protocol_params.go",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 in-range floor goldens + uint64 wrap vs i64 fail-closed",
+      "note": ""
+    },
+    {
+      "id": "GO-SELFTEST",
+      "status": "PASS",
+      "description": "independent Go FloorDataGas(z,nz) goldens + wrap vector",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_geth_floordata.lin",
+      "note": ""
+    },
+    {
+      "id": "GO-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Go transpiler v1 (emit path)",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 (REJ_C_ARRAY_PARAM)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "fd_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "8/8 in-range vectors: Python == C11 == Go == Geth-uint64 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "8/8 vectors: Python fail-closed i64 matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "FLOOR-VS-INTRINSIC",
+      "status": "PASS",
+      "description": "1 nonzero byte: Istanbul intrinsic 21016 < EIP-7623 floor 21040; Prague charge is the floor",
+      "note": "calldata spam pays the floor; wallets must budget 21040 not 21016"
+    },
+    {
+      "id": "PRAGUE-100NZ",
+      "status": "PASS",
+      "description": "100 nonzero bytes: Prague charge 25000 vs Istanbul intrinsic 22600",
+      "note": ""
+    },
+    {
+      "id": "GETH-WRAP-NZ",
+      "status": "PASS",
+      "description": "nz=2^62: Geth/Go uint64 nz*4 wraps to 0 and returns 21000; LIN fail-closes to 0",
+      "note": "unreachable at MaxBlockSize=8388608; defect of the unbounded function, not a mainnet consensus bug"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on fd_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes z/nz as arguments; pinned Geth scans []byte via bytes.Count",
+      "note": ""
+    },
+    {
+      "id": "GO-EMIT",
+      "status": "PASS",
+      "description": "lin_from_go.lin v1 emits LIN and rejects []byte / selectors / error",
+      "note": ""
+    },
+    {
+      "id": "C-ARRAY-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 rejects unsized [] params (lift to counts)",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/ethereum/go-ethereum",
+    "tag": "v1.16.9",
+    "commit": "95665d5703e1023995a0ff93e4ce9eb77e8a59bd",
+    "path": "core/state_transition.go",
+    "git_blob_sha": "bf5ac07636d5111c281726a4273d149cb10d1d8e",
+    "file_sha256": "449d50d372cc6ddff95f6ffa4eae29e06d38e248b24bc8501036c04f3e3f0c14",
+    "params_path": "params/protocol_params.go",
+    "params_git_blob_sha": "e8b044f45016d851af2698e94c62937218c9d736",
+    "params_file_sha256": "9dd1ccfb0c646f35b4d527f255ddee8173e99a033b0f6fc586340b6bdbfe4c14",
+    "license": "LGPL-3.0"
+  },
+  "lin_clone": "src/lin_geth_floordata.lin",
+  "c11_oracle": "test/oracles/geth_floordata_c11.c",
+  "go_oracle": "test/oracles/geth_floordata_go.go",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-geth-floordata",
+  "vectors": [
+    {
+      "z": 0,
+      "nz": 0,
+      "floor": 21000
+    },
+    {
+      "z": 1,
+      "nz": 0,
+      "floor": 21010
+    },
+    {
+      "z": 0,
+      "nz": 1,
+      "floor": 21040
+    },
+    {
+      "z": 1,
+      "nz": 1,
+      "floor": 21050
+    },
+    {
+      "z": 100,
+      "nz": 0,
+      "floor": 22000
+    },
+    {
+      "z": 0,
+      "nz": 100,
+      "floor": 25000
+    },
+    {
+      "z": 500,
+      "nz": 1000,
+      "floor": 66000
+    },
+    {
+      "z": 32,
+      "nz": 32,
+      "floor": 22600
+    }
+  ]
+}
