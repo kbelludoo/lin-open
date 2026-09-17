@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN changelog="v2: REJ_C_ARRAY_PARAM on unsized [] in the signature (calldata-style arrays must be lifted to counts, matching REJ_GO_SLICE)"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -40,6 +40,7 @@
   ?(rg_count_lit(sig, "float") > 0 || rg_count_lit(body, "float") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(sig, "double") > 0 || rg_count_lit(body, "double") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(body, "goto") > 0){ ^"REJ_C_GOTO" };
+  ?(rg_count_lit(sig, "[]") > 0){ ^"REJ_C_ARRAY_PARAM" };
   ^"OK";
 }
 

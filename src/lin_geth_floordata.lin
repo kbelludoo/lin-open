@@ -1,0 +1,156 @@
+@LIN:L1c:0.2
+@GETH_FLOORDATA{
+  version=1
+  repo="ethereum/go-ethereum"
+  source="core/state_transition.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="scalar_geth_eip7623_floordata_z_nz_counts"
+  note="Not a Geth node. Operand domain is non-negative i64 (Geth MaxGasLimit=2^63-1). Original FloorDataGas scans []byte and does not overflow-check nz*TxTokenPerNonZeroByte before the MaxUint64 token test."
+}
+
+!fd_tx_gas() -> int {
+  ^ 21000;
+}
+
+!fd_token_nz() -> int {
+  ^ 4;
+}
+
+!fd_token_z() -> int {
+  ^ 1;
+}
+
+!fd_cost_per_token() -> int {
+  ^ 10;
+}
+
+!fd_nz_istanbul() -> int {
+  ^ 16;
+}
+
+!fd_z_intrinsic() -> int {
+  ^ 4;
+}
+
+!fd_i64_max() -> int {
+  ^ 9223372036854775807;
+}
+
+!fd_add_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  m = fd_i64_max();
+  ?(a > m - b) { ^ 0; };
+  ^ 1;
+}
+
+!fd_mul_ok(count: int, cost: int) -> int {
+  ?(count < 0) { ^ 0; };
+  ?(cost < 0) { ^ 0; };
+  ?(cost == 0) { ^ 1; };
+  m = fd_i64_max();
+  ?(count > m / cost) { ^ 0; };
+  ^ 1;
+}
+
+!fd_charge(gas: int, count: int, cost: int) -> int {
+  ?(fd_mul_ok(count, cost) == 0) { ^ 0; };
+  add = count * cost;
+  ?(fd_add_ok(gas, add) == 0) { ^ 0; };
+  ^ gas + add;
+}
+
+!fd_tokens(z: int, nz: int) -> int {
+  ?(z < 0) { ^ 0; };
+  ?(nz < 0) { ^ 0; };
+  t = fd_charge(0, nz, fd_token_nz());
+  ?(nz > 0) {
+    ?(t == 0) { ^ 0; };
+  };
+  t = fd_charge(t, z, fd_token_z());
+  ?(z > 0) {
+    ?(t == 0) { ^ 0; };
+  };
+  ^ t;
+}
+
+!fd_floor(z: int, nz: int) -> int {
+  ?(z < 0) { ^ 0; };
+  ?(nz < 0) { ^ 0; };
+  tokens = fd_tokens(z, nz);
+  ?(tokens == 0) {
+    ?(z == 0) {
+      ?(nz == 0) { ^ fd_tx_gas(); };
+    };
+    ^ 0;
+  };
+  ^ fd_charge(fd_tx_gas(), tokens, fd_cost_per_token());
+}
+
+!fd_istanbul_intrinsic(z: int, nz: int) -> int {
+  ?(z < 0) { ^ 0; };
+  ?(nz < 0) { ^ 0; };
+  gas = fd_tx_gas();
+  gas = fd_charge(gas, nz, fd_nz_istanbul());
+  ?(nz > 0) {
+    ?(gas == 0) { ^ 0; };
+  };
+  gas = fd_charge(gas, z, fd_z_intrinsic());
+  ?(z > 0) {
+    ?(gas == 0) { ^ 0; };
+  };
+  ^ gas;
+}
+
+!fd_prague_charge(z: int, nz: int) -> int {
+  floor = fd_floor(z, nz);
+  inn = fd_istanbul_intrinsic(z, nz);
+  ?(floor == 0) { ^ 0; };
+  ?(inn == 0) { ^ 0; };
+  ?(floor > inn) { ^ floor; };
+  ^ inn;
+}
+
+!fd_test_suite() -> int {
+  ?(fd_tokens(0, 0) != 0) { ^ -1; };
+  ?(fd_floor(0, 0) != 21000) { ^ -2; };
+  ?(fd_floor(1, 0) != 21010) { ^ -3; };
+  ?(fd_floor(0, 1) != 21040) { ^ -4; };
+  ?(fd_floor(1, 1) != 21050) { ^ -5; };
+  ?(fd_floor(100, 0) != 22000) { ^ -6; };
+  ?(fd_floor(0, 100) != 25000) { ^ -7; };
+  ?(fd_floor(500, 1000) != 66000) { ^ -8; };
+  ?(fd_istanbul_intrinsic(0, 1) != 21016) { ^ -9; };
+  ?(fd_prague_charge(0, 1) != 21040) { ^ -10; };
+  ?(fd_prague_charge(0, 0) != 21000) { ^ -11; };
+  ?(fd_floor(-1, 0) != 0) { ^ -12; };
+  ?(fd_floor(0, -1) != 0) { ^ -13; };
+  ?(fd_mul_ok(2305843009213693952, 4) != 0) { ^ -14; };
+  ?(fd_tokens(0, 2305843009213693952) != 0) { ^ -15; };
+  ?(fd_floor(0, 2305843009213693952) != 0) { ^ -16; };
+  ?(fd_mul_ok(4611686018427387904, 4) != 0) { ^ -17; };
+  ?(fd_floor(0, 4611686018427387904) != 0) { ^ -18; };
+  ^ 1;
+}
+
+=ex{
+  fd_tx_gas,
+  fd_token_nz,
+  fd_token_z,
+  fd_cost_per_token,
+  fd_nz_istanbul,
+  fd_z_intrinsic,
+  fd_i64_max,
+  fd_add_ok,
+  fd_mul_ok,
+  fd_charge,
+  fd_tokens,
+  fd_floor,
+  fd_istanbul_intrinsic,
+  fd_prague_charge,
+  fd_test_suite
+}
