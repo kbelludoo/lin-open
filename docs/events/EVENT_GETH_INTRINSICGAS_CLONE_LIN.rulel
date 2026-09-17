@@ -1,0 +1,64 @@
+@RULEL:GETH_INTRINSICGAS_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GETH-INTRINSICGAS-V1"
+@TITLE="Clone-lin of go-ethereum v1.16.9 IntrinsicGas with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-09-17"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-geth-intrinsicgas"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Geth transaction intrinsic-gas math into deterministic LIN, compile in memory with C11 compiler 0, and publish auditable results in lin-open plus a separate clone-lin copy"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="non-negative i64 inputs; same cap as Geth MaxGasLimit=2^63-1; not uint64 wrap"
+  commercial_hook="every Ethereum transaction pays IntrinsicGas before EVM execution; making z/nz/access/auth counts explicit and overflow-checking AL/auth adds is an audit improvement, not a TVL or node-replacement claim"
+}
+
+.u{
+  repo="https://github.com/ethereum/go-ethereum"
+  tag="v1.16.9"
+  path="core/state_transition.go"
+  license="LGPL-3.0"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  git_blob_sha="bf5ac07636d5111c281726a4273d149cb10d1d8e"
+  file_sha256="449d50d372cc6ddff95f6ffa4eae29e06d38e248b24bc8501036c04f3e3f0c14"
+  params_blob="e8b044f45016d851af2698e94c62937218c9d736"
+  params_sha256="9dd1ccfb0c646f35b4d527f255ddee8173e99a033b0f6fc586340b6bdbfe4c14"
+  fixture="test/fixtures/external_proof/state_transition.go"
+}
+
+.l{
+  clone="src/lin_geth_intrinsicgas.lin"
+  transpiler_delta="src/lin_from_go.lin v1: go_from_go emit + REJ_GO_SLICE/SELECTOR/ERROR; src/lin_from_c.lin v2: REJ_C_ARRAY_PARAM for T name[]"
+  improvement_1="bytes.Count/len/StorageKeys become z/nz/naddr/nkeys/nauth arguments"
+  improvement_2="access-list and auth-list adds are overflow-checked; pinned Geth source has MaxUint64 guards only on the calldata path"
+  improvement_3="overflow fail-closes to 0 at i64max (Geth returns (0, error) on calldata overflow and wraps uint64 on AL/auth)"
+  improvement_4="toWordSize saturating MaxUint64 path is unreachable in i64; LIN fail-closes if size > i64max-31"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit (SKIP if libtcc missing)"
+  oracle="test/oracles/geth_intrinsicgas_c11.c (gcc -O2 -std=c11)"
+  gate="test/verify_geth_intrinsicgas.sh"
+}
+
+.p{
+  harness="test/prove_geth_intrinsicgas_external.py"
+  evidence_json="examples/geth_intrinsicgas/geth_intrinsicgas_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-geth-intrinsicgas"
+  method="PINNED_BYTES && PY_BIGINT_EQ_C11_EQ_LIN_VM && GETH_AL_UNCHECKED_IN_SOURCE && OPTIONAL_JIT_CONSENSUS"
+}
+
+.n{
+  not_claimed_1="LIN replaces go-ethereum or Ethereum consensus"
+  not_claimed_2="uint64 values above MaxGasLimit"
+  not_claimed_3="mainnet access lists wrap in production (they are small)"
+  not_claimed_4="Compiler 0 executes go_from_go string-literal paths (VM_REJ_STRING_LITERAL)"
+  not_claimed_5="wall-clock superiority vs Geth"
+}
+
+.v{
+  on_fail="do not publish a PASS status"
+}

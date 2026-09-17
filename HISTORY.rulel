@@ -165,3 +165,16 @@ equivalente funcional ao ACC 261473 do referencial v1 — o que importa e a pari
 
 Suite apos esta etapa: **26 passed / 0 failed**.
 Artefatos: /tmp/opencode/linmem2/ (fontes emitidos + drivers + medicoes).
+
+---
+
+## 2026-09-17 — Clone-lin go-ethereum IntrinsicGas (C11 compiler 0)
+
+Monetary kernel: Geth `v1.16.9` `IntrinsicGas` / `toWordSize` (LGPL-3.0).
+Class **EXPERIMENTAL** i64-scale (Geth `MaxGasLimit=2^63-1`).
+
+- LIN: `src/lin_geth_intrinsicgas.lin` — z/nz/access/auth counts as args; AL/auth overflow fail-closed
+- Go transpiler: `src/lin_from_go.lin` — `REJ_GO_SLICE` / `REJ_GO_SELECTOR` / `REJ_GO_ERROR`; emit for scalar uint64
+- C transpiler v2: `REJ_C_ARRAY_PARAM` for `T name[]`
+- Proof: `python3 test/prove_geth_intrinsicgas_external.py` (Python bigint == C11 == lin_c0 vm)
+- Clone-lin copy: https://github.com/kbelludoo/clone-lin-geth-intrinsicgas

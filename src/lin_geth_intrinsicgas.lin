@@ -1,0 +1,166 @@
+@LIN:L1c:0.2
+@GETH_INTRINSICGAS{
+  version=1
+  repo="ethereum/go-ethereum"
+  source="core/state_transition.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="scalar_geth_intrinsicgas_z_nz_access_auth_counts"
+  note="Not a Geth node. Operand domain is non-negative i64 (Geth MaxGasLimit=2^63-1). Original IntrinsicGas scans []byte and skips overflow checks on access-list/auth-list adds."
+}
+
+!ig_tx_gas() -> int {
+  ^ 21000;
+}
+
+!ig_create_gas() -> int {
+  ^ 53000;
+}
+
+!ig_zero_gas() -> int {
+  ^ 4;
+}
+
+!ig_nz_frontier() -> int {
+  ^ 68;
+}
+
+!ig_nz_istanbul() -> int {
+  ^ 16;
+}
+
+!ig_init_word() -> int {
+  ^ 2;
+}
+
+!ig_al_addr() -> int {
+  ^ 2400;
+}
+
+!ig_al_key() -> int {
+  ^ 1900;
+}
+
+!ig_auth() -> int {
+  ^ 25000;
+}
+
+!ig_i64_max() -> int {
+  ^ 9223372036854775807;
+}
+
+!ig_add_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  m = ig_i64_max();
+  ?(a > m - b) { ^ 0; };
+  ^ 1;
+}
+
+!ig_mul_ok(count: int, cost: int) -> int {
+  ?(count < 0) { ^ 0; };
+  ?(cost < 0) { ^ 0; };
+  ?(cost == 0) { ^ 1; };
+  m = ig_i64_max();
+  ?(count > m / cost) { ^ 0; };
+  ^ 1;
+}
+
+!ig_charge(gas: int, count: int, cost: int) -> int {
+  ?(ig_mul_ok(count, cost) == 0) { ^ 0; };
+  add = count * cost;
+  ?(ig_add_ok(gas, add) == 0) { ^ 0; };
+  ^ gas + add;
+}
+
+!ig_word_size(size: int) -> int {
+  ?(size < 0) { ^ -1; };
+  m = ig_i64_max();
+  ?(size > m - 31) { ^ -1; };
+  ^ (size + 31) / 32;
+}
+
+!ig_base(create: int, homestead: int) -> int {
+  ?(create == 1) {
+    ?(homestead == 1) { ^ ig_create_gas(); };
+  };
+  ^ ig_tx_gas();
+}
+
+!ig_intrinsic(z: int, nz: int, naddr: int, nkeys: int, nauth: int, create: int, homestead: int, eip2028: int, eip3860: int) -> int {
+  ?(z < 0) { ^ 0; };
+  ?(nz < 0) { ^ 0; };
+  ?(naddr < 0) { ^ 0; };
+  ?(nkeys < 0) { ^ 0; };
+  ?(nauth < 0) { ^ 0; };
+  gas = ig_base(create, homestead);
+  ?(ig_add_ok(z, nz) == 0) { ^ 0; };
+  dlen = z + nz;
+  ?(dlen > 0) {
+    nzg = ig_nz_frontier();
+    ?(eip2028 == 1) { nzg = ig_nz_istanbul(); };
+    gas = ig_charge(gas, nz, nzg);
+    ?(gas == 0) { ^ 0; };
+    gas = ig_charge(gas, z, ig_zero_gas());
+    ?(gas == 0) { ^ 0; };
+    ?(create == 1) {
+      ?(eip3860 == 1) {
+        w = ig_word_size(dlen);
+        ?(w < 0) { ^ 0; };
+        gas = ig_charge(gas, w, ig_init_word());
+        ?(gas == 0) { ^ 0; };
+      };
+    };
+  };
+  gas = ig_charge(gas, naddr, ig_al_addr());
+  ?(gas == 0) { ^ 0; };
+  gas = ig_charge(gas, nkeys, ig_al_key());
+  ?(gas == 0) { ^ 0; };
+  gas = ig_charge(gas, nauth, ig_auth());
+  ?(gas == 0) { ^ 0; };
+  ^ gas;
+}
+
+!ig_test_suite() -> int {
+  ?(ig_word_size(0) != 0) { ^ -1; };
+  ?(ig_word_size(1) != 1) { ^ -2; };
+  ?(ig_word_size(32) != 1) { ^ -3; };
+  ?(ig_word_size(33) != 2) { ^ -4; };
+  ?(ig_intrinsic(0, 0, 0, 0, 0, 0, 1, 1, 1) != 21000) { ^ -5; };
+  ?(ig_intrinsic(0, 0, 0, 0, 0, 1, 1, 1, 1) != 53000) { ^ -6; };
+  ?(ig_intrinsic(0, 0, 0, 0, 0, 1, 0, 0, 0) != 21000) { ^ -7; };
+  ?(ig_intrinsic(1, 0, 0, 0, 0, 0, 1, 1, 0) != 21004) { ^ -8; };
+  ?(ig_intrinsic(0, 1, 0, 0, 0, 0, 1, 0, 0) != 21068) { ^ -9; };
+  ?(ig_intrinsic(0, 1, 0, 0, 0, 0, 1, 1, 0) != 21016) { ^ -10; };
+  ?(ig_intrinsic(0, 0, 1, 0, 0, 0, 1, 1, 0) != 23400) { ^ -11; };
+  ?(ig_intrinsic(0, 0, 1, 1, 0, 0, 1, 1, 0) != 25300) { ^ -12; };
+  ?(ig_intrinsic(0, 0, 0, 0, 1, 0, 1, 1, 0) != 46000) { ^ -13; };
+  ?(ig_intrinsic(0, 1, 0, 0, 0, 1, 1, 1, 1) != 53018) { ^ -14; };
+  ?(ig_intrinsic(-1, 0, 0, 0, 0, 0, 1, 1, 0) != 0) { ^ -15; };
+  ?(ig_mul_ok(3843071682022824, 2400) != 0) { ^ -16; };
+  ?(ig_charge(21000, 3843071682022824, 2400) != 0) { ^ -17; };
+  ^ 1;
+}
+
+=ex{
+  ig_tx_gas,
+  ig_create_gas,
+  ig_zero_gas,
+  ig_nz_frontier,
+  ig_nz_istanbul,
+  ig_init_word,
+  ig_al_addr,
+  ig_al_key,
+  ig_auth,
+  ig_i64_max,
+  ig_add_ok,
+  ig_mul_ok,
+  ig_charge,
+  ig_word_size,
+  ig_base,
+  ig_intrinsic,
+  ig_test_suite
+}
