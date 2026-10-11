@@ -305,7 +305,7 @@ else
 	@python3 test/prove_all_claims_external.py --iterations 10000
 endif
 
-.PHONY: compound-jumprate-proof independent-reproof
+.PHONY: compound-jumprate-proof independent-reproof u512-coprocessor-proof
 compound-jumprate-proof: c0
 	@chmod +x test/verify_compound_jumprate.sh test/prove_compound_jumprate_external.py
 	@test/verify_compound_jumprate.sh
@@ -313,6 +313,90 @@ compound-jumprate-proof: c0
 independent-reproof: c0
 	@chmod +x test/prove_melhorias_independent.py
 	@python3 test/prove_melhorias_independent.py
+
+# Numeric coprocessor with auditable receipt (no Zig):
+#   C11 16-bit + C11 64-bit __int128 + Python int + Node BigInt + OpenSSL BN
+#   + Go math/big + Java BigInteger + GNU MP mpz (dlopen libgmp.so.10)
+#   + Perl Math::BigInt::Calc (not GMP) + C11 radix-2^32 schoolbook
+#   + rustc radix-2^64 schoolbook (4xu64=256, 8xu64=512, carry fits u128)
+#   + Python radix-2^8 schoolbook (32 bytes=256, 64 bytes=512, carry fits u16)
+#   + Knuth Algorithm D (TAOCP §4.3.1, 8xu32=256, 16xu32=512, carry fits u64;
+#     normalized long division, not restoring bit-serial)
+#   + POSIX GNU bc (BC_LINE_LENGTH=0).
+#   LNR1 quad-auditor; LCR2 + LCR2-full + LGE1 + LRI1 remainder-identity
+#   + LIP1 Merkle inclusion (all 8 LCR2 E2E + all 9 LCR2-full leaves).
+#   Zero-LIN Python, Node, AND Perl verifiers recompute five merkles and LIP1 paths.
+#   POSIX bc rechecks LRI1 q*d+r==n from published decimals (no LinVM, no gcc).
+#   rustc-only auditor recomputes LRI1 Merkle + LCR2/phantom bind (no Python).
+#   radix-2^8 auditor recomputes identity + OpenSSL dgst LRI1 Merkle.
+#   Knuth-D auditor recomputes identity via long division + OpenSSL dgst LRI1 Merkle.
+#   FullMath CRT+Newton auditor reconstructs 512-bit product independently of restoring.
+#   Karatsuba 128-bit split + Barrett (mu=floor(2^512/d), q=(n*mu)>>512, 512-bit ge)
+#     is a sixteenth independent math (not schoolbook, CRT, restoring-of-n, Knuth D, Hensel).
+#   Toom-3 86-bit 3-way + Goldschmidt (F=2^257-Y, eight iterations, 512-bit ge)
+#     is a seventeenth independent math (not 2-way Karatsuba, not Barrett mu, not Hensel).
+#   NTT base-256 length-64 (p=998244353) + SRT radix-4 (digits {-2..2})
+#     is an eighteenth independent math (not Toom-3, not Goldschmidt, not restoring).
+#   Comba column mul (64x64 products into a per-column acc) + non-restoring 512/256
+#     (signed remainder, q-bit = post-op sign, one final restore, 512-bit ge)
+#     is a nineteenth independent math (not row-major schoolbook, not NTT, not SRT,
+#     not restoring-of-n).
+#   Toom-4 64-bit 4-way (7 eval products, Newton interpolation) + Burnikel-Ziegler
+#     recursive D2n/1n (8xu64/4xu64, D3n/2n high-half, at most two add-backs,
+#     512-bit ge) is a twentieth independent math (not Toom-3, not Comba, not
+#     Knuth D digit q̂, not restoring-of-n, not Hensel).
+#   FNT base-2^16 length-32 (ring 2^64+1, ω=16 shift butterflies) + SRT radix-8
+#     (digits {-4..4}, thresholds ±D/2 ±3D/2 ±5D/2 ±7D/2, 512-bit ge)
+#     is a twenty-first independent math (not NTT over a prime, not SRT radix-4,
+#     not Toom-4, not Burnikel-Ziegler, not restoring-of-n).
+#   Toom-5 52-bit 5-way (9 eval products, Newton interpolation) + SRT radix-16
+#     (digits {-8..8}, thresholds ±D/2 … ±15D/2, 4 bits/step, 512-bit ge)
+#     is a twenty-second independent math (not Toom-4, not FNT, not SRT radix-8,
+#     not Burnikel-Ziegler, not restoring-of-n).
+#   Toom-6 43-bit 6-way (11 eval products, Newton interpolation) + SRT radix-32
+#     (digits {-16..16}, thresholds ±D/2 … ±31D/2, 5 bits/step, 512-bit ge)
+#     is a twenty-third independent math (not Toom-5, not SRT radix-16, not FNT,
+#     not SRT radix-8, not Toom-4, not Burnikel-Ziegler, not restoring-of-n).
+#   Toom-7 37-bit 7-way (13 eval products, Newton interpolation) + SRT radix-64
+#     (digits {-32..32}, thresholds ±D/2 … ±63D/2, 6 bits/step, 512-bit ge)
+#     is a twenty-fourth independent math (not Toom-6, not SRT radix-32, not
+#     Toom-5, not SRT radix-16, not FNT, not restoring-of-n).
+#   Class: EXPERIMENTAL (FullMath-width algorithm off-chain, not EVM mulmod, not a pool).
+u512-coprocessor-proof: c0
+	@chmod +x test/prove_u512_coprocessor_external.py \
+		examples/u512_coprocessor/verify_u512_receipt.py \
+		examples/u512_coprocessor/verify_u512_receipt.js \
+		examples/u512_coprocessor/verify_u512_inclusion.py \
+		examples/u512_coprocessor/verify_u512_inclusion.js \
+		examples/u512_coprocessor/verify_u512_inclusion.pl \
+		examples/u512_coprocessor/verify_u512_bc_identity.py \
+		examples/u512_coprocessor/verify_u512_radix8.py \
+		examples/u512_coprocessor/verify_u512_knuth_d.py \
+		examples/u512_coprocessor/verify_u512_crt.py \
+		examples/u512_coprocessor/verify_u512_karatsuba.py \
+		examples/u512_coprocessor/verify_u512_toom3.py \
+		examples/u512_coprocessor/verify_u512_ntt.py \
+		examples/u512_coprocessor/verify_u512_comba.py \
+		examples/u512_coprocessor/verify_u512_toom4.py \
+		examples/u512_coprocessor/verify_u512_fnt.py \
+		examples/u512_coprocessor/verify_u512_toom5.py \
+		examples/u512_coprocessor/verify_u512_toom6.py \
+		examples/u512_coprocessor/verify_u512_toom7.py \
+		test/oracles/u512_node_oracle.js \
+		test/oracles/u512_perl_oracle.pl \
+		test/oracles/u512_radix8.py \
+		test/oracles/u512_knuth_d.py \
+		test/oracles/u512_crt_fullmath.py \
+		test/oracles/u512_karatsuba_barrett.py \
+		test/oracles/u512_toom3_goldschmidt.py \
+		test/oracles/u512_ntt_srt.py \
+		test/oracles/u512_comba_nr.py \
+		test/oracles/u512_toom4_bz.py \
+		test/oracles/u512_fnt_srt8.py \
+		test/oracles/u512_toom5_srt16.py \
+		test/oracles/u512_toom6_srt32.py \
+		test/oracles/u512_toom7_srt64.py
+	@python3 test/prove_u512_coprocessor_external.py
 
 # Standalone no-Zig CLI (python3, stdlib only). `make install-cli PREFIX=~/.local`
 # puts an executable `lin-verify` on PATH.
