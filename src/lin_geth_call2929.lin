@@ -1,0 +1,192 @@
+@LIN:L1c:0.2
+@GETH_CALL2929{
+  version=1
+  repo="ethereum/go-ethereum"
+  source="core/vm/operations_acl.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="scalar_geth_gasCallEIP2929_cold_before_63_64"
+  note="Not a Geth node. Berlin CALL dynamic gas: charge cold-warm 2500 via UseGas BEFORE gasCall (new-account 25000 + value 9000 + memory_gas + EIP-150 63/64), then add 2500 back into the returned dynamic. Geth reads StateDB+stack. LIN takes available, requested, memory_gas, transfers, new_acct, is_cold. Cmem quadratic and CallStipend 2300 are out of scope. Jump-table constantGas WarmStorageReadCostEIP2929=100 is not returned by the dynamic fn. DELEGATECALL/STATICCALL/EIP-7702 are not this kernel."
+}
+
+!c29_warm() -> int {
+  ^ 100;
+}
+
+!c29_cold() -> int {
+  ^ 2600;
+}
+
+!c29_surcharge_amt() -> int {
+  ^ c29_cold() - c29_warm();
+}
+
+!c29_value_gas() -> int {
+  ^ 9000;
+}
+
+!c29_new_acct_gas() -> int {
+  ^ 25000;
+}
+
+!c29_ok_nonneg(v: int) -> int {
+  ?(v < 0) { ^ 0; };
+  ^ 1;
+}
+
+!c29_ok_flag(v: int) -> int {
+  ?(v == 0) { ^ 1; };
+  ?(v == 1) { ^ 1; };
+  ^ 0;
+}
+
+!c29_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!c29_surcharge(is_cold: int) -> int {
+  ?(c29_ok_flag(is_cold) == 0) { ^ 0; };
+  ?(is_cold == 1) { ^ c29_surcharge_amt(); };
+  ^ 0;
+}
+
+!c29_extra(transfers: int, new_acct: int, memory_gas: int) -> int {
+  ?(c29_ok_flag(transfers) == 0) { ^ 0; };
+  ?(c29_ok_flag(new_acct) == 0) { ^ 0; };
+  ?(c29_ok_nonneg(memory_gas) == 0) { ^ 0; };
+  g = memory_gas;
+  ?(transfers == 1) {
+    s = g + c29_value_gas();
+    ?(c29_u_lt(s, g) == 1) { ^ 0; };
+    g = s;
+    ?(new_acct == 1) {
+      s2 = g + c29_new_acct_gas();
+      ?(c29_u_lt(s2, g) == 1) { ^ 0; };
+      g = s2;
+    };
+  };
+  ^ g;
+}
+
+!c29_forward(available: int, base: int, requested: int) -> int {
+  ?(c29_ok_nonneg(available) == 0) { ^ 0; };
+  ?(c29_ok_nonneg(base) == 0) { ^ 0; };
+  ?(c29_ok_nonneg(requested) == 0) { ^ 0; };
+  ?(c29_u_lt(available, base) == 1) { ^ 0; };
+  left = available - base;
+  cap = left - (left / 64);
+  ?(c29_u_lt(requested, cap) == 1) { ^ requested; };
+  ^ cap;
+}
+
+!c29_ok_args(available: int, requested: int, memory_gas: int, transfers: int, new_acct: int, is_cold: int) -> int {
+  ?(c29_ok_nonneg(available) == 0) { ^ 0; };
+  ?(c29_ok_nonneg(requested) == 0) { ^ 0; };
+  ?(c29_ok_nonneg(memory_gas) == 0) { ^ 0; };
+  ?(c29_ok_flag(transfers) == 0) { ^ 0; };
+  ?(c29_ok_flag(new_acct) == 0) { ^ 0; };
+  ?(c29_ok_flag(is_cold) == 0) { ^ 0; };
+  cold = c29_surcharge(is_cold);
+  ?(c29_u_lt(available, cold) == 1) { ^ 0; };
+  avail2 = available - cold;
+  ex = c29_extra(transfers, new_acct, memory_gas);
+  ?(c29_u_lt(avail2, ex) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!c29_dynamic(available: int, requested: int, memory_gas: int, transfers: int, new_acct: int, is_cold: int) -> int {
+  ?(c29_ok_args(available, requested, memory_gas, transfers, new_acct, is_cold) == 0) { ^ 0; };
+  cold = c29_surcharge(is_cold);
+  avail2 = available - cold;
+  ex = c29_extra(transfers, new_acct, memory_gas);
+  f = c29_forward(avail2, ex, requested);
+  s = ex + f;
+  ?(c29_u_lt(s, ex) == 1) { ^ 0; };
+  out = s + cold;
+  ?(c29_u_lt(out, s) == 1) { ^ 0; };
+  ^ out;
+}
+
+!c29_total(available: int, requested: int, memory_gas: int, transfers: int, new_acct: int, is_cold: int) -> int {
+  ?(c29_ok_args(available, requested, memory_gas, transfers, new_acct, is_cold) == 0) { ^ 0; };
+  d = c29_dynamic(available, requested, memory_gas, transfers, new_acct, is_cold);
+  s = c29_warm() + d;
+  ?(c29_u_lt(s, d) == 1) { ^ 0; };
+  ^ s;
+}
+
+!c29_forwarded(available: int, requested: int, memory_gas: int, transfers: int, new_acct: int, is_cold: int) -> int {
+  ?(c29_ok_args(available, requested, memory_gas, transfers, new_acct, is_cold) == 0) { ^ 0; };
+  cold = c29_surcharge(is_cold);
+  avail2 = available - cold;
+  ex = c29_extra(transfers, new_acct, memory_gas);
+  ^ c29_forward(avail2, ex, requested);
+}
+
+!c29_berlin_delta(available: int, requested: int, memory_gas: int, transfers: int, new_acct: int) -> int {
+  ?(c29_ok_args(available, requested, memory_gas, transfers, new_acct, 0) == 0) { ^ 0; };
+  ?(c29_ok_args(available, requested, memory_gas, transfers, new_acct, 1) == 0) { ^ 0; };
+  ^ c29_dynamic(available, requested, memory_gas, transfers, new_acct, 1) - c29_dynamic(available, requested, memory_gas, transfers, new_acct, 0);
+}
+
+!c29_test_suite() -> int {
+  ?(c29_warm() != 100) { ^ -1; };
+  ?(c29_cold() != 2600) { ^ -2; };
+  ?(c29_surcharge_amt() != 2500) { ^ -3; };
+  ?(c29_value_gas() != 9000) { ^ -4; };
+  ?(c29_new_acct_gas() != 25000) { ^ -5; };
+  ?(c29_extra(0, 1, 0) != 0) { ^ -6; };
+  ?(c29_extra(1, 0, 0) != 9000) { ^ -7; };
+  ?(c29_extra(1, 1, 0) != 34000) { ^ -8; };
+  ?(c29_dynamic(64000, 1000000, 0, 0, 0, 0) != 63000) { ^ -9; };
+  ?(c29_dynamic(64000, 1000000, 0, 0, 0, 1) != 63040) { ^ -10; };
+  ?(c29_total(64000, 1000000, 0, 0, 0, 0) != 63100) { ^ -11; };
+  ?(c29_total(64000, 1000000, 0, 0, 0, 1) != 63140) { ^ -12; };
+  ?(c29_berlin_delta(64000, 1000000, 0, 0, 0) != 40) { ^ -13; };
+  ?(c29_forwarded(64000, 1000000, 0, 0, 0, 0) != 63000) { ^ -14; };
+  ?(c29_forwarded(64000, 1000000, 0, 0, 0, 1) != 60540) { ^ -15; };
+  ?(c29_dynamic(64000, 1000, 0, 0, 0, 0) != 1000) { ^ -16; };
+  ?(c29_dynamic(64000, 1000, 0, 0, 0, 1) != 3500) { ^ -17; };
+  ?(c29_berlin_delta(64000, 1000, 0, 0, 0) != 2500) { ^ -18; };
+  ?(c29_dynamic(100000, 0, 0, 1, 0, 0) != 9000) { ^ -19; };
+  ?(c29_dynamic(100000, 0, 0, 1, 0, 1) != 11500) { ^ -20; };
+  ?(c29_dynamic(100000, 1000000, 0, 1, 1, 0) != 98969) { ^ -21; };
+  ?(c29_dynamic(100000, 1000000, 0, 1, 1, 1) != 99008) { ^ -22; };
+  ?(c29_berlin_delta(100000, 1000000, 0, 1, 1) != 39) { ^ -23; };
+  ?(c29_dynamic(80000, 1000000, 100, 0, 0, 0) != 78752) { ^ -24; };
+  ?(c29_dynamic(80000, 1000000, 100, 0, 0, 1) != 78791) { ^ -25; };
+  ?(c29_dynamic(100000, 0, 0, 0, 1, 0) != 0) { ^ -26; };
+  ?(c29_total(100000, 0, 0, 0, 1, 0) != 100) { ^ -27; };
+  ?(c29_dynamic(2499, 0, 0, 0, 0, 1) != 0) { ^ -28; };
+  ?(c29_total(2499, 0, 0, 0, 0, 1) != 0) { ^ -29; };
+  ?(c29_dynamic(-1, 0, 0, 0, 0, 0) != 0) { ^ -30; };
+  ?(c29_dynamic(64000, 0, 0, 0, 0, 2) != 0) { ^ -31; };
+  ?(c29_dynamic(100, 0, 200, 0, 0, 0) != 0) { ^ -32; };
+  ^ 1;
+}
+
+=ex{
+  c29_warm,
+  c29_cold,
+  c29_surcharge_amt,
+  c29_value_gas,
+  c29_new_acct_gas,
+  c29_ok_nonneg,
+  c29_ok_flag,
+  c29_u_lt,
+  c29_surcharge,
+  c29_extra,
+  c29_forward,
+  c29_ok_args,
+  c29_dynamic,
+  c29_total,
+  c29_forwarded,
+  c29_berlin_delta,
+  c29_test_suite
+}

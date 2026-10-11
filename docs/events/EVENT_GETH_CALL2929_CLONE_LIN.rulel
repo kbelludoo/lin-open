@@ -1,0 +1,73 @@
+@RULEL:GETH_CALL2929_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GETH-CALL-EIP2929"
+@TITLE="Clone-lin of go-ethereum gasCallEIP2929 with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-10-11"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-geth-call2929"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Geth Berlin CALL dynamic gas (cold UseGas before EIP-150 63/64) into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open plus a separate clone-lin repo"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="i64 available/requested/memory_gas >= 0; flags 0/1; CallNewAccountGas=25000 CallValueTransferGas=9000 cold-warm 2500 fit i64; Geth uint64 wrap and uint256 requested are not claimed"
+  commercial_hook="Every Berlin+ CALL to a cold address charges 2500 before the 63/64 stipend, so the child receives less gas than a warm CALL with the same remaining gas. When 63/64 binds, parent dynamic rises by 40 (avail=64000) not 2500. DeFi routers pay this on first touch. LIN makes StateDB+stack explicit ints. Not a TVL or node-replacement claim."
+}
+
+.u{
+  repo="https://github.com/ethereum/go-ethereum"
+  path="core/vm/operations_acl.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  git_blob_sha="085b018e4c42bf0185da790518ea1d1ee891b682"
+  file_sha256="213f7846ed039c8ab293eb9511383897497f52c971da014317d3e1b5b5dc5330"
+  gas_table_path="core/vm/gas_table.go"
+  gas_table_blob="c7c1274bf2f39355108ab88722b694bf502cc4b2"
+  gas_table_sha256="c11be723771f3726bca1369a129fc8f212f7746aaa26c5b1ee3aa78e7c0a784c"
+  gas_helper_path="core/vm/gas.go"
+  gas_helper_blob="5fe589bce696f618c46841dde27d7e78d65e54a6"
+  gas_helper_sha256="94e6630a8bcbaccee3a8d5b23e5971a1e47863706aa18a9878124560a5693678"
+  params_blob="e8b044f45016d851af2698e94c62937218c9d736"
+  params_sha256="9dd1ccfb0c646f35b4d527f255ddee8173e99a033b0f6fc586340b6bdbfe4c14"
+  eips_blob="d7ed18648e6f09fcf1c3fcdf6b5ab37e480644a3"
+  eips_sha256="306e3660bb3aa7e4c943b458191390b46ed754984462f6655a413740bc6c670c"
+  fixture="test/fixtures/external_proof/gasCallEIP2929.go"
+  binding="jt[CALL].constantGas=WarmStorageReadCostEIP2929; jt[CALL].dynamicGas=gasCallEIP2929; gasCallEIP2929=makeCallVariantGasCallEIP2929(gasCall, 1)"
+  constant_gas="WarmStorageReadCostEIP2929=100 is jump-table constantGas; the cloned fn returns only dynamicGas"
+}
+
+.l{
+  clone="src/lin_geth_call2929.lin"
+  transpiler_delta="src/lin_from_go.lin v11: REJ_GO_CALL2929 / REJ_GO_USEGAS / REJ_GO_CALLTEMP / REJ_GO_CALLGAS / REJ_GO_EIP7702 + honest '='+'ex{' emit"
+  improvement_1="Geth reads StateDB+stack and calls gasCall after UseGas(2500); LIN takes available, requested, memory_gas, transfers, new_acct, is_cold"
+  improvement_2="Berlin cold is charged before 63/64, so the parent delta is not flat 2500 when the cap binds (64000 max-request delta=40)"
+  improvement_3="uint64 underflow (extra > available) and flags outside 0/1 fail-close to 0; Cmem and CallStipend are not silently pretended"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/geth_call2929_c11.c (gcc -O2 -std=c11) and test/oracles/geth_call2929_go.go"
+  gate="make geth-call2929-proof"
+}
+
+.p{
+  harness="test/prove_geth_call2929_external.py"
+  evidence_json="examples/geth_call2929/geth_call2929_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-geth-call2929"
+}
+
+.n{
+  not_claimed_1="LIN replacing Geth or Ethereum consensus"
+  not_claimed_2="quadratic memoryGasCost / Cmem (already a separate clone); memory_gas is an explicit integer"
+  not_claimed_3="CallStipend 2300, DELEGATECALL/STATICCALL/CALLCODE extras, EIP-7702 ParseDelegation, EIP-4762"
+  not_claimed_4="Compiler 0 executing go_from_go string-literal emit (VM_REJ_STRING_LITERAL)"
+  not_claimed_5="wall-clock superiority vs Geth; uint256 requested BitLen path"
+}
+
+.v{
+  method="PINNED_BYTES && PYTHON_BIGINT_EQ_C11_EQ_GO_EQ_LIN_C0_VM && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

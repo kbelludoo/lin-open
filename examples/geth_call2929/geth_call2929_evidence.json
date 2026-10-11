@@ -1,0 +1,251 @@
+{
+  "schema": "LIN_GETH_CALL2929_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned excerpt has UseGas(cold) then oldCalculator then add-back",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of go-ethereum v1.16.9 matches pinned sha256/blob",
+      "note": "commit=95665d5703e1023995a0ff93e4ce9eb77e8a59bd blob=085b018e4c42bf0185da790518ea1d1ee891b682"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of core/vm/operations_acl.go",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 in-range CALL2929 goldens vs i64 fail-closed",
+      "note": ""
+    },
+    {
+      "id": "GO-SELFTEST",
+      "status": "PASS",
+      "description": "independent Go CALL2929 goldens + fail-closed",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_geth_call2929.lin",
+      "note": ""
+    },
+    {
+      "id": "GO-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Go transpiler v11 (REJ_GO_CALL2929 / USEGAS / CALLGAS)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "c29_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "12/12 vectors: Python == C11 == Go == LIN vm (dynamic+total)",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "12/12 vectors: Python bigint CALL2929 table matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "BERLIN-DELTA",
+      "status": "PASS",
+      "description": "63/64-bound Berlin delta is 40 (not 2500); requested-bound delta is 2500",
+      "note": ""
+    },
+    {
+      "id": "CHILD-GAS",
+      "status": "PASS",
+      "description": "cold CALL forwards 60540 vs warm 63000 (child gets 2460 less)",
+      "note": ""
+    },
+    {
+      "id": "STATIC-PLUS",
+      "status": "PASS",
+      "description": "opcode total = WarmStorageReadCost 100 + dynamic (fn itself returns dynamic only)",
+      "note": ""
+    },
+    {
+      "id": "FAIL-CLOSED",
+      "status": "PASS",
+      "description": "negatives, flags outside 0/1, extra>avail, cold>avail fail-close to 0",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on c29_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes available+requested+flags; pinned Geth reads StateDB+stack",
+      "note": ""
+    },
+    {
+      "id": "GO-CALL-REJ",
+      "status": "PASS",
+      "description": "lin_from_go.lin v11 rejects UseGas / callGas / makeCallVariant / ParseDelegation",
+      "note": ""
+    },
+    {
+      "id": "GO-EX-SPLIT",
+      "status": "PASS",
+      "description": "go_from_go concatenates '=' + 'ex{' so C0 export parse is honest",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/ethereum/go-ethereum",
+    "tag": "v1.16.9",
+    "commit": "95665d5703e1023995a0ff93e4ce9eb77e8a59bd",
+    "path": "core/vm/operations_acl.go",
+    "git_blob_sha": "085b018e4c42bf0185da790518ea1d1ee891b682",
+    "file_sha256": "213f7846ed039c8ab293eb9511383897497f52c971da014317d3e1b5b5dc5330",
+    "license": "LGPL-3.0",
+    "constants": "CallValueTransferGas=9000 CallNewAccountGas=25000 ColdAccountAccessCostEIP2929=2600 WarmStorageReadCostEIP2929=100 cold-warm surcharge=2500 charged before EIP-150 63/64 from params/protocol_params.go blob e8b044f45016d851af2698e94c62937218c9d736 sha256 9dd1ccfb0c646f35b4d527f255ddee8173e99a033b0f6fc586340b6bdbfe4c14; core/vm/gas.go blob 5fe589bce696f618c46841dde27d7e78d65e54a6 sha256 94e6630a8bcbaccee3a8d5b23e5971a1e47863706aa18a9878124560a5693678; core/vm/gas_table.go blob c7c1274bf2f39355108ab88722b694bf502cc4b2 sha256 c11be723771f3726bca1369a129fc8f212f7746aaa26c5b1ee3aa78e7c0a784c"
+  },
+  "lin_clone": "src/lin_geth_call2929.lin",
+  "c11_oracle": "test/oracles/geth_call2929_c11.c",
+  "go_oracle": "test/oracles/geth_call2929_go.go",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-geth-call2929",
+  "vectors": [
+    {
+      "available": 64000,
+      "requested": 1000000,
+      "memory_gas": 0,
+      "transfers": 0,
+      "new_acct": 0,
+      "is_cold": 0,
+      "dynamic": 63000,
+      "total": 63100
+    },
+    {
+      "available": 64000,
+      "requested": 1000000,
+      "memory_gas": 0,
+      "transfers": 0,
+      "new_acct": 0,
+      "is_cold": 1,
+      "dynamic": 63040,
+      "total": 63140
+    },
+    {
+      "available": 64000,
+      "requested": 1000,
+      "memory_gas": 0,
+      "transfers": 0,
+      "new_acct": 0,
+      "is_cold": 0,
+      "dynamic": 1000,
+      "total": 1100
+    },
+    {
+      "available": 64000,
+      "requested": 1000,
+      "memory_gas": 0,
+      "transfers": 0,
+      "new_acct": 0,
+      "is_cold": 1,
+      "dynamic": 3500,
+      "total": 3600
+    },
+    {
+      "available": 100000,
+      "requested": 0,
+      "memory_gas": 0,
+      "transfers": 1,
+      "new_acct": 0,
+      "is_cold": 0,
+      "dynamic": 9000,
+      "total": 9100
+    },
+    {
+      "available": 100000,
+      "requested": 0,
+      "memory_gas": 0,
+      "transfers": 1,
+      "new_acct": 0,
+      "is_cold": 1,
+      "dynamic": 11500,
+      "total": 11600
+    },
+    {
+      "available": 100000,
+      "requested": 1000000,
+      "memory_gas": 0,
+      "transfers": 1,
+      "new_acct": 1,
+      "is_cold": 0,
+      "dynamic": 98969,
+      "total": 99069
+    },
+    {
+      "available": 100000,
+      "requested": 1000000,
+      "memory_gas": 0,
+      "transfers": 1,
+      "new_acct": 1,
+      "is_cold": 1,
+      "dynamic": 99008,
+      "total": 99108
+    },
+    {
+      "available": 80000,
+      "requested": 1000000,
+      "memory_gas": 100,
+      "transfers": 0,
+      "new_acct": 0,
+      "is_cold": 0,
+      "dynamic": 78752,
+      "total": 78852
+    },
+    {
+      "available": 80000,
+      "requested": 1000000,
+      "memory_gas": 100,
+      "transfers": 0,
+      "new_acct": 0,
+      "is_cold": 1,
+      "dynamic": 78791,
+      "total": 78891
+    },
+    {
+      "available": 100000,
+      "requested": 0,
+      "memory_gas": 0,
+      "transfers": 0,
+      "new_acct": 1,
+      "is_cold": 0,
+      "dynamic": 0,
+      "total": 100
+    },
+    {
+      "available": 2499,
+      "requested": 0,
+      "memory_gas": 0,
+      "transfers": 0,
+      "new_acct": 0,
+      "is_cold": 1,
+      "dynamic": 0,
+      "total": 0
+    }
+  ]
+}
