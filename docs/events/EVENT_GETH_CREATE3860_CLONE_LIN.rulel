@@ -1,0 +1,64 @@
+@RULEL:GETH_CREATE3860_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GETH-CREATE3860-EIP3860"
+@TITLE="Clone-lin of go-ethereum gasCreateEip3860 (EIP-3860 initcode word gas) with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-10-11"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-geth-create3860"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Geth EIP-3860 initcode word gas into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="non-negative i64 size; *Stack/*Memory/*EVM lifted to size+memgas ints; Geth error returns become fail-closed 0"
+  commercial_hook="gasCreateEip3860 is the Shanghai+ CREATE/CREATE2 initcode DoS meter; making stack.Back(2) explicit and fail-closing size>MaxInitCodeSize is an audit improvement, not a node-replacement or TVL claim"
+}
+
+.u{
+  repo="https://github.com/ethereum/go-ethereum"
+  path="core/vm/gas_table.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  git_blob_sha="c7c1274bf2f39355108ab88722b694bf502cc4b2"
+  file_sha256="c11be723771f3726bca1369a129fc8f212f7746aaa26c5b1ee3aa78e7c0a784c"
+  fixture="test/fixtures/external_proof/gasCreateEip3860.go"
+  constants="InitCodeWordGas=2 Keccak256WordGas=6 MaxInitCodeSize=49152 from params/protocol_params.go blob e8b044f45016d851af2698e94c62937218c9d736"
+}
+
+.l{
+  clone="src/lin_geth_create3860.lin"
+  transpiler_delta="src/lin_from_go.lin v4: REJ_GO_STACK / REJ_GO_EVM_CTX reject *Stack/stack.Back and *EVM/*Contract/*Memory (lift is size int). src/lin_from_c.lin v2 REJ_C_ARRAY_PARAM. src/lin_from_solidity.lin v3 REJ_SOLIDITY_UNCHECKED + require fail-closed. Did not mutate gated transpile/c/"
+  improvement_1="gasCreateEip3860 takes *EVM/*Contract/*Stack/*Memory; LIN takes size (and optional memgas) as arguments"
+  improvement_2="size>MaxInitCodeSize fail-closes to 0; Geth returns ErrMaxInitCodeSizeExceeded and does not return leftover memory gas"
+  improvement_3="CREATE2 surcharge is explicit (InitCodeWordGas+Keccak256WordGas)*words, not hidden behind params selectors"
+  improvement_4="negative size fail-closes; Geth stack.Back overflow is ErrGasUintOverflow"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/geth_create3860_c11.c (gcc -O2 -std=c11) plus test/oracles/geth_create3860_go.go"
+  gate="test/verify_geth_create3860.sh"
+}
+
+.p{
+  harness="test/prove_geth_create3860_external.py"
+  evidence_json="examples/geth_create3860/geth_create3860_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-geth-create3860"
+  goldens="size 0->0; 1->2/8; 32->2/8; 33->4/16; 49152->3072/12288; 49153 LIN=0 Geth=OVERFLOW"
+}
+
+.n{
+  not_claimed_1="LIN replaces go-ethereum or Ethereum consensus"
+  not_claimed_2="full CREATE/CREATE2 including Yellow Paper Cmem (separate memoryGasCost clone)"
+  not_claimed_3="this clone is a production node or wallet"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="Compiler 0 executes go_from_go string-literal emit"
+}
+
+.v{
+  method="PINNED_BYTES && PY_BIGINT_EQ_C11 && GO_UINT64_EQ_GETH && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
