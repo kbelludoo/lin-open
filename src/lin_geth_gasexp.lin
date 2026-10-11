@@ -1,0 +1,106 @@
+@LIN:L1c:0.2
+@GETH_GASEXP{
+  version=1
+  repo="ethereum/go-ethereum"
+  source="core/vm/gas_table.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="scalar_geth_gasExpEIP158_ExpByteEIP158"
+  note="Not a Geth node. EXP dynamic gas only: ExpGas + expByteLen*ExpByteEIP158 (10 + n*50). Geth reads stack.data[len-2].BitLen(); LIN takes bitLen or expByteLen as integers. Geth mul has no overflow check (comment: max 256*ExpByte); LIN fail-closes above that bound. math.SafeAdd overflow is fail-closed 0."
+}
+
+!ge_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!ge_exp_gas() -> int {
+  ^ 10;
+}
+
+!ge_exp_byte() -> int {
+  ^ 50;
+}
+
+!ge_ok_bitlen(bitLen: int) -> int {
+  ?(bitLen < 0) { ^ 0; };
+  ?(bitLen > 2048) { ^ 0; };
+  ^ 1;
+}
+
+!ge_ok_bytelen(n: int) -> int {
+  ?(n < 0) { ^ 0; };
+  ?(n > 256) { ^ 0; };
+  ^ 1;
+}
+
+!ge_byte_len(bitLen: int) -> int {
+  ?(ge_ok_bitlen(bitLen) == 0) { ^ 0; };
+  ^ (bitLen + 7) / 8;
+}
+
+!ge_exp(expByteLen: int) -> int {
+  ?(ge_ok_bytelen(expByteLen) == 0) { ^ 0; };
+  prod = expByteLen * ge_exp_byte();
+  s = ge_exp_gas() + prod;
+  ?(ge_u_lt(s, prod) == 1) { ^ 0; };
+  ^ s;
+}
+
+!ge_from_bitlen(bitLen: int) -> int {
+  ?(ge_ok_bitlen(bitLen) == 0) { ^ 0; };
+  n = ge_byte_len(bitLen);
+  ?(bitLen > 0 && n == 0) { ^ 0; };
+  ^ ge_exp(n);
+}
+
+!ge_evm_word() -> int {
+  ^ ge_from_bitlen(256);
+}
+
+!ge_test_suite() -> int {
+  ?(ge_exp_gas() != 10) { ^ -1; };
+  ?(ge_exp_byte() != 50) { ^ -2; };
+  ?(ge_byte_len(0) != 0) { ^ -3; };
+  ?(ge_byte_len(1) != 1) { ^ -4; };
+  ?(ge_byte_len(8) != 1) { ^ -5; };
+  ?(ge_byte_len(9) != 2) { ^ -6; };
+  ?(ge_byte_len(256) != 32) { ^ -7; };
+  ?(ge_byte_len(2048) != 256) { ^ -8; };
+  ?(ge_exp(0) != 10) { ^ -9; };
+  ?(ge_exp(1) != 60) { ^ -10; };
+  ?(ge_exp(2) != 110) { ^ -11; };
+  ?(ge_exp(32) != 1610) { ^ -12; };
+  ?(ge_exp(256) != 12810) { ^ -13; };
+  ?(ge_from_bitlen(0) != 10) { ^ -14; };
+  ?(ge_from_bitlen(1) != 60) { ^ -15; };
+  ?(ge_from_bitlen(8) != 60) { ^ -16; };
+  ?(ge_from_bitlen(9) != 110) { ^ -17; };
+  ?(ge_from_bitlen(256) != 1610) { ^ -18; };
+  ?(ge_evm_word() != 1610) { ^ -19; };
+  ?(ge_from_bitlen(2048) != 12810) { ^ -20; };
+  ?(ge_from_bitlen(-1) != 0) { ^ -21; };
+  ?(ge_exp(-1) != 0) { ^ -22; };
+  ?(ge_exp(257) != 0) { ^ -23; };
+  ?(ge_from_bitlen(2049) != 0) { ^ -24; };
+  ?(ge_byte_len(-1) != 0) { ^ -25; };
+  ^ 1;
+}
+
+=ex{
+  ge_u_lt,
+  ge_exp_gas,
+  ge_exp_byte,
+  ge_ok_bitlen,
+  ge_ok_bytelen,
+  ge_byte_len,
+  ge_exp,
+  ge_from_bitlen,
+  ge_evm_word,
+  ge_test_suite
+}
