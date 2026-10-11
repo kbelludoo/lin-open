@@ -1,0 +1,70 @@
+@RULEL:GETH_EXTCODECOPY_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GETH-EXTCODECOPY-EIP2929"
+@TITLE="Clone-lin of go-ethereum gasExtCodeCopyEIP2929 with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-10-11"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-geth-extcodecopy"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Geth EXTCODECOPY Berlin dynamic gas into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open plus a separate clone-lin repo"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="i64 size >= 0; is_cold flag 0/1; CopyGas=3 and cold-warm 2500 fit i64; Geth uint64 / Cmem quadratic is not claimed"
+  commercial_hook="EIP-2929 made first EXTCODECOPY of an address 26x more expensive (100 warm vs 2600 cold) on every Berlin+ Ethereum client. Proxies, diamonds, and bytecode-copying wallets pay this. LIN makes AddressInAccessList and stack size explicit args. Not a TVL or node-replacement claim."
+}
+
+.u{
+  repo="https://github.com/ethereum/go-ethereum"
+  path="core/vm/operations_acl.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  git_blob_sha="085b018e4c42bf0185da790518ea1d1ee891b682"
+  file_sha256="213f7846ed039c8ab293eb9511383897497f52c971da014317d3e1b5b5dc5330"
+  gas_table_path="core/vm/gas_table.go"
+  gas_table_blob="c7c1274bf2f39355108ab88722b694bf502cc4b2"
+  gas_table_sha256="c11be723771f3726bca1369a129fc8f212f7746aaa26c5b1ee3aa78e7c0a784c"
+  params_blob="e8b044f45016d851af2698e94c62937218c9d736"
+  params_sha256="9dd1ccfb0c646f35b4d527f255ddee8173e99a033b0f6fc586340b6bdbfe4c14"
+  eips_blob="d7ed18648e6f09fcf1c3fcdf6b5ab37e480644a3"
+  eips_sha256="306e3660bb3aa7e4c943b458191390b46ed754984462f6655a413740bc6c670c"
+  fixture="test/fixtures/external_proof/gasExtCodeCopyEIP2929.go"
+  binding="jt[EXTCODECOPY].constantGas=WarmStorageReadCostEIP2929; jt[EXTCODECOPY].dynamicGas=gasExtCodeCopyEIP2929; gasExtCodeCopy=memoryCopierGas(3)"
+  constant_gas="WarmStorageReadCostEIP2929=100 is jump-table constantGas; the cloned fn returns only dynamicGas"
+}
+
+.l{
+  clone="src/lin_geth_extcodecopy.lin"
+  transpiler_delta="src/lin_from_go.lin v10: REJ_GO_EXTCODECOPY / REJ_GO_ACCESSLIST + honest '='+'ex{' emit"
+  improvement_1="Geth reads StateDB+stack and calls gasExtCodeCopy; LIN takes size and is_cold"
+  improvement_2="Berlin cold-warm 2500 is an explicit ecc_surcharge instead of SafeAdd inside AddressInAccessList"
+  improvement_3="flags outside 0/1 and negative size fail-close to 0; Cmem quadratic is not silently pretended"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/geth_extcodecopy_c11.c (gcc -O2 -std=c11) and test/oracles/geth_extcodecopy_go.go"
+  gate="make geth-extcodecopy-proof"
+}
+
+.p{
+  harness="test/prove_geth_extcodecopy_external.py"
+  evidence_json="examples/geth_extcodecopy/geth_extcodecopy_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-geth-extcodecopy"
+}
+
+.n{
+  not_claimed_1="LIN replacing Geth or Ethereum consensus"
+  not_claimed_2="quadratic memoryGasCost / Cmem (already a separate clone)"
+  not_claimed_3="EIP-4762 / Verkle gasExtCodeCopyEIP4762"
+  not_claimed_4="Compiler 0 executing go_from_go string-literal emit (VM_REJ_STRING_LITERAL)"
+  not_claimed_5="wall-clock superiority vs Geth"
+}
+
+.v{
+  method="PINNED_BYTES && PYTHON_BIGINT_EQ_C11_EQ_GO_EQ_LIN_C0_VM && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

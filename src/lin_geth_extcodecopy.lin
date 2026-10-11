@@ -1,0 +1,146 @@
+@LIN:L1c:0.2
+@GETH_EXTCODECOPY{
+  version=1
+  repo="ethereum/go-ethereum"
+  source="core/vm/operations_acl.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="scalar_geth_gasExtCodeCopyEIP2929_copy_plus_cold_warm"
+  note="Not a Geth node. Dynamic EXTCODECOPY after Berlin: CopyGas*((size+31)/32) plus 2500 if the address is cold. Geth reads StateDB+stack and calls gasExtCodeCopy (memoryCopierGas(3), which also adds Cmem). LIN takes size and is_cold as integers. Quadratic memoryGasCost is out of scope. Jump-table constantGas WarmStorageReadCostEIP2929=100 is not returned by the dynamic fn."
+}
+
+!ecc_copy_gas() -> int {
+  ^ 3;
+}
+
+!ecc_warm() -> int {
+  ^ 100;
+}
+
+!ecc_cold() -> int {
+  ^ 2600;
+}
+
+!ecc_surcharge_amt() -> int {
+  ^ ecc_cold() - ecc_warm();
+}
+
+!ecc_ok_size(size: int) -> int {
+  ?(size < 0) { ^ 0; };
+  ^ 1;
+}
+
+!ecc_ok_flag(v: int) -> int {
+  ?(v == 0) { ^ 1; };
+  ?(v == 1) { ^ 1; };
+  ^ 0;
+}
+
+!ecc_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!ecc_words(size: int) -> int {
+  ?(ecc_ok_size(size) == 0) { ^ 0; };
+  ^ (size + 31) / 32;
+}
+
+!ecc_copy(size: int) -> int {
+  ?(ecc_ok_size(size) == 0) { ^ 0; };
+  ^ ecc_copy_gas() * ecc_words(size);
+}
+
+!ecc_surcharge(is_cold: int) -> int {
+  ?(ecc_ok_flag(is_cold) == 0) { ^ 0; };
+  ?(is_cold == 1) { ^ ecc_surcharge_amt(); };
+  ^ 0;
+}
+
+!ecc_dynamic(size: int, is_cold: int) -> int {
+  ?(ecc_ok_size(size) == 0) { ^ 0; };
+  ?(ecc_ok_flag(is_cold) == 0) { ^ 0; };
+  copy = ecc_copy(size);
+  extra = ecc_surcharge(is_cold);
+  s = copy + extra;
+  ?(ecc_u_lt(s, copy) == 1) { ^ 0; };
+  ^ s;
+}
+
+!ecc_total(size: int, is_cold: int) -> int {
+  ?(ecc_ok_size(size) == 0) { ^ 0; };
+  ?(ecc_ok_flag(is_cold) == 0) { ^ 0; };
+  d = ecc_dynamic(size, is_cold);
+  s = ecc_warm() + d;
+  ?(ecc_u_lt(s, d) == 1) { ^ 0; };
+  ^ s;
+}
+
+!ecc_berlin_delta(size: int) -> int {
+  ?(ecc_ok_size(size) == 0) { ^ 0; };
+  ^ ecc_dynamic(size, 1) - ecc_dynamic(size, 0);
+}
+
+!ecc_account_check(is_cold: int) -> int {
+  ^ ecc_surcharge(is_cold);
+}
+
+!ecc_test_suite() -> int {
+  ?(ecc_copy_gas() != 3) { ^ -1; };
+  ?(ecc_warm() != 100) { ^ -2; };
+  ?(ecc_cold() != 2600) { ^ -3; };
+  ?(ecc_surcharge_amt() != 2500) { ^ -4; };
+  ?(ecc_words(0) != 0) { ^ -5; };
+  ?(ecc_words(1) != 1) { ^ -6; };
+  ?(ecc_words(32) != 1) { ^ -7; };
+  ?(ecc_words(33) != 2) { ^ -8; };
+  ?(ecc_copy(0) != 0) { ^ -9; };
+  ?(ecc_copy(1) != 3) { ^ -10; };
+  ?(ecc_copy(32) != 3) { ^ -11; };
+  ?(ecc_copy(33) != 6) { ^ -12; };
+  ?(ecc_copy(1024) != 96) { ^ -13; };
+  ?(ecc_dynamic(0, 0) != 0) { ^ -14; };
+  ?(ecc_dynamic(0, 1) != 2500) { ^ -15; };
+  ?(ecc_dynamic(1, 0) != 3) { ^ -16; };
+  ?(ecc_dynamic(1, 1) != 2503) { ^ -17; };
+  ?(ecc_dynamic(33, 0) != 6) { ^ -18; };
+  ?(ecc_dynamic(33, 1) != 2506) { ^ -19; };
+  ?(ecc_dynamic(1024, 0) != 96) { ^ -20; };
+  ?(ecc_dynamic(1024, 1) != 2596) { ^ -21; };
+  ?(ecc_total(0, 0) != 100) { ^ -22; };
+  ?(ecc_total(0, 1) != 2600) { ^ -23; };
+  ?(ecc_total(1, 1) != 2603) { ^ -24; };
+  ?(ecc_total(1024, 1) != 2696) { ^ -25; };
+  ?(ecc_berlin_delta(0) != 2500) { ^ -26; };
+  ?(ecc_berlin_delta(1024) != 2500) { ^ -27; };
+  ?(ecc_account_check(1) != 2500) { ^ -28; };
+  ?(ecc_account_check(0) != 0) { ^ -29; };
+  ?(ecc_dynamic(-1, 0) != 0) { ^ -30; };
+  ?(ecc_dynamic(32, 2) != 0) { ^ -31; };
+  ?(ecc_surcharge(-1) != 0) { ^ -32; };
+  ?(ecc_copy(-1) != 0) { ^ -33; };
+  ^ 1;
+}
+
+=ex{
+  ecc_copy_gas,
+  ecc_warm,
+  ecc_cold,
+  ecc_surcharge_amt,
+  ecc_ok_size,
+  ecc_ok_flag,
+  ecc_u_lt,
+  ecc_words,
+  ecc_copy,
+  ecc_surcharge,
+  ecc_dynamic,
+  ecc_total,
+  ecc_berlin_delta,
+  ecc_account_check,
+  ecc_test_suite
+}
