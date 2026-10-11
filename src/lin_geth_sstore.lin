@@ -1,0 +1,179 @@
+@LIN:L1c:0.2
+@GETH_SSTORE{
+  version=1
+  repo="ethereum/go-ethereum"
+  source="core/vm/operations_acl.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="scalar_geth_makeGasSStoreFunc_EIP3529"
+  note="Not a Geth node. SSTORE dynamic gas + refund delta only. Geth reads StateDB original/current and stack value; LIN takes orig/curr/val slot tokens 0..3, is_warm, gas_left. Sentry (gas_left<=2300) fail-closes to 0. Refund is the intended AddRefund/SubRefund delta, not the account-capped refund."
+}
+
+!ss_sentry() -> int {
+  ^ 2300;
+}
+
+!ss_set() -> int {
+  ^ 20000;
+}
+
+!ss_reset() -> int {
+  ^ 5000;
+}
+
+!ss_cold() -> int {
+  ^ 2100;
+}
+
+!ss_warm() -> int {
+  ^ 100;
+}
+
+!ss_access_key() -> int {
+  ^ 1900;
+}
+
+!ss_clear_2200() -> int {
+  ^ 15000;
+}
+
+!ss_clear_3529() -> int {
+  ^ ss_reset() - ss_cold() + ss_access_key();
+}
+
+!ss_reset_warm() -> int {
+  ^ ss_reset() - ss_cold();
+}
+
+!ss_ok_slot(v: int) -> int {
+  ?(v < 0) { ^ 0; };
+  ?(v > 3) { ^ 0; };
+  ^ 1;
+}
+
+!ss_ok_warm(w: int) -> int {
+  ?(w == 0) { ^ 1; };
+  ?(w == 1) { ^ 1; };
+  ^ 0;
+}
+
+!ss_ok_sched(sched: int) -> int {
+  ?(sched == 4800) { ^ 1; };
+  ?(sched == 15000) { ^ 1; };
+  ^ 0;
+}
+
+!ss_gas(orig: int, curr: int, val: int, is_warm: int, gas_left: int) -> int {
+  ?(ss_ok_slot(orig) == 0) { ^ 0; };
+  ?(ss_ok_slot(curr) == 0) { ^ 0; };
+  ?(ss_ok_slot(val) == 0) { ^ 0; };
+  ?(ss_ok_warm(is_warm) == 0) { ^ 0; };
+  ?(gas_left <= ss_sentry()) { ^ 0; };
+  cost = 0;
+  ?(is_warm == 0) { cost = ss_cold(); };
+  ?(curr == val) { ^ cost + ss_warm(); };
+  ?(orig == curr) {
+    ?(orig == 0) { ^ cost + ss_set(); };
+    ^ cost + ss_reset_warm();
+  };
+  ^ cost + ss_warm();
+}
+
+!ss_refund(orig: int, curr: int, val: int, gas_left: int, sched: int) -> int {
+  ?(ss_ok_slot(orig) == 0) { ^ 0; };
+  ?(ss_ok_slot(curr) == 0) { ^ 0; };
+  ?(ss_ok_slot(val) == 0) { ^ 0; };
+  ?(ss_ok_sched(sched) == 0) { ^ 0; };
+  ?(gas_left <= ss_sentry()) { ^ 0; };
+  ?(curr == val) { ^ 0; };
+  ?(orig == curr) {
+    ?(orig == 0) { ^ 0; };
+    ?(val == 0) { ^ sched; };
+    ^ 0;
+  };
+  r = 0;
+  ?(orig != 0) {
+    ?(curr == 0) { r = r - sched; };
+    ?(curr != 0) {
+      ?(val == 0) { r = r + sched; };
+    };
+  };
+  ?(orig == val) {
+    ?(orig == 0) { r = r + (ss_set() - ss_warm()); };
+    ?(orig != 0) { r = r + (ss_reset_warm() - ss_warm()); };
+  };
+  ^ r;
+}
+
+!ss_gas_3529(orig: int, curr: int, val: int, is_warm: int, gas_left: int) -> int {
+  ^ ss_gas(orig, curr, val, is_warm, gas_left);
+}
+
+!ss_refund_3529(orig: int, curr: int, val: int, is_warm: int, gas_left: int) -> int {
+  ?(ss_ok_warm(is_warm) == 0) { ^ 0; };
+  ^ ss_refund(orig, curr, val, gas_left, ss_clear_3529());
+}
+
+!ss_sload(is_warm: int) -> int {
+  ?(ss_ok_warm(is_warm) == 0) { ^ 0; };
+  ?(is_warm == 1) { ^ ss_warm(); };
+  ^ ss_cold();
+}
+
+!ss_first_credit_cold() -> int {
+  ^ ss_gas(0, 0, 1, 0, 100000);
+}
+
+!ss_test_suite() -> int {
+  ?(ss_clear_3529() != 4800) { ^ -1; };
+  ?(ss_reset_warm() != 2900) { ^ -2; };
+  ?(ss_gas(0, 0, 0, 1, 100000) != 100) { ^ -3; };
+  ?(ss_gas(1, 1, 1, 1, 100000) != 100) { ^ -4; };
+  ?(ss_gas(0, 0, 1, 1, 100000) != 20000) { ^ -5; };
+  ?(ss_gas(1, 1, 0, 1, 100000) != 2900) { ^ -6; };
+  ?(ss_gas(1, 1, 2, 1, 100000) != 2900) { ^ -7; };
+  ?(ss_gas(1, 0, 1, 1, 100000) != 100) { ^ -8; };
+  ?(ss_gas(0, 1, 0, 1, 100000) != 100) { ^ -9; };
+  ?(ss_gas(0, 0, 1, 0, 100000) != 22100) { ^ -10; };
+  ?(ss_gas(1, 1, 0, 0, 100000) != 5000) { ^ -11; };
+  ?(ss_gas(0, 0, 1, 1, 2300) != 0) { ^ -12; };
+  ?(ss_gas(0, 0, 1, 1, 2301) != 20000) { ^ -13; };
+  ?(ss_refund(1, 1, 0, 100000, 4800) != 4800) { ^ -14; };
+  ?(ss_refund(1, 0, 1, 100000, 4800) != 0 - 2000) { ^ -15; };
+  ?(ss_refund(0, 1, 0, 100000, 4800) != 19900) { ^ -16; };
+  ?(ss_refund(1, 2, 1, 100000, 4800) != 2800) { ^ -17; };
+  ?(ss_refund(1, 1, 0, 100000, 15000) != 15000) { ^ -18; };
+  ?(ss_refund(0, 0, 1, 2300, 4800) != 0) { ^ -19; };
+  ?(ss_sload(1) != 100) { ^ -20; };
+  ?(ss_sload(0) != 2100) { ^ -21; };
+  ?(ss_first_credit_cold() != 22100) { ^ -22; };
+  ?(ss_gas(-1, 0, 1, 1, 100000) != 0) { ^ -23; };
+  ?(ss_gas(0, 0, 1, 2, 100000) != 0) { ^ -24; };
+  ?(ss_refund(1, 1, 0, 100000, 1) != 0) { ^ -25; };
+  ^ 1;
+}
+
+=ex{
+  ss_sentry,
+  ss_set,
+  ss_reset,
+  ss_cold,
+  ss_warm,
+  ss_access_key,
+  ss_clear_2200,
+  ss_clear_3529,
+  ss_reset_warm,
+  ss_ok_slot,
+  ss_ok_warm,
+  ss_ok_sched,
+  ss_gas,
+  ss_refund,
+  ss_gas_3529,
+  ss_refund_3529,
+  ss_sload,
+  ss_first_credit_cold,
+  ss_test_suite
+}

@@ -1,0 +1,64 @@
+@RULEL:GETH_SSTORE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GETH-SSTORE-EIP3529"
+@TITLE="Clone-lin of go-ethereum makeGasSStoreFunc (EIP-3529 SSTORE) with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-10-11"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-geth-sstore"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Geth makeGasSStoreFunc / SSTORE dynamic gas and refund delta into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="non-negative i64 slot tokens in 0..3, is_warm in {0,1}, gas_left i64; *Stack/*Memory/*EVM/StateDB lifted to ints; Geth error returns become fail-closed 0"
+  commercial_hook="SSTORE meters every Ethereum storage write since Istanbul/Berlin/London. A first-credit (0->nonzero, cold) costs 22100; a clean delete refunds 4800 under EIP-3529 (was 15000). Making StateDB original/current/value and the access-list warm bit explicit is an audit improvement, not a node-replacement or TVL claim"
+}
+
+.u{
+  repo="https://github.com/ethereum/go-ethereum"
+  path="core/vm/operations_acl.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  git_blob_sha="085b018e4c42bf0185da790518ea1d1ee891b682"
+  file_sha256="213f7846ed039c8ab293eb9511383897497f52c971da014317d3e1b5b5dc5330"
+  fixture="test/fixtures/external_proof/makeGasSStoreFunc.go"
+  constants="SstoreSentry=2300 Set=20000 Reset=5000 ColdSload=2100 Warm=100 AccessKey=1900 Clear3529=4800 from params/protocol_params.go blob e8b044f45016d851af2698e94c62937218c9d736"
+}
+
+.l{
+  clone="src/lin_geth_sstore.lin"
+  transpiler_delta="src/lin_from_go.lin v8: REJ_GO_STATEDB / REJ_GO_REFUND reject StateDB GetState AddRefund SlotInAccessList (SSTORE lift is sstoreGasEIP3529(orig,curr,val,isWarm,gasLeft)). src/lin_from_c.lin v2 REJ_C_ARRAY_PARAM. src/lin_from_solidity.lin v3 REJ_SOLIDITY_UNCHECKED + require fail-closed. Did not mutate gated transpile/c/"
+  improvement_1="GetStateAndCommittedState + stack.Back/peek become explicit orig/curr/val slot tokens 0..3"
+  improvement_2="*Stack / *Memory / *EVM / *Contract / StateDB unused gas-table params are dropped"
+  improvement_3="reentrancy sentry (gas_left<=2300) and illegal tokens fail-close to 0"
+  improvement_4="refund is a named signed delta; EIP-3529 4800 vs EIP-2200 15000 is an explicit identity 5000-2100+1900"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/geth_sstore_c11.c (gcc -O2 -std=c11) plus test/oracles/geth_sstore_go.go"
+  gate="test/verify_geth_sstore.sh"
+}
+
+.p{
+  harness="test/prove_geth_sstore_external.py"
+  evidence_json="examples/geth_sstore/geth_sstore_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-geth-sstore"
+  goldens="create_warm=20000; create_cold=22100; delete_warm=2900 refund=4800; recreate_original refund=-2000; dirty_reset_empty refund=19900; sentry_2300=0"
+}
+
+.n{
+  not_claimed_1="LIN replaces go-ethereum or Ethereum consensus"
+  not_claimed_2="account-capped refund / RefundQuotientEIP3529 (1/5) application"
+  not_claimed_3="this clone is a production node or wallet"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="Compiler 0 executes go_from_go string-literal emit"
+}
+
+.v{
+  method="PINNED_BYTES && PY_BIGINT_EQ_C11 && GO_EQ_GETH_TABLE && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

@@ -1,0 +1,302 @@
+{
+  "schema": "LIN_GETH_SSTORE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned excerpt has StateDB lift + sentry + set/reset/warm/cold",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of go-ethereum v1.16.9 matches pinned sha256/blob",
+      "note": "commit=95665d5703e1023995a0ff93e4ce9eb77e8a59bd blob=085b018e4c42bf0185da790518ea1d1ee891b682"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of core/vm/operations_acl.go",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 in-range SSTORE goldens vs i64 fail-closed",
+      "note": ""
+    },
+    {
+      "id": "GO-SELFTEST",
+      "status": "PASS",
+      "description": "independent Go SSTORE goldens + sentry fail-closed",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_geth_sstore.lin",
+      "note": ""
+    },
+    {
+      "id": "GO-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Go transpiler v8 (REJ_GO_STATEDB)",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 (REJ_C_ARRAY_PARAM)",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3 (require/unchecked)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "ss_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "17/17 vectors: Python == C11 == Go == LIN vm (gas+refund)",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "17/17 vectors: Python bigint SSTORE table matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "FIRST-CREDIT",
+      "status": "PASS",
+      "description": "first-credit cold SSTORE = 22100 (2100+20000)",
+      "note": "typical first ERC-20 balance write"
+    },
+    {
+      "id": "EIP3529-DELTA",
+      "status": "PASS",
+      "description": "EIP-3529 clear refund is 4800 = 5000-2100+1900; EIP-2200 remains 15000",
+      "note": ""
+    },
+    {
+      "id": "SENTRY",
+      "status": "PASS",
+      "description": "gas_left<=2300 fail-closes; 2301 still charges set-gas",
+      "note": ""
+    },
+    {
+      "id": "FAIL-CLOSED",
+      "status": "PASS",
+      "description": "slot tokens outside 0..3 and is_warm outside 0..1 fail-close to 0",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on ss_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes orig/curr/val/is_warm/gas_left; pinned Geth reads StateDB+stack",
+      "note": ""
+    },
+    {
+      "id": "GO-STATEDB-REJ",
+      "status": "PASS",
+      "description": "lin_from_go.lin v8 rejects StateDB/GetState/AddRefund (lift is sstoreGasEIP3529)",
+      "note": ""
+    },
+    {
+      "id": "C-ARRAY-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 rejects unsized [] params (lift to counts)",
+      "note": ""
+    },
+    {
+      "id": "SOL-REQUIRE",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects unchecked and lowers require to fail-closed",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/ethereum/go-ethereum",
+    "tag": "v1.16.9",
+    "commit": "95665d5703e1023995a0ff93e4ce9eb77e8a59bd",
+    "path": "core/vm/operations_acl.go",
+    "git_blob_sha": "085b018e4c42bf0185da790518ea1d1ee891b682",
+    "file_sha256": "213f7846ed039c8ab293eb9511383897497f52c971da014317d3e1b5b5dc5330",
+    "license": "LGPL-3.0",
+    "constants": "SstoreSentryGasEIP2200=2300 SstoreSetGasEIP2200=20000 SstoreResetGasEIP2200=5000 ColdSloadCostEIP2929=2100 WarmStorageReadCostEIP2929=100 TxAccessListStorageKeyGas=1900 SstoreClearsScheduleRefundEIP3529=4800 from params/protocol_params.go blob e8b044f45016d851af2698e94c62937218c9d736 sha256 9dd1ccfb0c646f35b4d527f255ddee8173e99a033b0f6fc586340b6bdbfe4c14"
+  },
+  "lin_clone": "src/lin_geth_sstore.lin",
+  "c11_oracle": "test/oracles/geth_sstore_c11.c",
+  "go_oracle": "test/oracles/geth_sstore_go.go",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-geth-sstore",
+  "vectors": [
+    {
+      "orig": 0,
+      "curr": 0,
+      "val": 0,
+      "is_warm": 1,
+      "gas_left": 100000,
+      "gas": 100,
+      "refund_3529": 0
+    },
+    {
+      "orig": 1,
+      "curr": 1,
+      "val": 1,
+      "is_warm": 1,
+      "gas_left": 100000,
+      "gas": 100,
+      "refund_3529": 0
+    },
+    {
+      "orig": 0,
+      "curr": 0,
+      "val": 1,
+      "is_warm": 1,
+      "gas_left": 100000,
+      "gas": 20000,
+      "refund_3529": 0
+    },
+    {
+      "orig": 1,
+      "curr": 1,
+      "val": 0,
+      "is_warm": 1,
+      "gas_left": 100000,
+      "gas": 2900,
+      "refund_3529": 4800
+    },
+    {
+      "orig": 1,
+      "curr": 1,
+      "val": 2,
+      "is_warm": 1,
+      "gas_left": 100000,
+      "gas": 2900,
+      "refund_3529": 0
+    },
+    {
+      "orig": 1,
+      "curr": 0,
+      "val": 1,
+      "is_warm": 1,
+      "gas_left": 100000,
+      "gas": 100,
+      "refund_3529": -2000
+    },
+    {
+      "orig": 1,
+      "curr": 0,
+      "val": 0,
+      "is_warm": 1,
+      "gas_left": 100000,
+      "gas": 100,
+      "refund_3529": 0
+    },
+    {
+      "orig": 1,
+      "curr": 0,
+      "val": 2,
+      "is_warm": 1,
+      "gas_left": 100000,
+      "gas": 100,
+      "refund_3529": -4800
+    },
+    {
+      "orig": 1,
+      "curr": 2,
+      "val": 1,
+      "is_warm": 1,
+      "gas_left": 100000,
+      "gas": 100,
+      "refund_3529": 2800
+    },
+    {
+      "orig": 1,
+      "curr": 2,
+      "val": 0,
+      "is_warm": 1,
+      "gas_left": 100000,
+      "gas": 100,
+      "refund_3529": 4800
+    },
+    {
+      "orig": 1,
+      "curr": 2,
+      "val": 2,
+      "is_warm": 1,
+      "gas_left": 100000,
+      "gas": 100,
+      "refund_3529": 0
+    },
+    {
+      "orig": 1,
+      "curr": 2,
+      "val": 3,
+      "is_warm": 1,
+      "gas_left": 100000,
+      "gas": 100,
+      "refund_3529": 0
+    },
+    {
+      "orig": 0,
+      "curr": 1,
+      "val": 0,
+      "is_warm": 1,
+      "gas_left": 100000,
+      "gas": 100,
+      "refund_3529": 19900
+    },
+    {
+      "orig": 0,
+      "curr": 1,
+      "val": 1,
+      "is_warm": 1,
+      "gas_left": 100000,
+      "gas": 100,
+      "refund_3529": 0
+    },
+    {
+      "orig": 0,
+      "curr": 1,
+      "val": 2,
+      "is_warm": 1,
+      "gas_left": 100000,
+      "gas": 100,
+      "refund_3529": 0
+    },
+    {
+      "orig": 0,
+      "curr": 0,
+      "val": 1,
+      "is_warm": 0,
+      "gas_left": 100000,
+      "gas": 22100,
+      "refund_3529": 0
+    },
+    {
+      "orig": 1,
+      "curr": 1,
+      "val": 0,
+      "is_warm": 0,
+      "gas_left": 100000,
+      "gas": 5000,
+      "refund_3529": 4800
+    }
+  ]
+}
