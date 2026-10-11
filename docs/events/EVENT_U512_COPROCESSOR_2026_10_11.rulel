@@ -1,0 +1,74 @@
+@RULEL:U512_COPROCESSOR_EVENT:1.17.0
+@CHALLENGE_ID="LIN-U512-COPROCESSOR-2026-10-11"
+@TITLE="512-bit intermediate proved as numeric coprocessor with auditable receipt"
+@STATUS="REPRODUCED_THIS_RUN"
+@DATE="2026-10-11"
+@CLASS="EXPERIMENTAL"
+
+~R{.s=scope .p=proved .n=not_proved .m=measured .h=hashes .v=verdict}
+
+.s{
+  product="LIN as a numeric coprocessor with an auditable receipt, not a Uniswap replacement"
+  why="u256 mulDiv(a,b,d)=(a*b)/d with a,b,d up to 2^256-1 needs a correct 512-bit product; otherwise the SafeMath-width settler lies or returns -2 where width-correct math approves"
+  engine="src/lin_u512_coprocessor.lin (16-bit limbs) + 32-limb remainder ge in examples/defi_settlement_proof/u512_uniswap_v2_core.lin"
+  make="make u512-coprocessor-proof"
+  harness="python3 test/prove_u512_coprocessor_external.py → 135/135 PASS this run"
+  delta="schema 1.17: Comba 256x256->512 + non-restoring 512/256 is a nineteenth independent math. Product: column Comba — for output limb k the inner sum is all a[i]*b[k-i] into one running accumulator, then one write + carry. 64x64 products only. Not 16-bit row-major schoolbook, not Karatsuba 2-way, not Toom-3 86-bit 3-way, not NTT, not CRT/Mersenne. Division: remainder is two's-complement and may be negative; each step shifts then subtracts D if rem>=0 else adds D; q-bit is the post-op sign; one final restore so r in [0,d); 512-bit ge so r<d. Not restoring of n, not SRT radix-4 digits {-2..2}, not Barrett mu, not Knuth D, not Goldschmidt, not Hensel. Python int only for 64x64->128 Comba products and 64-bit limb add/shift. Zero-LIN Comba auditor (verify_u512_comba.py) recomputes n==a*b via Comba, q*d+r==n via non-restoring, binds mulDiv(fee,rout,den) on 3 EXACT + 3 OVERPAID + PHANTOM_APPROVE, and OpenSSL dgst of the LRI1 Merkle tree (FIPS abc ba7816bf) — no gcc, no rustc, no LinVM. Still includes schema 1.16 NTT+SRT. Merkle roots unchanged vs 1.16 (engine frozen)."
+}
+
+.p{
+  mul="256x256->512 schoolbook in the engine AND Comba column reconstruction independently; leftover-carry fail-closed; (2^256-1)^2 lo=1 hi=2^256-2 published leaf"
+  div="512/256 restoring div in the engine AND non-restoring independently; remainder 32/16/8 limbs; 512-bit ge; q*d+r==n and r<d"
+  ge="u512_ge_word + LGE1 8-leaf power-of-two tree; Comba/NR ge_limbs agrees with Python int / Node / OpenSSL BN / Go / Java / GMP / Perl / radix32 / rust64 / radix8 / Knuth D / CRT / Karatsuba / Toom-3 / NTT / GNU bc"
+  identity="LRI1 8-leaf power-of-two tree binds the 512-bit product n plus d,q,r. Outsider (including Comba+NR + OpenSSL dgst) checks n==a*b and q*d+r==n and r<d without LinVM"
+  inclusion="LIP1: 34 published inclusion proofs (8 LRI1 + 8 LGE1 + LNR1 max_sq + 8 LCR2 E2E + 9 LCR2-full). Comba/NR auditor binds packed LCR2 EXACT/OVERPAID and PHANTOM_APPROVE via mulDiv(fee,rout,den)"
+  guards="-1 on d=0 (coprocessor) and zero amount_in (both LCR2 trees); -2 on q overflow, SafeMath-width phantom (LCR2), and ain=2^256-1 fee overflow (LCR2-full)"
+  oracles="previous 1.16 oracles plus Comba+NR (COMBA_NR_CONSENSUS) on the n=1060 batch; Comba/NR on 6 LCR2 EXACT/OVERPAID and 6 LCR2-full + PHANTOM_APPROVE"
+  phantom="ain=1,rin=1,rout=ceil(2^256/997): coprocessor APPROVES; settle_u512_swap APPROVES; settle_u256_word -2. 512-bit intermediate off the suspect list; replacing the SafeMath-width settler body remains required"
+  receipt="LNR1 240-byte records; LCR2 208-byte records; LGE1; LRI1; LIP1; quad-auditor Python hashlib == Node crypto == C11 lin_sha256 == OpenSSL dgst; 1-bit leaf tamper rejected"
+  lcr2="3 EXACT_INPUT + 3 OVERPAID_INPUT with settle_u256_word == coprocessor == ref_amount_out and steps!=0; GUARD_ZERO -1; GUARD_OVERFLOW -2"
+  lcr2_full="same 3 EXACT + 3 OVERPAID via settle_u512_swap == ref_amount_out_full plus PHANTOM_APPROVE"
+}
+
+.n{
+  not_1="EVM mulmod opcode / solc FullMath.sol on-chain (algorithm pin; opcode not executed)"
+  not_2="a deployed Uniswap v2/v3 pool"
+  not_3="the full 2000-swap + 157-unfiltered campaign"
+  not_4="that 512 proof closes the SafeMath-width u256 settler by itself"
+  not_5="zk or computational soundness of Merkle (tamper-evidence + re-execution)"
+}
+
+.m{
+  host="lin_c0 C11, gcc -std=c11, python3 Comba+NR + NTT+SRT + hashlib, node BigInt + crypto, openssl dgst, go math/big, javac BigInteger, libgmp.so.10, perl Math::BigInt::Calc, GNU bc 1.07.1, rustc zero-crate radix-2^64; no Zig"
+  comba_selftest="SELFTEST_PASS comba_nr q*d+r==n ge512 comba_prod nrdiv"
+  gate="135/135 PASS"
+  published_lip1_proofs=34
+  self_gate_steps=6710747
+  phantom_coprocessor_steps=1106942
+  phantom_u256_status=-2
+  phantom_u512_swap_steps=1098245
+  class="EXPERIMENTAL"
+}
+
+.h{
+  lin_src="sha256:2a66456eae1227cb9ec3571da3258313cd4a5c6c787c42d3877a67152e96bd4b"
+  oracle_comba="sha256:a74b2418d5748a197c97c9baaf10eafb9964f3ce0eecbffd915275fe08e3593b"
+  comba_py="sha256:d78dac9ef16449f1cefd8ac952bc6191b0ae63800b5e9eecd4a4b5991136caa9"
+  verifier_comba="sha256:fd1e61586b7eaeb1957c3b813df5c31388ae8a8d09f07862b52f4ca379bd56fb"
+  harness="sha256:6810c9a86ab95a0a29310f51cd0101a347c57214dca1015bc596c3b0ca11eff2"
+  oracle_ntt="sha256:872a48f39b57b4de431b3862eb61f82f980d995876db61530ee910946a11b2e3"
+  ntt_py="sha256:ff205272d167c438445d6baff16de9fbb9bf7c5d869569c5c9cd1c4bc1201284"
+  verifier_ntt="sha256:d2d13e6dd4ae04756f869e45eeefce07df5692d67a271c2e26b70bf74cc5e6fb"
+  lnr1_merkle="sha256:f140dcbcde99052d0d415dfb22336e951f1efc2b0c29c8327af35f1a671b8d7a"
+  lcr2_merkle="sha256:6a64103b587eec28b6dee714026803c707d4a963a6dceefaecabd2de5b1763fb"
+  lcr2_full_merkle="sha256:ea3b11158e1163a6ee880c1c0d3eeefec9b8b4a61f59c284a02e4d91660d6b5e"
+  lge1_merkle="sha256:bcd89d286a41e5ed8d31a0a3979e23744ea754e9e423982f6fcfbed7d0dfff68"
+  lri1_merkle="sha256:c10b87f0546b9927b15f5362cbb9dd03c220aa8a79b9178518647130fafd8b94"
+  evidence_json="sha256:7d67ab0828bc7a0a361f6eea5d9d5c173bdcc77ab6076158f9d815816a89dacb"
+  fullmath_sol="sha256:959c52e1c860bfbede3e33c8d04910c11038973173aa3478547cbad2e444880e"
+}
+
+.v{
+  method="PYTHON_BIGINT && COMBA_NR && NTT_SRT && LIN_C0_VM && LNR1_QUAD_AUDITOR && LCR2_SETTLER_EQ_COPROCESSOR && LCR2_FULL_SETTLE_U512 && LGE1_GE512 && LRI1_REMAINDER_IDENTITY && LIP1_INCLUSION && TAMPER_REJECT && COMBA_OPENSSL_LRI1_MERKLE_AND_LCR2_BIND"
+  on_fail="do not publish PASS"
+}
