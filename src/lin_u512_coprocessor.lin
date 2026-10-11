@@ -1,0 +1,317 @@
+@LIN:L1c:0.2
+@U512_NUMERIC_COPROCESSOR{
+  domain="lin:coprocessor:u512"
+  spec="fullmath_muldiv_width_256x256_to_512"
+  class="EXPERIMENTAL"
+  class_note="FullMath width (512-bit intermediate), not CRT/mulmod assembly, not a deployed pool"
+  abi="u256_words_i64_le_u512_limbs16"
+  purpose="numeric_coprocessor_with_auditable_receipt"
+}
+
+// Word ABI: four i64 little-endian 64-bit limbs = one uint256.
+// Product ABI: eight i64 words = one uint512 (word0=lo).
+// out_idx: -1 status (1 | -1 d=0 | -2 leftover/q-overflow/identity);
+//          0..3 q (or product lo); 4..7 r (or product hi).
+
+!u512_mul_word(
+  a0: int, a1: int, a2: int, a3: int,
+  b0: int, b1: int, b2: int, b3: int,
+  out_idx: int
+) -> int {
+  a: [16]int;
+  b: [16]int;
+  n: [32]int;
+  leftover = 0;
+  i = 0;
+  while (i < 4) {
+    a[i] = _lia_ushr(a0, 16 * i) & 65535;
+    a[4 + i] = _lia_ushr(a1, 16 * i) & 65535;
+    a[8 + i] = _lia_ushr(a2, 16 * i) & 65535;
+    a[12 + i] = _lia_ushr(a3, 16 * i) & 65535;
+    b[i] = _lia_ushr(b0, 16 * i) & 65535;
+    b[4 + i] = _lia_ushr(b1, 16 * i) & 65535;
+    b[8 + i] = _lia_ushr(b2, 16 * i) & 65535;
+    b[12 + i] = _lia_ushr(b3, 16 * i) & 65535;
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 32) {
+    n[i] = 0;
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 16) {
+    carry = 0;
+    j = 0;
+    while (j < 16) {
+      k = i + j;
+      t = n[k] + a[i] * b[j] + carry;
+      n[k] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      j = j + 1;
+    };
+    k = i + 16;
+    while (k < 32 && carry != 0) {
+      t = n[k] + carry;
+      n[k] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      k = k + 1;
+    };
+    ?(carry != 0) { leftover = 1; };
+    i = i + 1;
+  };
+  ?(leftover != 0) { ^-2; };
+  ?(out_idx == 0 - 1) { ^1; };
+  ?(out_idx < 0) { ^-1; };
+  ?(out_idx > 7) { ^-1; };
+  base_limb = out_idx * 4;
+  w = (n[base_limb] & 65535) |
+      _lia_shl(n[base_limb + 1] & 65535, 16) |
+      _lia_shl(n[base_limb + 2] & 65535, 32) |
+      _lia_shl(n[base_limb + 3] & 65535, 48);
+  ^w;
+}
+
+!u512_ge_word(
+  a0: int, a1: int, a2: int, a3: int, a4: int, a5: int, a6: int, a7: int,
+  b0: int, b1: int, b2: int, b3: int, b4: int, b5: int, b6: int, b7: int
+) -> int {
+  a: [32]int;
+  b: [32]int;
+  i = 0;
+  while (i < 4) {
+    a[i] = _lia_ushr(a0, 16 * i) & 65535;
+    a[4 + i] = _lia_ushr(a1, 16 * i) & 65535;
+    a[8 + i] = _lia_ushr(a2, 16 * i) & 65535;
+    a[12 + i] = _lia_ushr(a3, 16 * i) & 65535;
+    a[16 + i] = _lia_ushr(a4, 16 * i) & 65535;
+    a[20 + i] = _lia_ushr(a5, 16 * i) & 65535;
+    a[24 + i] = _lia_ushr(a6, 16 * i) & 65535;
+    a[28 + i] = _lia_ushr(a7, 16 * i) & 65535;
+    b[i] = _lia_ushr(b0, 16 * i) & 65535;
+    b[4 + i] = _lia_ushr(b1, 16 * i) & 65535;
+    b[8 + i] = _lia_ushr(b2, 16 * i) & 65535;
+    b[12 + i] = _lia_ushr(b3, 16 * i) & 65535;
+    b[16 + i] = _lia_ushr(b4, 16 * i) & 65535;
+    b[20 + i] = _lia_ushr(b5, 16 * i) & 65535;
+    b[24 + i] = _lia_ushr(b6, 16 * i) & 65535;
+    b[28 + i] = _lia_ushr(b7, 16 * i) & 65535;
+    i = i + 1;
+  };
+  cmp = 0;
+  j = 31;
+  while (j >= 0) {
+    ?(cmp == 0) {
+      ?(a[j] > b[j]) { cmp = 1; }
+      : (a[j] < b[j]) { cmp = 0 - 1; };
+    };
+    j = j - 1;
+  };
+  ?(cmp >= 0) { ^1; };
+  ^0;
+}
+
+!u512_muldiv_word(
+  a0: int, a1: int, a2: int, a3: int,
+  b0: int, b1: int, b2: int, b3: int,
+  d0: int, d1: int, d2: int, d3: int,
+  out_idx: int
+) -> int {
+  a: [16]int;
+  b: [16]int;
+  d: [16]int;
+  n: [32]int;
+  rem: [32]int;
+  q: [16]int;
+  qd: [32]int;
+  leftover = 0;
+  i = 0;
+  while (i < 4) {
+    a[i] = _lia_ushr(a0, 16 * i) & 65535;
+    a[4 + i] = _lia_ushr(a1, 16 * i) & 65535;
+    a[8 + i] = _lia_ushr(a2, 16 * i) & 65535;
+    a[12 + i] = _lia_ushr(a3, 16 * i) & 65535;
+    b[i] = _lia_ushr(b0, 16 * i) & 65535;
+    b[4 + i] = _lia_ushr(b1, 16 * i) & 65535;
+    b[8 + i] = _lia_ushr(b2, 16 * i) & 65535;
+    b[12 + i] = _lia_ushr(b3, 16 * i) & 65535;
+    d[i] = _lia_ushr(d0, 16 * i) & 65535;
+    d[4 + i] = _lia_ushr(d1, 16 * i) & 65535;
+    d[8 + i] = _lia_ushr(d2, 16 * i) & 65535;
+    d[12 + i] = _lia_ushr(d3, 16 * i) & 65535;
+    i = i + 1;
+  };
+  ?(d0 == 0 && d1 == 0 && d2 == 0 && d3 == 0) { ^-1; };
+  i = 0;
+  while (i < 16) {
+    q[i] = 0;
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 32) {
+    n[i] = 0;
+    rem[i] = 0;
+    qd[i] = 0;
+    i = i + 1;
+  };
+  i = 0;
+  while (i < 16) {
+    carry = 0;
+    j = 0;
+    while (j < 16) {
+      k = i + j;
+      t = n[k] + a[i] * b[j] + carry;
+      n[k] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      j = j + 1;
+    };
+    k = i + 16;
+    while (k < 32 && carry != 0) {
+      t = n[k] + carry;
+      n[k] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      k = k + 1;
+    };
+    ?(carry != 0) { leftover = 1; };
+    i = i + 1;
+  };
+  ?(leftover != 0) { ^-2; };
+  bit = 511;
+  while (bit >= 0) {
+    limb = _lia_ushr(bit, 4);
+    pos = bit & 15;
+    carry = (_lia_ushr(n[limb], pos) & 1);
+    j = 0;
+    while (j < 32) {
+      t = rem[j] * 2 + carry;
+      rem[j] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      j = j + 1;
+    };
+    ?(carry != 0) { ^-2; };
+    cmp = 0;
+    j = 31;
+    while (j >= 0) {
+      ?(cmp == 0) {
+        dj = 0;
+        ?(j < 16) { dj = d[j]; };
+        ?(rem[j] > dj) { cmp = 1; }
+        : (rem[j] < dj) { cmp = 0 - 1; };
+      };
+      j = j - 1;
+    };
+    ?(cmp >= 0) {
+      ?(bit >= 256) { ^-2; };
+      q[limb] = q[limb] | _lia_shl(1, pos);
+      borrow = 0;
+      j = 0;
+      while (j < 32) {
+        dj = 0;
+        ?(j < 16) { dj = d[j]; };
+        t = rem[j] - dj - borrow;
+        ?(t < 0) {
+          rem[j] = t + 65536;
+          borrow = 1;
+        } : {
+          rem[j] = t;
+          borrow = 0;
+        };
+        j = j + 1;
+      };
+    };
+    bit = bit - 1;
+  };
+  i = 0;
+  while (i < 16) {
+    carry = 0;
+    j = 0;
+    while (j < 16) {
+      k = i + j;
+      t = qd[k] + q[i] * d[j] + carry;
+      qd[k] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      j = j + 1;
+    };
+    k = i + 16;
+    while (k < 32 && carry != 0) {
+      t = qd[k] + carry;
+      qd[k] = t & 65535;
+      carry = _lia_ushr(t, 16);
+      k = k + 1;
+    };
+    ?(carry != 0) { leftover = 1; };
+    i = i + 1;
+  };
+  ?(leftover != 0) { ^-2; };
+  carry = 0;
+  i = 0;
+  while (i < 32) {
+    t = qd[i] + rem[i] + carry;
+    qd[i] = t & 65535;
+    carry = _lia_ushr(t, 16);
+    i = i + 1;
+  };
+  ?(carry != 0) { ^-2; };
+  i = 0;
+  while (i < 32) {
+    ?(qd[i] != n[i]) { ^-2; };
+    i = i + 1;
+  };
+  rcmp = 0;
+  j = 31;
+  while (j >= 0) {
+    ?(rcmp == 0) {
+      dj = 0;
+      ?(j < 16) { dj = d[j]; };
+      ?(rem[j] > dj) { rcmp = 1; }
+      : (rem[j] < dj) { rcmp = 0 - 1; };
+    };
+    j = j - 1;
+  };
+  ?(rcmp >= 0) { ^-2; };
+  ?(out_idx == 0 - 1) { ^1; };
+  ?(out_idx < 0) { ^-1; };
+  ?(out_idx > 7) { ^-1; };
+  ?(out_idx < 4) {
+    base_limb = out_idx * 4;
+    w = (q[base_limb] & 65535) |
+        _lia_shl(q[base_limb + 1] & 65535, 16) |
+        _lia_shl(q[base_limb + 2] & 65535, 32) |
+        _lia_shl(q[base_limb + 3] & 65535, 48);
+    ^w;
+  };
+  base_limb = (out_idx - 4) * 4;
+  w = (rem[base_limb] & 65535) |
+      _lia_shl(rem[base_limb + 1] & 65535, 16) |
+      _lia_shl(rem[base_limb + 2] & 65535, 32) |
+      _lia_shl(rem[base_limb + 3] & 65535, 48);
+  ^w;
+}
+
+!u512_self_gate() -> int {
+  all1 = 0 - 1;
+  hi255 = _lia_shl(1, 63);
+  q55 = 6148914691236517205;
+  ?(u512_mul_word(7, 0, 0, 0, 9, 0, 0, 0, 0) != 63) { ^0 - 2; };
+  ?(u512_muldiv_word(7, 0, 0, 0, 9, 0, 0, 0, 2, 0, 0, 0, 0 - 1) != 1) { ^0 - 3; };
+  ?(u512_muldiv_word(7, 0, 0, 0, 9, 0, 0, 0, 2, 0, 0, 0, 0) != 31) { ^0 - 4; };
+  ?(u512_muldiv_word(7, 0, 0, 0, 9, 0, 0, 0, 2, 0, 0, 0, 4) != 1) { ^0 - 5; };
+  ?(u512_mul_word(all1, all1, all1, all1, all1, all1, all1, all1, 0) != 1) { ^0 - 6; };
+  ?(u512_mul_word(all1, all1, all1, all1, all1, all1, all1, all1, 4) != (0 - 2)) { ^0 - 7; };
+  ?(u512_mul_word(all1, all1, all1, all1, all1, all1, all1, all1, 7) != all1) { ^0 - 8; };
+  ?(u512_muldiv_word(0, 0, 0, hi255, 2, 0, 0, 0, 3, 0, 0, 0, 0) != q55) { ^0 - 9; };
+  ?(u512_muldiv_word(0, 0, 0, hi255, 2, 0, 0, 0, 3, 0, 0, 0, 4) != 1) { ^0 - 10; };
+  ?(u512_muldiv_word(1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 - 1) != (0 - 1)) { ^0 - 11; };
+  ?(u512_muldiv_word(0, 0, 0, hi255, 2, 0, 0, 0, 1, 0, 0, 0, 0 - 1) != (0 - 2)) { ^0 - 12; };
+  ?(u512_ge_word(0, 0, 0, 0, 1, 0, 0, 0, all1, all1, all1, all1, 0, 0, 0, 0) != 1) { ^0 - 13; };
+  ?(u512_ge_word(all1, all1, all1, all1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0) != 0) { ^0 - 14; };
+  ?(u512_muldiv_word(997000, 0, 0, 0, 20000, 0, 0, 0, 10997000, 0, 0, 0, 0) != 1813) { ^0 - 15; };
+  ^1;
+}
+
+=ex{
+  u512_mul_word,
+  u512_ge_word,
+  u512_muldiv_word,
+  u512_self_gate
+}
