@@ -1,0 +1,193 @@
+{
+  "schema": "LIN_GETH_COPYGAS_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned excerpts have memoryCopierGas closure + gasKeccak256 word gas",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of go-ethereum v1.16.9 matches pinned sha256/blob",
+      "note": "commit=95665d5703e1023995a0ff93e4ce9eb77e8a59bd blob=c7c1274bf2f39355108ab88722b694bf502cc4b2"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of core/vm/gas_table.go",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 in-range CopyGas/keccak goldens vs i64 fail-closed",
+      "note": ""
+    },
+    {
+      "id": "GO-SELFTEST",
+      "status": "PASS",
+      "description": "independent Go CopyGas/keccak goldens + negative fail-closed",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_geth_copygas.lin",
+      "note": ""
+    },
+    {
+      "id": "GO-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Go transpiler v5 (REJ_GO_CLOSURE)",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 (REJ_C_ARRAY_PARAM)",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3 (require/unchecked)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "cg_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "10/10 in-range vectors: Python == C11 == Go == Geth-uint64 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "10/10 vectors: Python bigint ceil(size/32)*word matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "COPYGAS-WORD",
+      "status": "PASS",
+      "description": "32-byte: COPY=3 KECCAK=6 (CopyGas and Keccak256WordGas)",
+      "note": "CALLDATACOPY/CODECOPY/MCOPY/RETURNDATACOPY/EXTCODECOPY and KECCAK256 pay this"
+    },
+    {
+      "id": "FAIL-CLOSED",
+      "status": "PASS",
+      "description": "negative size fail-closes to 0 (Geth models this as Uint64WithOverflow)",
+      "note": ""
+    },
+    {
+      "id": "MEMGAS-ADD",
+      "status": "PASS",
+      "description": "cg_with_mem adds explicit memgas (Geth *Memory lastGasCost is not hidden)",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on cg_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes size int; pinned Geth reads stack.Back(stackpos) via closure",
+      "note": ""
+    },
+    {
+      "id": "GO-CLOSURE-REJ",
+      "status": "PASS",
+      "description": "lin_from_go.lin v5 rejects return func closures and *Stack/stack.Back",
+      "note": ""
+    },
+    {
+      "id": "C-ARRAY-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 rejects unsized [] params (lift to counts)",
+      "note": ""
+    },
+    {
+      "id": "SOL-REQUIRE",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects unchecked and lowers require to fail-closed",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/ethereum/go-ethereum",
+    "tag": "v1.16.9",
+    "commit": "95665d5703e1023995a0ff93e4ce9eb77e8a59bd",
+    "path": "core/vm/gas_table.go",
+    "git_blob_sha": "c7c1274bf2f39355108ab88722b694bf502cc4b2",
+    "file_sha256": "c11be723771f3726bca1369a129fc8f212f7746aaa26c5b1ee3aa78e7c0a784c",
+    "license": "LGPL-3.0",
+    "constants": "CopyGas=3 Keccak256WordGas=6 from params/protocol_params.go blob e8b044f45016d851af2698e94c62937218c9d736"
+  },
+  "lin_clone": "src/lin_geth_copygas.lin",
+  "c11_oracle": "test/oracles/geth_copygas_c11.c",
+  "go_oracle": "test/oracles/geth_copygas_go.go",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-geth-copygas",
+  "vectors": [
+    {
+      "size": 0,
+      "copy": 0,
+      "keccak": 0
+    },
+    {
+      "size": 1,
+      "copy": 3,
+      "keccak": 6
+    },
+    {
+      "size": 31,
+      "copy": 3,
+      "keccak": 6
+    },
+    {
+      "size": 32,
+      "copy": 3,
+      "keccak": 6
+    },
+    {
+      "size": 33,
+      "copy": 6,
+      "keccak": 12
+    },
+    {
+      "size": 64,
+      "copy": 6,
+      "keccak": 12
+    },
+    {
+      "size": 65,
+      "copy": 9,
+      "keccak": 18
+    },
+    {
+      "size": 1024,
+      "copy": 96,
+      "keccak": 192
+    },
+    {
+      "size": 24576,
+      "copy": 2304,
+      "keccak": 4608
+    },
+    {
+      "size": 49152,
+      "copy": 4608,
+      "keccak": 9216
+    }
+  ]
+}
