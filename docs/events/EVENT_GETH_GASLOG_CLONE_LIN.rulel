@@ -1,0 +1,64 @@
+@RULEL:GETH_GASLOG_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GETH-GASLOG-MAKEGASLOG"
+@TITLE="Clone-lin of go-ethereum makeGasLog (LogDataGas=8) with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-10-11"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-geth-gaslog"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Geth makeGasLog / LOG0-LOG4 execution gas into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="non-negative i64 n in 0..4 and size; *Stack/*Memory/*EVM and the makeGasLog closure lifted to n+size+memgas ints; Geth error returns become fail-closed 0"
+  commercial_hook="makeGasLog meters LOG0-LOG4. Every ERC-20 Transfer is LOG3 + 32-byte amount (1756 exec gas before Cmem). Making stack.Back(1) and the n-closure explicit is an audit improvement, not a node-replacement or TVL claim"
+}
+
+.u{
+  repo="https://github.com/ethereum/go-ethereum"
+  path="core/vm/gas_table.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  git_blob_sha="c7c1274bf2f39355108ab88722b694bf502cc4b2"
+  file_sha256="c11be723771f3726bca1369a129fc8f212f7746aaa26c5b1ee3aa78e7c0a784c"
+  fixture="test/fixtures/external_proof/makeGasLog.go"
+  constants="LogGas=375 LogTopicGas=375 LogDataGas=8 from params/protocol_params.go blob e8b044f45016d851af2698e94c62937218c9d736"
+}
+
+.l{
+  clone="src/lin_geth_gaslog.lin"
+  transpiler_delta="src/lin_from_go.lin v6: REJ_GO_BITLEN rejects BitLen()/stack.data (gasExpEIP158 lift is expByteLen). makeGasLog lift is logExecGas(n, size). REJ_GO_CLOSURE / REJ_GO_STACK kept. src/lin_from_c.lin v2 REJ_C_ARRAY_PARAM. src/lin_from_solidity.lin v3 REJ_SOLIDITY_UNCHECKED + require fail-closed. Did not mutate gated transpile/c/"
+  improvement_1="makeGasLog returns a gasFunc closure over n; LIN takes n and size as arguments"
+  improvement_2="stack.Back(1) / *Stack / *Memory / *EVM become explicit size and optional memgas integers"
+  improvement_3="n outside 0..4 fail-closes (jump table only wires LOG0-LOG4)"
+  improvement_4="negative size fail-closes; Geth stack.Back overflow is ErrGasUintOverflow"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/geth_gaslog_c11.c (gcc -O2 -std=c11) plus test/oracles/geth_gaslog_go.go"
+  gate="test/verify_geth_gaslog.sh"
+}
+
+.p{
+  harness="test/prove_geth_gaslog_external.py"
+  evidence_json="examples/geth_gaslog/geth_gaslog_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-geth-gaslog"
+  goldens="LOG0/0=375; LOG0/1=383; LOG0/32=631; LOG3/32=1756 ERC-20 Transfer; LOG4/0=1875; LOG4/1024=10067; memgas 100+LOG3/32=1856"
+}
+
+.n{
+  not_claimed_1="LIN replaces go-ethereum or Ethereum consensus"
+  not_claimed_2="full LOG* including Yellow Paper Cmem (separate memoryGasCost clone)"
+  not_claimed_3="this clone is a production node or wallet"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="Compiler 0 executes go_from_go string-literal emit"
+}
+
+.v{
+  method="PINNED_BYTES && PY_BIGINT_EQ_C11 && GO_UINT64_EQ_GETH && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
