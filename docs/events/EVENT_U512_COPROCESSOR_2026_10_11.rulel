@@ -1,0 +1,72 @@
+@RULEL:U512_COPROCESSOR_EVENT:1.18.0
+@CHALLENGE_ID="LIN-U512-COPROCESSOR-2026-10-11"
+@TITLE="512-bit intermediate proved as numeric coprocessor with auditable receipt"
+@STATUS="REPRODUCED_THIS_RUN"
+@DATE="2026-10-11"
+@CLASS="EXPERIMENTAL"
+
+~R{.s=scope .p=proved .n=not_proved .m=measured .h=hashes .v=verdict}
+
+.s{
+  product="LIN as a numeric coprocessor with an auditable receipt, not a Uniswap replacement"
+  why="u256 mulDiv(a,b,d)=(a*b)/d with a,b,d up to 2^256-1 needs a correct 512-bit product; otherwise the SafeMath-width settler lies or returns -2 where width-correct math approves"
+  engine="src/lin_u512_coprocessor.lin (16-bit limbs) + 32-limb remainder ge in examples/defi_settlement_proof/u512_uniswap_v2_core.lin"
+  make="make u512-coprocessor-proof"
+  harness="python3 test/prove_u512_coprocessor_external.py → 142/142 PASS this run"
+  delta="schema 1.18: Toom-4 256x256->512 + Burnikel-Ziegler 512/256 is a twentieth independent math. Product: 64-bit 4-way split, seven eval products via 64x64->128, Newton interpolation of <=140-bit coeffs, B-adic sum at 2^64. Not 16-bit row-major schoolbook, not Karatsuba 2-way, not Toom-3 86-bit 3-way, not NTT, not Comba, not CRT/Mersenne. Division: recursive D2n/1n of 8xu64/4xu64 (then 4/2, 2/1); D3n/2n high-half quotient; at most two remainder add-backs; 512-bit ge so r<d. Not restoring of n, not non-restoring, not SRT radix-4, not Barrett mu, not Knuth D digit q̂, not Goldschmidt, not Hensel. Python int only for <=70-bit Toom eval, 64x64->128, <=140-bit interpolation, and 128/64 at the BZ 2-by-1 leaf. Zero-LIN Toom-4 auditor (verify_u512_toom4.py) recomputes n==a*b via Toom-4, q*d+r==n via Burnikel-Ziegler, binds mulDiv(fee,rout,den) on 3 EXACT + 3 OVERPAID + PHANTOM_APPROVE, and OpenSSL dgst of the LRI1 Merkle tree (FIPS abc ba7816bf) — no gcc, no rustc, no LinVM. Still includes schema 1.17 Comba+NR. Merkle roots unchanged vs 1.17 (engine frozen)."
+}
+
+.p{
+  mul="256x256->512 schoolbook in the engine AND Toom-4 reconstruction independently; leftover-carry fail-closed; (2^256-1)^2 lo=1 hi=2^256-2 published leaf"
+  div="512/256 restoring div in the engine AND Burnikel-Ziegler independently; remainder 32/16/8 limbs; 512-bit ge; q*d+r==n and r<d"
+  ge="u512_ge_word + LGE1 8-leaf power-of-two tree; Toom-4/BZ ge_limbs agrees with Python int / Node / OpenSSL BN / Go / Java / GMP / Perl / radix32 / rust64 / radix8 / Knuth D / CRT / Karatsuba / Toom-3 / NTT / Comba / GNU bc"
+  identity="LRI1 8-leaf power-of-two tree binds the 512-bit product n plus d,q,r. Outsider (including Toom-4+BZ + OpenSSL dgst) checks n==a*b and q*d+r==n and r<d without LinVM"
+  inclusion="LIP1: 34 published inclusion proofs (8 LRI1 + 8 LGE1 + LNR1 max_sq + 8 LCR2 E2E + 9 LCR2-full). Toom-4/BZ auditor binds packed LCR2 EXACT/OVERPAID and PHANTOM_APPROVE via mulDiv(fee,rout,den)"
+  guards="-1 on d=0 (coprocessor) and zero amount_in (both LCR2 trees); -2 on q overflow, SafeMath-width phantom (LCR2), and ain=2^256-1 fee overflow (LCR2-full)"
+  oracles="previous 1.17 oracles plus Toom-4+BZ (TOOM4_BZ_CONSENSUS) on the n=1060 batch; Toom-4/BZ on 6 LCR2 EXACT/OVERPAID and 6 LCR2-full + PHANTOM_APPROVE"
+  phantom="ain=1,rin=1,rout=ceil(2^256/997): coprocessor APPROVES; settle_u512_swap APPROVES; settle_u256_word -2. 512-bit intermediate off the suspect list; replacing the SafeMath-width settler body remains required"
+  receipt="LNR1 240-byte records; LCR2 208-byte records; LGE1; LRI1; LIP1; quad-auditor Python hashlib == Node crypto == C11 lin_sha256 == OpenSSL dgst; 1-bit leaf tamper rejected"
+  lcr2="3 EXACT_INPUT + 3 OVERPAID_INPUT with settle_u256_word == coprocessor == ref_amount_out and steps!=0; GUARD_ZERO -1; GUARD_OVERFLOW -2"
+  lcr2_full="same 3 EXACT + 3 OVERPAID via settle_u512_swap == ref_amount_out_full plus PHANTOM_APPROVE"
+}
+
+.n{
+  not_1="EVM mulmod opcode / solc FullMath.sol on-chain (algorithm pin; opcode not executed)"
+  not_2="a deployed Uniswap v2/v3 pool"
+  not_3="the full 2000-swap + 157-unfiltered campaign"
+  not_4="that 512 proof closes the SafeMath-width u256 settler by itself"
+  not_5="zk or computational soundness of Merkle (tamper-evidence + re-execution)"
+}
+
+.m{
+  host="lin_c0 C11, gcc -std=c11, python3 Toom-4+BZ + Comba+NR + hashlib, node BigInt + crypto, openssl dgst, go math/big, javac BigInteger, libgmp.so.10, perl Math::BigInt::Calc, GNU bc 1.07.1, rustc zero-crate radix-2^64; no Zig"
+  toom4_selftest="SELFTEST_PASS toom4_bz q*d+r==n ge512 toom4_prod bzdiv"
+  gate="142/142 PASS"
+  published_lip1_proofs=34
+  self_gate_steps=6710747
+  phantom_coprocessor_steps=1106942
+  phantom_u256_status=-2
+  phantom_u512_swap_steps=1098245
+  class="EXPERIMENTAL"
+}
+
+.h{
+  lin_src="sha256:2a66456eae1227cb9ec3571da3258313cd4a5c6c787c42d3877a67152e96bd4b"
+  oracle_toom4="sha256:66f48d85635c00b7589231020a59367eb19f564dd9704c54753e1197e4c2148c"
+  toom4_py="sha256:8a5939ee21bf7719d3d9fe3fab2947b76b3d602fdee7748894bc81dcbdc85c02"
+  verifier_toom4="sha256:8208287f74e634d46cff8982e0c9ea8a1678c3872c6cbef8901bf7f2989258a3"
+  harness="sha256:1ae648c3a94ad259a4bc0b16ab125da9826f23f1d88b9aa03cd9ed08c7ee293c"
+  oracle_comba="sha256:a74b2418d5748a197c97c9baaf10eafb9964f3ce0eecbffd915275fe08e3593b"
+  lnr1_merkle="sha256:f140dcbcde99052d0d415dfb22336e951f1efc2b0c29c8327af35f1a671b8d7a"
+  lcr2_merkle="sha256:6a64103b587eec28b6dee714026803c707d4a963a6dceefaecabd2de5b1763fb"
+  lcr2_full_merkle="sha256:ea3b11158e1163a6ee880c1c0d3eeefec9b8b4a61f59c284a02e4d91660d6b5e"
+  lge1_merkle="sha256:bcd89d286a41e5ed8d31a0a3979e23744ea754e9e423982f6fcfbed7d0dfff68"
+  lri1_merkle="sha256:c10b87f0546b9927b15f5362cbb9dd03c220aa8a79b9178518647130fafd8b94"
+  evidence_json="sha256:e291d2265f7f00f17c1f996953fc89164570abb4975da8237882a7d39f293b0c"
+  fullmath_sol="sha256:959c52e1c860bfbede3e33c8d04910c11038973173aa3478547cbad2e444880e"
+}
+
+.v{
+  method="PYTHON_BIGINT && TOOM4_BZ && COMBA_NR && LIN_C0_VM && LNR1_QUAD_AUDITOR && LCR2_SETTLER_EQ_COPROCESSOR && LCR2_FULL_SETTLE_U512 && LGE1_GE512 && LRI1_REMAINDER_IDENTITY && LIP1_INCLUSION && TAMPER_REJECT && TOOM4_OPENSSL_LRI1_MERKLE_AND_LCR2_BIND"
+  on_fail="do not publish PASS"
+}
