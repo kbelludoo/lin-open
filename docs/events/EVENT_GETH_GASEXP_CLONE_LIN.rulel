@@ -1,0 +1,64 @@
+@RULEL:GETH_GASEXP_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GETH-GASEXP-EIP158"
+@TITLE="Clone-lin of go-ethereum gasExpEIP158 (ExpByteEIP158=50) with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-10-11"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-geth-gasexp"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Geth gasExpEIP158 / EXP dynamic gas into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="non-negative i64 bitLen in 0..2048 and expByteLen in 0..256; *Stack/*Memory/*EVM and BitLen() lifted to ints; Geth error returns become fail-closed 0"
+  commercial_hook="gasExpEIP158 meters the EXP opcode since Spurious Dragon. A 256-bit (EVM-word) exponent costs 1610 (10+32*50). Making stack.data BitLen and the undocumented 256-byte mul bound explicit is an audit improvement, not a node-replacement or TVL claim"
+}
+
+.u{
+  repo="https://github.com/ethereum/go-ethereum"
+  path="core/vm/gas_table.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  git_blob_sha="c7c1274bf2f39355108ab88722b694bf502cc4b2"
+  file_sha256="c11be723771f3726bca1369a129fc8f212f7746aaa26c5b1ee3aa78e7c0a784c"
+  fixture="test/fixtures/external_proof/gasExpEIP158.go"
+  constants="ExpGas=10 ExpByteEIP158=50 from params/protocol_params.go blob e8b044f45016d851af2698e94c62937218c9d736"
+}
+
+.l{
+  clone="src/lin_geth_gasexp.lin"
+  transpiler_delta="src/lin_from_go.lin v7: REJ_GO_SAFEMATH rejects math.SafeAdd/SafeMul/SafeSub (gasExpEIP158 lift is expGasEIP158(expByteLen)=10+n*50). REJ_GO_BITLEN kept. src/lin_from_c.lin v2 REJ_C_ARRAY_PARAM. src/lin_from_solidity.lin v3 REJ_SOLIDITY_UNCHECKED + require fail-closed. Did not mutate gated transpile/c/"
+  improvement_1="stack.data[len-2].BitLen() becomes an explicit bitLen integer; expByteLen = (bitLen+7)/8 is a named function"
+  improvement_2="*Stack / *Memory / *EVM / *Contract unused gas-table params are dropped"
+  improvement_3="Geth mul has no overflow check (comment: max 256*ExpByte); LIN fail-closes above expByteLen 256 / bitLen 2048"
+  improvement_4="math.SafeAdd overflow and negatives fail-close to 0 (Geth returns ErrGasUintOverflow)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/geth_gasexp_c11.c (gcc -O2 -std=c11) plus test/oracles/geth_gasexp_go.go"
+  gate="test/verify_geth_gasexp.sh"
+}
+
+.p{
+  harness="test/prove_geth_gasexp_external.py"
+  evidence_json="examples/geth_gasexp/geth_gasexp_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-geth-gasexp"
+  goldens="bitLen0=10; bitLen1=60; bitLen8=60; bitLen9=110; bitLen256=1610 EVM-word; bitLen2048=12810 Geth-max-comment"
+}
+
+.n{
+  not_claimed_1="LIN replaces go-ethereum or Ethereum consensus"
+  not_claimed_2="gasExpFrontier / pre-EIP-158 EXP (ExpByteFrontier=10)"
+  not_claimed_3="this clone is a production node or wallet"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="Compiler 0 executes go_from_go string-literal emit"
+}
+
+.v{
+  method="PINNED_BYTES && PY_BIGINT_EQ_C11 && GO_UINT64_EQ_GETH && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

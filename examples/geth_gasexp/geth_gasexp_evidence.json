@@ -1,0 +1,182 @@
+{
+  "schema": "LIN_GETH_GASEXP_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned excerpt has BitLen lift + ExpByteEIP158 + SafeAdd ExpGas",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of go-ethereum v1.16.9 matches pinned sha256/blob",
+      "note": "commit=95665d5703e1023995a0ff93e4ce9eb77e8a59bd blob=c7c1274bf2f39355108ab88722b694bf502cc4b2"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of core/vm/gas_table.go",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 in-range EXP goldens vs i64 fail-closed",
+      "note": ""
+    },
+    {
+      "id": "GO-SELFTEST",
+      "status": "PASS",
+      "description": "independent Go EXP goldens + negative/bound fail-closed",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_geth_gasexp.lin",
+      "note": ""
+    },
+    {
+      "id": "GO-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Go transpiler v7 (REJ_GO_SAFEMATH)",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 (REJ_C_ARRAY_PARAM)",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3 (require/unchecked)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "ge_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "9/9 in-range vectors: Python == C11 == Go == Geth-uint64 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "9/9 vectors: Python bigint 10+ceil(bitLen/8)*50 matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "EVM-WORD",
+      "status": "PASS",
+      "description": "EVM-word EXP (256-bit exponent) = 1610 (10+32*50)",
+      "note": "common on-chain pow / modular-exponent byte length"
+    },
+    {
+      "id": "FAIL-CLOSED",
+      "status": "PASS",
+      "description": "negative and above Geth's documented 256-byte max fail-close to 0",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on ge_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes bitLen/expByteLen ints; pinned Geth reads stack.data BitLen",
+      "note": ""
+    },
+    {
+      "id": "GO-SAFEMATH-REJ",
+      "status": "PASS",
+      "description": "lin_from_go.lin v7 rejects SafeAdd/BitLen/stack.data (lift is expGasEIP158)",
+      "note": ""
+    },
+    {
+      "id": "C-ARRAY-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 rejects unsized [] params (lift to counts)",
+      "note": ""
+    },
+    {
+      "id": "SOL-REQUIRE",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects unchecked and lowers require to fail-closed",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/ethereum/go-ethereum",
+    "tag": "v1.16.9",
+    "commit": "95665d5703e1023995a0ff93e4ce9eb77e8a59bd",
+    "path": "core/vm/gas_table.go",
+    "git_blob_sha": "c7c1274bf2f39355108ab88722b694bf502cc4b2",
+    "file_sha256": "c11be723771f3726bca1369a129fc8f212f7746aaa26c5b1ee3aa78e7c0a784c",
+    "license": "LGPL-3.0",
+    "constants": "ExpGas=10 ExpByteEIP158=50 from params/protocol_params.go blob e8b044f45016d851af2698e94c62937218c9d736"
+  },
+  "lin_clone": "src/lin_geth_gasexp.lin",
+  "c11_oracle": "test/oracles/geth_gasexp_c11.c",
+  "go_oracle": "test/oracles/geth_gasexp_go.go",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-geth-gasexp",
+  "vectors": [
+    {
+      "bitLen": 0,
+      "expByteLen": 0,
+      "gas": 10
+    },
+    {
+      "bitLen": 1,
+      "expByteLen": 1,
+      "gas": 60
+    },
+    {
+      "bitLen": 7,
+      "expByteLen": 1,
+      "gas": 60
+    },
+    {
+      "bitLen": 8,
+      "expByteLen": 1,
+      "gas": 60
+    },
+    {
+      "bitLen": 9,
+      "expByteLen": 2,
+      "gas": 110
+    },
+    {
+      "bitLen": 16,
+      "expByteLen": 2,
+      "gas": 110
+    },
+    {
+      "bitLen": 255,
+      "expByteLen": 32,
+      "gas": 1610
+    },
+    {
+      "bitLen": 256,
+      "expByteLen": 32,
+      "gas": 1610
+    },
+    {
+      "bitLen": 2048,
+      "expByteLen": 256,
+      "gas": 12810
+    }
+  ]
+}
