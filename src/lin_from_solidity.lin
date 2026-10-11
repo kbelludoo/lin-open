@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: REJ_SOLIDITY_ARRAY / REJ_SOLIDITY_REVERT / REJ_SOLIDITY_FOR / REJ_SOLIDITY_MULMOD / REJ_SOLIDITY_CAST; Saddle getD array+SafeMath+revert gate; emit concatenates '=' + 'ex{'"
 }
 
 !sol_is_kw(nm: string): int {
@@ -43,6 +43,14 @@
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
   ?(rg_count_lit(body, "assembly") > 0) { ^"REJ_SOLIDITY_INLINE_ASM" };
+  ?(rg_count_lit(body, "mulmod") > 0) { ^"REJ_SOLIDITY_MULMOD" };
+  ?(rg_count_lit(body, "revert ") > 0) { ^"REJ_SOLIDITY_REVERT" };
+  ?(rg_count_lit(body, "revert(") > 0) { ^"REJ_SOLIDITY_REVERT" };
+  ?(rg_count_lit(body, "uint8(") > 0) { ^"REJ_SOLIDITY_CAST" };
+  ?(rg_count_lit(body, "uint256(") > 0) { ^"REJ_SOLIDITY_CAST" };
+  ?(rg_count_lit(sig, "[]") > 0) { ^"REJ_SOLIDITY_ARRAY" };
+  ?(rg_count_lit(body, "[]") > 0) { ^"REJ_SOLIDITY_ARRAY" };
+  ?(rg_count_lit(body, "for (") > 0) { ^"REJ_SOLIDITY_FOR" };
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
@@ -64,6 +72,18 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_gd = "function getD(uint256[] memory xp, uint256 a) internal pure returns (uint256)";
+  body_gd = "for (uint256 i = 0; i < numTokens; i++) { s = s.add(xp[i]); } return s;";
+  r4 = sol_reason(sig_gd, body_gd);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_ARRAY") == 0) { ^0 };
+  sig_rv = "function getD2(uint256 x0, uint256 x1, uint256 a) internal pure returns (uint256)";
+  body_rv = "if (s == 0) { return 0; } revert(D);";
+  r5 = sol_reason(sig_rv, body_rv);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_REVERT") == 0) { ^0 };
+  sig_fr = "function step(uint256 d) internal pure returns (uint256)";
+  body_fr = "for (uint256 i = 0; i < 256; i++) { d = d; } return d;";
+  r6 = sol_reason(sig_fr, body_fr);
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_FOR") == 0) { ^0 };
   ^1;
 }
 
@@ -317,7 +337,8 @@
     };
     i = i + 1;
   };
-  out = out + "=ex{";
+  out = out + "=";
+  out = out + "ex{";
   out = out + names;
   out = out + "}";
   out = out + rgs_ch(10);
