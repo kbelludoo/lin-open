@@ -1,0 +1,224 @@
+{
+  "schema": "LIN_RUST_LIGHTNING_FEEWGT_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned excerpt has wrapping +999 ceil and try_into saturate",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of rust-lightning v0.2.7 matches pinned sha256/blob",
+      "note": "commit=5ce2ecb33d32e3b61ef01d5ead0ee6693c0cd7d1 blob=5dc46d5a055074ec6d9a028ca7a4c8723a62bcb0"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of lightning/src/chain/chaininterface.rs",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 in-range goldens vs i64 fail-closed",
+      "note": ""
+    },
+    {
+      "id": "RS-SELFTEST",
+      "status": "PASS",
+      "description": "independent Rust remainder-ceil + wrapping goldens",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_rust_lightning_feewgt.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2 (REJ_RUST_OVERFLOW_CEIL)",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler (unchanged this run)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "fw_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "15/15 vectors: Python == C11 == Rust == LIN vm == wrapping in-range",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "15/15 vectors: Python bigint remainder-ceil matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "P2WPKH-FLOOR",
+      "status": "PASS",
+      "description": "P2WPKH-sized 440 WU at LDK floor 253 sat/kW = 112 sats",
+      "note": "1 sat/vB after weight-to-vbyte rounding"
+    },
+    {
+      "id": "FLOOR-253",
+      "status": "PASS",
+      "description": "LDK / Core Lightning 253 sat/kW floor; INCREMENTAL_RELAY is the same constant",
+      "note": ""
+    },
+    {
+      "id": "SATURATE",
+      "status": "PASS",
+      "description": "compute_feerate saturates to u32::MAX instead of wrap-then-try_into",
+      "note": ""
+    },
+    {
+      "id": "FAIL-CLOSED",
+      "status": "PASS",
+      "description": "weight<=0, feerate>u32, negatives, and i64 product overflow fail-close to 0",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on fw_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-CEIL",
+      "status": "PASS",
+      "description": "LIN remainder ceil; pinned LDK uses (prod + 1000 - 1) / 1000",
+      "note": ""
+    },
+    {
+      "id": "RS-CEIL-REJ",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects +1000-1 ceil, div_ceil, try_into/unwrap_or",
+      "note": ""
+    },
+    {
+      "id": "RS-EMIT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 emits eligible pure integer fns (lift is remainder-ceil)",
+      "note": ""
+    },
+    {
+      "id": "NOT-BOLT07",
+      "status": "PASS",
+      "description": "this kernel is on-chain sats/kW*weight, not lnd ComputeFee",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/lightningdevkit/rust-lightning",
+    "tag": "v0.2.7",
+    "commit": "5ce2ecb33d32e3b61ef01d5ead0ee6693c0cd7d1",
+    "path": "lightning/src/chain/chaininterface.rs",
+    "git_blob_sha": "5dc46d5a055074ec6d9a028ca7a4c8723a62bcb0",
+    "file_sha256": "1e92ebb0e3d13437a13737bf53ff66f6281a726eeb66c168a0e2e1d820869eea",
+    "license": "Apache-2.0 OR MIT",
+    "constants": "FEERATE_FLOOR_SATS_PER_KW=253 INCREMENTAL_RELAY_FEE_SAT_PER_1000_WEIGHT=253"
+  },
+  "lin_clone": "src/lin_rust_lightning_feewgt.lin",
+  "c11_oracle": "test/oracles/rust_lightning_feewgt_c11.c",
+  "rust_oracle": "test/oracles/rust_lightning_feewgt.rs",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-rust-lightning-feewgt",
+  "vectors": [
+    {
+      "feerate": 253,
+      "weight": 1000,
+      "fee": 253
+    },
+    {
+      "feerate": 253,
+      "weight": 1,
+      "fee": 1
+    },
+    {
+      "feerate": 1,
+      "weight": 1000,
+      "fee": 1
+    },
+    {
+      "feerate": 1,
+      "weight": 1,
+      "fee": 1
+    },
+    {
+      "feerate": 1,
+      "weight": 999,
+      "fee": 1
+    },
+    {
+      "feerate": 1,
+      "weight": 1001,
+      "fee": 2
+    },
+    {
+      "feerate": 250,
+      "weight": 400,
+      "fee": 100
+    },
+    {
+      "feerate": 0,
+      "weight": 500,
+      "fee": 0
+    },
+    {
+      "feerate": 253,
+      "weight": 724,
+      "fee": 184
+    },
+    {
+      "feerate": 1000,
+      "weight": 440,
+      "fee": 440
+    },
+    {
+      "feerate": 253,
+      "weight": 440,
+      "fee": 112
+    },
+    {
+      "feerate": 4,
+      "weight": 250,
+      "fee": 1
+    },
+    {
+      "feerate": 4,
+      "weight": 249,
+      "fee": 1
+    },
+    {
+      "feerate": 5,
+      "weight": 200,
+      "fee": 1
+    },
+    {
+      "feerate": 2530,
+      "weight": 440,
+      "fee": 1114
+    }
+  ],
+  "distinct_from": [
+    "lnd CachedEdgePolicy.ComputeFee / BOLT-07 ppm routing",
+    "rust-bitcoin FeeRate::to_sat_per_vb_ceil",
+    "rust-bitcoin Amount::div_by_weight_ceil",
+    "Bitcoin Core CFeeRate::GetFee"
+  ]
+}

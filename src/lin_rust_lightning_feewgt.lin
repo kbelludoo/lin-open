@@ -1,0 +1,142 @@
+@LIN:L1c:0.2
+@RUST_LIGHTNING_FEEWGT{
+  version=1
+  repo="lightningdevkit/rust-lightning"
+  source="lightning/src/chain/chaininterface.rs"
+  license="Apache-2.0 OR MIT"
+  tag="v0.2.7"
+  commit="5ce2ecb33d32e3b61ef01d5ead0ee6693c0cd7d1"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="scalar_ldk_fee_for_weight_and_253_sat_kw_floor"
+  note="Not an LDK node. On-chain sat fee from sats/kW * weight. Upstream v0.2.7 does ((feerate as u64 * weight) + 1000 - 1) / 1000 which wraps on overflow and panics if weight==0. LIN uses remainder ceil, fail-closes on overflow/zero-weight/negatives, and makes the 253 sat/kW floor an explicit argument-free constant."
+}
+
+!fw_kw() -> int {
+  ^ 1000;
+}
+
+!fw_floor() -> int {
+  ^ 253;
+}
+
+!fw_relay() -> int {
+  ^ 253;
+}
+
+!fw_u32_max() -> int {
+  ^ 4294967295;
+}
+
+!fw_i64_max() -> int {
+  ^ 9223372036854775807;
+}
+
+!fw_ok_rate(r: int) -> int {
+  ?(r < 0) { ^ 0; };
+  ?(r > fw_u32_max()) { ^ 0; };
+  ^ 1;
+}
+
+!fw_ok_weight(w: int) -> int {
+  ?(w <= 0) { ^ 0; };
+  ^ 1;
+}
+
+!fw_prod_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(a == 0) { ^ 1; };
+  ?(b == 0) { ^ 1; };
+  lim = fw_i64_max() / a;
+  ?(b > lim) { ^ 0; };
+  ^ 1;
+}
+
+!fw_ceil_div(num: int, den: int) -> int {
+  ?(den <= 0) { ^ 0; };
+  ?(num < 0) { ^ 0; };
+  q = num / den;
+  r = num - (q * den);
+  ?(r == 0) { ^ q; };
+  ^ q + 1;
+}
+
+!fw_fee_for_weight(feerate: int, weight: int) -> int {
+  ?(fw_ok_rate(feerate) == 0) { ^ 0; };
+  ?(fw_ok_weight(weight) == 0) { ^ 0; };
+  ?(fw_prod_ok(feerate, weight) == 0) { ^ 0; };
+  ^ fw_ceil_div(feerate * weight, fw_kw());
+}
+
+!fw_compute_feerate(fee_sat: int, weight: int) -> int {
+  ?(fee_sat < 0) { ^ 0; };
+  ?(fw_ok_weight(weight) == 0) { ^ 0; };
+  ?(fw_prod_ok(fee_sat, fw_kw()) == 0) { ^ fw_u32_max(); };
+  q = (fee_sat * fw_kw()) / weight;
+  ?(q > fw_u32_max()) { ^ fw_u32_max(); };
+  ^ q;
+}
+
+!fw_bounded(est: int) -> int {
+  ?(fw_ok_rate(est) == 0) { ^ 0; };
+  ?(est < fw_floor()) { ^ fw_floor(); };
+  ^ est;
+}
+
+!fw_bounded_fee(est: int, weight: int) -> int {
+  ^ fw_fee_for_weight(fw_bounded(est), weight);
+}
+
+!fw_p2wpkh_floor() -> int {
+  ^ fw_fee_for_weight(fw_floor(), 440);
+}
+
+!fw_test_suite() -> int {
+  ?(fw_floor() != fw_relay()) { ^ -1; };
+  ?(fw_fee_for_weight(253, 1000) != 253) { ^ -2; };
+  ?(fw_fee_for_weight(253, 1) != 1) { ^ -3; };
+  ?(fw_fee_for_weight(1, 1000) != 1) { ^ -4; };
+  ?(fw_fee_for_weight(1, 1) != 1) { ^ -5; };
+  ?(fw_fee_for_weight(1, 999) != 1) { ^ -6; };
+  ?(fw_fee_for_weight(1, 1001) != 2) { ^ -7; };
+  ?(fw_fee_for_weight(250, 400) != 100) { ^ -8; };
+  ?(fw_fee_for_weight(0, 500) != 0) { ^ -9; };
+  ?(fw_fee_for_weight(253, 724) != 184) { ^ -10; };
+  ?(fw_fee_for_weight(1000, 440) != 440) { ^ -11; };
+  ?(fw_fee_for_weight(253, 440) != 112) { ^ -12; };
+  ?(fw_p2wpkh_floor() != 112) { ^ -13; };
+  ?(fw_compute_feerate(253, 1000) != 253) { ^ -14; };
+  ?(fw_compute_feerate(1, 1000) != 1) { ^ -15; };
+  ?(fw_compute_feerate(0, 1000) != 0) { ^ -16; };
+  ?(fw_compute_feerate(5000000000, 1) != 4294967295) { ^ -17; };
+  ?(fw_bounded(100) != 253) { ^ -18; };
+  ?(fw_bounded(253) != 253) { ^ -19; };
+  ?(fw_bounded(1000) != 1000) { ^ -20; };
+  ?(fw_fee_for_weight(253, 0) != 0) { ^ -21; };
+  ?(fw_fee_for_weight(-1, 1000) != 0) { ^ -22; };
+  ?(fw_fee_for_weight(4294967296, 1) != 0) { ^ -23; };
+  ?(fw_fee_for_weight(4294967295, 2147483649) != 0) { ^ -24; };
+  ?(fw_compute_feerate(10, 0) != 0) { ^ -25; };
+  ?(fw_bounded(-1) != 0) { ^ -26; };
+  ?(fw_bounded_fee(100, 440) != 112) { ^ -27; };
+  ^ 1;
+}
+
+=ex{
+  fw_kw,
+  fw_floor,
+  fw_relay,
+  fw_u32_max,
+  fw_i64_max,
+  fw_ok_rate,
+  fw_ok_weight,
+  fw_prod_ok,
+  fw_ceil_div,
+  fw_fee_for_weight,
+  fw_compute_feerate,
+  fw_bounded,
+  fw_bounded_fee,
+  fw_p2wpkh_floor,
+  fw_test_suite
+}
