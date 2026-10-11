@@ -1,0 +1,212 @@
+@LIN:L1c:0.2
+@GETH_CALLCODE2929{
+  version=1
+  repo="ethereum/go-ethereum"
+  source="core/vm/operations_acl.go + core/vm/gas_table.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="scalar_geth_gasCallCodeEIP2929_vs_CALL_named_contrast"
+  note="Not a Geth node. Shared Berlin wrapper: UseGas(2500) before oldCalculator 63/64, then add 2500 back. kind 0=CALL (value+new), 1=CALLCODE (value only, never 25000), 2=DELEGATECALL / 3=STATICCALL (memory only). Cmem and CallStipend out of scope. EIP-7702 / EIP-4762 are not this kernel."
+}
+
+!cc29_kind_call() -> int { ^ 0; }
+!cc29_kind_callcode() -> int { ^ 1; }
+!cc29_kind_delegate() -> int { ^ 2; }
+!cc29_kind_static() -> int { ^ 3; }
+!cc29_warm() -> int { ^ 100; }
+!cc29_cold() -> int { ^ 2600; }
+!cc29_surcharge_amt() -> int { ^ cc29_cold() - cc29_warm(); }
+!cc29_value_gas() -> int { ^ 9000; }
+!cc29_new_acct_gas() -> int { ^ 25000; }
+
+!cc29_ok_nonneg(v: int) -> int {
+  ?(v < 0) { ^ 0; };
+  ^ 1;
+}
+
+!cc29_ok_flag(v: int) -> int {
+  ?(v == 0) { ^ 1; };
+  ?(v == 1) { ^ 1; };
+  ^ 0;
+}
+
+!cc29_ok_kind(k: int) -> int {
+  ?(k == 0) { ^ 1; };
+  ?(k == 1) { ^ 1; };
+  ?(k == 2) { ^ 1; };
+  ?(k == 3) { ^ 1; };
+  ^ 0;
+}
+
+!cc29_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!cc29_surcharge(is_cold: int) -> int {
+  ?(cc29_ok_flag(is_cold) == 0) { ^ 0; };
+  ?(is_cold == 1) { ^ cc29_surcharge_amt(); };
+  ^ 0;
+}
+
+!cc29_extra(kind: int, transfers: int, new_acct: int, memory_gas: int) -> int {
+  ?(cc29_ok_kind(kind) == 0) { ^ 0; };
+  ?(cc29_ok_flag(transfers) == 0) { ^ 0; };
+  ?(cc29_ok_flag(new_acct) == 0) { ^ 0; };
+  ?(cc29_ok_nonneg(memory_gas) == 0) { ^ 0; };
+  g = memory_gas;
+  ?(kind == 2) { ^ g; };
+  ?(kind == 3) { ^ g; };
+  ?(kind == 1) {
+    ?(transfers == 1) {
+      s = g + cc29_value_gas();
+      ?(cc29_u_lt(s, g) == 1) { ^ 0; };
+      ^ s;
+    };
+    ^ g;
+  };
+  ?(transfers == 1) {
+    s2 = g + cc29_value_gas();
+    ?(cc29_u_lt(s2, g) == 1) { ^ 0; };
+    g = s2;
+    ?(new_acct == 1) {
+      s3 = g + cc29_new_acct_gas();
+      ?(cc29_u_lt(s3, g) == 1) { ^ 0; };
+      g = s3;
+    };
+  };
+  ^ g;
+}
+
+!cc29_forward(available: int, base: int, requested: int) -> int {
+  ?(cc29_ok_nonneg(available) == 0) { ^ 0; };
+  ?(cc29_ok_nonneg(base) == 0) { ^ 0; };
+  ?(cc29_ok_nonneg(requested) == 0) { ^ 0; };
+  ?(cc29_u_lt(available, base) == 1) { ^ 0; };
+  left = available - base;
+  cap = left - (left / 64);
+  ?(cc29_u_lt(requested, cap) == 1) { ^ requested; };
+  ^ cap;
+}
+
+!cc29_ok_args(kind: int, available: int, requested: int, memory_gas: int, transfers: int, new_acct: int, is_cold: int) -> int {
+  ?(cc29_ok_kind(kind) == 0) { ^ 0; };
+  ?(cc29_ok_nonneg(available) == 0) { ^ 0; };
+  ?(cc29_ok_nonneg(requested) == 0) { ^ 0; };
+  ?(cc29_ok_nonneg(memory_gas) == 0) { ^ 0; };
+  ?(cc29_ok_flag(transfers) == 0) { ^ 0; };
+  ?(cc29_ok_flag(new_acct) == 0) { ^ 0; };
+  ?(cc29_ok_flag(is_cold) == 0) { ^ 0; };
+  cold = cc29_surcharge(is_cold);
+  ?(cc29_u_lt(available, cold) == 1) { ^ 0; };
+  avail2 = available - cold;
+  ex = cc29_extra(kind, transfers, new_acct, memory_gas);
+  ?(cc29_u_lt(avail2, ex) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!cc29_dynamic(kind: int, available: int, requested: int, memory_gas: int, transfers: int, new_acct: int, is_cold: int) -> int {
+  ?(cc29_ok_args(kind, available, requested, memory_gas, transfers, new_acct, is_cold) == 0) { ^ 0; };
+  cold = cc29_surcharge(is_cold);
+  avail2 = available - cold;
+  ex = cc29_extra(kind, transfers, new_acct, memory_gas);
+  f = cc29_forward(avail2, ex, requested);
+  s = ex + f;
+  ?(cc29_u_lt(s, ex) == 1) { ^ 0; };
+  out = s + cold;
+  ?(cc29_u_lt(out, s) == 1) { ^ 0; };
+  ^ out;
+}
+
+!cc29_total(kind: int, available: int, requested: int, memory_gas: int, transfers: int, new_acct: int, is_cold: int) -> int {
+  ?(cc29_ok_args(kind, available, requested, memory_gas, transfers, new_acct, is_cold) == 0) { ^ 0; };
+  d = cc29_dynamic(kind, available, requested, memory_gas, transfers, new_acct, is_cold);
+  s = cc29_warm() + d;
+  ?(cc29_u_lt(s, d) == 1) { ^ 0; };
+  ^ s;
+}
+
+!cc29_forwarded(kind: int, available: int, requested: int, memory_gas: int, transfers: int, new_acct: int, is_cold: int) -> int {
+  ?(cc29_ok_args(kind, available, requested, memory_gas, transfers, new_acct, is_cold) == 0) { ^ 0; };
+  cold = cc29_surcharge(is_cold);
+  avail2 = available - cold;
+  ex = cc29_extra(kind, transfers, new_acct, memory_gas);
+  ^ cc29_forward(avail2, ex, requested);
+}
+
+!cc29_berlin_delta(kind: int, available: int, requested: int, memory_gas: int, transfers: int, new_acct: int) -> int {
+  ?(cc29_ok_args(kind, available, requested, memory_gas, transfers, new_acct, 0) == 0) { ^ 0; };
+  ?(cc29_ok_args(kind, available, requested, memory_gas, transfers, new_acct, 1) == 0) { ^ 0; };
+  ^ cc29_dynamic(kind, available, requested, memory_gas, transfers, new_acct, 1) - cc29_dynamic(kind, available, requested, memory_gas, transfers, new_acct, 0);
+}
+
+!cc29_vs_call(kind: int, available: int, requested: int, memory_gas: int, transfers: int, new_acct: int, is_cold: int) -> int {
+  ?(cc29_ok_args(0, available, requested, memory_gas, transfers, new_acct, is_cold) == 0) { ^ 0; };
+  ?(cc29_ok_args(kind, available, requested, memory_gas, transfers, new_acct, is_cold) == 0) { ^ 0; };
+  ^ cc29_dynamic(0, available, requested, memory_gas, transfers, new_acct, is_cold) - cc29_dynamic(kind, available, requested, memory_gas, transfers, new_acct, is_cold);
+}
+
+!cc29_test_suite() -> int {
+  ?(cc29_warm() != 100) { ^ -1; };
+  ?(cc29_surcharge_amt() != 2500) { ^ -2; };
+  ?(cc29_extra(0, 1, 1, 0) != 34000) { ^ -3; };
+  ?(cc29_extra(1, 1, 1, 0) != 9000) { ^ -4; };
+  ?(cc29_extra(2, 1, 1, 0) != 0) { ^ -5; };
+  ?(cc29_extra(3, 1, 1, 100) != 100) { ^ -6; };
+  ?(cc29_extra(1, 0, 1, 0) != 0) { ^ -7; };
+  ?(cc29_dynamic(2, 64000, 1000000, 0, 0, 0, 0) != 63000) { ^ -8; };
+  ?(cc29_dynamic(3, 64000, 1000000, 0, 0, 0, 1) != 63040) { ^ -9; };
+  ?(cc29_berlin_delta(2, 64000, 1000000, 0, 0, 0) != 40) { ^ -10; };
+  ?(cc29_dynamic(1, 64000, 1000000, 0, 0, 0, 0) != 63000) { ^ -11; };
+  ?(cc29_dynamic(1, 64000, 1000000, 0, 1, 0, 0) != 63141) { ^ -12; };
+  ?(cc29_dynamic(1, 64000, 1000000, 0, 1, 0, 1) != 63180) { ^ -13; };
+  ?(cc29_berlin_delta(1, 64000, 1000000, 0, 1, 0) != 39) { ^ -14; };
+  ?(cc29_dynamic(1, 100000, 1000000, 0, 1, 1, 0) != 98579) { ^ -15; };
+  ?(cc29_dynamic(0, 100000, 1000000, 0, 1, 1, 0) != 98969) { ^ -16; };
+  ?(cc29_vs_call(1, 100000, 1000000, 0, 1, 1, 0) != 390) { ^ -17; };
+  ?(cc29_dynamic(3, 100000, 1000000, 0, 1, 1, 0) != 98438) { ^ -18; };
+  ?(cc29_vs_call(3, 100000, 1000000, 0, 1, 1, 0) != 531) { ^ -19; };
+  ?(cc29_vs_call(2, 100000, 1000000, 0, 1, 0, 0) != 141) { ^ -20; };
+  ?(cc29_dynamic(1, 64000, 1000, 0, 1, 0, 0) != 10000) { ^ -21; };
+  ?(cc29_dynamic(1, 64000, 1000, 0, 1, 0, 1) != 12500) { ^ -22; };
+  ?(cc29_berlin_delta(1, 64000, 1000, 0, 1, 0) != 2500) { ^ -23; };
+  ?(cc29_forwarded(1, 100000, 1000000, 0, 1, 1, 0) != 89579) { ^ -24; };
+  ?(cc29_forwarded(0, 100000, 1000000, 0, 1, 1, 0) != 64969) { ^ -25; };
+  ?(cc29_total(1, 64000, 1000000, 0, 1, 0, 0) != 63241) { ^ -26; };
+  ?(cc29_dynamic(1, 2499, 0, 0, 0, 0, 1) != 0) { ^ -27; };
+  ?(cc29_dynamic(4, 64000, 0, 0, 0, 0, 0) != 0) { ^ -28; };
+  ?(cc29_dynamic(1, -1, 0, 0, 0, 0, 0) != 0) { ^ -29; };
+  ?(cc29_dynamic(1, 100, 0, 200, 0, 0, 0) != 0) { ^ -30; };
+  ^ 1;
+}
+
+=ex{
+  cc29_kind_call,
+  cc29_kind_callcode,
+  cc29_kind_delegate,
+  cc29_kind_static,
+  cc29_warm,
+  cc29_cold,
+  cc29_surcharge_amt,
+  cc29_value_gas,
+  cc29_new_acct_gas,
+  cc29_ok_nonneg,
+  cc29_ok_flag,
+  cc29_ok_kind,
+  cc29_u_lt,
+  cc29_surcharge,
+  cc29_extra,
+  cc29_forward,
+  cc29_ok_args,
+  cc29_dynamic,
+  cc29_total,
+  cc29_forwarded,
+  cc29_berlin_delta,
+  cc29_vs_call,
+  cc29_test_suite
+}
