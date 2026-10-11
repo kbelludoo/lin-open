@@ -1,0 +1,64 @@
+@RULEL:RUST_LIGHTNING_FEEWGT_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-RUST-LIGHTNING-FEEWGT"
+@TITLE="Clone-lin of rust-lightning fee_for_weight (253 sat/kW floor) with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-10-11"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-rust-lightning-feewgt"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile LDK fee_for_weight / 253 sat/kW floor into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed in a production Lightning node"
+  operand_width="non-negative i64 feerate in 0..u32::MAX, weight > 0; product must fit i64 or fail-close 0"
+  commercial_hook="Every LDK close, HTLC-success, splice, and sweep pays ceil(feerate_kw * weight / 1000). At the documented 253 sat/kW floor a 440 WU P2WPKH-sized spend is 112 sats. Making the +999 overflow and zero-weight panic explicit is an audit improvement, not a node-replacement or TVL claim"
+}
+
+.u{
+  repo="https://github.com/lightningdevkit/rust-lightning"
+  path="lightning/src/chain/chaininterface.rs"
+  license="Apache-2.0 OR MIT"
+  tag="v0.2.7"
+  commit="5ce2ecb33d32e3b61ef01d5ead0ee6693c0cd7d1"
+  git_blob_sha="5dc46d5a055074ec6d9a028ca7a4c8723a62bcb0"
+  file_sha256="1e92ebb0e3d13437a13737bf53ff66f6281a726eeb66c168a0e2e1d820869eea"
+  fixture="test/fixtures/external_proof/fee_for_weight.rs"
+  constants="FEERATE_FLOOR_SATS_PER_KW=253 INCREMENTAL_RELAY_FEE_SAT_PER_1000_WEIGHT=253"
+}
+
+.l{
+  clone="src/lin_rust_lightning_feewgt.lin"
+  transpiler_delta="src/lin_from_rust.lin v2: REJ_RUST_OVERFLOW_CEIL / REJ_RUST_DIV_CEIL / REJ_RUST_TRY_INTO / REJ_RUST_UNWRAP reject ((a*b)+1000-1)/1000 and try_into().unwrap_or(u32::max_value()). rs_from_rs emits eligible pure integer fns. Did not mutate gated transpile/c/"
+  improvement_1="wrapping +999 ceil becomes remainder ceil"
+  improvement_2="u64 product wrap and weight==0 panic become fail-closed 0"
+  improvement_3="compute_feerate saturates to u32::MAX instead of wrap-then-try_into"
+  improvement_4="253 sat/kW floor is fw_bounded(est), not a FeeEstimator trait object"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/rust_lightning_feewgt_c11.c (gcc -O2 -std=c11) plus test/oracles/rust_lightning_feewgt.rs"
+  gate="test/verify_rust_lightning_feewgt.sh"
+}
+
+.p{
+  harness="test/prove_rust_lightning_feewgt_external.py"
+  evidence_json="examples/rust_lightning_feewgt/rust_lightning_feewgt_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-rust-lightning-feewgt"
+  goldens="floor_1000wu=253; p2wpkh_440wu=112; ceil(1,1001)=2; overflow_u32max_x_2^31+1=0; saturate_5e9sats=4294967295"
+}
+
+.n{
+  not_claimed_1="LIN replaces rust-lightning / LDK / a Lightning node"
+  not_claimed_2="BOLT-07 routing ComputeFee / lnd fee_base_msat+ppm"
+  not_claimed_3="rust-bitcoin FeeRate::to_sat_per_vb_ceil or Amount::div_by_weight_ceil"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="Compiler 0 executes rs_from_rs string-literal emit"
+}
+
+.v{
+  method="PINNED_BYTES && PY_BIGINT_EQ_C11 && RUST_EQ_LIN && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
