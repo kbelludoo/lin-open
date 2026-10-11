@@ -1,0 +1,122 @@
+@LIN:L1c:0.2
+@GETH_GASLOG{
+  version=1
+  repo="ethereum/go-ethereum"
+  source="core/vm/gas_table.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="scalar_geth_makeGasLog_LOG0_LOG4_LogDataGas"
+  note="Not a Geth node. LOG execution gas only: LogGas + n*LogTopicGas + size*LogDataGas (375 + n*375 + size*8). Geth makeGasLog is a closure over n and stack.Back(1); LIN takes n and size as integers. Memory expansion is an explicit memgas argument, not *Memory. n outside 0..4 fail-closes (jump table only wires LOG0-LOG4)."
+}
+
+!gl_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!gl_log_gas() -> int {
+  ^ 375;
+}
+
+!gl_topic_gas() -> int {
+  ^ 375;
+}
+
+!gl_data_gas() -> int {
+  ^ 8;
+}
+
+!gl_ok_n(n: int) -> int {
+  ?(n < 0) { ^ 0; };
+  ?(n > 4) { ^ 0; };
+  ^ 1;
+}
+
+!gl_ok_size(size: int) -> int {
+  ?(size < 0) { ^ 0; };
+  ^ 1;
+}
+
+!gl_data(size: int) -> int {
+  ?(gl_ok_size(size) == 0) { ^ 0; };
+  ?(gl_u_lt(1152921504606846975, size) == 1) { ^ 0; };
+  ^ size * gl_data_gas();
+}
+
+!gl_topics(n: int) -> int {
+  ?(gl_ok_n(n) == 0) { ^ 0; };
+  ^ n * gl_topic_gas();
+}
+
+!gl_exec(n: int, size: int) -> int {
+  ?(gl_ok_n(n) == 0) { ^ 0; };
+  ?(gl_ok_size(size) == 0) { ^ 0; };
+  data = gl_data(size);
+  ?(size > 0 && data == 0) { ^ 0; };
+  base = gl_log_gas() + gl_topics(n);
+  s = base + data;
+  ?(gl_u_lt(s, base) == 1) { ^ 0; };
+  ^ s;
+}
+
+!gl_with_mem(memgas: int, n: int, size: int) -> int {
+  ?(memgas < 0) { ^ 0; };
+  more = gl_exec(n, size);
+  ?(more == 0 && (gl_ok_n(n) == 0 || gl_ok_size(size) == 0)) { ^ 0; };
+  ?(more == 0 && size > 0) { ^ 0; };
+  s = memgas + more;
+  ?(gl_u_lt(s, memgas) == 1) { ^ 0; };
+  ^ s;
+}
+
+!gl_erc20_transfer() -> int {
+  ^ gl_exec(3, 32);
+}
+
+!gl_test_suite() -> int {
+  ?(gl_log_gas() != 375) { ^ -1; };
+  ?(gl_topic_gas() != 375) { ^ -2; };
+  ?(gl_data_gas() != 8) { ^ -3; };
+  ?(gl_exec(0, 0) != 375) { ^ -4; };
+  ?(gl_exec(0, 1) != 383) { ^ -5; };
+  ?(gl_exec(0, 32) != 631) { ^ -6; };
+  ?(gl_exec(1, 0) != 750) { ^ -7; };
+  ?(gl_exec(1, 32) != 1006) { ^ -8; };
+  ?(gl_exec(2, 0) != 1125) { ^ -9; };
+  ?(gl_exec(3, 0) != 1500) { ^ -10; };
+  ?(gl_exec(3, 32) != 1756) { ^ -11; };
+  ?(gl_erc20_transfer() != 1756) { ^ -12; };
+  ?(gl_exec(4, 0) != 1875) { ^ -13; };
+  ?(gl_exec(4, 32) != 2131) { ^ -14; };
+  ?(gl_exec(4, 1024) != 10067) { ^ -15; };
+  ?(gl_exec(0, 1024) != 8567) { ^ -16; };
+  ?(gl_exec(-1, 0) != 0) { ^ -17; };
+  ?(gl_exec(0, -1) != 0) { ^ -18; };
+  ?(gl_exec(5, 0) != 0) { ^ -19; };
+  ?(gl_with_mem(100, 0, 0) != 475) { ^ -20; };
+  ?(gl_with_mem(100, 3, 32) != 1856) { ^ -21; };
+  ?(gl_with_mem(-1, 0, 0) != 0) { ^ -22; };
+  ?(gl_data(-1) != 0) { ^ -23; };
+  ?(gl_topics(5) != 0) { ^ -24; };
+  ^ 1;
+}
+
+=ex{
+  gl_u_lt,
+  gl_log_gas,
+  gl_topic_gas,
+  gl_data_gas,
+  gl_ok_n,
+  gl_ok_size,
+  gl_data,
+  gl_topics,
+  gl_exec,
+  gl_with_mem,
+  gl_erc20_transfer,
+  gl_test_suite
+}

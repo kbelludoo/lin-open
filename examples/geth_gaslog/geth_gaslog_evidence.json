@@ -1,0 +1,203 @@
+{
+  "schema": "LIN_GETH_GASLOG_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned excerpt has makeGasLog closure + LogDataGas/LogTopicGas",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of go-ethereum v1.16.9 matches pinned sha256/blob",
+      "note": "commit=95665d5703e1023995a0ff93e4ce9eb77e8a59bd blob=c7c1274bf2f39355108ab88722b694bf502cc4b2"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of core/vm/gas_table.go",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 in-range LOG goldens vs i64 fail-closed",
+      "note": ""
+    },
+    {
+      "id": "GO-SELFTEST",
+      "status": "PASS",
+      "description": "independent Go LOG goldens + negative/n>4 fail-closed",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_geth_gaslog.lin",
+      "note": ""
+    },
+    {
+      "id": "GO-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Go transpiler v6 (REJ_GO_BITLEN)",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 (REJ_C_ARRAY_PARAM)",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3 (require/unchecked)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "gl_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "12/12 in-range vectors: Python == C11 == Go == Geth-uint64 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "12/12 vectors: Python bigint 375+n*375+size*8 matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "ERC20-TRANSFER",
+      "status": "PASS",
+      "description": "ERC-20 Transfer LOG3+32B = 1756 (375+3*375+32*8)",
+      "note": "Transfer(address,address,uint256) is the common monetary LOG*"
+    },
+    {
+      "id": "FAIL-CLOSED",
+      "status": "PASS",
+      "description": "negative n/size and n>4 fail-close to 0 (LOG0-LOG4 only; Geth overflow is ErrGasUintOverflow)",
+      "note": ""
+    },
+    {
+      "id": "MEMGAS-ADD",
+      "status": "PASS",
+      "description": "gl_with_mem adds explicit memgas (Geth *Memory lastGasCost is not hidden)",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on gl_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes n,size ints; pinned Geth reads stack.Back(1) via makeGasLog closure",
+      "note": ""
+    },
+    {
+      "id": "GO-BITLEN-REJ",
+      "status": "PASS",
+      "description": "lin_from_go.lin v6 rejects BitLen/stack.data and return func closures",
+      "note": ""
+    },
+    {
+      "id": "C-ARRAY-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 rejects unsized [] params (lift to counts)",
+      "note": ""
+    },
+    {
+      "id": "SOL-REQUIRE",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects unchecked and lowers require to fail-closed",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/ethereum/go-ethereum",
+    "tag": "v1.16.9",
+    "commit": "95665d5703e1023995a0ff93e4ce9eb77e8a59bd",
+    "path": "core/vm/gas_table.go",
+    "git_blob_sha": "c7c1274bf2f39355108ab88722b694bf502cc4b2",
+    "file_sha256": "c11be723771f3726bca1369a129fc8f212f7746aaa26c5b1ee3aa78e7c0a784c",
+    "license": "LGPL-3.0",
+    "constants": "LogGas=375 LogTopicGas=375 LogDataGas=8 from params/protocol_params.go blob e8b044f45016d851af2698e94c62937218c9d736"
+  },
+  "lin_clone": "src/lin_geth_gaslog.lin",
+  "c11_oracle": "test/oracles/geth_gaslog_c11.c",
+  "go_oracle": "test/oracles/geth_gaslog_go.go",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-geth-gaslog",
+  "vectors": [
+    {
+      "n": 0,
+      "size": 0,
+      "exec": 375
+    },
+    {
+      "n": 0,
+      "size": 1,
+      "exec": 383
+    },
+    {
+      "n": 0,
+      "size": 32,
+      "exec": 631
+    },
+    {
+      "n": 1,
+      "size": 0,
+      "exec": 750
+    },
+    {
+      "n": 1,
+      "size": 32,
+      "exec": 1006
+    },
+    {
+      "n": 2,
+      "size": 0,
+      "exec": 1125
+    },
+    {
+      "n": 3,
+      "size": 0,
+      "exec": 1500
+    },
+    {
+      "n": 3,
+      "size": 32,
+      "exec": 1756
+    },
+    {
+      "n": 4,
+      "size": 0,
+      "exec": 1875
+    },
+    {
+      "n": 4,
+      "size": 32,
+      "exec": 2131
+    },
+    {
+      "n": 4,
+      "size": 1024,
+      "exec": 10067
+    },
+    {
+      "n": 0,
+      "size": 1024,
+      "exec": 8567
+    }
+  ]
+}

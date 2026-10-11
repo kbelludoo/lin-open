@@ -92,6 +92,7 @@ In compliance with rationalist auditing standards (`NP1`):
 | **"Full OpenSSL executes in LinVM"** | ❌ **NOT PROVEN** | OpenSSL `sha256.c` is pinned for provenance only; full OpenSSL is not transpiled or executed. |
 | **"Full Uniswap protocol is replaced"** | ❌ **NOT PROVEN** | Only the pure scalar arithmetic functions are transpiled and verified; state storage, ERC-20 calls, and EVM reentrancy are out of scope. |
 | **"Compound cToken / uint256 mainnet parity"** | ❌ **NOT PROVEN** | The JumpRate clone is experimental uint64-scale: explicit IRM arguments and 128-bit `(a*b)/d`, not Solidity uint256. |
+| **"LOG* / LogDataGas replaces Geth / mainnet consensus"** | ❌ **NOT PROVEN** | Experimental i64-scale: `makeGasLog` closure and `stack.Back(1)` lifted to `n,size`. Not a node. Memory expansion is a separate kernel. |
 | **"Merkle receipts are zk / computationally sound"** | ❌ **NOT PROVEN** | C4 recomputes a SHA-256 root and rejects a tampered output. That is tamper-evidence plus re-execution, not a SNARK. |
 
 ---
@@ -104,6 +105,7 @@ LIN is tested against production-grade C kernels with **100% bit-exact parity** 
 * **xxHash64 (`xxhash64_round`):** 100% match with official Yann Collet Cyan4973 test vectors.
 * **SipHash-2-4 (`siphash_round`):** Bit-exact verification against the reference C RFC implementation.
 * **Uniswap v2 AMM (`get_amount_out`):** Exact mathematical parity with Solidity EVM 0.3% fee swaps.
+* **Geth `makeGasLog` / `LogDataGas=8` (experimental i64):** `375 + n*375 + size*8` vs pinned go-ethereum v1.16.9; ERC-20 Transfer LOG3+32B = 1756; proofs in `examples/geth_gaslog/` and clone-lin https://github.com/kbelludoo/clone-lin-geth-gaslog .
 * **A5/1 Stream Cipher (GSM TS 100 920):** Hardware shift-register stepping and majority clocking.
 * **Post-Quantum Kyber / ML-KEM:** Butterfly Number Theoretic Transform (NTT) mod 3329.
 
