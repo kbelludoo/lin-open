@@ -1,0 +1,193 @@
+{
+  "schema": "LIN_GETH_CREATE3860_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned excerpt has EIP-3860 CREATE/CREATE2 word-gas + *Stack size",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of go-ethereum v1.16.9 matches pinned sha256/blob",
+      "note": "commit=95665d5703e1023995a0ff93e4ce9eb77e8a59bd blob=c7c1274bf2f39355108ab88722b694bf502cc4b2"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of core/vm/gas_table.go",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 in-range EIP-3860 goldens + oversize vs i64 fail-closed",
+      "note": ""
+    },
+    {
+      "id": "GO-SELFTEST",
+      "status": "PASS",
+      "description": "independent Go CREATE/CREATE2 goldens + oversize",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_geth_create3860.lin",
+      "note": ""
+    },
+    {
+      "id": "GO-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Go transpiler v4 (REJ_GO_STACK)",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 (REJ_C_ARRAY_PARAM)",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3 (require/unchecked)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "ic_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "9/9 in-range vectors: Python == C11 == Go == Geth-uint64 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "9/9 vectors: Python bigint ceil(size/32)*word matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "EIP3860-WORD",
+      "status": "PASS",
+      "description": "32-byte initcode: CREATE=2 CREATE2=8 (InitCodeWordGas and +Keccak256WordGas)",
+      "note": "every Shanghai+ CREATE/CREATE2 pays this surcharge"
+    },
+    {
+      "id": "OVERSIZE",
+      "status": "PASS",
+      "description": "size=49153: Geth ErrMaxInitCodeSizeExceeded; LIN fail-closes to 0",
+      "note": ""
+    },
+    {
+      "id": "FAIL-CLOSED",
+      "status": "PASS",
+      "description": "negative size and oversize+memgas fail-close to 0 (Geth does not return leftover memgas)",
+      "note": ""
+    },
+    {
+      "id": "MEMGAS-ADD",
+      "status": "PASS",
+      "description": "ic_with_mem adds explicit memgas (Geth *Memory lastGasCost is not hidden)",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on ic_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes size int; pinned Geth reads stack.Back(2) on *Stack",
+      "note": ""
+    },
+    {
+      "id": "GO-STACK-REJ",
+      "status": "PASS",
+      "description": "lin_from_go.lin v4 rejects *Stack/stack.Back and *EVM/*Contract/*Memory",
+      "note": ""
+    },
+    {
+      "id": "C-ARRAY-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 rejects unsized [] params (lift to counts)",
+      "note": ""
+    },
+    {
+      "id": "SOL-REQUIRE",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects unchecked and lowers require to fail-closed",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/ethereum/go-ethereum",
+    "tag": "v1.16.9",
+    "commit": "95665d5703e1023995a0ff93e4ce9eb77e8a59bd",
+    "path": "core/vm/gas_table.go",
+    "git_blob_sha": "c7c1274bf2f39355108ab88722b694bf502cc4b2",
+    "file_sha256": "c11be723771f3726bca1369a129fc8f212f7746aaa26c5b1ee3aa78e7c0a784c",
+    "license": "LGPL-3.0"
+  },
+  "lin_clone": "src/lin_geth_create3860.lin",
+  "c11_oracle": "test/oracles/geth_create3860_c11.c",
+  "go_oracle": "test/oracles/geth_create3860_go.go",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-geth-create3860",
+  "vectors": [
+    {
+      "size": 0,
+      "create": 0,
+      "create2": 0
+    },
+    {
+      "size": 1,
+      "create": 2,
+      "create2": 8
+    },
+    {
+      "size": 31,
+      "create": 2,
+      "create2": 8
+    },
+    {
+      "size": 32,
+      "create": 2,
+      "create2": 8
+    },
+    {
+      "size": 33,
+      "create": 4,
+      "create2": 16
+    },
+    {
+      "size": 64,
+      "create": 4,
+      "create2": 16
+    },
+    {
+      "size": 65,
+      "create": 6,
+      "create2": 24
+    },
+    {
+      "size": 24576,
+      "create": 1536,
+      "create2": 6144
+    },
+    {
+      "size": 49152,
+      "create": 3072,
+      "create2": 12288
+    }
+  ]
+}

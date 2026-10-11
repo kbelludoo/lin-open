@@ -1,0 +1,109 @@
+@LIN:L1c:0.2
+@GETH_CREATE3860{
+  version=1
+  repo="ethereum/go-ethereum"
+  source="core/vm/gas_table.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="scalar_geth_gasCreateEip3860_initcode_word_gas"
+  note="Not a Geth node. EIP-3860 surcharge only: InitCodeWordGas*((size+31)/32). Geth reads size from stack.Back(2); LIN takes size as an integer. size>MaxInitCodeSize (49152) fail-closes to 0 (Geth returns error). Memory expansion is an explicit memgas argument, not *Memory."
+}
+
+!ic_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!ic_max_initcode() -> int {
+  ^ 49152;
+}
+
+!ic_word_gas() -> int {
+  ^ 2;
+}
+
+!ic_keccak_word() -> int {
+  ^ 6;
+}
+
+!ic_ok(size: int) -> int {
+  ?(size < 0) { ^ 0; };
+  ?(ic_u_lt(ic_max_initcode(), size) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!ic_words(size: int) -> int {
+  ?(ic_ok(size) == 0) { ^ 0; };
+  ^ (size + 31) / 32;
+}
+
+!ic_create(size: int) -> int {
+  ?(ic_ok(size) == 0) { ^ 0; };
+  ^ ic_word_gas() * ic_words(size);
+}
+
+!ic_create2(size: int) -> int {
+  ?(ic_ok(size) == 0) { ^ 0; };
+  ^ (ic_word_gas() + ic_keccak_word()) * ic_words(size);
+}
+
+!ic_with_mem(kind: int, memgas: int, size: int) -> int {
+  ?(kind < 0) { ^ 0; };
+  ?(memgas < 0) { ^ 0; };
+  ?(ic_ok(size) == 0) { ^ 0; };
+  more = ic_create(size);
+  ?(kind != 0) { more = ic_create2(size); };
+  s = memgas + more;
+  ?(ic_u_lt(s, memgas) == 1) { ^ 0; };
+  ^ s;
+}
+
+!ic_test_suite() -> int {
+  ?(ic_max_initcode() != 49152) { ^ -1; };
+  ?(ic_word_gas() != 2) { ^ -2; };
+  ?(ic_keccak_word() != 6) { ^ -3; };
+  ?(ic_words(0) != 0) { ^ -4; };
+  ?(ic_words(1) != 1) { ^ -5; };
+  ?(ic_words(32) != 1) { ^ -6; };
+  ?(ic_words(33) != 2) { ^ -7; };
+  ?(ic_words(49152) != 1536) { ^ -8; };
+  ?(ic_create(0) != 0) { ^ -9; };
+  ?(ic_create(1) != 2) { ^ -10; };
+  ?(ic_create(32) != 2) { ^ -11; };
+  ?(ic_create(33) != 4) { ^ -12; };
+  ?(ic_create(49152) != 3072) { ^ -13; };
+  ?(ic_create(49153) != 0) { ^ -14; };
+  ?(ic_create(-1) != 0) { ^ -15; };
+  ?(ic_create2(0) != 0) { ^ -16; };
+  ?(ic_create2(1) != 8) { ^ -17; };
+  ?(ic_create2(32) != 8) { ^ -18; };
+  ?(ic_create2(33) != 16) { ^ -19; };
+  ?(ic_create2(49152) != 12288) { ^ -20; };
+  ?(ic_create2(49153) != 0) { ^ -21; };
+  ?(ic_with_mem(0, 100, 32) != 102) { ^ -22; };
+  ?(ic_with_mem(1, 100, 32) != 108) { ^ -23; };
+  ?(ic_with_mem(0, 100, 49153) != 0) { ^ -24; };
+  ?(ic_with_mem(0, -1, 32) != 0) { ^ -25; };
+  ?(ic_create(31) != 2) { ^ -26; };
+  ?(ic_create(64) != 4) { ^ -27; };
+  ?(ic_create(24576) != 1536) { ^ -28; };
+  ^ 1;
+}
+
+=ex{
+  ic_u_lt,
+  ic_max_initcode,
+  ic_word_gas,
+  ic_keccak_word,
+  ic_ok,
+  ic_words,
+  ic_create,
+  ic_create2,
+  ic_with_mem,
+  ic_test_suite
+}
