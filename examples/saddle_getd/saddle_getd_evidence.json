@@ -1,0 +1,215 @@
+{
+  "schema": "LIN_SADDLE_GETD_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned SwapUtils.sol sha256 matches Saddle commit",
+      "note": ""
+    },
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned excerpt has getD, getY, uint256[], revert, within1",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned saddle-contract commit matches fixture",
+      "note": "commit=2cfdd05580efb626d79d597034b2cf5ae89b5626 blob=38e236c32c550ce63187dc9297eb36fac005851b"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of contracts/SwapUtils.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb getD/getY agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_saddle_getd.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3 (ARRAY/REVERT/FOR)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "sgd_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "9/9 vectors: Python bigint == C11 i128 == limbs == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "9/9 vectors: Python arbitrary-precision Newton matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "INVARIANT",
+      "status": "PASS",
+      "description": "balanced D(1000,1000)=2000; imbalanced D(1000,2000)=2998 < 3000",
+      "note": ""
+    },
+    {
+      "id": "STABLE-VS-CP",
+      "status": "PASS",
+      "description": "1% swap of 1e6/1e6: Saddle fee-less dy=9999 > Uniswap-style cp=9871",
+      "note": ""
+    },
+    {
+      "id": "FAIL-CLOSED",
+      "status": "PASS",
+      "description": "negative balances and A=0 fail-close to 0 (Saddle reverts)",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on sgd_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN flattens N=2 xp[0],xp[1],A; Saddle takes uint256[] + SafeMath",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses visible 128-bit schoolbook product (Saddle uses SafeMath uint256)",
+      "note": ""
+    },
+    {
+      "id": "SOL-GD-REJ",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects uint256[] / revert / for (lift is sgd_get_d)",
+      "note": ""
+    },
+    {
+      "id": "SOL-EX-SPLIT",
+      "status": "PASS",
+      "description": "sol_from_sol concatenates '=' + 'ex{' so C0 export parse is honest",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/saddle-finance/saddle-contract",
+    "commit": "2cfdd05580efb626d79d597034b2cf5ae89b5626",
+    "path": "contracts/SwapUtils.sol",
+    "git_blob_sha": "38e236c32c550ce63187dc9297eb36fac005851b",
+    "file_sha256": "9684c7e46310e1b9d128587f08cf0b62e8d6d0574b094d338a9ed99e936f3df6",
+    "license": "MIT",
+    "note": "Curve.vy was not pinned: Curve.Fi LICENSE grants no reproduction right. Saddle is the MIT Solidity Newton D.",
+    "a_precision": "precise A = display A * 100; LIN a is precise A"
+  },
+  "lin_clone": "src/lin_saddle_getd.lin",
+  "c11_oracle": "test/oracles/saddle_getd_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-saddle-getd",
+  "vectors": [
+    {
+      "kind": "getd",
+      "args": [
+        1000,
+        1000,
+        10000
+      ],
+      "want": 2000
+    },
+    {
+      "kind": "getd",
+      "args": [
+        1000,
+        2000,
+        10000
+      ],
+      "want": 2998
+    },
+    {
+      "kind": "getd",
+      "args": [
+        1000000,
+        1000000,
+        20000
+      ],
+      "want": 2000000
+    },
+    {
+      "kind": "getd",
+      "args": [
+        1000000,
+        1100000,
+        20000
+      ],
+      "want": 2099988
+    },
+    {
+      "kind": "getd",
+      "args": [
+        100,
+        200,
+        10000
+      ],
+      "want": 299
+    },
+    {
+      "kind": "gety",
+      "args": [
+        1000,
+        1000,
+        10000,
+        1000
+      ],
+      "want": 1000
+    },
+    {
+      "kind": "gety",
+      "args": [
+        1000,
+        1000,
+        10000,
+        1010
+      ],
+      "want": 990
+    },
+    {
+      "kind": "dy",
+      "args": [
+        1000,
+        1000,
+        10000,
+        10
+      ],
+      "want": 9
+    },
+    {
+      "kind": "dy",
+      "args": [
+        1000000,
+        1000000,
+        20000,
+        10000
+      ],
+      "want": 9999
+    }
+  ]
+}
