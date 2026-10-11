@@ -29,7 +29,7 @@
   reserve_out: [16]int;
   fee_amount: [16]int;
   denominator: [16]int;
-  remainder: [16]int;
+  remainder: [32]int;
   quotient: [16]int;
   numerator: [32]int;
 
@@ -41,13 +41,13 @@
     reserve_out[i] = 0;
     fee_amount[i] = 0;
     denominator[i] = 0;
-    remainder[i] = 0;
     quotient[i] = 0;
     i = i + 1;
   };
   i = 0;
   while (i < 32) {
     numerator[i] = 0;
+    remainder[i] = 0;
     i = i + 1;
   };
 
@@ -127,52 +127,49 @@
       carry = _lia_ushr(t, 16);
       k = k + 1;
     };
+    ?(carry != 0) { ^0 - 2; };
     i = i + 1;
   };
 
-  // 6. Divisão restauradora de 512 bits por 256 bits: numerator (512b) / denominator (256b)
+  // 6. Divisão restauradora 512/256 com remainder de 32 limbs (ge em 512 bits)
   bit = 511;
   while (bit >= 0) {
     limb = _lia_ushr(bit, 4);
     pos = bit & 15;
     in_bit = (_lia_ushr(numerator[limb], pos) & 1);
 
-    // Desloca remainder à esquerda por 1 bit e insere in_bit
     carry = in_bit;
     j = 0;
-    while (j < 16) {
+    while (j < 32) {
       t = remainder[j] * 2 + carry;
       remainder[j] = t & 65535;
       carry = _lia_ushr(t, 16);
       j = j + 1;
     };
+    ?(carry != 0) { ^0 - 2; };
 
-    // Compara remainder (16 limbs) com denominator (16 limbs)
     cmp = 0;
-    j = 15;
+    j = 31;
     while (j >= 0) {
       ?(cmp == 0) {
-        ?(remainder[j] > denominator[j]) { cmp = 1; }
-        : (remainder[j] < denominator[j]) { cmp = 0 - 1; };
+        dj = 0;
+        ?(j < 16) { dj = denominator[j]; };
+        ?(remainder[j] > dj) { cmp = 1; }
+        : (remainder[j] < dj) { cmp = 0 - 1; };
       };
       j = j - 1;
     };
 
-    take = 0;
-    ?((carry == 1) | (cmp >= 0)) { take = 1; };
-    ?(take == 1) {
-      // Se quotient exceder 256 bits (bit >= 256), ocorreu overflow
-      ?(bit >= 256) {
-        ^0 - 2;
-      };
-
+    ?(cmp >= 0) {
+      ?(bit >= 256) { ^0 - 2; };
       quot_limb = _lia_ushr(bit, 4);
       quotient[quot_limb] = quotient[quot_limb] | _lia_shl(1, pos);
-
       borrow = 0;
       j = 0;
-      while (j < 16) {
-        t = remainder[j] - denominator[j] - borrow;
+      while (j < 32) {
+        dj = 0;
+        ?(j < 16) { dj = denominator[j]; };
+        t = remainder[j] - dj - borrow;
         ?(t < 0) {
           remainder[j] = t + 65536;
           borrow = 1;
