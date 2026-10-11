@@ -1,0 +1,65 @@
+@RULEL:GETH_SELFDESTRUCT_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GETH-SELFDESTRUCT-EIP3529"
+@TITLE="Clone-lin of go-ethereum makeSelfdestructGasFn / EIP-3529 with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-10-11"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-geth-selfdestruct"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Geth SELFDESTRUCT dynamic gas into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open plus a separate clone-lin repo"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="i64 flags 0/1; addends 2600/25000/24000 fit i64; Solidity/Geth uint64 is not claimed beyond these constants"
+  commercial_hook="EIP-3529 set refundsEnabled=false, removing the 24000 SELFDESTRUCT refund used by GST2/CHI gas tokens. LIN makes AddressInAccessList/Empty/GetBalance/HasSelfDestructed explicit 0/1 args. Not a TVL or node-replacement claim."
+}
+
+.u{
+  repo="https://github.com/ethereum/go-ethereum"
+  path="core/vm/operations_acl.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  git_blob_sha="085b018e4c42bf0185da790518ea1d1ee891b682"
+  file_sha256="213f7846ed039c8ab293eb9511383897497f52c971da014317d3e1b5b5dc5330"
+  params_blob="e8b044f45016d851af2698e94c62937218c9d736"
+  params_sha256="9dd1ccfb0c646f35b4d527f255ddee8173e99a033b0f6fc586340b6bdbfe4c14"
+  fixture="test/fixtures/external_proof/makeSelfdestructGasFn.go"
+  bindings="gasSelfdestructEIP2929=makeSelfdestructGasFn(true); gasSelfdestructEIP3529=makeSelfdestructGasFn(false)"
+  constant_gas="SelfdestructGasEIP150=5000 is jump-table constantGas; the cloned fn returns only dynamicGas"
+}
+
+.l{
+  clone="src/lin_geth_selfdestruct.lin"
+  transpiler_delta="src/lin_from_go.lin v9: REJ_GO_SELFDESTRUCT / REJ_GO_ACCESSLIST + honest '='+'ex{' emit"
+  improvement_1="Geth reads StateDB+stack inside a closure; LIN takes is_cold/target_empty/has_value/already_destructed/refunds_enabled"
+  improvement_2="EIP-3529 refund delta is an explicit function (sd_eip3529_delta=24000) instead of a bool captured by makeSelfdestructGasFn"
+  improvement_3="gasEip2929AccountCheck cold-warm 2500 is a sibling scalar in the same file; flags outside 0/1 fail-close to 0"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/geth_selfdestruct_c11.c (gcc -O2 -std=c11) and test/oracles/geth_selfdestruct_go.go"
+  gate="make geth-selfdestruct-proof"
+}
+
+.p{
+  harness="test/prove_geth_selfdestruct_external.py"
+  evidence_json="examples/geth_selfdestruct/geth_selfdestruct_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-geth-selfdestruct"
+}
+
+.n{
+  not_claimed_1="LIN replacing Geth or Ethereum consensus"
+  not_claimed_2="EIP-6780 same-transaction only SELFDESTRUCT"
+  not_claimed_3="account-capped refund / RefundQuotientEIP3529"
+  not_claimed_4="Compiler 0 executing go_from_go string-literal emit (VM_REJ_STRING_LITERAL)"
+  not_claimed_5="wall-clock superiority vs Geth"
+}
+
+.v{
+  method="PINNED_BYTES && PYTHON_BIGINT_EQ_C11_EQ_GO_EQ_LIN_C0_VM && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

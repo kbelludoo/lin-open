@@ -1,0 +1,146 @@
+@LIN:L1c:0.2
+@GETH_SELFDESTRUCT{
+  version=1
+  repo="ethereum/go-ethereum"
+  source="core/vm/operations_acl.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="scalar_geth_makeSelfdestructGasFn_EIP3529"
+  note="Not a Geth node. Dynamic SELFDESTRUCT gas + intended refund only. Geth reads StateDB access-list/empty/balance/HasSelfDestructed; LIN takes is_cold/target_empty/has_value/already_destructed/refunds_enabled as 0/1. EIP-3529 is makeSelfdestructGasFn(false): refund=0. Constant opcode gas SelfdestructGasEIP150=5000 is NOT returned by the dynamic fn."
+}
+
+!sd_cold() -> int {
+  ^ 2600;
+}
+
+!sd_create() -> int {
+  ^ 25000;
+}
+
+!sd_refund_amt() -> int {
+  ^ 24000;
+}
+
+!sd_warm_read() -> int {
+  ^ 100;
+}
+
+!sd_static() -> int {
+  ^ 5000;
+}
+
+!sd_ok_flag(v: int) -> int {
+  ?(v == 0) { ^ 1; };
+  ?(v == 1) { ^ 1; };
+  ^ 0;
+}
+
+!sd_account_check(is_cold: int) -> int {
+  ?(sd_ok_flag(is_cold) == 0) { ^ 0; };
+  ?(is_cold == 1) { ^ sd_cold() - sd_warm_read(); };
+  ^ 0;
+}
+
+!sd_gas(is_cold: int, target_empty: int, has_value: int) -> int {
+  ?(sd_ok_flag(is_cold) == 0) { ^ 0; };
+  ?(sd_ok_flag(target_empty) == 0) { ^ 0; };
+  ?(sd_ok_flag(has_value) == 0) { ^ 0; };
+  gas = 0;
+  ?(is_cold == 1) { gas = gas + sd_cold(); };
+  ?(target_empty == 1) {
+    ?(has_value == 1) { gas = gas + sd_create(); };
+  };
+  ^ gas;
+}
+
+!sd_refund(refunds_enabled: int, already_destructed: int) -> int {
+  ?(sd_ok_flag(refunds_enabled) == 0) { ^ 0; };
+  ?(sd_ok_flag(already_destructed) == 0) { ^ 0; };
+  ?(refunds_enabled == 0) { ^ 0; };
+  ?(already_destructed == 1) { ^ 0; };
+  ^ sd_refund_amt();
+}
+
+!sd_gas_3529(is_cold: int, target_empty: int, has_value: int) -> int {
+  ^ sd_gas(is_cold, target_empty, has_value);
+}
+
+!sd_refund_3529(already_destructed: int) -> int {
+  ?(sd_ok_flag(already_destructed) == 0) { ^ 0; };
+  ^ 0;
+}
+
+!sd_gas_2929(is_cold: int, target_empty: int, has_value: int) -> int {
+  ^ sd_gas(is_cold, target_empty, has_value);
+}
+
+!sd_refund_2929(already_destructed: int) -> int {
+  ^ sd_refund(1, already_destructed);
+}
+
+!sd_create_cold() -> int {
+  ^ sd_gas(1, 1, 1);
+}
+
+!sd_eip3529_delta() -> int {
+  ^ sd_refund(1, 0) - sd_refund(0, 0);
+}
+
+!sd_opcode_total_3529(is_cold: int, target_empty: int, has_value: int) -> int {
+  ?(sd_ok_flag(is_cold) == 0) { ^ 0; };
+  ?(sd_ok_flag(target_empty) == 0) { ^ 0; };
+  ?(sd_ok_flag(has_value) == 0) { ^ 0; };
+  ^ sd_static() + sd_gas(is_cold, target_empty, has_value);
+}
+
+!sd_test_suite() -> int {
+  ?(sd_cold() != 2600) { ^ -1; };
+  ?(sd_create() != 25000) { ^ -2; };
+  ?(sd_refund_amt() != 24000) { ^ -3; };
+  ?(sd_account_check(1) != 2500) { ^ -4; };
+  ?(sd_account_check(0) != 0) { ^ -5; };
+  ?(sd_gas(0, 0, 0) != 0) { ^ -6; };
+  ?(sd_gas(1, 0, 0) != 2600) { ^ -7; };
+  ?(sd_gas(0, 1, 1) != 25000) { ^ -8; };
+  ?(sd_gas(1, 1, 1) != 27600) { ^ -9; };
+  ?(sd_gas(0, 1, 0) != 0) { ^ -10; };
+  ?(sd_gas(0, 0, 1) != 0) { ^ -11; };
+  ?(sd_gas(1, 1, 0) != 2600) { ^ -12; };
+  ?(sd_refund(0, 0) != 0) { ^ -13; };
+  ?(sd_refund(1, 0) != 24000) { ^ -14; };
+  ?(sd_refund(1, 1) != 0) { ^ -15; };
+  ?(sd_refund_3529(0) != 0) { ^ -16; };
+  ?(sd_refund_2929(0) != 24000) { ^ -17; };
+  ?(sd_create_cold() != 27600) { ^ -18; };
+  ?(sd_eip3529_delta() != 24000) { ^ -19; };
+  ?(sd_gas(-1, 0, 0) != 0) { ^ -20; };
+  ?(sd_gas(0, 2, 1) != 0) { ^ -21; };
+  ?(sd_refund(2, 0) != 0) { ^ -22; };
+  ?(sd_account_check(2) != 0) { ^ -23; };
+  ?(sd_opcode_total_3529(0, 0, 0) != 5000) { ^ -24; };
+  ?(sd_opcode_total_3529(1, 1, 1) != 32600) { ^ -25; };
+  ^ 1;
+}
+
+=ex{
+  sd_cold,
+  sd_create,
+  sd_refund_amt,
+  sd_warm_read,
+  sd_static,
+  sd_ok_flag,
+  sd_account_check,
+  sd_gas,
+  sd_refund,
+  sd_gas_3529,
+  sd_refund_3529,
+  sd_gas_2929,
+  sd_refund_2929,
+  sd_create_cold,
+  sd_eip3529_delta,
+  sd_opcode_total_3529,
+  sd_test_suite
+}
