@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: REJ_SOLIDITY_MULMOD / REJ_SOLIDITY_REVERT / REJ_SOLIDITY_CAST; Rounding as a strippable type; mulDiv assembly+mulmod gate vectors; emit concatenates '=' + 'ex{'"
 }
 
 !sol_is_kw(nm: string): int {
@@ -34,6 +34,7 @@
   ?(starts_lit(nm, 0, "int256") == 1 && nm.length == 6) { ^1 };
   ?(starts_lit(nm, 0, "int") == 1 && nm.length == 3) { ^1 };
   ?(starts_lit(nm, 0, "bool") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "Rounding") == 1 && nm.length == 8) { ^1 };
   ^0;
 }
 
@@ -43,6 +44,11 @@
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
   ?(rg_count_lit(body, "assembly") > 0) { ^"REJ_SOLIDITY_INLINE_ASM" };
+  ?(rg_count_lit(body, "mulmod") > 0) { ^"REJ_SOLIDITY_MULMOD" };
+  ?(rg_count_lit(body, "revert ") > 0) { ^"REJ_SOLIDITY_REVERT" };
+  ?(rg_count_lit(body, "revert(") > 0) { ^"REJ_SOLIDITY_REVERT" };
+  ?(rg_count_lit(body, "uint8(") > 0) { ^"REJ_SOLIDITY_CAST" };
+  ?(rg_count_lit(body, "uint256(") > 0) { ^"REJ_SOLIDITY_CAST" };
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
@@ -64,6 +70,18 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_md = "function mulDiv(uint256 x, uint256 y, uint256 denominator) internal pure returns (uint256 result)";
+  body_md = "assembly { let mm := mulmod(x, y, not(0)) } return prod0 / denominator;";
+  r4 = sol_reason(sig_md, body_md);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_INLINE_ASM") == 0) { ^0 };
+  sig_rnd = "function mulDiv(uint256 x, uint256 y, uint256 denominator, Rounding rounding) internal pure returns (uint256)";
+  body_rnd = "uint256 result = mulDiv(x, y, denominator); if (unsignedRoundsUp(rounding) && mulmod(x, y, denominator) > 0) { result += 1; } return result;";
+  r5 = sol_reason(sig_rnd, body_rnd);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_MULMOD") == 0) { ^0 };
+  sig_up = "function unsignedRoundsUp(Rounding rounding) internal pure returns (bool)";
+  body_up = "return uint8(rounding) % 2 == 1;";
+  r6 = sol_reason(sig_up, body_up);
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_CAST") == 0) { ^0 };
   ^1;
 }
 
@@ -317,7 +335,8 @@
     };
     i = i + 1;
   };
-  out = out + "=ex{";
+  out = out + "=";
+  out = out + "ex{";
   out = out + names;
   out = out + "}";
   out = out + rgs_ch(10);

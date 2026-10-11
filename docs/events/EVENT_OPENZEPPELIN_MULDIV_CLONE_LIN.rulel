@@ -1,0 +1,64 @@
+@RULEL:OPENZEPPELIN_MULDIV_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-OZ-MULDIV-ROUNDING"
+@TITLE="Clone-lin of OpenZeppelin Math.mulDiv + Rounding with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-11"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-oz-muldiv"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile OpenZeppelin mulDiv rounding into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open plus a separate clone-lin repo"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for (x*y)/d; Solidity uint256 / 512-bit CRT is NOT claimed"
+  commercial_hook="mulDiv is the shared primitive under ERC-4626 convertToShares (Floor) and previewMint (Ceil). LIN makes Rounding an explicit 0/1/2/3 flag and fail-closes overflow instead of reverting in Yul. Not a TVL or vault-replacement claim."
+}
+
+.u{
+  repo="https://github.com/OpenZeppelin/openzeppelin-contracts"
+  path="contracts/utils/math/Math.sol"
+  license="MIT"
+  tag="v5.0.2"
+  commit="dbb6104ce834628e473d2173bbc9d47f81a9eec3"
+  git_blob_sha="9681524529b34f34033ae97064a2700bfc4eec00"
+  file_sha256="a6ee779fc42e6bf01b5e6a963065706e882b016affbedfd8be19a71ea48e6e15"
+  fixture="test/fixtures/external_proof/Math.sol"
+  excerpt="test/fixtures/external_proof/mulDiv.sol"
+  rounding="Floor=0 Ceil=1 Trunc=2 Expand=3; unsignedRoundsUp = uint8(rounding)%2"
+}
+
+.l{
+  clone="src/lin_openzeppelin_muldiv.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_MULMOD / REJ_SOLIDITY_REVERT / REJ_SOLIDITY_CAST + Rounding type + honest '='+'ex{' emit"
+  improvement_1="OZ Rounding is an enum with uint8 cast; LIN takes 0/1/2/3 and fail-closes outside that set"
+  improvement_2="OZ mulDiv builds a 512-bit product in Yul via mulmod/CRT; LIN uses a visible 128-bit schoolbook product"
+  improvement_3="div-by-zero and quotient overflow fail-close to 0 (OZ reverts MathOverflowedMulDiv); remainder identity is checked"
+  improvement_4="named contrast vs already-cloned ceilDiv: ceilDiv(7,3)=3 != mulDiv(7,2,3,Ceil)=5"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/openzeppelin_muldiv_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="make oz-muldiv-proof"
+}
+
+.p{
+  harness="test/prove_openzeppelin_muldiv_external.py"
+  evidence_json="examples/openzeppelin_muldiv/openzeppelin_muldiv_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-oz-muldiv"
+}
+
+.n{
+  not_claimed_1="full uint256 / 512-bit CRT product parity with OZ Math.sol"
+  not_claimed_2="LIN replacing OpenZeppelin, ERC-4626 vaults, or the EVM"
+  not_claimed_3="Compiler 0 executing sol_from_sol string-literal emit (VM_REJ_STRING_LITERAL)"
+  not_claimed_4="wall-clock superiority vs solc"
+  not_claimed_5="zk / computational soundness of Merkle receipts"
+}
+
+.v{
+  method="PINNED_BYTES && PYTHON_BIGINT_EQ_C11_I128_EQ_LIMBS_EQ_LIN_C0_VM && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

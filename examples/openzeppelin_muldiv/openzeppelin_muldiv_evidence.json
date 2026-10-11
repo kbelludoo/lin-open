@@ -1,0 +1,238 @@
+{
+  "schema": "LIN_OPENZEPPELIN_MULDIV_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned Math.sol sha256 matches OpenZeppelin v5.0.2",
+      "note": ""
+    },
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned excerpt has mulDiv, Rounding, unsignedRoundsUp, Yul mulmod",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of OpenZeppelin v5.0.2 matches pinned sha256/blob",
+      "note": "commit=dbb6104ce834628e473d2173bbc9d47f81a9eec3 blob=9681524529b34f34033ae97064a2700bfc4eec00"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of contracts/utils/math/Math.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb mulDiv+rounding agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_openzeppelin_muldiv.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3 (MULMOD/REVERT/CAST)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "ozmd_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "12/12 vectors: Python bigint == C11 i128 == limbs == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "12/12 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "REM-ID",
+      "status": "PASS",
+      "description": "remainder identity witness: 7*9 = 31*2 + 1",
+      "note": ""
+    },
+    {
+      "id": "CEILDIV-DELTA",
+      "status": "PASS",
+      "description": "named contrast: OZ ceilDiv(7,3)=3 != mulDiv(7,2,3,Ceil)=5",
+      "note": ""
+    },
+    {
+      "id": "VAULT-FLOOR",
+      "status": "PASS",
+      "description": "ERC-4626-style convertToShares = mulDiv Floor (100*50/200=25)",
+      "note": ""
+    },
+    {
+      "id": "VAULT-CEIL",
+      "status": "PASS",
+      "description": "ERC-4626-style previewMint = mulDiv Ceil (ceil(1*100/3)=34)",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive 64-bit (1e18*1e18) wraps; 128-bit mulDiv fail-closes to 0",
+      "note": "i64_wrap=12919594847110692864"
+    },
+    {
+      "id": "FAIL-CLOSED",
+      "status": "PASS",
+      "description": "rounding outside 0..3 and negative inputs fail-close to 0",
+      "note": ""
+    },
+    {
+      "id": "DIV0",
+      "status": "PASS",
+      "description": "denominator 0 fail-closes to 0 (OZ reverts; LIN documents the delta)",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on ozmd_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes Rounding as 0/1/2/3; pinned OZ uses an enum + uint8 cast",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses visible 128-bit schoolbook product (OZ uses Yul mulmod/CRT)",
+      "note": ""
+    },
+    {
+      "id": "SOL-MD-REJ",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects mulmod / uint8(enum) / revert (lift is ozmd_muldiv)",
+      "note": ""
+    },
+    {
+      "id": "SOL-EX-SPLIT",
+      "status": "PASS",
+      "description": "sol_from_sol concatenates '=' + 'ex{' so C0 export parse is honest",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/OpenZeppelin/openzeppelin-contracts",
+    "tag": "v5.0.2",
+    "commit": "dbb6104ce834628e473d2173bbc9d47f81a9eec3",
+    "path": "contracts/utils/math/Math.sol",
+    "git_blob_sha": "9681524529b34f34033ae97064a2700bfc4eec00",
+    "file_sha256": "a6ee779fc42e6bf01b5e6a963065706e882b016affbedfd8be19a71ea48e6e15",
+    "license": "MIT",
+    "rounding": "Floor=0 Ceil=1 Trunc=2 Expand=3; unsignedRoundsUp = rounding%2"
+  },
+  "lin_clone": "src/lin_openzeppelin_muldiv.lin",
+  "c11_oracle": "test/oracles/openzeppelin_muldiv_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-oz-muldiv",
+  "vectors": [
+    {
+      "x": 100,
+      "y": 200,
+      "d": 50,
+      "rounding": 0,
+      "want": 400
+    },
+    {
+      "x": 7,
+      "y": 9,
+      "d": 2,
+      "rounding": 0,
+      "want": 31
+    },
+    {
+      "x": 7,
+      "y": 9,
+      "d": 2,
+      "rounding": 1,
+      "want": 32
+    },
+    {
+      "x": 7,
+      "y": 9,
+      "d": 2,
+      "rounding": 2,
+      "want": 31
+    },
+    {
+      "x": 7,
+      "y": 9,
+      "d": 2,
+      "rounding": 3,
+      "want": 32
+    },
+    {
+      "x": 1,
+      "y": 1,
+      "d": 2,
+      "rounding": 0,
+      "want": 0
+    },
+    {
+      "x": 1,
+      "y": 1,
+      "d": 2,
+      "rounding": 1,
+      "want": 1
+    },
+    {
+      "x": 1000000000000000000,
+      "y": 1,
+      "d": 2,
+      "rounding": 0,
+      "want": 500000000000000000
+    },
+    {
+      "x": 7,
+      "y": 2,
+      "d": 3,
+      "rounding": 1,
+      "want": 5
+    },
+    {
+      "x": 100,
+      "y": 50,
+      "d": 200,
+      "rounding": 0,
+      "want": 25
+    },
+    {
+      "x": 25,
+      "y": 200,
+      "d": 50,
+      "rounding": 1,
+      "want": 100
+    },
+    {
+      "x": 1,
+      "y": 100,
+      "d": 3,
+      "rounding": 1,
+      "want": 34
+    }
+  ]
+}
