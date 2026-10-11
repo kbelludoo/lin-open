@@ -1,0 +1,64 @@
+@RULEL:GETH_COPYGAS_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GETH-COPYGAS-MEMORYCOPIER"
+@TITLE="Clone-lin of go-ethereum memoryCopierGas (CopyGas=3) with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-10-11"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-geth-copygas"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Geth memoryCopierGas / CopyGas word gas into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="non-negative i64 size; *Stack/*Memory/*EVM and the memoryCopierGas closure lifted to size+memgas ints; Geth error returns become fail-closed 0"
+  commercial_hook="memoryCopierGas meters CALLDATACOPY/CODECOPY/MCOPY/RETURNDATACOPY/EXTCODECOPY; gasKeccak256 meters KECCAK256 word gas. Making stack.Back(stackpos) and the closure factory explicit is an audit improvement, not a node-replacement or TVL claim"
+}
+
+.u{
+  repo="https://github.com/ethereum/go-ethereum"
+  path="core/vm/gas_table.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  git_blob_sha="c7c1274bf2f39355108ab88722b694bf502cc4b2"
+  file_sha256="c11be723771f3726bca1369a129fc8f212f7746aaa26c5b1ee3aa78e7c0a784c"
+  fixture="test/fixtures/external_proof/memoryCopierGas.go + test/fixtures/external_proof/gasKeccak256.go"
+  constants="CopyGas=3 Keccak256WordGas=6 from params/protocol_params.go blob e8b044f45016d851af2698e94c62937218c9d736"
+}
+
+.l{
+  clone="src/lin_geth_copygas.lin"
+  transpiler_delta="src/lin_from_go.lin v5: REJ_GO_CLOSURE rejects return func / nested func( before generic pointer (memoryCopierGas lift is size int). REJ_GO_STACK / REJ_GO_EVM_CTX kept. src/lin_from_c.lin v2 REJ_C_ARRAY_PARAM. src/lin_from_solidity.lin v3 REJ_SOLIDITY_UNCHECKED + require fail-closed. Did not mutate gated transpile/c/"
+  improvement_1="memoryCopierGas returns a gasFunc closure over stackpos; LIN takes size as an argument"
+  improvement_2="stack.Back(stackpos) / *Stack / *Memory / *EVM become explicit size and optional memgas integers"
+  improvement_3="KECCAK256 word surcharge is explicit Keccak256WordGas*words, distinct from CREATE2's (InitCodeWordGas+Keccak256WordGas)*words"
+  improvement_4="negative size fail-closes; Geth stack.Back overflow is ErrGasUintOverflow"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/geth_copygas_c11.c (gcc -O2 -std=c11) plus test/oracles/geth_copygas_go.go"
+  gate="test/verify_geth_copygas.sh"
+}
+
+.p{
+  harness="test/prove_geth_copygas_external.py"
+  evidence_json="examples/geth_copygas/geth_copygas_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-geth-copygas"
+  goldens="size 0->0/0; 1->3/6; 32->3/6; 33->6/12; 1024->96/192; 24576->2304/4608; 49152->4608/9216; memgas 100+32-byte COPY=103 KECCAK=106"
+}
+
+.n{
+  not_claimed_1="LIN replaces go-ethereum or Ethereum consensus"
+  not_claimed_2="full COPY/KECCAK256 including Yellow Paper Cmem (separate memoryGasCost clone)"
+  not_claimed_3="this clone is a production node or wallet"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="Compiler 0 executes go_from_go string-literal emit"
+}
+
+.v{
+  method="PINNED_BYTES && PY_BIGINT_EQ_C11 && GO_UINT64_EQ_GETH && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
