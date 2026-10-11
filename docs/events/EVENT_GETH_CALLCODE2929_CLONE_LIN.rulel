@@ -1,0 +1,64 @@
+@RULEL:GETH_CALLCODE2929_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GETH-CALLCODE2929"
+@TITLE="Clone-lin of Geth gasCallCodeEIP2929 / gasDelegateCallEIP2929 / gasStaticCallEIP2929 with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-10-11"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-geth-callcode2929"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Geth Berlin CALLCODE/DELEGATECALL/STATICCALL dynamic gas into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="i64-scale available/requested/memory_gas; Geth uint64 + StateDB are NOT claimed"
+  commercial_hook="a fee estimator that treats CALLCODE as CALL-25000 is wrong: extras change the 63/64 child cap, so CALL-CALLCODE at value+new is 390 and CALL-STATIC is 531"
+}
+
+.u{
+  repo="https://github.com/ethereum/go-ethereum"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  path="core/vm/operations_acl.go"
+  git_blob_sha="085b018e4c42bf0185da790518ea1d1ee891b682"
+  file_sha256="213f7846ed039c8ab293eb9511383897497f52c971da014317d3e1b5b5dc5330"
+  gas_table="core/vm/gas_table.go sha256 c11be723771f3726bca1369a129fc8f212f7746aaa26c5b1ee3aa78e7c0a784c blob c7c1274bf2f39355108ab88722b694bf502cc4b2"
+  license="LGPL-3.0"
+  fixture="test/fixtures/external_proof/gasCallCodeEIP2929.go + gasCallCode.go"
+}
+
+.l{
+  clone="src/lin_geth_callcode2929.lin"
+  transpiler_delta="src/lin_from_go.lin v12: REJ_GO_CALLCODE / REJ_GO_DELEGATE / REJ_GO_STATIC; scalar lift callcode2929Gas; emit '=' + 'ex{'"
+  improvement_1="kind 0=CALL 1=CALLCODE 2=DELEGATE 3=STATIC is an explicit argument; Geth closes over oldCalculator"
+  improvement_2="CALLCODE extras never include CallNewAccountGas=25000 even when new_acct=1"
+  improvement_3="DELEGATE/STATIC extras ignore transfers and new_acct"
+  improvement_4="fail-closed on bad kind, negatives, extra>avail, cold>avail instead of wrapping"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/geth_callcode2929_c11.c (gcc -O2 -std=c11) + test/oracles/geth_callcode2929_go.go"
+  gate="python3 test/prove_geth_callcode2929_external.py"
+}
+
+.p{
+  harness="test/prove_geth_callcode2929_external.py"
+  evidence_json="examples/geth_callcode2929/geth_callcode2929_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-geth-callcode2929"
+  goldens="CALLCODE value+new warm dyn=98579 vs CALL 98969 (delta 390); STATIC 98438 (delta 531); Berlin CALLCODE value delta=39; DELEGATE no-value delta=40"
+}
+
+.n{
+  not_claimed_1="LIN replaces go-ethereum or Ethereum consensus"
+  not_claimed_2="quadratic memoryGasCost / Cmem / CallStipend 2300"
+  not_claimed_3="EIP-7702 ParseDelegation or EIP-4762 Verkle"
+  not_claimed_4="uint256 / full-node parity"
+  not_claimed_5="Compiler 0 executes go_from_go string-literal emit (VM_REJ_STRING_LITERAL)"
+}
+
+.v{
+  method="PINNED_BYTES && PYTHON_BIGINT && C11 && GO && LIN_C0_VM && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
