@@ -1,0 +1,245 @@
+{
+  "schema": "LIN_GETH_SELFDESTRUCT_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned excerpt has StateDB lift + refundsEnabled closure",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of go-ethereum v1.16.9 matches pinned sha256/blob",
+      "note": "commit=95665d5703e1023995a0ff93e4ce9eb77e8a59bd blob=085b018e4c42bf0185da790518ea1d1ee891b682"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of core/vm/operations_acl.go",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 in-range SELFDESTRUCT goldens vs i64 fail-closed",
+      "note": ""
+    },
+    {
+      "id": "GO-SELFTEST",
+      "status": "PASS",
+      "description": "independent Go SELFDESTRUCT goldens + fail-closed",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_geth_selfdestruct.lin",
+      "note": ""
+    },
+    {
+      "id": "GO-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Go transpiler v9 (REJ_GO_SELFDESTRUCT / ACCESSLIST)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "sd_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "12/12 vectors: Python == C11 == Go == LIN vm (gas+refund)",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "12/12 vectors: Python bigint SELFDESTRUCT table matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "CREATE-COLD",
+      "status": "PASS",
+      "description": "cold create-by-selfdestruct = 27600 (2600+25000)",
+      "note": ""
+    },
+    {
+      "id": "EIP3529-DELTA",
+      "status": "PASS",
+      "description": "EIP-3529 disables the 24000 SELFDESTRUCT refund (gas-token path)",
+      "note": ""
+    },
+    {
+      "id": "ACCOUNT-CHECK",
+      "status": "PASS",
+      "description": "gasEip2929AccountCheck = 2500 when cold (2600-100), 0 when warm",
+      "note": ""
+    },
+    {
+      "id": "STATIC-PLUS",
+      "status": "PASS",
+      "description": "opcode total = SelfdestructGasEIP150 5000 + dynamic (fn itself returns dynamic only)",
+      "note": ""
+    },
+    {
+      "id": "FAIL-CLOSED",
+      "status": "PASS",
+      "description": "flags outside 0/1 fail-close to 0",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on sd_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes 0/1 flags; pinned Geth reads StateDB+stack",
+      "note": ""
+    },
+    {
+      "id": "GO-SD-REJ",
+      "status": "PASS",
+      "description": "lin_from_go.lin v9 rejects HasSelfDestructed / AddressInAccessList (lift is selfdestructGas)",
+      "note": ""
+    },
+    {
+      "id": "GO-EX-SPLIT",
+      "status": "PASS",
+      "description": "go_from_go concatenates '=' + 'ex{' so C0 export parse is honest",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/ethereum/go-ethereum",
+    "tag": "v1.16.9",
+    "commit": "95665d5703e1023995a0ff93e4ce9eb77e8a59bd",
+    "path": "core/vm/operations_acl.go",
+    "git_blob_sha": "085b018e4c42bf0185da790518ea1d1ee891b682",
+    "file_sha256": "213f7846ed039c8ab293eb9511383897497f52c971da014317d3e1b5b5dc5330",
+    "license": "LGPL-3.0",
+    "constants": "ColdAccountAccessCostEIP2929=2600 CreateBySelfdestructGas=25000 SelfdestructRefundGas=24000 WarmStorageReadCostEIP2929=100 SelfdestructGasEIP150=5000 (static; not returned by makeSelfdestructGasFn) from params/protocol_params.go blob e8b044f45016d851af2698e94c62937218c9d736 sha256 9dd1ccfb0c646f35b4d527f255ddee8173e99a033b0f6fc586340b6bdbfe4c14"
+  },
+  "lin_clone": "src/lin_geth_selfdestruct.lin",
+  "c11_oracle": "test/oracles/geth_selfdestruct_c11.c",
+  "go_oracle": "test/oracles/geth_selfdestruct_go.go",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-geth-selfdestruct",
+  "vectors": [
+    {
+      "is_cold": 0,
+      "target_empty": 0,
+      "has_value": 0,
+      "already_destructed": 0,
+      "refunds_enabled": 0,
+      "gas": 0,
+      "refund": 0
+    },
+    {
+      "is_cold": 0,
+      "target_empty": 0,
+      "has_value": 0,
+      "already_destructed": 0,
+      "refunds_enabled": 1,
+      "gas": 0,
+      "refund": 24000
+    },
+    {
+      "is_cold": 0,
+      "target_empty": 0,
+      "has_value": 0,
+      "already_destructed": 1,
+      "refunds_enabled": 1,
+      "gas": 0,
+      "refund": 0
+    },
+    {
+      "is_cold": 1,
+      "target_empty": 0,
+      "has_value": 0,
+      "already_destructed": 0,
+      "refunds_enabled": 0,
+      "gas": 2600,
+      "refund": 0
+    },
+    {
+      "is_cold": 1,
+      "target_empty": 0,
+      "has_value": 0,
+      "already_destructed": 0,
+      "refunds_enabled": 1,
+      "gas": 2600,
+      "refund": 24000
+    },
+    {
+      "is_cold": 0,
+      "target_empty": 1,
+      "has_value": 1,
+      "already_destructed": 0,
+      "refunds_enabled": 0,
+      "gas": 25000,
+      "refund": 0
+    },
+    {
+      "is_cold": 1,
+      "target_empty": 1,
+      "has_value": 1,
+      "already_destructed": 0,
+      "refunds_enabled": 0,
+      "gas": 27600,
+      "refund": 0
+    },
+    {
+      "is_cold": 1,
+      "target_empty": 1,
+      "has_value": 1,
+      "already_destructed": 0,
+      "refunds_enabled": 1,
+      "gas": 27600,
+      "refund": 24000
+    },
+    {
+      "is_cold": 0,
+      "target_empty": 1,
+      "has_value": 0,
+      "already_destructed": 0,
+      "refunds_enabled": 0,
+      "gas": 0,
+      "refund": 0
+    },
+    {
+      "is_cold": 0,
+      "target_empty": 0,
+      "has_value": 1,
+      "already_destructed": 0,
+      "refunds_enabled": 0,
+      "gas": 0,
+      "refund": 0
+    },
+    {
+      "is_cold": 1,
+      "target_empty": 1,
+      "has_value": 0,
+      "already_destructed": 0,
+      "refunds_enabled": 0,
+      "gas": 2600,
+      "refund": 0
+    },
+    {
+      "is_cold": 1,
+      "target_empty": 0,
+      "has_value": 1,
+      "already_destructed": 1,
+      "refunds_enabled": 1,
+      "gas": 2600,
+      "refund": 0
+    }
+  ]
+}
