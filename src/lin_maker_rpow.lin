@@ -1,0 +1,204 @@
+@LIN:L1c:0.2
+@MAKER_DSR_RPOW{
+  version=1
+  repo="makerdao/dss"
+  source="src/pot.sol"
+  license="AGPL-3.0-or-later"
+  commit="3f30552a586264b32ebdb5bac94ba67020282e53"
+  tag="1.3.0"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_dsr_rpow_RAY9_not_RAY27"
+  note="Not mainnet ray=1e27. Kernel is pot.rpow binary fixed-point exponentiation (Dai Savings Rate drip). RAY'=1e9. Assembly rpow is rejected, not emitted. Not a Lido/Rocket share-rate. Not Aave rayMul (1e27 does not fit i64)."
+}
+
+!mds_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!mds_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(mds_u_lt(s, a));
+}
+
+!mds_mask32() -> int {
+  ^ 4294967295;
+}
+
+!mds_ray() -> int {
+  ^ 1000000000;
+}
+
+!mds_muldiv_part(a: int, b: int, d: int, want: int) -> int {
+  ?(d <= 0) { ^ 0; };
+  m32 = mds_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = mds_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = mds_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  ?(want == 3 || want == 4) {
+    half = d / 2;
+    nlo = lo + half;
+    add_c = mds_u_lt(nlo, lo);
+    lo = nlo;
+    nhi = hi + add_c;
+    ?(add_c == 1) {
+      ?(mds_u_lt(nhi, hi) == 1) { ^ 0; };
+    };
+    hi = nhi;
+  };
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(mds_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = mds_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want == 1) { ^ r_lo; };
+  ?(want == 2 || want == 4) { ^ ov; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!mds_muldiv(a: int, b: int, d: int) -> int {
+  ^ mds_muldiv_part(a, b, d, 0);
+}
+
+!mds_muldiv_round(a: int, b: int, d: int) -> int {
+  ^ mds_muldiv_part(a, b, d, 3);
+}
+
+!mds_naive_sq_wrap(x: int, base: int) -> int {
+  ^ (x * x) / base;
+}
+
+!mds_rpow_loop(x: int, n: int, z: int, base: int, do_round: int) -> int {
+  while (n > 0) {
+    xx = 0;
+    ?(do_round == 1) { xx = mds_muldiv_round(x, x, base); };
+    ?(do_round == 0) { xx = mds_muldiv(x, x, base); };
+    ?(mds_muldiv_part(x, x, base, 2) == 1) { ^ 0; };
+    x = xx;
+    odd = n - (n / 2) * 2;
+    ?(odd == 1) {
+      zx = 0;
+      ?(do_round == 1) { zx = mds_muldiv_round(z, x, base); };
+      ?(do_round == 0) { zx = mds_muldiv(z, x, base); };
+      z = zx;
+    };
+    n = n / 2;
+  };
+  ^ z;
+}
+
+!mds_rpow(x: int, n: int, base: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(n < 0) { ^ 0; };
+  ?(base <= 0) { ^ 0; };
+  ?(x == 0) {
+    ?(n == 0) { ^ base; };
+    ^ 0;
+  };
+  z = x;
+  odd0 = n - (n / 2) * 2;
+  ?(odd0 == 0) { z = base; };
+  ^ mds_rpow_loop(x, n / 2, z, base, 1);
+}
+
+!mds_rpow_no_round(x: int, n: int, base: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(n < 0) { ^ 0; };
+  ?(base <= 0) { ^ 0; };
+  ?(x == 0) {
+    ?(n == 0) { ^ base; };
+    ^ 0;
+  };
+  z = x;
+  odd0 = n - (n / 2) * 2;
+  ?(odd0 == 0) { z = base; };
+  ^ mds_rpow_loop(x, n / 2, z, base, 0);
+}
+
+!mds_rmul(x: int, y: int) -> int {
+  ^ mds_muldiv(x, y, mds_ray());
+}
+
+!mds_drip_chi(dsr: int, dt: int, chi: int) -> int {
+  ^ mds_rmul(mds_rpow(dsr, dt, mds_ray()), chi);
+}
+
+!mds_test_suite() -> int {
+  r = mds_ray();
+  ?(mds_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(mds_rpow(0, 0, r) != 1000000000) { ^ -2; };
+  ?(mds_rpow(0, 5, r) != 0) { ^ -3; };
+  ?(mds_rpow(2000000000, 3, r) != 8000000000) { ^ -4; };
+  ?(mds_rpow(1500000000, 2, r) != 2250000000) { ^ -5; };
+  ?(mds_rpow(r, 100, r) != 1000000000) { ^ -6; };
+  ?(mds_rpow(5000000000, 2, r) != 25000000000) { ^ -7; };
+  ?(mds_rpow(3, 2, 2) != 5) { ^ -8; };
+  ?(mds_rpow_no_round(3, 2, 2) != 4) { ^ -9; };
+  ?(mds_rpow(1050000000, 2, r) != 1102500000) { ^ -10; };
+  ?(mds_rpow(1000001000, 1000, r) != 1001000482) { ^ -11; };
+  ?(mds_rpow(7, 1, r) != 7) { ^ -12; };
+  ?(mds_naive_sq_wrap(5000000000, r) != 6553255926) { ^ -13; };
+  ?(mds_drip_chi(1050000000, 2, 2000000000) != 2205000000) { ^ -14; };
+  ?(mds_drip_chi(1050000000, 2, r) != 1102500000) { ^ -15; };
+  ?(mds_muldiv(1000000000000000000, 1000000000000000000, 1) != 0) { ^ -16; };
+  ?(mds_rpow(1, 0, r) != 1000000000) { ^ -17; };
+  ^ 1;
+}
+
+=ex{
+  mds_u_lt,
+  mds_u_add_carry,
+  mds_mask32,
+  mds_ray,
+  mds_muldiv_part,
+  mds_muldiv,
+  mds_muldiv_round,
+  mds_naive_sq_wrap,
+  mds_rpow_loop,
+  mds_rpow,
+  mds_rpow_no_round,
+  mds_rmul,
+  mds_drip_chi,
+  mds_test_suite
+}
