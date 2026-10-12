@@ -1,0 +1,182 @@
+{
+  "schema": "LIN_GMX_NEXT_FUNDING_RATE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned Vault.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned gmx-io/gmx-contracts matches fixture",
+      "note": "commit=fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8 blob=4aef3c7dcf40b4657e7dfcef582958dc2d418126"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of contracts/core/Vault.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (intervals / stable / wrap / uninit last)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_gmx_nextrate.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "gnr_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "16/16 vectors: C11 i128 == LIN vm == Python bigint",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "16/16 vectors: Python wrapping-int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "RATE-50",
+      "status": "PASS",
+      "description": "50% util, 1x 8h interval, factor=100: nextRate=50",
+      "note": ""
+    },
+    {
+      "id": "PARTIAL-IV",
+      "status": "PASS",
+      "description": "elapsed 20000 < interval 28800: nextRate=0 vs ignore-interval=50",
+      "note": ""
+    },
+    {
+      "id": "ELAPSED-TRAP",
+      "status": "PASS",
+      "description": "24h: intervals=3 rate=150 vs raw elapsed seconds=4320000 (28800x)",
+      "note": ""
+    },
+    {
+      "id": "STABLE-TRAP",
+      "status": "PASS",
+      "description": "same pool with stable factor=10: rate=5 vs volatile 50 (10x)",
+      "note": ""
+    },
+    {
+      "id": "UTIL-TRAP",
+      "status": "PASS",
+      "description": "getUtilisation reserved*1e6/pool=500000 vs nextRate=50 (10000x)",
+      "note": ""
+    },
+    {
+      "id": "FUND-TRAP",
+      "status": "PASS",
+      "description": "confused getFundingFee reserved*factor/1e6=5000 vs nextRate=50 (100x)",
+      "note": ""
+    },
+    {
+      "id": "UNINIT-LAST",
+      "status": "PASS",
+      "description": "last=0 now=1700000000: intervals=59027 rate=2951350 vs initialized 0",
+      "note": ""
+    },
+    {
+      "id": "NAIVE-WRAP",
+      "status": "PASS",
+      "description": "naive i64 (4e9*3e9)/2e9 wraps to -3223372036; 128-bit muldiv=6000000000",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on gnr_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes now/last/interval/reserved/pool/factors as arguments (no vault storage)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv for factor*reserved*intervals/pool",
+      "note": ""
+    },
+    {
+      "id": "NOT-FUNDING-FEE",
+      "status": "PASS",
+      "description": "kernel is GMX next-rate factor*reserved*intervals/pool, not size*(cum-entry)/1e6",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects getNextFundingRate / lastFundingTimes before ENV",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects get_next_funding_rate / last_funding_times",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/gmx-io/gmx-contracts",
+    "commit": "fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8",
+    "path": "contracts/core/Vault.sol",
+    "git_blob_sha": "4aef3c7dcf40b4657e7dfcef582958dc2d418126",
+    "file_sha256": "0b49e265fc4c04d3eea74b07d698748050671a2df259f1faa8d05cabf2970f92",
+    "license": "MIT",
+    "commercial_descendants": "GMX V1 Vault perpetual funding accrual on Arbitrum/Avalanche"
+  },
+  "lin_clone": "src/lin_gmx_nextrate.lin",
+  "c11_oracle": "test/oracles/gmx_nextrate_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "next_1interval_50pct": 50,
+    "partial_interval": 0,
+    "ignore_interval": 50,
+    "three_intervals": 150,
+    "raw_elapsed_24h": 4320000,
+    "stable_factor": 5,
+    "utilisation": 500000,
+    "confused_funding_fee": 5000,
+    "uninit_last": 2951350,
+    "naive_wrap_4e9_3e9": -3223372036,
+    "wide_4e9_3e9": 6000000000
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-gmx-nextrate"
+}
