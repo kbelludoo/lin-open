@@ -12,7 +12,7 @@
   why="u256 mulDiv(a,b,d)=(a*b)/d with a,b,d up to 2^256-1 needs a correct 512-bit product; otherwise the SafeMath-width settler lies or returns -2 where width-correct math approves"
   engine="src/lin_u512_coprocessor.lin (16-bit limbs) + 32-limb remainder ge in examples/defi_settlement_proof/u512_uniswap_v2_core.lin"
   make="make u512-coprocessor-proof"
-  harness="python3 test/prove_u512_coprocessor_external.py → gate count filled after this run"
+  harness="python3 test/prove_u512_coprocessor_external.py → 247/247 PASS this run"
   delta="schema 1.33: Dekker double-double 256x256->512 + Cook–Sieveking precision-doubling reciprocal 512/256 is a thirty-fifth independent math. Product: 32-bit digits, 8x8 schoolbook in binary64x2, Veltkamp split (2^27+1), Dekker two-product, Knuth two-sum. Not IEEE-754 FFT, not FMA, not Solinas NTT p=2^64-2^32+1, not Fermat SS (F7), not FNT (2^64+1), not NTT p=998244353, not Toom, not RNS, not Comba, not Karatsuba. Division: 8-bit leading-digit seed, fixed scale K=768, multiplicative y:=(y*(2^{K+1}-d*y))>>K until 8→16→…→1024 bits, q=(n*y)>>768, 512-bit ge so r<d. Not fixed-width Newton (10 iters at 512), not Goldschmidt dual N,D, not Barrett mu=floor(2^512/d) or floor(2^768/d) or floor(2^1024/d) in one shot, not Granlund–Montgomery, not Montgomery REDC, not Jebelean, not SRT radix-4..2048, not Hensel-of-n, not restoring of n. Python int for the 8-bit seed and Cook doubling products. Zero-LIN Cook auditor (verify_u512_cook.py) recomputes n==a*b via Dekker DD, q*d+r==n via Cook–Sieveking, binds mulDiv(fee,rout,den) on 3 EXACT + 3 OVERPAID + PHANTOM_APPROVE, and OpenSSL dgst of the LRI1 Merkle tree (FIPS abc ba7816bf) — no gcc, no rustc, no LinVM. Still includes schema 1.32 Solinas+GM. Engine frozen (Merkle roots vs 1.32 depend on this run's image digest)."
 }
 
@@ -41,7 +41,7 @@
 .m{
   host="lin_c0 C11, gcc -std=c11, python3 Dekker DD+Cook–Sieveking + Solinas NTT+Granlund–Montgomery + IEEE-754 FFT+Montgomery + hashlib, node BigInt + crypto, openssl dgst, go math/big, javac BigInteger, libgmp.so.10, perl Math::BigInt::Calc, GNU bc 1.07.1, rustc zero-crate radix-2^64; no Zig"
   cook_selftest="SELFTEST_PASS dd_cook q*d+r==n ge512 dekker_prod cook_recip"
-  gate="filled after this run"
+  gate="247/247 PASS"
   published_lip1_proofs=34
   self_gate_steps=6710747
   phantom_coprocessor_steps=1106942
@@ -52,11 +52,11 @@
 
 .h{
   lin_src="sha256:2a66456eae1227cb9ec3571da3258313cd4a5c6c787c42d3877a67152e96bd4b"
-  oracle_cook="filled-after-run"
-  cook_py="filled-after-run"
-  verifier_cook="filled-after-run"
-  harness="filled-after-run"
-  evidence_json="filled-after-run"
+  oracle_cook="sha256:483d8c629e82653f1c5c614e0d2b88a85079de22cff0cb860b6ae6b2cd4270ec"
+  cook_py="sha256:4baf64437f3ad66e70bc0d59da5834ae5d9f37543975ce7ed4a53d2065d8b43a"
+  verifier_cook="sha256:69947408298243bb5a5754caf583584eef6e5b88bd77b68666dea244a514776b"
+  harness="sha256:f254f31b562e505195ef2b19df3052693f2980eadbb0205042eed26fc1cda3c2"
+  evidence_json="sha256:080491b87d1d6f56f4076fa17df0831ea7bef88be30085e0cd4c9dcaa95a75a0"
   lnr1_merkle="sha256:f140dcbcde99052d0d415dfb22336e951f1efc2b0c29c8327af35f1a671b8d7a"
   lcr2_merkle="sha256:2b8edf02b63457f3dd8f882b1afaa91f8c29f98815e33ccecd21cd94558b1751"
   lcr2_full_merkle="sha256:0b25f19eb4b0eba086cc7753d44250808d83d55bce26edc07c44d5098d7446f8"
