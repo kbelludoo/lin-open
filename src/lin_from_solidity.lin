@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: reject Uniswap V3 computeSwapStep / feePips / amountRemaining / uint24 / uint160 / uint256(- / FullMath.mulDiv (Q32 swap-step cap is a 128-bit port, not emit). Split =ex{ emit so C0 does not steal the export list. v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,16 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(sig, "computeSwapStep") > 0) { ^"REJ_SOLIDITY_SWAP_STEP" };
+  ?(rg_count_lit(body, "computeSwapStep") > 0) { ^"REJ_SOLIDITY_SWAP_STEP" };
+  ?(rg_count_lit(sig, "feePips") > 0) { ^"REJ_SOLIDITY_FEE_PIPS" };
+  ?(rg_count_lit(body, "feePips") > 0) { ^"REJ_SOLIDITY_FEE_PIPS" };
+  ?(rg_count_lit(sig, "amountRemaining") > 0) { ^"REJ_SOLIDITY_AMOUNT_REMAINING" };
+  ?(rg_count_lit(sig, "uint24") > 0) { ^"REJ_SOLIDITY_UINT24" };
+  ?(rg_count_lit(sig, "uint160") > 0) { ^"REJ_SOLIDITY_UINT160" };
+  ?(rg_count_lit(body, "uint160(") > 0) { ^"REJ_SOLIDITY_UINT160" };
+  ?(rg_count_lit(body, "uint256(-") > 0) { ^"REJ_SOLIDITY_NEG_CAST" };
+  ?(rg_count_lit(body, "FullMath.mulDiv") > 0) { ^"REJ_SOLIDITY_FULLMATH" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -317,7 +327,8 @@
     };
     i = i + 1;
   };
-  out = out + "=ex{";
+  out = out + "=";
+  out = out + "ex{";
   out = out + names;
   out = out + "}";
   out = out + rgs_ch(10);
@@ -337,4 +348,28 @@
   ^1;
 }
 
-=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
+!sol_step_reject_gate(): int {
+  sig_s = "function computeSwapStep(uint160 a, uint160 b, uint128 L, int256 r, uint24 feePips) internal pure returns (uint160 n)";
+  body_s = "bool exactIn = r >= 0; return a;";
+  r1 = sol_reason(sig_s, body_s);
+  ?(starts_lit(r1, 0, "REJ_SOLIDITY_SWAP_STEP") == 0) { ^0 };
+  sig_f = "function foo(uint256 x, uint24 feePips) internal pure returns (uint256)";
+  body_f = "return x;";
+  r2 = sol_reason(sig_f, body_f);
+  ?(starts_lit(r2, 0, "REJ_SOLIDITY_FEE_PIPS") == 0) { ^0 };
+  sig_u = "function bar(uint160 x) internal pure returns (uint160)";
+  body_u = "return x;";
+  r3 = sol_reason(sig_u, body_u);
+  ?(starts_lit(r3, 0, "REJ_SOLIDITY_UINT160") == 0) { ^0 };
+  sig_n = "function baz(int256 amountRemaining) internal pure returns (uint256)";
+  body_n = "return uint256(-amountRemaining);";
+  r4 = sol_reason(sig_n, body_n);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_AMOUNT_REMAINING") == 0) { ^0 };
+  sig_m = "function qux(uint256 x) internal pure returns (uint256)";
+  body_m = "return FullMath.mulDiv(x, 997000, 1000000);";
+  r5 = sol_reason(sig_m, body_m);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_FULLMATH") == 0) { ^0 };
+  ^1;
+}
+
+=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate, sol_step_reject_gate}
