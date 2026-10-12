@@ -1,0 +1,150 @@
+{
+  "schema": "LIN_OPGETH_ECOTONE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned excerpts: Ecotone + Bedrock + Isthmus/Jovian operator",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of op-geth v1.101702.3 matches pinned sha256/blob",
+      "note": "commit=7da4560d1fb3045286b70a8dc23360d2626543f2 blob=3266ae13faaabf599feb4417d60893a11b908fb3"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of rollup_cost.go + test + protocol_params.go",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 goldens vs official op-geth emptyTx / operator vectors",
+      "note": ""
+    },
+    {
+      "id": "GO-SELFTEST",
+      "status": "PASS",
+      "description": "independent Go math/big goldens + fail-closed",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_opgeth_ecotone.lin",
+      "note": ""
+    },
+    {
+      "id": "GO-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Go transpiler v14 (REJ_GO_ECOTONE / OPERATOR / FASTLZ)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "eco_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "5/5 Ecotone vectors: Python == C11 == Go == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "5/5 vectors: Python bigint Ecotone table matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "BEDROCK",
+      "status": "PASS",
+      "description": "official emptyTx Bedrock 11.326e12 / Regolith 3.71e12 match",
+      "note": ""
+    },
+    {
+      "id": "VS-NOBLOB",
+      "status": "PASS",
+      "description": "naive no-blob estimator undercharges emptyTx by 900 wei",
+      "note": ""
+    },
+    {
+      "id": "OP-ISTHMUS",
+      "status": "PASS",
+      "description": "official emptyTx Isthmus operator 1256417826611659930",
+      "note": ""
+    },
+    {
+      "id": "OP-JOVIAN",
+      "status": "PASS",
+      "description": "official emptyTx Jovian operator 1256650673615173860",
+      "note": ""
+    },
+    {
+      "id": "OP-VS",
+      "status": "PASS",
+      "description": "Jovian-Isthmus variable term is *100 vs /1e6 (1e8\u00d7)",
+      "note": "delta=232847003513930"
+    },
+    {
+      "id": "FAIL-CLOSED",
+      "status": "PASS",
+      "description": "negatives and overflow fail-close to 0",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on eco_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes zeroes/ones/fee scalars; pinned op-geth closes over L1Block storage",
+      "note": ""
+    },
+    {
+      "id": "GO-ECO-REJ",
+      "status": "PASS",
+      "description": "lin_from_go.lin v14 rejects newL1CostFuncEcotone / operator / FastLZ",
+      "note": ""
+    },
+    {
+      "id": "GO-EX-SPLIT",
+      "status": "PASS",
+      "description": "go_from_go concatenates '=' + 'ex{' so C0 export parse is honest",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/ethereum-optimism/op-geth",
+    "tag": "v1.101702.3",
+    "commit": "7da4560d1fb3045286b70a8dc23360d2626543f2",
+    "path": "core/types/rollup_cost.go",
+    "git_blob_sha": "3266ae13faaabf599feb4417d60893a11b908fb3",
+    "file_sha256": "35a4e1976fca49cb5f328c6bf3f1513458eda450c9e7425c24a78a8750c51dec",
+    "license": "LGPL-3.0",
+    "constants": "TxDataZeroGas=4 TxDataNonZeroGasEIP2028=16 ecotoneDivisor=16e6 official emptyTx calldataGas=480 baseFee=1e9 blobBaseFee=1e7 baseFeeScalar=2 blobBaseFeeScalar=3 from core/types/rollup_cost_test.go blob c07b53f023725f1758df86e09d9bff6b38ecc317; params/protocol_params.go blob 3e9ce4a125308b89ba6dd034061ec59befd29d06 sha256 fa66f41673c97a3dd9a62031ce02d8201c8a32e564c34f4b15ee860a4c8a0479"
+  },
+  "lin_clone": "src/lin_opgeth_ecotone.lin",
+  "c11_oracle": "test/oracles/opgeth_ecotone_c11.c",
+  "go_oracle": "test/oracles/opgeth_ecotone_go.go",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-opgeth-ecotone",
+  "goldens": {
+    "ecotone_emptyTx": 960900,
+    "noblob_emptyTx": 960000,
+    "vs_noblob": 900,
+    "bedrock_emptyTx": 11326000000000,
+    "regolith_emptyTx": 3710000000000,
+    "isthmus_operator": 1256417826611659930,
+    "jovian_operator": 1256650673615173860
+  }
+}

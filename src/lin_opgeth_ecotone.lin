@@ -1,0 +1,233 @@
+@LIN:L1c:0.2
+@OPGETH_ECOTONE{
+  version=1
+  repo="ethereum-optimism/op-geth"
+  source="core/types/rollup_cost.go"
+  license="LGPL-3.0"
+  tag="v1.101702.3"
+  commit="7da4560d1fb3045286b70a8dc23360d2626543f2"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="scalar_opgeth_newL1CostFuncEcotone_vs_bedrock_plus_operator"
+  note="Not an op-geth node. Explicit zeroes/ones/fee scalars. Fjord FastLZ and StateDB GetState are out of scope. i64-scale with 128-bit (a*b)/d."
+}
+
+!eco_zero_gas() -> int { ^ 4; }
+!eco_nz_gas() -> int { ^ 16; }
+!eco_pre_regolith_pad() -> int { ^ 68; }
+!eco_div16e6() -> int { ^ 16000000; }
+!eco_div1e6() -> int { ^ 1000000; }
+!eco_i64max() -> int { ^ 9223372036854775807; }
+
+!eco_ok_nonneg(v: int) -> int {
+  ?(v < 0) { ^ 0; };
+  ^ 1;
+}
+
+!eco_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!eco_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(eco_u_lt(s, a));
+}
+
+!eco_mask32() -> int { ^ 4294967295; }
+
+!eco_muldiv(a: int, b: int, d: int) -> int {
+  ?(eco_ok_nonneg(a) == 0) { ^ 0; };
+  ?(eco_ok_nonneg(b) == 0) { ^ 0; };
+  ?(d <= 0) { ^ 0; };
+  m32 = eco_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = eco_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = eco_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(eco_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = eco_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!eco_calldata(zeroes: int, ones: int) -> int {
+  ?(eco_ok_nonneg(zeroes) == 0) { ^ 0; };
+  ?(eco_ok_nonneg(ones) == 0) { ^ 0; };
+  z = eco_muldiv(zeroes, eco_zero_gas(), 1);
+  n = eco_muldiv(ones, eco_nz_gas(), 1);
+  ?(z == 0 && zeroes != 0) { ^ 0; };
+  ?(n == 0 && ones != 0) { ^ 0; };
+  s = z + n;
+  ?(eco_u_lt(s, z) == 1) { ^ 0; };
+  ^ s;
+}
+
+!eco_inner(bf: int, bb: int, bs: int, bbs: int) -> int {
+  ?(eco_ok_nonneg(bf) == 0) { ^ 0; };
+  ?(eco_ok_nonneg(bb) == 0) { ^ 0; };
+  ?(eco_ok_nonneg(bs) == 0) { ^ 0; };
+  ?(eco_ok_nonneg(bbs) == 0) { ^ 0; };
+  a = eco_muldiv(bf, 16, 1);
+  ?(a == 0 && bf != 0) { ^ 0; };
+  a2 = eco_muldiv(a, bs, 1);
+  ?(a2 == 0 && a != 0 && bs != 0) { ^ 0; };
+  b = eco_muldiv(bb, bbs, 1);
+  ?(b == 0 && bb != 0 && bbs != 0) { ^ 0; };
+  s = a2 + b;
+  ?(eco_u_lt(s, a2) == 1) { ^ 0; };
+  ^ s;
+}
+
+!eco_fee(zeroes: int, ones: int, bf: int, bb: int, bs: int, bbs: int) -> int {
+  cg = eco_calldata(zeroes, ones);
+  ?(cg == 0 && (zeroes != 0 || ones != 0)) { ^ 0; };
+  inn = eco_inner(bf, bb, bs, bbs);
+  ?(inn == 0 && (bf != 0 || bb != 0) && (bs != 0 || bbs != 0)) { ^ 0; };
+  ^ eco_muldiv(cg, inn, eco_div16e6());
+}
+
+!eco_noblob(zeroes: int, ones: int, bf: int, bs: int) -> int {
+  ^ eco_fee(zeroes, ones, bf, 0, bs, 0);
+}
+
+!eco_vs_noblob(zeroes: int, ones: int, bf: int, bb: int, bs: int, bbs: int) -> int {
+  full = eco_fee(zeroes, ones, bf, bb, bs, bbs);
+  drop = eco_noblob(zeroes, ones, bf, bs);
+  ?(eco_u_lt(full, drop) == 1) { ^ 0; };
+  ^ full - drop;
+}
+
+!eco_bedrock(zeroes: int, ones: int, overhead: int, bf: int, scalar: int, regolith: int) -> int {
+  ?(eco_ok_nonneg(overhead) == 0) { ^ 0; };
+  ?(eco_ok_nonneg(bf) == 0) { ^ 0; };
+  ?(eco_ok_nonneg(scalar) == 0) { ^ 0; };
+  ?(regolith != 0 && regolith != 1) { ^ 0; };
+  cg = eco_calldata(zeroes, ones);
+  ?(regolith == 0) {
+    pad = eco_muldiv(eco_pre_regolith_pad(), eco_nz_gas(), 1);
+    t = cg + pad;
+    ?(eco_u_lt(t, cg) == 1) { ^ 0; };
+    cg = t;
+  };
+  g = cg + overhead;
+  ?(eco_u_lt(g, cg) == 1) { ^ 0; };
+  tmp = eco_muldiv(g, bf, 1);
+  ?(tmp == 0 && g != 0 && bf != 0) { ^ 0; };
+  ^ eco_muldiv(tmp, scalar, eco_div1e6());
+}
+
+!eco_op_isthmus(gas: int, scalar: int, constant: int) -> int {
+  ?(eco_ok_nonneg(gas) == 0) { ^ 0; };
+  ?(eco_ok_nonneg(scalar) == 0) { ^ 0; };
+  ?(eco_ok_nonneg(constant) == 0) { ^ 0; };
+  q = eco_muldiv(gas, scalar, eco_div1e6());
+  s = q + constant;
+  ?(eco_u_lt(s, q) == 1) { ^ 0; };
+  ^ s;
+}
+
+!eco_op_jovian(gas: int, scalar: int, constant: int) -> int {
+  ?(eco_ok_nonneg(gas) == 0) { ^ 0; };
+  ?(eco_ok_nonneg(scalar) == 0) { ^ 0; };
+  ?(eco_ok_nonneg(constant) == 0) { ^ 0; };
+  p = eco_muldiv(gas, scalar, 1);
+  ?(p == 0 && gas != 0 && scalar != 0) { ^ 0; };
+  p2 = eco_muldiv(p, 100, 1);
+  ?(p2 == 0 && p != 0) { ^ 0; };
+  s = p2 + constant;
+  ?(eco_u_lt(s, p2) == 1) { ^ 0; };
+  ^ s;
+}
+
+!eco_op_vs(gas: int, scalar: int, constant: int) -> int {
+  j = eco_op_jovian(gas, scalar, constant);
+  i = eco_op_isthmus(gas, scalar, constant);
+  ?(eco_u_lt(j, i) == 1) { ^ 0; };
+  ^ j - i;
+}
+
+!eco_test_suite() -> int {
+  ?(eco_calldata(0, 30) != 480) { ^ -1; };
+  ?(eco_calldata(40, 20) != 480) { ^ -2; };
+  ?(eco_inner(1000000000, 10000000, 2, 3) != 32030000000) { ^ -3; };
+  ?(eco_fee(0, 30, 1000000000, 10000000, 2, 3) != 960900) { ^ -4; };
+  ?(eco_noblob(0, 30, 1000000000, 2) != 960000) { ^ -5; };
+  ?(eco_vs_noblob(0, 30, 1000000000, 10000000, 2, 3) != 900) { ^ -6; };
+  ?(eco_bedrock(0, 30, 50, 1000000000, 7000000, 0) != 11326000000000) { ^ -7; };
+  ?(eco_bedrock(0, 30, 50, 1000000000, 7000000, 1) != 3710000000000) { ^ -8; };
+  ?(eco_op_isthmus(1618, 1439103868, 1256417826609331460) != 1256417826611659930) { ^ -9; };
+  ?(eco_op_jovian(1618, 1439103868, 1256417826609331460) != 1256650673615173860) { ^ -10; };
+  ?(eco_op_isthmus(1000, 2000000, 5) != 2005) { ^ -11; };
+  ?(eco_op_jovian(1000, 2, 5) != 200005) { ^ -12; };
+  ?(eco_fee(-1, 0, 1, 0, 1, 0) != 0) { ^ -13; };
+  ?(eco_muldiv(100, 200, 50) != 400) { ^ -14; };
+  ?(eco_fee(0, 0, 1000000000, 10000000, 2, 3) != 0) { ^ -15; };
+  ?(eco_vs_noblob(0, 30, 1000000000, 10000000, 2, 3) == 0) { ^ -16; };
+  ^ 1;
+}
+
+=ex{
+  eco_zero_gas,
+  eco_nz_gas,
+  eco_pre_regolith_pad,
+  eco_div16e6,
+  eco_div1e6,
+  eco_i64max,
+  eco_ok_nonneg,
+  eco_u_lt,
+  eco_u_add_carry,
+  eco_mask32,
+  eco_muldiv,
+  eco_calldata,
+  eco_inner,
+  eco_fee,
+  eco_noblob,
+  eco_vs_noblob,
+  eco_bedrock,
+  eco_op_isthmus,
+  eco_op_jovian,
+  eco_op_vs,
+  eco_test_suite
+}
