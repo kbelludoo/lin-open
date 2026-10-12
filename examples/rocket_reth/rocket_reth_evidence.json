@@ -1,0 +1,148 @@
+{
+  "schema": "LIN_ROCKET_RETH_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned RocketTokenRETH.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned rocketpool v1.4 matches fixture",
+      "note": "commit=fb7d9c428dc3dddc3fbd3e634e3cb365655df89e"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of RocketTokenRETH.sol",
+      "note": "6bc457cf3c364c69e169b133ebe7d48df6500562"
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_rocket_reth.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "rrt_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "13/13 vectors: C11 == LIN vm == Python bigint",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "13/13 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "EMPTY-CONTRAST",
+      "status": "PASS",
+      "description": "empty protocol 1000 ETH: Rocket 1000 (1:1) vs Lido 0 vs OZ +1/+1 1000 vs Morpho 1e9",
+      "note": ""
+    },
+    {
+      "id": "INFLATE-CONTRAST",
+      "status": "PASS",
+      "description": "after 1-wei bootstrap + 1e6-ETH donation, victim of 1e6 ETH gets 0 Rocket/Lido vs 1 OZ vs 1999996 Morpho",
+      "note": "named contrast only; not a TVL or exploit claim"
+    },
+    {
+      "id": "EXCHANGE-RATE",
+      "status": "PASS",
+      "description": "empty getExchangeRate is 1e18; 1e18*20/1 overflows uint64 and fail-closes",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (1e18*1e18) wraps; 128-bit muldiv fail-closes",
+      "note": "i64_wrap=-5527149226598858752"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on rrt_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN lifts hidden getTotalETHBalance/getTotalRETHSupply to arguments",
+      "note": ""
+    },
+    {
+      "id": "EMPTY-1TO1",
+      "status": "PASS",
+      "description": "empty rethSupply is 1:1 in both upstream and LIN (not Lido empty-div0)",
+      "note": ""
+    },
+    {
+      "id": "SLASH-ZERO",
+      "status": "PASS",
+      "description": "upstream getRethValue reverts on totalEth==0 with supply; LIN fail-closes 0",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects SafeMath .mul/.div, 1 ether, and hidden network-balance getters",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects overflow-ceil / div_ceil",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/rocket-pool/rocketpool",
+    "tag": "v1.4",
+    "commit": "fb7d9c428dc3dddc3fbd3e634e3cb365655df89e",
+    "path": "contracts/contract/token/RocketTokenRETH.sol",
+    "git_blob_sha": "6bc457cf3c364c69e169b133ebe7d48df6500562",
+    "file_sha256": "ae2d961e7ba87bf26b65ce1dcb02353393f3ef8944490e1a0f6ce941e4a25b7e",
+    "license": "GPL-3.0-only"
+  },
+  "lin_clone": "src/lin_rocket_reth.lin",
+  "c11_oracle": "test/oracles/rocket_reth_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "empty_rocket_reth": 1000,
+  "empty_lido_shares": 0,
+  "empty_oz_shares": 1000,
+  "empty_morpho_shares": 1000000000,
+  "inflate_victim_rocket_reth": 0,
+  "inflate_victim_lido_shares": 0,
+  "inflate_victim_oz_shares": 1,
+  "inflate_victim_morpho_shares": 1999996,
+  "empty_exchange_rate": 1000000000000000000,
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-rocket-reth"
+}
