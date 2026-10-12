@@ -1,0 +1,64 @@
+@RULEL:OPGETH_FJORD_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-OPGETH-FJORD"
+@TITLE="Clone-lin of op-geth NewL1CostFuncFjord with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-10-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-opgeth-fjord"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile OP Stack Fjord L1 data-availability fee into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Base/OP mainnet"
+  operand_width="i64-scale FastLZ size + fee scalars with 128-bit (a*b)/d; op-geth *big.Int / StateDB / FlzCompressLen are NOT claimed"
+  commercial_hook="a wallet that still prices Base/OP txs with Ecotone (calldataGas/16) after Fjord undercharges the official emptyTx by 2242100 wei because Fjord replaces that estimate with max(100 bytes, intercept + 0.8365*FastLZ); dropping the min-size clamp on FastLZ 31 yields a negative size"
+}
+
+.u{
+  repo="https://github.com/ethereum-optimism/op-geth"
+  tag="v1.101702.3"
+  commit="7da4560d1fb3045286b70a8dc23360d2626543f2"
+  path="core/types/rollup_cost.go"
+  git_blob_sha="3266ae13faaabf599feb4417d60893a11b908fb3"
+  file_sha256="35a4e1976fca49cb5f328c6bf3f1513458eda450c9e7425c24a78a8750c51dec"
+  test="core/types/rollup_cost_test.go sha256 a1c7d82cdc42ce399bc62fa6ca7b5c68df16ec7786a34408e2c42d6098bb1739 blob c07b53f023725f1758df86e09d9bff6b38ecc317"
+  license="LGPL-3.0"
+  fixture="test/fixtures/external_proof/NewL1CostFuncFjord.go + estimatedDASizeScaled.go + newL1CostFuncEcotone.go + fjord_constants.go"
+}
+
+.l{
+  clone="src/lin_opgeth_fjord.lin"
+  transpiler_delta="src/lin_from_go.lin v15: REJ_GO_FJORD / REJ_GO_INTERCEPT / REJ_GO_FASTLZ; scalar lift fjoFee; emit '=' + 'ex{'"
+  improvement_1="FastLZ size / l1BaseFee / blobBaseFee / scalars are explicit arguments; op-geth closes over StateDB.GetState(L1Block) and FlzCompressLen(tx)"
+  improvement_2="named contrast vs Ecotone: same official emptyTx (calldata 480, FastLZ pin 31) prices at 3203000 vs 960900 — leftover Ecotone undercharges 2242100 wei"
+  improvement_3="negative intercept rewritten as abs-sub + min clamp; unclamped FastLZ 31 fail-closes to 0 instead of a negative fee"
+  improvement_4="128-bit muldiv fail-closes if the quotient does not fit i64; negatives fail-close to 0"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/opgeth_fjord_c11.c (gcc -O2 -std=c11, __int128) + test/oracles/opgeth_fjord_go.go"
+  gate="python3 test/prove_opgeth_fjord_external.py"
+}
+
+.p{
+  harness="test/prove_opgeth_fjord_external.py"
+  evidence_json="examples/opgeth_fjord/opgeth_fjord_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-opgeth-fjord"
+  goldens="fjord min emptyTx=3203000; gas=1600; flz171=3217602; flz200=3994602; solidity235=105484/2463; ecotone=960900; vs_ecotone=+2242100"
+}
+
+.n{
+  not_claimed_1="LIN replaces op-geth, Base, Optimism, or OP Stack consensus"
+  not_claimed_2="FlzCompressLen / FastLZ compressor / DA batch encoding"
+  not_claimed_3="first-Ecotone Bedrock fallback (unset blob+scalar slot)"
+  not_claimed_4="uint256 / full-node parity / deposit-tx exemption"
+  not_claimed_5="Compiler 0 executes go_from_go string-literal emit (VM_REJ_STRING_LITERAL)"
+}
+
+.v{
+  method="PINNED_BYTES && PYTHON_BIGINT && C11 && GO && LIN_C0_VM && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
