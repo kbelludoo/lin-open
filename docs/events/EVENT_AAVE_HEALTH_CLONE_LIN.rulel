@@ -1,0 +1,72 @@
+@RULEL:AAVE_HEALTH_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-AAVE-V3-HEALTH-FACTOR"
+@TITLE="Clone-lin of Aave V3 percentMul/wadDiv health factor with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-aave-health"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Aave V3 health-factor math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for (a*b+half)/d; Solidity uint256 is NOT claimed; RAY=1e27 is rejected not wrapped"
+  commercial_hook="Aave V3 health factor is the liquidation predicate for the largest money-market by TVL class; making coll/LT/debt explicit and replacing wrapping i64 / Yul percentMul+wadDiv with 128-bit half-up muldiv is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/aave/aave-v3-core"
+  tag="v1.19.4"
+  commit="b74526a7bc67a3a117a1963fc871b3eb8cea8435"
+  paths="contracts/protocol/libraries/logic/GenericLogic.sol + math/PercentageMath.sol + math/WadRayMath.sol"
+  license="MIT"
+  license_note="Upstream SPDX still BUSL-1.1; LICENSE.md Change Date 2023-01-27 elapsed; Change License MIT"
+  generic_logic_blob="3342316e772a7e733723ef2963ab79566904fb30"
+  generic_logic_sha256="6a5dbf307801b001ae5cd450c7bc6a7c77947b50f4bc29bdb93661ed22ea795b"
+  percentage_math_blob="c000be3a6c38a959aa3d28737445eaa5762c53b0"
+  percentage_math_sha256="6f165ad32ddcc3383cbb611cc3045c1a4bb28f16f83a85015fe202803de0161f"
+  wad_ray_math_blob="f61fe87f2f2748144cd4d113c848e649c41a4e5d"
+  wad_ray_math_sha256="fae5b995ec613cc213050c99ea6352c9c18ceebba106d03b1726cfa8f1f0124e"
+  formula="healthFactor = debt==0 ? uint256.max : percentMul(coll, avgLT).wadDiv(debt)"
+  percent_mul="(value * percentage + HALF_PERCENTAGE_FACTOR) / PERCENTAGE_FACTOR with PERCENTAGE_FACTOR=1e4 HALF=0.5e4"
+  wad_div="(a * WAD + b/2) / b with WAD=1e18"
+  fixtures="test/fixtures/external_proof/{AaveHealth.excerpt.sol,PercentageMath.sol,WadRayMath.sol,GenericLogic.sol}"
+}
+
+.l{
+  clone="src/lin_aave_health.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_PERCENT_MUL / WAD_DIV / WAD_MUL / RAY / UINT_MAX / HEALTH / USING; emit splits '=' + 'ex{'. src/lin_from_rust.lin v2: REJ_RUST_PERCENT_MUL / WAD_DIV / RAY"
+  improvement_1="calculateUserAccountData is view-on-storage with oracle getAssetPrice; LIN takes coll, lt, debt as arguments"
+  improvement_2="Yul percentMul/wadDiv wrap uint256; LIN uses schoolbook 128-bit (a*b+half)/d matching C11 __int128; quotient that does not fit uint64 fail-closes to 0"
+  improvement_3="debt==0: Aave returns type(uint256).max; LIN fail-closes health=0 with ahf_no_debt=1 (i64 cannot represent uint256.max)"
+  improvement_4="RAY=1e27 exceeds signed i64 (VM_REJ_LITERAL_RANGE); rayMul/rayDiv are rejected, not wrapped"
+  improvement_5="skip-LT wadDiv(coll,debt) overstates HF vs Aave percentMul(coll,LT).wadDiv(debt); Liquity ICR has no LT and matches the skip-LT path"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/aave_health_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_aave_health.sh"
+}
+
+.p{
+  harness="test/prove_aave_health_external.py"
+  evidence_json="examples/aave_health/aave_health_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-aave-health"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet Aave pool parity / rayMul RAY=1e27"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production liquidation engine replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Aave, Liquity, Compound, or the EVM"
+  not_claimed_6="Compound III mulPrice / Liquity _computeCR as a full port (named contrast only)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

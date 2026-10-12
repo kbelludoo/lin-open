@@ -1,0 +1,168 @@
+{
+  "schema": "LIN_AAVE_HEALTH_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned excerpt contains exact healthFactor / percentMul / wadDiv / RAY substrings",
+      "note": ""
+    },
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned PercentageMath.sol / WadRayMath.sol / GenericLogic.sol sha256 match",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of aave-v3-core v1.19.4 matches fixture hashes",
+      "note": "commit=b74526a7bc67a3a117a1963fc871b3eb8cea8435"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of GenericLogic.sol",
+      "note": ""
+    },
+    {
+      "id": "SNIPPET-IN-LIVE",
+      "status": "PASS",
+      "description": "health/percentMul/wadDiv/RAY excerpts are substrings of live bytes",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb (a*b+add)/d agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_aave_health.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3 (emit path)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "ahf_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "12/12 vectors: C11 i128 == limbs == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "12/12 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "LT-SKIP",
+      "status": "PASS",
+      "description": "coll=10000 debt=8500 LT=80%: Aave HF=0.941e18 liquidatable; skip-LT=1.176e18 falsely healthy",
+      "note": "aave=941176470588235294 skip_lt=1176470588235294118"
+    },
+    {
+      "id": "HALF-UP",
+      "status": "PASS",
+      "description": "named rejected floor path: percentMul(1,5000)=1; without HALF_PERCENTAGE=0",
+      "note": ""
+    },
+    {
+      "id": "WAD-HALF",
+      "status": "PASS",
+      "description": "wadDiv(2,3)=666...667; floor path=666...666 (b/2 rounding)",
+      "note": ""
+    },
+    {
+      "id": "DEBT-ZERO",
+      "status": "PASS",
+      "description": "debt==0: LIN fail-closes health=0; Aave returns type(uint256).max (unrepresentable in i64)",
+      "note": ""
+    },
+    {
+      "id": "LIQUITY-CONTRAST",
+      "status": "PASS",
+      "description": "Liquity ICR (coll*WAD/debt) has no LT; same bits as skip-LT, 1.176e18 vs Aave 0.941e18",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (1e18*1e18) wraps; 128-bit muldiv fail-closes 0",
+      "note": "i64_wrap=-5527149226598858752"
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still cjr_test_suite==1 after PERCENT_MUL/WAD_DIV rejects",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on ahf_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes collateral, LT and debt as arguments (no hidden storage)",
+      "note": ""
+    },
+    {
+      "id": "NO-RAY-GET",
+      "status": "PASS",
+      "description": "clone has no getAssetPrice and no 1e27 i64-overflow literal",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJ",
+      "status": "PASS",
+      "description": "v3 rejects PERCENT_MUL / WAD_DIV / RAY / HEALTH / UINT_MAX; emit splits '=' + 'ex{'",
+      "note": ""
+    },
+    {
+      "id": "RS-REJ",
+      "status": "PASS",
+      "description": "rust transpiler v2 rejects * percentage wrapping wrap",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE-REJ",
+      "status": "PASS",
+      "description": "Compiler 0 refuses sol_parse_test_gate string-literal path (VM_REJ_STRING_LITERAL)",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/aave/aave-v3-core",
+    "tag": "v1.19.4",
+    "commit": "b74526a7bc67a3a117a1963fc871b3eb8cea8435",
+    "path": "contracts/protocol/libraries/logic/GenericLogic.sol",
+    "git_blob_sha": "3342316e772a7e733723ef2963ab79566904fb30",
+    "file_sha256": "6a5dbf307801b001ae5cd450c7bc6a7c77947b50f4bc29bdb93661ed22ea795b",
+    "percentage_math_sha256": "6f165ad32ddcc3383cbb611cc3045c1a4bb28f16f83a85015fe202803de0161f",
+    "wad_ray_math_sha256": "fae5b995ec613cc213050c99ea6352c9c18ceebba106d03b1726cfa8f1f0124e",
+    "license": "MIT (BUSL-1.1 Change Date 2023-01-27 elapsed)"
+  },
+  "lin_clone": "src/lin_aave_health.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-aave-health",
+  "c11_oracle": "test/oracles/aave_health_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "hf_80pct_lt_85debt": 941176470588235294,
+  "skip_lt_85debt": 1176470588235294118,
+  "wadDiv_2_3": 666666666666666667
+}

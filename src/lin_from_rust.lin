@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: reject * percentage (REJ_RUST_PERCENT_MUL), * wad / (REJ_RUST_WAD_DIV), * RAY / 1e27 (REJ_RUST_RAY). Aave V3 percentMul+wadDiv wrapping i64 is the named gate"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,10 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(body, "* percentage") > 0) { ^"REJ_RUST_PERCENT_MUL" };
+  ?(rg_count_lit(body, "* wad /") > 0) { ^"REJ_RUST_WAD_DIV" };
+  ?(rg_count_lit(body, "* RAY") > 0) { ^"REJ_RUST_RAY" };
+  ?(rg_count_lit(body, "1e27") > 0) { ^"REJ_RUST_RAY" };
   ^"OK";
 }
 
@@ -66,6 +71,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_pm = "pub fn percent_mul(value: u64, percentage: u64) -> u64";
+  body_pm = "let v = value * percentage / 10000; v";
+  r3 = rs_reason(sig_pm, body_pm);
+  ?(starts_lit(r3, 0, "REJ_RUST_PERCENT_MUL") == 0) { ^0 };
 
   ^1;
 }
