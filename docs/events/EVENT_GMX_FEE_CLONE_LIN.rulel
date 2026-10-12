@@ -1,0 +1,62 @@
+@RULEL:GMX_FEE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GMX-FEE-BPS"
+@TITLE="Clone-lin of GMX V1 VaultUtils.getFeeBasisPoints with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-gmx-fee"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile GMX V1 USDG tax/rebate fee curve into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Arbitrum/Avalanche mainnet"
+  operand_width="uint64 inputs, 128-bit product for tax*diff/target; Solidity uint256 is NOT claimed"
+  commercial_hook="the same Vault charges a rebate when a mint/swap improves token weight vs target and a tax when it worsens it; a flat Uniswap-style bps fee on an overweight increment undercharges 30 bps (130 dynamic vs 100 flat). Making usdgAmounts/target/fee/tax explicit with 128-bit muldiv is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/gmx-io/gmx-contracts"
+  path="contracts/core/VaultUtils.sol"
+  license="MIT"
+  commit="fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8"
+  git_blob_sha="8e29c3ff19258d191f6d2459c110a917ba1f9906"
+  file_sha256="ad831f3c8d675c42665c854368bc06696e1cba23bd3294f91aa2ce4c0a8fc495"
+  fixture="test/fixtures/external_proof/VaultUtils.sol"
+  descendants="GMX V1 Vault / GLP mint-burn and swap fees on Arbitrum and Avalanche"
+}
+
+.l{
+  clone="src/lin_gmx_fee.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_GMX_FEE; emit split = + ex{ so C0 does not steal the export list; src/lin_from_rust.lin v2 REJ_RUST_GMX_FEE"
+  improvement_1="overweight increment 10k-target 15k+2k: dynamic 130 vs flat 100 (named 30 bps undercharge if dynamic fees are ignored)"
+  improvement_2="underweight increment 5k-on-10k: rebate 75 vs flat 100 (25 bps cheaper to rebalance)"
+  improvement_3="naive i64 (5e9*5e9)/1e6 wraps to 6553255926290; 128-bit muldiv=25000000000000"
+  improvement_4="published GMX tests: at-target 1000-delta=100, 5000-delta=104; underweight 23760-on-29700 increment=90"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/gmx_fee_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="python3 test/prove_gmx_fee_external.py"
+}
+
+.p{
+  harness="test/prove_gmx_fee_external.py"
+  evidence_json="examples/gmx_fee/gmx_fee_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-gmx-fee"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet GMX Vault or GLP parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production perps DEX replacement"
+  not_claimed_4="retread of Uniswap xy, Solidly x3y+y3x, Saddle getD/getY, or Maker rpow"
+  not_claimed_5="LIN replaces GMX, GLP, or the EVM"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

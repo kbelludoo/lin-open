@@ -1,0 +1,190 @@
+@LIN:L1c:0.2
+@GMX_FEE_BPS{
+  version=1
+  repo="gmx-io/gmx-contracts"
+  source="contracts/core/VaultUtils.sol"
+  license="MIT"
+  commit="fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_gmx_getFeeBasisPoints_usdg_tax_rebate"
+  note="Not mainnet uint256. Kernel is GMX V1 dynamic USDG fee: rebate when a swap improves weight vs target, tax when it worsens. Storage (hasDynamicFees, usdgAmounts, getTargetUsdgAmount) is explicit args. 128-bit muldiv. Not Uniswap xy, not Solidly x3y+y3x, not Maker rpow, not Curve getD."
+}
+
+!gmx_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!gmx_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(gmx_u_lt(s, a));
+}
+
+!gmx_mask32() -> int {
+  ^ 4294967295;
+}
+
+!gmx_bps() -> int {
+  ^ 10000;
+}
+
+!gmx_muldiv_part(a: int, b: int, d: int, want: int) -> int {
+  ?(d <= 0) { ^ 0; };
+  m32 = gmx_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = gmx_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = gmx_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(gmx_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = gmx_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want == 1) { ^ r_lo; };
+  ?(want == 2) { ^ ov; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!gmx_muldiv(a: int, b: int, d: int) -> int {
+  ^ gmx_muldiv_part(a, b, d, 0);
+}
+
+!gmx_naive_mul_wrap(a: int, b: int, d: int) -> int {
+  ^ (a * b) / d;
+}
+
+!gmx_abs_diff(a: int, b: int) -> int {
+  ?(gmx_u_lt(a, b) == 1) { ^ b - a; };
+  ^ a - b;
+}
+
+!gmx_next_amount(initial: int, delta: int, increment: int) -> int {
+  ?(increment != 0) { ^ initial + delta; };
+  ?(gmx_u_lt(initial, delta) == 1) { ^ 0; };
+  ^ initial - delta;
+}
+
+!gmx_target_usdg(weight: int, supply: int, total_w: int) -> int {
+  ?(total_w <= 0) { ^ 0; };
+  ?(weight < 0) { ^ 0; };
+  ?(supply < 0) { ^ 0; };
+  ^ gmx_muldiv(weight, supply, total_w);
+}
+
+!gmx_usd_to_token(usd: int, token_pow: int, price: int) -> int {
+  ?(usd <= 0) { ^ 0; };
+  ?(token_pow <= 0) { ^ 0; };
+  ?(price <= 0) { ^ 0; };
+  ^ gmx_muldiv(usd, token_pow, price);
+}
+
+!gmx_position_fee(size: int, margin_bps: int) -> int {
+  ?(size <= 0) { ^ 0; };
+  ?(margin_bps < 0) { ^ 0; };
+  ?(gmx_u_lt(gmx_bps(), margin_bps) == 1) { ^ 0; };
+  after = gmx_muldiv(size, gmx_bps() - margin_bps, gmx_bps());
+  ^ size - after;
+}
+
+!gmx_fee_bps(initial: int, delta: int, target: int, fee: int, tax: int, increment: int, has_dyn: int) -> int {
+  ?(initial < 0) { ^ 0; };
+  ?(delta < 0) { ^ 0; };
+  ?(target < 0) { ^ 0; };
+  ?(fee < 0) { ^ 0; };
+  ?(tax < 0) { ^ 0; };
+  ?(has_dyn == 0) { ^ fee; };
+  next = gmx_next_amount(initial, delta, increment);
+  ?(target == 0) { ^ fee; };
+  idiff = gmx_abs_diff(initial, target);
+  ndiff = gmx_abs_diff(next, target);
+  ?(gmx_u_lt(ndiff, idiff) == 1) {
+    rebate = gmx_muldiv(tax, idiff, target);
+    ?(gmx_u_lt(fee, rebate) == 1) { ^ 0; };
+    ^ fee - rebate;
+  };
+  avg = (idiff + ndiff) / 2;
+  ?(gmx_u_lt(target, avg) == 1) { avg = target; };
+  taxb = gmx_muldiv(tax, avg, target);
+  ^ fee + taxb;
+}
+
+!gmx_test_suite() -> int {
+  ?(gmx_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(gmx_fee_bps(10000, 2000, 10000, 100, 50, 1, 1) != 105) { ^ -2; };
+  ?(gmx_fee_bps(5000, 2000, 10000, 100, 50, 1, 1) != 75) { ^ -3; };
+  ?(gmx_fee_bps(15000, 2000, 10000, 100, 50, 0, 1) != 75) { ^ -4; };
+  ?(gmx_fee_bps(15000, 2000, 10000, 100, 50, 1, 1) != 130) { ^ -5; };
+  ?(gmx_fee_bps(15000, 2000, 10000, 100, 50, 1, 0) != 100) { ^ -6; };
+  ?(gmx_fee_bps(15000, 2000, 0, 100, 50, 1, 1) != 100) { ^ -7; };
+  ?(gmx_fee_bps(0, 1, 10000, 100, 200, 1, 1) != 0) { ^ -8; };
+  ?(gmx_fee_bps(29700, 1000, 29700, 100, 50, 1, 1) != 100) { ^ -9; };
+  ?(gmx_fee_bps(29700, 5000, 29700, 100, 50, 1, 1) != 104) { ^ -10; };
+  ?(gmx_fee_bps(23760, 1000, 29700, 100, 50, 1, 1) != 90) { ^ -11; };
+  ?(gmx_fee_bps(12000, 1000, 10000, 100, 50, 1, 1) != 112) { ^ -12; };
+  ?(gmx_fee_bps(9000, 3000, 10000, 100, 50, 1, 1) != 107) { ^ -13; };
+  ?(gmx_target_usdg(2000, 1000000, 10000) != 200000) { ^ -14; };
+  ?(gmx_position_fee(1000000, 10) != 1000) { ^ -15; };
+  ?(gmx_naive_mul_wrap(5000000000, 5000000000, 1000000) != 6553255926290) { ^ -16; };
+  ?(gmx_muldiv(5000000000, 5000000000, 1000000) != 25000000000000) { ^ -17; };
+  ?(gmx_usd_to_token(1000000000, 1000000, 2000) != 500000000000) { ^ -18; };
+  ?(gmx_muldiv(1000000000000000000, 1000000000000000000, 1) != 0) { ^ -19; };
+  ?(gmx_next_amount(100, 250, 0) != 0) { ^ -20; };
+  ^ 1;
+}
+
+=ex{
+  gmx_u_lt,
+  gmx_u_add_carry,
+  gmx_mask32,
+  gmx_bps,
+  gmx_muldiv_part,
+  gmx_muldiv,
+  gmx_naive_mul_wrap,
+  gmx_abs_diff,
+  gmx_next_amount,
+  gmx_target_usdg,
+  gmx_usd_to_token,
+  gmx_position_fee,
+  gmx_fee_bps,
+  gmx_test_suite
+}

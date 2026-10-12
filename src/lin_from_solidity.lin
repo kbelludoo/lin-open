@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: reject GMX getFeeBasisPoints / hasDynamicFees / usdgAmounts (USDG tax-rebate is a 128-bit LIN port, not emit of vault storage). Split equals-ex export emit so C0 does not steal the export list. v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -42,6 +42,9 @@
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
+  ?(rg_count_lit(sig, "getFeeBasisPoints") > 0) { ^"REJ_SOLIDITY_GMX_FEE" };
+  ?(rg_count_lit(body, "hasDynamicFees") > 0) { ^"REJ_SOLIDITY_GMX_FEE" };
+  ?(rg_count_lit(body, "usdgAmounts") > 0) { ^"REJ_SOLIDITY_GMX_FEE" };
   ?(rg_count_lit(body, "assembly") > 0) { ^"REJ_SOLIDITY_INLINE_ASM" };
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
@@ -317,7 +320,8 @@
     };
     i = i + 1;
   };
-  out = out + "=ex{";
+  out = out + "=";
+  out = out + "ex{";
   out = out + names;
   out = out + "}";
   out = out + rgs_ch(10);
@@ -337,4 +341,12 @@
   ^1;
 }
 
-=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
+!sol_gmx_reject_gate(): int {
+  sig_f = "function getFeeBasisPoints(address t, uint d, uint f, uint x, bool i) public view returns (uint)";
+  body_f = "if (!vault.hasDynamicFees()) { return f; } uint a = vault.usdgAmounts(t);";
+  r1 = sol_reason(sig_f, body_f);
+  ?(starts_lit(r1, 0, "REJ_SOLIDITY_GMX_FEE") == 0) { ^0 };
+  ^1;
+}
+
+=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate, sol_gmx_reject_gate}
