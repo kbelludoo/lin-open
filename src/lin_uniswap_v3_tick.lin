@@ -1,0 +1,195 @@
+@LIN:L1c:0.2
+@UNISWAP_V3_TICK_MATH{
+  version=1
+  repo="Uniswap/v3-core"
+  source="contracts/libraries/TickMath.sol"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2023-04-01 elapsed; Change License GPL-2.0-or-later"
+  commit="e3589b192d0be27e100cd0daaf6c97204fdb1899"
+  tag="v1.0.0"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_v3_getSqrtRatioAtTick_Q32_bit_table_not_Q96"
+  note="Not mainnet uint160/Q64.96. Reduced 14-bit |tick|<=16383 Q32 table. Not getNextSqrtPriceFromInput (clone-lin-uniswap-v3-next-sqrt) and not getAmount0Delta (clone-lin-uniswap-v3-sqrt). Invert uses 128-bit Q*Q/ratio; naive i64 Q*Q wraps to 0."
+}
+
+!v3t_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!v3t_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(v3t_u_lt(s, a));
+}
+
+!v3t_mask32() -> int {
+  ^ 4294967295;
+}
+
+!v3t_q32() -> int {
+  ^ 4294967296;
+}
+
+!v3t_max_tick() -> int {
+  ^ 16383;
+}
+
+!v3t_muldiv_part(a: int, b: int, d: int, want_rem: int) -> int {
+  ?(d == 0) { ^ 0; };
+  m32 = v3t_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = v3t_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = v3t_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(v3t_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = v3t_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!v3t_muldiv(a: int, b: int, d: int) -> int {
+  ^ v3t_muldiv_part(a, b, d, 0);
+}
+
+!v3t_magic(bit: int) -> int {
+  ?(bit == 0) { ^ 4294752563; };
+  ?(bit == 1) { ^ 4294537842; };
+  ?(bit == 2) { ^ 4294108431; };
+  ?(bit == 3) { ^ 4293249738; };
+  ?(bit == 4) { ^ 4291532867; };
+  ?(bit == 5) { ^ 4288101185; };
+  ?(bit == 6) { ^ 4281246052; };
+  ?(bit == 7) { ^ 4267568644; };
+  ?(bit == 8) { ^ 4240344775; };
+  ?(bit == 9) { ^ 4186416933; };
+  ?(bit == 10) { ^ 4080610056; };
+  ?(bit == 11) { ^ 3876951157; };
+  ?(bit == 12) { ^ 3499619261; };
+  ?(bit == 13) { ^ 2851554886; };
+  ^ 0;
+}
+
+!v3t_sqrt_neg(abs: int) -> int {
+  q = v3t_q32();
+  ratio = q;
+  b0 = abs & 1;
+  ?(b0 != 0) { ratio = v3t_magic(0); };
+  i = 1;
+  while (i < 14) {
+    mask = _lia_shl(1, i);
+    bit = abs & mask;
+    ?(bit != 0) {
+      m = v3t_magic(i);
+      ratio = v3t_muldiv(ratio, m, q);
+    };
+    i = i + 1;
+  };
+  ^ ratio;
+}
+
+!v3t_sqrt_at_tick(tick: int) -> int {
+  abs = tick;
+  ?(tick < 0) { abs = 0 - tick; };
+  ?(v3t_u_lt(v3t_max_tick(), abs) == 1) { ^ 0; };
+  ratio = v3t_sqrt_neg(abs);
+  ?(ratio == 0) { ^ 0; };
+  ?(tick > 0) {
+    q = v3t_q32();
+    ^ v3t_muldiv(q, q, ratio);
+  };
+  ^ ratio;
+}
+
+!v3t_naive_linear(tick: int) -> int {
+  q = v3t_q32();
+  ^ q + (q * tick) / 20000;
+}
+
+!v3t_naive_invert(ratio: int) -> int {
+  q = v3t_q32();
+  ?(ratio == 0) { ^ 0; };
+  ^ (q * q) / ratio;
+}
+
+!v3t_test_suite() -> int {
+  q = v3t_q32();
+  ?(v3t_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(v3t_sqrt_at_tick(0) != q) { ^ -2; };
+  ?(v3t_sqrt_at_tick(1) != 4295182039) { ^ -3; };
+  n1 = 0 - 1;
+  ?(v3t_sqrt_at_tick(n1) != 4294752563) { ^ -4; };
+  ?(v3t_sqrt_at_tick(2) != 4295396792) { ^ -5; };
+  ?(v3t_naive_invert(v3t_magic(0)) != 0) { ^ -6; };
+  ?(v3t_sqrt_at_tick(1) == v3t_naive_invert(v3t_magic(0))) { ^ -7; };
+  t8 = 8192;
+  ?(v3t_sqrt_at_tick(t8) != 6469012455) { ^ -8; };
+  ?(v3t_u_lt(v3t_naive_linear(t8), v3t_sqrt_at_tick(t8)) == 0) { ^ -9; };
+  mx = v3t_max_tick();
+  ?(v3t_sqrt_at_tick(mx) != 9743038112) { ^ -10; };
+  nmx = 0 - mx;
+  ?(v3t_sqrt_at_tick(nmx) != 1893325661) { ^ -11; };
+  ?(v3t_sqrt_at_tick(16384) != 0) { ^ -12; };
+  ?(v3t_muldiv(q, q, v3t_magic(0)) != 4295182039) { ^ -13; };
+  ?(v3t_naive_linear(0) != q) { ^ -14; };
+  ?(v3t_sqrt_at_tick(1000) != 4515163696) { ^ -15; };
+  ^ 1;
+}
+
+=ex{
+  v3t_u_lt,
+  v3t_u_add_carry,
+  v3t_mask32,
+  v3t_q32,
+  v3t_max_tick,
+  v3t_muldiv_part,
+  v3t_muldiv,
+  v3t_magic,
+  v3t_sqrt_neg,
+  v3t_sqrt_at_tick,
+  v3t_naive_linear,
+  v3t_naive_invert,
+  v3t_test_suite
+}

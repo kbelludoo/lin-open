@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: reject sqrt_ratio_at_tick / 0xfffcb933 / >> 128 Q64.96 ports (Uniswap V3 TickMath is a 128-bit LIN kernel, not emit)"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,10 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "sqrt_ratio_at_tick") > 0) { ^"REJ_RUST_TICK_SQRT" };
+  ?(rg_count_lit(body, "sqrt_ratio_at_tick") > 0) { ^"REJ_RUST_TICK_SQRT" };
+  ?(rg_count_lit(body, "0xfffcb933") > 0) { ^"REJ_RUST_TICK_MAGIC" };
+  ?(rg_count_lit(body, ">> 128") > 0) { ^"REJ_RUST_RSHIFT128" };
   ^"OK";
 }
 
@@ -70,4 +75,16 @@
   ^1;
 }
 
-=ex{rs_is_kw, rs_is_type, rs_reason, rs_parse_test_gate}
+!rs_tick_reject_gate(): int {
+  sig_n = "pub fn get_sqrt_ratio_at_tick(tick: i32) -> u64";
+  body_n = "let mut ratio = 0xfffcb933u128; ratio";
+  r1 = rs_reason(sig_n, body_n);
+  ?(starts_lit(r1, 0, "REJ_RUST_TICK_SQRT") == 0) { ^0 };
+  sig_s = "pub fn foo(x: u128) -> u128";
+  body_s = "let y = (x * k) >> 128; y";
+  r2 = rs_reason(sig_s, body_s);
+  ?(starts_lit(r2, 0, "REJ_RUST_RSHIFT128") == 0) { ^0 };
+  ^1;
+}
+
+=ex{rs_is_kw, rs_is_type, rs_reason, rs_parse_test_gate, rs_tick_reject_gate}
