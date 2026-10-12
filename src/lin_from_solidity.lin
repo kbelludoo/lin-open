@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: reject totalBorrow_ * FACTOR_SCALE (REJ_SOLIDITY_UTIL_WRAP), presentValueSupply(/presentValueBorrow(/totalSupplyBase/totalBorrowBase (REJ_SOLIDITY_GETTER), FACTOR_SCALE (REJ_SOLIDITY_FACTOR_SCALE). Compound III getUtilization is the named gate. Split '=' + 'ex{' emit. v2: emit LIN; expand 1eN; OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,13 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(body, "totalBorrow_ * FACTOR_SCALE") > 0) { ^"REJ_SOLIDITY_UTIL_WRAP" };
+  ?(rg_count_lit(body, "totalBorrow * FACTOR_SCALE") > 0) { ^"REJ_SOLIDITY_UTIL_WRAP" };
+  ?(rg_count_lit(body, "presentValueSupply(") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "presentValueBorrow(") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "totalSupplyBase") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "totalBorrowBase") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "FACTOR_SCALE") > 0) { ^"REJ_SOLIDITY_FACTOR_SCALE" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +71,14 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_util = "function utilOf(uint totalBorrow_, uint totalSupply_) internal pure returns (uint)";
+  body_util = "return totalBorrow_ * FACTOR_SCALE / totalSupply_;";
+  r4 = sol_reason(sig_util, body_util);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_UTIL_WRAP") == 0) { ^0 };
+  sig_pv = "function load() internal view returns (uint)";
+  body_pv = "return presentValueSupply(baseSupplyIndex, totalSupplyBase);";
+  r5 = sol_reason(sig_pv, body_pv);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_GETTER") == 0) { ^0 };
   ^1;
 }
 
@@ -317,7 +332,8 @@
     };
     i = i + 1;
   };
-  out = out + "=ex{";
+  out = out + "=";
+  out = out + "ex{";
   out = out + names;
   out = out + "}";
   out = out + rgs_ch(10);
@@ -334,6 +350,12 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  wrap = "function utilOf(uint totalBorrow_, uint totalSupply_) internal pure returns (uint) { return totalBorrow_ * FACTOR_SCALE / totalSupply_; }";
+  out2 = sol_from_sol(wrap);
+  ?(rg_count_lit(out2, "utilOf") > 0) { ^0 };
+  pv = "function load(uint x) internal pure returns (uint) { return presentValueSupply(x, 1); }";
+  out3 = sol_from_sol(pv);
+  ?(rg_count_lit(out3, "load") > 0) { ^0 };
   ^1;
 }
 

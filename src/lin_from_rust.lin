@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: reject * FACTOR_SCALE / * factor_scale (REJ_RUST_UTIL_WRAP); wrapping borrow*factor/supply is the same class as Solidity totalBorrow_ * FACTOR_SCALE in Comet getUtilization"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,8 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(body, "* FACTOR_SCALE") > 0) { ^"REJ_RUST_UTIL_WRAP" };
+  ?(rg_count_lit(body, "* factor_scale") > 0) { ^"REJ_RUST_UTIL_WRAP" };
   ^"OK";
 }
 
@@ -66,6 +69,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_util = "pub fn util(total_borrow: u64, total_supply: u64) -> u64";
+  body_util = "let u = total_borrow * FACTOR_SCALE / total_supply; u";
+  r3 = rs_reason(sig_util, body_util);
+  ?(starts_lit(r3, 0, "REJ_RUST_UTIL_WRAP") == 0) { ^0 };
 
   ^1;
 }
