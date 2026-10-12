@@ -1,0 +1,150 @@
+{
+  "schema": "LIN_AAVE_COMPOUND_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned MathUtils.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned aave-v3-core commit matches fixture",
+      "note": "commit=b74526a7bc67a3a117a1963fc871b3eb8cea8435 blob=9adca939db36cbe1009d0a00600def9314fc7332"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of MathUtils.sol",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-FORMULA",
+      "status": "PASS",
+      "description": "pinned MathUtils has binomial (1+x)^n through x^3",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_aave_compound.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "aci_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "12/12 vectors: C11 i128 == limbs == LIN vm == Python bigint",
+      "note": ""
+    },
+    {
+      "id": "LINEAR-VS-BINOM",
+      "status": "PASS",
+      "description": "1y 5% APY: binomial exceeds linear (second+third terms)",
+      "note": "linear=1050000000000000000 compounded=1051270833291714231 extra=1270833291714231"
+    },
+    {
+      "id": "YEAR2-FLOOR",
+      "status": "PASS",
+      "description": "naive wad YEAR^2 floor hides second-term precision vs 128-bit binomial",
+      "note": "wide=1051270833291714231 year2_floor=1050994519264464000 missing=276314027250231"
+    },
+    {
+      "id": "HORNER-VS-BINOM",
+      "status": "PASS",
+      "description": "exp=2 100% APY: e^x Horner (n^2/2) != Aave binomial n(n-1)/2",
+      "note": "binomial=1000000063419584972 horner=1000000063419585978 delta=1006"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive uint64 (rate*YEAR)/YEAR wraps; 128-bit muldiv does not",
+      "note": "i64_naive=292049323152 bigint=50000000000000000"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on aci_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes rate and dt as arguments (no block.timestamp in functions)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv (naive i64 rate*dt wraps)",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECTS",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin rejects rayMul/RAY/binomial/SECONDS_PER_YEAR/uint40/using",
+      "note": ""
+    },
+    {
+      "id": "SOL-EMIT-SPLIT",
+      "status": "PASS",
+      "description": "emit splits '=' + 'ex{' so C0 does not steal the export list",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECTS",
+      "status": "PASS",
+      "description": "lin_from_rust.lin rejects ray_mul/1e27/exp_minus_one/SECONDS_PER_YEAR",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate cjr_test_suite still == 1",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/aave/aave-v3-core",
+    "tag": "v1.19.4",
+    "commit": "b74526a7bc67a3a117a1963fc871b3eb8cea8435",
+    "path": "contracts/protocol/libraries/math/MathUtils.sol",
+    "git_blob_sha": "9adca939db36cbe1009d0a00600def9314fc7332",
+    "file_sha256": "7f73c927e9801debfe0666e2a6364b92f62fd2d58d0c4b485ff04765fd4dc58d",
+    "license": "MIT (BUSL-1.1 Change Date 2023-01-27 elapsed)",
+    "not_pinned": "aave-dao/aave-v3-origin (BUSL Change Date 2027-03-06 still future)"
+  },
+  "lin_clone": "src/lin_aave_compound.lin",
+  "c11_oracle": "test/oracles/aave_compound_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "linear_1y_5pct": 1050000000000000000,
+    "compounded_1y_5pct": 1051270833291714231,
+    "year2_floor_1y_5pct": 1050994519264464000,
+    "horner_1y_5pct": 1051270833333333333,
+    "binomial_minus_linear_1y_5pct": 1270833291714231,
+    "wide_minus_year2_floor_1y_5pct": 276314027250231,
+    "compounded_exp2_100pct": 1000000063419584972,
+    "horner_exp2_100pct": 1000000063419585978
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-aave-compound"
+}

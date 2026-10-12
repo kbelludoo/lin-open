@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: reject ray_mul/1e27 (REJ_RUST_RAY), exp_minus_one/base_power_two (REJ_RUST_BINOMIAL), SECONDS_PER_YEAR (REJ_RUST_SECONDS_YEAR). Aave V3 compounded interest is the named gate."
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,11 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(body, "ray_mul") > 0) { ^"REJ_RUST_RAY" };
+  ?(rg_count_lit(body, "1e27") > 0) { ^"REJ_RUST_RAY" };
+  ?(rg_count_lit(body, "exp_minus_one") > 0) { ^"REJ_RUST_BINOMIAL" };
+  ?(rg_count_lit(body, "base_power_two") > 0) { ^"REJ_RUST_BINOMIAL" };
+  ?(rg_count_lit(body, "SECONDS_PER_YEAR") > 0) { ^"REJ_RUST_SECONDS_YEAR" };
   ^"OK";
 }
 
@@ -66,6 +72,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_ray = "pub fn compound(rate: u64, dt: u64) -> u64";
+  body_ray = "let x = ray_mul(rate, rate); return x;";
+  r3 = rs_reason(sig_ray, body_ray);
+  ?(starts_lit(r3, 0, "REJ_RUST_RAY") == 0) { ^0 };
 
   ^1;
 }

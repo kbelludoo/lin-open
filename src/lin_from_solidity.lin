@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: reject rayMul(/rayDiv(/RAY/1e27/HALF_RAY (REJ_SOLIDITY_RAY), expMinusOne/basePowerTwo/basePowerThree (REJ_SOLIDITY_BINOMIAL), SECONDS_PER_YEAR (REJ_SOLIDITY_SECONDS_YEAR), uint40 (REJ_SOLIDITY_UINT40), using  (REJ_SOLIDITY_USING). Aave V3 MathUtils compounded interest is the named gate. Split '=' + 'ex{' emit. v2: emit LIN; expand 1eN; OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,19 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(sig, "using ") > 0) { ^"REJ_SOLIDITY_USING" };
+  ?(rg_count_lit(body, "using ") > 0) { ^"REJ_SOLIDITY_USING" };
+  ?(rg_count_lit(sig, "uint40") > 0) { ^"REJ_SOLIDITY_UINT40" };
+  ?(rg_count_lit(body, "rayMul(") > 0) { ^"REJ_SOLIDITY_RAY" };
+  ?(rg_count_lit(body, ".rayMul(") > 0) { ^"REJ_SOLIDITY_RAY" };
+  ?(rg_count_lit(body, "rayDiv(") > 0) { ^"REJ_SOLIDITY_RAY" };
+  ?(rg_count_lit(body, "HALF_RAY") > 0) { ^"REJ_SOLIDITY_RAY" };
+  ?(rg_count_lit(body, "1e27") > 0) { ^"REJ_SOLIDITY_RAY" };
+  ?(rg_count_lit(body, "RAY") > 0) { ^"REJ_SOLIDITY_RAY" };
+  ?(rg_count_lit(body, "expMinusOne") > 0) { ^"REJ_SOLIDITY_BINOMIAL" };
+  ?(rg_count_lit(body, "basePowerTwo") > 0) { ^"REJ_SOLIDITY_BINOMIAL" };
+  ?(rg_count_lit(body, "basePowerThree") > 0) { ^"REJ_SOLIDITY_BINOMIAL" };
+  ?(rg_count_lit(body, "SECONDS_PER_YEAR") > 0) { ^"REJ_SOLIDITY_SECONDS_YEAR" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +77,14 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_ray = "function calculateCompoundedInterest(uint256 rate, uint256 last, uint256 cur) internal pure returns (uint256)";
+  body_ray = "return WadRayMath.RAY + rate.rayMul(rate);";
+  r4 = sol_reason(sig_ray, body_ray);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_RAY") == 0) { ^0 };
+  sig_bin = "function calc(uint256 rate, uint256 exp) internal pure returns (uint256)";
+  body_bin = "uint256 expMinusOne = exp - 1; uint256 basePowerTwo = 1; return expMinusOne;";
+  r5 = sol_reason(sig_bin, body_bin);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_BINOMIAL") == 0) { ^0 };
   ^1;
 }
 
@@ -317,7 +338,8 @@
     };
     i = i + 1;
   };
-  out = out + "=ex{";
+  out = out + "=";
+  out = out + "ex{";
   out = out + names;
   out = out + "}";
   out = out + rgs_ch(10);
@@ -334,6 +356,12 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  wrap = "function calculateCompoundedInterest(uint256 rate, uint256 lastUpdateTimestamp, uint256 currentTimestamp) internal pure returns (uint256) { return rate.rayMul(rate); }";
+  out2 = sol_from_sol(wrap);
+  ?(rg_count_lit(out2, "!calculateCompoundedInterest(") > 0) { ^0 };
+  bin = "function calc(uint256 rate, uint256 exp) internal pure returns (uint256) { uint256 expMinusOne = exp - 1; return expMinusOne; }";
+  out3 = sol_from_sol(bin);
+  ?(rg_count_lit(out3, "!calc(") > 0) { ^0 };
   ^1;
 }
 
