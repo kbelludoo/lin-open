@@ -1,0 +1,67 @@
+@RULEL:COMET_PRICE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-COMET-MULPRICE-DIVPRICE"
+@TITLE="Clone-lin of Compound III mulPrice/divPrice / PRICE_SCALE with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-comet-price"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Compound III mulPrice(n*price/fromScale) and divPrice(n*toScale/price) into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for n*price/fromScale and n*toScale/price; Solidity uint256 is NOT claimed"
+  commercial_hook="Comet collateral USD uses Chainlink 8-dec PRICE_SCALE=1e8, not FACTOR_SCALE=1e18 and not BASE_INDEX_SCALE=1e15. 1 USDC at $1 is 1e8 common-price units. Feeding FACTOR as the price inflates USDC ~1e10x. mulFactor-as-price floors to 0. (n/scale)*price truncates to 0 on (3,5,4) vs Comet 3. WBTC 8-dec hides PRICE_SCALE vs asset.scale. Skipping borrowCollateralFactor mulFactor falsely collateralizes a 50% CF underwater account. This is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/compound-finance/comet"
+  path="contracts/CometWithExtendedAssetList.sol"
+  core="contracts/CometCore.sol PRICE_FEED_DECIMALS=8 PRICE_SCALE=1e8 FACTOR_SCALE=1e18 BASE_INDEX_SCALE=1e15"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2025-12-31 elapsed; Change License GPL-2.0-or-later"
+  commit="f766f51583c23acc33b2a7824654ef2029a96804"
+  git_blob_sha="3490e984d133789aa1afe2e8f7e37a11d2512396"
+  file_sha256="c9099e56eda092fd0150005706edf086723899afb102f164b60ad1f36a426961"
+  core_git_blob_sha="534f2701b6c8e683f9294112b0bcc23878d39fe6"
+  core_file_sha256="1d80f0d12c101d01c2e1f38e8662cfcf350299b1c78188f8c501bb1c51b5ec78"
+  fixture="test/fixtures/external_proof/CometPriceScale.excerpt.sol"
+}
+
+.l{
+  clone="src/lin_comet_price.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_MUL_PRICE / PRICE_WRAP / DIV_PRICE / PRICE_SCALE / FROM_SCALE / GETTER; emit splits '=' + 'ex{'. src/lin_from_rust.lin v2: REJ_RUST_PRICE_WRAP / REJ_RUST_DIV_PRICE"
+  improvement_1="getPrice/baseScale/asset.scale are view-on-storage; LIN takes n, price, fromScale/toScale, CF/LF as arguments"
+  improvement_2="n * price overflows i64 on WETH-scale amounts; LIN uses schoolbook 128-bit muldiv matching C11 __int128"
+  improvement_3="price==0: Solidity 0.8 reverts on /0; LIN fail-closes 0 (c3p_price_ok=0)"
+  improvement_4="reorder (n/fromScale)*price is a named rejected path (0 vs 3 on (3,5,4))"
+  improvement_5="named contrast vs FACTOR_SCALE / BASE_INDEX_SCALE / mulFactor: USDC 6-dec comet=$1→1e8, FACTOR confusion=1e18 (~1e10x), INDEX=1e15, mulFactor-as-price=0; WBTC 8-dec hides PRICE_SCALE vs asset.scale; WETH 18-dec * $2000 / PRICE_SCALE overflows uint64 (fail-close 0 vs 2e11)"
+  improvement_6="isBorrowCollateralized CF path: skip mulFactor falsely returns ok=1 on 200 USDC borrow vs 0.1 WETH@$2000 with CF=50%; Comet adj under-waters (ok=0). absorbInternal 0.1 WETH LF=80% pays 160 USDC; confusing toScale with PRICE_SCALE pays 16000 USDC (100x)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/comet_price_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_comet_price.sh"
+}
+
+.p{
+  harness="test/prove_comet_price_external.py"
+  evidence_json="examples/comet_price/comet_price_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-comet-price"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet Comet market / Chainlink PriceFeed parity"
+  not_claimed_2="getUtilization / presentValue / tracking-index / accruedInterestIndices (separate clones)"
+  not_claimed_3="LIN is faster than the EVM or solc"
+  not_claimed_4="this clone is a production liquidation/oracle replacement"
+  not_claimed_5="LIN replaces Compound, Uniswap, or the EVM"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS && SCALE_CONTRAST && REORDER_REJECT && CF_SKIP_REJECT && WBTC_HIDE"
+  on_fail="do not publish a PASS status"
+}

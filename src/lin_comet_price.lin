@@ -1,0 +1,227 @@
+@LIN:L1c:0.2
+@COMET_PRICE_SCALE{
+  version=1
+  repo="compound-finance/comet"
+  source="contracts/CometWithExtendedAssetList.sol"
+  license="GPL-2.0-or-later"
+  license_note="Upstream BUSL-1.1 Change Date 2025-12-31 elapsed; Change License GPL-2.0-or-later. This run is 2026-10-12."
+  commit="f766f51583c23acc33b2a7824654ef2029a96804"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_comet_mulPrice_divPrice_PRICE_SCALE"
+  note="Not mainnet uint256. Not getUtilization. Not tracking-index/divBaseWei. Not accruedInterestIndices. Not presentValue. Not a Comet / USDC market / PriceFeed. n, price, fromScale/toScale, CF/LF are arguments. n*price/fromScale uses 128-bit product, fail-closed if a quotient exceeds uint64. price==0 fail-closes 0. FACTOR_SCALE/BASE_INDEX_SCALE/mulFactor confusions and (n/scale)*price reorder are named rejected paths. WBTC 8-dec hides PRICE_SCALE vs asset.scale."
+}
+
+!c3p_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!c3p_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(c3p_u_lt(s, a));
+}
+
+!c3p_mask32() -> int {
+  ^ 4294967295;
+}
+
+!c3p_price_scale() -> int {
+  ^ 100000000;
+}
+
+!c3p_factor_scale() -> int {
+  ^ 1000000000000000000;
+}
+
+!c3p_index_scale() -> int {
+  ^ 1000000000000000;
+}
+
+!c3p_muldiv_part(a: int, b: int, d: int, want_rem: int) -> int {
+  ?(d == 0) { ^ 0; };
+  m32 = c3p_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = c3p_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = c3p_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(c3p_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = c3p_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!c3p_muldiv(a: int, b: int, d: int) -> int {
+  ^ c3p_muldiv_part(a, b, d, 0);
+}
+
+!c3p_muldiv_rem(a: int, b: int, d: int) -> int {
+  ^ c3p_muldiv_part(a, b, d, 1);
+}
+
+!c3p_price_ok(n: int, price: int, scale: int) -> int {
+  ?(n < 0) { ^ 0; };
+  ?(price <= 0) { ^ 0; };
+  ?(scale <= 0) { ^ 0; };
+  ^ 1;
+}
+
+!c3p_mul_price(n: int, price: int, from_scale: int) -> int {
+  ?(c3p_price_ok(n, price, from_scale) == 0) { ^ 0; };
+  ^ c3p_muldiv(n, price, from_scale);
+}
+
+!c3p_div_price(n: int, price: int, to_scale: int) -> int {
+  ?(c3p_price_ok(n, price, to_scale) == 0) { ^ 0; };
+  ^ c3p_muldiv(n, to_scale, price);
+}
+
+!c3p_mul_factor(n: int, factor: int) -> int {
+  ?(n < 0) { ^ 0; };
+  ?(factor < 0) { ^ 0; };
+  ^ c3p_muldiv(n, factor, c3p_factor_scale());
+}
+
+!c3p_reorder(n: int, price: int, from_scale: int) -> int {
+  ?(from_scale <= 0) { ^ 0; };
+  ?(price <= 0) { ^ 0; };
+  q = n / from_scale;
+  ^ (q * price);
+}
+
+!c3p_factor_as_price(n: int, from_scale: int) -> int {
+  ?(from_scale <= 0) { ^ 0; };
+  ?(n < 0) { ^ 0; };
+  ^ c3p_muldiv(n, c3p_factor_scale(), from_scale);
+}
+
+!c3p_index_as_price(n: int, from_scale: int) -> int {
+  ?(from_scale <= 0) { ^ 0; };
+  ?(n < 0) { ^ 0; };
+  ^ c3p_muldiv(n, c3p_index_scale(), from_scale);
+}
+
+!c3p_mulfactor_as_price(n: int, price: int) -> int {
+  ^ c3p_mul_factor(n, price);
+}
+
+!c3p_div_price_scale_confused(n: int, price: int) -> int {
+  ^ c3p_div_price(n, price, c3p_price_scale());
+}
+
+!c3p_is_borrow_ok(borrow_base: int, base_price: int, base_scale: int, collat: int, asset_price: int, asset_scale: int, cf: int) -> int {
+  borrow_usd = c3p_mul_price(borrow_base, base_price, base_scale);
+  collat_usd = c3p_mul_price(collat, asset_price, asset_scale);
+  adj = c3p_mul_factor(collat_usd, cf);
+  ?(c3p_u_lt(adj, borrow_usd) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!c3p_skip_cf(borrow_base: int, base_price: int, base_scale: int, collat: int, asset_price: int, asset_scale: int) -> int {
+  borrow_usd = c3p_mul_price(borrow_base, base_price, base_scale);
+  collat_usd = c3p_mul_price(collat, asset_price, asset_scale);
+  ?(c3p_u_lt(collat_usd, borrow_usd) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!c3p_absorb_base(seize: int, asset_price: int, asset_scale: int, liq_factor: int, base_price: int, base_scale: int) -> int {
+  value = c3p_mul_price(seize, asset_price, asset_scale);
+  delta = c3p_mul_factor(value, liq_factor);
+  ^ c3p_div_price(delta, base_price, base_scale);
+}
+
+!c3p_test_suite() -> int {
+  ?(c3p_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(c3p_muldiv(7, 9, 1) != 63) { ^ -2; };
+  ?(c3p_mul_price(1000000, 100000000, 1000000) != 100000000) { ^ -3; };
+  ?(c3p_factor_as_price(1000000, 1000000) != 1000000000000000000) { ^ -4; };
+  ?(c3p_index_as_price(1000000, 1000000) != 1000000000000000) { ^ -5; };
+  ?(c3p_mulfactor_as_price(1000000, 100000000) != 0) { ^ -6; };
+  ?(c3p_mul_price(3, 5, 4) != 3) { ^ -7; };
+  ?(c3p_reorder(3, 5, 4) != 0) { ^ -8; };
+  ?(c3p_mul_price(3, 5, 4) == c3p_reorder(3, 5, 4)) { ^ -9; };
+  ?(c3p_mul_price(100000000, 6000000000000, 100000000) != 6000000000000) { ^ -10; };
+  ?(c3p_factor_as_price(100000000, 100000000) != 1000000000000000000) { ^ -11; };
+  ?(c3p_mul_price(1000000000000000000, 200000000000, 1000000000000000000) != 200000000000) { ^ -12; };
+  ?(c3p_mul_price(1000000000000000000, 200000000000, 100000000) != 0) { ^ -13; };
+  ?(c3p_div_price(100000000, 100000000, 1000000) != 1000000) { ^ -14; };
+  ?(c3p_div_price_scale_confused(100000000, 100000000) != 100000000) { ^ -15; };
+  ?(c3p_mul_price(1, 0, 1000000) != 0) { ^ -16; };
+  ?(c3p_div_price(100, 0, 1000000) != 0) { ^ -17; };
+  ?(c3p_muldiv(1000000000000000000, 1000000000000000000, 1) != 0) { ^ -18; };
+  ?(c3p_muldiv_rem(7, 9, 2) != 1) { ^ -19; };
+  ?(c3p_is_borrow_ok(200000000, 100000000, 1000000, 100000000000000000, 200000000000, 1000000000000000000, 500000000000000000) != 0) { ^ -20; };
+  ?(c3p_skip_cf(200000000, 100000000, 1000000, 100000000000000000, 200000000000, 1000000000000000000) != 1) { ^ -21; };
+  ?(c3p_absorb_base(100000000000000000, 200000000000, 1000000000000000000, 800000000000000000, 100000000, 1000000) != 160000000) { ^ -22; };
+  ?(c3p_price_scale() != 100000000) { ^ -23; };
+  ?(c3p_factor_scale() != 1000000000000000000) { ^ -24; };
+  ?(c3p_index_scale() != 1000000000000000) { ^ -25; };
+  ^ 1;
+}
+
+=ex{
+  c3p_u_lt,
+  c3p_u_add_carry,
+  c3p_mask32,
+  c3p_price_scale,
+  c3p_factor_scale,
+  c3p_index_scale,
+  c3p_muldiv_part,
+  c3p_muldiv,
+  c3p_muldiv_rem,
+  c3p_price_ok,
+  c3p_mul_price,
+  c3p_div_price,
+  c3p_mul_factor,
+  c3p_reorder,
+  c3p_factor_as_price,
+  c3p_index_as_price,
+  c3p_mulfactor_as_price,
+  c3p_div_price_scale_confused,
+  c3p_is_borrow_ok,
+  c3p_skip_cf,
+  c3p_absorb_base,
+  c3p_test_suite
+}
