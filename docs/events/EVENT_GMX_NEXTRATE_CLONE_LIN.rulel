@@ -1,0 +1,62 @@
+@RULEL:GMX_NEXTRATE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GMX-NEXT-FUNDING-RATE"
+@TITLE="Clone-lin of GMX V1 Vault.getNextFundingRate with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-gmx-nextrate"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile GMX V1 time-sliced utilization funding increment into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Arbitrum/Avalanche mainnet"
+  operand_width="uint64 inputs, 128-bit product for factor*reserved then *intervals/pool; Solidity uint256 is NOT claimed"
+  commercial_hook="the same Vault accrues funding as factor*reserved*intervals/poolAmount with intervals=(now-last)/fundingInterval (default 8h). Applying raw elapsed seconds overcharges 28800x (4320000 vs 150 on a 24h 50pct pool). Uninitialized lastFundingTimes=0 at now=1700000000 yields 2951350 vs 0. Confusing next-rate with getFundingFee size*rate/1e6 is 100x (5000 vs 50). Making now/last/interval/reserved/pool/factors explicit with 128-bit muldiv is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/gmx-io/gmx-contracts"
+  path="contracts/core/Vault.sol"
+  license="MIT"
+  commit="fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8"
+  git_blob_sha="4aef3c7dcf40b4657e7dfcef582958dc2d418126"
+  file_sha256="0b49e265fc4c04d3eea74b07d698748050671a2df259f1faa8d05cabf2970f92"
+  fixture="test/fixtures/external_proof/Vault.sol"
+  descendants="GMX V1 Vault perpetual funding accrual on Arbitrum and Avalanche"
+}
+
+.l{
+  clone="src/lin_gmx_nextrate.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_GMX_NEXTRATE before ENV so getNextFundingRate is named not generic timestamp; emit split equals plus ex so C0 does not steal the export list; src/lin_from_rust.lin v2 REJ_RUST_GMX_NEXTRATE"
+  improvement_1="elapsed 20000 < interval 28800: nextRate 0 vs ignore-interval 50"
+  improvement_2="24h 50pct pool factor=100: intervals=3 rate=150 vs raw elapsed 4320000 (28800x)"
+  improvement_3="stable factor=10 vs volatile 100 on the same pool: 5 vs 50 (10x)"
+  improvement_4="uninit last=0 now=1700000000: 2951350 vs initialized 0; naive i64 (4e9*3e9)/2e9 wraps to -3223372036 vs 128-bit 6000000000"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/gmx_nextrate_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="python3 test/prove_gmx_nextrate_external.py"
+}
+
+.p{
+  harness="test/prove_gmx_nextrate_external.py"
+  evidence_json="examples/gmx_nextrate/gmx_nextrate_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-gmx-nextrate"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet GMX Vault or GLP parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production perps DEX replacement"
+  not_claimed_4="retread of GMX getFundingFee size*(cum-entry)/1e6, getFeeBasisPoints USDG tax-rebate, Uniswap xy, Solidly x3y+y3x, or Maker rpow"
+  not_claimed_5="LIN replaces GMX, GLP, or the EVM"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

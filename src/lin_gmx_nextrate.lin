@@ -1,0 +1,204 @@
+@LIN:L1c:0.2
+@GMX_NEXT_FUNDING_RATE{
+  version=1
+  repo="gmx-io/gmx-contracts"
+  source="contracts/core/Vault.sol"
+  license="MIT"
+  commit="fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_gmx_getNextFundingRate_factor_reserved_intervals_over_pool"
+  note="Not mainnet uint256. Kernel is GMX V1 getNextFundingRate: factor * reserved * intervals / poolAmount. intervals = (now-last)/fundingInterval; last+interval>now returns 0. Storage and block.timestamp are explicit args. 128-bit muldiv. Companion getUtilisation is reserved*1e6/pool. Confusing next-rate with getFundingFee size*rate/1e6 or with raw elapsed seconds is a named misprice. Not USDG tax-rebate, not size*delta/1e6, not Uniswap xy, not Solidly cubic, not Maker rpow."
+}
+
+!gnr_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!gnr_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(gnr_u_lt(s, a));
+}
+
+!gnr_u_add_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  s = a + b;
+  ?(s < a) { ^ 0; };
+  ^ 1;
+}
+
+!gnr_mask32() -> int {
+  ^ 4294967295;
+}
+
+!gnr_funding_prec() -> int {
+  ^ 1000000;
+}
+
+!gnr_interval_8h() -> int {
+  ^ 28800;
+}
+
+!gnr_muldiv_part(a: int, b: int, d: int, want: int) -> int {
+  ?(d <= 0) { ^ 0; };
+  m32 = gnr_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = gnr_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = gnr_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(gnr_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = gnr_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want == 1) { ^ r_lo; };
+  ?(want == 2) { ^ ov; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!gnr_muldiv(a: int, b: int, d: int) -> int {
+  ^ gnr_muldiv_part(a, b, d, 0);
+}
+
+!gnr_naive_mul_wrap(a: int, b: int, d: int) -> int {
+  ^ (a * b) / d;
+}
+
+!gnr_intervals(now: int, last: int, interval: int) -> int {
+  ?(interval <= 0) { ^ 0; };
+  ?(last < 0) { ^ 0; };
+  ?(now < 0) { ^ 0; };
+  ?(gnr_u_lt(now, last) == 1) { ^ 0; };
+  ?(gnr_u_add_ok(last, interval) == 0) { ^ 0; };
+  ?(gnr_u_lt(now, last + interval) == 1) { ^ 0; };
+  ^ (now - last) / interval;
+}
+
+!gnr_factor(is_stable: int, vol_factor: int, stable_factor: int) -> int {
+  ?(is_stable != 0) { ^ stable_factor; };
+  ^ vol_factor;
+}
+
+!gnr_next_rate(now: int, last: int, interval: int, reserved: int, pool: int, is_stable: int, vol_factor: int, stable_factor: int) -> int {
+  ?(pool <= 0) { ^ 0; };
+  ?(reserved < 0) { ^ 0; };
+  ?(vol_factor < 0) { ^ 0; };
+  ?(stable_factor < 0) { ^ 0; };
+  iv = gnr_intervals(now, last, interval);
+  ?(iv == 0) { ^ 0; };
+  fac = gnr_factor(is_stable, vol_factor, stable_factor);
+  ?(fac == 0) { ^ 0; };
+  t = gnr_muldiv(fac, reserved, 1);
+  ^ gnr_muldiv(t, iv, pool);
+}
+
+!gnr_utilisation(reserved: int, pool: int) -> int {
+  ?(pool <= 0) { ^ 0; };
+  ?(reserved < 0) { ^ 0; };
+  ^ gnr_muldiv(reserved, gnr_funding_prec(), pool);
+}
+
+!gnr_ignore_interval(reserved: int, pool: int, factor: int) -> int {
+  ?(pool <= 0) { ^ 0; };
+  ?(reserved < 0) { ^ 0; };
+  ?(factor < 0) { ^ 0; };
+  ^ gnr_muldiv(factor, reserved, pool);
+}
+
+!gnr_use_elapsed(now: int, last: int, reserved: int, pool: int, factor: int) -> int {
+  ?(pool <= 0) { ^ 0; };
+  ?(reserved < 0) { ^ 0; };
+  ?(factor < 0) { ^ 0; };
+  ?(gnr_u_lt(now, last) == 1) { ^ 0; };
+  elapsed = now - last;
+  t = gnr_muldiv(factor, reserved, 1);
+  ^ gnr_muldiv(t, elapsed, pool);
+}
+
+!gnr_as_funding_fee(reserved: int, factor: int) -> int {
+  ?(reserved <= 0) { ^ 0; };
+  ?(factor <= 0) { ^ 0; };
+  ^ gnr_muldiv(reserved, factor, gnr_funding_prec());
+}
+
+!gnr_test_suite() -> int {
+  ?(gnr_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(gnr_next_rate(28800, 0, 28800, 50000000, 100000000, 0, 100, 10) != 50) { ^ -2; };
+  ?(gnr_next_rate(20000, 0, 28800, 50000000, 100000000, 0, 100, 10) != 0) { ^ -3; };
+  ?(gnr_ignore_interval(50000000, 100000000, 100) != 50) { ^ -4; };
+  ?(gnr_next_rate(86400, 0, 28800, 50000000, 100000000, 0, 100, 10) != 150) { ^ -5; };
+  ?(gnr_use_elapsed(86400, 0, 50000000, 100000000, 100) != 4320000) { ^ -6; };
+  ?(gnr_next_rate(28800, 0, 28800, 50000000, 100000000, 1, 100, 10) != 5) { ^ -7; };
+  ?(gnr_utilisation(50000000, 100000000) != 500000) { ^ -8; };
+  ?(gnr_as_funding_fee(50000000, 100) != 5000) { ^ -9; };
+  ?(gnr_next_rate(28800, 0, 28800, 50000000, 0, 0, 100, 10) != 0) { ^ -10; };
+  ?(gnr_next_rate(1000, 2000, 28800, 50000000, 100000000, 0, 100, 10) != 0) { ^ -11; };
+  ?(gnr_next_rate(1700000000, 0, 28800, 50000000, 100000000, 0, 100, 10) != 2951350) { ^ -12; };
+  ?(gnr_naive_mul_wrap(4000000000, 3000000000, 2000000000) != -3223372036) { ^ -13; };
+  ?(gnr_muldiv(4000000000, 3000000000, 2000000000) != 6000000000) { ^ -14; };
+  ?(gnr_next_rate(28800, 0, 28800, 0, 100000000, 0, 100, 10) != 0) { ^ -15; };
+  ?(gnr_intervals(20000, 0, 28800) != 0) { ^ -16; };
+  ?(gnr_intervals(86400, 0, 28800) != 3) { ^ -17; };
+  ^ 1;
+}
+
+=ex{
+  gnr_u_lt,
+  gnr_u_add_carry,
+  gnr_u_add_ok,
+  gnr_mask32,
+  gnr_funding_prec,
+  gnr_interval_8h,
+  gnr_muldiv_part,
+  gnr_muldiv,
+  gnr_naive_mul_wrap,
+  gnr_intervals,
+  gnr_factor,
+  gnr_next_rate,
+  gnr_utilisation,
+  gnr_ignore_interval,
+  gnr_use_elapsed,
+  gnr_as_funding_fee,
+  gnr_test_suite
+}

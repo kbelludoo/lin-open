@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: reject get_next_funding_rate / last_funding_times / stable_funding_rate_factor (GMX time-sliced utilization increment is a LIN port, not emit)"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,9 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "get_next_funding_rate") > 0) { ^"REJ_RUST_GMX_NEXTRATE" };
+  ?(rg_count_lit(body, "last_funding_times") > 0) { ^"REJ_RUST_GMX_NEXTRATE" };
+  ?(rg_count_lit(body, "stable_funding_rate_factor") > 0) { ^"REJ_RUST_GMX_NEXTRATE" };
   ^"OK";
 }
 
