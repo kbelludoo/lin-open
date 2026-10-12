@@ -1,0 +1,162 @@
+{
+  "schema": "LIN_UNISWAP_V3_TICK_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned TickMath.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned Uniswap/v3-core v1.0.0 matches fixture",
+      "note": "commit=e3589b192d0be27e100cd0daaf6c97204fdb1899 blob=378e44528caeb7fa0ce2f86b8a39f6d0785a0925"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of TickMath.sol",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-FN",
+      "status": "PASS",
+      "description": "pinned source contains getSqrtRatioAtTick and Q128 magic table",
+      "note": ""
+    },
+    {
+      "id": "NOT-OTHER-KERNEL",
+      "status": "PASS",
+      "description": "this pin is TickMath only (not SqrtPriceMath next-sqrt / amount-delta)",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree on Q32 tick table",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_uniswap_v3_tick.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler (tick rejects)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "v3t_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "12/12 ticks: C11 i128 == limbs == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "Python harness compared LIN to C11; suite locks Python-derived table",
+      "note": ""
+    },
+    {
+      "id": "NAIVE-INVERT",
+      "status": "PASS",
+      "description": "naive signed-i64 (Q32*Q32)/ratio wraps to 0; 128-bit invert yields tick+1 price",
+      "note": "naive=0 tick1=4295182039"
+    },
+    {
+      "id": "NAIVE-LINEAR",
+      "status": "PASS",
+      "description": "tick=8192 bit-table exceeds first-order Q*(1+tick/20000) (exponential vs linear)",
+      "note": "table=6469012455 linear=6054185900 delta=414826555"
+    },
+    {
+      "id": "FAIL-CLOSED",
+      "status": "PASS",
+      "description": "|tick|=16384 fail-closes to 0 (reduced 14-bit domain)",
+      "note": ""
+    },
+    {
+      "id": "TICK-0",
+      "status": "PASS",
+      "description": "tick 0 == Q32 (price 1.0), same as Uniswap getSqrtRatioAtTick(0)==2^96 in Q96",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes tick as an argument (no pool storage / assembly MSB)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv (naive i64 Q*Q wraps on invert)",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJ",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin fail-closes getSqrtRatioAtTick / 0xfffcb933 / >> 128",
+      "note": ""
+    },
+    {
+      "id": "RS-REJ",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes sqrt_ratio_at_tick / 0xfffcb933",
+      "note": ""
+    },
+    {
+      "id": "SOL-EMIT",
+      "status": "PASS",
+      "description": "sol_from_sol concatenates '=' + 'ex{' so C0 does not steal the export list",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on v3t_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after Solidity/Rust transpiler delta",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/Uniswap/v3-core",
+    "tag": "v1.0.0",
+    "commit": "e3589b192d0be27e100cd0daaf6c97204fdb1899",
+    "path": "contracts/libraries/TickMath.sol",
+    "git_blob_sha": "378e44528caeb7fa0ce2f86b8a39f6d0785a0925",
+    "file_sha256": "83cf64b2ca84001effd16e007b49bac5359143b6c3132bfe42907b2426a0c5f5",
+    "license": "GPL-2.0-or-later",
+    "license_note": "BUSL-1.1 Change Date 2023-04-01 elapsed"
+  },
+  "lin_clone": "src/lin_uniswap_v3_tick.lin",
+  "c11_oracle": "test/oracles/uniswap_v3_tick_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "q32": 4294967296,
+  "max_tick_reduced": 16383,
+  "tick1": 4295182039,
+  "tick8192": 6469012455,
+  "linear8192": 6054185900,
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-uniswap-v3-tick",
+  "not_claimed": [
+    "Q64.96 / uint160 / |tick|<=887272 mainnet parity",
+    "Uniswap V3 pool / SwapRouter / NFT replacement",
+    "getNextSqrtPriceFromInput / getAmount0Delta"
+  ]
+}
