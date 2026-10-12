@@ -1,0 +1,237 @@
+@LIN:L1c:0.2
+@AAVE_V3_HEALTH_FACTOR{
+  version=1
+  repo="aave/aave-v3-core"
+  source="contracts/protocol/libraries/logic/GenericLogic.sol + math/PercentageMath.sol + math/WadRayMath.sol"
+  license="MIT"
+  license_note="Upstream BUSL-1.1 Change Date 2023-01-27 elapsed; Change License MIT. This run is 2026-10-12. Tag v1.19.4."
+  commit="b74526a7bc67a3a117a1963fc871b3eb8cea8435"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_aave_percentMul_wadDiv_health_factor"
+  note="Not mainnet uint256. Not rayMul/rayDiv (RAY=1e27 exceeds i64). Not calculateUserAccountData storage/oracle walk. coll, lt/ltv, debt are arguments. (a*b+half)/d uses 128-bit product, fail-closed if a quotient exceeds uint64. debt==0 fail-closes 0 (Aave returns uint256.max). Skip-LT wadDiv and Liquity-style coll*WAD/debt are named rejected paths. Assembly percentMul/wadDiv are rejected by the Solidity transpiler."
+}
+
+!ahf_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!ahf_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(ahf_u_lt(s, a));
+}
+
+!ahf_mask32() -> int {
+  ^ 4294967295;
+}
+
+!ahf_wad() -> int {
+  ^ 1000000000000000000;
+}
+
+!ahf_pct() -> int {
+  ^ 10000;
+}
+
+!ahf_half_pct() -> int {
+  ^ 5000;
+}
+
+!ahf_muldiv_part(a: int, b: int, addend: int, d: int, want_rem: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(addend < 0) { ^ 0; };
+  m32 = ahf_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = ahf_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = ahf_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  lo2 = lo + addend;
+  ?(ahf_u_lt(lo2, lo) == 1) { hi = hi + 1; };
+  lo = lo2;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(ahf_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = ahf_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!ahf_muldiv(a: int, b: int, d: int) -> int {
+  ^ ahf_muldiv_part(a, b, 0, d, 0);
+}
+
+!ahf_muldiv_add(a: int, b: int, addend: int, d: int) -> int {
+  ^ ahf_muldiv_part(a, b, addend, d, 0);
+}
+
+!ahf_muldiv_rem(a: int, b: int, d: int) -> int {
+  ^ ahf_muldiv_part(a, b, 0, d, 1);
+}
+
+!ahf_percent_mul(value: int, percentage: int) -> int {
+  ?(value < 0) { ^ 0; };
+  ?(percentage < 0) { ^ 0; };
+  ^ ahf_muldiv_add(value, percentage, ahf_half_pct(), ahf_pct());
+}
+
+!ahf_percent_mul_floor(value: int, percentage: int) -> int {
+  ?(value < 0) { ^ 0; };
+  ?(percentage < 0) { ^ 0; };
+  ^ ahf_muldiv(value, percentage, ahf_pct());
+}
+
+!ahf_wad_div(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b <= 0) { ^ 0; };
+  half = _lia_ushr(b, 1);
+  ^ ahf_muldiv_add(a, ahf_wad(), half, b);
+}
+
+!ahf_wad_div_floor(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b <= 0) { ^ 0; };
+  ^ ahf_muldiv(a, ahf_wad(), b);
+}
+
+!ahf_no_debt(debt: int) -> int {
+  ?(debt == 0) { ^ 1; };
+  ^ 0;
+}
+
+!ahf_health(coll: int, lt: int, debt: int) -> int {
+  ?(coll < 0) { ^ 0; };
+  ?(lt < 0) { ^ 0; };
+  ?(debt <= 0) { ^ 0; };
+  adj = ahf_percent_mul(coll, lt);
+  ^ ahf_wad_div(adj, debt);
+}
+
+!ahf_skip_lt(coll: int, debt: int) -> int {
+  ?(coll < 0) { ^ 0; };
+  ?(debt <= 0) { ^ 0; };
+  ^ ahf_wad_div(coll, debt);
+}
+
+!ahf_liquity_icr(coll: int, debt: int) -> int {
+  ^ ahf_skip_lt(coll, debt);
+}
+
+!ahf_health_ok(coll: int, lt: int, debt: int) -> int {
+  ?(debt == 0) { ^ 1; };
+  hf = ahf_health(coll, lt, debt);
+  ?(ahf_u_lt(hf, ahf_wad()) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!ahf_skip_lt_ok(coll: int, debt: int) -> int {
+  ?(debt == 0) { ^ 1; };
+  hf = ahf_skip_lt(coll, debt);
+  ?(ahf_u_lt(hf, ahf_wad()) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!ahf_available(coll: int, ltv: int, debt: int) -> int {
+  ?(coll < 0) { ^ 0; };
+  ?(ltv < 0) { ^ 0; };
+  ?(debt < 0) { ^ 0; };
+  cap = ahf_percent_mul(coll, ltv);
+  ?(ahf_u_lt(cap, debt) == 1) { ^ 0; };
+  ^ (cap - debt);
+}
+
+!ahf_test_suite() -> int {
+  ?(ahf_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(ahf_muldiv(7, 9, 1) != 63) { ^ -2; };
+  ?(ahf_percent_mul(10000, 8000) != 8000) { ^ -3; };
+  ?(ahf_percent_mul(1, 5000) != 1) { ^ -4; };
+  ?(ahf_percent_mul_floor(1, 5000) != 0) { ^ -5; };
+  ?(ahf_percent_mul(1, 5000) == ahf_percent_mul_floor(1, 5000)) { ^ -6; };
+  ?(ahf_wad_div(8000, 5000) != 1600000000000000000) { ^ -7; };
+  ?(ahf_wad_div(2, 3) != 666666666666666667) { ^ -8; };
+  ?(ahf_wad_div_floor(2, 3) != 666666666666666666) { ^ -9; };
+  ?(ahf_health(10000, 8000, 5000) != 1600000000000000000) { ^ -10; };
+  ?(ahf_health(10000, 8000, 8500) != 941176470588235294) { ^ -11; };
+  ?(ahf_skip_lt(10000, 8500) != 1176470588235294118) { ^ -12; };
+  ?(ahf_u_lt(ahf_health(10000, 8000, 8500), ahf_wad()) != 1) { ^ -13; };
+  ?(ahf_u_lt(ahf_skip_lt(10000, 8500), ahf_wad()) != 0) { ^ -14; };
+  ?(ahf_health_ok(10000, 8000, 8500) != 0) { ^ -15; };
+  ?(ahf_skip_lt_ok(10000, 8500) != 1) { ^ -16; };
+  ?(ahf_available(10000, 7500, 1000) != 6500) { ^ -17; };
+  ?(ahf_available(10000, 7500, 8000) != 0) { ^ -18; };
+  ?(ahf_no_debt(0) != 1) { ^ -19; };
+  ?(ahf_health(10000, 8000, 0) != 0) { ^ -20; };
+  ?(ahf_percent_mul(10000, 0) != 0) { ^ -21; };
+  ?(ahf_muldiv(1000000000000000000, 1000000000000000000, 1) != 0) { ^ -22; };
+  ?(ahf_muldiv_rem(7, 9, 2) != 1) { ^ -23; };
+  ?(ahf_wad() != 1000000000000000000) { ^ -24; };
+  ?(ahf_pct() != 10000) { ^ -25; };
+  ?(ahf_health_ok(10000, 8000, 5000) != 1) { ^ -26; };
+  ?(ahf_liquity_icr(10000, 8500) != ahf_skip_lt(10000, 8500)) { ^ -27; };
+  ^ 1;
+}
+
+=ex{
+  ahf_u_lt,
+  ahf_u_add_carry,
+  ahf_mask32,
+  ahf_wad,
+  ahf_pct,
+  ahf_half_pct,
+  ahf_muldiv_part,
+  ahf_muldiv,
+  ahf_muldiv_add,
+  ahf_muldiv_rem,
+  ahf_percent_mul,
+  ahf_percent_mul_floor,
+  ahf_wad_div,
+  ahf_wad_div_floor,
+  ahf_no_debt,
+  ahf_health,
+  ahf_skip_lt,
+  ahf_liquity_icr,
+  ahf_health_ok,
+  ahf_skip_lt_ok,
+  ahf_available,
+  ahf_test_suite
+}

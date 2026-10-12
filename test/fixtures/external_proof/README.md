@@ -11,6 +11,10 @@ independent proof harness. They are **test fixtures**, not vendored libraries.
 | `qoi.h` | [phoboslab/qoi](https://github.com/phoboslab/qoi) | MIT |
 | `tinyexpr.c` | [codeplea/tinyexpr](https://github.com/codeplea/tinyexpr) | zlib |
 | `BaseJumpRateModelV2.sol` | [compound-finance/compound-protocol](https://github.com/compound-finance/compound-protocol) | BSD-3-Clause |
+| `PercentageMath.sol` | [aave/aave-v3-core](https://github.com/aave/aave-v3-core) v1.19.4 | MIT (BUSL Change Date 2023-01-27 elapsed) |
+| `WadRayMath.sol` | [aave/aave-v3-core](https://github.com/aave/aave-v3-core) v1.19.4 | MIT (BUSL Change Date 2023-01-27 elapsed) |
+| `GenericLogic.sol` | [aave/aave-v3-core](https://github.com/aave/aave-v3-core) v1.19.4 | MIT (BUSL Change Date 2023-01-27 elapsed) |
+| `AaveHealth.excerpt.sol` | verbatim snippets of the three Aave files above | MIT (same Change Date) |
 
 They are only pinned so an auditor can hash the exact bytes and, with `--fetch`,
 re-download them from the GitHub Contents API. No upstream code is compiled or

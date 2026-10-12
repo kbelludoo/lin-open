@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: reject percentMul( / .percentMul( (REJ_SOLIDITY_PERCENT_MUL), wadDiv( / .wadDiv( (REJ_SOLIDITY_WAD_DIV), wadMul( (REJ_SOLIDITY_WAD_MUL), rayMul( / rayDiv( / RAY / 1e27 / HALF_RAY (REJ_SOLIDITY_RAY), type(uint256).max (REJ_SOLIDITY_UINT_MAX), healthFactor (REJ_SOLIDITY_HEALTH), using  (REJ_SOLIDITY_USING). Aave V3 percentMul+wadDiv health factor is the named gate. Split '=' + 'ex{' emit. v2: emit LIN; expand 1eN; OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,21 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(sig, "using ") > 0) { ^"REJ_SOLIDITY_USING" };
+  ?(rg_count_lit(body, "using ") > 0) { ^"REJ_SOLIDITY_USING" };
+  ?(rg_count_lit(body, "percentMul(") > 0) { ^"REJ_SOLIDITY_PERCENT_MUL" };
+  ?(rg_count_lit(body, ".percentMul(") > 0) { ^"REJ_SOLIDITY_PERCENT_MUL" };
+  ?(rg_count_lit(body, "wadDiv(") > 0) { ^"REJ_SOLIDITY_WAD_DIV" };
+  ?(rg_count_lit(body, ".wadDiv(") > 0) { ^"REJ_SOLIDITY_WAD_DIV" };
+  ?(rg_count_lit(body, "wadMul(") > 0) { ^"REJ_SOLIDITY_WAD_MUL" };
+  ?(rg_count_lit(body, ".wadMul(") > 0) { ^"REJ_SOLIDITY_WAD_MUL" };
+  ?(rg_count_lit(body, "rayMul(") > 0) { ^"REJ_SOLIDITY_RAY" };
+  ?(rg_count_lit(body, "rayDiv(") > 0) { ^"REJ_SOLIDITY_RAY" };
+  ?(rg_count_lit(body, "HALF_RAY") > 0) { ^"REJ_SOLIDITY_RAY" };
+  ?(rg_count_lit(body, "1e27") > 0) { ^"REJ_SOLIDITY_RAY" };
+  ?(rg_count_lit(body, "RAY") > 0) { ^"REJ_SOLIDITY_RAY" };
+  ?(rg_count_lit(body, "type(uint256).max") > 0) { ^"REJ_SOLIDITY_UINT_MAX" };
+  ?(rg_count_lit(body, "healthFactor") > 0) { ^"REJ_SOLIDITY_HEALTH" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +79,14 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_pm = "function calculateAvailableBorrows(uint256 coll, uint256 debt, uint256 ltv) internal pure returns (uint256)";
+  body_pm = "return totalCollateralInBaseCurrency.percentMul(ltv);";
+  r4 = sol_reason(sig_pm, body_pm);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_PERCENT_MUL") == 0) { ^0 };
+  sig_wd = "function hf(uint256 coll, uint256 lt, uint256 debt) internal pure returns (uint256)";
+  body_wd = "return (coll.percentMul(lt)).wadDiv(debt);";
+  r5 = sol_reason(sig_wd, body_wd);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_PERCENT_MUL") == 0) { ^0 };
   ^1;
 }
 
@@ -317,7 +340,8 @@
     };
     i = i + 1;
   };
-  out = out + "=ex{";
+  out = out + "=";
+  out = out + "ex{";
   out = out + names;
   out = out + "}";
   out = out + rgs_ch(10);
@@ -334,6 +358,12 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  wrap = "function calculateAvailableBorrows(uint256 coll, uint256 debt, uint256 ltv) internal pure returns (uint256) { return coll.percentMul(ltv); }";
+  out2 = sol_from_sol(wrap);
+  ?(rg_count_lit(out2, "!calculateAvailableBorrows(") > 0) { ^0 };
+  hf = "function hf(uint256 coll, uint256 lt, uint256 debt) internal pure returns (uint256) { return (coll.percentMul(lt)).wadDiv(debt); }";
+  out3 = sol_from_sol(hf);
+  ?(rg_count_lit(out3, "!hf(") > 0) { ^0 };
   ^1;
 }
 
