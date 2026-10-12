@@ -1,0 +1,64 @@
+@RULEL:COMET_PV_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-COMET-PRESENT-PRINCIPAL"
+@TITLE="Clone-lin of Compound III presentValue/principalValue with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-comet-pv"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Compound III Comet present/principal math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for (a*b)/d and rem+1 ceil; Solidity uint256 is NOT claimed"
+  commercial_hook="Comet BASE_INDEX_SCALE is 1e15, not wad 1e18. A wallet that prices Comet balances with Compound V2 exchangeRate scale understates genesis present by 1000x (1000 vs 1 on principal=1000). Borrow principal ceils; supply principal floors — a liquidator using floor on both understates debt by 1 unit on present=1 index=3. Hidden indices become arguments. index==0 fail-closes 0. Not a TVL claim."
+}
+
+.u{
+  repo="https://github.com/compound-finance/comet"
+  commit="f766f51583c23acc33b2a7824654ef2029a96804"
+  path="contracts/CometCore.sol"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2025-12-31 elapsed; Change License GPL-2.0-or-later"
+  git_blob_sha="534f2701b6c8e683f9294112b0bcc23878d39fe6"
+  file_sha256="1d80f0d12c101d01c2e1f38e8662cfcf350299b1c78188f8c501bb1c51b5ec78"
+  fixture="test/fixtures/external_proof/CometCore.sol"
+}
+
+.l{
+  clone="src/lin_comet_pv.lin"
+  transpiler_delta="src/lin_from_solidity.lin v5: REJ_SOLIDITY_CAST (uint256(/uint104(/uint64(/int256(/int104()) / REJ_SOLIDITY_OVERFLOW_CEIL (+ baseBorrowIndex_ - 1 / + d - 1) / REJ_SOLIDITY_GETTER (baseSupplyIndex,/baseBorrowIndex,) / REJ_SOLIDITY_LIBCALL / REJ_SOLIDITY_POW256 / REJ_SOLIDITY_NICR_SCALE / REJ_SOLIDITY_USING / REJ_SOLIDITY_ETHER_UNIT; emit '=' + 'ex{'; src/lin_from_rust.lin v2 REJ_RUST_OVERFLOW_CEIL / REJ_RUST_DIV_CEIL"
+  improvement_1="hidden baseSupplyIndex/baseBorrowIndex become arguments"
+  improvement_2="BASE_INDEX_SCALE 1e15 named contrast vs Compound V2 wad 1e18 (1000x genesis misprice)"
+  improvement_3="borrow principal rem+1 ceil vs supply floor (not (x*scale+index-1)/index wrap)"
+  improvement_4="index==0: Solidity reverts; LIN fail-closes 0"
+  improvement_5="uint256(/uint104( casts rejected; 128-bit muldiv fail-closes quotient overflow"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/comet_pv_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_comet_pv.sh"
+}
+
+.p{
+  harness="test/prove_comet_pv_external.py"
+  evidence_json="examples/comet_pv/comet_pv_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-comet-pv"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet Comet / USDC market / PriceFeed parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production Comet replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Compound III, Aave, Uniswap, or the EVM"
+  not_claimed_6="TVL or live liquidation profit"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
