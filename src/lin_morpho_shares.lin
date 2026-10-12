@@ -1,0 +1,259 @@
+@LIN:L1c:0.2
+@MORPHO_BLUE_SHARES_MATH{
+  version=1
+  repo="morpho-org/morpho-blue"
+  source="src/libraries/SharesMathLib.sol"
+  math="src/libraries/MathLib.sol"
+  license="GPL-2.0-or-later"
+  tag="v1.0.0"
+  commit="55d2d99304fb3fb930c688462ae2ccabb1d533ad"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_morpho_virtual_shares_with_128bit_muldiv"
+  note="Not Solidity uint256. Morpho uses VIRTUAL_SHARES=1e6 and VIRTUAL_ASSETS=1. LIN makes those offsets arguments-visible, uses a 128-bit schoolbook product, and fail-closes to 0 on div0/overflow. mulDivUp is remainder+1, not x*y+(d-1) wrap. Named contrast vs OZ ERC-4626 offset-0 (virtual shares=1, assets=1)."
+}
+
+!msh_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!msh_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(msh_u_lt(s, a));
+}
+
+!msh_u_add_ok(a: int, b: int) -> int {
+  s = a + b;
+  ?(msh_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!msh_mask32() -> int {
+  ^ 4294967295;
+}
+
+!msh_ok_nn(v: int) -> int {
+  ?(v < 0) { ^ 0; };
+  ^ 1;
+}
+
+!msh_virtual_shares() -> int {
+  ^ 1000000;
+}
+
+!msh_virtual_assets() -> int {
+  ^ 1;
+}
+
+!msh_oz_virtual_shares() -> int {
+  ^ 1;
+}
+
+!msh_oz_virtual_assets() -> int {
+  ^ 1;
+}
+
+!msh_muldiv_part(a: int, b: int, d: int, want: int) -> int {
+  ?(d == 0) { ^ 0; };
+  m32 = msh_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = msh_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = msh_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(msh_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = msh_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want == 1) { ^ r_lo; };
+  ?(want == 2) { ^ ov; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!msh_floor(x: int, y: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(msh_ok_nn(x) == 0) { ^ 0; };
+  ?(msh_ok_nn(y) == 0) { ^ 0; };
+  ^ msh_muldiv_part(x, y, d, 0);
+}
+
+!msh_rem(x: int, y: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(msh_ok_nn(x) == 0) { ^ 0; };
+  ?(msh_ok_nn(y) == 0) { ^ 0; };
+  ^ msh_muldiv_part(x, y, d, 1);
+}
+
+!msh_ov(x: int, y: int, d: int) -> int {
+  ?(d == 0) { ^ 1; };
+  ?(msh_ok_nn(x) == 0) { ^ 1; };
+  ?(msh_ok_nn(y) == 0) { ^ 1; };
+  ^ msh_muldiv_part(x, y, d, 2);
+}
+
+!msh_ceil(x: int, y: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(msh_ok_nn(x) == 0) { ^ 0; };
+  ?(msh_ok_nn(y) == 0) { ^ 0; };
+  ?(msh_muldiv_part(x, y, d, 2) == 1) { ^ 0; };
+  q = msh_muldiv_part(x, y, d, 0);
+  r = msh_muldiv_part(x, y, d, 1);
+  ?(r == 0) { ^ q; };
+  ?(msh_u_add_ok(q, 1) == 0) { ^ 0; };
+  ^ q + 1;
+}
+
+!msh_virt_ok(total_assets: int, total_shares: int, virt_a: int, virt_s: int) -> int {
+  ?(msh_ok_nn(total_assets) == 0) { ^ 0; };
+  ?(msh_ok_nn(total_shares) == 0) { ^ 0; };
+  ?(msh_ok_nn(virt_a) == 0) { ^ 0; };
+  ?(msh_ok_nn(virt_s) == 0) { ^ 0; };
+  ?(msh_u_add_ok(total_assets, virt_a) == 0) { ^ 0; };
+  ?(msh_u_add_ok(total_shares, virt_s) == 0) { ^ 0; };
+  ^ 1;
+}
+
+!msh_to_shares_down_off(assets: int, total_assets: int, total_shares: int, virt_a: int, virt_s: int) -> int {
+  ?(msh_ok_nn(assets) == 0) { ^ 0; };
+  ?(msh_virt_ok(total_assets, total_shares, virt_a, virt_s) == 0) { ^ 0; };
+  ^ msh_floor(assets, total_shares + virt_s, total_assets + virt_a);
+}
+
+!msh_to_assets_down_off(shares: int, total_assets: int, total_shares: int, virt_a: int, virt_s: int) -> int {
+  ?(msh_ok_nn(shares) == 0) { ^ 0; };
+  ?(msh_virt_ok(total_assets, total_shares, virt_a, virt_s) == 0) { ^ 0; };
+  ^ msh_floor(shares, total_assets + virt_a, total_shares + virt_s);
+}
+
+!msh_to_shares_up_off(assets: int, total_assets: int, total_shares: int, virt_a: int, virt_s: int) -> int {
+  ?(msh_ok_nn(assets) == 0) { ^ 0; };
+  ?(msh_virt_ok(total_assets, total_shares, virt_a, virt_s) == 0) { ^ 0; };
+  ^ msh_ceil(assets, total_shares + virt_s, total_assets + virt_a);
+}
+
+!msh_to_assets_up_off(shares: int, total_assets: int, total_shares: int, virt_a: int, virt_s: int) -> int {
+  ?(msh_ok_nn(shares) == 0) { ^ 0; };
+  ?(msh_virt_ok(total_assets, total_shares, virt_a, virt_s) == 0) { ^ 0; };
+  ^ msh_ceil(shares, total_assets + virt_a, total_shares + virt_s);
+}
+
+!msh_to_shares_down(assets: int, total_assets: int, total_shares: int) -> int {
+  ^ msh_to_shares_down_off(assets, total_assets, total_shares, msh_virtual_assets(), msh_virtual_shares());
+}
+
+!msh_to_assets_down(shares: int, total_assets: int, total_shares: int) -> int {
+  ^ msh_to_assets_down_off(shares, total_assets, total_shares, msh_virtual_assets(), msh_virtual_shares());
+}
+
+!msh_to_shares_up(assets: int, total_assets: int, total_shares: int) -> int {
+  ^ msh_to_shares_up_off(assets, total_assets, total_shares, msh_virtual_assets(), msh_virtual_shares());
+}
+
+!msh_to_assets_up(shares: int, total_assets: int, total_shares: int) -> int {
+  ^ msh_to_assets_up_off(shares, total_assets, total_shares, msh_virtual_assets(), msh_virtual_shares());
+}
+
+!msh_oz_to_shares_down(assets: int, total_assets: int, total_shares: int) -> int {
+  ^ msh_to_shares_down_off(assets, total_assets, total_shares, msh_oz_virtual_assets(), msh_oz_virtual_shares());
+}
+
+!msh_oz_to_assets_down(shares: int, total_assets: int, total_shares: int) -> int {
+  ^ msh_to_assets_down_off(shares, total_assets, total_shares, msh_oz_virtual_assets(), msh_oz_virtual_shares());
+}
+
+!msh_test_suite() -> int {
+  ?(msh_floor(100, 200, 50) != 400) { ^ -1; };
+  ?(msh_floor(7, 9, 2) != 31) { ^ -2; };
+  ?(msh_rem(7, 9, 2) != 1) { ^ -3; };
+  ?(msh_ceil(7, 9, 2) != 32) { ^ -4; };
+  ?(msh_floor(1000000000000000000, 1, 2) != 500000000000000000) { ^ -5; };
+  ?(msh_floor(1000000000000000000, 1000000000000000000, 1) != 0) { ^ -6; };
+  ?(msh_ov(1000000000000000000, 1000000000000000000, 1) != 1) { ^ -7; };
+  ?(msh_virtual_shares() != 1000000) { ^ -8; };
+  ?(msh_virtual_assets() != 1) { ^ -9; };
+  ?(msh_to_shares_down(1000, 0, 0) != 1000000000) { ^ -10; };
+  ?(msh_to_shares_down(1, 0, 0) != 1000000) { ^ -11; };
+  ?(msh_to_assets_down(1000000, 0, 0) != 1) { ^ -12; };
+  ?(msh_oz_to_shares_down(1000, 0, 0) != 1000) { ^ -13; };
+  ?(msh_oz_to_shares_down(1, 0, 0) != 1) { ^ -14; };
+  ?(msh_to_shares_down(1000000, 1000001, 1000000) != 1999996) { ^ -15; };
+  ?(msh_oz_to_shares_down(1000000, 1000001, 1) != 1) { ^ -16; };
+  ?(msh_to_shares_down(1000, 5000, 2000) != 200359) { ^ -17; };
+  ?(msh_to_assets_down(200359, 5000, 2000) != 999) { ^ -18; };
+  ?(msh_to_shares_up(1000, 5000, 2000) != 200360) { ^ -19; };
+  ?(msh_to_assets_up(1, 3, 100) != 1) { ^ -20; };
+  ?(msh_to_assets_down(1, 3, 100) != 0) { ^ -21; };
+  ?(msh_to_shares_down(-1, 0, 0) != 0) { ^ -22; };
+  ?(msh_floor(7, 9, 0) != 0) { ^ -23; };
+  ?(msh_ceil(7, 9, 0) != 0) { ^ -24; };
+  ^ 1;
+}
+
+=ex{
+  msh_u_lt,
+  msh_u_add_carry,
+  msh_u_add_ok,
+  msh_mask32,
+  msh_ok_nn,
+  msh_virtual_shares,
+  msh_virtual_assets,
+  msh_oz_virtual_shares,
+  msh_oz_virtual_assets,
+  msh_muldiv_part,
+  msh_floor,
+  msh_rem,
+  msh_ov,
+  msh_ceil,
+  msh_virt_ok,
+  msh_to_shares_down_off,
+  msh_to_assets_down_off,
+  msh_to_shares_up_off,
+  msh_to_assets_up_off,
+  msh_to_shares_down,
+  msh_to_assets_down,
+  msh_to_shares_up,
+  msh_to_assets_up,
+  msh_oz_to_shares_down,
+  msh_oz_to_assets_down,
+  msh_test_suite
+}
