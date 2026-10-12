@@ -1,0 +1,172 @@
+{
+  "schema": "LIN_SOLIDLY_CUBIC_K_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned BaseV1-core.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned transmissions11/solidly matches fixture",
+      "note": "commit=a71fe0dc42925709e138d5f1c9ecc4b2a2f3acf5 blob=5827d9fdff7442b4075cd0e0b7f236719e0d017c"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of contracts/BaseV1-core.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (k / Newton / wrap / fee)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_solidly_k.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "sld_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "17/17 vectors: C11 i128 == LIN vm == Python bigint",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "17/17 vectors: Python wrapping-int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "CUBIC-VS-XY",
+      "status": "PASS",
+      "description": "stable 10k-on-1e6/1e6 = 9997; volatile xy path = 9900",
+      "note": ""
+    },
+    {
+      "id": "PEG-VS-IMBAL",
+      "status": "PASS",
+      "description": "imbalanced 1.2e6/0.8e6 stable out=9827 vs volatile 6610",
+      "note": ""
+    },
+    {
+      "id": "NAIVE-WRAP",
+      "status": "PASS",
+      "description": "naive i64 (5e9*5e9)/1e6 wraps to 6553255926290; 128-bit muldiv=25000000000000",
+      "note": ""
+    },
+    {
+      "id": "FEE-1BPS",
+      "status": "PASS",
+      "description": "Solidly 1 bps: apply_fee(10000,1)=9999",
+      "note": ""
+    },
+    {
+      "id": "K-EQUAL",
+      "status": "PASS",
+      "description": "k_stable(1e6,1e6)=2e6; k_vol=1e12 (different scale, same Pair)",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on sld_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes amount/reserves/stable/fee as arguments (no pair storage)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv for (x*x)/WAD and Newton dy",
+      "note": ""
+    },
+    {
+      "id": "WAD6-NOT-18",
+      "status": "PASS",
+      "description": "WAD'=1e6 used; sequential 1e18 cubes overflow signed i64",
+      "note": ""
+    },
+    {
+      "id": "NOT-SADDLE",
+      "status": "PASS",
+      "description": "kernel is Solidly x3y+y3x Newton, not a Saddle/Curve getD port",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects _k / _get_y / x3y+y3x",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects _get_y / x3y",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/transmissions11/solidly",
+    "commit": "a71fe0dc42925709e138d5f1c9ecc4b2a2f3acf5",
+    "path": "contracts/BaseV1-core.sol",
+    "git_blob_sha": "5827d9fdff7442b4075cd0e0b7f236719e0d017c",
+    "file_sha256": "24f7939bf6e030f59889de6b4bad40e0814e910137044b8661d776ee6b33e59f",
+    "license": "MIT",
+    "commercial_descendants": "Velodrome (Optimism) / Aerodrome (Base) inherit this cubic k"
+  },
+  "lin_clone": "src/lin_solidly_k.lin",
+  "c11_oracle": "test/oracles/solidly_k_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "q_scale": "WAD'=1e6 (not 1e18)",
+  "goldens": {
+    "k_stable_1e6": 2000000,
+    "k_stable_2e6": 32000000,
+    "k_vol_1e6": 1000000000000,
+    "out_stable_10k": 9997,
+    "out_vol_10k": 9900,
+    "out_stable_10k_fee0": 9999,
+    "out_vol_1e6_4e6": 39600,
+    "out_stable_1e5": 99939,
+    "out_imbal_stable": 9827,
+    "out_imbal_vol": 6610,
+    "naive_wrap_5e9": 6553255926290,
+    "wide_sq_5e9": 25000000000000
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-solidly-k"
+}
