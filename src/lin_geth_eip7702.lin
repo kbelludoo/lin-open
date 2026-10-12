@@ -1,0 +1,228 @@
+@LIN:L1c:0.2
+@GETH_EIP7702{
+  version=1
+  repo="ethereum/go-ethereum"
+  source="core/vm/operations_acl.go + core/types/tx_setcode.go"
+  license="LGPL-3.0"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="scalar_geth_makeCallVariantGasCallEIP7702_vs_2929"
+  note="Not a Geth node. 7702 precharges Berlin 2500 for a cold call target PLUS 100/2600 for ParseDelegation target, then EIP-150 63/64, then adds the precharge back. kind extras match CALL/CALLCODE/DELEGATE/STATIC. Cmem and CallStipend out of scope."
+}
+
+!e7702_kind_call() -> int { ^ 0; }
+!e7702_kind_callcode() -> int { ^ 1; }
+!e7702_kind_delegate() -> int { ^ 2; }
+!e7702_kind_static() -> int { ^ 3; }
+!e7702_warm() -> int { ^ 100; }
+!e7702_cold() -> int { ^ 2600; }
+!e7702_surcharge_amt() -> int { ^ e7702_cold() - e7702_warm(); }
+!e7702_value_gas() -> int { ^ 9000; }
+!e7702_new_acct_gas() -> int { ^ 25000; }
+!e7702_designator_len() -> int { ^ 23; }
+
+!e7702_ok_nonneg(v: int) -> int {
+  ?(v < 0) { ^ 0; };
+  ^ 1;
+}
+
+!e7702_ok_flag(v: int) -> int {
+  ?(v == 0) { ^ 1; };
+  ?(v == 1) { ^ 1; };
+  ^ 0;
+}
+
+!e7702_ok_kind(k: int) -> int {
+  ?(k == 0) { ^ 1; };
+  ?(k == 1) { ^ 1; };
+  ?(k == 2) { ^ 1; };
+  ?(k == 3) { ^ 1; };
+  ^ 0;
+}
+
+!e7702_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!e7702_parse_ok(code_len: int, prefix_ok: int) -> int {
+  ?(e7702_ok_nonneg(code_len) == 0) { ^ 0; };
+  ?(e7702_ok_flag(prefix_ok) == 0) { ^ 0; };
+  ?(code_len != e7702_designator_len()) { ^ 0; };
+  ?(prefix_ok == 0) { ^ 0; };
+  ^ 1;
+}
+
+!e7702_precharge(addr_cold: int, is_del: int, target_cold: int) -> int {
+  ?(e7702_ok_flag(addr_cold) == 0) { ^ 0; };
+  ?(e7702_ok_flag(is_del) == 0) { ^ 0; };
+  ?(e7702_ok_flag(target_cold) == 0) { ^ 0; };
+  p = 0;
+  ?(addr_cold == 1) { p = e7702_surcharge_amt(); };
+  ?(is_del == 0) { ^ p; };
+  ?(target_cold == 1) { ^ p + e7702_cold(); };
+  ^ p + e7702_warm();
+}
+
+!e7702_extra(kind: int, transfers: int, new_acct: int, memory_gas: int) -> int {
+  ?(e7702_ok_kind(kind) == 0) { ^ 0; };
+  ?(e7702_ok_flag(transfers) == 0) { ^ 0; };
+  ?(e7702_ok_flag(new_acct) == 0) { ^ 0; };
+  ?(e7702_ok_nonneg(memory_gas) == 0) { ^ 0; };
+  g = memory_gas;
+  ?(kind == 2) { ^ g; };
+  ?(kind == 3) { ^ g; };
+  ?(kind == 1) {
+    ?(transfers == 1) {
+      s = g + e7702_value_gas();
+      ?(e7702_u_lt(s, g) == 1) { ^ 0; };
+      ^ s;
+    };
+    ^ g;
+  };
+  ?(transfers == 1) {
+    s2 = g + e7702_value_gas();
+    ?(e7702_u_lt(s2, g) == 1) { ^ 0; };
+    g = s2;
+    ?(new_acct == 1) {
+      s3 = g + e7702_new_acct_gas();
+      ?(e7702_u_lt(s3, g) == 1) { ^ 0; };
+      g = s3;
+    };
+  };
+  ^ g;
+}
+
+!e7702_forward(available: int, base: int, requested: int) -> int {
+  ?(e7702_ok_nonneg(available) == 0) { ^ 0; };
+  ?(e7702_ok_nonneg(base) == 0) { ^ 0; };
+  ?(e7702_ok_nonneg(requested) == 0) { ^ 0; };
+  ?(e7702_u_lt(available, base) == 1) { ^ 0; };
+  left = available - base;
+  cap = left - (left / 64);
+  ?(e7702_u_lt(requested, cap) == 1) { ^ requested; };
+  ^ cap;
+}
+
+!e7702_ok_args(kind: int, available: int, requested: int, memory_gas: int, transfers: int, new_acct: int, addr_cold: int, is_del: int, target_cold: int) -> int {
+  ?(e7702_ok_kind(kind) == 0) { ^ 0; };
+  ?(e7702_ok_nonneg(available) == 0) { ^ 0; };
+  ?(e7702_ok_nonneg(requested) == 0) { ^ 0; };
+  ?(e7702_ok_nonneg(memory_gas) == 0) { ^ 0; };
+  ?(e7702_ok_flag(transfers) == 0) { ^ 0; };
+  ?(e7702_ok_flag(new_acct) == 0) { ^ 0; };
+  ?(e7702_ok_flag(addr_cold) == 0) { ^ 0; };
+  ?(e7702_ok_flag(is_del) == 0) { ^ 0; };
+  ?(e7702_ok_flag(target_cold) == 0) { ^ 0; };
+  pre = e7702_precharge(addr_cold, is_del, target_cold);
+  ?(e7702_u_lt(available, pre) == 1) { ^ 0; };
+  avail2 = available - pre;
+  ex = e7702_extra(kind, transfers, new_acct, memory_gas);
+  ?(e7702_u_lt(avail2, ex) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!e7702_dynamic(kind: int, available: int, requested: int, memory_gas: int, transfers: int, new_acct: int, addr_cold: int, is_del: int, target_cold: int) -> int {
+  ?(e7702_ok_args(kind, available, requested, memory_gas, transfers, new_acct, addr_cold, is_del, target_cold) == 0) { ^ 0; };
+  pre = e7702_precharge(addr_cold, is_del, target_cold);
+  avail2 = available - pre;
+  ex = e7702_extra(kind, transfers, new_acct, memory_gas);
+  f = e7702_forward(avail2, ex, requested);
+  s = ex + f;
+  ?(e7702_u_lt(s, ex) == 1) { ^ 0; };
+  out = s + pre;
+  ?(e7702_u_lt(out, s) == 1) { ^ 0; };
+  ^ out;
+}
+
+!e7702_total(kind: int, available: int, requested: int, memory_gas: int, transfers: int, new_acct: int, addr_cold: int, is_del: int, target_cold: int) -> int {
+  ?(e7702_ok_args(kind, available, requested, memory_gas, transfers, new_acct, addr_cold, is_del, target_cold) == 0) { ^ 0; };
+  d = e7702_dynamic(kind, available, requested, memory_gas, transfers, new_acct, addr_cold, is_del, target_cold);
+  s = e7702_warm() + d;
+  ?(e7702_u_lt(s, d) == 1) { ^ 0; };
+  ^ s;
+}
+
+!e7702_forwarded(kind: int, available: int, requested: int, memory_gas: int, transfers: int, new_acct: int, addr_cold: int, is_del: int, target_cold: int) -> int {
+  ?(e7702_ok_args(kind, available, requested, memory_gas, transfers, new_acct, addr_cold, is_del, target_cold) == 0) { ^ 0; };
+  pre = e7702_precharge(addr_cold, is_del, target_cold);
+  avail2 = available - pre;
+  ex = e7702_extra(kind, transfers, new_acct, memory_gas);
+  ^ e7702_forward(avail2, ex, requested);
+}
+
+!e7702_vs_2929(kind: int, available: int, requested: int, memory_gas: int, transfers: int, new_acct: int, addr_cold: int, is_del: int, target_cold: int) -> int {
+  ?(e7702_ok_args(kind, available, requested, memory_gas, transfers, new_acct, addr_cold, 0, 0) == 0) { ^ 0; };
+  ?(e7702_ok_args(kind, available, requested, memory_gas, transfers, new_acct, addr_cold, is_del, target_cold) == 0) { ^ 0; };
+  ^ e7702_dynamic(kind, available, requested, memory_gas, transfers, new_acct, addr_cold, is_del, target_cold) - e7702_dynamic(kind, available, requested, memory_gas, transfers, new_acct, addr_cold, 0, 0);
+}
+
+!e7702_test_suite() -> int {
+  ?(e7702_warm() != 100) { ^ -1; };
+  ?(e7702_surcharge_amt() != 2500) { ^ -2; };
+  ?(e7702_parse_ok(23, 1) != 1) { ^ -3; };
+  ?(e7702_parse_ok(22, 1) != 0) { ^ -4; };
+  ?(e7702_parse_ok(23, 0) != 0) { ^ -5; };
+  ?(e7702_precharge(0, 0, 0) != 0) { ^ -6; };
+  ?(e7702_precharge(1, 0, 0) != 2500) { ^ -7; };
+  ?(e7702_precharge(0, 1, 0) != 100) { ^ -8; };
+  ?(e7702_precharge(0, 1, 1) != 2600) { ^ -9; };
+  ?(e7702_precharge(1, 1, 1) != 5100) { ^ -10; };
+  ?(e7702_extra(0, 1, 1, 0) != 34000) { ^ -11; };
+  ?(e7702_extra(1, 1, 1, 0) != 9000) { ^ -12; };
+  ?(e7702_extra(2, 1, 1, 0) != 0) { ^ -13; };
+  ?(e7702_dynamic(0, 64000, 1000000, 0, 0, 0, 0, 0, 0) != 63000) { ^ -14; };
+  ?(e7702_dynamic(0, 64000, 1000000, 0, 0, 0, 1, 0, 0) != 63040) { ^ -15; };
+  ?(e7702_dynamic(0, 64000, 1000000, 0, 0, 0, 0, 1, 0) != 63002) { ^ -16; };
+  ?(e7702_dynamic(0, 64000, 1000000, 0, 0, 0, 0, 1, 1) != 63041) { ^ -17; };
+  ?(e7702_dynamic(0, 64000, 1000000, 0, 0, 0, 1, 1, 1) != 63080) { ^ -18; };
+  ?(e7702_dynamic(0, 64000, 1000000, 0, 0, 0, 1, 1, 0) != 63041) { ^ -19; };
+  ?(e7702_vs_2929(0, 64000, 1000000, 0, 0, 0, 0, 1, 0) != 2) { ^ -20; };
+  ?(e7702_vs_2929(0, 64000, 1000000, 0, 0, 0, 0, 1, 1) != 41) { ^ -21; };
+  ?(e7702_vs_2929(0, 64000, 1000000, 0, 0, 0, 1, 1, 1) != 40) { ^ -22; };
+  ?(e7702_vs_2929(0, 64000, 1000000, 0, 0, 0, 1, 1, 0) != 1) { ^ -23; };
+  ?(e7702_dynamic(0, 100000, 1000000, 0, 1, 1, 0, 1, 1) != 99010) { ^ -24; };
+  ?(e7702_vs_2929(0, 100000, 1000000, 0, 1, 1, 0, 1, 1) != 41) { ^ -25; };
+  ?(e7702_dynamic(3, 100000, 1000000, 0, 1, 1, 0, 1, 1) != 98479) { ^ -26; };
+  ?(e7702_dynamic(0, 64000, 1000, 0, 0, 0, 0, 1, 1) != 3600) { ^ -27; };
+  ?(e7702_vs_2929(0, 64000, 1000, 0, 0, 0, 0, 1, 1) != 2600) { ^ -28; };
+  ?(e7702_dynamic(0, 2599, 0, 0, 0, 0, 0, 1, 1) != 0) { ^ -29; };
+  ?(e7702_dynamic(0, 99, 0, 0, 0, 0, 0, 1, 0) != 0) { ^ -30; };
+  ?(e7702_dynamic(0, 2499, 0, 0, 0, 0, 1, 0, 0) != 0) { ^ -31; };
+  ?(e7702_dynamic(4, 64000, 0, 0, 0, 0, 0, 0, 0) != 0) { ^ -32; };
+  ?(e7702_dynamic(0, -1, 0, 0, 0, 0, 0, 0, 0) != 0) { ^ -33; };
+  ?(e7702_total(0, 64000, 1000000, 0, 0, 0, 0, 1, 1) != 63141) { ^ -34; };
+  ?(e7702_dynamic(1, 64000, 1000000, 0, 1, 0, 0, 1, 1) != 63182) { ^ -35; };
+  ^ 1;
+}
+
+=ex{
+  e7702_kind_call,
+  e7702_kind_callcode,
+  e7702_kind_delegate,
+  e7702_kind_static,
+  e7702_warm,
+  e7702_cold,
+  e7702_surcharge_amt,
+  e7702_value_gas,
+  e7702_new_acct_gas,
+  e7702_designator_len,
+  e7702_ok_nonneg,
+  e7702_ok_flag,
+  e7702_ok_kind,
+  e7702_u_lt,
+  e7702_parse_ok,
+  e7702_precharge,
+  e7702_extra,
+  e7702_forward,
+  e7702_ok_args,
+  e7702_dynamic,
+  e7702_total,
+  e7702_forwarded,
+  e7702_vs_2929,
+  e7702_test_suite
+}

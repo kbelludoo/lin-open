@@ -1,0 +1,65 @@
+@RULEL:GETH_EIP7702_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GETH-EIP7702"
+@TITLE="Clone-lin of Geth makeCallVariantGasCallEIP7702 / ParseDelegation with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-10-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-geth-eip7702"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Geth Pectra CALL/CALLCODE/DELEGATE/STATIC 7702 dynamic gas into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="i64-scale available/requested/memory_gas; Geth uint64 + StateDB + []byte code are NOT claimed"
+  commercial_hook="a fee estimator that prices 7702 delegated CALL as 2929 CALL is wrong: the extra 100/2600 is charged before EIP-150, so 63/64-bound delta is +2/+41 and requested-bound delta is the full 2600"
+}
+
+.u{
+  repo="https://github.com/ethereum/go-ethereum"
+  tag="v1.16.9"
+  commit="95665d5703e1023995a0ff93e4ce9eb77e8a59bd"
+  path="core/vm/operations_acl.go"
+  git_blob_sha="085b018e4c42bf0185da790518ea1d1ee891b682"
+  file_sha256="213f7846ed039c8ab293eb9511383897497f52c971da014317d3e1b5b5dc5330"
+  parse_delegation="core/types/tx_setcode.go sha256 b9ba5d2fbbfa5a1a46e9edd7d00cbb6f0b651599da555744ece0f071f99273d6 blob f2281d4ae7662b9ab3def885e4e460867f1d25cd"
+  eips="core/vm/eips.go enable7702 sha256 306e3660bb3aa7e4c943b458191390b46ed754984462f6655a413740bc6c670c blob d7ed18648e6f09fcf1c3fcdf6b5ab37e480644a3"
+  license="LGPL-3.0"
+  fixture="test/fixtures/external_proof/gasCallEIP7702.go + parseDelegation.go + enable7702.go"
+}
+
+.l{
+  clone="src/lin_geth_eip7702.lin"
+  transpiler_delta="src/lin_from_go.lin v13: REJ_GO_CALL7702 before generic makeCallVariant; REJ_GO_EIP7702 ParseDelegation; scalar lift e7702Precharge; emit '=' + 'ex{'"
+  improvement_1="is_delegation + target_cold are explicit arguments; Geth closes over StateDB.GetCode + ParseDelegation"
+  improvement_2="delegation target cold charges 2600 (full ColdAccountAccessCost), not the 2500 Berlin leftover"
+  improvement_3="63/64-bound 64000-gas CALL: +2 warm target / +41 cold target vs 2929; requested-bound adds the full 2600"
+  improvement_4="fail-closed on bad kind, negatives, precharge>avail instead of wrapping"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/geth_eip7702_c11.c (gcc -O2 -std=c11) + test/oracles/geth_eip7702_go.go"
+  gate="python3 test/prove_geth_eip7702_external.py"
+}
+
+.p{
+  harness="test/prove_geth_eip7702_external.py"
+  evidence_json="examples/geth_eip7702/geth_eip7702_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-geth-eip7702"
+  goldens="warm-del-warm dyn=63002 vs2929=+2; warm-del-cold dyn=63041 vs2929=+41; req=1000 del-cold dyn=3600 vs2929=+2600"
+}
+
+.n{
+  not_claimed_1="LIN replaces go-ethereum or Ethereum consensus"
+  not_claimed_2="quadratic memoryGasCost / Cmem / CallStipend 2300"
+  not_claimed_3="EIP-4762 Verkle or byte-level code parsing"
+  not_claimed_4="uint256 / full-node parity"
+  not_claimed_5="Compiler 0 executes go_from_go string-literal emit (VM_REJ_STRING_LITERAL)"
+}
+
+.v{
+  method="PINNED_BYTES && PYTHON_BIGINT && C11 && GO && LIN_C0_VM && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

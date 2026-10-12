@@ -1,0 +1,287 @@
+{
+  "schema": "LIN_GETH_EIP7702_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned excerpts: 7702 wrapper + ParseDelegation 23-byte 0xef0100",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of go-ethereum v1.16.9 matches pinned sha256/blob",
+      "note": "commit=95665d5703e1023995a0ff93e4ce9eb77e8a59bd blob=085b018e4c42bf0185da790518ea1d1ee891b682"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of operations_acl.go + tx_setcode.go + eips.go",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 7702 goldens vs i64 fail-closed",
+      "note": ""
+    },
+    {
+      "id": "GO-SELFTEST",
+      "status": "PASS",
+      "description": "independent Go EIP-7702 goldens + fail-closed",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_geth_eip7702.lin",
+      "note": ""
+    },
+    {
+      "id": "GO-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Go transpiler v13 (REJ_GO_CALL7702 / REJ_GO_EIP7702)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "e7702_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "12/12 vectors: Python == C11 == Go == LIN vm (dynamic+total)",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "12/12 vectors: Python bigint 7702 table matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "VS-2929",
+      "status": "PASS",
+      "description": "naive 2929 copy is wrong: 63/64-bound +2 (warm target) / +41 (cold target)",
+      "note": ""
+    },
+    {
+      "id": "REQ-BOUND",
+      "status": "PASS",
+      "description": "requested-bound CALL: 7702-2929 = full 2600 (not 41)",
+      "note": ""
+    },
+    {
+      "id": "PARSE-OK",
+      "status": "PASS",
+      "description": "scalar ParseDelegation: len==23 && prefix_ok (no []byte)",
+      "note": ""
+    },
+    {
+      "id": "FAIL-CLOSED",
+      "status": "PASS",
+      "description": "bad kind, negatives, pre>avail fail-close to 0",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on e7702_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes kind+flags; pinned Geth reads StateDB+GetCode",
+      "note": ""
+    },
+    {
+      "id": "GO-CALL-REJ",
+      "status": "PASS",
+      "description": "lin_from_go.lin v13 rejects makeCallVariantGasCallEIP7702 / ParseDelegation",
+      "note": ""
+    },
+    {
+      "id": "GO-EX-SPLIT",
+      "status": "PASS",
+      "description": "go_from_go concatenates '=' + 'ex{' so C0 export parse is honest",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/ethereum/go-ethereum",
+    "tag": "v1.16.9",
+    "commit": "95665d5703e1023995a0ff93e4ce9eb77e8a59bd",
+    "path": "core/vm/operations_acl.go",
+    "git_blob_sha": "085b018e4c42bf0185da790518ea1d1ee891b682",
+    "file_sha256": "213f7846ed039c8ab293eb9511383897497f52c971da014317d3e1b5b5dc5330",
+    "license": "LGPL-3.0",
+    "constants": "CallValueTransferGas=9000 CallNewAccountGas=25000 ColdAccountAccessCostEIP2929=2600 WarmStorageReadCostEIP2929=100 7702 delegation target: warm=100 cold=2600 (full, not 2500) before EIP-150 63/64 from params/protocol_params.go blob e8b044f45016d851af2698e94c62937218c9d736; core/types/tx_setcode.go blob f2281d4ae7662b9ab3def885e4e460867f1d25cd sha256 b9ba5d2fbbfa5a1a46e9edd7d00cbb6f0b651599da555744ece0f071f99273d6; core/vm/eips.go blob d7ed18648e6f09fcf1c3fcdf6b5ab37e480644a3 sha256 306e3660bb3aa7e4c943b458191390b46ed754984462f6655a413740bc6c670c"
+  },
+  "lin_clone": "src/lin_geth_eip7702.lin",
+  "c11_oracle": "test/oracles/geth_eip7702_c11.c",
+  "go_oracle": "test/oracles/geth_eip7702_go.go",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-geth-eip7702",
+  "vectors": [
+    {
+      "kind": 0,
+      "available": 64000,
+      "requested": 1000000,
+      "memory_gas": 0,
+      "transfers": 0,
+      "new_acct": 0,
+      "addr_cold": 0,
+      "is_delegation": 0,
+      "target_cold": 0,
+      "dynamic": 63000,
+      "total": 63100
+    },
+    {
+      "kind": 0,
+      "available": 64000,
+      "requested": 1000000,
+      "memory_gas": 0,
+      "transfers": 0,
+      "new_acct": 0,
+      "addr_cold": 1,
+      "is_delegation": 0,
+      "target_cold": 0,
+      "dynamic": 63040,
+      "total": 63140
+    },
+    {
+      "kind": 0,
+      "available": 64000,
+      "requested": 1000000,
+      "memory_gas": 0,
+      "transfers": 0,
+      "new_acct": 0,
+      "addr_cold": 0,
+      "is_delegation": 1,
+      "target_cold": 0,
+      "dynamic": 63002,
+      "total": 63102
+    },
+    {
+      "kind": 0,
+      "available": 64000,
+      "requested": 1000000,
+      "memory_gas": 0,
+      "transfers": 0,
+      "new_acct": 0,
+      "addr_cold": 0,
+      "is_delegation": 1,
+      "target_cold": 1,
+      "dynamic": 63041,
+      "total": 63141
+    },
+    {
+      "kind": 0,
+      "available": 64000,
+      "requested": 1000000,
+      "memory_gas": 0,
+      "transfers": 0,
+      "new_acct": 0,
+      "addr_cold": 1,
+      "is_delegation": 1,
+      "target_cold": 1,
+      "dynamic": 63080,
+      "total": 63180
+    },
+    {
+      "kind": 0,
+      "available": 64000,
+      "requested": 1000000,
+      "memory_gas": 0,
+      "transfers": 0,
+      "new_acct": 0,
+      "addr_cold": 1,
+      "is_delegation": 1,
+      "target_cold": 0,
+      "dynamic": 63041,
+      "total": 63141
+    },
+    {
+      "kind": 0,
+      "available": 100000,
+      "requested": 1000000,
+      "memory_gas": 0,
+      "transfers": 1,
+      "new_acct": 1,
+      "addr_cold": 0,
+      "is_delegation": 1,
+      "target_cold": 1,
+      "dynamic": 99010,
+      "total": 99110
+    },
+    {
+      "kind": 0,
+      "available": 100000,
+      "requested": 1000000,
+      "memory_gas": 0,
+      "transfers": 1,
+      "new_acct": 1,
+      "addr_cold": 0,
+      "is_delegation": 0,
+      "target_cold": 0,
+      "dynamic": 98969,
+      "total": 99069
+    },
+    {
+      "kind": 3,
+      "available": 100000,
+      "requested": 1000000,
+      "memory_gas": 0,
+      "transfers": 1,
+      "new_acct": 1,
+      "addr_cold": 0,
+      "is_delegation": 1,
+      "target_cold": 1,
+      "dynamic": 98479,
+      "total": 98579
+    },
+    {
+      "kind": 0,
+      "available": 64000,
+      "requested": 1000,
+      "memory_gas": 0,
+      "transfers": 0,
+      "new_acct": 0,
+      "addr_cold": 0,
+      "is_delegation": 1,
+      "target_cold": 1,
+      "dynamic": 3600,
+      "total": 3700
+    },
+    {
+      "kind": 0,
+      "available": 2599,
+      "requested": 0,
+      "memory_gas": 0,
+      "transfers": 0,
+      "new_acct": 0,
+      "addr_cold": 0,
+      "is_delegation": 1,
+      "target_cold": 1,
+      "dynamic": 0,
+      "total": 0
+    },
+    {
+      "kind": 1,
+      "available": 64000,
+      "requested": 1000000,
+      "memory_gas": 0,
+      "transfers": 1,
+      "new_acct": 0,
+      "addr_cold": 0,
+      "is_delegation": 1,
+      "target_cold": 1,
+      "dynamic": 63182,
+      "total": 63282
+    }
+  ]
+}
