@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: reject .mulDiv*/.ceilDiv/SafeMath .mul/.div (REJ_SOLIDITY_LIBCALL), overflow-ceil x*y+(d-1), using-for, 1 ether (REJ_SOLIDITY_ETHER_UNIT), and hidden _getShareRate*/_getTotalPooledEther/_getTotalShares/getTotalETHBalance/getTotalRETHSupply/getContractAddress (REJ_SOLIDITY_GETTER). Rocket rETH and Lido stETH are the named gates. v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,25 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(sig, "using ") > 0) { ^"REJ_SOLIDITY_USING" };
+  ?(rg_count_lit(body, "using ") > 0) { ^"REJ_SOLIDITY_USING" };
+  ?(rg_count_lit(body, ".mulDivDown") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, ".mulDivUp") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, ".mulDiv(") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, ".ceilDiv") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, ".mul(") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, ".div(") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, "+ (d - 1)") > 0) { ^"REJ_SOLIDITY_OVERFLOW_CEIL" };
+  ?(rg_count_lit(body, "+ (d-1)") > 0) { ^"REJ_SOLIDITY_OVERFLOW_CEIL" };
+  ?(rg_count_lit(body, "1 ether") > 0) { ^"REJ_SOLIDITY_ETHER_UNIT" };
+  ?(rg_count_lit(body, " ether)") > 0) { ^"REJ_SOLIDITY_ETHER_UNIT" };
+  ?(rg_count_lit(body, "_getShareRateNumerator") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "_getShareRateDenominator") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "_getTotalPooledEther") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "_getTotalShares") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "getTotalETHBalance") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "getTotalRETHSupply") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "getContractAddress") > 0) { ^"REJ_SOLIDITY_GETTER" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -53,7 +72,7 @@
 
 !sol_parse_test_gate(): int {
   sig_ok = "function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut)";
-  body_ok = "require(amountIn > 0); uint amountInWithFee = amountIn.mul(997); return amountInWithFee;";
+  body_ok = "require(amountIn > 0); uint amountInWithFee = amountIn * 997; return amountInWithFee;";
   sig_bad = "function mint() external payable returns (bool)";
   body_bad = "require(msg.value > 0); return true;";
   r1 = sol_reason(sig_ok, body_ok);
@@ -64,6 +83,34 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_lib = "function toSharesDown(uint256 assets, uint256 totalAssets, uint256 totalShares) internal pure returns (uint256)";
+  body_lib = "return assets.mulDivDown(totalShares + VIRTUAL_SHARES, totalAssets + VIRTUAL_ASSETS);";
+  r4 = sol_reason(sig_lib, body_lib);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_LIBCALL") == 0) { ^0 };
+  sig_ceil = "function mulDivUp(uint256 x, uint256 y, uint256 d) internal pure returns (uint256)";
+  body_ceil = "return (x * y + (d - 1)) / d;";
+  r5 = sol_reason(sig_ceil, body_ceil);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_OVERFLOW_CEIL") == 0) { ^0 };
+  sig_lido = "function getSharesByPooledEth(uint256 _ethAmount) public view returns (uint256)";
+  body_lido = "return (_ethAmount * _getShareRateDenominator()) / _getShareRateNumerator();";
+  r6 = sol_reason(sig_lido, body_lido);
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_GETTER") == 0) { ^0 };
+  sig_cdiv = "function getPooledEthBySharesRoundUp(uint256 _sharesAmount) public view returns (uint256)";
+  body_cdiv = "return Math256.ceilDiv(_sharesAmount * numeratorInEther, denominatorInShares);";
+  r7 = sol_reason(sig_cdiv, body_cdiv);
+  ?(starts_lit(r7, 0, "REJ_SOLIDITY_LIBCALL") == 0) { ^0 };
+  sig_rp = "function getRethValue(uint256 _ethAmount) public view returns (uint256)";
+  body_rp = "uint256 totalEthBalance = rocketNetworkBalances.getTotalETHBalance(); return _ethAmount.mul(rethSupply).div(totalEthBalance);";
+  r8 = sol_reason(sig_rp, body_rp);
+  ?(starts_lit(r8, 0, "REJ_SOLIDITY_GETTER") == 0) { ^0 };
+  sig_eth = "function getExchangeRate() external view returns (uint256)";
+  body_eth = "return getEthValue(1 ether);";
+  r9 = sol_reason(sig_eth, body_eth);
+  ?(starts_lit(r9, 0, "REJ_SOLIDITY_ETHER_UNIT") == 0) { ^0 };
+  sig_sm = "function getEthValue(uint256 _rethAmount) public view returns (uint256)";
+  body_sm = "return _rethAmount.mul(totalEthBalance).div(rethSupply);";
+  r10 = sol_reason(sig_sm, body_sm);
+  ?(starts_lit(r10, 0, "REJ_SOLIDITY_LIBCALL") == 0) { ^0 };
   ^1;
 }
 
@@ -317,7 +364,8 @@
     };
     i = i + 1;
   };
-  out = out + "=ex{";
+  out = out + "=";
+  out = out + "ex{";
   out = out + names;
   out = out + "}";
   out = out + rgs_ch(10);
@@ -334,6 +382,18 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  lib = "function toSharesDown(uint assets, uint totalAssets, uint totalShares) internal pure returns (uint) { return assets.mulDivDown(totalShares + 1e6, totalAssets + 1); }";
+  out2 = sol_from_sol(lib);
+  ?(rg_count_lit(out2, "toSharesDown") > 0) { ^0 };
+  lido = "function getSharesByPooledEth(uint ethAmount) public view returns (uint) { return (ethAmount * _getShareRateDenominator()) / _getShareRateNumerator(); }";
+  out3 = sol_from_sol(lido);
+  ?(rg_count_lit(out3, "getSharesByPooledEth") > 0) { ^0 };
+  rp = "function getRethValue(uint ethAmount) public view returns (uint) { uint totalEthBalance = rocketNetworkBalances.getTotalETHBalance(); return ethAmount * rethSupply / totalEthBalance; }";
+  out4 = sol_from_sol(rp);
+  ?(rg_count_lit(out4, "getRethValue") > 0) { ^0 };
+  er = "function getExchangeRate() external view returns (uint) { return getEthValue(1 ether); }";
+  out5 = sol_from_sol(er);
+  ?(rg_count_lit(out5, "getExchangeRate") > 0) { ^0 };
   ^1;
 }
 

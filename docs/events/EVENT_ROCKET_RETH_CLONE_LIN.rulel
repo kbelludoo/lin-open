@@ -1,0 +1,64 @@
+@RULEL:ROCKET_RETH_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-ROCKET-RETH-EXCHANGE"
+@TITLE="Clone-lin of Rocket Pool getRethValue/getEthValue with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-rocket-reth"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Rocket Pool rETH exchange-rate math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for (a*b)/d; Solidity uint256 is NOT claimed"
+  commercial_hook="Empty rETH supply is 1:1. A wallet that prices empty LST deposits with Lido empty-div0 (0) or Morpho VIRTUAL_SHARES=1e6 mis-mints the first Rocket deposit. After 1-wei bootstrap + donation, Rocket and Lido both give the victim 0. Not a TVL claim."
+}
+
+.u{
+  repo="https://github.com/rocket-pool/rocketpool"
+  tag="v1.4"
+  commit="fb7d9c428dc3dddc3fbd3e634e3cb365655df89e"
+  path="contracts/contract/token/RocketTokenRETH.sol"
+  license="GPL-3.0-only"
+  git_blob_sha="6bc457cf3c364c69e169b133ebe7d48df6500562"
+  file_sha256="ae2d961e7ba87bf26b65ce1dcb02353393f3ef8944490e1a0f6ce941e4a25b7e"
+  fixture="test/fixtures/external_proof/RocketTokenRETH.sol"
+}
+
+.l{
+  clone="src/lin_rocket_reth.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_LIBCALL (.ceilDiv/.mulDiv*/SafeMath .mul/.div) / REJ_SOLIDITY_GETTER (Lido _getShareRate* + Rocket getTotalETHBalance/getTotalRETHSupply/getContractAddress) / REJ_SOLIDITY_OVERFLOW_CEIL / REJ_SOLIDITY_USING / REJ_SOLIDITY_ETHER_UNIT; emit '=' + 'ex{'; src/lin_from_rust.lin v2 REJ_RUST_OVERFLOW_CEIL / REJ_RUST_DIV_CEIL"
+  improvement_1="hidden getTotalETHBalance/getTotalRETHSupply/getContractAddress become arguments"
+  improvement_2="empty rethSupply is 1:1 (named contrast vs Lido empty-div0=0 and Morpho 1e6)"
+  improvement_3="totalEth==0 with supply>0: Solidity getRethValue reverts; LIN fail-closes to 0"
+  improvement_4="SafeMath .mul.div and 1 ether unit are rejected; LIN uses 128-bit muldiv and rrt_ether()"
+  improvement_5="getExchangeRate is getEthValue(1e18); 1e18*20/1 overflows uint64 and fail-closes"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/rocket_reth_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_rocket_reth.sh"
+}
+
+.p{
+  harness="test/prove_rocket_reth_external.py"
+  evidence_json="examples/rocket_reth/rocket_reth_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-rocket-reth"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet rETH / deposit-pool / minipool parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production staking-router replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Rocket Pool, Lido, Morpho, Uniswap, or the EVM"
+  not_claimed_6="TVL or live inflation-attack profit"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
