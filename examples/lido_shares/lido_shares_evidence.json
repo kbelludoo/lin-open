@@ -1,0 +1,149 @@
+{
+  "schema": "LIN_LIDO_SHARES_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned StETH.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "PIN-MATH-SHA256",
+      "status": "PASS",
+      "description": "pinned Math256.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned lido-dao v4.1.0 matches fixtures",
+      "note": "commit=1440c830eb1d0916a436468a71cd73bc8b8deffb"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of StETH.sol and Math256.sol",
+      "note": "b8c8d47f2571d018c938d994c4debf375b84b45a,366a014cf49523980e06ae7efb4cb3199589fc00"
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_lido_shares.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "lds_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "13/13 vectors: C11 == LIN vm == Python bigint",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "13/13 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "EMPTY-CONTRAST",
+      "status": "PASS",
+      "description": "empty protocol 1000 ETH: Lido 0 (div0 fail-closed) vs OZ +1/+1 1000 vs Morpho 1e9",
+      "note": ""
+    },
+    {
+      "id": "INFLATE-CONTRAST",
+      "status": "PASS",
+      "description": "after 1-wei bootstrap + 1e6-ETH donation, victim of 1e6 ETH gets 0 Lido shares vs 1 OZ vs 1999996 Morpho",
+      "note": "named contrast only; not a TVL or exploit claim"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (1e18*1e18) wraps; 128-bit muldiv fail-closes",
+      "note": "i64_wrap=-5527149226598858752"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on lds_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN lifts hidden _getShareRate* storage getters to arguments",
+      "note": ""
+    },
+    {
+      "id": "WIDE-CEIL",
+      "status": "PASS",
+      "description": "LIN ceil uses remainder+1 (not (a+b-1)/b wrap; matches OZ ceilDiv class)",
+      "note": ""
+    },
+    {
+      "id": "UINT128-CAP",
+      "status": "PASS",
+      "description": "upstream caps inputs at uint128 so uint128*uint128 fits uint256; LIN operands are uint64-scale",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects .ceilDiv / .mulDiv* and hidden share-rate getters",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects overflow-ceil / div_ceil",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/lidofinance/lido-dao",
+    "tag": "v4.1.0",
+    "commit": "1440c830eb1d0916a436468a71cd73bc8b8deffb",
+    "path": "contracts/0.4.24/StETH.sol",
+    "math_path": "contracts/common/lib/Math256.sol",
+    "git_blob_sha": "b8c8d47f2571d018c938d994c4debf375b84b45a",
+    "math_git_blob_sha": "366a014cf49523980e06ae7efb4cb3199589fc00",
+    "file_sha256": "63ebed0e205b602fe2e427bb09c111479f98253bd02f96ac052b38202d3713bd",
+    "math_file_sha256": "028e9b0c87fea3ec6fd5aac9e7a5724a18b4a175d5ab70159f24428dd28ea6b6",
+    "license": "GPL-3.0",
+    "math_license": "MIT"
+  },
+  "lin_clone": "src/lin_lido_shares.lin",
+  "c11_oracle": "test/oracles/lido_shares_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "empty_lido_shares": 0,
+  "empty_oz_shares": 1000,
+  "empty_morpho_shares": 1000000000,
+  "inflate_victim_lido_shares": 0,
+  "inflate_victim_oz_shares": 1,
+  "inflate_victim_morpho_shares": 1999996,
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-lido-shares"
+}
