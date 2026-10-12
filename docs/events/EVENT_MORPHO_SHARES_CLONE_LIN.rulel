@@ -1,0 +1,68 @@
+@RULEL:MORPHO_SHARES_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MORPHO-SHARES-V1"
+@TITLE="Clone-lin of Morpho Blue SharesMathLib with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-morpho-shares"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Morpho Blue virtual-share conversion into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for (a*b)/d; Solidity uint256 is NOT claimed"
+  commercial_hook="SharesMathLib prices empty Morpho Blue markets and mitigates ERC-4626 inflation attacks via VIRTUAL_SHARES=1e6 / VIRTUAL_ASSETS=1; LIN makes those offsets explicit and replaces wrapping i64 multiply plus x*y+(d-1) ceil with 128-bit muldiv. Named contrast vs OZ ERC-4626 offset-0 (virtual shares=1). Not a TVL claim."
+}
+
+.u{
+  repo="https://github.com/morpho-org/morpho-blue"
+  tag="v1.0.0"
+  path="src/libraries/SharesMathLib.sol"
+  math_path="src/libraries/MathLib.sol"
+  license="GPL-2.0-or-later (file SPDX; repo LICENSE at v1.0.0 was BUSL-1.1 with Change Date 2026-01-01 and Change License GPL-2.0-or-later; this run is after that date)"
+  commit="55d2d99304fb3fb930c688462ae2ccabb1d533ad"
+  git_blob_sha="3ed7115b5bcc491199446837c5a737eb80c5675c"
+  math_git_blob_sha="653db4f87580d5f9fd6162a78715d5416f8aac63"
+  file_sha256="4580deb1b1a3f2ea0b60f2305708428975613d1e94d404d647bcc573a7b2a2f0"
+  math_file_sha256="2c6728d1bc8f5db81f2a7946f226c3c4a8cffe4134c55450ca445b05727011bc"
+  fixture="test/fixtures/external_proof/SharesMathLib.sol"
+  math_fixture="test/fixtures/external_proof/MathLib.sol"
+}
+
+.l{
+  clone="src/lin_morpho_shares.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_LIBCALL / REJ_SOLIDITY_OVERFLOW_CEIL / REJ_SOLIDITY_USING; src/lin_from_rust.lin v2: REJ_RUST_OVERFLOW_CEIL / REJ_RUST_DIV_CEIL"
+  improvement_1="VIRTUAL_SHARES and VIRTUAL_ASSETS are library constants in Solidity; LIN exposes them as functions and as explicit offset arguments"
+  improvement_2="assets * (totalShares+1e6) overflows i64; LIN uses schoolbook 128-bit muldiv matching C11 __int128"
+  improvement_3="MathLib.mulDivUp is (x*y+(d-1))/d which wraps on the add; LIN ceil is remainder+1 and fail-closes if q+1 overflows uint64"
+  improvement_4="named contrast vs OZ ERC-4626 offset-0: empty 1000 assets -> 1e9 Morpho shares vs 1000 OZ shares; after a 1e6-asset donation a 1e6-asset depositor gets 1999996 vs 1"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/morpho_shares_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_morpho_shares.sh"
+}
+
+.p{
+  harness="test/prove_morpho_shares_external.py"
+  evidence_json="examples/morpho_shares/morpho_shares_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-morpho-shares"
+  clone_lin_note="standalone LIN copy; proofs and fixtures stay in lin-open"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet Morpho Blue market parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production Morpho replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Morpho, OpenZeppelin, or the EVM"
+  not_claimed_6="TVL or live inflation-attack profitability"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
