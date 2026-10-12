@@ -305,7 +305,7 @@ else
 	@python3 test/prove_all_claims_external.py --iterations 10000
 endif
 
-.PHONY: compound-jumprate-proof independent-reproof
+.PHONY: compound-jumprate-proof independent-reproof u512-coprocessor-proof
 compound-jumprate-proof: c0
 	@chmod +x test/verify_compound_jumprate.sh test/prove_compound_jumprate_external.py
 	@test/verify_compound_jumprate.sh
@@ -313,6 +313,193 @@ compound-jumprate-proof: c0
 independent-reproof: c0
 	@chmod +x test/prove_melhorias_independent.py
 	@python3 test/prove_melhorias_independent.py
+
+
+# Numeric coprocessor with auditable receipt (no Zig):
+#   C11 16-bit + C11 64-bit __int128 + Python int + Node BigInt + OpenSSL BN
+#   + Go math/big + Java BigInteger + GNU MP mpz (dlopen libgmp.so.10)
+#   + Perl Math::BigInt::Calc (not GMP) + C11 radix-2^32 schoolbook
+#   + rustc radix-2^64 schoolbook (4xu64=256, 8xu64=512, carry fits u128)
+#   + Python radix-2^8 schoolbook (32 bytes=256, 64 bytes=512, carry fits u16)
+#   + Knuth Algorithm D (TAOCP §4.3.1, 8xu32=256, 16xu32=512, carry fits u64;
+#     normalized long division, not restoring bit-serial)
+#   + POSIX GNU bc (BC_LINE_LENGTH=0).
+#   LNR1 quad-auditor; LCR2 + LCR2-full + LGE1 + LRI1 remainder-identity
+#   + LIP1 Merkle inclusion (all 8 LCR2 E2E + all 9 LCR2-full leaves).
+#   Zero-LIN Python, Node, AND Perl verifiers recompute five merkles and LIP1 paths.
+#   POSIX bc rechecks LRI1 q*d+r==n from published decimals (no LinVM, no gcc).
+#   rustc-only auditor recomputes LRI1 Merkle + LCR2/phantom bind (no Python).
+#   radix-2^8 auditor recomputes identity + OpenSSL dgst LRI1 Merkle.
+#   Knuth-D auditor recomputes identity via long division + OpenSSL dgst LRI1 Merkle.
+#   FullMath CRT+Newton auditor reconstructs 512-bit product independently of restoring.
+#   Karatsuba 128-bit split + Barrett (mu=floor(2^512/d), q=(n*mu)>>512, 512-bit ge)
+#     is a sixteenth independent math (not schoolbook, CRT, restoring-of-n, Knuth D, Hensel).
+#   Toom-3 86-bit 3-way + Goldschmidt (F=2^257-Y, eight iterations, 512-bit ge)
+#     is a seventeenth independent math (not 2-way Karatsuba, not Barrett mu, not Hensel).
+#   NTT base-256 length-64 (p=998244353) + SRT radix-4 (digits {-2..2})
+#     is an eighteenth independent math (not Toom-3, not Goldschmidt, not restoring).
+#   Comba column mul (64x64 products into a per-column acc) + non-restoring 512/256
+#     (signed remainder, q-bit = post-op sign, one final restore, 512-bit ge)
+#     is a nineteenth independent math (not row-major schoolbook, not NTT, not SRT,
+#     not restoring-of-n).
+#   Toom-4 64-bit 4-way (7 eval products, Newton interpolation) + Burnikel-Ziegler
+#     recursive D2n/1n (8xu64/4xu64, D3n/2n high-half, at most two add-backs,
+#     512-bit ge) is a twentieth independent math (not Toom-3, not Comba, not
+#     Knuth D digit q̂, not restoring-of-n, not Hensel).
+#   FNT base-2^16 length-32 (ring 2^64+1, ω=16 shift butterflies) + SRT radix-8
+#     (digits {-4..4}, thresholds ±D/2 ±3D/2 ±5D/2 ±7D/2, 512-bit ge)
+#     is a twenty-first independent math (not NTT over a prime, not SRT radix-4,
+#     not Toom-4, not Burnikel-Ziegler, not restoring-of-n).
+#   Toom-5 52-bit 5-way (9 eval products, Newton interpolation) + SRT radix-16
+#     (digits {-8..8}, thresholds ±D/2 … ±15D/2, 4 bits/step, 512-bit ge)
+#     is a twenty-second independent math (not Toom-4, not FNT, not SRT radix-8,
+#     not Burnikel-Ziegler, not restoring-of-n).
+#   Toom-6 43-bit 6-way (11 eval products, Newton interpolation) + SRT radix-32
+#     (digits {-16..16}, thresholds ±D/2 … ±31D/2, 5 bits/step, 512-bit ge)
+#     is a twenty-third independent math (not Toom-5, not SRT radix-16, not FNT,
+#     not SRT radix-8, not Toom-4, not Burnikel-Ziegler, not restoring-of-n).
+#   Toom-7 37-bit 7-way (13 eval products, Newton interpolation) + SRT radix-64
+#     (digits {-32..32}, thresholds ±D/2 … ±63D/2, 6 bits/step, 512-bit ge)
+#     is a twenty-fourth independent math (not Toom-6, not SRT radix-32, not
+#     Toom-5, not SRT radix-16, not FNT, not restoring-of-n).
+#   Toom-8 32-bit 8-way (15 eval products, Newton interpolation) + SRT radix-128
+#     (digits {-64..64}, thresholds ±D/2 … ±127D/2, 7 bits/step, 512-bit ge)
+#     is a twenty-fifth independent math (not Toom-7, not SRT radix-64, not
+#     Toom-6, not SRT radix-32, not Toom-5, not restoring-of-n).
+#   Toom-9 32-bit 9-way (256-bit padded to 288; 17 eval products, Newton
+#     interpolation) + SRT radix-256 (digits {-128..128}, thresholds ±D/2 …
+#     ±255D/2, 8 bits/step, 512-bit ge) is a twenty-sixth independent math
+#     (not Toom-8, not SRT radix-128, not Toom-7, not SRT radix-64, not
+#     Toom-6, not restoring-of-n).
+#   Toom-10 32-bit 10-way (256-bit padded to 320; 19 eval products, Newton
+#     interpolation) + SRT radix-512 (digits {-256..256}, thresholds ±D/2 …
+#     ±511D/2, 9 bits/step, 512-bit ge) is a twenty-seventh independent math
+#     (not Toom-9, not SRT radix-256, not Toom-8, not SRT radix-128, not
+#     Toom-7, not restoring-of-n).
+#   RNS 17 coprime 32-bit primes (Garner mixed-radix, product 544 bits > 2^512)
+#     + Newton-Raphson reciprocal (v=2^(512-bitlen(d)), ten iterations
+#     v:=2v-((d*v*v)>>512), q=(n*v)>>512, 512-bit ge) is a twenty-eighth
+#     independent math (not CRT/Mersenne 2^256 and 2^256-1, not Hensel mod
+#     2^256, not Goldschmidt dual N,D, not Barrett mu from sparse 2^512, not
+#     Toom-10, not SRT radix-512, not restoring-of-n).
+#   Schönhage–Strassen negacyclic Fermat FFT (F7=2^128+1, length-32, ψ=2^4,
+#     ω=2^8 shift butterflies) + SRT radix-1024 (digits {-512..512},
+#     thresholds ±D/2 … ±1023D/2, 10 bits/step, 512-bit ge) is a
+#     twenty-ninth independent math (not FNT over F6=2^64+1, not NTT over
+#     p=998244353, not SRT radix-512, not Newton-Raphson, not Hensel mod
+#     2^256, not restoring-of-n).
+#   Unbalanced Toom-Cook 3x7 (37-bit digits, three 111-bit groups of a
+#     times 7-digit b, nine eval products at {0,±1,±2,±3,4,inf}, Lagrange
+#     interpolation) + Barrett mu=floor(2^768/d) (q=(n*mu)>>768, 512-bit
+#     ge) is a thirtieth independent math (not balanced Toom-3..10, not
+#     SS, not SRT radix-1024, not Barrett mu=floor(2^512/d), not Newton,
+#     not restoring-of-n).
+#   Unbalanced Toom-Cook 2x5 (52-bit digits, three 104-bit groups of a
+#     times 5-digit b, six eval products at {0,±1,±2,inf}, Lagrange
+#     interpolation) + SRT radix-2048 (digits {-1024..1024}, thresholds
+#     ±D/2 … ±2047D/2, 11 bits/step, 512-bit ge) is a thirty-first
+#     independent math (not unbalanced Toom-3x7, not Barrett-768, not
+#     SRT radix-1024, not balanced Toom-3..10, not restoring-of-n).
+#   Unbalanced Toom-Cook 2x7 (37-bit digits, four 74-bit groups of a
+#     times 7-digit b, seven eval products at {0,±1,±2,±3} plus inf,
+#     Lagrange interpolation) + Barrett mu=floor(2^1024/d) (q=(n*mu)>>1024,
+#     512-bit ge) is a thirty-second independent math (not unbalanced
+#     Toom-2x5, not unbalanced Toom-3x7, not Barrett mu=floor(2^512/d)
+#     or floor(2^768/d), not SRT radix-2048, not restoring-of-n).
+#   IEEE-754 binary64 FFT convolution (8-bit digits, length-64 Cooley-Tukey)
+#     + Montgomery REDC (R=2^512, even-d CRT) + Jebelean exact q of n-r
+#     is a thirty-third independent math (not Fermat SS, not FNT, not NTT,
+#     not unbalanced Toom-2x7, not Barrett 2^512/2^768/2^1024, not SRT
+#     radix-4..2048, not Newton, not Hensel-of-n, not restoring-of-n).
+#   Solinas NTT (p=2^64-2^32+1, 16-bit digits, length-32, ω=2^18,
+#     2^64≡2^32-1 reduction) + Granlund–Montgomery magic (M=ceil(2^p/d)
+#     from nc=2^512-1-((2^512-1)%d), add-indicator, d-dependent shift)
+#     is a thirty-fourth independent math (not NTT p=998244353, not
+#     Fermat SS, not FNT, not IEEE-754 FFT, not Barrett 2^512/2^768/2^1024,
+#     not Montgomery REDC, not Jebelean, not SRT, not Newton, not
+#     Hensel-of-n, not restoring-of-n).
+#   Dekker double-double convolution (32-bit digits, 8x8 schoolbook,
+#     Veltkamp split 2^27+1, Dekker two-product, Knuth two-sum) +
+#     Cook–Sieveking precision-doubling reciprocal (8-bit seed, K=768,
+#     multiplicative y:=(y*(2^{K+1}-d*y))>>K, q=(n*y)>>768, 512-bit ge)
+#     is a thirty-fifth independent math (not IEEE-754 FFT, not FMA, not
+#     Solinas NTT, not Fermat SS, not FNT, not NTT p=998244353, not
+#     fixed-width Newton, not Goldschmidt, not Barrett 2^512/2^768/2^1024
+#     in one shot, not Granlund–Montgomery, not Montgomery REDC, not
+#     Jebelean, not SRT, not Hensel-of-n, not restoring-of-n).
+#   IEEE-754 binary80 convolution (40-bit digits, Veltkamp 2^32+1) +
+#     Karp–Markstein half-plus (K=448) is a thirty-sixth independent math.
+#   Unbalanced Toom-Cook 2x9 (29-bit digits, five 58-bit groups of a
+#     times 9-digit b, nine eval products at {0,±1,±2,±3,±4} plus inf,
+#     Lagrange interpolation) + Svoboda–Tung (bit-normalize, m=floor((2^32-1)/(d1+1)),
+#     leading-digit qhat, Tung restore, 512-bit ge) is a thirty-seventh
+#     independent math (not unbalanced Toom-2x5/2x7/3x7, not Barrett
+#     2^512/2^768/2^1024, not Karp–Markstein, not Cook–Sieveking, not
+#     Knuth two-digit estimate, not SRT, not Newton, not Goldschmidt,
+#     not Granlund–Montgomery, not Montgomery REDC, not Jebelean, not
+#     Hensel-of-n, not restoring-of-n).
+#   Class: EXPERIMENTAL (FullMath-width algorithm off-chain, not EVM mulmod, not a pool).
+u512-coprocessor-proof: c0
+	@chmod +x test/prove_u512_coprocessor_external.py \
+		examples/u512_coprocessor/verify_u512_receipt.py \
+		examples/u512_coprocessor/verify_u512_receipt.js \
+		examples/u512_coprocessor/verify_u512_inclusion.py \
+		examples/u512_coprocessor/verify_u512_inclusion.js \
+		examples/u512_coprocessor/verify_u512_inclusion.pl \
+		examples/u512_coprocessor/verify_u512_bc_identity.py \
+		examples/u512_coprocessor/verify_u512_radix8.py \
+		examples/u512_coprocessor/verify_u512_knuth_d.py \
+		examples/u512_coprocessor/verify_u512_crt.py \
+		examples/u512_coprocessor/verify_u512_karatsuba.py \
+		examples/u512_coprocessor/verify_u512_toom3.py \
+		examples/u512_coprocessor/verify_u512_ntt.py \
+		examples/u512_coprocessor/verify_u512_comba.py \
+		examples/u512_coprocessor/verify_u512_toom4.py \
+		examples/u512_coprocessor/verify_u512_fnt.py \
+		examples/u512_coprocessor/verify_u512_toom5.py \
+		examples/u512_coprocessor/verify_u512_toom6.py \
+		examples/u512_coprocessor/verify_u512_toom7.py \
+		examples/u512_coprocessor/verify_u512_toom8.py \
+		examples/u512_coprocessor/verify_u512_toom9.py \
+		examples/u512_coprocessor/verify_u512_toom10.py \
+		examples/u512_coprocessor/verify_u512_rns.py \
+		examples/u512_coprocessor/verify_u512_ss.py \
+		examples/u512_coprocessor/verify_u512_toom37.py \
+		examples/u512_coprocessor/verify_u512_toom25.py \
+		examples/u512_coprocessor/verify_u512_toom27.py \
+		examples/u512_coprocessor/verify_u512_fft.py \
+		examples/u512_coprocessor/verify_u512_solinas.py \
+		examples/u512_coprocessor/verify_u512_cook.py \
+		examples/u512_coprocessor/verify_u512_km.py \
+		examples/u512_coprocessor/verify_u512_st.py \
+		test/oracles/u512_node_oracle.js \
+		test/oracles/u512_perl_oracle.pl \
+		test/oracles/u512_radix8.py \
+		test/oracles/u512_knuth_d.py \
+		test/oracles/u512_crt_fullmath.py \
+		test/oracles/u512_karatsuba_barrett.py \
+		test/oracles/u512_toom3_goldschmidt.py \
+		test/oracles/u512_ntt_srt.py \
+		test/oracles/u512_comba_nr.py \
+		test/oracles/u512_toom4_bz.py \
+		test/oracles/u512_fnt_srt8.py \
+		test/oracles/u512_toom5_srt16.py \
+		test/oracles/u512_toom6_srt32.py \
+		test/oracles/u512_toom7_srt64.py \
+		test/oracles/u512_toom8_srt128.py \
+		test/oracles/u512_toom9_srt256.py \
+		test/oracles/u512_toom10_srt512.py \
+		test/oracles/u512_rns_newton.py \
+		test/oracles/u512_ss_srt1024.py \
+		test/oracles/u512_toom37_barrett768.py \
+		test/oracles/u512_toom25_srt2048.py \
+		test/oracles/u512_toom27_barrett1024.py \
+		test/oracles/u512_fft_montgomery.py \
+		test/oracles/u512_solinas_gm.py \
+		test/oracles/u512_dd_cook.py \
+		test/oracles/u512_b80_km.py \
+		test/oracles/u512_toom29_svoboda.py
+	@python3 test/prove_u512_coprocessor_external.py
 
 # Standalone no-Zig CLI (python3, stdlib only). `make install-cli PREFIX=~/.local`
 # puts an executable `lin-verify` on PATH.
