@@ -1,0 +1,149 @@
+{
+  "schema": "LIN_COMET_UTIL_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned excerpt contains exact getUtilization substring",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned comet commit matches fixture hashes",
+      "note": "commit=f766f51583c23acc33b2a7824654ef2029a96804 blob=3490e984d133789aa1afe2e8f7e37a11d2512396"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of CometWithExtendedAssetList.sol",
+      "note": ""
+    },
+    {
+      "id": "CORE-SHA",
+      "status": "PASS",
+      "description": "CometCore.sol sha256 + FACTOR_SCALE=1e18",
+      "note": ""
+    },
+    {
+      "id": "SNIPPET-IN-LIVE",
+      "status": "PASS",
+      "description": "getUtilization excerpt is a substring of live bytes",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_comet_util.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3 (emit path)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "c3u_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "8/8 vectors: C11 i128 == limbs == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "8/8 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "V2-CONTRAST",
+      "status": "PASS",
+      "description": "same 1e18 numbers: III util=100% vs V2 JumpRate util=50% (2x)",
+      "note": "iii=1000000000000000000 v2=500000000000000000"
+    },
+    {
+      "id": "V2-ALIGN",
+      "status": "PASS",
+      "description": "III supply_pv=2e18 borrow_pv=1e18 matches V2 50% util",
+      "note": ""
+    },
+    {
+      "id": "TWOSTEP-REJ",
+      "status": "PASS",
+      "description": "named rejected path floor(borrow/supply)*1e18 = 0; Comet wrap = 5e17",
+      "note": "twostep=0 comet=500000000000000000"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (1e18*1e18) wraps; 128-bit muldiv does not",
+      "note": "i64_wrap=-5527149226598858752 bigint=1000000000000000000"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on c3u_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes present-value totals as arguments (no hidden index/storage)",
+      "note": ""
+    },
+    {
+      "id": "NO-HIDDEN-PV",
+      "status": "PASS",
+      "description": "clone does not reimplement presentValue/principalValue",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJ",
+      "status": "PASS",
+      "description": "v3 rejects UTIL_WRAP / PV getters; emit splits '=' + 'ex{'",
+      "note": ""
+    },
+    {
+      "id": "RS-REJ",
+      "status": "PASS",
+      "description": "rust transpiler v2 rejects * FACTOR_SCALE wrapping util",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE-REJ",
+      "status": "PASS",
+      "description": "Compiler 0 refuses sol_parse_test_gate string-literal path (VM_REJ_STRING_LITERAL)",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/compound-finance/comet",
+    "commit": "f766f51583c23acc33b2a7824654ef2029a96804",
+    "path": "contracts/CometWithExtendedAssetList.sol",
+    "git_blob_sha": "3490e984d133789aa1afe2e8f7e37a11d2512396",
+    "file_sha256": "c9099e56eda092fd0150005706edf086723899afb102f164b60ad1f36a426961",
+    "core_path": "contracts/CometCore.sol",
+    "core_git_blob_sha": "534f2701b6c8e683f9294112b0bcc23878d39fe6",
+    "core_file_sha256": "1d80f0d12c101d01c2e1f38e8662cfcf350299b1c78188f8c501bb1c51b5ec78",
+    "license": "GPL-2.0-or-later (BUSL-1.1 Change Date 2025-12-31 elapsed)"
+  },
+  "lin_clone": "src/lin_comet_util.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-comet-util",
+  "c11_oracle": "test/oracles/comet_util_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "iii_util_1e18_1e18": 1000000000000000000,
+  "v2_util_1e18_1e18_0": 500000000000000000
+}
