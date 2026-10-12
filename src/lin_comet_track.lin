@@ -1,0 +1,201 @@
+@LIN:L1c:0.2
+@COMET_TRACKING_INDEX{
+  version=1
+  repo="compound-finance/comet"
+  source="contracts/CometWithExtendedAssetList.sol"
+  license="GPL-2.0-or-later"
+  license_note="Upstream BUSL-1.1 Change Date 2025-12-31 elapsed; Change License GPL-2.0-or-later. This run is 2026-10-12."
+  commit="f766f51583c23acc33b2a7824654ef2029a96804"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_comet_divBaseWei_tracking_index"
+  note="Not mainnet uint256. Not getUtilization. Not accruedInterestIndices/mulFactor IRM. Not presentValue. Not a Comet / USDC market. Speed, dt, baseScale, totalSupplyBase, baseMinForRewards are arguments. (speed*dt)*baseScale/total uses 128-bit product, fail-closed if a quotient exceeds uint64. Empty/below-min supply fail-closes 0. Reorder (speed*scale/total)*dt and FACTOR_SCALE/BASE_INDEX_SCALE confusions are named rejected paths."
+}
+
+!c3t_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!c3t_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(c3t_u_lt(s, a));
+}
+
+!c3t_mask32() -> int {
+  ^ 4294967295;
+}
+
+!c3t_factor_scale() -> int {
+  ^ 1000000000000000000;
+}
+
+!c3t_index_scale() -> int {
+  ^ 1000000000000000;
+}
+
+!c3t_accrual_scale() -> int {
+  ^ 1000000;
+}
+
+!c3t_muldiv_part(a: int, b: int, d: int, want_rem: int) -> int {
+  ?(d == 0) { ^ 0; };
+  m32 = c3t_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = c3t_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = c3t_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(c3t_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = c3t_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!c3t_muldiv(a: int, b: int, d: int) -> int {
+  ^ c3t_muldiv_part(a, b, d, 0);
+}
+
+!c3t_muldiv_rem(a: int, b: int, d: int) -> int {
+  ^ c3t_muldiv_part(a, b, d, 1);
+}
+
+!c3t_div_base_wei(n: int, base_scale: int, base_wei: int) -> int {
+  ?(base_wei <= 0) { ^ 0; };
+  ?(base_scale <= 0) { ^ 0; };
+  ?(n < 0) { ^ 0; };
+  ^ c3t_muldiv(n, base_scale, base_wei);
+}
+
+!c3t_mul_factor(n: int, factor: int) -> int {
+  ?(n < 0) { ^ 0; };
+  ?(factor < 0) { ^ 0; };
+  ^ c3t_muldiv(n, factor, c3t_factor_scale());
+}
+
+!c3t_track_ok(speed: int, dt: int, base_scale: int, total_base: int, min_rewards: int) -> int {
+  ?(dt <= 0) { ^ 0; };
+  ?(speed < 0) { ^ 0; };
+  ?(base_scale <= 0) { ^ 0; };
+  ?(total_base <= 0) { ^ 0; };
+  ?(c3t_u_lt(total_base, min_rewards) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!c3t_tracking_delta(speed: int, dt: int, base_scale: int, total_base: int, min_rewards: int) -> int {
+  ?(c3t_track_ok(speed, dt, base_scale, total_base, min_rewards) == 0) { ^ 0; };
+  n = c3t_muldiv(speed, dt, 1);
+  ^ c3t_div_base_wei(n, base_scale, total_base);
+}
+
+!c3t_reorder(speed: int, dt: int, base_scale: int, total_base: int) -> int {
+  ?(dt <= 0) { ^ 0; };
+  ?(total_base <= 0) { ^ 0; };
+  ?(base_scale <= 0) { ^ 0; };
+  q = c3t_muldiv(speed, base_scale, total_base);
+  ^ (q * dt);
+}
+
+!c3t_factor_confused(speed: int, dt: int, total_base: int) -> int {
+  ?(total_base <= 0) { ^ 0; };
+  n = c3t_muldiv(speed, dt, 1);
+  ^ c3t_muldiv(n, c3t_factor_scale(), total_base);
+}
+
+!c3t_index_confused(speed: int, dt: int, total_base: int) -> int {
+  ?(total_base <= 0) { ^ 0; };
+  n = c3t_muldiv(speed, dt, 1);
+  ^ c3t_muldiv(n, c3t_index_scale(), total_base);
+}
+
+!c3t_mulfactor_as_track(speed: int, dt: int, base_scale: int) -> int {
+  n = c3t_muldiv(speed, dt, 1);
+  ^ c3t_mul_factor(n, base_scale);
+}
+
+!c3t_test_suite() -> int {
+  ?(c3t_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(c3t_muldiv(7, 9, 1) != 63) { ^ -2; };
+  ?(c3t_tracking_delta(1, 3, 1, 2, 0) != 1) { ^ -3; };
+  ?(c3t_reorder(1, 3, 1, 2) != 0) { ^ -4; };
+  ?(c3t_tracking_delta(1, 3, 1, 2, 0) == c3t_reorder(1, 3, 1, 2)) { ^ -5; };
+  ?(c3t_tracking_delta(1, 1, 1000000, 1000000, 0) != 1) { ^ -6; };
+  ?(c3t_factor_confused(1, 1, 1000000) != 1000000000000) { ^ -7; };
+  ?(c3t_index_confused(1, 1, 1000000) != 1000000000) { ^ -8; };
+  ?(c3t_mulfactor_as_track(1, 1, 1000000) != 0) { ^ -9; };
+  ?(c3t_tracking_delta(1, 1, 1000000, 5, 10) != 0) { ^ -10; };
+  ?(c3t_tracking_delta(1, 0, 1000000, 1000000, 0) != 0) { ^ -11; };
+  ?(c3t_tracking_delta(2, 5, 1000000, 4000000, 0) != 2) { ^ -12; };
+  ?(c3t_reorder(2, 5, 1000000, 4000000) != 0) { ^ -13; };
+  ?(c3t_muldiv(1000000000000000000, 1000000000000000000, 1) != 0) { ^ -14; };
+  ?(c3t_muldiv_rem(7, 9, 2) != 1) { ^ -15; };
+  ?(c3t_tracking_delta(1, 1, 1000000000000000000, 1000000000000000000, 0) != 1) { ^ -16; };
+  ?(c3t_factor_confused(1, 1, 1000000000000000000) != 1) { ^ -17; };
+  ?(c3t_track_ok(1, 1, 1000000, 5, 10) != 0) { ^ -18; };
+  ?(c3t_factor_scale() != 1000000000000000000) { ^ -19; };
+  ?(c3t_index_scale() != 1000000000000000) { ^ -20; };
+  ?(c3t_accrual_scale() != 1000000) { ^ -21; };
+  ^ 1;
+}
+
+=ex{
+  c3t_u_lt,
+  c3t_u_add_carry,
+  c3t_mask32,
+  c3t_factor_scale,
+  c3t_index_scale,
+  c3t_accrual_scale,
+  c3t_muldiv_part,
+  c3t_muldiv,
+  c3t_muldiv_rem,
+  c3t_div_base_wei,
+  c3t_mul_factor,
+  c3t_track_ok,
+  c3t_tracking_delta,
+  c3t_reorder,
+  c3t_factor_confused,
+  c3t_index_confused,
+  c3t_mulfactor_as_track,
+  c3t_test_suite
+}

@@ -1,0 +1,163 @@
+{
+  "schema": "LIN_COMET_TRACK_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned excerpt contains exact tracking/divBaseWei substrings",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned comet commit matches fixture hashes",
+      "note": "commit=f766f51583c23acc33b2a7824654ef2029a96804 blob=3490e984d133789aa1afe2e8f7e37a11d2512396"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of CometWithExtendedAssetList.sol",
+      "note": ""
+    },
+    {
+      "id": "CORE-SHA",
+      "status": "PASS",
+      "description": "CometCore.sol sha256 + FACTOR/INDEX/ACCRUAL scales",
+      "note": ""
+    },
+    {
+      "id": "SNIPPET-IN-LIVE",
+      "status": "PASS",
+      "description": "tracking excerpt is a substring of live bytes",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_comet_track.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3 (emit path)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "c3t_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "12/12 vectors: C11 i128 == limbs == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "12/12 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "REORDER-REJ",
+      "status": "PASS",
+      "description": "named rejected path (speed*scale/total)*dt = 0; Comet wrap = 2",
+      "note": "reorder=0 comet=2"
+    },
+    {
+      "id": "SCALE-CONTRAST",
+      "status": "PASS",
+      "description": "USDC 6-dec: comet=1; FACTOR confusion=1e12 (~1e12 x); INDEX=1e9; mulFactor-as-track=0",
+      "note": "comet=1 factor=1000000000000 index=1000000000 mulfactor=0"
+    },
+    {
+      "id": "WETH-HIDE",
+      "status": "PASS",
+      "description": "WETH 18-dec supply=1e18: comet=1 and FACTOR confusion=1 (bug hidden)",
+      "note": ""
+    },
+    {
+      "id": "MIN-SKIP",
+      "status": "PASS",
+      "description": "total_base < baseMinForRewards fail-closes 0 (no tiny-supply blowup)",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (1e18*1e18) wraps; 128-bit muldiv fail-closes 0",
+      "note": "i64_wrap=-5527149226598858752"
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still cjr_test_suite==1 after TRACK_DT rejects",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on c3t_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes tracking inputs as arguments (no hidden storage)",
+      "note": ""
+    },
+    {
+      "id": "NO-HIDDEN-GET",
+      "status": "PASS",
+      "description": "clone does not reimplement Solidity getters / divBaseWei view",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJ",
+      "status": "PASS",
+      "description": "v3 rejects TRACK_DT / DIV_BASE_WEI / BASE_SCALE_WRAP; emit splits '=' + 'ex{'",
+      "note": ""
+    },
+    {
+      "id": "RS-REJ",
+      "status": "PASS",
+      "description": "rust transpiler v2 rejects * time_elapsed tracking wrap",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE-REJ",
+      "status": "PASS",
+      "description": "Compiler 0 refuses sol_parse_test_gate string-literal path (VM_REJ_STRING_LITERAL)",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/compound-finance/comet",
+    "commit": "f766f51583c23acc33b2a7824654ef2029a96804",
+    "path": "contracts/CometWithExtendedAssetList.sol",
+    "git_blob_sha": "3490e984d133789aa1afe2e8f7e37a11d2512396",
+    "file_sha256": "c9099e56eda092fd0150005706edf086723899afb102f164b60ad1f36a426961",
+    "core_path": "contracts/CometCore.sol",
+    "core_git_blob_sha": "534f2701b6c8e683f9294112b0bcc23878d39fe6",
+    "core_file_sha256": "1d80f0d12c101d01c2e1f38e8662cfcf350299b1c78188f8c501bb1c51b5ec78",
+    "license": "GPL-2.0-or-later (BUSL-1.1 Change Date 2025-12-31 elapsed)"
+  },
+  "lin_clone": "src/lin_comet_track.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-comet-track",
+  "c11_oracle": "test/oracles/comet_track_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "usdc_comet_1_1": 1,
+  "usdc_factor_confused": 1000000000000,
+  "usdc_index_confused": 1000000000,
+  "usdc_reorder_2_5": 0
+}

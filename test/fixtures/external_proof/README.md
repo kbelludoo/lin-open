@@ -11,6 +11,7 @@ independent proof harness. They are **test fixtures**, not vendored libraries.
 | `qoi.h` | [phoboslab/qoi](https://github.com/phoboslab/qoi) | MIT |
 | `tinyexpr.c` | [codeplea/tinyexpr](https://github.com/codeplea/tinyexpr) | zlib |
 | `BaseJumpRateModelV2.sol` | [compound-finance/compound-protocol](https://github.com/compound-finance/compound-protocol) | BSD-3-Clause |
+| `CometTrackingIndex.excerpt.sol` | [compound-finance/comet](https://github.com/compound-finance/comet) tracking / `divBaseWei` excerpt | GPL-2.0-or-later (BUSL-1.1 Change Date 2025-12-31 elapsed) |
 
 They are only pinned so an auditor can hash the exact bytes and, with `--fetch`,
 re-download them from the GitHub Contents API. No upstream code is compiled or
