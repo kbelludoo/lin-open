@@ -1,0 +1,173 @@
+@LIN:L1c:0.2
+@GMX_FUNDING_FEE{
+  version=1
+  repo="gmx-io/gmx-contracts"
+  source="contracts/core/VaultUtils.sol"
+  license="MIT"
+  commit="fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_gmx_getFundingFee_size_times_delta_rate"
+  note="Not mainnet uint256. Kernel is GMX V1 getFundingFee: size * (cumulative - entry) / 1e6. Storage (cumulativeFundingRates, entryFundingRate) is explicit args. 128-bit muldiv. Companion getPositionFee uses /10000. Confusing FUNDING_RATE_PRECISION with BASIS_POINTS_DIVISOR overcharges 100x. Not USDG tax-rebate, not Uniswap xy, not Solidly cubic, not Maker rpow."
+}
+
+!gmf_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!gmf_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(gmf_u_lt(s, a));
+}
+
+!gmf_mask32() -> int {
+  ^ 4294967295;
+}
+
+!gmf_funding_prec() -> int {
+  ^ 1000000;
+}
+
+!gmf_bps() -> int {
+  ^ 10000;
+}
+
+!gmf_muldiv_part(a: int, b: int, d: int, want: int) -> int {
+  ?(d <= 0) { ^ 0; };
+  m32 = gmf_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = gmf_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = gmf_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(gmf_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = gmf_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want == 1) { ^ r_lo; };
+  ?(want == 2) { ^ ov; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!gmf_muldiv(a: int, b: int, d: int) -> int {
+  ^ gmf_muldiv_part(a, b, d, 0);
+}
+
+!gmf_naive_mul_wrap(a: int, b: int, d: int) -> int {
+  ^ (a * b) / d;
+}
+
+!gmf_funding_fee(size: int, cum: int, entry: int) -> int {
+  ?(size <= 0) { ^ 0; };
+  ?(cum < 0) { ^ 0; };
+  ?(entry < 0) { ^ 0; };
+  ?(gmf_u_lt(cum, entry) == 1) { ^ 0; };
+  rate = cum - entry;
+  ?(rate == 0) { ^ 0; };
+  ^ gmf_muldiv(size, rate, gmf_funding_prec());
+}
+
+!gmf_position_fee(size: int, margin_bps: int) -> int {
+  ?(size <= 0) { ^ 0; };
+  ?(margin_bps < 0) { ^ 0; };
+  ?(gmf_u_lt(gmf_bps(), margin_bps) == 1) { ^ 0; };
+  after = gmf_muldiv(size, gmf_bps() - margin_bps, gmf_bps());
+  ^ size - after;
+}
+
+!gmf_confused_bps(size: int, rate: int) -> int {
+  ?(size <= 0) { ^ 0; };
+  ?(rate <= 0) { ^ 0; };
+  ^ gmf_muldiv(size, rate, gmf_bps());
+}
+
+!gmf_ignore_entry(size: int, cum: int) -> int {
+  ?(size <= 0) { ^ 0; };
+  ?(cum <= 0) { ^ 0; };
+  ^ gmf_muldiv(size, cum, gmf_funding_prec());
+}
+
+!gmf_uniswap_shot(amount: int, fee_bps: int) -> int {
+  ?(amount <= 0) { ^ 0; };
+  ?(fee_bps < 0) { ^ 0; };
+  ?(gmf_u_lt(gmf_bps(), fee_bps) == 1) { ^ 0; };
+  ^ gmf_muldiv(amount, fee_bps, gmf_bps());
+}
+
+!gmf_test_suite() -> int {
+  ?(gmf_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(gmf_funding_fee(1000000, 1000, 0) != 1000) { ^ -2; };
+  ?(gmf_funding_fee(1000000, 1000, 1000) != 0) { ^ -3; };
+  ?(gmf_funding_fee(0, 1000, 0) != 0) { ^ -4; };
+  ?(gmf_funding_fee(1000000, 1000, 400) != 600) { ^ -5; };
+  ?(gmf_funding_fee(10000000, 50, 0) != 500) { ^ -6; };
+  ?(gmf_funding_fee(1000000, 400, 1000) != 0) { ^ -7; };
+  ?(gmf_position_fee(1000000, 10) != 1000) { ^ -8; };
+  ?(gmf_confused_bps(1000000, 1000) != 100000) { ^ -9; };
+  ?(gmf_ignore_entry(1000000, 5000) != 5000) { ^ -10; };
+  ?(gmf_funding_fee(1000000, 5000, 4000) != 1000) { ^ -11; };
+  ?(gmf_uniswap_shot(1000000, 30) != 3000) { ^ -12; };
+  ?(gmf_naive_mul_wrap(5000000000, 5000000000, 1000000) != 6553255926290) { ^ -13; };
+  ?(gmf_muldiv(5000000000, 5000000000, 1000000) != 25000000000000) { ^ -14; };
+  ?(gmf_muldiv(1000000000000000000, 1000000000000000000, 1) != 0) { ^ -15; };
+  ?(gmf_position_fee(0, 10) != 0) { ^ -16; };
+  ?(gmf_funding_fee(1000000, 0, 0) != 0) { ^ -17; };
+  ^ 1;
+}
+
+=ex{
+  gmf_u_lt,
+  gmf_u_add_carry,
+  gmf_mask32,
+  gmf_funding_prec,
+  gmf_bps,
+  gmf_muldiv_part,
+  gmf_muldiv,
+  gmf_naive_mul_wrap,
+  gmf_funding_fee,
+  gmf_position_fee,
+  gmf_confused_bps,
+  gmf_ignore_entry,
+  gmf_uniswap_shot,
+  gmf_test_suite
+}

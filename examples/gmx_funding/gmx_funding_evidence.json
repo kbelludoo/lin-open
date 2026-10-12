@@ -1,0 +1,172 @@
+{
+  "schema": "LIN_GMX_FUNDING_FEE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned VaultUtils.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned gmx-io/gmx-contracts matches fixture",
+      "note": "commit=fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8 blob=8e29c3ff19258d191f6d2459c110a917ba1f9906"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of contracts/core/VaultUtils.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (funding / wrap / 100x bps trap)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_gmx_funding.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "gmf_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "16/16 vectors: C11 i128 == LIN vm == Python bigint",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "16/16 vectors: Python wrapping-int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "FUND-1000",
+      "status": "PASS",
+      "description": "size=1e6 rate=1000 entry=0 funding=1000 (VaultUtils size*rate/1e6)",
+      "note": ""
+    },
+    {
+      "id": "BPS-TRAP",
+      "status": "PASS",
+      "description": "same inputs with /10000 = 100000 (100x overcharge if FUNDING_RATE_PRECISION is confused with BASIS_POINTS_DIVISOR)",
+      "note": ""
+    },
+    {
+      "id": "ENTRY-TRAP",
+      "status": "PASS",
+      "description": "size=1e6 cum=5000 entry=4000 funding=1000 vs ignore-entry=5000 (5x overcharge)",
+      "note": ""
+    },
+    {
+      "id": "POS-VS-FUND",
+      "status": "PASS",
+      "description": "position 10 bps of 1e6 = 1000; funding rate=1000 of 1e6 = 1000 (same number, /10000 vs /1e6)",
+      "note": ""
+    },
+    {
+      "id": "UNI-VS-FUND",
+      "status": "PASS",
+      "description": "Uniswap 30 bps one-shot of 1e6 = 3000 vs GMX funding 1000 (accrued delta-rate, not swap fee)",
+      "note": ""
+    },
+    {
+      "id": "NAIVE-WRAP",
+      "status": "PASS",
+      "description": "naive i64 (5e9*5e9)/1e6 wraps to 6553255926290; 128-bit muldiv=25000000000000",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on gmf_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes size/cumulative/entry as arguments (no vault storage)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv for size*rate/1e6",
+      "note": ""
+    },
+    {
+      "id": "NOT-USDG",
+      "status": "PASS",
+      "description": "kernel is GMX funding size*delta-rate/1e6, not USDG tax-rebate or Solidly cubic",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects getFundingFee / cumulativeFundingRates / FUNDING_RATE_PRECISION",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects get_funding_fee / cumulative_funding_rates",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/gmx-io/gmx-contracts",
+    "commit": "fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8",
+    "path": "contracts/core/VaultUtils.sol",
+    "git_blob_sha": "8e29c3ff19258d191f6d2459c110a917ba1f9906",
+    "file_sha256": "ad831f3c8d675c42665c854368bc06696e1cba23bd3294f91aa2ce4c0a8fc495",
+    "license": "MIT",
+    "commercial_descendants": "GMX V1 Vault perpetual funding and position fees on Arbitrum/Avalanche"
+  },
+  "lin_clone": "src/lin_gmx_funding.lin",
+  "c11_oracle": "test/oracles/gmx_funding_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "fund_1e6_1000": 1000,
+    "fund_zero_rate": 0,
+    "fund_entry_400": 600,
+    "fund_underflow": 0,
+    "fund_vs_ignore": {
+      "correct": 1000,
+      "ignore_entry": 5000
+    },
+    "confused_bps_100x": 100000,
+    "position_10bps": 1000,
+    "uniswap_30bps": 3000,
+    "naive_wrap_5e9": 6553255926290,
+    "wide_5e9": 25000000000000
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-gmx-funding"
+}
