@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: reject q96/Q96 (REJ_RUST_Q96), mul_div_rounding_up/div_rounding_up (REJ_RUST_ROUNDING_UP), fixed_point_96 (REJ_RUST_FIXEDPOINT96). Uniswap V3 SqrtPriceMath is the named gate."
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,12 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(body, "q96") > 0) { ^"REJ_RUST_Q96" };
+  ?(rg_count_lit(body, "Q96") > 0) { ^"REJ_RUST_Q96" };
+  ?(rg_count_lit(sig, "q96") > 0) { ^"REJ_RUST_Q96" };
+  ?(rg_count_lit(body, "mul_div_rounding_up") > 0) { ^"REJ_RUST_ROUNDING_UP" };
+  ?(rg_count_lit(body, "div_rounding_up") > 0) { ^"REJ_RUST_ROUNDING_UP" };
+  ?(rg_count_lit(body, "fixed_point_96") > 0) { ^"REJ_RUST_FIXEDPOINT96" };
   ^"OK";
 }
 
@@ -66,6 +73,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_q = "pub fn amount1(liq: u64, da: u64) -> u64";
+  body_q = "let q = mul_div(liq, da, q96); return q;";
+  r3 = rs_reason(sig_q, body_q);
+  ?(starts_lit(r3, 0, "REJ_RUST_Q96") == 0) { ^0 };
 
   ^1;
 }
