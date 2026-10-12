@@ -1,0 +1,167 @@
+{
+  "schema": "LIN_UNISWAP_V3_NEXT_SQRT_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned SqrtPriceMath.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned Uniswap/v3-core v1.0.0 matches fixture",
+      "note": "commit=e3589b192d0be27e100cd0daaf6c97204fdb1899 blob=685f485da43402235c3a9ce7fd85a49597b6373a"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of SqrtPriceMath.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (next0 ceil/floor/naive/wrap-hide)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_uniswap_v3_next_sqrt.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "v3n_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "10/10 vectors: C11 i128 == LIN vm == Python bigint",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "10/10 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "CEIL-VS-FLOOR",
+      "status": "PASS",
+      "description": "amount0 next-sqrt rounds up: 2863311531 vs floor 2863311530 (1-unit solvency)",
+      "note": ""
+    },
+    {
+      "id": "NAIVE-WRAP",
+      "status": "PASS",
+      "description": "naive (L*sqrtP)/(L+amount*sqrtP) wrapping i64 yields 1; 128-bit ceil yields 2863311531",
+      "note": ""
+    },
+    {
+      "id": "WRAP-HIDE",
+      "status": "PASS",
+      "description": "amount=2^33 * Q32 overflows uint64: naive leaves price at Q32; real next=499942",
+      "note": ""
+    },
+    {
+      "id": "TOKEN1-PRICE4",
+      "status": "PASS",
+      "description": "adding amount1=L at price 1 steps sqrtP from Q32 to 2*Q32 (price 4)",
+      "note": ""
+    },
+    {
+      "id": "INVERT-025",
+      "status": "PASS",
+      "description": "token0 amount=L at price 1 steps to Q32/2 (price 0.25); named contrast vs amount-delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on v3n_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes sqrtP/L/amount/zeroForOne as arguments",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv (Q32 * L * sqrtP)",
+      "note": ""
+    },
+    {
+      "id": "Q32-NOT-Q96",
+      "status": "PASS",
+      "description": "headers label Q32 reduced scale; Q96 is not claimed",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects next-sqrt / RESOLUTION / << / uint160 / type(uint / product= / .add(",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects next_sqrt / RESOLUTION / << / uint160",
+      "note": ""
+    },
+    {
+      "id": "NOT-AMT-DELTA",
+      "status": "PASS",
+      "description": "kernel is next-sqrt only; amount-delta is a named contrast not a port",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/Uniswap/v3-core",
+    "commit": "e3589b192d0be27e100cd0daaf6c97204fdb1899",
+    "tag": "v1.0.0",
+    "path": "contracts/libraries/SqrtPriceMath.sol",
+    "git_blob_sha": "685f485da43402235c3a9ce7fd85a49597b6373a",
+    "file_sha256": "ddd62e3a94346248677f30f1ab009ef015e71e4b8696dcca890eeabc9dc6c149",
+    "license": "GPL-2.0-or-later",
+    "license_note": "BUSL-1.1 Change Date 2023-04-01 elapsed"
+  },
+  "lin_clone": "src/lin_uniswap_v3_next_sqrt.lin",
+  "c11_oracle": "test/oracles/uniswap_v3_next_sqrt_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "q_scale": "Q32=2^32 (not Q96=2^96)",
+  "goldens": {
+    "next0_ceil_1_to_4ninths": 2863311531,
+    "next0_floor_1_to_4ninths": 2863311530,
+    "naive_wrap_1_to_4ninths": 1,
+    "next1_price4": 8589934592,
+    "wrap_hide_naive": 4294967296,
+    "wrap_hide_real": 499942
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-uniswap-v3-next-sqrt"
+}

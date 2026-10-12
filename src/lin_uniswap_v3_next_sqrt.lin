@@ -1,0 +1,247 @@
+@LIN:L1c:0.2
+@UNISWAP_V3_NEXT_SQRT{
+  version=1
+  repo="Uniswap/v3-core"
+  source="contracts/libraries/SqrtPriceMath.sol"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2023-04-01 elapsed; Change License GPL-2.0-or-later"
+  commit="e3589b192d0be27e100cd0daaf6c97204fdb1899"
+  tag="v1.0.0"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_v3_getNextSqrtPriceFromInput_Q32_not_Q96"
+  note="Not mainnet uint160/Q64.96. Real deltas: Q32=2^32; 128-bit muldiv; ceil amount0 vs floor; overflow fallback vs wrapping naive (L*sqrtP)/(L+amount*sqrtP). Not getAmount0Delta (that is clone-lin-uniswap-v3-sqrt)."
+}
+
+!v3n_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!v3n_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(v3n_u_lt(s, a));
+}
+
+!v3n_mask32() -> int {
+  ^ 4294967295;
+}
+
+!v3n_q32() -> int {
+  ^ 4294967296;
+}
+
+!v3n_muldiv_part(a: int, b: int, d: int, want_rem: int) -> int {
+  ?(d == 0) { ^ 0; };
+  m32 = v3n_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = v3n_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = v3n_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(v3n_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = v3n_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 2) { ^ ov; };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!v3n_muldiv(a: int, b: int, d: int) -> int {
+  ^ v3n_muldiv_part(a, b, d, 0);
+}
+
+!v3n_muldiv_rem(a: int, b: int, d: int) -> int {
+  ^ v3n_muldiv_part(a, b, d, 1);
+}
+
+!v3n_muldiv_up(a: int, b: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(v3n_muldiv_part(a, b, d, 2) == 1) { ^ 0; };
+  q = v3n_muldiv_part(a, b, d, 0);
+  r = v3n_muldiv_part(a, b, d, 1);
+  ?(r == 0) { ^ q; };
+  s = q + 1;
+  ?(v3n_u_lt(s, q) == 1) { ^ 0; };
+  ^ s;
+}
+
+!v3n_div_up(a: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  q = a / d;
+  r = a - q * d;
+  ?(r == 0) { ^ q; };
+  s = q + 1;
+  ?(v3n_u_lt(s, q) == 1) { ^ 0; };
+  ^ s;
+}
+
+!v3n_num1(liq: int) -> int {
+  ^ v3n_muldiv(liq, v3n_q32(), 1);
+}
+
+!v3n_next0_up(sqrt_p: int, liq: int, amount: int, add: int) -> int {
+  ?(v3n_u_lt(0, sqrt_p) == 0) { ^ 0; };
+  ?(v3n_u_lt(0, liq) == 0) { ^ 0; };
+  ?(amount == 0) { ^ sqrt_p; };
+  num1 = v3n_num1(liq);
+  ?(num1 == 0) { ^ 0; };
+  ?(add != 0) {
+    ov = v3n_muldiv_part(amount, sqrt_p, 1, 2);
+    product = v3n_muldiv(amount, sqrt_p, 1);
+    ?(ov == 0) {
+      denom = num1 + product;
+      ?(v3n_u_lt(denom, num1) == 0) {
+        ^ v3n_muldiv_up(num1, sqrt_p, denom);
+      };
+    };
+    qvirt = num1 / sqrt_p;
+    den2 = qvirt + amount;
+    ?(v3n_u_lt(den2, qvirt) == 1) { ^ 0; };
+    ^ v3n_div_up(num1, den2);
+  };
+  ov2 = v3n_muldiv_part(amount, sqrt_p, 1, 2);
+  ?(ov2 == 1) { ^ 0; };
+  product2 = v3n_muldiv(amount, sqrt_p, 1);
+  ?(v3n_u_lt(product2, num1) == 0) { ^ 0; };
+  denom2 = num1 - product2;
+  ?(denom2 == 0) { ^ 0; };
+  ^ v3n_muldiv_up(num1, sqrt_p, denom2);
+}
+
+!v3n_floor_next0(sqrt_p: int, liq: int, amount: int) -> int {
+  ?(v3n_u_lt(0, sqrt_p) == 0) { ^ 0; };
+  ?(v3n_u_lt(0, liq) == 0) { ^ 0; };
+  ?(amount == 0) { ^ sqrt_p; };
+  num1 = v3n_num1(liq);
+  ?(num1 == 0) { ^ 0; };
+  ov = v3n_muldiv_part(amount, sqrt_p, 1, 2);
+  ?(ov == 1) { ^ 0; };
+  product = v3n_muldiv(amount, sqrt_p, 1);
+  denom = num1 + product;
+  ?(v3n_u_lt(denom, num1) == 1) { ^ 0; };
+  ^ v3n_muldiv(num1, sqrt_p, denom);
+}
+
+!v3n_next1_down(sqrt_p: int, liq: int, amount: int, add: int) -> int {
+  ?(v3n_u_lt(0, sqrt_p) == 0) { ^ 0; };
+  ?(v3n_u_lt(0, liq) == 0) { ^ 0; };
+  ?(amount == 0) { ^ sqrt_p; };
+  shift = v3n_muldiv(amount, v3n_q32(), 1);
+  ?(add != 0) {
+    quot = 0;
+    ?(shift == 0) {
+      quot = v3n_muldiv(amount, v3n_q32(), liq);
+      ?(quot == 0) { ^ 0; };
+    };
+    ?(shift != 0) { quot = shift / liq; };
+    s = sqrt_p + quot;
+    ?(v3n_u_lt(s, sqrt_p) == 1) { ^ 0; };
+    ^ s;
+  };
+  quot2 = 0;
+  ?(shift == 0) {
+    quot2 = v3n_muldiv_up(amount, v3n_q32(), liq);
+    ?(quot2 == 0) { ^ 0; };
+  };
+  ?(shift != 0) { quot2 = v3n_div_up(shift, liq); };
+  ?(v3n_u_lt(quot2, sqrt_p) == 0) { ^ 0; };
+  ^ sqrt_p - quot2;
+}
+
+!v3n_next_from_input(sqrt_p: int, liq: int, amount_in: int, zero_for_one: int) -> int {
+  ?(v3n_u_lt(0, sqrt_p) == 0) { ^ 0; };
+  ?(v3n_u_lt(0, liq) == 0) { ^ 0; };
+  ?(zero_for_one != 0) {
+    ^ v3n_next0_up(sqrt_p, liq, amount_in, 1);
+  };
+  ^ v3n_next1_down(sqrt_p, liq, amount_in, 1);
+}
+
+!v3n_naive_next0(sqrt_p: int, liq: int, amount: int) -> int {
+  den = liq + amount * sqrt_p;
+  ?(den == 0) { ^ 0; };
+  ^ (liq * sqrt_p) / den;
+}
+
+!v3n_test_suite() -> int {
+  q = v3n_q32();
+  l = 1000000;
+  ?(v3n_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(v3n_next0_up(q, l, 500000, 1) != 2863311531) { ^ -2; };
+  ?(v3n_floor_next0(q, l, 500000) != 2863311530) { ^ -3; };
+  ?(v3n_naive_next0(q, l, 500000) != 1) { ^ -4; };
+  ?(v3n_next1_down(q, l, l, 1) != 8589934592) { ^ -5; };
+  ?(v3n_next0_up(q, l, 0, 1) != q) { ^ -6; };
+  ?(v3n_next_from_input(q, l, 500000, 1) != 2863311531) { ^ -7; };
+  ?(v3n_next_from_input(q, l, 500000, 0) != 6442450944) { ^ -8; };
+  ?(v3n_next0_up(q, l, 1000000, 1) != 2147483648) { ^ -9; };
+  ?(v3n_next0_up(0, l, 1, 1) != 0) { ^ -10; };
+  ?(v3n_next_from_input(q, 0, 1, 1) != 0) { ^ -11; };
+  ?(v3n_muldiv(1000000000000000000, 1000000000000000000, 1) != 0) { ^ -12; };
+  amt = 8589934592;
+  ?(v3n_naive_next0(q, l, amt) != q) { ^ -13; };
+  ?(v3n_next0_up(q, l, amt, 1) != 499942) { ^ -14; };
+  ?(v3n_next1_down(8589934592, l, 500000, 0) != 6442450944) { ^ -15; };
+  ?(v3n_muldiv_rem(7, 9, 2) != 1) { ^ -16; };
+  ^ 1;
+}
+
+=ex{
+  v3n_u_lt,
+  v3n_u_add_carry,
+  v3n_mask32,
+  v3n_q32,
+  v3n_muldiv_part,
+  v3n_muldiv,
+  v3n_muldiv_rem,
+  v3n_muldiv_up,
+  v3n_div_up,
+  v3n_num1,
+  v3n_next0_up,
+  v3n_floor_next0,
+  v3n_next1_down,
+  v3n_next_from_input,
+  v3n_naive_next0,
+  v3n_test_suite
+}

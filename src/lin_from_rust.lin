@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: reject next_sqrt / RESOLUTION / << / uint160 Q64.96 ports (Uniswap V3 getNextSqrtPrice is a 128-bit LIN kernel, not emit)"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,11 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "next_sqrt") > 0) { ^"REJ_RUST_NEXT_SQRT" };
+  ?(rg_count_lit(body, "next_sqrt") > 0) { ^"REJ_RUST_NEXT_SQRT" };
+  ?(rg_count_lit(body, "RESOLUTION") > 0) { ^"REJ_RUST_RESOLUTION" };
+  ?(rg_count_lit(body, "<<") > 0) { ^"REJ_RUST_LSHIFT" };
+  ?(rg_count_lit(sig, "uint160") > 0) { ^"REJ_RUST_UINT160" };
   ^"OK";
 }
 
@@ -70,4 +76,16 @@
   ^1;
 }
 
-=ex{rs_is_kw, rs_is_type, rs_reason, rs_parse_test_gate}
+!rs_next_sqrt_reject_gate(): int {
+  sig_n = "pub fn get_next_sqrt_price_from_amount_0(sqrt_p: u64, liq: u64, amount: u64) -> u64";
+  body_n = "let numerator1 = liq << RESOLUTION; return numerator1;";
+  r1 = rs_reason(sig_n, body_n);
+  ?(starts_lit(r1, 0, "REJ_RUST_NEXT_SQRT") == 0) { ^0 };
+  sig_s = "pub fn foo(x: u64) -> u64";
+  body_s = "let y = x << 32; y";
+  r2 = rs_reason(sig_s, body_s);
+  ?(starts_lit(r2, 0, "REJ_RUST_LSHIFT") == 0) { ^0 };
+  ^1;
+}
+
+=ex{rs_is_kw, rs_is_type, rs_reason, rs_parse_test_gate, rs_next_sqrt_reject_gate}

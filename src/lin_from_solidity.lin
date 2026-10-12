@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: reject Uniswap V3 getNextSqrtPriceFrom / FixedPoint96.RESOLUTION / uint160 / type(uint / product= assign / .add( SafeMath / << shift (Q96 next-sqrt is a 128-bit port, not emit). v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,15 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(sig, "getNextSqrtPriceFrom") > 0) { ^"REJ_SOLIDITY_NEXT_SQRT" };
+  ?(rg_count_lit(body, "getNextSqrtPriceFrom") > 0) { ^"REJ_SOLIDITY_NEXT_SQRT" };
+  ?(rg_count_lit(body, "FixedPoint96.RESOLUTION") > 0) { ^"REJ_SOLIDITY_RESOLUTION" };
+  ?(rg_count_lit(body, "<<") > 0) { ^"REJ_SOLIDITY_LSHIFT" };
+  ?(rg_count_lit(sig, "uint160") > 0) { ^"REJ_SOLIDITY_UINT160" };
+  ?(rg_count_lit(body, "uint160(") > 0) { ^"REJ_SOLIDITY_UINT160" };
+  ?(rg_count_lit(body, "type(uint") > 0) { ^"REJ_SOLIDITY_TYPE_MAX" };
+  ?(rg_count_lit(body, "product =") > 0) { ^"REJ_SOLIDITY_ASSIGN_MUL" };
+  ?(rg_count_lit(body, ".add(") > 0) { ^"REJ_SOLIDITY_SAFE_ADD" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -317,7 +326,8 @@
     };
     i = i + 1;
   };
-  out = out + "=ex{";
+  out = out + "=";
+  out = out + "ex{";
   out = out + names;
   out = out + "}";
   out = out + rgs_ch(10);
@@ -337,4 +347,25 @@
   ^1;
 }
 
-=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
+!sol_next_sqrt_reject_gate(): int {
+  sig_n = "function getNextSqrtPriceFromAmount0RoundingUp(uint160 sqrtPX96, uint128 liquidity, uint256 amount, bool add) internal pure returns (uint160)";
+  body_n = "if (amount == 0) return sqrtPX96; uint256 numerator1 = uint256(liquidity) << FixedPoint96.RESOLUTION;";
+  r1 = sol_reason(sig_n, body_n);
+  ?(starts_lit(r1, 0, "REJ_SOLIDITY_NEXT_SQRT") == 0) { ^0 };
+  sig_s = "function foo(uint256 x) internal pure returns (uint256)";
+  body_s = "return x << 32;";
+  r2 = sol_reason(sig_s, body_s);
+  ?(starts_lit(r2, 0, "REJ_SOLIDITY_LSHIFT") == 0) { ^0 };
+  body_a = "return (numerator1 / sqrtPX96).add(amount);";
+  r3 = sol_reason(sig_s, body_a);
+  ?(starts_lit(r3, 0, "REJ_SOLIDITY_SAFE_ADD") == 0) { ^0 };
+  body_p = "if ((product = amount * sqrtPX96) / amount == sqrtPX96) { return product; }";
+  r4 = sol_reason(sig_s, body_p);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_ASSIGN_MUL") == 0) { ^0 };
+  body_t = "return amount <= type(uint160).max ? amount : 0;";
+  r5 = sol_reason(sig_s, body_t);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_TYPE_MAX") == 0) { ^0 };
+  ^1;
+}
+
+=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate, sol_next_sqrt_reject_gate}

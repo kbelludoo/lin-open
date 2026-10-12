@@ -1,0 +1,65 @@
+@RULEL:UNISWAP_V3_NEXT_SQRT_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-UNISWAP-V3-NEXT-SQRT"
+@TITLE="Clone-lin of Uniswap V3 getNextSqrtPriceFromInput with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_Q32_SCALE"
+@DATE="2026-10-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-uniswap-v3-next-sqrt"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Uniswap V3 next-sqrt-price math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, Q32=2^32 (not Q96=2^96), 128-bit product for (a*b)/d"
+  commercial_hook="getNextSqrtPriceFromInput is the price step a Uniswap V3 swap actually takes; amount-delta (clone-lin-uniswap-v3-sqrt) is the token amounts given two prices. Named contrast: wrapping naive (L*sqrtP)/(L+amount*sqrtP) yields 1 or hides a 2^33 swap; 128-bit ceil yields 2863311531 / 499942"
+}
+
+.u{
+  repo="https://github.com/Uniswap/v3-core"
+  path="contracts/libraries/SqrtPriceMath.sol"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2023-04-01 elapsed; Change License GPL-2.0-or-later"
+  tag="v1.0.0"
+  commit="e3589b192d0be27e100cd0daaf6c97204fdb1899"
+  git_blob_sha="685f485da43402235c3a9ce7fd85a49597b6373a"
+  file_sha256="ddd62e3a94346248677f30f1ab009ef015e71e4b8696dcca890eeabc9dc6c149"
+  fixture="test/fixtures/external_proof/SqrtPriceMath.sol"
+}
+
+.l{
+  clone="src/lin_uniswap_v3_next_sqrt.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_NEXT_SQRT/RESOLUTION/LSHIFT/UINT160/TYPE_MAX/ASSIGN_MUL/SAFE_ADD; emit equals concatenated with ex{; src/lin_from_rust.lin v2: REJ_RUST_NEXT_SQRT/RESOLUTION/LSHIFT/UINT160"
+  improvement_1="Q96=2^96 is rejected (VM_REJ_LITERAL_RANGE); working kernel is Q32=2^32"
+  improvement_2="amount0 next-sqrt always rounds up: 1e6 L price-1 plus 5e5 token0 is 2863311531 not floor 2863311530"
+  improvement_3="naive wrapping (L*sqrtP)/(L+amount*sqrtP) misses the Q-shift and yields 1 on that vector"
+  improvement_4="amount=2^33 * Q32 overflows uint64: naive leaves price unchanged at Q32 (hides the swap); overflow fallback ceil(num1/(num1/sqrtP+amount))=499942"
+  improvement_5="token1 in of L at price 1 steps to 2*Q32 (price 4); zeroForOne=1 vs 0 are different directions"
+  not_retread="getAmount0Delta/getAmount1Delta is clone-lin-uniswap-v3-sqrt / lin-open PR 206; this kernel is getNextSqrtPriceFromInput only"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/uniswap_v3_next_sqrt_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_uniswap_v3_next_sqrt.sh"
+}
+
+.p{
+  harness="test/prove_uniswap_v3_next_sqrt_external.py"
+  evidence_json="examples/uniswap_v3_next_sqrt/uniswap_v3_next_sqrt_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-uniswap-v3-next-sqrt"
+}
+
+.n{
+  not_claimed_1="full uint160 / Q64.96 / mainnet Pool / SwapRouter / NFT position parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production Uniswap V3 replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="getAmount0Delta / getAmount1Delta as this kernel"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS && JUMPRATE_REGRESS"
+  on_fail="do not publish a PASS status"
+}
