@@ -1,0 +1,268 @@
+@LIN:L1c:0.2
+@LIQUITY_CR_DECMUL{
+  version=1
+  repo="liquity/dev"
+  source="packages/contracts/contracts/Dependencies/LiquityMath.sol"
+  license="MIT"
+  commit="9130cb989a953185f5f19824c91e2031b8fdfa90"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_liquity_icr_decmul_decpow_with_128bit_muldiv"
+  note="Not Solidity uint256. debt==0 is fail-closed 0 not 2**256-1. NICR 1e20 exceeds i64 and is rejected. Hidden PriceFeed becomes a price argument. SafeMath .mul.add.div is 128-bit fail-closed. decMul is half-up not floor. Named contrast vs Aave HF (liqThreshold baked in) and vs floor wad-mul. Not a TroveManager / LUSD replacement."
+}
+
+!lq_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!lq_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(lq_u_lt(s, a));
+}
+
+!lq_u_add_ok(a: int, b: int) -> int {
+  s = a + b;
+  ?(lq_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!lq_mask32() -> int {
+  ^ 4294967295;
+}
+
+!lq_ok_nn(v: int) -> int {
+  ?(v < 0) { ^ 0; };
+  ^ 1;
+}
+
+!lq_wad() -> int {
+  ^ 1000000000000000000;
+}
+
+!lq_wad_half() -> int {
+  ^ 500000000000000000;
+}
+
+!lq_pow_cap() -> int {
+  ^ 525600000;
+}
+
+!lq_minute_decay() -> int {
+  ^ 999037758833783000;
+}
+
+!lq_bps() -> int {
+  ^ 10000;
+}
+
+!lq_muldiv_part(a: int, b: int, d: int, want: int) -> int {
+  ?(d == 0) { ^ 0; };
+  m32 = lq_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = lq_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = lq_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(lq_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = lq_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want == 1) { ^ r_lo; };
+  ?(want == 2) { ^ ov; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!lq_floor(x: int, y: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(lq_ok_nn(x) == 0) { ^ 0; };
+  ?(lq_ok_nn(y) == 0) { ^ 0; };
+  ^ lq_muldiv_part(x, y, d, 0);
+}
+
+!lq_rem(x: int, y: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(lq_ok_nn(x) == 0) { ^ 0; };
+  ?(lq_ok_nn(y) == 0) { ^ 0; };
+  ^ lq_muldiv_part(x, y, d, 1);
+}
+
+!lq_ov(x: int, y: int, d: int) -> int {
+  ?(d == 0) { ^ 1; };
+  ?(lq_ok_nn(x) == 0) { ^ 1; };
+  ?(lq_ok_nn(y) == 0) { ^ 1; };
+  ^ lq_muldiv_part(x, y, d, 2);
+}
+
+!lq_dec_mul(x: int, y: int) -> int {
+  ?(lq_ok_nn(x) == 0) { ^ 0; };
+  ?(lq_ok_nn(y) == 0) { ^ 0; };
+  d = lq_wad();
+  ?(lq_ov(x, y, d) == 1) { ^ 0; };
+  q = lq_floor(x, y, d);
+  r = lq_rem(x, y, d);
+  ?(lq_u_lt(r, lq_wad_half()) == 1) { ^ q; };
+  ?(lq_u_add_ok(q, 1) == 0) { ^ 0; };
+  ^ q + 1;
+}
+
+!lq_compute_cr(coll: int, debt: int, price: int) -> int {
+  ?(lq_ok_nn(coll) == 0) { ^ 0; };
+  ?(lq_ok_nn(debt) == 0) { ^ 0; };
+  ?(lq_ok_nn(price) == 0) { ^ 0; };
+  ?(debt == 0) { ^ 0; };
+  ^ lq_floor(coll, price, debt);
+}
+
+!lq_cr_ok(debt: int) -> int {
+  ?(lq_ok_nn(debt) == 0) { ^ 0; };
+  ?(debt == 0) { ^ 0; };
+  ^ 1;
+}
+
+!lq_aave_hf(coll: int, debt: int, lt_bps: int) -> int {
+  ?(lq_ok_nn(coll) == 0) { ^ 0; };
+  ?(lq_ok_nn(debt) == 0) { ^ 0; };
+  ?(lq_ok_nn(lt_bps) == 0) { ^ 0; };
+  ?(debt == 0) { ^ 0; };
+  adj = lq_floor(coll, lt_bps, lq_bps());
+  ^ lq_floor(adj, lq_wad(), debt);
+}
+
+!lq_min(a: int, b: int) -> int {
+  ?(lq_ok_nn(a) == 0) { ^ 0; };
+  ?(lq_ok_nn(b) == 0) { ^ 0; };
+  ?(lq_u_lt(a, b) == 1) { ^ a; };
+  ^ b;
+}
+
+!lq_max(a: int, b: int) -> int {
+  ?(lq_ok_nn(a) == 0) { ^ 0; };
+  ?(lq_ok_nn(b) == 0) { ^ 0; };
+  ?(lq_u_lt(a, b) == 1) { ^ b; };
+  ^ a;
+}
+
+!lq_absdiff(a: int, b: int) -> int {
+  ?(lq_ok_nn(a) == 0) { ^ 0; };
+  ?(lq_ok_nn(b) == 0) { ^ 0; };
+  ?(lq_u_lt(a, b) == 1) { ^ b - a; };
+  ^ a - b;
+}
+
+!lq_dec_pow(base: int, minutes: int) -> int {
+  ?(lq_ok_nn(base) == 0) { ^ 0; };
+  ?(lq_ok_nn(minutes) == 0) { ^ 0; };
+  n = minutes;
+  ?(lq_u_lt(lq_pow_cap(), n) == 1) { n = lq_pow_cap(); };
+  ?(n == 0) { ^ lq_wad(); };
+  y = lq_wad();
+  x = base;
+  while (n > 1) {
+    odd = n & 1;
+    ?(odd == 0) {
+      x = lq_dec_mul(x, x);
+      n = n / 2;
+    };
+    ?(odd == 1) {
+      y = lq_dec_mul(x, y);
+      x = lq_dec_mul(x, x);
+      n = (n - 1) / 2;
+    };
+  };
+  ^ lq_dec_mul(x, y);
+}
+
+!lq_test_suite() -> int {
+  ?(lq_floor(100, 200, 50) != 400) { ^ -1; };
+  ?(lq_floor(7, 9, 2) != 31) { ^ -2; };
+  ?(lq_rem(7, 9, 2) != 1) { ^ -3; };
+  ?(lq_dec_mul(lq_wad(), lq_wad()) != lq_wad()) { ^ -4; };
+  ?(lq_dec_mul(1, lq_wad_half()) != 1) { ^ -5; };
+  ?(lq_dec_mul(1, lq_wad_half() - 1) != 0) { ^ -6; };
+  ?(lq_floor(3, lq_wad_half(), lq_wad()) != 1) { ^ -7; };
+  ?(lq_dec_mul(3, lq_wad_half()) != 2) { ^ -8; };
+  ?(lq_compute_cr(10, 5, 3) != 6) { ^ -9; };
+  ?(lq_compute_cr(1000, 0, 2000) != 0) { ^ -10; };
+  ?(lq_cr_ok(0) != 0) { ^ -11; };
+  ?(lq_cr_ok(5) != 1) { ^ -12; };
+  ?(lq_compute_cr(10000000000, 10000000000000, 2000000000000) != 2000000000) { ^ -13; };
+  ?(lq_aave_hf(10000, 10000, 8500) != 850000000000000000) { ^ -14; };
+  ?(lq_compute_cr(10000, 10000, lq_wad()) != lq_wad()) { ^ -15; };
+  ?(lq_dec_pow(lq_wad(), 0) != lq_wad()) { ^ -16; };
+  ?(lq_dec_pow(lq_wad(), 5) != lq_wad()) { ^ -17; };
+  ?(lq_dec_pow(2000000000000000000, 3) != 8000000000000000000) { ^ -18; };
+  ?(lq_dec_pow(lq_minute_decay(), 1) != lq_minute_decay()) { ^ -19; };
+  ?(lq_min(3, 5) != 3) { ^ -20; };
+  ?(lq_max(3, 5) != 5) { ^ -21; };
+  ?(lq_absdiff(3, 10) != 7) { ^ -22; };
+  ?(lq_floor(lq_wad(), lq_wad(), 1) != 0) { ^ -23; };
+  ?(lq_ov(lq_wad(), lq_wad(), 1) != 1) { ^ -24; };
+  ?(lq_dec_mul(2000000000000000000, 3000000000000000000) != 6000000000000000000) { ^ -25; };
+  ^ 1;
+}
+
+=ex{
+  lq_u_lt,
+  lq_u_add_carry,
+  lq_u_add_ok,
+  lq_mask32,
+  lq_ok_nn,
+  lq_wad,
+  lq_wad_half,
+  lq_pow_cap,
+  lq_minute_decay,
+  lq_bps,
+  lq_muldiv_part,
+  lq_floor,
+  lq_rem,
+  lq_ov,
+  lq_dec_mul,
+  lq_compute_cr,
+  lq_cr_ok,
+  lq_aave_hf,
+  lq_min,
+  lq_max,
+  lq_absdiff,
+  lq_dec_pow,
+  lq_test_suite
+}

@@ -1,0 +1,137 @@
+{
+  "schema": "LIN_LIQUITY_CR_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned LiquityMath.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned liquity/dev matches fixture",
+      "note": "commit=9130cb989a953185f5f19824c91e2031b8fdfa90"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of LiquityMath.sol",
+      "note": "9f6c44d728f69387d40e0645386c5a271e7e37c5"
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_liquity_cr.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v4",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "lq_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "14/14 vectors: C11 == LIN vm == Python bigint",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "14/14 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "HF-CONTRAST",
+      "status": "PASS",
+      "description": "same 10000/10000 coll/debt: Liquity CR=1e18 (price=1e18) vs Aave-style HF=0.85e18 (lt=85%)",
+      "note": "named contrast only; not an Aave port or TVL claim"
+    },
+    {
+      "id": "HALFUP-CONTRAST",
+      "status": "PASS",
+      "description": "3*(5e17)/1e18 is floor 1 vs Liquity decMul half-up 2",
+      "note": ""
+    },
+    {
+      "id": "DEBT-ZERO",
+      "status": "PASS",
+      "description": "debt==0: Solidity returns 2**256-1 (infinite CR); LIN fail-closes 0 and lq_cr_ok=0",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (1e18*1e18) wraps; 128-bit muldiv fail-closes",
+      "note": "i64_wrap=-5527149226598858752"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on lq_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN lifts hidden PriceFeed to a price argument; SafeMath product is 128-bit",
+      "note": ""
+    },
+    {
+      "id": "NICR-SCALE",
+      "status": "PASS",
+      "description": "upstream NICR 1e20 exceeds signed i64; LIN rejects that scale (no silent wrap)",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v4 rejects SafeMath .mul/.add/.div, 2**256, and 1e20 NICR",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects overflow-ceil / div_ceil",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/liquity/dev",
+    "commit": "9130cb989a953185f5f19824c91e2031b8fdfa90",
+    "path": "packages/contracts/contracts/Dependencies/LiquityMath.sol",
+    "git_blob_sha": "9f6c44d728f69387d40e0645386c5a271e7e37c5",
+    "file_sha256": "0d418289d7ba0ab052d1fff29b3c832bd809175d9bd69b8cd5552184a5e1bf17",
+    "license": "MIT"
+  },
+  "lin_clone": "src/lin_liquity_cr.lin",
+  "c11_oracle": "test/oracles/liquity_cr_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "liquity_cr_100pct": 1000000000000000000,
+  "aave_hf_85pct": 850000000000000000,
+  "floor_half": 1,
+  "decmul_half_up": 2,
+  "empty_debt_cr": 0,
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-liquity-cr"
+}

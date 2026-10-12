@@ -1,0 +1,63 @@
+@RULEL:LIQUITY_CR_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-LIQUITY-CR-DECMUL-DECPOW"
+@TITLE="Clone-lin of Liquity _computeCR/decMul/_decPow with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-liquity-cr"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Liquity collateral-ratio and decimal-pow math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for (a*b)/d and half-up decMul; Solidity uint256 is NOT claimed"
+  commercial_hook="Liquity ICR is coll*price/debt with no liquidation threshold inside the ratio. A wallet that prices Troves with Aave-style percentMul(lt) understates CR. decMul is half-up; floor wad-mul of 3*(5e17)/1e18 is 1 vs Liquity 2, which drifts redemption-fee decay. debt==0 is infinite in Solidity and fail-closed 0 in LIN. Not a TVL claim."
+}
+
+.u{
+  repo="https://github.com/liquity/dev"
+  commit="9130cb989a953185f5f19824c91e2031b8fdfa90"
+  path="packages/contracts/contracts/Dependencies/LiquityMath.sol"
+  license="MIT"
+  git_blob_sha="9f6c44d728f69387d40e0645386c5a271e7e37c5"
+  file_sha256="0d418289d7ba0ab052d1fff29b3c832bd809175d9bd69b8cd5552184a5e1bf17"
+  fixture="test/fixtures/external_proof/LiquityMath.sol"
+}
+
+.l{
+  clone="src/lin_liquity_cr.lin"
+  transpiler_delta="src/lin_from_solidity.lin v4: REJ_SOLIDITY_LIBCALL (.mulDiv*/.ceilDiv/SafeMath .mul/.div/.add/.sub) / REJ_SOLIDITY_POW256 (2**256) / REJ_SOLIDITY_NICR_SCALE (1e20) / REJ_SOLIDITY_GETTER / REJ_SOLIDITY_OVERFLOW_CEIL / REJ_SOLIDITY_USING / REJ_SOLIDITY_ETHER_UNIT; emit '=' + 'ex{'; src/lin_from_rust.lin v2 REJ_RUST_OVERFLOW_CEIL / REJ_RUST_DIV_CEIL"
+  improvement_1="hidden PriceFeed becomes a price argument"
+  improvement_2="decMul is half-up (named contrast vs floor wad-mul 1 vs 2 on 3*(5e17)/1e18)"
+  improvement_3="debt==0: Solidity 2**256-1 infinite CR; LIN fail-closes 0"
+  improvement_4="NICR 1e20 exceeds signed i64 and is rejected; 128-bit muldiv fail-closes quotient overflow"
+  improvement_5="named contrast vs Aave-style HF with liqThreshold baked in (1e18 vs 0.85e18 on the same 10000/10000 book)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/liquity_cr_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_liquity_cr.sh"
+}
+
+.p{
+  harness="test/prove_liquity_cr_external.py"
+  evidence_json="examples/liquity_cr/liquity_cr_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-liquity-cr"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet Trove / LUSD / PriceFeed parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production TroveManager replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Liquity, Aave, Uniswap, or the EVM"
+  not_claimed_6="TVL or live liquidation profit"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

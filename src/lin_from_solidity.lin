@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=4
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V4"
+  changelog="v4: reject SafeMath .add/.sub, 2**256 infinite-CR (REJ_SOLIDITY_POW256), and 1e20 NICR (REJ_SOLIDITY_NICR_SCALE). Liquity _computeCR/decMul is the named gate. v3-class: reject .mulDiv*/.ceilDiv/SafeMath .mul/.div (REJ_SOLIDITY_LIBCALL), overflow-ceil x*y+(d-1), using-for, 1 ether, hidden Lido/Rocket getters. v2: emit LIN for eligible pure functions; expand 1eN; view without msg.sender is OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,30 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(sig, "using ") > 0) { ^"REJ_SOLIDITY_USING" };
+  ?(rg_count_lit(body, "using ") > 0) { ^"REJ_SOLIDITY_USING" };
+  ?(rg_count_lit(body, ".mulDivDown") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, ".mulDivUp") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, ".mulDiv(") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, ".ceilDiv") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, ".mul(") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, ".div(") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, ".add(") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, ".sub(") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, "+ (d - 1)") > 0) { ^"REJ_SOLIDITY_OVERFLOW_CEIL" };
+  ?(rg_count_lit(body, "+ (d-1)") > 0) { ^"REJ_SOLIDITY_OVERFLOW_CEIL" };
+  ?(rg_count_lit(body, "1 ether") > 0) { ^"REJ_SOLIDITY_ETHER_UNIT" };
+  ?(rg_count_lit(body, " ether)") > 0) { ^"REJ_SOLIDITY_ETHER_UNIT" };
+  ?(rg_count_lit(body, "2**256") > 0) { ^"REJ_SOLIDITY_POW256" };
+  ?(rg_count_lit(body, "2 ** 256") > 0) { ^"REJ_SOLIDITY_POW256" };
+  ?(rg_count_lit(body, "1e20") > 0) { ^"REJ_SOLIDITY_NICR_SCALE" };
+  ?(rg_count_lit(body, "_getShareRateNumerator") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "_getShareRateDenominator") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "_getTotalPooledEther") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "_getTotalShares") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "getTotalETHBalance") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "getTotalRETHSupply") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "getContractAddress") > 0) { ^"REJ_SOLIDITY_GETTER" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +88,22 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_lib = "function decMul(uint x, uint y) internal pure returns (uint decProd)";
+  body_lib = "uint prod_xy = x.mul(y); decProd = prod_xy.add(DECIMAL_PRECISION / 2).div(DECIMAL_PRECISION);";
+  r4 = sol_reason(sig_lib, body_lib);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_LIBCALL") == 0) { ^0 };
+  sig_pow = "function _computeCR(uint coll, uint debt, uint price) internal pure returns (uint)";
+  body_pow = "if (debt > 0) { return coll * price / debt; } return 2**256 - 1;";
+  r5 = sol_reason(sig_pow, body_pow);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_POW256") == 0) { ^0 };
+  sig_nicr = "function _computeNominalCR(uint coll, uint debt) internal pure returns (uint)";
+  body_nicr = "if (debt > 0) { return coll * 1e20 / debt; } return 0;";
+  r6 = sol_reason(sig_nicr, body_nicr);
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_NICR_SCALE") == 0) { ^0 };
+  sig_sm = "function _computeCR(uint coll, uint debt, uint price) internal pure returns (uint)";
+  body_sm = "return coll.mul(price).div(debt);";
+  r7 = sol_reason(sig_sm, body_sm);
+  ?(starts_lit(r7, 0, "REJ_SOLIDITY_LIBCALL") == 0) { ^0 };
   ^1;
 }
 
@@ -317,7 +357,8 @@
     };
     i = i + 1;
   };
-  out = out + "=ex{";
+  out = out + "=";
+  out = out + "ex{";
   out = out + names;
   out = out + "}";
   out = out + rgs_ch(10);
@@ -334,6 +375,15 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  lib = "function decMul(uint x, uint y) internal pure returns (uint) { return x.mul(y).add(1).div(1); }";
+  out2 = sol_from_sol(lib);
+  ?(rg_count_lit(out2, "decMul") > 0) { ^0 };
+  pow = "function _computeCR(uint coll, uint debt, uint price) internal pure returns (uint) { return 2**256 - 1; }";
+  out3 = sol_from_sol(pow);
+  ?(rg_count_lit(out3, "_computeCR") > 0) { ^0 };
+  nicr = "function _computeNominalCR(uint coll, uint debt) internal pure returns (uint) { return coll * 1e20 / debt; }";
+  out4 = sol_from_sol(nicr);
+  ?(rg_count_lit(out4, "_computeNominalCR") > 0) { ^0 };
   ^1;
 }
 
