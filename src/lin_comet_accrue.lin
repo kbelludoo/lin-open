@@ -1,0 +1,258 @@
+@LIN:L1c:0.2
+@COMET_ACCRUED_INTEREST{
+  version=1
+  repo="compound-finance/comet"
+  source="contracts/CometWithExtendedAssetList.sol"
+  constants="contracts/CometCore.sol SECONDS_PER_YEAR/FACTOR_SCALE/BASE_INDEX_SCALE"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2025-12-31 elapsed; Change License GPL-2.0-or-later"
+  commit="f766f51583c23acc33b2a7824654ef2029a96804"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_comet_per_second_index_accrual_with_128bit_muldiv"
+  note="Not Solidity uint256. Hidden getUtilization/getSupplyRate/storage IRM become arguments. safe64 and rate*timeElapsed wrap are rejected. Index += mulFactor(index, rate*dt) uses 128-bit product of (rate*dt) then (index*product)/1e18, not wrapping i64 and not floor(index*rate/1e18)*dt. Named contrast: Compound V2 per-block 1% reused as III per-second over SECONDS_PER_YEAR over-accrues ~15x. Not a Comet / USDC market replacement. Not presentValue/principalValue."
+}
+
+!cai_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!cai_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(cai_u_lt(s, a));
+}
+
+!cai_u_add_ok(a: int, b: int) -> int {
+  s = a + b;
+  ?(cai_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!cai_mask32() -> int {
+  ^ 4294967295;
+}
+
+!cai_ok_nn(v: int) -> int {
+  ?(v < 0) { ^ 0; };
+  ^ 1;
+}
+
+!cai_factor_scale() -> int {
+  ^ 1000000000000000000;
+}
+
+!cai_index_scale() -> int {
+  ^ 1000000000000000;
+}
+
+!cai_seconds_per_year() -> int {
+  ^ 31536000;
+}
+
+!cai_blocks_per_year() -> int {
+  ^ 2102400;
+}
+
+!cai_muldiv_part(a: int, b: int, d: int, want: int) -> int {
+  ?(d == 0) { ^ 0; };
+  m32 = cai_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = cai_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = cai_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(cai_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = cai_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want == 1) { ^ r_lo; };
+  ?(want == 2) { ^ ov; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!cai_floor(x: int, y: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(cai_ok_nn(x) == 0) { ^ 0; };
+  ?(cai_ok_nn(y) == 0) { ^ 0; };
+  ^ cai_muldiv_part(x, y, d, 0);
+}
+
+!cai_ov(x: int, y: int, d: int) -> int {
+  ?(d == 0) { ^ 1; };
+  ?(cai_ok_nn(x) == 0) { ^ 1; };
+  ?(cai_ok_nn(y) == 0) { ^ 1; };
+  ^ cai_muldiv_part(x, y, d, 2);
+}
+
+!cai_mul_factor(n: int, factor: int) -> int {
+  ^ cai_floor(n, factor, cai_factor_scale());
+}
+
+!cai_rate_time_ok(rate: int, dt: int) -> int {
+  ?(cai_ok_nn(rate) == 0) { ^ 0; };
+  ?(cai_ok_nn(dt) == 0) { ^ 0; };
+  ?(rate == 0) { ^ 1; };
+  ?(dt == 0) { ^ 1; };
+  ?(cai_ov(rate, dt, 1) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!cai_rate_time(rate: int, dt: int) -> int {
+  ?(cai_rate_time_ok(rate, dt) == 0) { ^ 0; };
+  ^ cai_floor(rate, dt, 1);
+}
+
+!cai_delta(index: int, rate: int, dt: int) -> int {
+  ?(cai_ok_nn(index) == 0) { ^ 0; };
+  ?(cai_rate_time_ok(rate, dt) == 0) { ^ 0; };
+  rt = cai_rate_time(rate, dt);
+  ^ cai_mul_factor(index, rt);
+}
+
+!cai_delta_twostep(index: int, rate: int, dt: int) -> int {
+  ?(cai_ok_nn(index) == 0) { ^ 0; };
+  ?(cai_ok_nn(dt) == 0) { ^ 0; };
+  q = cai_mul_factor(index, rate);
+  ^ cai_floor(q, dt, 1);
+}
+
+!cai_accrue_index(index: int, rate: int, dt: int) -> int {
+  ?(dt == 0) { ^ index; };
+  inc = cai_delta(index, rate, dt);
+  ?(cai_u_add_ok(index, inc) == 0) { ^ 0; };
+  ^ index + inc;
+}
+
+!cai_kink_rate(util: int, base: int, slope_low: int, slope_high: int, kink: int) -> int {
+  ?(cai_ok_nn(util) == 0) { ^ 0; };
+  ?(cai_ok_nn(base) == 0) { ^ 0; };
+  ?(cai_ok_nn(slope_low) == 0) { ^ 0; };
+  ?(cai_ok_nn(slope_high) == 0) { ^ 0; };
+  ?(cai_ok_nn(kink) == 0) { ^ 0; };
+  ?(cai_u_lt(kink, util) == 0) {
+    add = cai_mul_factor(slope_low, util);
+    ?(cai_u_add_ok(base, add) == 0) { ^ 0; };
+    ^ base + add;
+  };
+  low = cai_mul_factor(slope_low, kink);
+  ?(cai_u_lt(util, kink) == 1) { ^ 0; };
+  high = cai_mul_factor(slope_high, util - kink);
+  ?(cai_u_add_ok(base, low) == 0) { ^ 0; };
+  s1 = base + low;
+  ?(cai_u_add_ok(s1, high) == 0) { ^ 0; };
+  ^ s1 + high;
+}
+
+!cai_utilization(total_borrow: int, total_supply: int) -> int {
+  ?(cai_ok_nn(total_borrow) == 0) { ^ 0; };
+  ?(cai_ok_nn(total_supply) == 0) { ^ 0; };
+  ?(total_supply == 0) { ^ 0; };
+  ^ cai_floor(total_borrow, cai_factor_scale(), total_supply);
+}
+
+!cai_apy_per_second(apy_wad: int) -> int {
+  ^ cai_floor(apy_wad, 1, cai_seconds_per_year());
+}
+
+!cai_apy_per_block(apy_wad: int) -> int {
+  ^ cai_floor(apy_wad, 1, cai_blocks_per_year());
+}
+
+!cai_test_suite() -> int {
+  f = cai_factor_scale();
+  ix = cai_index_scale();
+  sy = cai_seconds_per_year();
+  by = cai_blocks_per_year();
+  apy = 10000000000000000;
+  ?(cai_floor(100, 200, 50) != 400) { ^ -1; };
+  ?(cai_mul_factor(f, 500000000000000000) != 500000000000000000) { ^ -2; };
+  ?(cai_utilization(500, 1000) != 500000000000000000) { ^ -3; };
+  ?(cai_utilization(1, 0) != 0) { ^ -4; };
+  ?(cai_accrue_index(ix, 1, 0) != ix) { ^ -5; };
+  ?(cai_delta(ix, 1, 1000) != 1) { ^ -6; };
+  ?(cai_delta_twostep(ix, 1, 1000) != 0) { ^ -7; };
+  ps = cai_apy_per_second(apy);
+  ?(ps != 317097919) { ^ -8; };
+  pb = cai_apy_per_block(apy);
+  ?(pb != 4756468797) { ^ -9; };
+  d_iii = cai_delta(ix, ps, sy);
+  ?(d_iii != 9999999973584) { ^ -10; };
+  d_bad = cai_delta(ix, pb, sy);
+  ?(d_bad != 149999999982192) { ^ -11; };
+  ?(cai_u_lt(d_iii * 14, d_bad) == 0) { ^ -12; };
+  ?(cai_u_lt(d_bad, d_iii * 16) == 0) { ^ -12; };
+  ?(cai_accrue_index(ix, ps, sy) != 1009999999973584) { ^ -13; };
+  ?(cai_kink_rate(500000000000000000, 0, 100, 200, 800000000000000000) != 50) { ^ -14; };
+  ?(cai_kink_rate(900000000000000000, 1, 100, 200, 800000000000000000) != 101) { ^ -15; };
+  ?(cai_rate_time_ok(4294967296, 4294967296) != 0) { ^ -16; };
+  ?(cai_ov(f, f, 1) != 1) { ^ -17; };
+  ?(cai_floor(f, f, 1) != 0) { ^ -18; };
+  ?(cai_rate_time(ps, sy) != 9999999973584000) { ^ -19; };
+  ^ 1;
+}
+
+=ex{
+  cai_u_lt,
+  cai_u_add_carry,
+  cai_u_add_ok,
+  cai_mask32,
+  cai_ok_nn,
+  cai_factor_scale,
+  cai_index_scale,
+  cai_seconds_per_year,
+  cai_blocks_per_year,
+  cai_muldiv_part,
+  cai_floor,
+  cai_ov,
+  cai_mul_factor,
+  cai_rate_time_ok,
+  cai_rate_time,
+  cai_delta,
+  cai_delta_twostep,
+  cai_accrue_index,
+  cai_kink_rate,
+  cai_utilization,
+  cai_apy_per_second,
+  cai_apy_per_block,
+  cai_test_suite
+}

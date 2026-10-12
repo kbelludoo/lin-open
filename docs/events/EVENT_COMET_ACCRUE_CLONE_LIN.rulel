@@ -1,0 +1,71 @@
+@RULEL:COMET_ACCRUE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-COMET-ACCRUED-INTEREST-INDICES"
+@TITLE="Clone-lin of Compound III accruedInterestIndices with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-comet-accrue"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Compound III per-second index accrual into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for (a*b)/d; Solidity uint256 is NOT claimed"
+  commercial_hook="Compound III USDC markets accrue supply/borrow indexes every second; a wallet that reuses Compound V2 per-block IRM constants as III per-second slopes over-accrues a 365-day 1% book by ~15x. Making getUtilization/IRM storage explicit and replacing wrapping rate*dt with 128-bit muldiv is an audit improvement, not a TVL claim"
+  not_present_principal="this kernel is the per-second index update, not CometCore presentValue/principalValue"
+}
+
+.u{
+  repo="https://github.com/compound-finance/comet"
+  path="contracts/CometWithExtendedAssetList.sol"
+  constants_path="contracts/CometCore.sol"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2025-12-31 elapsed; Change License GPL-2.0-or-later"
+  commit="f766f51583c23acc33b2a7824654ef2029a96804"
+  git_blob_sha="3490e984d133789aa1afe2e8f7e37a11d2512396"
+  file_sha256="c9099e56eda092fd0150005706edf086723899afb102f164b60ad1f36a426961"
+  core_blob_sha="534f2701b6c8e683f9294112b0bcc23878d39fe6"
+  core_sha256="1d80f0d12c101d01c2e1f38e8662cfcf350299b1c78188f8c501bb1c51b5ec78"
+  fixture="test/fixtures/external_proof/CometWithExtendedAssetList.sol"
+  core_fixture="test/fixtures/external_proof/CometCore.sol"
+  seconds_per_year=31536000
+  factor_scale=1000000000000000000
+  base_index_scale=1000000000000000
+}
+
+.l{
+  clone="src/lin_comet_accrue.lin"
+  transpiler_delta="src/lin_from_solidity.lin v6: REJ_SOLIDITY_TUPLE_RET / REJ_SOLIDITY_SAFE64 / REJ_SOLIDITY_RATE_TIME / REJ_SOLIDITY_FACTOR_SCALE / getUtilization getter; src/lin_from_rust.lin v3: REJ_RUST_RATE_TIME"
+  improvement_1="getUtilization / getSupplyRate / getBorrowRate / storage IRM slopes / baseSupplyIndex are arguments, not hidden view-on-storage"
+  improvement_2="rate * timeElapsed wrapping i64 is rejected; LIN checks 128-bit product then mulFactor(index, product)"
+  improvement_3="floor(index*rate/1e18)*dt is not the on-chain formula; genesis 1e15 * 1 * 1000 / 1e18 is 1 via (rate*dt) first and 0 via two-step"
+  improvement_4="named contrast vs Compound V2 JumpRate per-block: same 1% wad over SECONDS_PER_YEAR with V2 per-block rate as III per-second over-accrues ~15x (31536000/2102400)"
+  improvement_5="tuple returns (uint64, uint64), safe64(, and FACTOR_SCALE identifier are fail-closed rejects, not silent uint256 emit"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/comet_accrue_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_comet_accrue.sh"
+}
+
+.p{
+  harness="test/prove_comet_accrue_external.py"
+  evidence_json="examples/comet_accrue/comet_accrue_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-comet-accrue"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet Comet / USDC / PriceFeed parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production IRM replacement"
+  not_claimed_4="presentValue / principalValue (clone-lin-comet-pv)"
+  not_claimed_5="TVL or live interest-income profit"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS && JUMPRATE_REGRESSION"
+  on_fail="do not publish a PASS status"
+}
