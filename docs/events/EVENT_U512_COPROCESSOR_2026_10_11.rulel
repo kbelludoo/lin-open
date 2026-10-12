@@ -1,0 +1,71 @@
+@RULEL:U512_COPROCESSOR_EVENT:1.31.0
+@CHALLENGE_ID="LIN-U512-COPROCESSOR-2026-10-12"
+@TITLE="512-bit intermediate proved as numeric coprocessor with auditable receipt"
+@STATUS="REPRODUCED_THIS_RUN"
+@DATE="2026-10-12"
+@CLASS="EXPERIMENTAL"
+
+~R{.s=scope .p=proved .n=not_proved .m=measured .h=hashes .v=verdict}
+
+.s{
+  product="LIN as a numeric coprocessor with an auditable receipt, not a Uniswap replacement"
+  why="u256 mulDiv(a,b,d)=(a*b)/d with a,b,d up to 2^256-1 needs a correct 512-bit product; otherwise the SafeMath-width settler lies or returns -2 where width-correct math approves"
+  engine="src/lin_u512_coprocessor.lin (16-bit limbs) + 32-limb remainder ge in examples/defi_settlement_proof/u512_uniswap_v2_core.lin"
+  make="make u512-coprocessor-proof"
+  harness="python3 test/prove_u512_coprocessor_external.py → 233/233 PASS this run"
+  delta="schema 1.31: IEEE-754 binary64 FFT convolution 256x256->512 + Montgomery REDC 512/256 with Jebelean exact q is a thirty-third independent math. Product: 8-bit digits, length-64 Cooley-Tukey over complex binary64, round-to-nearest carry in base 256. Not Fermat SS (F7), not FNT (2^64+1), not NTT, not unbalanced Toom-2x7, not RNS, not Comba, not Karatsuba. Division: Montgomery R=2^512, N'=-m^{-1} mod R, t=REDC(n), r=REDC(t R2) with R2=2^1024 mod m from sparse shift-sub of 2^k (not of n); even d via CRT; Jebelean exact q of n-r from the low-limb inverse. Not Barrett mu=floor(2^512/d) or floor(2^768/d) or floor(2^1024/d), not SRT radix-4..2048, not Newton, not Goldschmidt, not Knuth D, not Hensel-of-n, not restoring of n. Python int only for 8-bit FFT bins, 64x64->128, and N' setup. Zero-LIN FFT auditor (verify_u512_fft.py) recomputes n==a*b via FFT, q*d+r==n via Montgomery+Jebelean, binds mulDiv(fee,rout,den) on 3 EXACT + 3 OVERPAID + PHANTOM_APPROVE, and OpenSSL dgst of the LRI1 Merkle tree (FIPS abc ba7816bf) — no gcc, no rustc, no LinVM. Still includes schema 1.30 Toom-2x7+Barrett-1024. Engine frozen (Merkle roots vs 1.30 depend on this run's image digest)."
+}
+
+.p{
+  mul="256x256->512 schoolbook in the engine AND IEEE-754 FFT convolution independently; leftover-carry fail-closed; (2^256-1)^2 lo=1 hi=2^256-2 published leaf"
+  div="512/256 restoring div in the engine AND Montgomery REDC + Jebelean exact q independently; remainder 32/16/8 limbs; 512-bit ge; q*d+r==n and r<d"
+  ge="u512_ge_word + LGE1 8-leaf power-of-two tree; FFT/Montgomery ge_limbs agrees with Python int / Node / OpenSSL BN / Go / Java / GMP / Perl / radix32 / rust64 / radix8 / Knuth D / CRT / Karatsuba / Toom-3 / NTT / Comba / Toom-4 / FNT / Toom-5 / Toom-6 / Toom-7 / Toom-8 / Toom-9 / Toom-10 / RNS/Newton / SS/SRT-1024 / Toom-3x7/Barrett-768 / Toom-2x5/SRT-2048 / Toom-2x7/Barrett-1024 / GNU bc"
+  identity="LRI1 8-leaf power-of-two tree binds the 512-bit product n plus d,q,r. Outsider (including FFT+Montgomery + OpenSSL dgst) checks n==a*b and q*d+r==n and r<d without LinVM"
+  inclusion="LIP1: 34 published inclusion proofs (8 LRI1 + 8 LGE1 + LNR1 max_sq + 8 LCR2 E2E + 9 LCR2-full). FFT/Montgomery auditor binds packed LCR2 EXACT/OVERPAID and PHANTOM_APPROVE via mulDiv(fee,rout,den)"
+  guards="-1 on d=0 (coprocessor) and zero amount_in (both LCR2 trees); -2 on q overflow, SafeMath-width phantom (LCR2), and ain=2^256-1 fee overflow (LCR2-full)"
+  oracles="previous 1.30 oracles plus IEEE-754 FFT+Montgomery (FFT_MONTGOMERY_CONSENSUS) on the n=1060 batch; FFT/Montgomery on 6 LCR2 EXACT/OVERPAID and 6 LCR2-full + PHANTOM_APPROVE"
+  phantom="ain=1,rin=1,rout=ceil(2^256/997): coprocessor APPROVES; settle_u512_swap APPROVES; settle_u256_word -2. 512-bit intermediate off the suspect list; replacing the SafeMath-width settler body remains required"
+  receipt="LNR1 240-byte records; LCR2 208-byte records; LGE1; LRI1; LIP1; quad-auditor Python hashlib == Node crypto == C11 lin_sha256 == OpenSSL dgst; 1-bit leaf tamper rejected"
+  lcr2="3 EXACT_INPUT + 3 OVERPAID_INPUT with settle_u256_word == coprocessor == ref_amount_out and steps!=0; GUARD_ZERO -1; GUARD_OVERFLOW -2"
+  lcr2_full="same 3 EXACT + 3 OVERPAID via settle_u512_swap == ref_amount_out_full plus PHANTOM_APPROVE"
+}
+
+.n{
+  not_1="EVM mulmod opcode / solc FullMath.sol on-chain (algorithm pin; opcode not executed)"
+  not_2="a deployed Uniswap v2/v3 pool"
+  not_3="the full 2000-swap + 157-unfiltered campaign"
+  not_4="that 512 proof closes the SafeMath-width u256 settler by itself"
+  not_5="zk or computational soundness of Merkle (tamper-evidence + re-execution)"
+}
+
+.m{
+  host="lin_c0 C11, gcc -std=c11, python3 IEEE-754 FFT+Montgomery + Toom-2x7+Barrett-1024 + Toom-2x5+SRT-2048 + hashlib, node BigInt + crypto, openssl dgst, go math/big, javac BigInteger, libgmp.so.10, perl Math::BigInt::Calc, GNU bc 1.07.1, rustc zero-crate radix-2^64; no Zig"
+  fft_selftest="SELFTEST_PASS fft_montgomery q*d+r==n ge512 fft_prod montgomery_redc jebelean_q"
+  gate="233/233 PASS"
+  published_lip1_proofs=34
+  self_gate_steps=6710747
+  phantom_coprocessor_steps=1106942
+  phantom_u256_status=-2
+  phantom_u512_swap_steps=510463
+  class="EXPERIMENTAL"
+}
+
+.h{
+  lin_src="sha256:2a66456eae1227cb9ec3571da3258313cd4a5c6c787c42d3877a67152e96bd4b"
+  oracle_fft="sha256:38f9da199dab8a86ec03d3a5e3c766f9fd3ba8a48da5ae4f28e877bd72779a8f"
+  fft_py="sha256:3734f646735a1fdf9f8a8951612f0cfb59021d4392c729c460dd51d4ef603703"
+  verifier_fft="sha256:399b22e441ab7a4b23acea4c8adfb4a103e9ccc8d402fc998b6e299f9d924454"
+  harness="sha256:15afb880fdda86bb468d40d5ddb1ce1ca3b42c50d3764df276026175a45f4252"
+  evidence_json="sha256:5a04fab5fb79ef357c94161211e8551edbca136e0b7d70dc7081eb55a5b00819"
+  lnr1_merkle="sha256:f140dcbcde99052d0d415dfb22336e951f1efc2b0c29c8327af35f1a671b8d7a"
+  lcr2_merkle="sha256:2b8edf02b63457f3dd8f882b1afaa91f8c29f98815e33ccecd21cd94558b1751"
+  lcr2_full_merkle="sha256:0b25f19eb4b0eba086cc7753d44250808d83d55bce26edc07c44d5098d7446f8"
+  lge1_merkle="sha256:bcd89d286a41e5ed8d31a0a3979e23744ea754e9e423982f6fcfbed7d0dfff68"
+  lri1_merkle="sha256:c10b87f0546b9927b15f5362cbb9dd03c220aa8a79b9178518647130fafd8b94"
+  fullmath_sol="sha256:959c52e1c860bfbede3e33c8d04910c11038973173aa3478547cbad2e444880e"
+}
+
+.v{
+  method="PYTHON_BIGINT && FFT_MONTGOMERY && TOOM27_BARRETT1024 && LIN_C0_VM && LNR1_QUAD_AUDITOR && LCR2_SETTLER_EQ_COPROCESSOR && LCR2_FULL_SETTLE_U512 && LGE1_GE512 && LRI1_REMAINDER_IDENTITY && LIP1_INCLUSION && TAMPER_REJECT && FFT_OPENSSL_LRI1_MERKLE_AND_LCR2_BIND"
+  on_fail="do not publish PASS"
+}
