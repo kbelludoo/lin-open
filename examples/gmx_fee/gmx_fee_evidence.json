@@ -1,0 +1,163 @@
+{
+  "schema": "LIN_GMX_FEE_BPS_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned VaultUtils.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned gmx-io/gmx-contracts matches fixture",
+      "note": "commit=fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8 blob=8e29c3ff19258d191f6d2459c110a917ba1f9906"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of contracts/core/VaultUtils.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (fee / wrap / GMX goldens)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_gmx_fee.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "gmx_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "18/18 vectors: C11 i128 == LIN vm == Python bigint",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "18/18 vectors: Python wrapping-int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "GMX-TEST-100",
+      "status": "PASS",
+      "description": "published GMX at-target 1000-delta fee=100 (test/core/Vault/getFeeBasisPoints.js)",
+      "note": ""
+    },
+    {
+      "id": "GMX-TEST-104",
+      "status": "PASS",
+      "description": "published GMX at-target 5000-delta fee=104",
+      "note": ""
+    },
+    {
+      "id": "TAX-VS-FLAT",
+      "status": "PASS",
+      "description": "overweight increment 130 dynamic vs 100 flat (30 bps extra tax)",
+      "note": ""
+    },
+    {
+      "id": "REBATE-VS-FLAT",
+      "status": "PASS",
+      "description": "underweight increment 75 rebate vs 100 flat (25 bps cheaper to rebalance)",
+      "note": ""
+    },
+    {
+      "id": "NAIVE-WRAP",
+      "status": "PASS",
+      "description": "naive i64 (5e9*5e9)/1e6 wraps to 6553255926290; 128-bit muldiv=25000000000000",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on gmx_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes initial/delta/target/fee/tax as arguments (no vault storage)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv for tax*diff/target",
+      "note": ""
+    },
+    {
+      "id": "NOT-XY",
+      "status": "PASS",
+      "description": "kernel is GMX USDG tax/rebate, not Uniswap xy or Solidly cubic or Saddle getD",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects getFeeBasisPoints / hasDynamicFees / usdgAmounts",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects get_fee_basis_points / has_dynamic_fees",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/gmx-io/gmx-contracts",
+    "commit": "fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8",
+    "path": "contracts/core/VaultUtils.sol",
+    "git_blob_sha": "8e29c3ff19258d191f6d2459c110a917ba1f9906",
+    "file_sha256": "ad831f3c8d675c42665c854368bc06696e1cba23bd3294f91aa2ce4c0a8fc495",
+    "license": "MIT",
+    "commercial_descendants": "GMX V1 Vault on Arbitrum/Avalanche; GLP mint/burn and swap fees"
+  },
+  "lin_clone": "src/lin_gmx_fee.lin",
+  "c11_oracle": "test/oracles/gmx_fee_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "at_target_2k": 105,
+    "under_inc_rebate": 75,
+    "over_dec_rebate": 75,
+    "over_inc_tax": 130,
+    "flat_no_dyn": 100,
+    "gmx_test_1000": 100,
+    "gmx_test_5000": 104,
+    "gmx_test_90": 90,
+    "naive_wrap_5e9": 6553255926290,
+    "wide_5e9": 25000000000000
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-gmx-fee"
+}
