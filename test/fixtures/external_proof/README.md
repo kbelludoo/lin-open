@@ -7,6 +7,7 @@ independent proof harness. They are **test fixtures**, not vendored libraries.
 |---|---|---|
 | `UniswapV2Library.sol` | [Uniswap/v2-periphery](https://github.com/Uniswap/v2-periphery) | GPL v3 (upstream) |
 | `FullMath.sol` | [Uniswap/v3-core](https://github.com/Uniswap/v3-core) | BUSL-1.1 / GPL-3.0 (upstream) |
+| `SqrtPriceMath.sol` | [Uniswap/v3-core](https://github.com/Uniswap/v3-core) tag `v1.0.0` | GPL-2.0-or-later after BUSL Change Date 2023-04-01 |
 | `openssl_sha256.c` | [openssl/openssl](https://github.com/openssl/openssl) | Apache-2.0 |
 | `qoi.h` | [phoboslab/qoi](https://github.com/phoboslab/qoi) | MIT |
 | `tinyexpr.c` | [codeplea/tinyexpr](https://github.com/codeplea/tinyexpr) | zlib |

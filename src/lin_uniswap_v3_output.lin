@@ -1,0 +1,293 @@
+@LIN:L1c:0.2
+@UNISWAP_V3_FROM_OUTPUT{
+  version=1
+  repo="Uniswap/v3-core"
+  source="contracts/libraries/SqrtPriceMath.sol"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2023-04-01 elapsed; Change License GPL-2.0-or-later"
+  commit="e3589b192d0be27e100cd0daaf6c97204fdb1899"
+  tag="v1.0.0"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_v3_getNextSqrtPriceFromOutput_Q32_not_Q96"
+  note="Not mainnet uint160/Q64.96. Real deltas: Q32=2^32; 128-bit muldiv; exact-output subtract vs FromInput add routing; ceil token1 remove vs floor; wrapping i64 sub hides a drain. Not getNextSqrtPriceFromInput (clone-lin-uniswap-v3-next-sqrt). Not getAmount0Delta. Not getTickAtSqrtRatio (assembly MSB reject)."
+}
+
+!v3o_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!v3o_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(v3o_u_lt(s, a));
+}
+
+!v3o_mask32() -> int {
+  ^ 4294967295;
+}
+
+!v3o_q32() -> int {
+  ^ 4294967296;
+}
+
+!v3o_muldiv_part(a: int, b: int, d: int, want_rem: int) -> int {
+  ?(d == 0) { ^ 0; };
+  m32 = v3o_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = v3o_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = v3o_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(v3o_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = v3o_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 2) { ^ ov; };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!v3o_muldiv(a: int, b: int, d: int) -> int {
+  ^ v3o_muldiv_part(a, b, d, 0);
+}
+
+!v3o_muldiv_rem(a: int, b: int, d: int) -> int {
+  ^ v3o_muldiv_part(a, b, d, 1);
+}
+
+!v3o_muldiv_up(a: int, b: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(v3o_muldiv_part(a, b, d, 2) == 1) { ^ 0; };
+  q = v3o_muldiv_part(a, b, d, 0);
+  r = v3o_muldiv_part(a, b, d, 1);
+  ?(r == 0) { ^ q; };
+  s = q + 1;
+  ?(v3o_u_lt(s, q) == 1) { ^ 0; };
+  ^ s;
+}
+
+!v3o_div_up(a: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  q = a / d;
+  r = a - q * d;
+  ?(r == 0) { ^ q; };
+  s = q + 1;
+  ?(v3o_u_lt(s, q) == 1) { ^ 0; };
+  ^ s;
+}
+
+!v3o_num1(liq: int) -> int {
+  ^ v3o_muldiv(liq, v3o_q32(), 1);
+}
+
+!v3o_next0_sub(sqrt_p: int, liq: int, amount: int) -> int {
+  ?(v3o_u_lt(0, sqrt_p) == 0) { ^ 0; };
+  ?(v3o_u_lt(0, liq) == 0) { ^ 0; };
+  ?(amount == 0) { ^ sqrt_p; };
+  num1 = v3o_num1(liq);
+  ?(num1 == 0) { ^ 0; };
+  ov = v3o_muldiv_part(amount, sqrt_p, 1, 2);
+  ?(ov == 1) { ^ 0; };
+  product = v3o_muldiv(amount, sqrt_p, 1);
+  ?(v3o_u_lt(product, num1) == 0) { ^ 0; };
+  denom = num1 - product;
+  ?(denom == 0) { ^ 0; };
+  ^ v3o_muldiv_up(num1, sqrt_p, denom);
+}
+
+!v3o_floor_sub0(sqrt_p: int, liq: int, amount: int) -> int {
+  ?(v3o_u_lt(0, sqrt_p) == 0) { ^ 0; };
+  ?(v3o_u_lt(0, liq) == 0) { ^ 0; };
+  ?(amount == 0) { ^ sqrt_p; };
+  num1 = v3o_num1(liq);
+  ?(num1 == 0) { ^ 0; };
+  ov = v3o_muldiv_part(amount, sqrt_p, 1, 2);
+  ?(ov == 1) { ^ 0; };
+  product = v3o_muldiv(amount, sqrt_p, 1);
+  ?(v3o_u_lt(product, num1) == 0) { ^ 0; };
+  denom = num1 - product;
+  ?(denom == 0) { ^ 0; };
+  ^ v3o_muldiv(num1, sqrt_p, denom);
+}
+
+!v3o_next1_sub(sqrt_p: int, liq: int, amount: int) -> int {
+  ?(v3o_u_lt(0, sqrt_p) == 0) { ^ 0; };
+  ?(v3o_u_lt(0, liq) == 0) { ^ 0; };
+  ?(amount == 0) { ^ sqrt_p; };
+  shift = v3o_muldiv(amount, v3o_q32(), 1);
+  quot = 0;
+  ?(shift == 0) {
+    quot = v3o_muldiv_up(amount, v3o_q32(), liq);
+    ?(quot == 0) { ^ 0; };
+  };
+  ?(shift != 0) { quot = v3o_div_up(shift, liq); };
+  ?(v3o_u_lt(quot, sqrt_p) == 0) { ^ 0; };
+  ^ sqrt_p - quot;
+}
+
+!v3o_floor_sub1(sqrt_p: int, liq: int, amount: int) -> int {
+  ?(v3o_u_lt(0, sqrt_p) == 0) { ^ 0; };
+  ?(v3o_u_lt(0, liq) == 0) { ^ 0; };
+  ?(amount == 0) { ^ sqrt_p; };
+  shift = v3o_muldiv(amount, v3o_q32(), 1);
+  quot = 0;
+  ?(shift == 0) {
+    quot = v3o_muldiv(amount, v3o_q32(), liq);
+    ?(quot == 0) { ^ 0; };
+  };
+  ?(shift != 0) { quot = shift / liq; };
+  ?(v3o_u_lt(quot, sqrt_p) == 0) { ^ 0; };
+  ^ sqrt_p - quot;
+}
+
+!v3o_next0_add(sqrt_p: int, liq: int, amount: int) -> int {
+  ?(v3o_u_lt(0, sqrt_p) == 0) { ^ 0; };
+  ?(v3o_u_lt(0, liq) == 0) { ^ 0; };
+  ?(amount == 0) { ^ sqrt_p; };
+  num1 = v3o_num1(liq);
+  ?(num1 == 0) { ^ 0; };
+  ov = v3o_muldiv_part(amount, sqrt_p, 1, 2);
+  ?(ov == 1) { ^ 0; };
+  product = v3o_muldiv(amount, sqrt_p, 1);
+  denom = num1 + product;
+  ?(v3o_u_lt(denom, num1) == 1) { ^ 0; };
+  ^ v3o_muldiv_up(num1, sqrt_p, denom);
+}
+
+!v3o_next1_add(sqrt_p: int, liq: int, amount: int) -> int {
+  ?(v3o_u_lt(0, sqrt_p) == 0) { ^ 0; };
+  ?(v3o_u_lt(0, liq) == 0) { ^ 0; };
+  ?(amount == 0) { ^ sqrt_p; };
+  shift = v3o_muldiv(amount, v3o_q32(), 1);
+  quot = 0;
+  ?(shift == 0) {
+    quot = v3o_muldiv(amount, v3o_q32(), liq);
+    ?(quot == 0) { ^ 0; };
+  };
+  ?(shift != 0) { quot = shift / liq; };
+  s = sqrt_p + quot;
+  ?(v3o_u_lt(s, sqrt_p) == 1) { ^ 0; };
+  ^ s;
+}
+
+!v3o_next_from_output(sqrt_p: int, liq: int, amount_out: int, zero_for_one: int) -> int {
+  ?(v3o_u_lt(0, sqrt_p) == 0) { ^ 0; };
+  ?(v3o_u_lt(0, liq) == 0) { ^ 0; };
+  ?(zero_for_one != 0) {
+    ^ v3o_next1_sub(sqrt_p, liq, amount_out);
+  };
+  ^ v3o_next0_sub(sqrt_p, liq, amount_out);
+}
+
+!v3o_as_input(sqrt_p: int, liq: int, amount: int, zero_for_one: int) -> int {
+  ?(v3o_u_lt(0, sqrt_p) == 0) { ^ 0; };
+  ?(v3o_u_lt(0, liq) == 0) { ^ 0; };
+  ?(zero_for_one != 0) {
+    ^ v3o_next0_add(sqrt_p, liq, amount);
+  };
+  ^ v3o_next1_add(sqrt_p, liq, amount);
+}
+
+!v3o_naive_wrap_sub0(sqrt_p: int, liq: int, amount: int) -> int {
+  den = liq - amount * sqrt_p;
+  ?(den == 0) { ^ 0; };
+  ^ (liq * sqrt_p) / den;
+}
+
+!v3o_naive_underflow(sqrt_p: int, liq: int, amount: int) -> int {
+  ?(liq == 0) { ^ 0; };
+  shift = amount * v3o_q32();
+  quot = shift / liq;
+  r = shift - quot * liq;
+  ?(r != 0) { quot = quot + 1; };
+  ^ sqrt_p - quot;
+}
+
+!v3o_test_suite() -> int {
+  q = v3o_q32();
+  l = 1000000;
+  ?(v3o_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(v3o_next_from_output(q, l, 500000, 1) != 2147483648) { ^ -2; };
+  ?(v3o_as_input(q, l, 500000, 1) != 2863311531) { ^ -3; };
+  ?(v3o_next_from_output(q, l, 500000, 0) != 8589934592) { ^ -4; };
+  ?(v3o_as_input(q, l, 500000, 0) != 6442450944) { ^ -5; };
+  ?(v3o_next1_sub(q, l, 1) != 4294963001) { ^ -6; };
+  ?(v3o_floor_sub1(q, l, 1) != 4294963002) { ^ -7; };
+  ?(v3o_next0_sub(q, l, 1) != 4294971591) { ^ -8; };
+  ?(v3o_floor_sub0(q, l, 1) != 4294971590) { ^ -9; };
+  ?(v3o_next_from_output(q, l, l, 1) != 0) { ^ -10; };
+  ?(v3o_as_input(q, l, l, 1) != 2147483648) { ^ -11; };
+  ?(v3o_next_from_output(q, l, l, 0) != 0) { ^ -12; };
+  ?(v3o_naive_wrap_sub0(q, l, 500000) != 0 - 2) { ^ -13; };
+  ?(v3o_naive_underflow(q, l, 1000001) != 0 - 4295) { ^ -14; };
+  ?(v3o_next_from_output(q, l, 0, 1) != q) { ^ -15; };
+  ?(v3o_next_from_output(0, l, 1, 1) != 0) { ^ -16; };
+  ?(v3o_next_from_output(q, 0, 1, 1) != 0) { ^ -17; };
+  ?(v3o_muldiv(1000000000000000000, 1000000000000000000, 1) != 0) { ^ -18; };
+  ?(v3o_muldiv_rem(7, 9, 2) != 1) { ^ -19; };
+  ^ 1;
+}
+
+=ex{
+  v3o_u_lt,
+  v3o_u_add_carry,
+  v3o_mask32,
+  v3o_q32,
+  v3o_muldiv_part,
+  v3o_muldiv,
+  v3o_muldiv_rem,
+  v3o_muldiv_up,
+  v3o_div_up,
+  v3o_num1,
+  v3o_next0_sub,
+  v3o_floor_sub0,
+  v3o_next1_sub,
+  v3o_floor_sub1,
+  v3o_next0_add,
+  v3o_next1_add,
+  v3o_next_from_output,
+  v3o_as_input,
+  v3o_naive_wrap_sub0,
+  v3o_naive_underflow,
+  v3o_test_suite
+}

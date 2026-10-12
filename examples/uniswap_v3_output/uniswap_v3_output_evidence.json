@@ -1,0 +1,187 @@
+{
+  "schema": "LIN_UNISWAP_V3_FROM_OUTPUT_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned SqrtPriceMath.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned Uniswap/v3-core v1.0.0 matches fixture",
+      "note": "commit=e3589b192d0be27e100cd0daaf6c97204fdb1899 blob=685f485da43402235c3a9ce7fd85a49597b6373a"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of SqrtPriceMath.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (output routing / ceil / wrap-hide)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_uniswap_v3_output.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "v3o_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "13/13 vectors: C11 i128 == LIN vm == Python bigint",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "13/13 vectors: Python wrapping-int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "ROUTE-INVERT",
+      "status": "PASS",
+      "description": "exact-output zfo=1 of 5e5 is Q/2=2147483648; FromInput routing yields 2863311531",
+      "note": ""
+    },
+    {
+      "id": "ROUTE-ZFO0",
+      "status": "PASS",
+      "description": "exact-output zfo=0 of 5e5 is 2Q=8589934592; FromInput routing yields 1.5Q=6442450944",
+      "note": ""
+    },
+    {
+      "id": "CEIL-VS-FLOOR",
+      "status": "PASS",
+      "description": "token1 remove amount=1 ceils to 4294963001 vs floor 4294963002 (1-unit solvency)",
+      "note": ""
+    },
+    {
+      "id": "NAIVE-WRAP",
+      "status": "PASS",
+      "description": "naive wrapping (L*sqrtP)/(L-amount*sqrtP) yields -2; 128-bit output yields 2Q",
+      "note": ""
+    },
+    {
+      "id": "WRAP-HIDE",
+      "status": "PASS",
+      "description": "token1 amount=L+1: wrapping sub yields -4295; require(sqrtP>quot) fail-closes to 0",
+      "note": ""
+    },
+    {
+      "id": "UNDERFLOW-IN",
+      "status": "PASS",
+      "description": "output of L token1 fail-closes 0; FromInput routing of the same amount yields Q/2",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on v3o_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes sqrtP/L/amountOut/zeroForOne as arguments",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv (Q32 * L * sqrtP)",
+      "note": ""
+    },
+    {
+      "id": "Q32-NOT-Q96",
+      "status": "PASS",
+      "description": "Q32=2^32 used; Q96=2^96 cannot fit signed i64",
+      "note": ""
+    },
+    {
+      "id": "NOT-FROM-INPUT",
+      "status": "PASS",
+      "description": "kernel is FromOutput only; FromInput is the named rejected routing v3o_as_input",
+      "note": ""
+    },
+    {
+      "id": "NOT-AMT-DELTA",
+      "status": "PASS",
+      "description": "kernel is next-sqrt-from-output; amount-delta is a named contrast not a port",
+      "note": ""
+    },
+    {
+      "id": "NOT-TICK-INV",
+      "status": "PASS",
+      "description": "no i64 inverse of the tick table; getTickAtSqrtRatio is assembly-MSB reject",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects FromOutput / TickAt / RESOLUTION / << / uint160 / RoundingUp",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects FromOutput / TickAt / RESOLUTION / <<",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/Uniswap/v3-core",
+    "commit": "e3589b192d0be27e100cd0daaf6c97204fdb1899",
+    "tag": "v1.0.0",
+    "path": "contracts/libraries/SqrtPriceMath.sol",
+    "git_blob_sha": "685f485da43402235c3a9ce7fd85a49597b6373a",
+    "file_sha256": "ddd62e3a94346248677f30f1ab009ef015e71e4b8696dcca890eeabc9dc6c149",
+    "license": "GPL-2.0-or-later",
+    "license_note": "BUSL-1.1 Change Date 2023-04-01 elapsed"
+  },
+  "lin_clone": "src/lin_uniswap_v3_output.lin",
+  "c11_oracle": "test/oracles/uniswap_v3_output_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "q_scale": "Q32=2^32 (not Q96=2^96)",
+  "goldens": {
+    "out_zfo1_5e5": 2147483648,
+    "as_input_zfo1_5e5": 2863311531,
+    "out_zfo0_5e5": 8589934592,
+    "as_input_zfo0_5e5": 6442450944,
+    "ceil_amt1_1": 4294963001,
+    "floor_amt1_1": 4294963002,
+    "naive_wrap_sub0": -2,
+    "naive_underflow": -4295
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-uniswap-v3-output"
+}
