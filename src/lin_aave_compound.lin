@@ -1,0 +1,221 @@
+@LIN:L1c:0.2
+@AAVE_V3_COMPOUNDED_INTEREST{
+  version=1
+  repo="aave/aave-v3-core"
+  source="contracts/protocol/libraries/math/MathUtils.sol"
+  license="MIT"
+  license_note="Upstream BUSL-1.1 Change Date 2023-01-27 elapsed; Change License MIT. This run is 2026-10-12. Tag v1.19.4. Did not pin aave-dao/aave-v3-origin (Change Date 2027-03-06 still future)."
+  commit="b74526a7bc67a3a117a1963fc871b3eb8cea8435"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_aave_binomial_compounded_interest"
+  note="Not mainnet uint256. Not rayMul/RAY=1e27 (exceeds i64). Not block.timestamp. rate and dt are arguments. Binomial (1+r)^n truncated after x^3 via 128-bit muldiv at WAD=1e18. YEAR^2-floor wad port and e^x Horner n^2/2 are named rejected paths. Linear is first term only."
+}
+
+!aci_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!aci_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(aci_u_lt(s, a));
+}
+
+!aci_mask32() -> int {
+  ^ 4294967295;
+}
+
+!aci_wad() -> int {
+  ^ 1000000000000000000;
+}
+
+!aci_year() -> int {
+  ^ 31536000;
+}
+
+!aci_year2() -> int {
+  ^ 994519296000000;
+}
+
+!aci_dt_ok(dt: int) -> int {
+  ?(dt < 0) { ^ 0; };
+  ?(aci_u_lt(2000000000, dt) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!aci_muldiv_part(a: int, b: int, d: int, want_rem: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  m32 = aci_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = aci_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = aci_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(aci_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = aci_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!aci_muldiv(a: int, b: int, d: int) -> int {
+  ^ aci_muldiv_part(a, b, d, 0);
+}
+
+!aci_muldiv_rem(a: int, b: int, d: int) -> int {
+  ^ aci_muldiv_part(a, b, d, 1);
+}
+
+!aci_elapsed(last: int, now: int) -> int {
+  ?(last < 0) { ^ 0; };
+  ?(now < 0) { ^ 0; };
+  ?(aci_u_lt(now, last) == 1) { ^ 0; };
+  ^ (now - last);
+}
+
+!aci_linear(rate: int, dt: int) -> int {
+  ?(rate < 0) { ^ 0; };
+  ?(aci_dt_ok(dt) == 0) { ^ 0; };
+  first = aci_muldiv(rate, dt, aci_year());
+  ^ (aci_wad() + first);
+}
+
+!aci_compounded(rate: int, dt: int) -> int {
+  ?(rate < 0) { ^ 0; };
+  ?(aci_dt_ok(dt) == 0) { ^ 0; };
+  ?(dt == 0) { ^ aci_wad(); };
+  dt1 = dt - 1;
+  dt2 = 0;
+  ?(dt > 2) { dt2 = dt - 2; };
+  first = aci_muldiv(rate, dt, aci_year());
+  r2 = aci_muldiv(rate, rate, aci_wad());
+  pair = aci_muldiv(dt, dt1, 2);
+  second = aci_muldiv(r2, pair, aci_year2());
+  r3 = aci_muldiv(r2, rate, aci_wad());
+  t = aci_muldiv(r3, dt, aci_year());
+  t = aci_muldiv(t, dt1, aci_year());
+  t = aci_muldiv(t, dt2, aci_year());
+  third = aci_muldiv(t, 1, 6);
+  ^ (((aci_wad() + first) + second) + third);
+}
+
+!aci_year2_floor(rate: int, dt: int) -> int {
+  ?(rate < 0) { ^ 0; };
+  ?(aci_dt_ok(dt) == 0) { ^ 0; };
+  ?(dt == 0) { ^ aci_wad(); };
+  dt1 = dt - 1;
+  dt2 = 0;
+  ?(dt > 2) { dt2 = dt - 2; };
+  first = aci_muldiv(rate, dt, aci_year());
+  r2 = aci_muldiv(rate, rate, aci_wad());
+  bp2 = aci_muldiv(r2, 1, aci_year2());
+  pair = aci_muldiv(dt, dt1, 2);
+  second = aci_muldiv(pair, bp2, 1);
+  bp3 = aci_muldiv(aci_muldiv(bp2, rate, aci_wad()), 1, aci_year());
+  third = aci_muldiv(aci_muldiv(aci_muldiv(dt, dt1, 1), dt2, 1), bp3, 6);
+  ^ (((aci_wad() + first) + second) + third);
+}
+
+!aci_ex_horner(rate: int, dt: int) -> int {
+  ?(rate < 0) { ^ 0; };
+  ?(aci_dt_ok(dt) == 0) { ^ 0; };
+  x = aci_muldiv(rate, dt, aci_year());
+  x2 = aci_muldiv(x, x, aci_wad());
+  x3 = aci_muldiv(x2, x, aci_wad());
+  ^ (((aci_wad() + x) + aci_muldiv(x2, 1, 2)) + aci_muldiv(x3, 1, 6));
+}
+
+!aci_index_mul(index: int, interest: int) -> int {
+  ?(index < 0) { ^ 0; };
+  ?(interest < 0) { ^ 0; };
+  ^ aci_muldiv(index, interest, aci_wad());
+}
+
+!aci_test_suite() -> int {
+  ?(aci_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(aci_muldiv(7, 9, 1) != 63) { ^ -2; };
+  ?(aci_compounded(50000000000000000, 0) != 1000000000000000000) { ^ -3; };
+  ?(aci_linear(50000000000000000, 31536000) != 1050000000000000000) { ^ -4; };
+  ?(aci_compounded(50000000000000000, 31536000) != 1051270833291714231) { ^ -5; };
+  ?(aci_year2_floor(50000000000000000, 31536000) != 1050994519264464000) { ^ -6; };
+  ?(aci_ex_horner(50000000000000000, 31536000) != 1051270833333333333) { ^ -7; };
+  ?(aci_u_lt(aci_linear(50000000000000000, 31536000), aci_compounded(50000000000000000, 31536000)) != 1) { ^ -8; };
+  ?(aci_compounded(50000000000000000, 31536000) == aci_year2_floor(50000000000000000, 31536000)) { ^ -9; };
+  ?(aci_linear(50000000000000000, 1) != aci_compounded(50000000000000000, 1)) { ^ -10; };
+  ?(aci_compounded(1000000000000000000, 2) != 1000000063419584972) { ^ -11; };
+  ?(aci_ex_horner(1000000000000000000, 2) != 1000000063419585978) { ^ -12; };
+  ?(aci_compounded(1000000000000000000, 2) == aci_ex_horner(1000000000000000000, 2)) { ^ -13; };
+  ?(aci_elapsed(100, 90) != 0) { ^ -14; };
+  ?(aci_elapsed(100, 110) != 10) { ^ -15; };
+  ?(aci_muldiv(1000000000000000000, 1000000000000000000, 1) != 0) { ^ -16; };
+  ?(aci_muldiv_rem(7, 9, 2) != 1) { ^ -17; };
+  ?(aci_index_mul(1000000000000000000, 1051270833291714231) != 1051270833291714231) { ^ -18; };
+  ?(aci_dt_ok(-1) != 0) { ^ -19; };
+  ?(aci_year() != 31536000) { ^ -20; };
+  ?(aci_linear(50000000000000000, 86400) != 1000136986301369863) { ^ -21; };
+  ?(aci_compounded(50000000000000000, 86400) != 1000136995684313064) { ^ -22; };
+  ^ 1;
+}
+
+=ex{
+  aci_u_lt,
+  aci_u_add_carry,
+  aci_mask32,
+  aci_wad,
+  aci_year,
+  aci_year2,
+  aci_dt_ok,
+  aci_muldiv_part,
+  aci_muldiv,
+  aci_muldiv_rem,
+  aci_elapsed,
+  aci_linear,
+  aci_compounded,
+  aci_year2_floor,
+  aci_ex_horner,
+  aci_index_mul,
+  aci_test_suite
+}

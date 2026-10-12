@@ -1,0 +1,66 @@
+@RULEL:AAVE_COMPOUND_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-AAVE-V3-COMPOUNDED-INTEREST"
+@TITLE="Clone-lin of Aave V3 MathUtils binomial compounded interest with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-aave-compound"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Aave V3 MathUtils calculateCompoundedInterest / calculateLinearInterest into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs at WAD=1e18, 128-bit product for (a*b)/d; Solidity uint256 and RAY=1e27 are NOT claimed"
+  commercial_hook="MathUtils binomial (1+x)^n through x^3 is how Aave V3 accrues reserve indexes; linear-only, YEAR^2-floor wad ports, e^x Horner n^2/2, and wrapping i64 rate*dt are named rejected paths, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/aave/aave-v3-core"
+  tag="v1.19.4"
+  path="contracts/protocol/libraries/math/MathUtils.sol"
+  license="MIT"
+  license_note="BUSL-1.1 Change Date 2023-01-27 elapsed; Change License MIT. Did not pin aave-dao/aave-v3-origin (Change Date 2027-03-06 still future)."
+  commit="b74526a7bc67a3a117a1963fc871b3eb8cea8435"
+  git_blob_sha="9adca939db36cbe1009d0a00600def9314fc7332"
+  file_sha256="7f73c927e9801debfe0666e2a6364b92f62fd2d58d0c4b485ff04765fd4dc58d"
+  fixture="test/fixtures/external_proof/MathUtils.sol"
+}
+
+.l{
+  clone="src/lin_aave_compound.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_RAY / BINOMIAL / SECONDS_YEAR / UINT40 / USING; emit splits '=' + 'ex{'. src/lin_from_rust.lin v2: REJ_RUST_RAY / BINOMIAL / SECONDS_YEAR"
+  improvement_1="calculateLinearInterest is view-on-block.timestamp; LIN takes explicit rate,dt"
+  improvement_2="RAY=1e27 exceeds signed i64; clone is wad 1e18 with 128-bit muldiv"
+  improvement_3="naive wad port of rate.rayMul(rate)/(YEAR*YEAR) floors the second term (bp2=2 at 5% APY); LIN expanded 128-bit product keeps the binomial"
+  improvement_4="e^x Horner 1+x+x^2/2+x^3/6 uses n^2 not n(n-1); named rejected path, not a port of aave-v3-origin"
+  improvement_5="debt-index update is aci_index_mul(index, interest); rate*YEAR wraps in uint64, 128-bit does not"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/aave_compound_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="python3 test/prove_aave_compound_external.py"
+}
+
+.p{
+  harness="test/prove_aave_compound_external.py"
+  evidence_json="examples/aave_compound/aave_compound_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-aave-compound"
+  named_goldens="linear_1y_5pct=1050000000000000000 compounded_1y_5pct=1051270833291714231 year2_floor_1y_5pct=1050994519264464000 horner_exp2_100pct=1000000063419585978 binomial_exp2_100pct=1000000063419584972"
+}
+
+.n{
+  not_claimed_1="full uint256 / ray / mainnet Pool / aToken parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production IRM or interest-index replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Aave, Compound, or the EVM"
+  not_claimed_6="aave-dao/aave-v3-origin MathUtils Horner rewrite (still BUSL until 2027-03-06)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
