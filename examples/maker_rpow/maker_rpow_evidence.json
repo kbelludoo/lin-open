@@ -1,0 +1,170 @@
+{
+  "schema": "LIN_MAKER_DSR_RPOW_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned pot.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss 1.3.0 matches fixture",
+      "note": "commit=3f30552a586264b32ebdb5bac94ba67020282e53 blob=13ddce04785a0c9dc49bb8a95c441e25f4263d10"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/pot.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (0^0 / rounding / wrap / drip chi)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_rpow.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "mds_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "14/14 vectors: C11 i128 == LIN vm == Python bigint",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "14/14 vectors: Python wrapping-int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "ZERO-POW",
+      "status": "PASS",
+      "description": "rpow(0,0,RAY')=1e9; rpow(0,5,RAY')=0 (Maker 0^0 = base)",
+      "note": ""
+    },
+    {
+      "id": "ROUND-HALF",
+      "status": "PASS",
+      "description": "rpow(3,2,2)=5 with half-up; skip-round floor=4",
+      "note": ""
+    },
+    {
+      "id": "NAIVE-WRAP",
+      "status": "PASS",
+      "description": "naive i64 (5e9*5e9)/1e9 wraps to 6553255926; 128-bit rpow=25000000000",
+      "note": ""
+    },
+    {
+      "id": "DSR-DRIP",
+      "status": "PASS",
+      "description": "drip chi'=rmul(rpow(1.05e9,2,RAY'),2e9)=2205000000",
+      "note": ""
+    },
+    {
+      "id": "COMPOUND-1K",
+      "status": "PASS",
+      "description": "rpow(1e9+1000, 1000, RAY')=1001000482 (binary exp, not naive loop)",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on mds_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes x/n/base as arguments (dsr/dt/chi explicit on drip)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv (x*x/base with half-up rounding)",
+      "note": ""
+    },
+    {
+      "id": "RAY9-NOT-27",
+      "status": "PASS",
+      "description": "RAY'=1e9 used; RAY=1e27 cannot fit signed i64",
+      "note": ""
+    },
+    {
+      "id": "NOT-SHARE-RATE",
+      "status": "PASS",
+      "description": "kernel is DSR rpow, not a Lido/Rocket 1:1-vs-div0 retread",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects rpow / _rpow / 10**27 / 1e27",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects rpow",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "3f30552a586264b32ebdb5bac94ba67020282e53",
+    "tag": "1.3.0",
+    "path": "src/pot.sol",
+    "git_blob_sha": "13ddce04785a0c9dc49bb8a95c441e25f4263d10",
+    "file_sha256": "3b20c6285e7eeec097ef20d2065e4aa1773588b9e1f127b9afe19ca3543928bb",
+    "license": "AGPL-3.0-or-later"
+  },
+  "lin_clone": "src/lin_maker_rpow.lin",
+  "c11_oracle": "test/oracles/maker_rpow_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "q_scale": "RAY'=1e9 (not RAY=1e27)",
+  "goldens": {
+    "zero_pow_zero": 1000000000,
+    "two_cubed_ray": 8000000000,
+    "one_point_five_sq": 2250000000,
+    "five_e9_sq": 25000000000,
+    "round_3_2_2": 5,
+    "noround_3_2_2": 4,
+    "one_point_05_sq": 1102500000,
+    "dsr_plus_1000_n1000": 1001000482,
+    "naive_wrap_5e9": 6553255926,
+    "drip_chi_2e9": 2205000000
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-maker-rpow"
+}
