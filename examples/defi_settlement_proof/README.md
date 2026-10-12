@@ -182,3 +182,242 @@ python3 tools/ingest_mainnet_unfiltered.py --blocks 200 --out test/pilot_harness
 python3 test/pilot_harness/test_honest_parity_and_sensitivity.py --json test/pilot_harness/mainnet_unfiltered.json
 ```
 Com GPU (ROCm/OpenCL): `u256_opencl_host /tmp/swaps.bin`. Cite throughput apenas comparando lotes de tamanhos distintos (ex.: 2k, 10k, 100k).
+
+---
+
+## 6. Coprocessor numérico u512 (recibo auditável) — EXPERIMENTAL
+
+LIN vende como **coprocessor numérico com recibo**, não como substituto de Uniswap.
+`src/lin_u512_coprocessor.lin` faz `mulDiv(a,b,d)=(a*b)/d` com intermediário de 512 bits
+(16-bit limbs). Prova-se neste checkout, sem Zig:
+
+```bash
+make u512-coprocessor-proof
+python3 examples/u512_coprocessor/verify_u512_receipt.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json --self-test
+node examples/u512_coprocessor/verify_u512_receipt.js \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_knuth_d.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_crt.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_karatsuba.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom3.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_ntt.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_comba.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom4.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_fnt.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom5.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom6.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom7.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom8.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom9.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom10.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_rns.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_ss.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom37.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom25.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom27.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+```
+
+O que fecha: mul 256×256→512 com leftover-carry fail-closed; div 512/256 com remainder
+de 32 limbs e `q*d+r==n` (LIN + C11 16-bit + C11 64-bit `identity64` + C11 radix-2^32
+schoolbook + rustc radix-2^64 + Python radix-2^8 + Node.js BigInt + OpenSSL BIGNUM via `dlopen libcrypto.so.3` + Go `math/big`
++ Java `BigInteger` + GNU MP `mpz` via `dlopen libgmp.so.10` + Perl `Math::BigInt::Calc`,
+não GMP + POSIX GNU `bc` + Knuth Algorithm D (TAOCP §4.3.1, divisão longa
+normalizada, não restoring bit-serial) + FullMath CRT + Newton (prod0 wrapping,
+mm por rotate-and-add Mersenne `2^256≡1`, prod1 por teorema chinês dos restos,
+inverso Hensel 4→256 bits — algoritmo distinto do restoring e do Knuth D)); ge em 512 bits com oito folhas LGE1 publicadas (árvore
+potência de 2). Consenso Python `int` + C11 16/64 + radix-2^32 + rustc radix-2^64 + Python radix-2^8 + Knuth D + CRT/Newton + Karatsuba/Barrett + Toom-3/Goldschmidt + NTT/SRT + Comba/NR + Toom-4/BZ + FNT/SRT-8 + Toom-5/SRT-16 + Toom-6/SRT-32 + Toom-7/SRT-64 + Toom-8/SRT-128 + Toom-9/SRT-256 + Toom-10/SRT-512 + RNS/Newton-Raphson + Schönhage–Strassen/SRT-1024 + Toom-3x7/Barrett-768 + Toom-2x5/SRT-2048 + Toom-2x7/Barrett-1024 + Node BigInt + OpenSSL BN
++ Go + Java + GMP + Perl + GNU bc no lote n=1060. Merkle LNR1 (Python / Node / C11
+`lin_sha256` / OpenSSL) rejeita tamper de 1 bit. Schema 1.30: verificadores zero-LIN em
+**Python, Node e Perl** recomputam as raízes LNR1, LCR2 (largura SafeMath), LCR2-full
+(512-bit numerator via `settle_u512_swap`), LGE1 (cmp/ge 512) **e** LRI1 (identidade
+de resto: `n==a*b` e `q*d+r==n` sobre o produto de 512 bits publicado) a partir das
+folhas publicadas, **e** verificam recibos LIP1 de **todas as 8 folhas LCR2**
+(3 EXACT + 3 OVERPAID + `GUARD_ZERO` + `GUARD_OVERFLOW`) ligando os 208 bytes
+empacotados a `ref_amount_out` **e de todas as 9 folhas LCR2-full** ligando os
+208 bytes a `ref_amount_out_full` sem LinVM. C11 `lin_sha256` verifica o recibo LIP1
+de um EXACT, o phantom 512-bit LRI1 **e** o `PHANTOM_APPROVE` LCR2-full.
+GMP, Perl, radix-2^32, rustc radix-2^64, Python radix-2^8, Knuth D, CRT, Karatsuba/Barrett, Toom-3/Goldschmidt, NTT/SRT, Comba/NR, Toom-4/BZ, FNT/SRT-8, Toom-5/SRT-16, Toom-6/SRT-32, Toom-7/SRT-64, Toom-8/SRT-128, Toom-9/SRT-256, Toom-10/SRT-512, RNS/Newton-Raphson, Schönhage–Strassen/SRT-1024, Toom-3x7/Barrett-768, Toom-2x5/SRT-2048, Toom-2x7/Barrett-1024 e GNU bc recomputam `mulDiv(fee,rout,den)` nas 6 liquidações
+EXACT/OVERPAID; Perl, radix-2^32, rustc radix-2^64, Python radix-2^8, Knuth D, CRT, Karatsuba/Barrett, Toom-3/Goldschmidt, NTT/SRT, Comba/NR, Toom-4/BZ, FNT/SRT-8, Toom-5/SRT-16, Toom-6/SRT-32, Toom-7/SRT-64, Toom-8/SRT-128, Toom-9/SRT-256, Toom-10/SRT-512, RNS/Newton-Raphson, Schönhage–Strassen/SRT-1024, Toom-3x7/Barrett-768, Toom-2x5/SRT-2048, Toom-2x7/Barrett-1024 e GNU bc também fecham o phantom FullMath-width.
+Um auditor POSIX (`verify_u512_bc_identity.py` + `bc`) confere `q*d+r==n` nas 8
+folhas LRI1 só com decimais publicados — sem LinVM e sem gcc.
+Um auditor só com `rustc` (`verify_u512_rust64.rs`, zero crates) recomputa SHA-256 FIPS
+da árvore LRI1 e o `mulDiv` das fatias LCR2/phantom.
+Um auditor radix-2^8 (`verify_u512_radix8.py`) recomputa `n==a*b` e `q*d+r==n` em
+bytes (carry cabe em u16) e a raiz LRI1 com `openssl dgst` — quatro larguras de limb
+(8/16/32/64) não podem esconder o mesmo bug de carry.
+Um auditor Knuth D (`verify_u512_knuth_d.py`) recomputa o mesmo `q*d+r==n` com
+divisão longa normalizada (algoritmo distinto do restoring bit-serial do motor) e
+a raiz LRI1 com `openssl dgst` — um bug no loop restoring não se esconde aqui.
+Um auditor FullMath CRT+Newton (`verify_u512_crt.py`) reconstrói o produto de 512 bits
+pelo teorema chinês dos restos (nunca um schoolbook 512) e divide com inverso modular
+de Newton — o algoritmo de `FullMath.sol`, sem o opcode `mulmod` da EVM.
+Um auditor Karatsuba+Barrett (`verify_u512_karatsuba.py`) reconstrói `n=a*b` com
+split de 128 bits (não schoolbook 16-bit, não CRT) e divide com `μ=⌊2^{512}/d⌋`,
+`q=(n·μ)>>512` e ge em 512 bits — não restoring de `n`, não Knuth D, não Hensel.
+Um auditor Toom-3+Goldschmidt (`verify_u512_toom3.py`) reconstrói `n=a*b` com
+split de 86 bits em 3 vias (cinco produtos, interpolação de Bodrato — não Karatsuba
+2-vias) e divide com `F=2^{257}-Y` em oito iterações mais ge em 512 bits — não
+Barrett `μ`, não restoring de `n`, não Hensel.
+Um auditor NTT+SRT (`verify_u512_ntt.py`) reconstrói `n=a*b` com NTT de comprimento
+64 em base 256 sobre `p=998244353` (coeficientes ≤32·255² cabem no primo — não
+Toom-3, não CRT/Mersenne) e divide com SRT radix-4 (dígitos `{-2..2}`, limiares
+`±D/2` e `±3D/2`, resto pode ser negativo, ge em 512 bits) — não Goldschmidt, não
+Barrett `μ`, não restoring de `n`, não Knuth D.
+Um auditor Comba+não-restauradora (`verify_u512_comba.py`) reconstrói `n=a*b` por
+coluna (produtos 64×64 num acumulador por limb de saída — não schoolbook linha a
+linha, não NTT, não Toom-3) e divide com resto com sinal, bit de quociente = sinal
+após ±D, um restore final e ge em 512 bits — não SRT radix-4, não restoring de `n`,
+não Barrett, não Knuth D.
+Um auditor Toom-4+Burnikel-Ziegler (`verify_u512_toom4.py`) reconstrói `n=a*b` com
+split de 64 bits em 4 vias (sete produtos, interpolação de Newton — não Toom-3,
+não Comba, não NTT) e divide com D2n/1n recursivo 8×u64/4×u64 (D3n/2n na metade
+alta, no máximo dois add-backs, ge em 512 bits) — não Knuth D (q̂ por dígito),
+não restoring de `n`, não Hensel, não Barrett.
+Um auditor FNT+SRT radix-8 (`verify_u512_fnt.py`) reconstrói `n=a*b` com a
+transformada de Fermat comprimento 32 em base 2^16 sobre `Z/(2^64+1)Z`
+(ω=16, borboletas por shift — não NTT sobre primo, não Toom-4, não Comba) e
+divide com SRT radix-8 (dígitos `{-4..4}`, limiares `±D/2 ±3D/2 ±5D/2 ±7D/2`,
+resto pode ser negativo, ge em 512 bits) — não SRT radix-4, não restoring de
+`n`, não Burnikel-Ziegler, não Barrett.
+Um auditor Toom-5+SRT radix-16 (`verify_u512_toom5.py`) reconstrói `n=a*b` com
+split de 52 bits em 5 vias (nove produtos, interpolação de Newton — não Toom-4,
+não FNT, não Comba) e divide com SRT radix-16 (dígitos `{-8..8}`, limiares
+`±D/2 … ±15D/2`, 4 bits por passo, resto pode ser negativo, ge em 512 bits) —
+não SRT radix-8, não restoring de `n`, não Burnikel-Ziegler, não Barrett.
+Um auditor Toom-6+SRT radix-32 (`verify_u512_toom6.py`) reconstrói `n=a*b` com
+split de 43 bits em 6 vias (onze produtos, interpolação de Newton — não Toom-5,
+não FNT, não Comba) e divide com SRT radix-32 (dígitos `{-16..16}`, limiares
+`±D/2 … ±31D/2`, 5 bits por passo, resto pode ser negativo, ge em 512 bits) —
+não SRT radix-16, não restoring de `n`, não Burnikel-Ziegler, não Barrett.
+Um auditor Toom-7+SRT radix-64 (`verify_u512_toom7.py`) reconstrói `n=a*b` com
+split de 37 bits em 7 vias (treze produtos, interpolação de Newton — não Toom-6,
+não FNT, não Comba) e divide com SRT radix-64 (dígitos `{-32..32}`, limiares
+`±D/2 … ±63D/2`, 6 bits por passo, resto pode ser negativo, ge em 512 bits) —
+não SRT radix-32, não restoring de `n`, não Burnikel-Ziegler, não Barrett.
+Um auditor Toom-8+SRT radix-128 (`verify_u512_toom8.py`) reconstrói `n=a*b` com
+split de 32 bits em 8 vias (quinze produtos, interpolação de Newton — não Toom-7,
+não FNT, não Comba) e divide com SRT radix-128 (dígitos `{-64..64}`, limiares
+`±D/2 … ±127D/2`, 7 bits por passo, resto pode ser negativo, ge em 512 bits) —
+não SRT radix-64, não restoring de `n`, não Burnikel-Ziegler, não Barrett.
+Um auditor Toom-9+SRT radix-256 (`verify_u512_toom9.py`) reconstrói `n=a*b` com
+split de 32 bits em 9 vias (256 bits padded a 288; dezessete produtos,
+interpolação de Newton — não Toom-8, não FNT, não Comba) e divide com SRT
+radix-256 (dígitos `{-128..128}`, limiares `±D/2 … ±255D/2`, 8 bits por passo,
+resto pode ser negativo, ge em 512 bits) — não SRT radix-128, não restoring de
+`n`, não Burnikel-Ziegler, não Barrett.
+Um auditor Toom-10+SRT radix-512 (`verify_u512_toom10.py`) reconstrói `n=a*b` com
+split de 32 bits em 10 vias (256 bits padded a 320; dezenove produtos,
+interpolação de Newton — não Toom-9, não FNT, não Comba) e divide com SRT
+radix-512 (dígitos `{-256..256}`, limiares `±D/2 … ±511D/2`, 9 bits por passo,
+resto pode ser negativo, ge em 512 bits) — não SRT radix-256, não restoring de
+`n`, não Burnikel-Ziegler, não Barrett.
+Um auditor RNS+Newton-Raphson (`verify_u512_rns.py`) reconstrói `n=a*b` com 17
+primos de 32 bits coprimos (produto 544 bits, CRT misto de Garner — não
+CRT/Mersenne `2^256` e `2^256-1`, não Toom-10, não FNT) e divide com Newton-Raphson
+recíproco (`v=2^(512-bitlen(d))`, dez iterações `v:=2v-((d*v*v)>>512)`,
+`q=(n*v)>>512`, ge em 512 bits) — não Goldschmidt (N e D juntos), não Hensel
+mod `2^256`, não Barrett `mu` de `2^512` esparso, não SRT, não restoring de `n`.
+Um auditor Schönhage–Strassen+SRT radix-1024 (`verify_u512_ss.py`) reconstrói `n=a*b`
+com FFT de Fermat negacíclica sobre `F7=2^128+1`, comprimento 32, dígitos de 16 bits
+padded a 32, peso `ψ=2^4` (`ψ^32≡-1`), twiddle `ω=2^8` (borboletas por shift,
+`2^128≡-1`) — não FNT sobre `F6=2^64+1`, não NTT sobre `p=998244353`, não RNS —
+e divide com SRT radix-1024 (dígitos `{-512..512}`, limiares `±D/2 … ±1023D/2`,
+10 bits por passo, resto pode ser negativo, ge em 512 bits) — não SRT radix-512,
+não Newton-Raphson, não Hensel mod `2^256`, não restoring de `n`.
+Um auditor Toom-2x5+SRT radix-2048 (`verify_u512_toom25.py`) reconstrói `n=a*b`
+com Toom-Cook desbalanceado 2×5 (dígitos de 52 bits; `a` em três grupos de 2
+dígitos / 104 bits vezes `b` de cinco dígitos; seis produtos de avaliação em
+`{0,±1,±2,∞}`, interpolação de Lagrange — não Toom-3..10 balanceado, não
+Toom-3x7, não SS/FNT/NTT) e divide com SRT radix-2048 (dígitos `{-1024..1024}`,
+limiares `±D/2 … ±2047D/2`, 11 bits por passo, resto pode ser negativo, ge em
+512 bits) — não SRT radix-1024, não Barrett `2^768`, não restoring de `n`.
+Um auditor Toom-2x7+Barrett-1024 (`verify_u512_toom27.py`) reconstrói `n=a*b`
+com Toom-Cook desbalanceado 2×7 (dígitos de 37 bits; `a` em quatro grupos de 2
+dígitos / 74 bits vezes `b` de sete dígitos; sete produtos de avaliação em
+`{0,±1,±2,±3}` mais `∞`, interpolação de Lagrange — não Toom-2x5, não
+Toom-3x7, não Toom-3..10 balanceado) e divide com Barrett `μ=⌊2^{1024}/d⌋`,
+`q=(n·μ)>>1024` e ge em 512 bits — não Barrett `2^512`/`2^768`, não SRT
+radix-2048, não restoring de `n`.
+Fatia LCR2: 3 `EXACT_INPUT` + 3 `OVERPAID_INPUT` com
+`settle_u256_word == coprocessor mulDiv(fee,rout,den) == ref_amount_out` e `steps != 0`,
+mais `GUARD_ZERO` (`-1`) e `GUARD_OVERFLOW` (`-2`). Fatia LCR2-full: os mesmos EXACT/
+OVERPAID mais `PHANTOM_APPROVE` (ref SafeMath `-2`, ref FullMath aprova) e
+`GUARD_FEE_OVERFLOW` (`ain=2^256-1`).
+
+```bash
+python3 examples/u512_coprocessor/verify_u512_inclusion.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+node examples/u512_coprocessor/verify_u512_inclusion.js \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+perl examples/u512_coprocessor/verify_u512_inclusion.pl \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_bc_identity.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+rustc --edition 2021 -O -o /tmp/verify_u512_rust64 \
+    examples/u512_coprocessor/verify_u512_rust64.rs
+/tmp/verify_u512_rust64 examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_radix8.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_crt.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_karatsuba.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom3.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_ntt.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_comba.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom4.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_fnt.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom5.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom6.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom7.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom8.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom9.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom10.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_rns.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_ss.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom37.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom25.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+python3 examples/u512_coprocessor/verify_u512_toom27.py \
+    examples/u512_coprocessor/u512_coprocessor_evidence.json
+```
+
+O que **não** fecha: opcode `mulmod` da EVM / execução on-chain de `FullMath.sol`; pool implantado; campanha 2000/157 completa.
+O phantom `ain=1,rin=1,rout=ceil(2^256/997)` mostra o coprocessor e `settle_u512_swap`
+a **aprovar** e o settler u256 a devolver `-2` (largura SafeMath). 512 bits sai da
+lista de suspeitos; substituir o corpo do settler u256 continua obrigatório para essa
+ABI. Ver `docs/U512_COPROCESSOR.rulel`.
