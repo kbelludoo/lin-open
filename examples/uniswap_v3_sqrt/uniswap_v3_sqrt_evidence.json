@@ -1,0 +1,150 @@
+{
+  "schema": "LIN_UNISWAP_V3_SQRT_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned SqrtPriceMath.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned v3-core commit matches fixture",
+      "note": "commit=e3589b192d0be27e100cd0daaf6c97204fdb1899 blob=685f485da43402235c3a9ce7fd85a49597b6373a"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of SqrtPriceMath.sol",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-FORMULA",
+      "status": "PASS",
+      "description": "pinned SqrtPriceMath has getAmount0Delta / getAmount1Delta",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_uniswap_v3_sqrt.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "v3s_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "12/12 vectors: C11 i128 == limbs == LIN vm == Python bigint",
+      "note": ""
+    },
+    {
+      "id": "NAIVE-VS-SEQ",
+      "status": "PASS",
+      "description": "price 1->4 L=1e6: sequential amount0 keeps 500000; naive (L*dsqrt)/(sa*sb) floors to 0",
+      "note": "amount0=500000 amount1=1000000 naive=0 hidden=500000"
+    },
+    {
+      "id": "ROUNDUP-WEI",
+      "status": "PASS",
+      "description": "L=1 sb=sa+1: floor amount0=0 vs ceil=1 (protocol-solvency 1-unit gap)",
+      "note": "floor=0 ceil=1"
+    },
+    {
+      "id": "ROUNDUP-MID",
+      "status": "PASS",
+      "description": "price 1->2.25 L=1e6: amount0 ceil is floor+1 (333334 vs 333333)",
+      "note": "floor=333333 ceil=333334"
+    },
+    {
+      "id": "Q96-I64",
+      "status": "PASS",
+      "description": "Q96=2^96 exceeds signed i64; clone uses reduced Q32=2^32",
+      "note": "Q32=4294967296 Q96_bits=96"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on v3s_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes sqrt prices, liquidity, round_up as arguments (no tuple swap / roundUp bool storage)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv (sa*sb at Q32 overflows uint64)",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECTS",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin rejects Q96/FixedPoint96/mulDivRoundingUp/UnsafeMath",
+      "note": ""
+    },
+    {
+      "id": "SOL-EMIT-SPLIT",
+      "status": "PASS",
+      "description": "emit splits '=' + 'ex{' so C0 does not steal the export list",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECTS",
+      "status": "PASS",
+      "description": "lin_from_rust.lin rejects q96 / mul_div_rounding_up / fixed_point_96",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate cjr_test_suite still == 1",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/Uniswap/v3-core",
+    "tag": "v1.0.0",
+    "commit": "e3589b192d0be27e100cd0daaf6c97204fdb1899",
+    "path": "contracts/libraries/SqrtPriceMath.sol",
+    "git_blob_sha": "685f485da43402235c3a9ce7fd85a49597b6373a",
+    "file_sha256": "ddd62e3a94346248677f30f1ab009ef015e71e4b8696dcca890eeabc9dc6c149",
+    "license": "GPL-2.0-or-later (BUSL-1.1 Change Date 2023-04-01 elapsed)"
+  },
+  "lin_clone": "src/lin_uniswap_v3_sqrt.lin",
+  "c11_oracle": "test/oracles/uniswap_v3_sqrt_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "q32": 4294967296,
+    "amount0_1to4_L1e6": 500000,
+    "amount1_1to4_L1e6": 1000000,
+    "naive_amt0_1to4_L1e6": 0,
+    "hidden_vs_naive_1to4": 500000,
+    "amount0_wei_floor": 0,
+    "amount0_wei_ceil": 1,
+    "amount0_1to225_floor": 333333,
+    "amount0_1to225_ceil": 333334
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-uniswap-v3-sqrt"
+}

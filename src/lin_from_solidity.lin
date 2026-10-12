@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: reject Q96/FixedPoint96 (REJ_SOLIDITY_Q96), mulDivRoundingUp/divRoundingUp (REJ_SOLIDITY_ROUNDING_UP), UnsafeMath (REJ_SOLIDITY_UNSAFE_MATH). Uniswap V3 SqrtPriceMath getAmount0Delta/getAmount1Delta is the named gate. Split '=' + 'ex{' emit. v2: emit LIN; expand 1eN; OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,12 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(body, "Q96") > 0) { ^"REJ_SOLIDITY_Q96" };
+  ?(rg_count_lit(sig, "Q96") > 0) { ^"REJ_SOLIDITY_Q96" };
+  ?(rg_count_lit(body, "FixedPoint96") > 0) { ^"REJ_SOLIDITY_Q96" };
+  ?(rg_count_lit(body, "mulDivRoundingUp") > 0) { ^"REJ_SOLIDITY_ROUNDING_UP" };
+  ?(rg_count_lit(body, "divRoundingUp") > 0) { ^"REJ_SOLIDITY_ROUNDING_UP" };
+  ?(rg_count_lit(body, "UnsafeMath") > 0) { ^"REJ_SOLIDITY_UNSAFE_MATH" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +70,14 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_q = "function getAmount0Delta(uint160 sqrtRatioAX96, uint160 sqrtRatioBX96, uint128 liquidity, bool roundUp) internal pure returns (uint256)";
+  body_q = "return FullMath.mulDiv(liquidity, sqrtRatioBX96 - sqrtRatioAX96, FixedPoint96.Q96);";
+  r4 = sol_reason(sig_q, body_q);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_Q96") == 0) { ^0 };
+  sig_up = "function getAmount1Delta(uint160 a, uint160 b, uint128 L, bool roundUp) internal pure returns (uint256)";
+  body_up = "return FullMath.mulDivRoundingUp(L, b - a, 1);";
+  r5 = sol_reason(sig_up, body_up);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_ROUNDING_UP") == 0) { ^0 };
   ^1;
 }
 
@@ -317,7 +331,8 @@
     };
     i = i + 1;
   };
-  out = out + "=ex{";
+  out = out + "=";
+  out = out + "ex{";
   out = out + names;
   out = out + "}";
   out = out + rgs_ch(10);
@@ -334,6 +349,12 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  wrap = "function getAmount1Delta(uint160 a, uint160 b, uint128 L, bool roundUp) internal pure returns (uint256) { return FullMath.mulDiv(L, b - a, FixedPoint96.Q96); }";
+  out2 = sol_from_sol(wrap);
+  ?(rg_count_lit(out2, "!getAmount1Delta(") > 0) { ^0 };
+  up = "function getAmount0Delta(uint160 a, uint160 b, uint128 L, bool roundUp) internal pure returns (uint256) { return UnsafeMath.divRoundingUp(1, a); }";
+  out3 = sol_from_sol(up);
+  ?(rg_count_lit(out3, "!getAmount0Delta(") > 0) { ^0 };
   ^1;
 }
 
