@@ -1,0 +1,184 @@
+{
+  "schema": "LIN_UNISWAP_V3_SWAP_STEP_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned SwapMath.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned Uniswap/v3-core v1.0.0 matches fixture",
+      "note": "commit=e3589b192d0be27e100cd0daaf6c97204fdb1899 blob=ee176fbee4ae2fb2ba7da4ddd00391fe6b685f39"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of SwapMath.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (fee cap / skip-fee / exact-out sign / wrap)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_uniswap_v3_step.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "v3s_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "15/15 vectors: C11 i128 == LIN vm == Python bigint",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "15/15 vectors: Python wrapping-int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "SKIP-FEE-CAP",
+      "status": "PASS",
+      "description": "exact-in remaining=1e6 fee=3000 does not hit Q/2 (next=2150709713); skip-fee hits 2147483648",
+      "note": ""
+    },
+    {
+      "id": "FEE-REMAINDER",
+      "status": "PASS",
+      "description": "not-reached exact-in fee=remaining-amountIn=3000; reached remaining=1003011 fee=ceil=3010",
+      "note": ""
+    },
+    {
+      "id": "EXACT-OUT-SIGN",
+      "status": "PASS",
+      "description": "exact-out remaining=-5e5 hits Q/2; treating +5e5 as exact-in yields 2866177709",
+      "note": ""
+    },
+    {
+      "id": "EXACT-OUT-SHORT",
+      "status": "PASS",
+      "description": "exact-out remaining=-499999 does not hit target (next=2147487942 vs Q/2)",
+      "note": ""
+    },
+    {
+      "id": "NAIVE-WRAP",
+      "status": "PASS",
+      "description": "naive i64 (1e13*997000)/1e6 wraps to -8476744073709; 128-bit remaining_less_fee=9970000000000",
+      "note": ""
+    },
+    {
+      "id": "OFO-PARTIAL",
+      "status": "PASS",
+      "description": "oneForZero exact-in remaining=1e6 fee=3000 next=8577049690 (not 2Q)",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on v3s_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes sqrtP/target/L/remaining/feePips as arguments",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv (fee remaining and Q32 deltas)",
+      "note": ""
+    },
+    {
+      "id": "Q32-NOT-Q96",
+      "status": "PASS",
+      "description": "Q32=2^32 used; Q96=2^96 cannot fit signed i64",
+      "note": ""
+    },
+    {
+      "id": "NOT-FROM-INPUT",
+      "status": "PASS",
+      "description": "kernel is computeSwapStep cap; FromInput is a helper inside the cap, not the claim",
+      "note": ""
+    },
+    {
+      "id": "NOT-FROM-OUTPUT",
+      "status": "PASS",
+      "description": "kernel is not getNextSqrtPriceFromOutput; exact-out is the remaining-sign cap",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects computeSwapStep / feePips / amountRemaining / uint160 / FullMath",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects compute_swap_step / fee_pips / amount_remaining",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/Uniswap/v3-core",
+    "commit": "e3589b192d0be27e100cd0daaf6c97204fdb1899",
+    "tag": "v1.0.0",
+    "path": "contracts/libraries/SwapMath.sol",
+    "git_blob_sha": "ee176fbee4ae2fb2ba7da4ddd00391fe6b685f39",
+    "file_sha256": "d6cb9a153be4ea9fb2377ef88641ef7979b5cee6933162f1b732d0289e26e1b6",
+    "license": "GPL-2.0-or-later",
+    "license_note": "BUSL-1.1 Change Date 2023-04-01 elapsed"
+  },
+  "lin_clone": "src/lin_uniswap_v3_step.lin",
+  "c11_oracle": "test/oracles/uniswap_v3_step_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "q_scale": "Q32=2^32 (not Q96=2^96)",
+  "goldens": {
+    "exact_in_zfo_1e6_next": 2150709713,
+    "skip_fee_zfo_1e6_next": 2147483648,
+    "exact_in_zfo_hit_next": 2147483648,
+    "not_reached_fee": 3000,
+    "reached_fee": 3010,
+    "exact_out_zfo_5e5_next": 2147483648,
+    "as_exact_in_5e5_next": 2866177709,
+    "exact_out_short_next": 2147487942,
+    "ofo_partial_next": 8577049690,
+    "naive_fee_wrap_1e13": -8476744073709,
+    "less_fee_1e13": 9970000000000
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-uniswap-v3-step"
+}

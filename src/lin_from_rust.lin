@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: reject compute_swap_step / fee_pips / amount_remaining (Uniswap V3 swap-step cap is a LIN port, not emit)"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,10 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "compute_swap_step") > 0) { ^"REJ_RUST_SWAP_STEP" };
+  ?(rg_count_lit(body, "compute_swap_step") > 0) { ^"REJ_RUST_SWAP_STEP" };
+  ?(rg_count_lit(sig, "fee_pips") > 0) { ^"REJ_RUST_FEE_PIPS" };
+  ?(rg_count_lit(sig, "amount_remaining") > 0) { ^"REJ_RUST_AMOUNT_REMAINING" };
   ^"OK";
 }
 
