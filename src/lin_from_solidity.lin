@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: reject mulPrice( / signedMulPrice( (REJ_SOLIDITY_MUL_PRICE), n * price (REJ_SOLIDITY_PRICE_WRAP), divPrice( / n * toScale (REJ_SOLIDITY_DIV_PRICE), PRICE_SCALE / PRICE_FEED_DECIMALS (REJ_SOLIDITY_PRICE_SCALE), fromScale (REJ_SOLIDITY_FROM_SCALE), getPrice( / baseTokenPriceFeed (REJ_SOLIDITY_GETTER). Compound III PRICE_SCALE=1e8 vs FACTOR_SCALE is the named gate. Split '=' + 'ex{' emit. v2: emit LIN; expand 1eN; OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,16 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(body, "mulPrice(") > 0) { ^"REJ_SOLIDITY_MUL_PRICE" };
+  ?(rg_count_lit(body, "signedMulPrice(") > 0) { ^"REJ_SOLIDITY_MUL_PRICE" };
+  ?(rg_count_lit(body, "n * price") > 0) { ^"REJ_SOLIDITY_PRICE_WRAP" };
+  ?(rg_count_lit(body, "divPrice(") > 0) { ^"REJ_SOLIDITY_DIV_PRICE" };
+  ?(rg_count_lit(body, "n * toScale") > 0) { ^"REJ_SOLIDITY_DIV_PRICE" };
+  ?(rg_count_lit(body, "PRICE_SCALE") > 0) { ^"REJ_SOLIDITY_PRICE_SCALE" };
+  ?(rg_count_lit(body, "PRICE_FEED_DECIMALS") > 0) { ^"REJ_SOLIDITY_PRICE_SCALE" };
+  ?(rg_count_lit(body, "fromScale") > 0) { ^"REJ_SOLIDITY_FROM_SCALE" };
+  ?(rg_count_lit(body, "getPrice(") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "baseTokenPriceFeed") > 0) { ^"REJ_SOLIDITY_GETTER" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +74,14 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_mp = "function mulPrice(uint n, uint price, uint64 fromScale) internal pure returns (uint)";
+  body_mp = "return n * price / fromScale;";
+  r4 = sol_reason(sig_mp, body_mp);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_PRICE_WRAP") == 0) { ^0 };
+  sig_dp = "function divPrice(uint n, uint price, uint64 toScale) internal pure returns (uint)";
+  body_dp = "return n * toScale / price;";
+  r5 = sol_reason(sig_dp, body_dp);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_DIV_PRICE") == 0) { ^0 };
   ^1;
 }
 
@@ -317,7 +335,8 @@
     };
     i = i + 1;
   };
-  out = out + "=ex{";
+  out = out + "=";
+  out = out + "ex{";
   out = out + names;
   out = out + "}";
   out = out + rgs_ch(10);
@@ -334,6 +353,12 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  wrap = "function mulPrice(uint n, uint price, uint64 fromScale) internal pure returns (uint) { return n * price / fromScale; }";
+  out2 = sol_from_sol(wrap);
+  ?(rg_count_lit(out2, "!mulPrice(") > 0) { ^0 };
+  dp = "function divPrice(uint n, uint price, uint64 toScale) internal pure returns (uint) { return n * toScale / price; }";
+  out3 = sol_from_sol(dp);
+  ?(rg_count_lit(out3, "!divPrice(") > 0) { ^0 };
   ^1;
 }
 

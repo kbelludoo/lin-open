@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: reject * price / (REJ_RUST_PRICE_WRAP) and * to_scale / (REJ_RUST_DIV_PRICE). Compound III mulPrice n*price/fromScale is the named gate; wrapping i64 n*price then / from_scale is the same class as Solidity n * price / fromScale"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,8 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(body, "* price /") > 0) { ^"REJ_RUST_PRICE_WRAP" };
+  ?(rg_count_lit(body, "* to_scale /") > 0) { ^"REJ_RUST_DIV_PRICE" };
   ^"OK";
 }
 
@@ -66,6 +69,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_pr = "pub fn mul_price(n: u64, price: u64, from_scale: u64) -> u64";
+  body_pr = "let v = n * price / from_scale; v";
+  r3 = rs_reason(sig_pr, body_pr);
+  ?(starts_lit(r3, 0, "REJ_RUST_PRICE_WRAP") == 0) { ^0 };
 
   ^1;
 }

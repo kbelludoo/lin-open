@@ -1,0 +1,182 @@
+{
+  "schema": "LIN_COMET_PRICE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned excerpt contains exact mulPrice/divPrice/mulFactor substrings",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned comet commit matches fixture hashes",
+      "note": "commit=f766f51583c23acc33b2a7824654ef2029a96804 blob=3490e984d133789aa1afe2e8f7e37a11d2512396"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of CometWithExtendedAssetList.sol",
+      "note": ""
+    },
+    {
+      "id": "CORE-SHA",
+      "status": "PASS",
+      "description": "CometCore.sol sha256 + PRICE/FACTOR/INDEX scales",
+      "note": ""
+    },
+    {
+      "id": "SNIPPET-IN-LIVE",
+      "status": "PASS",
+      "description": "price excerpt is a substring of live bytes",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_comet_price.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3 (emit path)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "c3p_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "13/13 vectors: C11 i128 == limbs == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "13/13 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "REORDER-REJ",
+      "status": "PASS",
+      "description": "named rejected path (n/fromScale)*price = 0; Comet wrap = 3",
+      "note": "reorder=0 comet=3"
+    },
+    {
+      "id": "SCALE-CONTRAST",
+      "status": "PASS",
+      "description": "USDC 6-dec $1: comet=1e8; FACTOR confusion=1e18 (~1e10 x); INDEX=1e15; mulFactor-as-price=0",
+      "note": "comet=100000000 factor=1000000000000000000 index=1000000000000000 mulfactor=0"
+    },
+    {
+      "id": "WBTC-HIDE",
+      "status": "PASS",
+      "description": "WBTC 8-dec: comet=6e12 and PRICE_SCALE-as-fromScale=6e12 (bug hidden)",
+      "note": ""
+    },
+    {
+      "id": "WETH-OVF",
+      "status": "PASS",
+      "description": "WETH 1e18 @$2000: comet=2e11; /PRICE_SCALE overflows uint64 \u2192 0",
+      "note": ""
+    },
+    {
+      "id": "DIV-SCALE",
+      "status": "PASS",
+      "description": "$1 \u2192 1 USDC (1e6); toScale=PRICE_SCALE \u2192 1e8 (100\u00d7 payout)",
+      "note": ""
+    },
+    {
+      "id": "CF-SKIP",
+      "status": "PASS",
+      "description": "200 USDC vs 0.1 WETH@$2000 CF=50%: comet ok=0; skip mulFactor ok=1",
+      "note": ""
+    },
+    {
+      "id": "ABSORB",
+      "status": "PASS",
+      "description": "absorbInternal scalar: 0.1 WETH LF=80% \u2192 160e6 base units (160 USDC)",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (1e18*1e18) wraps; 128-bit muldiv fail-closes 0",
+      "note": "i64_wrap=-5527149226598858752"
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still cjr_test_suite==1 after PRICE rejects",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on c3p_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes price inputs as arguments (no hidden storage)",
+      "note": ""
+    },
+    {
+      "id": "NO-HIDDEN-GET",
+      "status": "PASS",
+      "description": "clone does not reimplement Solidity getters / PriceFeed",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJ",
+      "status": "PASS",
+      "description": "v3 rejects MUL_PRICE / PRICE_WRAP / DIV_PRICE / PRICE_SCALE; emit splits '=' + 'ex{'",
+      "note": ""
+    },
+    {
+      "id": "RS-REJ",
+      "status": "PASS",
+      "description": "rust transpiler v2 rejects * price / wrapping wrap",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE-REJ",
+      "status": "PASS",
+      "description": "Compiler 0 refuses sol_parse_test_gate string-literal path (VM_REJ_STRING_LITERAL)",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/compound-finance/comet",
+    "commit": "f766f51583c23acc33b2a7824654ef2029a96804",
+    "path": "contracts/CometWithExtendedAssetList.sol",
+    "git_blob_sha": "3490e984d133789aa1afe2e8f7e37a11d2512396",
+    "file_sha256": "c9099e56eda092fd0150005706edf086723899afb102f164b60ad1f36a426961",
+    "core_path": "contracts/CometCore.sol",
+    "core_git_blob_sha": "534f2701b6c8e683f9294112b0bcc23878d39fe6",
+    "core_file_sha256": "1d80f0d12c101d01c2e1f38e8662cfcf350299b1c78188f8c501bb1c51b5ec78",
+    "license": "GPL-2.0-or-later (BUSL-1.1 Change Date 2025-12-31 elapsed)"
+  },
+  "lin_clone": "src/lin_comet_price.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-comet-price",
+  "c11_oracle": "test/oracles/comet_price_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "usdc_mulprice_1usd": 100000000,
+  "usdc_factor_confused": 1000000000000000000,
+  "usdc_index_confused": 1000000000000000,
+  "reorder_3_5_4": 0,
+  "absorb_01_weth_lf80": 160000000
+}
