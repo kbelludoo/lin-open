@@ -1,0 +1,229 @@
+@LIN:L1c:0.2
+@COMET_PRESENT_VALUE{
+  version=1
+  repo="compound-finance/comet"
+  source="contracts/CometCore.sol"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2025-12-31 elapsed; Change License GPL-2.0-or-later"
+  commit="f766f51583c23acc33b2a7824654ef2029a96804"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_comet_present_principal_with_128bit_muldiv_and_rem_ceil"
+  note="Not Solidity uint256. Hidden baseSupplyIndex/baseBorrowIndex become arguments. uint256(/uint104( casts are rejected. Borrow principal uses rem+1 ceil, not (x*scale+index-1)/index wrap. Index scale is 1e15 not wad 1e18. Named contrast vs Compound V2 exchangeRate 1e18. Not a Comet replacement."
+}
+
+!cm_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!cm_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(cm_u_lt(s, a));
+}
+
+!cm_u_add_ok(a: int, b: int) -> int {
+  s = a + b;
+  ?(cm_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!cm_mask32() -> int {
+  ^ 4294967295;
+}
+
+!cm_ok_nn(v: int) -> int {
+  ?(v < 0) { ^ 0; };
+  ^ 1;
+}
+
+!cm_index_scale() -> int {
+  ^ 1000000000000000;
+}
+
+!cm_factor_scale() -> int {
+  ^ 1000000000000000000;
+}
+
+!cm_muldiv_part(a: int, b: int, d: int, want: int) -> int {
+  ?(d == 0) { ^ 0; };
+  m32 = cm_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = cm_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = cm_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(cm_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = cm_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want == 1) { ^ r_lo; };
+  ?(want == 2) { ^ ov; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!cm_floor(x: int, y: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(cm_ok_nn(x) == 0) { ^ 0; };
+  ?(cm_ok_nn(y) == 0) { ^ 0; };
+  ^ cm_muldiv_part(x, y, d, 0);
+}
+
+!cm_rem(x: int, y: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(cm_ok_nn(x) == 0) { ^ 0; };
+  ?(cm_ok_nn(y) == 0) { ^ 0; };
+  ^ cm_muldiv_part(x, y, d, 1);
+}
+
+!cm_ov(x: int, y: int, d: int) -> int {
+  ?(d == 0) { ^ 1; };
+  ?(cm_ok_nn(x) == 0) { ^ 1; };
+  ?(cm_ok_nn(y) == 0) { ^ 1; };
+  ^ cm_muldiv_part(x, y, d, 2);
+}
+
+!cm_ceil(x: int, y: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(cm_ok_nn(x) == 0) { ^ 0; };
+  ?(cm_ok_nn(y) == 0) { ^ 0; };
+  ?(cm_ov(x, y, d) == 1) { ^ 0; };
+  q = cm_floor(x, y, d);
+  r = cm_rem(x, y, d);
+  ?(r == 0) { ^ q; };
+  ?(cm_u_add_ok(q, 1) == 0) { ^ 0; };
+  ^ q + 1;
+}
+
+!cm_present_supply(index: int, principal: int) -> int {
+  ?(cm_ok_nn(index) == 0) { ^ 0; };
+  ?(cm_ok_nn(principal) == 0) { ^ 0; };
+  ^ cm_floor(principal, index, cm_index_scale());
+}
+
+!cm_present_borrow(index: int, principal: int) -> int {
+  ?(cm_ok_nn(index) == 0) { ^ 0; };
+  ?(cm_ok_nn(principal) == 0) { ^ 0; };
+  ^ cm_floor(principal, index, cm_index_scale());
+}
+
+!cm_principal_supply(index: int, present: int) -> int {
+  ?(cm_ok_nn(index) == 0) { ^ 0; };
+  ?(cm_ok_nn(present) == 0) { ^ 0; };
+  ?(index == 0) { ^ 0; };
+  ^ cm_floor(present, cm_index_scale(), index);
+}
+
+!cm_principal_borrow(index: int, present: int) -> int {
+  ?(cm_ok_nn(index) == 0) { ^ 0; };
+  ?(cm_ok_nn(present) == 0) { ^ 0; };
+  ?(index == 0) { ^ 0; };
+  ^ cm_ceil(present, cm_index_scale(), index);
+}
+
+!cm_wad_present(index: int, principal: int) -> int {
+  ?(cm_ok_nn(index) == 0) { ^ 0; };
+  ?(cm_ok_nn(principal) == 0) { ^ 0; };
+  ^ cm_floor(principal, index, cm_factor_scale());
+}
+
+!cm_utilization(s_idx: int, s_prin: int, b_idx: int, b_prin: int) -> int {
+  ts = cm_present_supply(s_idx, s_prin);
+  tb = cm_present_borrow(b_idx, b_prin);
+  ?(ts == 0) { ^ 0; };
+  ^ cm_floor(tb, cm_factor_scale(), ts);
+}
+
+!cm_index_ok(index: int) -> int {
+  ?(cm_ok_nn(index) == 0) { ^ 0; };
+  ?(index == 0) { ^ 0; };
+  ^ 1;
+}
+
+!cm_test_suite() -> int {
+  sc = cm_index_scale();
+  ?(cm_floor(100, 200, 50) != 400) { ^ -1; };
+  ?(cm_floor(7, 9, 2) != 31) { ^ -2; };
+  ?(cm_rem(7, 9, 2) != 1) { ^ -3; };
+  ?(cm_present_supply(sc, 1000) != 1000) { ^ -4; };
+  ?(cm_present_borrow(sc, 1000) != 1000) { ^ -5; };
+  ?(cm_present_supply(sc + sc, 1000) != 2000) { ^ -6; };
+  ?(cm_wad_present(sc, 1000) != 1) { ^ -7; };
+  ?(cm_principal_supply(sc, 1000) != 1000) { ^ -8; };
+  ?(cm_principal_borrow(sc, 1000) != 1000) { ^ -9; };
+  ?(cm_principal_supply(3, 1) != 333333333333333) { ^ -10; };
+  ?(cm_principal_borrow(3, 1) != 333333333333334) { ^ -11; };
+  ?(cm_principal_supply(0, 1000) != 0) { ^ -12; };
+  ?(cm_index_ok(0) != 0) { ^ -13; };
+  ?(cm_index_ok(sc) != 1) { ^ -14; };
+  u = cm_utilization(sc, 1000, sc, 500);
+  ?(u != 500000000000000000) { ^ -15; };
+  ?(cm_utilization(sc, 0, sc, 500) != 0) { ^ -16; };
+  ?(cm_ov(cm_factor_scale(), cm_factor_scale(), 1) != 1) { ^ -17; };
+  ?(cm_floor(cm_factor_scale(), cm_factor_scale(), 1) != 0) { ^ -18; };
+  ?(cm_ceil(3, 5, 4) != 4) { ^ -19; };
+  ?(cm_ceil(8, 2, 4) != 4) { ^ -20; };
+  ^ 1;
+}
+
+=ex{
+  cm_u_lt,
+  cm_u_add_carry,
+  cm_u_add_ok,
+  cm_mask32,
+  cm_ok_nn,
+  cm_index_scale,
+  cm_factor_scale,
+  cm_muldiv_part,
+  cm_floor,
+  cm_rem,
+  cm_ov,
+  cm_ceil,
+  cm_present_supply,
+  cm_present_borrow,
+  cm_principal_supply,
+  cm_principal_borrow,
+  cm_wad_present,
+  cm_utilization,
+  cm_index_ok,
+  cm_test_suite
+}

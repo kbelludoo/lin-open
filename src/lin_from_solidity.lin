@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=5
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V5"
+  changelog="v5: reject uint256(/uint104(/uint64(/int256(/int104( (REJ_SOLIDITY_CAST), hidden Comet baseSupplyIndex,/baseBorrowIndex, (REJ_SOLIDITY_GETTER), and overflow-ceil + baseBorrowIndex_ - 1 (REJ_SOLIDITY_OVERFLOW_CEIL). Compound III presentValue/principalValue is the named gate. v4: SafeMath .add/.sub, 2**256, 1e20 NICR. v3: .mulDiv*/.ceilDiv/.mul/.div, using-for, 1 ether. v2: emit LIN; expand 1eN; OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,32 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(sig, "using ") > 0) { ^"REJ_SOLIDITY_USING" };
+  ?(rg_count_lit(body, "using ") > 0) { ^"REJ_SOLIDITY_USING" };
+  ?(rg_count_lit(body, ".mulDivDown") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, ".mulDivUp") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, ".mulDiv(") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, ".ceilDiv") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, ".mul(") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, ".div(") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, ".add(") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, ".sub(") > 0) { ^"REJ_SOLIDITY_LIBCALL" };
+  ?(rg_count_lit(body, "+ (d - 1)") > 0) { ^"REJ_SOLIDITY_OVERFLOW_CEIL" };
+  ?(rg_count_lit(body, "+ (d-1)") > 0) { ^"REJ_SOLIDITY_OVERFLOW_CEIL" };
+  ?(rg_count_lit(body, " + d - 1") > 0) { ^"REJ_SOLIDITY_OVERFLOW_CEIL" };
+  ?(rg_count_lit(body, "+ baseBorrowIndex_ - 1") > 0) { ^"REJ_SOLIDITY_OVERFLOW_CEIL" };
+  ?(rg_count_lit(body, "1 ether") > 0) { ^"REJ_SOLIDITY_ETHER_UNIT" };
+  ?(rg_count_lit(body, " ether)") > 0) { ^"REJ_SOLIDITY_ETHER_UNIT" };
+  ?(rg_count_lit(body, "2**256") > 0) { ^"REJ_SOLIDITY_POW256" };
+  ?(rg_count_lit(body, "2 ** 256") > 0) { ^"REJ_SOLIDITY_POW256" };
+  ?(rg_count_lit(body, "1e20") > 0) { ^"REJ_SOLIDITY_NICR_SCALE" };
+  ?(rg_count_lit(body, "uint256(") > 0) { ^"REJ_SOLIDITY_CAST" };
+  ?(rg_count_lit(body, "uint104(") > 0) { ^"REJ_SOLIDITY_CAST" };
+  ?(rg_count_lit(body, "uint64(") > 0) { ^"REJ_SOLIDITY_CAST" };
+  ?(rg_count_lit(body, "int256(") > 0) { ^"REJ_SOLIDITY_CAST" };
+  ?(rg_count_lit(body, "int104(") > 0) { ^"REJ_SOLIDITY_CAST" };
+  ?(rg_count_lit(body, "baseSupplyIndex,") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "baseBorrowIndex,") > 0) { ^"REJ_SOLIDITY_GETTER" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -53,7 +79,7 @@
 
 !sol_parse_test_gate(): int {
   sig_ok = "function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut)";
-  body_ok = "require(amountIn > 0); uint amountInWithFee = amountIn.mul(997); return amountInWithFee;";
+  body_ok = "require(amountIn > 0); uint amountInWithFee = amountIn * 997; return amountInWithFee;";
   sig_bad = "function mint() external payable returns (bool)";
   body_bad = "require(msg.value > 0); return true;";
   r1 = sol_reason(sig_ok, body_ok);
@@ -64,6 +90,18 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_cast = "function presentValueSupply(uint64 baseSupplyIndex_, uint104 principalValue_) internal pure returns (uint256)";
+  body_cast = "return uint256(principalValue_) * baseSupplyIndex_ / BASE_INDEX_SCALE;";
+  r4 = sol_reason(sig_cast, body_cast);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_CAST") == 0) { ^0 };
+  sig_ceil = "function principalValueBorrow(uint64 baseBorrowIndex_, uint256 presentValue_) internal pure returns (uint104)";
+  body_ceil = "return safe104((presentValue_ * BASE_INDEX_SCALE + baseBorrowIndex_ - 1) / baseBorrowIndex_);";
+  r5 = sol_reason(sig_ceil, body_ceil);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_OVERFLOW_CEIL") == 0) { ^0 };
+  sig_get = "function presentValue(int104 principalValue_) internal view returns (int256)";
+  body_get = "return signed256(presentValueSupply(baseSupplyIndex, uint104(principalValue_)));";
+  r6 = sol_reason(sig_get, body_get);
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_CAST") == 0) { ^0 };
   ^1;
 }
 
@@ -317,7 +355,8 @@
     };
     i = i + 1;
   };
-  out = out + "=ex{";
+  out = out + "=";
+  out = out + "ex{";
   out = out + names;
   out = out + "}";
   out = out + rgs_ch(10);
@@ -334,6 +373,12 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  cast = "function presentValueSupply(uint64 ix, uint104 p) internal pure returns (uint256) { return uint256(p) * ix / 1; }";
+  out2 = sol_from_sol(cast);
+  ?(rg_count_lit(out2, "presentValueSupply") > 0) { ^0 };
+  ceil = "function principalValueBorrow(uint64 d, uint256 x) internal pure returns (uint104) { return (x * 1 + d - 1) / d; }";
+  out3 = sol_from_sol(ceil);
+  ?(rg_count_lit(out3, "principalValueBorrow") > 0) { ^0 };
   ^1;
 }
 

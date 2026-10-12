@@ -1,0 +1,144 @@
+{
+  "schema": "LIN_COMET_PV_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned CometCore.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned compound-finance/comet matches fixture",
+      "note": "commit=f766f51583c23acc33b2a7824654ef2029a96804"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of CometCore.sol",
+      "note": "534f2701b6c8e683f9294112b0bcc23878d39fe6"
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_comet_pv.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v5",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "cm_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "14/14 vectors: C11 == LIN vm == Python bigint",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "14/14 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "WAD-CONTRAST",
+      "status": "PASS",
+      "description": "genesis index=1e15, principal=1000: Comet present=1000 vs naive wad-1e18 present=1 (1000x understatement)",
+      "note": "named contrast vs Compound V2 exchangeRate scale; not a TVL claim"
+    },
+    {
+      "id": "CEIL-CONTRAST",
+      "status": "PASS",
+      "description": "present=1 index=3: supply principal floor=333333333333333 vs borrow principal ceil=333333333333334",
+      "note": ""
+    },
+    {
+      "id": "INDEX-ZERO",
+      "status": "PASS",
+      "description": "index==0: Solidity reverts on principalValue*; LIN fail-closes 0 and cm_index_ok=0",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (1e18*1e18) wraps; 128-bit muldiv fail-closes",
+      "note": "i64_wrap=-5527149226598858752"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on cm_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN lifts hidden baseSupplyIndex/baseBorrowIndex to arguments; product is 128-bit",
+      "note": ""
+    },
+    {
+      "id": "OVERFLOW-CEIL",
+      "status": "PASS",
+      "description": "upstream borrow principal is (x*scale+index-1)/index; LIN uses rem+1 ceil",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v5 rejects uint256(/uint104( casts, overflow-ceil, and hidden Comet indices",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects overflow-ceil / div_ceil",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESSION",
+      "status": "PASS",
+      "description": "Compound JumpRate still 1 after transpiler v5 delta",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/compound-finance/comet",
+    "commit": "f766f51583c23acc33b2a7824654ef2029a96804",
+    "path": "contracts/CometCore.sol",
+    "git_blob_sha": "534f2701b6c8e683f9294112b0bcc23878d39fe6",
+    "file_sha256": "1d80f0d12c101d01c2e1f38e8662cfcf350299b1c78188f8c501bb1c51b5ec78",
+    "license": "GPL-2.0-or-later",
+    "license_note": "BUSL-1.1 Change Date 2025-12-31 elapsed"
+  },
+  "lin_clone": "src/lin_comet_pv.lin",
+  "c11_oracle": "test/oracles/comet_pv_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "comet_present_genesis_1000": 1000,
+  "wad_present_genesis_1000": 1,
+  "supply_principal_floor": 333333333333333,
+  "borrow_principal_ceil": 333333333333334,
+  "empty_index_principal": 0,
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-comet-pv"
+}
