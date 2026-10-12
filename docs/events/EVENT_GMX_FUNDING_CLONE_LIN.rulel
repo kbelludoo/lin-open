@@ -1,0 +1,62 @@
+@RULEL:GMX_FUNDING_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GMX-FUNDING-FEE"
+@TITLE="Clone-lin of GMX V1 VaultUtils.getFundingFee with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-gmx-funding"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile GMX V1 perpetual funding fee into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Arbitrum/Avalanche mainnet"
+  operand_width="uint64 inputs, 128-bit product for size*rate/1e6; Solidity uint256 is NOT claimed"
+  commercial_hook="the same Vault charges funding as size*(cumulative-entry)/1e6 and position fee as size*bps/10000; confusing FUNDING_RATE_PRECISION with BASIS_POINTS_DIVISOR overcharges 100x (100000 vs 1000 on a 1e6 size / 1000 rate). Making cumulative/entry/size explicit with 128-bit muldiv is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/gmx-io/gmx-contracts"
+  path="contracts/core/VaultUtils.sol"
+  license="MIT"
+  commit="fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8"
+  git_blob_sha="8e29c3ff19258d191f6d2459c110a917ba1f9906"
+  file_sha256="ad831f3c8d675c42665c854368bc06696e1cba23bd3294f91aa2ce4c0a8fc495"
+  fixture="test/fixtures/external_proof/VaultUtils.sol"
+  descendants="GMX V1 Vault perpetual funding and position fees on Arbitrum and Avalanche"
+}
+
+.l{
+  clone="src/lin_gmx_funding.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_GMX_FUNDING; emit split = + ex{ so C0 does not steal the export list; src/lin_from_rust.lin v2 REJ_RUST_GMX_FUNDING"
+  improvement_1="size=1e6 rate=1000: funding 1000 vs confused-bps 100000 (100x overcharge if /10000 is used)"
+  improvement_2="size=1e6 cum=5000 entry=4000: correct 1000 vs ignore-entry 5000 (5x overcharge)"
+  improvement_3="naive i64 (5e9*5e9)/1e6 wraps to 6553255926290; 128-bit muldiv=25000000000000"
+  improvement_4="entry>cumulative fail-closes to 0 (Solidity 0.6 SafeMath.sub reverts)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/gmx_funding_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="python3 test/prove_gmx_funding_external.py"
+}
+
+.p{
+  harness="test/prove_gmx_funding_external.py"
+  evidence_json="examples/gmx_funding/gmx_funding_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-gmx-funding"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet GMX Vault or GLP parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production perps DEX replacement"
+  not_claimed_4="retread of GMX getFeeBasisPoints USDG tax-rebate, Uniswap xy, Solidly x3y+y3x, or Maker rpow"
+  not_claimed_5="LIN replaces GMX, GLP, or the EVM"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
