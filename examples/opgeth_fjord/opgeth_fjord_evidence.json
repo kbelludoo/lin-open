@@ -1,0 +1,145 @@
+{
+  "schema": "LIN_OPGETH_FJORD_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "pinned excerpts: Fjord + estimatedDASizeScaled + Ecotone + intercept",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of op-geth v1.101702.3 matches pinned sha256/blob",
+      "note": "commit=7da4560d1fb3045286b70a8dc23360d2626543f2 blob=3266ae13faaabf599feb4417d60893a11b908fb3"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of rollup_cost.go + official Fjord test",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 goldens vs official op-geth Fjord / Solidity-parity vectors",
+      "note": ""
+    },
+    {
+      "id": "GO-SELFTEST",
+      "status": "PASS",
+      "description": "independent Go math/big goldens + fail-closed",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_opgeth_fjord.lin",
+      "note": ""
+    },
+    {
+      "id": "GO-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Go transpiler v15 (REJ_GO_FJORD / INTERCEPT / FASTLZ)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "fjo_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "7/7 Fjord vectors: Python == C11 == Go == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "7/7 vectors: Python bigint Fjord table matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "GAS",
+      "status": "PASS",
+      "description": "official min gas 1600 and Solidity-parity gas 2463",
+      "note": ""
+    },
+    {
+      "id": "ECO-CONTRAST",
+      "status": "PASS",
+      "description": "official emptyTx Ecotone still 960900 on the same scalars",
+      "note": ""
+    },
+    {
+      "id": "VS-ECOTONE",
+      "status": "PASS",
+      "description": "Ecotone leftover undercharges official emptyTx by 2242100 wei",
+      "note": ""
+    },
+    {
+      "id": "CLAMP",
+      "status": "PASS",
+      "description": "unclamped FastLZ 31 is negative; LIN fail-closes to 0 (op-geth clamps to 100e6)",
+      "note": ""
+    },
+    {
+      "id": "FAIL-CLOSED",
+      "status": "PASS",
+      "description": "negatives and overflow fail-close to 0",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on fjo_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes FastLZ size as an int; pinned op-geth closes over FlzCompressLen + L1Block",
+      "note": ""
+    },
+    {
+      "id": "GO-FJ-REJ",
+      "status": "PASS",
+      "description": "lin_from_go.lin v15 rejects NewL1CostFuncFjord / L1CostIntercept / FastLZ",
+      "note": ""
+    },
+    {
+      "id": "GO-EX-SPLIT",
+      "status": "PASS",
+      "description": "go_from_go concatenates '=' + 'ex{' so C0 export parse is honest",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/ethereum-optimism/op-geth",
+    "tag": "v1.101702.3",
+    "commit": "7da4560d1fb3045286b70a8dc23360d2626543f2",
+    "path": "core/types/rollup_cost.go",
+    "git_blob_sha": "3266ae13faaabf599feb4417d60893a11b908fb3",
+    "file_sha256": "35a4e1976fca49cb5f328c6bf3f1513458eda450c9e7425c24a78a8750c51dec",
+    "license": "LGPL-3.0",
+    "constants": "L1CostIntercept=-42585600 L1CostFastlzCoef=836500 MinTransactionSizeScaled=100e6 fjordDivisor=1e12 official emptyTx fjordFee=3203000 minimumFjordGas=1600 FastLZ emptyTx=31 (TestFlzCompressLen) Ecotone emptyTx=960900 Solidity-parity FastLZ=235 fee=105484 gas=2463 from core/types/rollup_cost_test.go blob c07b53f023725f1758df86e09d9bff6b38ecc317"
+  },
+  "lin_clone": "src/lin_opgeth_fjord.lin",
+  "c11_oracle": "test/oracles/opgeth_fjord_c11.c",
+  "go_oracle": "test/oracles/opgeth_fjord_go.go",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-opgeth-fjord",
+  "goldens": {
+    "fjord_emptyTx_min": 3203000,
+    "fjord_min_gas": 1600,
+    "fjord_flz171": 3217602,
+    "fjord_flz200": 3994602,
+    "fjord_solidity_parity": 105484,
+    "fjord_solidity_gas": 2463,
+    "ecotone_emptyTx": 960900,
+    "vs_ecotone": 2242100
+  }
+}

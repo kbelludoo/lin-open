@@ -1,0 +1,211 @@
+@LIN:L1c:0.2
+@OPGETH_FJORD{
+  version=1
+  repo="ethereum-optimism/op-geth"
+  source="core/types/rollup_cost.go"
+  license="LGPL-3.0"
+  tag="v1.101702.3"
+  commit="7da4560d1fb3045286b70a8dc23360d2626543f2"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="scalar_opgeth_NewL1CostFuncFjord_explicit_fastlz_vs_ecotone"
+  note="Not an op-geth node. FastLZ size is an explicit integer. FlzCompressLen / StateDB GetState are out of scope. i64-scale with 128-bit (a*b)/d. Negative intercept is rewritten as abs-sub + min clamp."
+}
+
+!fjo_coef() -> int { ^ 836500; }
+!fjo_intercept_abs() -> int { ^ 42585600; }
+!fjo_min_scaled() -> int { ^ 100000000; }
+!fjo_div1e12() -> int { ^ 1000000000000; }
+!fjo_div16e6() -> int { ^ 16000000; }
+!fjo_div1e6() -> int { ^ 1000000; }
+!fjo_nz_gas() -> int { ^ 16; }
+!fjo_zero_gas() -> int { ^ 4; }
+
+!fjo_ok_nonneg(v: int) -> int {
+  ?(v < 0) { ^ 0; };
+  ^ 1;
+}
+
+!fjo_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!fjo_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(fjo_u_lt(s, a));
+}
+
+!fjo_mask32() -> int { ^ 4294967295; }
+
+!fjo_muldiv(a: int, b: int, d: int) -> int {
+  ?(fjo_ok_nonneg(a) == 0) { ^ 0; };
+  ?(fjo_ok_nonneg(b) == 0) { ^ 0; };
+  ?(d <= 0) { ^ 0; };
+  m32 = fjo_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = fjo_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = fjo_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(fjo_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = fjo_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!fjo_est(flz: int) -> int {
+  ?(fjo_ok_nonneg(flz) == 0) { ^ 0; };
+  raw = fjo_muldiv(fjo_coef(), flz, 1);
+  ?(raw == 0 && flz != 0) { ^ 0; };
+  ?(fjo_u_lt(raw, fjo_intercept_abs()) == 1) { ^ fjo_min_scaled(); };
+  unclamped = raw - fjo_intercept_abs();
+  ?(fjo_u_lt(unclamped, fjo_min_scaled()) == 1) { ^ fjo_min_scaled(); };
+  ^ unclamped;
+}
+
+!fjo_unclamped(flz: int) -> int {
+  ?(fjo_ok_nonneg(flz) == 0) { ^ 0; };
+  raw = fjo_muldiv(fjo_coef(), flz, 1);
+  ?(raw == 0 && flz != 0) { ^ 0; };
+  ?(fjo_u_lt(raw, fjo_intercept_abs()) == 1) { ^ 0; };
+  ^ raw - fjo_intercept_abs();
+}
+
+!fjo_inner(bf: int, bb: int, bs: int, bbs: int) -> int {
+  ?(fjo_ok_nonneg(bf) == 0) { ^ 0; };
+  ?(fjo_ok_nonneg(bb) == 0) { ^ 0; };
+  ?(fjo_ok_nonneg(bs) == 0) { ^ 0; };
+  ?(fjo_ok_nonneg(bbs) == 0) { ^ 0; };
+  a = fjo_muldiv(bf, 16, 1);
+  ?(a == 0 && bf != 0) { ^ 0; };
+  a2 = fjo_muldiv(a, bs, 1);
+  ?(a2 == 0 && a != 0 && bs != 0) { ^ 0; };
+  b = fjo_muldiv(bb, bbs, 1);
+  ?(b == 0 && bb != 0 && bbs != 0) { ^ 0; };
+  s = a2 + b;
+  ?(fjo_u_lt(s, a2) == 1) { ^ 0; };
+  ^ s;
+}
+
+!fjo_fee(flz: int, bf: int, bb: int, bs: int, bbs: int) -> int {
+  est = fjo_est(flz);
+  ?(est == 0) { ^ 0; };
+  inn = fjo_inner(bf, bb, bs, bbs);
+  ?(inn == 0 && (bf != 0 || bb != 0) && (bs != 0 || bbs != 0)) { ^ 0; };
+  ^ fjo_muldiv(est, inn, fjo_div1e12());
+}
+
+!fjo_gas(flz: int) -> int {
+  est = fjo_est(flz);
+  ?(est == 0) { ^ 0; };
+  ^ fjo_muldiv(est, fjo_nz_gas(), fjo_div1e6());
+}
+
+!fjo_eco(zeroes: int, ones: int, bf: int, bb: int, bs: int, bbs: int) -> int {
+  ?(fjo_ok_nonneg(zeroes) == 0) { ^ 0; };
+  ?(fjo_ok_nonneg(ones) == 0) { ^ 0; };
+  z = fjo_muldiv(zeroes, fjo_zero_gas(), 1);
+  n = fjo_muldiv(ones, fjo_nz_gas(), 1);
+  ?(z == 0 && zeroes != 0) { ^ 0; };
+  ?(n == 0 && ones != 0) { ^ 0; };
+  cg = z + n;
+  ?(fjo_u_lt(cg, z) == 1) { ^ 0; };
+  inn = fjo_inner(bf, bb, bs, bbs);
+  ?(inn == 0 && (bf != 0 || bb != 0) && (bs != 0 || bbs != 0)) { ^ 0; };
+  ^ fjo_muldiv(cg, inn, fjo_div16e6());
+}
+
+!fjo_vs_eco(flz: int, zeroes: int, ones: int, bf: int, bb: int, bs: int, bbs: int) -> int {
+  full = fjo_fee(flz, bf, bb, bs, bbs);
+  eco = fjo_eco(zeroes, ones, bf, bb, bs, bbs);
+  ?(fjo_u_lt(full, eco) == 1) { ^ 0; };
+  ^ full - eco;
+}
+
+!fjo_test_suite() -> int {
+  ?(fjo_inner(1000000000, 10000000, 2, 3) != 32030000000) { ^ -1; };
+  ?(fjo_est(100) != 100000000) { ^ -2; };
+  ?(fjo_est(170) != 100000000) { ^ -3; };
+  ?(fjo_est(171) != 100455900) { ^ -4; };
+  ?(fjo_est(200) != 124714400) { ^ -5; };
+  ?(fjo_fee(100, 1000000000, 10000000, 2, 3) != 3203000) { ^ -6; };
+  ?(fjo_fee(170, 1000000000, 10000000, 2, 3) != 3203000) { ^ -7; };
+  ?(fjo_fee(171, 1000000000, 10000000, 2, 3) != 3217602) { ^ -8; };
+  ?(fjo_fee(200, 1000000000, 10000000, 2, 3) != 3994602) { ^ -9; };
+  ?(fjo_gas(100) != 1600) { ^ -10; };
+  ?(fjo_gas(171) != 1607) { ^ -11; };
+  ?(fjo_fee(235, 2000000, 3000000, 20, 15) != 105484) { ^ -12; };
+  ?(fjo_gas(235) != 2463) { ^ -13; };
+  ?(fjo_eco(0, 30, 1000000000, 10000000, 2, 3) != 960900) { ^ -14; };
+  ?(fjo_vs_eco(31, 0, 30, 1000000000, 10000000, 2, 3) != 2242100) { ^ -15; };
+  ?(fjo_unclamped(31) != 0) { ^ -16; };
+  ?(fjo_fee(-1, 1, 0, 1, 0) != 0) { ^ -17; };
+  ?(fjo_muldiv(100, 200, 50) != 400) { ^ -18; };
+  ?(fjo_est(31) != 100000000) { ^ -19; };
+  ^ 1;
+}
+
+=ex{
+  fjo_coef,
+  fjo_intercept_abs,
+  fjo_min_scaled,
+  fjo_div1e12,
+  fjo_div16e6,
+  fjo_div1e6,
+  fjo_nz_gas,
+  fjo_zero_gas,
+  fjo_ok_nonneg,
+  fjo_u_lt,
+  fjo_u_add_carry,
+  fjo_mask32,
+  fjo_muldiv,
+  fjo_est,
+  fjo_unclamped,
+  fjo_inner,
+  fjo_fee,
+  fjo_gas,
+  fjo_eco,
+  fjo_vs_eco,
+  fjo_test_suite
+}
