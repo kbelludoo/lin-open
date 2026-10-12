@@ -1,0 +1,189 @@
+{
+  "schema": "LIN_COMET_ACCRUE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned CometWithExtendedAssetList.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned CometCore.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned comet commit matches fixtures",
+      "note": "commit=f766f51583c23acc33b2a7824654ef2029a96804 CometWithExtendedAssetList.sol:3490e984d133789aa1afe2e8f7e37a11d2512396 CometCore.sol:534f2701b6c8e683f9294112b0bcc23878d39fe6"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of CometWithExtendedAssetList.sol and CometCore.sol",
+      "note": ""
+    },
+    {
+      "id": "PIN-CONST",
+      "status": "PASS",
+      "description": "CometCore.sol pins SECONDS_PER_YEAR=31536000 and FACTOR_SCALE=1e18",
+      "note": ""
+    },
+    {
+      "id": "PIN-FNS",
+      "status": "PASS",
+      "description": "fixture contains accruedInterestIndices, getSupplyRate, mulFactor",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_comet_accrue.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v6",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "cai_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE-C0",
+      "status": "PASS",
+      "description": "Compiler 0 fail-closes sol_parse_test_gate with VM_REJ_STRING_LITERAL (numeric kernel still runs)",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "6/6 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "APY-SPLIT",
+      "status": "PASS",
+      "description": "1% wad / SECONDS_PER_YEAR vs / JumpRate blocksPerYear",
+      "note": "ps=317097919 pb=4756468797"
+    },
+    {
+      "id": "YEAR-DELTA",
+      "status": "PASS",
+      "description": "genesis index, 1% APY, 365-day year: III per-second vs V2 per-block-as-per-second",
+      "note": "iii=9999999973584 v2mis=149999999982192 ratio=15.000000"
+    },
+    {
+      "id": "NAMED-15X",
+      "status": "PASS",
+      "description": "wallet that reuses Compound V2 per-block 1% as III per-second over-accrues ~15x in one year",
+      "note": "149999999982192/9999999973584 = 15.000000 (31536000/2102400 = 15.000000)"
+    },
+    {
+      "id": "YEAR-C11",
+      "status": "PASS",
+      "description": "year deltas: Python bigint == C11 i128 == limbs == LIN",
+      "note": ""
+    },
+    {
+      "id": "PREC-TWOSTEP",
+      "status": "PASS",
+      "description": "floor(index*rate/1e18)*dt under-counts 1e15*1*1000/1e18 as 0; (rate*dt) first yields 1",
+      "note": ""
+    },
+    {
+      "id": "RATE-TIME-OV",
+      "status": "PASS",
+      "description": "rate*dt that does not fit uint64 fail-closes (Solidity uint256 would succeed)",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes index/rate/dt and kink IRM params as arguments (no hidden storage / getUtilization)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv (naive i64 rate*dt wraps)",
+      "note": ""
+    },
+    {
+      "id": "SOL-V6",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v6: TUPLE_RET / SAFE64 / RATE_TIME / FACTOR_SCALE / split export",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-REJECT",
+      "status": "PASS",
+      "description": "pinned accruedInterestIndices / getSupplyRate / mulFactor snippets are covered by v6 rejects",
+      "note": ""
+    },
+    {
+      "id": "RS-V3",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v3 rejects wrapping * time_elapsed",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on cai_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate cjr_test_suite still == 1 after v6 transpiler",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-JIT",
+      "status": "PASS",
+      "description": "JumpRate roundtrip-jit still CONSENSUS",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/compound-finance/comet",
+    "commit": "f766f51583c23acc33b2a7824654ef2029a96804",
+    "path": "contracts/CometWithExtendedAssetList.sol",
+    "constants_path": "contracts/CometCore.sol",
+    "git_blob_sha": "3490e984d133789aa1afe2e8f7e37a11d2512396",
+    "core_blob_sha": "534f2701b6c8e683f9294112b0bcc23878d39fe6",
+    "file_sha256": "c9099e56eda092fd0150005706edf086723899afb102f164b60ad1f36a426961",
+    "core_sha256": "1d80f0d12c101d01c2e1f38e8662cfcf350299b1c78188f8c501bb1c51b5ec78",
+    "license": "GPL-2.0-or-later",
+    "license_note": "BUSL-1.1 Change Date 2025-12-31 elapsed; Change License GPL-2.0-or-later"
+  },
+  "lin_clone": "src/lin_comet_accrue.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-comet-accrue",
+  "c11_oracle": "test/oracles/comet_accrue_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "per_second_1pct": 317097919,
+  "per_block_1pct": 4756468797,
+  "year_delta_iii": 9999999973584,
+  "year_delta_v2_misapply": 149999999982192,
+  "year_ratio": 15.0000000378432
+}

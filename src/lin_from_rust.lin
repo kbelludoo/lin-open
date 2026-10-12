@@ -1,12 +1,12 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=3
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: reject * time_elapsed / * seconds_elapsed (REJ_RUST_RATE_TIME); wrapping rate*dt is the same class as Solidity supplyRate * timeElapsed in Comet accruedInterestIndices. v2: overflow-ceil (+ 1000 - 1 / + n - 1) and div_ceil"
 }
 
-// 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
 !rs_is_kw(nm: string): int {
   ?(starts_lit(nm, 0, "fn") == 1 && nm.length == 2) { ^1 };
   ?(starts_lit(nm, 0, "let") == 1 && nm.length == 3) { ^1 };
@@ -21,7 +21,6 @@
   ^0;
 }
 
-// 2. Identificação de tipos inteiros primitivos Rust
 !rs_is_type(nm: string): int {
   ?(starts_lit(nm, 0, "u128") == 1 && nm.length == 4) { ^1 };
   ?(starts_lit(nm, 0, "u64") == 1 && nm.length == 3) { ^1 };
@@ -38,7 +37,6 @@
   ^0;
 }
 
-// 3. Critérios fail-closed de rejeição de código Rust não-puro
 !rs_reason(sig: string, body: string): string {
   ?(rg_count_lit(sig, "&mut") > 0) { ^"REJ_RUST_MUTABLE_REF" };
   ?(rg_count_lit(sig, "&") > 0) { ^"REJ_RUST_BORROW" };
@@ -50,23 +48,31 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(body, "div_ceil") > 0) { ^"REJ_RUST_DIV_CEIL" };
+  ?(rg_count_lit(body, "+ 1000 - 1") > 0) { ^"REJ_RUST_OVERFLOW_CEIL" };
+  ?(rg_count_lit(body, " + n - 1") > 0) { ^"REJ_RUST_OVERFLOW_CEIL" };
+  ?(rg_count_lit(body, "* time_elapsed") > 0) { ^"REJ_RUST_RATE_TIME" };
+  ?(rg_count_lit(body, "* seconds_elapsed") > 0) { ^"REJ_RUST_RATE_TIME" };
   ^"OK";
 }
 
-// 4. Teste de conformidade de parser Rust (funções pure no_std)
 !rs_parse_test_gate(): int {
   sig_ok = "pub fn compute_fee(amount: u64, fee_bps: u64) -> u64";
   body_ok = "let fee = (amount * fee_bps) / 10000; return fee;";
-
   sig_bad = "pub fn allocate_vec(n: usize) -> Vec<u8>";
   body_bad = "let mut v = Vec::with_capacity(n); v";
-
   r1 = rs_reason(sig_ok, body_ok);
-  ?(r1.length != 2) { ^0 }; // "OK"
-
+  ?(r1.length != 2) { ^0 };
   r2 = rs_reason(sig_bad, body_bad);
-  ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
-
+  ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 };
+  sig_ceil = "pub fn fee_for_weight(weight: u64) -> u64";
+  body_ceil = "let fee = (weight + 1000 - 1) / 1000; fee";
+  r3 = rs_reason(sig_ceil, body_ceil);
+  ?(starts_lit(r3, 0, "REJ_RUST_OVERFLOW_CEIL") == 0) { ^0 };
+  sig_rt = "pub fn accrue(index: u64, rate: u64, time_elapsed: u64) -> u64";
+  body_rt = "let product = rate * time_elapsed; index + product";
+  r4 = rs_reason(sig_rt, body_rt);
+  ?(starts_lit(r4, 0, "REJ_RUST_RATE_TIME") == 0) { ^0 };
   ^1;
 }
 
