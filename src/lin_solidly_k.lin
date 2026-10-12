@@ -1,0 +1,223 @@
+@LIN:L1c:0.2
+@SOLIDLY_CUBIC_K{
+  version=1
+  repo="transmissions11/solidly"
+  source="contracts/BaseV1-core.sol"
+  license="MIT"
+  commit="a71fe0dc42925709e138d5f1c9ecc4b2a2f3acf5"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_solidly_x3y_y3x_WAD6_not_WAD18"
+  note="Not mainnet uint256 / 1e18. Kernel is Solidly stable cubic k = x3y+y3x vs volatile xy, plus Newton _get_y. WAD'=1e6. _k/_get_y are rejected, not emitted. Not Uniswap V2 xy, not Saddle/Curve StableSwap getD. Not Maker rpow."
+}
+
+!sld_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!sld_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(sld_u_lt(s, a));
+}
+
+!sld_mask32() -> int {
+  ^ 4294967295;
+}
+
+!sld_wad() -> int {
+  ^ 1000000;
+}
+
+!sld_muldiv_part(a: int, b: int, d: int, want: int) -> int {
+  ?(d <= 0) { ^ 0; };
+  m32 = sld_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = sld_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = sld_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(sld_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = sld_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want == 1) { ^ r_lo; };
+  ?(want == 2) { ^ ov; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!sld_muldiv(a: int, b: int, d: int) -> int {
+  ^ sld_muldiv_part(a, b, d, 0);
+}
+
+!sld_naive_sq_wrap(x: int, base: int) -> int {
+  ^ (x * x) / base;
+}
+
+!sld_apply_fee(amount: int, fee_bps: int) -> int {
+  ?(amount < 0) { ^ 0; };
+  ?(fee_bps < 0) { ^ 0; };
+  ^ amount - sld_muldiv(amount, fee_bps, 10000);
+}
+
+!sld_k_stable(x: int, y: int) -> int {
+  ?(x <= 0) { ^ 0; };
+  ?(y <= 0) { ^ 0; };
+  w = sld_wad();
+  a = sld_muldiv(x, y, w);
+  b = sld_muldiv(x, x, w) + sld_muldiv(y, y, w);
+  ^ sld_muldiv(a, b, w);
+}
+
+!sld_k(x: int, y: int, stable: int) -> int {
+  ?(stable == 1) { ^ sld_k_stable(x, y); };
+  ^ sld_muldiv(x, y, 1);
+}
+
+!sld_f(x0: int, y: int) -> int {
+  w = sld_wad();
+  y2 = sld_muldiv(y, y, w);
+  y3 = sld_muldiv(y2, y, w);
+  t1 = sld_muldiv(x0, y3, w);
+  x2 = sld_muldiv(x0, x0, w);
+  x3 = sld_muldiv(x2, x0, w);
+  t2 = sld_muldiv(x3, y, w);
+  ^ t1 + t2;
+}
+
+!sld_d(x0: int, y: int) -> int {
+  w = sld_wad();
+  inner = sld_muldiv(y, y, w);
+  t1 = sld_muldiv(x0 + x0 + x0, inner, w);
+  x2 = sld_muldiv(x0, x0, w);
+  x3 = sld_muldiv(x2, x0, w);
+  ^ t1 + x3;
+}
+
+!sld_get_y(x0: int, xy: int, y: int) -> int {
+  ?(x0 <= 0) { ^ 0; };
+  ?(y <= 0) { ^ 0; };
+  i = 0;
+  while (i < 16) {
+    y_prev = y;
+    k = sld_f(x0, y);
+    dd = sld_d(x0, y);
+    ?(dd <= 0) { ^ 0; };
+    ?(k < xy) {
+      dy = sld_muldiv(xy - k, sld_wad(), dd);
+      y = y + dy;
+    };
+    ?(k >= xy) {
+      dy = sld_muldiv(k - xy, sld_wad(), dd);
+      ?(sld_u_lt(y, dy) == 1) { ^ 0; };
+      y = y - dy;
+    };
+    ?(y > y_prev) {
+      ?(y - y_prev <= 1) { ^ y; };
+    };
+    ?(y <= y_prev) {
+      ?(y_prev - y <= 1) { ^ y; };
+    };
+    i = i + 1;
+  };
+  ^ y;
+}
+
+!sld_amount_out(amount_in: int, reserve_in: int, reserve_out: int, stable: int, fee_bps: int) -> int {
+  ?(amount_in <= 0) { ^ 0; };
+  ?(reserve_in <= 0) { ^ 0; };
+  ?(reserve_out <= 0) { ^ 0; };
+  ain = sld_apply_fee(amount_in, fee_bps);
+  ?(ain <= 0) { ^ 0; };
+  ?(stable == 0) {
+    den = reserve_in + ain;
+    ?(den <= 0) { ^ 0; };
+    ^ sld_muldiv(ain, reserve_out, den);
+  };
+  xy = sld_k_stable(reserve_in, reserve_out);
+  y = sld_get_y(ain + reserve_in, xy, reserve_out);
+  ?(sld_u_lt(reserve_out, y) == 1) { ^ 0; };
+  ^ reserve_out - y;
+}
+
+!sld_test_suite() -> int {
+  w = sld_wad();
+  ?(sld_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(sld_k_stable(w, w) != 2000000) { ^ -2; };
+  ?(sld_k_stable(2000000, 2000000) != 32000000) { ^ -3; };
+  ?(sld_k_stable(w, 2000000) != 10000000) { ^ -4; };
+  ?(sld_k(w, w, 0) != 1000000000000) { ^ -5; };
+  ?(sld_f(w, w) != 2000000) { ^ -6; };
+  ?(sld_d(w, w) != 4000000) { ^ -7; };
+  ?(sld_amount_out(10000, w, w, 0, 1) != 9900) { ^ -8; };
+  ?(sld_amount_out(10000, w, w, 1, 1) != 9997) { ^ -9; };
+  ?(sld_amount_out(10000, w, w, 1, 0) != 9999) { ^ -10; };
+  ?(sld_amount_out(10000, w, 4000000, 0, 1) != 39600) { ^ -11; };
+  ?(sld_amount_out(100000, w, w, 1, 1) != 99939) { ^ -12; };
+  ?(sld_amount_out(100000, w, w, 0, 1) != 90900) { ^ -13; };
+  ?(sld_amount_out(10000, 1200000, 800000, 1, 1) != 9827) { ^ -14; };
+  ?(sld_amount_out(10000, 1200000, 800000, 0, 1) != 6610) { ^ -15; };
+  ?(sld_naive_sq_wrap(5000000000, w) != 6553255926290) { ^ -16; };
+  ?(sld_muldiv(5000000000, 5000000000, w) != 25000000000000) { ^ -17; };
+  ?(sld_apply_fee(10000, 1) != 9999) { ^ -18; };
+  ?(sld_muldiv(1000000000000000000, 1000000000000000000, 1) != 0) { ^ -19; };
+  ?(sld_k_stable(5000000, 5000000) != 1250000000) { ^ -20; };
+  ^ 1;
+}
+
+=ex{
+  sld_u_lt,
+  sld_u_add_carry,
+  sld_mask32,
+  sld_wad,
+  sld_muldiv_part,
+  sld_muldiv,
+  sld_naive_sq_wrap,
+  sld_apply_fee,
+  sld_k_stable,
+  sld_k,
+  sld_f,
+  sld_d,
+  sld_get_y,
+  sld_amount_out,
+  sld_test_suite
+}

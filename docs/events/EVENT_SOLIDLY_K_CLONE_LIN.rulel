@@ -1,0 +1,62 @@
+@RULEL:SOLIDLY_K_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-SOLIDLY-CUBIC-K"
+@TITLE="Clone-lin of Solidly BaseV1Pair x3y+y3x with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_WAD6"
+@DATE="2026-10-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-solidly-k"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Solidly stable cubic invariant (x3y+y3x) and Newton get_y into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Fantom/Optimism/Base mainnet"
+  operand_width="uint64 inputs, WAD'=1e6, 128-bit product for (a*b)/WAD; Solidity 1e18 cubes are NOT claimed"
+  commercial_hook="the same Pair contract prices stable pools with x3y+y3x and volatile pools with xy; using Uniswap-style xy on a pegged pool underpays the swap (10k-on-1e6/1e6: cubic 9997 vs xy 9900). Velodrome/Aerodrome inherit this kernel. Making reserves/stable/fee explicit with 128-bit muldiv is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/transmissions11/solidly"
+  path="contracts/BaseV1-core.sol"
+  license="MIT"
+  commit="a71fe0dc42925709e138d5f1c9ecc4b2a2f3acf5"
+  git_blob_sha="5827d9fdff7442b4075cd0e0b7f236719e0d017c"
+  file_sha256="24f7939bf6e030f59889de6b4bad40e0814e910137044b8661d776ee6b33e59f"
+  fixture="test/fixtures/external_proof/BaseV1-core.sol"
+  descendants="Velodrome V2 Pool.sol / Aerodrome Pool.sol inherit the cubic; pin is the MIT Solidly source, not BUSL Velodrome"
+}
+
+.l{
+  clone="src/lin_solidly_k.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_GET_Y / REJ_SOLIDITY_SOLIDLY_K; emit split = + ex{ so C0 does not steal the export list; src/lin_from_rust.lin v2 REJ_RUST_GET_Y / REJ_RUST_SOLIDLY_K"
+  improvement_1="stable 10k-on-1e6/1e6 out=9997 vs volatile xy=9900 (named misprice if the wrong curve is used)"
+  improvement_2="naive i64 (5e9*5e9)/1e6 wraps to 6553255926290; 128-bit muldiv=25000000000000"
+  improvement_3="imbalanced 1.2e6/0.8e6 stable out=9827 vs volatile 6610"
+  improvement_4="Newton _get_y is explicit args + 16-iter cap (Solidly 255); fail-close if dy>y"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/solidly_k_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="python3 test/prove_solidly_k_external.py"
+}
+
+.p{
+  harness="test/prove_solidly_k_external.py"
+  evidence_json="examples/solidly_k/solidly_k_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-solidly-k"
+}
+
+.n{
+  not_claimed_1="full uint256 / WAD=1e18 / mainnet Velodrome or Aerodrome swap parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production DEX replacement"
+  not_claimed_4="retread of Uniswap V2 xy, Uniswap V3 sqrt, Saddle getD/getY, or Maker rpow"
+  not_claimed_5="LIN replaces Solidly, Velodrome, Aerodrome, or the EVM"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
