@@ -305,7 +305,7 @@ else
 	@python3 test/prove_all_claims_external.py --iterations 10000
 endif
 
-.PHONY: compound-jumprate-proof independent-reproof
+.PHONY: compound-jumprate-proof independent-reproof u512-coprocessor-proof
 compound-jumprate-proof: c0
 	@chmod +x test/verify_compound_jumprate.sh test/prove_compound_jumprate_external.py
 	@test/verify_compound_jumprate.sh
@@ -313,6 +313,102 @@ compound-jumprate-proof: c0
 independent-reproof: c0
 	@chmod +x test/prove_melhorias_independent.py
 	@python3 test/prove_melhorias_independent.py
+
+# Numeric coprocessor with auditable receipt (no Zig). Schema 1.51:
+# unbalanced Toom-2x41 + Barrett mu=floor(2^5120/d). Class: EXPERIMENTAL.
+u512-coprocessor-proof: c0
+	@chmod +x test/prove_u512_coprocessor_external.py \
+		examples/u512_coprocessor/verify_u512_receipt.py \
+		examples/u512_coprocessor/verify_u512_receipt.js \
+		examples/u512_coprocessor/verify_u512_inclusion.py \
+		examples/u512_coprocessor/verify_u512_inclusion.js \
+		examples/u512_coprocessor/verify_u512_inclusion.pl \
+		examples/u512_coprocessor/verify_u512_bc_identity.py \
+		examples/u512_coprocessor/verify_u512_radix8.py \
+		examples/u512_coprocessor/verify_u512_knuth_d.py \
+		examples/u512_coprocessor/verify_u512_crt.py \
+		examples/u512_coprocessor/verify_u512_karatsuba.py \
+		examples/u512_coprocessor/verify_u512_toom3.py \
+		examples/u512_coprocessor/verify_u512_ntt.py \
+		examples/u512_coprocessor/verify_u512_comba.py \
+		examples/u512_coprocessor/verify_u512_toom4.py \
+		examples/u512_coprocessor/verify_u512_fnt.py \
+		examples/u512_coprocessor/verify_u512_toom5.py \
+		examples/u512_coprocessor/verify_u512_toom6.py \
+		examples/u512_coprocessor/verify_u512_toom7.py \
+		examples/u512_coprocessor/verify_u512_toom8.py \
+		examples/u512_coprocessor/verify_u512_toom9.py \
+		examples/u512_coprocessor/verify_u512_toom10.py \
+		examples/u512_coprocessor/verify_u512_rns.py \
+		examples/u512_coprocessor/verify_u512_ss.py \
+		examples/u512_coprocessor/verify_u512_toom37.py \
+		examples/u512_coprocessor/verify_u512_toom25.py \
+		examples/u512_coprocessor/verify_u512_toom27.py \
+		examples/u512_coprocessor/verify_u512_fft.py \
+		examples/u512_coprocessor/verify_u512_solinas.py \
+		examples/u512_coprocessor/verify_u512_cook.py \
+		examples/u512_coprocessor/verify_u512_km.py \
+		examples/u512_coprocessor/verify_u512_st.py \
+		examples/u512_coprocessor/verify_u512_toom211.py \
+		examples/u512_coprocessor/verify_u512_toom213.py \
+		examples/u512_coprocessor/verify_u512_toom215.py \
+		examples/u512_coprocessor/verify_u512_toom217.py \
+		examples/u512_coprocessor/verify_u512_toom219.py \
+		examples/u512_coprocessor/verify_u512_toom221.py \
+		examples/u512_coprocessor/verify_u512_toom223.py \
+		examples/u512_coprocessor/verify_u512_toom225.py \
+		examples/u512_coprocessor/verify_u512_toom227.py \
+		examples/u512_coprocessor/verify_u512_toom229.py \
+		examples/u512_coprocessor/verify_u512_toom231.py \
+		examples/u512_coprocessor/verify_u512_toom233.py \
+		examples/u512_coprocessor/verify_u512_toom235.py \
+		examples/u512_coprocessor/verify_u512_toom237.py \
+		examples/u512_coprocessor/verify_u512_toom239.py \
+		examples/u512_coprocessor/verify_u512_toom241.py \
+		test/oracles/u512_node_oracle.js \
+		test/oracles/u512_perl_oracle.pl \
+		test/oracles/u512_radix8.py \
+		test/oracles/u512_knuth_d.py \
+		test/oracles/u512_crt_fullmath.py \
+		test/oracles/u512_karatsuba_barrett.py \
+		test/oracles/u512_toom3_goldschmidt.py \
+		test/oracles/u512_ntt_srt.py \
+		test/oracles/u512_comba_nr.py \
+		test/oracles/u512_toom4_bz.py \
+		test/oracles/u512_fnt_srt8.py \
+		test/oracles/u512_toom5_srt16.py \
+		test/oracles/u512_toom6_srt32.py \
+		test/oracles/u512_toom7_srt64.py \
+		test/oracles/u512_toom8_srt128.py \
+		test/oracles/u512_toom9_srt256.py \
+		test/oracles/u512_toom10_srt512.py \
+		test/oracles/u512_rns_newton.py \
+		test/oracles/u512_ss_srt1024.py \
+		test/oracles/u512_toom37_barrett768.py \
+		test/oracles/u512_toom25_srt2048.py \
+		test/oracles/u512_toom27_barrett1024.py \
+		test/oracles/u512_fft_montgomery.py \
+		test/oracles/u512_solinas_gm.py \
+		test/oracles/u512_dd_cook.py \
+		test/oracles/u512_b80_km.py \
+		test/oracles/u512_toom29_svoboda.py \
+		test/oracles/u512_toom211_barrett1280.py \
+		test/oracles/u512_toom213_barrett1536.py \
+		test/oracles/u512_toom215_barrett1792.py \
+		test/oracles/u512_toom217_barrett2048.py \
+		test/oracles/u512_toom219_barrett2304.py \
+		test/oracles/u512_toom221_barrett2560.py \
+		test/oracles/u512_toom223_barrett2816.py \
+		test/oracles/u512_toom225_barrett3072.py \
+		test/oracles/u512_toom227_barrett3328.py \
+		test/oracles/u512_toom229_barrett3584.py \
+		test/oracles/u512_toom231_barrett3840.py \
+		test/oracles/u512_toom233_barrett4096.py \
+		test/oracles/u512_toom235_barrett4352.py \
+		test/oracles/u512_toom237_barrett4608.py \
+		test/oracles/u512_toom239_barrett4864.py \
+		test/oracles/u512_toom241_barrett5120.py
+	@python3 test/prove_u512_coprocessor_external.py
 
 # Standalone no-Zig CLI (python3, stdlib only). `make install-cli PREFIX=~/.local`
 # puts an executable `lin-verify` on PATH.
