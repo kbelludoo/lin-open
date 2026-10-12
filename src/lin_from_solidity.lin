@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: reject baseTrackingSupplySpeed * timeElapsed (REJ_SOLIDITY_TRACK_DT), divBaseWei( (REJ_SOLIDITY_DIV_BASE_WEI), n * baseScale (REJ_SOLIDITY_BASE_SCALE_WRAP), * timeElapsed (REJ_SOLIDITY_RATE_TIME), baseScale/totalSupplyBase/baseMinForRewards (REJ_SOLIDITY_GETTER). Compound III tracking index is the named gate. Split '=' + 'ex{' emit. v2: emit LIN; expand 1eN; OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,17 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(body, "baseTrackingSupplySpeed * timeElapsed") > 0) { ^"REJ_SOLIDITY_TRACK_DT" };
+  ?(rg_count_lit(body, "baseTrackingBorrowSpeed * timeElapsed") > 0) { ^"REJ_SOLIDITY_TRACK_DT" };
+  ?(rg_count_lit(body, "divBaseWei(") > 0) { ^"REJ_SOLIDITY_DIV_BASE_WEI" };
+  ?(rg_count_lit(body, "n * baseScale") > 0) { ^"REJ_SOLIDITY_BASE_SCALE_WRAP" };
+  ?(rg_count_lit(body, "* timeElapsed") > 0) { ^"REJ_SOLIDITY_RATE_TIME" };
+  ?(rg_count_lit(body, "baseScale") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "totalSupplyBase") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "totalBorrowBase") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "baseMinForRewards") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "baseTrackingSupplySpeed") > 0) { ^"REJ_SOLIDITY_GETTER" };
+  ?(rg_count_lit(body, "trackingSupplyIndex") > 0) { ^"REJ_SOLIDITY_GETTER" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +75,14 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_dt = "function acc(uint timeElapsed) internal view returns (uint)";
+  body_dt = "return divBaseWei(baseTrackingSupplySpeed * timeElapsed, totalSupplyBase);";
+  r4 = sol_reason(sig_dt, body_dt);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_TRACK_DT") == 0) { ^0 };
+  sig_dw = "function d(uint n, uint baseWei) internal view returns (uint)";
+  body_dw = "return n * baseScale / baseWei;";
+  r5 = sol_reason(sig_dw, body_dw);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_BASE_SCALE_WRAP") == 0) { ^0 };
   ^1;
 }
 
@@ -317,7 +336,8 @@
     };
     i = i + 1;
   };
-  out = out + "=ex{";
+  out = out + "=";
+  out = out + "ex{";
   out = out + names;
   out = out + "}";
   out = out + rgs_ch(10);
@@ -334,6 +354,13 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  wrap = "function d(uint n, uint baseWei) internal pure returns (uint) { return n * baseScale / baseWei; }";
+  out2 = sol_from_sol(wrap);
+  ?(rg_count_lit(out2, "function d") > 0) { ^0 };
+  ?(rg_count_lit(out2, "!d(") > 0) { ^0 };
+  dt = "function acc(uint timeElapsed) internal pure returns (uint) { return divBaseWei(baseTrackingSupplySpeed * timeElapsed, 1); }";
+  out3 = sol_from_sol(dt);
+  ?(rg_count_lit(out3, "!acc(") > 0) { ^0 };
   ^1;
 }
 
