@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: reject GMX validateLiquidation / remainingCollateral / liquidationFeeUsd / maxLeverage before STORAGE so the kernel is named not generic vault read. Split equals-ex export emit so C0 does not steal the export list. v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -41,6 +41,10 @@
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
+  ?(rg_count_lit(sig, "validateLiquidation") > 0) { ^"REJ_SOLIDITY_GMX_LIQ" };
+  ?(rg_count_lit(body, "remainingCollateral") > 0) { ^"REJ_SOLIDITY_GMX_LIQ" };
+  ?(rg_count_lit(body, "liquidationFeeUsd") > 0) { ^"REJ_SOLIDITY_GMX_LIQ" };
+  ?(rg_count_lit(body, "maxLeverage") > 0) { ^"REJ_SOLIDITY_GMX_LIQ" };
   ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
   ?(rg_count_lit(body, "assembly") > 0) { ^"REJ_SOLIDITY_INLINE_ASM" };
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
@@ -317,7 +321,8 @@
     };
     i = i + 1;
   };
-  out = out + "=ex{";
+  out = out + "=";
+  out = out + "ex{";
   out = out + names;
   out = out + "}";
   out = out + rgs_ch(10);
@@ -337,4 +342,12 @@
   ^1;
 }
 
-=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
+!sol_gvl_reject_gate(): int {
+  sig_v = "function validateLiquidation(address account, address collateralToken, address indexToken, bool isLong, bool raise) public view returns (uint, uint)";
+  body_v = "if (remainingCollateral < marginFees.add(vault.liquidationFeeUsd())) { return (1, marginFees); } if (remainingCollateral.mul(vault.maxLeverage()) < position.size.mul(BASIS)) { return (2, marginFees); }";
+  r1 = sol_reason(sig_v, body_v);
+  ?(starts_lit(r1, 0, "REJ_SOLIDITY_GMX_LIQ") == 0) { ^0 };
+  ^1;
+}
+
+=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate, sol_gvl_reject_gate}

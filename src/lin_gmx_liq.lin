@@ -1,0 +1,314 @@
+@LIN:L1c:0.2
+@GMX_VALIDATE_LIQUIDATION{
+  version=1
+  repo="gmx-io/gmx-contracts"
+  source="contracts/core/VaultUtils.sol"
+  license="MIT"
+  commit="fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_gmx_validateLiquidation_cap_fees_to_remaining_and_max_leverage"
+  note="Not mainnet uint256. Kernel is GMX V1 VaultUtils.validateLiquidation: remaining collateral after PnL vs marginFees+liquidationFeeUsd, then remaining*maxLeverage < size*10000. Storage, getDelta, getFundingFee and getPositionFee are explicit args. 128-bit product compare. Cap-to-collateral returns remaining not computed fees. Profit is added only when raise=0. Not getFundingFee, not getNextFundingRate, not getFeeBasisPoints, not Uniswap xy, not Solidly cubic, not Maker rpow."
+}
+
+!gvl_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!gvl_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(gvl_u_lt(s, a));
+}
+
+!gvl_u_add_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  s = a + b;
+  ?(s < a) { ^ 0; };
+  ^ 1;
+}
+
+!gvl_mask32() -> int {
+  ^ 4294967295;
+}
+
+!gvl_bps() -> int {
+  ^ 10000;
+}
+
+!gvl_default_max_lev() -> int {
+  ^ 500000;
+}
+
+!gvl_funding_prec() -> int {
+  ^ 1000000;
+}
+
+!gvl_prod_part(a: int, b: int, want: int) -> int {
+  m32 = gvl_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = gvl_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = gvl_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  ?(want == 1) { ^ hi; };
+  ^ lo;
+}
+
+!gvl_prod_hi(a: int, b: int) -> int {
+  ^ gvl_prod_part(a, b, 1);
+}
+
+!gvl_prod_lo(a: int, b: int) -> int {
+  ^ gvl_prod_part(a, b, 0);
+}
+
+!gvl_u128_lt(a_hi: int, a_lo: int, b_hi: int, b_lo: int) -> int {
+  ?(gvl_u_lt(a_hi, b_hi) == 1) { ^ 1; };
+  ?(gvl_u_lt(b_hi, a_hi) == 1) { ^ 0; };
+  ^ gvl_u_lt(a_lo, b_lo);
+}
+
+!gvl_muldiv_part(a: int, b: int, d: int, want: int) -> int {
+  ?(d <= 0) { ^ 0; };
+  m32 = gvl_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = gvl_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = gvl_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(gvl_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = gvl_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!gvl_muldiv(a: int, b: int, d: int) -> int {
+  ^ gvl_muldiv_part(a, b, d, 0);
+}
+
+!gvl_wiped(collateral: int, has_profit: int, delta: int) -> int {
+  ?(has_profit != 0) { ^ 0; };
+  ?(gvl_u_lt(collateral, delta) == 1) { ^ 1; };
+  ^ 0;
+}
+
+!gvl_remaining(collateral: int, has_profit: int, delta: int, raise: int) -> int {
+  ?(collateral < 0) { ^ 0; };
+  ?(delta < 0) { ^ 0; };
+  ?(has_profit == 0) {
+    ?(gvl_u_lt(collateral, delta) == 1) { ^ 0; };
+    ^ collateral - delta;
+  };
+  ?(raise == 0) {
+    ?(gvl_u_add_ok(collateral, delta) == 0) { ^ 0; };
+    ^ collateral + delta;
+  };
+  ^ collateral;
+}
+
+!gvl_lev_exceeded(remaining: int, size: int, max_lev: int) -> int {
+  ?(remaining < 0) { ^ 1; };
+  ?(size < 0) { ^ 0; };
+  ?(max_lev <= 0) { ^ 1; };
+  a_hi = gvl_prod_hi(remaining, max_lev);
+  a_lo = gvl_prod_lo(remaining, max_lev);
+  b_hi = gvl_prod_hi(size, gvl_bps());
+  b_lo = gvl_prod_lo(size, gvl_bps());
+  ^ gvl_u128_lt(a_hi, a_lo, b_hi, b_lo);
+}
+
+!gvl_naive_lev_exceeded(remaining: int, size: int, max_lev: int) -> int {
+  left = remaining * max_lev;
+  right = size * gvl_bps();
+  ?(left < right) { ^ 1; };
+  ^ 0;
+}
+
+!gvl_missing_bps_lev(remaining: int, size: int, max_lev: int) -> int {
+  a_hi = gvl_prod_hi(remaining, max_lev);
+  a_lo = gvl_prod_lo(remaining, max_lev);
+  ?(a_hi != 0) { ^ 0; };
+  ?(gvl_u_lt(a_lo, size) == 1) { ^ 1; };
+  ^ 0;
+}
+
+!gvl_state(collateral: int, size: int, has_profit: int, delta: int, margin_fees: int, liq_fee: int, max_lev: int, raise: int) -> int {
+  ?(collateral < 0) { ^ -1; };
+  ?(size < 0) { ^ -1; };
+  ?(delta < 0) { ^ -1; };
+  ?(margin_fees < 0) { ^ -1; };
+  ?(liq_fee < 0) { ^ -1; };
+  ?(max_lev <= 0) { ^ -1; };
+  ?(gvl_wiped(collateral, has_profit, delta) == 1) {
+    ?(raise != 0) { ^ -1; };
+    ^ 1;
+  };
+  rem = gvl_remaining(collateral, has_profit, delta, raise);
+  ?(gvl_u_lt(rem, margin_fees) == 1) {
+    ?(raise != 0) { ^ -1; };
+    ^ 1;
+  };
+  ?(gvl_u_add_ok(margin_fees, liq_fee) == 0) { ^ -1; };
+  ?(gvl_u_lt(rem, margin_fees + liq_fee) == 1) {
+    ?(raise != 0) { ^ -1; };
+    ^ 1;
+  };
+  ?(gvl_lev_exceeded(rem, size, max_lev) == 1) {
+    ?(raise != 0) { ^ -1; };
+    ^ 2;
+  };
+  ^ 0;
+}
+
+!gvl_fees(collateral: int, size: int, has_profit: int, delta: int, margin_fees: int, liq_fee: int, max_lev: int, raise: int) -> int {
+  st = gvl_state(collateral, size, has_profit, delta, margin_fees, liq_fee, max_lev, raise);
+  ?(st < 0) { ^ 0; };
+  ?(gvl_wiped(collateral, has_profit, delta) == 1) { ^ margin_fees; };
+  rem = gvl_remaining(collateral, has_profit, delta, raise);
+  ?(gvl_u_lt(rem, margin_fees) == 1) { ^ rem; };
+  ^ margin_fees;
+}
+
+!gvl_uncapped_fees(collateral: int, has_profit: int, delta: int, margin_fees: int, raise: int) -> int {
+  ?(gvl_wiped(collateral, has_profit, delta) == 1) { ^ margin_fees; };
+  rem = gvl_remaining(collateral, has_profit, delta, raise);
+  ?(gvl_u_lt(rem, margin_fees) == 1) { ^ margin_fees; };
+  ^ margin_fees;
+}
+
+!gvl_always_add_remaining(collateral: int, has_profit: int, delta: int) -> int {
+  ^ gvl_remaining(collateral, has_profit, delta, 0);
+}
+
+!gvl_ignore_liq_state(collateral: int, size: int, has_profit: int, delta: int, margin_fees: int, max_lev: int, raise: int) -> int {
+  ?(gvl_wiped(collateral, has_profit, delta) == 1) {
+    ?(raise != 0) { ^ -1; };
+    ^ 1;
+  };
+  rem = gvl_remaining(collateral, has_profit, delta, raise);
+  ?(gvl_u_lt(rem, margin_fees) == 1) {
+    ?(raise != 0) { ^ -1; };
+    ^ 1;
+  };
+  ?(gvl_lev_exceeded(rem, size, max_lev) == 1) {
+    ?(raise != 0) { ^ -1; };
+    ^ 2;
+  };
+  ^ 0;
+}
+
+!gvl_as_funding_fee(size: int, rate: int) -> int {
+  ?(size <= 0) { ^ 0; };
+  ?(rate <= 0) { ^ 0; };
+  ^ gvl_muldiv(size, rate, gvl_funding_prec());
+}
+
+!gvl_test_suite() -> int {
+  ?(gvl_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(gvl_state(100000, 2000000, 1, 20000, 8000, 5000, 500000, 0) != 0) { ^ -2; };
+  ?(gvl_fees(100000, 2000000, 1, 20000, 8000, 5000, 500000, 0) != 8000) { ^ -3; };
+  ?(gvl_remaining(100000, 1, 20000, 0) != 120000) { ^ -4; };
+  ?(gvl_state(100000, 2000000, 0, 20000, 90000, 5000, 500000, 0) != 1) { ^ -5; };
+  ?(gvl_fees(100000, 2000000, 0, 20000, 90000, 5000, 500000, 0) != 80000) { ^ -6; };
+  ?(gvl_uncapped_fees(100000, 0, 20000, 90000, 0) != 90000) { ^ -7; };
+  ?(gvl_state(100000, 2000000, 0, 150000, 8000, 5000, 500000, 0) != 1) { ^ -8; };
+  ?(gvl_fees(100000, 2000000, 0, 150000, 8000, 5000, 500000, 0) != 8000) { ^ -9; };
+  ?(gvl_state(13000, 100000, 0, 1000, 8000, 5000, 500000, 0) != 1) { ^ -10; };
+  ?(gvl_ignore_liq_state(13000, 100000, 0, 1000, 8000, 500000, 0) != 0) { ^ -11; };
+  ?(gvl_state(100000, 6000000, 1, 0, 8000, 5000, 500000, 0) != 2) { ^ -12; };
+  ?(gvl_missing_bps_lev(100000, 6000000, 500000) != 0) { ^ -13; };
+  ?(gvl_state(10000, 100000, 1, 20000, 15000, 5000, 500000, 0) != 0) { ^ -14; };
+  ?(gvl_state(10000, 100000, 1, 20000, 15000, 5000, 500000, 1) != -1) { ^ -15; };
+  ?(gvl_always_add_remaining(10000, 1, 20000) != 30000) { ^ -16; };
+  ?(gvl_remaining(10000, 1, 20000, 1) != 10000) { ^ -17; };
+  ?(gvl_state(100000, 2000000, 0, 20000, 90000, 5000, 500000, 1) != -1) { ^ -18; };
+  ?(gvl_naive_lev_exceeded(4000000000, 1000000000, 3000000000) != 1) { ^ -19; };
+  ?(gvl_lev_exceeded(4000000000, 1000000000, 3000000000) != 0) { ^ -20; };
+  ?(gvl_state(4000000000, 1000000000, 1, 0, 1, 1, 3000000000, 0) != 0) { ^ -21; };
+  ?(gvl_as_funding_fee(2000000, 100) != 200) { ^ -22; };
+  ^(1);
+}
+
+=ex{
+  gvl_u_lt,
+  gvl_u_add_carry,
+  gvl_u_add_ok,
+  gvl_mask32,
+  gvl_bps,
+  gvl_default_max_lev,
+  gvl_funding_prec,
+  gvl_prod_part,
+  gvl_prod_hi,
+  gvl_prod_lo,
+  gvl_u128_lt,
+  gvl_muldiv_part,
+  gvl_muldiv,
+  gvl_wiped,
+  gvl_remaining,
+  gvl_lev_exceeded,
+  gvl_naive_lev_exceeded,
+  gvl_missing_bps_lev,
+  gvl_state,
+  gvl_fees,
+  gvl_uncapped_fees,
+  gvl_always_add_remaining,
+  gvl_ignore_liq_state,
+  gvl_as_funding_fee,
+  gvl_test_suite
+}

@@ -1,0 +1,189 @@
+{
+  "schema": "LIN_GMX_VALIDATE_LIQUIDATION_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned VaultUtils.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned gmx-io/gmx-contracts matches fixture",
+      "note": "commit=fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8 blob=8e29c3ff19258d191f6d2459c110a917ba1f9906"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of contracts/core/VaultUtils.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (cap-to-collateral / profit-on-liq / wrap)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_gmx_liq.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "gvl_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "20/20 vectors: C11 i128 == LIN vm == Python bigint",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "20/20 vectors: Python wrapping-int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "HEALTHY-0",
+      "status": "PASS",
+      "description": "profit on liq path remaining=120000: state=0 fees=8000",
+      "note": ""
+    },
+    {
+      "id": "CAP-FEES",
+      "status": "PASS",
+      "description": "remaining 80000 < marginFees 90000: state=1 fees capped to 80000 vs uncapped 90000",
+      "note": ""
+    },
+    {
+      "id": "WIPED",
+      "status": "PASS",
+      "description": "loss 150000 > collateral 100000: state=1 fees=8000 (not remaining 0)",
+      "note": ""
+    },
+    {
+      "id": "LIQ-BUFFER",
+      "status": "PASS",
+      "description": "remaining 12000 < fees+liqFee 13000: state=1 vs ignore-liq-fee state=0",
+      "note": ""
+    },
+    {
+      "id": "MAX-LEV",
+      "status": "PASS",
+      "description": "60x vs 50x cap: state=2; missing BASIS remaining*maxLev<size is false (wrong healthy)",
+      "note": ""
+    },
+    {
+      "id": "PROFIT-RAISE",
+      "status": "PASS",
+      "description": "raise=0 adds profit 20000 (state=0); raise=1 keeps 10000 and fail-closes -1",
+      "note": ""
+    },
+    {
+      "id": "NAIVE-WRAP",
+      "status": "PASS",
+      "description": "naive i64 remaining*maxLev 4e9*3e9 wraps and flags leverage; 128-bit product stays healthy",
+      "note": ""
+    },
+    {
+      "id": "FUND-TRAP",
+      "status": "PASS",
+      "description": "confused getFundingFee size*100/1e6=200 vs liquidation state/fees",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on gvl_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes collateral/size/pnl/fees/liqFee/maxLev/raise as arguments (no vault storage)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MUL",
+      "status": "PASS",
+      "description": "clone uses 128-bit product compare for remaining*maxLeverage vs size*10000",
+      "note": ""
+    },
+    {
+      "id": "NOT-FUNDING-FEE",
+      "status": "PASS",
+      "description": "kernel is GMX validateLiquidation remaining vs fees+liqFee, not size*(cum-entry)/1e6",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects validateLiquidation / remainingCollateral before STORAGE",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects validate_liquidation / remaining_collateral",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/gmx-io/gmx-contracts",
+    "commit": "fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8",
+    "path": "contracts/core/VaultUtils.sol",
+    "git_blob_sha": "8e29c3ff19258d191f6d2459c110a917ba1f9906",
+    "file_sha256": "ad831f3c8d675c42665c854368bc06696e1cba23bd3294f91aa2ce4c0a8fc495",
+    "license": "MIT",
+    "commercial_descendants": "GMX V1 Vault perpetual liquidation on Arbitrum/Avalanche"
+  },
+  "lin_clone": "src/lin_gmx_liq.lin",
+  "c11_oracle": "test/oracles/gmx_liq_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "healthy_state": 0,
+    "healthy_fees": 8000,
+    "healthy_remaining": 120000,
+    "cap_state": 1,
+    "cap_fees": 80000,
+    "uncapped_fees": 90000,
+    "wiped_state": 1,
+    "wiped_fees": 8000,
+    "liq_buffer_state": 1,
+    "ignore_liq_state": 0,
+    "max_lev_state": 2,
+    "missing_bps": 0,
+    "profit_on_liq": 0,
+    "profit_on_raise": -1,
+    "raise_cap_revert": -1,
+    "naive_wrap_lev": 1,
+    "wide_lev_healthy": 0,
+    "confused_funding_fee": 200
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-gmx-liq"
+}
