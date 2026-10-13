@@ -1,0 +1,64 @@
+@RULEL:GMX_DEC_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GMX-ADJUST-DECIMALS-V1"
+@TITLE="Clone-lin of GMX Vault.adjustForDecimals / tokenToUsdMin with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-gmx-dec"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile GMX V1 decimals-normalize muldiv into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Arbitrum/Avalanche"
+  operand_width="uint64 inputs; amount*10^decMul / 10^decDiv uses 128-bit product; Solidity uint256 and PRICE_PRECISION 1e30 are NOT claimed"
+  commercial_hook="adjustForDecimals is the GMX V1 Vault swap/mint/burn USDG scale: USDC 6-dec vs WETH 18-dec vs USDG 18. Ignoring decimals understates USDC by 1e12; treating USDC as 18-dec floors tokenToUsd to 0; using PRICE_PRECISION 30 for USDG instead of USDG_DECIMALS 18 is a fail-closed 0 vs 1e18. Getting the scale wrong mis-mints USDG and misprices GLP"
+}
+
+.u{
+  repo="https://github.com/gmx-io/gmx-contracts"
+  path="contracts/core/Vault.sol"
+  license="MIT"
+  commit="fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8"
+  git_blob_sha="4aef3c7dcf40b4657e7dfcef582958dc2d418126"
+  file_sha256="0b49e265fc4c04d3eea74b07d698748050671a2df259f1faa8d05cabf2970f92"
+  fixture="test/fixtures/external_proof/Vault.sol"
+  not_this_kernel="validateLiquidation / getNextFundingRate / getFundingFee / getFeeBasisPoints / getPositionFee"
+}
+
+.l{
+  clone="src/lin_gmx_dec.lin"
+  prefix="gad_"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_GMX_DEC before ENV; equals-ex emit split. src/lin_from_rust.lin v2: REJ_RUST_GMX_DEC"
+  improvement_1="Vault.adjustForDecimals is view-on-storage (usdg address, tokenDecimals mapping); LIN takes amount/decDiv/decMul or is_usdg flags as arguments"
+  improvement_2="amount*10^decMul overflows i64 on 5e9*1e10; LIN uses 128-bit muldiv matching C11 __int128"
+  improvement_3="pow10(n) for n>18 fail-closes to 0: PRICE_PRECISION 30 is rejected, not wrapped"
+  improvement_4="named contrasts: ignore-decimals 1e6 vs 1e18; treat-USDC-as-18 USD 0 vs 1e8; USDG 18 vs PRICE_PRECISION 30"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/gmx_dec_c11.c (gcc -O2 -std=c11, __int128 XOR limb muldiv)"
+  gate="python3 test/prove_gmx_dec_external.py"
+}
+
+.p{
+  harness="test/prove_gmx_dec_external.py"
+  evidence_json="examples/gmx_dec/gmx_dec_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-gmx-dec"
+  goldens="USDC 6->18 = 1e18 vs ignore 1e6; WBTC 8->18 = 1e18; 18->6 = 1e6; wrap 5e9*1e10/1e6 = 5e13 vs i64 wrap; tokenToUsd USDC 1e8 vs as18 0; USDG 18 = 1e18 vs PRICE_PRECISION 30 = 0"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet GMX Vault / GLP / 30-decimal price parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production Vault or GLP replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="this kernel is validateLiquidation, getFundingFee, getNextFundingRate, getFeeBasisPoints, Uniswap xy, Solidly cubic, or Maker rpow"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

@@ -1,0 +1,164 @@
+{
+  "schema": "LIN_GMX_ADJUST_DECIMALS_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned Vault.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned gmx-io/gmx-contracts matches fixture",
+      "note": "commit=fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8 blob=4aef3c7dcf40b4657e7dfcef582958dc2d418126"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of contracts/core/Vault.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (6->18 / 8->18 / wrap / USDG vs 30)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_gmx_dec.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "gad_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "11/11 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "11/11 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "IGN-TRAP",
+      "status": "PASS",
+      "description": "USDC 1e6 6->18: 1e18 vs naive ignore-decimals 1e6 (1e12x)",
+      "note": ""
+    },
+    {
+      "id": "AS18-TRAP",
+      "status": "PASS",
+      "description": "USDC tokenToUsd treated as 18-dec: 0 vs correct 1e8",
+      "note": ""
+    },
+    {
+      "id": "NAIVE-WRAP",
+      "status": "PASS",
+      "description": "naive i64 5e9*1e10/1e6 wraps; 128-bit muldiv yields 5e13",
+      "note": ""
+    },
+    {
+      "id": "USDG-PREC",
+      "status": "PASS",
+      "description": "USDG_DECIMALS=18 yields 1e18; PRICE_PRECISION 30 fail-closes to 0",
+      "note": ""
+    },
+    {
+      "id": "WBTC-SCALE",
+      "status": "PASS",
+      "description": "WBTC 1e8 8->18 = 1e18; tokenToUsd 1e8*40000e8/1e8 = 40000e8",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on gad_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes amount/decDiv/decMul as arguments (no tokenDecimals mapping / usdg)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit amount * 10^decMul / 10^decDiv",
+      "note": ""
+    },
+    {
+      "id": "NOT-LIQ",
+      "status": "PASS",
+      "description": "kernel is GMX decimals-normalize muldiv, not validateLiquidation or getFundingFee",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects adjustForDecimals / tokenToUsdMin before ENV",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects adjust_for_decimals / token_to_usd_min",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/gmx-io/gmx-contracts",
+    "commit": "fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8",
+    "path": "contracts/core/Vault.sol",
+    "git_blob_sha": "4aef3c7dcf40b4657e7dfcef582958dc2d418126",
+    "file_sha256": "0b49e265fc4c04d3eea74b07d698748050671a2df259f1faa8d05cabf2970f92",
+    "license": "MIT",
+    "commercial_descendants": "GMX V1 Vault swap/mint/burn USDG decimal normalize on Arbitrum/Avalanche"
+  },
+  "lin_clone": "src/lin_gmx_dec.lin",
+  "c11_oracle": "test/oracles/gmx_dec_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "usdc_6_to_18": 1000000000000000000,
+    "naive_ignore": 1000000,
+    "wbtc_8_to_18": 1000000000000000000,
+    "downscale_18_to_6": 1000000,
+    "wrap_wide": 50000000000000,
+    "wrap_naive": -5340232221128,
+    "usdc_token_to_usd": 100000000,
+    "usdc_as18_usd": 0,
+    "wbtc_token_to_usd": 4000000000000,
+    "usdg_18": 1000000000000000000,
+    "price_precision_30": 0
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-gmx-dec"
+}
