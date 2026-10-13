@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Zero-LIN FNT + SRT radix-8 + OpenSSL auditor for schema 1.57 evidence.json.
+Zero-LIN FNT + SRT radix-8 + OpenSSL auditor for schema 1.58 evidence.json.
 
 Python only decodes JSON / hex. FNT reconstructs n==a*b.
 SRT radix-8 checks q*d+r==n. OpenSSL dgst recomputes the LRI1 Merkle
@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "test" / "oracles"))
 from u512_fnt_srt8 import ge_limbs, identity512, le256, mul256, muldiv256  # noqa: E402
 
-SCHEMA = "LIN_U512_COPROCESSOR_EVIDENCE_1.57"
+SCHEMA = "LIN_U512_COPROCESSOR_EVIDENCE_1.58"
 RI_LEAF = b"LIN:U512:RI:LEAF:1"
 RI_NODE = b"LIN:U512:RI:NODE:1"
 UMAX = (1 << 256) - 1

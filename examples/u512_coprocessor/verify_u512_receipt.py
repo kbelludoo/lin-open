@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Zero-LIN auditor for the u512 coprocessor receipt (schema 1.57).
+Zero-LIN auditor for the u512 coprocessor receipt (schema 1.58).
 
 Recomputes LNR1, LCR2, LCR2-full, LGE1, and LRI1 (remainder identity
 q*d+r==n over the published 512-bit product) from published leaves.
@@ -160,7 +160,7 @@ def main() -> int:
         print("usage: verify_u512_receipt.py <evidence.json> [--self-test]")
         return 2
     ev = json.loads(Path(sys.argv[1]).read_text())
-    if ev.get("schema") != "LIN_U512_COPROCESSOR_EVIDENCE_1.57":
+    if ev.get("schema") != "LIN_U512_COPROCESSOR_EVIDENCE_1.58":
         return fail("schema")
     if ev.get("class") != "EXPERIMENTAL":
         return fail("class must stay EXPERIMENTAL")

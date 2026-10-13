@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Zero-LIN unbalanced Toom-2x25 + Barrett-3072 + OpenSSL auditor for schema 1.57
+Zero-LIN unbalanced Toom-2x25 + Barrett-3072 + OpenSSL auditor for schema 1.58
 evidence.json.
 
 Python only decodes JSON / hex. Toom-2x25 reconstructs n==a*b.
@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "test" / "oracles"))
 from u512_toom225_barrett3072 import ge_limbs, identity512, le256, mul256, muldiv256  # noqa: E402
 
-SCHEMA = "LIN_U512_COPROCESSOR_EVIDENCE_1.57"
+SCHEMA = "LIN_U512_COPROCESSOR_EVIDENCE_1.58"
 RI_LEAF = b"LIN:U512:RI:LEAF:1"
 RI_NODE = b"LIN:U512:RI:NODE:1"
 UMAX = (1 << 256) - 1
