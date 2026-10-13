@@ -1,0 +1,181 @@
+{
+  "schema": "LIN_COMET_ACCRUAL_DESCALE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-CORE",
+      "status": "PASS",
+      "description": "pinned CometCore.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "excerpt contains constructor factor and updateBasePrincipal",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned compound-finance/comet matches fixture",
+      "note": "commit=f766f51583c23acc33b2a7824654ef2029a96804 blob=3490e984d133789aa1afe2e8f7e37a11d2512396"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of CometWithExtendedAssetList.sol + CometCore.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (USDC=1 / WETH=1e12 / wrap / 4-dec reject)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_comet_descale.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "cad_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "10/10 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "10/10 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "USDC-WETH",
+      "status": "PASS",
+      "description": "USDC factor=1 yields 1e6; WETH factor=1e12 also yields 1e6 (6-dec preserve)",
+      "note": ""
+    },
+    {
+      "id": "FORGET-TRAP",
+      "status": "PASS",
+      "description": "WETH forget-descale: 1e18 vs correct 1e6 (1e12x over-accrual)",
+      "note": ""
+    },
+    {
+      "id": "AS18-TRAP",
+      "status": "PASS",
+      "description": "USDC treated as 18-dec factor: 0 vs correct 1e6",
+      "note": ""
+    },
+    {
+      "id": "GMX-OPP",
+      "status": "PASS",
+      "description": "GMX-style USDC 6->18 upscale is 1e18; Comet descale keeps 1e6",
+      "note": ""
+    },
+    {
+      "id": "NAIVE-WRAP",
+      "status": "PASS",
+      "description": "naive i64 5e9*1e10/1e6 wraps; 128-bit muldiv yields 5e13",
+      "note": ""
+    },
+    {
+      "id": "WBTC-SCALE",
+      "status": "PASS",
+      "description": "WBTC 8-dec factor=100; 1e8 principal * 1e15 / 1e15 / 100 = 1e6",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on cad_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes principal/indexDelta/trackingIndexScale/baseScale as arguments",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit principal * indexDelta / trackingIndexScale then / factor",
+      "note": ""
+    },
+    {
+      "id": "NOT-TRACK",
+      "status": "PASS",
+      "description": "kernel is reward-wei descale, not divBaseWei tracking-index wrap or interest index",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects accrualDescaleFactor / baseTrackingAccrued before ENV",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects accrual_descale / base_tracking_accrued",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/compound-finance/comet",
+    "commit": "f766f51583c23acc33b2a7824654ef2029a96804",
+    "path": "contracts/CometWithExtendedAssetList.sol",
+    "constants_path": "contracts/CometCore.sol",
+    "git_blob_sha": "3490e984d133789aa1afe2e8f7e37a11d2512396",
+    "file_sha256": "c9099e56eda092fd0150005706edf086723899afb102f164b60ad1f36a426961",
+    "core_git_blob_sha": "534f2701b6c8e683f9294112b0bcc23878d39fe6",
+    "core_file_sha256": "1d80f0d12c101d01c2e1f38e8662cfcf350299b1c78188f8c501bb1c51b5ec78",
+    "license": "GPL-2.0-or-later",
+    "license_note": "BUSL-1.1 Change Date 2025-12-31 elapsed; Change License GPL-2.0-or-later",
+    "commercial_descendants": "Compound III USDC/WETH markets: COMP reward wei stays 6-dec via baseScale/1e6"
+  },
+  "lin_clone": "src/lin_comet_descale.lin",
+  "c11_oracle": "test/oracles/comet_descale_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "usdc_factor": 1,
+    "weth_factor": 1000000000000,
+    "wbtc_factor": 100,
+    "four_dec_reject": 0,
+    "usdc_accrued": 1000000,
+    "weth_accrued": 1000000,
+    "weth_forget": 1000000000000000000,
+    "usdc_as18": 0,
+    "wbtc_accrued": 1000000,
+    "gmx_upscale": 1000000000000000000,
+    "wrap_wide": 50000000000000,
+    "wrap_naive": -5340232221128
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-comet-descale"
+}

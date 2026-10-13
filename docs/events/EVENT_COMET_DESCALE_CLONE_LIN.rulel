@@ -1,0 +1,67 @@
+@RULEL:COMET_DESCALE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-COMET-ACCRUAL-DESCALE"
+@TITLE="Clone-lin of Compound III accrualDescaleFactor / baseTrackingAccrued with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-comet-descale"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Compound III reward-wei descale (baseScale/1e6) into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for principal*indexDelta; Solidity uint256 is NOT claimed"
+  commercial_hook="Compound III keeps COMP reward wei at 6 decimals: USDC (baseScale=1e6) factor=1 is a silent no-op; WETH (baseScale=1e18) factor=1e12. A wallet that forgets the divide over-accrues WETH rewards 1e12x. Opposite of GMX adjustForDecimals (6-dec UP to 18). This is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/compound-finance/comet"
+  path="contracts/CometWithExtendedAssetList.sol"
+  constants_path="contracts/CometCore.sol BASE_ACCRUAL_SCALE=1e6"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2025-12-31 elapsed; Change License GPL-2.0-or-later"
+  commit="f766f51583c23acc33b2a7824654ef2029a96804"
+  git_blob_sha="3490e984d133789aa1afe2e8f7e37a11d2512396"
+  file_sha256="c9099e56eda092fd0150005706edf086723899afb102f164b60ad1f36a426961"
+  core_blob_sha="534f2701b6c8e683f9294112b0bcc23878d39fe6"
+  core_sha256="1d80f0d12c101d01c2e1f38e8662cfcf350299b1c78188f8c501bb1c51b5ec78"
+  fixture="test/fixtures/external_proof/CometAccrualDescale.excerpt.sol"
+  core_fixture="test/fixtures/external_proof/CometCore.sol"
+}
+
+.l{
+  clone="src/lin_comet_descale.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_COMET_DESCALE before ENV; emit splits equals then ex-brace. src/lin_from_rust.lin v2: REJ_RUST_COMET_DESCALE"
+  improvement_1="immutable accrualDescaleFactor / trackingIndexScale / principal are arguments, not hidden constructor storage"
+  improvement_2="principal * indexDelta overflows i64 on the USDC 1e6*1e15 vector; LIN uses schoolbook 128-bit muldiv matching C11 __int128"
+  improvement_3="baseScale < 1e6 is Solidity BadDecimals; LIN fail-closes factor=0 and accrued=0"
+  improvement_4="named contrast: USDC factor=1 yields 1e6; WETH factor=1e12 also 1e6; forget-descale WETH=1e18 (1e12x); USDC-as-18=0; GMX-style 6-to-18 upscale=1e18 (opposite direction)"
+  improvement_5="two-step divide is mandatory: trackingIndexScale*factor is 1e27 on WETH and does not fit signed i64 as a single denominator"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/comet_descale_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_comet_descale.sh"
+}
+
+.p{
+  harness="test/prove_comet_descale_external.py"
+  evidence_json="examples/comet_descale/comet_descale_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-comet-descale"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet Comet / COMP distribution parity"
+  not_claimed_2="divBaseWei tracking-index wrap (clone-lin-comet-track) or accruedInterestIndices (clone-lin-comet-accrue) or presentValue (clone-lin-comet-pv)"
+  not_claimed_3="LIN is faster than the EVM or solc"
+  not_claimed_4="this clone is a production rewards replacement"
+  not_claimed_5="TVL or live COMP-emission profit"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS && JUMPRATE_REGRESSION"
+  on_fail="do not publish a PASS status"
+}
