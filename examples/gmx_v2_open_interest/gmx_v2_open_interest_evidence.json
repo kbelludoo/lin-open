@@ -1,0 +1,219 @@
+{
+  "schema": "LIN_GMX_V2_OPEN_INTEREST_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "excerpt contains unsigned OI, long-flip VI, swap-only reject",
+      "note": ""
+    },
+    {
+      "id": "PIN-TOKENS",
+      "status": "PASS",
+      "description": "tokens sibling applies VI iff useOpenInterestInTokens (inverse)",
+      "note": ""
+    },
+    {
+      "id": "PIN-UINT",
+      "status": "PASS",
+      "description": "applyDeltaToUint rejects a negative next uint",
+      "note": ""
+    },
+    {
+      "id": "PIN-BOUND",
+      "status": "PASS",
+      "description": "applyBoundedDeltaToUint floors at 0 instead of rejecting",
+      "note": ""
+    },
+    {
+      "id": "PIN-INT",
+      "status": "PASS",
+      "description": "applyDeltaToInt is signed and may go negative",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned gmx-io/gmx-synthetics matches fixtures",
+      "note": "commit=a85ea3491c19c93bb4b5a002d9b358fb769b7849 blob=ad7a0b2b5a516ec86ce0afed89ff84ecba11038c"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of MarketUtils.sol + DataStore.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (long-flip / reject-neg / overflow)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_gmx_v2_open_interest.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "g2o_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "25/25 vectors: C11 i128 == portable == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "25/25 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "LONG-FLIP",
+      "status": "PASS",
+      "description": "long +3e7 flips VI 5e7->2e7; no-flip would raise VI to 8e7",
+      "note": ""
+    },
+    {
+      "id": "SHORT-NOFLIP",
+      "status": "PASS",
+      "description": "short +3e7 adds VI 5e7->8e7; always-flip would drop VI to 2e7",
+      "note": ""
+    },
+    {
+      "id": "REJECT-NEG-OI",
+      "status": "PASS",
+      "description": "delta -1.5e8 on OI 1e8 rejects; naive signed OI is -5e7",
+      "note": ""
+    },
+    {
+      "id": "NOT-BOUNDED",
+      "status": "PASS",
+      "description": "applyBoundedDeltaToUint would floor OI at 0; kernel rejects the same draw",
+      "note": ""
+    },
+    {
+      "id": "TOKENS-INVERSE",
+      "status": "PASS",
+      "description": "USD path (use_tok=1) leaves VI; tokens sibling would long-flip VI to 2e7",
+      "note": ""
+    },
+    {
+      "id": "SIGNED-VI",
+      "status": "PASS",
+      "description": "long +5e7 on VI 2e7 is signed -3e7; unsigned floor would clip to 0",
+      "note": ""
+    },
+    {
+      "id": "MAX-AND-SWAP",
+      "status": "PASS",
+      "description": "delta>0 that exceeds max OI rejects; swap-only market (index=0) rejects",
+      "note": ""
+    },
+    {
+      "id": "I64-OVERFLOW",
+      "status": "PASS",
+      "description": "7e18+3e18 OI and VI fail-close; naive i64 wraps to -8446744073709551616",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on g2o_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes index/oi/vi/has_v/is_long/delta/use_tok/max_oi as arguments",
+      "note": ""
+    },
+    {
+      "id": "FAIL-CLOSED-ADD",
+      "status": "PASS",
+      "description": "clone fail-closes unsigned OI add and signed VI add instead of wrapping",
+      "note": ""
+    },
+    {
+      "id": "NOT-POOL-LENT",
+      "status": "PASS",
+      "description": "kernel is unsigned OI + signed long-flipped VI, not position-impact pool/lent",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects applyDeltaToOpenInterest before ENV",
+      "note": ""
+    },
+    {
+      "id": "SOL-HEADER",
+      "status": "PASS",
+      "description": "transpiler header changelog does not contain the export token",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects apply_delta_to_open_interest",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/gmx-io/gmx-synthetics",
+    "commit": "a85ea3491c19c93bb4b5a002d9b358fb769b7849",
+    "path": "contracts/market/MarketUtils.sol",
+    "datastore_path": "contracts/data/DataStore.sol",
+    "git_blob_sha": "ad7a0b2b5a516ec86ce0afed89ff84ecba11038c",
+    "file_sha256": "8dfd271e4fc8e18d6a114b674dc1f520f38f6acd1f9c9a58b4b7509fe86e748f",
+    "datastore_git_blob_sha": "36279a5f32eae0882bd53418e04590da97aee154",
+    "datastore_file_sha256": "ab332edb2d32bb94cf47c06d2fe1fc7fb6dff101ab6b210282879514f6b05b3d",
+    "license": "GPL-2.0-or-later",
+    "license_note": "BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later",
+    "commercial_descendants": "GMX V2: unsigned OI cannot go negative; virtual inventory is signed and long-flipped. Distinct from applyBoundedDeltaToUint (floor at 0) and from applyDeltaToOpenInterestInTokens (VI iff tokens flag)."
+  },
+  "lin_clone": "src/lin_gmx_v2_open_interest.lin",
+  "c11_oracle": "test/oracles/gmx_v2_open_interest_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "long_inc_oi": 130000000,
+    "long_inc_vi": 20000000,
+    "wrong_noflip_vi": 80000000,
+    "short_inc_vi": 80000000,
+    "wrong_alwaysflip_vi": 20000000,
+    "neg_oi_ok": 0,
+    "wrong_naive_oi": -50000000,
+    "wrong_bounded_oi": 0,
+    "tokens_vi": 50000000,
+    "wrong_tokens_vi": 20000000,
+    "signed_vi": -30000000,
+    "wrong_unsigned_vi": 0,
+    "overflow_ok": 0,
+    "wrap_naive": -8446744073709551616
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-gmx-v2-open-interest"
+}

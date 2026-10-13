@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: reject apply_delta_to_open_interest / virtual_inventory_for_positions (GMX V2 signed OI-plus-VI pairing is a LIN port, not emit)"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,9 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "apply_delta_to_open_interest") > 0) { ^"REJ_RUST_GMX_V2_OI" };
+  ?(rg_count_lit(body, "virtual_inventory_for_positions") > 0) { ^"REJ_RUST_GMX_V2_OI" };
+  ?(rg_count_lit(body, "use_open_interest_in_tokens") > 0) { ^"REJ_RUST_GMX_V2_OI" };
   ^"OK";
 }
 
@@ -66,6 +70,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_oi = "pub fn apply_delta_to_open_interest(oi: u64, vi: i64, is_long: bool, delta: i64) -> i64";
+  body_oi = "let vd = if is_long { -delta } else { delta }; virtual_inventory_for_positions += vd;";
+  r3 = rs_reason(sig_oi, body_oi);
+  ?(starts_lit(r3, 0, "REJ_RUST_GMX_V2_OI") == 0) { ^0 };
 
   ^1;
 }
