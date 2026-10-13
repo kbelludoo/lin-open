@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Zero-LIN Schönhage–Strassen + SRT radix-1024 + OpenSSL auditor for schema 1.58 evidence.json.
+Zero-LIN Schönhage–Strassen + SRT radix-1024 + OpenSSL auditor for schema 1.59 evidence.json.
 
 Python only decodes JSON / hex. SS reconstructs n==a*b.
 SRT radix-1024 checks q*d+r==n. OpenSSL dgst recomputes the LRI1 Merkle
@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "test" / "oracles"))
 from u512_ss_srt1024 import ge_limbs, identity512, le256, mul256, muldiv256  # noqa: E402
 
-SCHEMA = "LIN_U512_COPROCESSOR_EVIDENCE_1.58"
+SCHEMA = "LIN_U512_COPROCESSOR_EVIDENCE_1.59"
 RI_LEAF = b"LIN:U512:RI:LEAF:1"
 RI_NODE = b"LIN:U512:RI:NODE:1"
 UMAX = (1 << 256) - 1

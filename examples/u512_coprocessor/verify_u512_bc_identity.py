@@ -31,7 +31,7 @@ def main() -> int:
         return 2
     ev = json.loads(Path(sys.argv[1]).read_text())
     schema = ev.get("schema") or ""
-    if schema != "LIN_U512_COPROCESSOR_EVIDENCE_1.58":
+    if schema != "LIN_U512_COPROCESSOR_EVIDENCE_1.59":
         return fail("schema")
     leaves = ev.get("lri1_leaves") or []
     if len(leaves) < 8:
