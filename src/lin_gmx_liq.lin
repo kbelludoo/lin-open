@@ -1,0 +1,246 @@
+@LIN:L1c:0.2
+@GMX_VALIDATE_LIQUIDATION{
+  version=1
+  repo="gmx-io/gmx-contracts"
+  source="contracts/core/VaultUtils.sol"
+  license="MIT"
+  commit="fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_gmx_validateLiquidation_cap_fees_to_remaining_collateral"
+  note="Not mainnet uint256. Kernel is GMX V1 validateLiquidation: remaining vs marginFees then vs margin+liqFee then remaining*maxLeverage vs size*10000. If remaining < marginFees return (1, remaining) not (1, marginFees). Profits added only when raise=0. Storage lifted to args. 128-bit leverage compare. Not getFundingFee, not getNextFundingRate, not getFeeBasisPoints, not Uniswap xy, not Solidly cubic, not Maker rpow."
+}
+
+!gvl_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!gvl_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(gvl_u_lt(s, a));
+}
+
+!gvl_u_add_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  s = a + b;
+  ?(s < a) { ^ 0; };
+  ^ 1;
+}
+
+!gvl_mask32() -> int {
+  ^ 4294967295;
+}
+
+!gvl_bps() -> int {
+  ^ 10000;
+}
+
+!gvl_prod_part(a: int, b: int, want_hi: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  m32 = gvl_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = gvl_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = gvl_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  ?(want_hi == 1) { ^ hi; };
+  ^ lo;
+}
+
+!gvl_u128_lt(ahi: int, alo: int, bhi: int, blo: int) -> int {
+  ?(gvl_u_lt(ahi, bhi) == 1) { ^ 1; };
+  ?(gvl_u_lt(bhi, ahi) == 1) { ^ 0; };
+  ^ gvl_u_lt(alo, blo);
+}
+
+!gvl_mul_lt(a: int, b: int, c: int, d: int) -> int {
+  ahi = gvl_prod_part(a, b, 1);
+  alo = gvl_prod_part(a, b, 0);
+  bhi = gvl_prod_part(c, d, 1);
+  blo = gvl_prod_part(c, d, 0);
+  ^ gvl_u128_lt(ahi, alo, bhi, blo);
+}
+
+!gvl_margin_fees(funding: int, position: int) -> int {
+  ?(funding < 0) { ^ 0; };
+  ?(position < 0) { ^ 0; };
+  ?(gvl_u_add_ok(funding, position) == 0) { ^ 0; };
+  ^ funding + position;
+}
+
+!gvl_remaining(collateral: int, has_profit: int, delta: int, raise: int) -> int {
+  ?(collateral < 0) { ^ 0; };
+  ?(delta < 0) { ^ 0; };
+  rem = collateral;
+  ?(has_profit == 0) {
+    ?(gvl_u_lt(collateral, delta) == 1) { ^ 0; };
+    rem = collateral - delta;
+  };
+  ?(raise == 0) {
+    ?(has_profit != 0) {
+      ?(gvl_u_add_ok(collateral, delta) == 0) { ^ 0; };
+      rem = collateral + delta;
+    };
+  };
+  ^ rem;
+}
+
+!gvl_losses_exceed(collateral: int, has_profit: int, delta: int) -> int {
+  ?(has_profit != 0) { ^ 0; };
+  ?(collateral < 0) { ^ 0; };
+  ?(delta < 0) { ^ 0; };
+  ^ gvl_u_lt(collateral, delta);
+}
+
+!gvl_eval(size: int, collateral: int, has_profit: int, delta: int, funding: int, position: int, liq: int, max_lev: int, raise: int, want: int) -> int {
+  ?(size < 0) { ^ 0; };
+  ?(liq < 0) { ^ 0; };
+  ?(max_lev <= 0) { ^ 0; };
+  margin = gvl_margin_fees(funding, position);
+  ?(gvl_losses_exceed(collateral, has_profit, delta) == 1) {
+    ?(raise != 0) {
+      ?(want == 0) { ^ -1; };
+      ^ 0;
+    };
+    ?(want == 0) { ^ 1; };
+    ?(want == 2) { ^ 0; };
+    ^ margin;
+  };
+  rem = gvl_remaining(collateral, has_profit, delta, raise);
+  ?(gvl_u_lt(rem, margin) == 1) {
+    ?(raise != 0) {
+      ?(want == 0) { ^ -2; };
+      ^ 0;
+    };
+    ?(want == 0) { ^ 1; };
+    ^ rem;
+  };
+  ?(gvl_u_add_ok(margin, liq) == 0) { ^ 0; };
+  liq_tot = margin + liq;
+  ?(gvl_u_lt(rem, liq_tot) == 1) {
+    ?(raise != 0) {
+      ?(want == 0) { ^ -3; };
+      ^ 0;
+    };
+    ?(want == 0) { ^ 1; };
+    ?(want == 2) { ^ rem; };
+    ^ margin;
+  };
+  ?(gvl_mul_lt(rem, max_lev, size, gvl_bps()) == 1) {
+    ?(raise != 0) {
+      ?(want == 0) { ^ -4; };
+      ^ 0;
+    };
+    ?(want == 0) { ^ 2; };
+    ?(want == 2) { ^ rem; };
+    ^ margin;
+  };
+  ?(want == 0) { ^ 0; };
+  ?(want == 2) { ^ rem; };
+  ^ margin;
+}
+
+!gvl_state(size: int, collateral: int, has_profit: int, delta: int, funding: int, position: int, liq: int, max_lev: int, raise: int) -> int {
+  ^ gvl_eval(size, collateral, has_profit, delta, funding, position, liq, max_lev, raise, 0);
+}
+
+!gvl_fees(size: int, collateral: int, has_profit: int, delta: int, funding: int, position: int, liq: int, max_lev: int, raise: int) -> int {
+  ^ gvl_eval(size, collateral, has_profit, delta, funding, position, liq, max_lev, raise, 1);
+}
+
+!gvl_rem_of(size: int, collateral: int, has_profit: int, delta: int, funding: int, position: int, liq: int, max_lev: int, raise: int) -> int {
+  ^ gvl_eval(size, collateral, has_profit, delta, funding, position, liq, max_lev, raise, 2);
+}
+
+!gvl_fees_no_cap(collateral: int, has_profit: int, delta: int, funding: int, position: int) -> int {
+  margin = gvl_margin_fees(funding, position);
+  ?(gvl_losses_exceed(collateral, has_profit, delta) == 1) { ^ margin; };
+  rem = gvl_remaining(collateral, has_profit, delta, 0);
+  ?(gvl_u_lt(rem, margin) == 1) { ^ margin; };
+  ^ rem;
+}
+
+!gvl_fees_include_liq(collateral: int, has_profit: int, delta: int, funding: int, position: int, liq: int) -> int {
+  margin = gvl_margin_fees(funding, position);
+  ?(gvl_losses_exceed(collateral, has_profit, delta) == 1) { ^ margin; };
+  rem = gvl_remaining(collateral, has_profit, delta, 0);
+  ?(gvl_u_add_ok(margin, liq) == 0) { ^ 0; };
+  ?(gvl_u_lt(rem, margin + liq) == 1) { ^ margin + liq; };
+  ^ margin;
+}
+
+!gvl_naive_lev(rem: int, max_lev: int, size: int) -> int {
+  ?(rem * max_lev < size * gvl_bps()) { ^ 1; };
+  ^ 0;
+}
+
+!gvl_wide_lev(rem: int, max_lev: int, size: int) -> int {
+  ^ gvl_mul_lt(rem, max_lev, size, gvl_bps());
+}
+
+!gvl_test_suite() -> int {
+  ?(gvl_margin_fees(800, 150) != 950) { ^ -1; };
+  ?(gvl_remaining(1000, 0, 100, 0) != 900) { ^ -2; };
+  ?(gvl_state(100000, 1000, 0, 100, 800, 150, 5, 500000, 0) != 1) { ^ -3; };
+  ?(gvl_fees(100000, 1000, 0, 100, 800, 150, 5, 500000, 0) != 900) { ^ -4; };
+  ?(gvl_fees_no_cap(1000, 0, 100, 800, 150) != 950) { ^ -5; };
+  ?(gvl_state(100000, 1020, 0, 100, 850, 50, 50, 500000, 0) != 1) { ^ -6; };
+  ?(gvl_fees(100000, 1020, 0, 100, 850, 50, 50, 500000, 0) != 900) { ^ -7; };
+  ?(gvl_fees_include_liq(1020, 0, 100, 850, 50, 50) != 950) { ^ -8; };
+  ?(gvl_state(100000, 500, 0, 600, 80, 20, 5, 500000, 0) != 1) { ^ -9; };
+  ?(gvl_fees(100000, 500, 0, 600, 80, 20, 5, 500000, 0) != 100) { ^ -10; };
+  ?(gvl_state(100000, 1500, 0, 0, 8, 2, 5, 500000, 0) != 2) { ^ -11; };
+  ?(gvl_fees(100000, 1500, 0, 0, 8, 2, 5, 500000, 0) != 10) { ^ -12; };
+  ?(gvl_state(100000, 3000, 0, 0, 8, 2, 5, 500000, 0) != 0) { ^ -13; };
+  ?(gvl_fees(100000, 3000, 0, 0, 8, 2, 5, 500000, 0) != 10) { ^ -14; };
+  ?(gvl_state(60000, 1000, 1, 500, 8, 2, 5, 500000, 1) != -4) { ^ -15; };
+  ?(gvl_state(60000, 1000, 1, 500, 8, 2, 5, 500000, 0) != 0) { ^ -16; };
+  ?(gvl_remaining(1000, 1, 500, 1) != 1000) { ^ -17; };
+  ?(gvl_remaining(1000, 1, 500, 0) != 1500) { ^ -18; };
+  ?(gvl_naive_lev(4000000000, 3000000000, 2000000000) != 1) { ^ -19; };
+  ?(gvl_wide_lev(4000000000, 3000000000, 2000000000) != 0) { ^ -20; };
+  ?(gvl_state(100000, 1000, 0, 100, 800, 150, 5, 500000, 1) != -2) { ^ -21; };
+  ?(gvl_fees(100, 100, 1, 50, 180, 20, 5, 500000, 0) != 150) { ^ -22; };
+  ^ 1;
+}
+
+=ex{
+  gvl_u_lt,
+  gvl_u_add_carry,
+  gvl_u_add_ok,
+  gvl_mask32,
+  gvl_bps,
+  gvl_prod_part,
+  gvl_u128_lt,
+  gvl_mul_lt,
+  gvl_margin_fees,
+  gvl_remaining,
+  gvl_losses_exceed,
+  gvl_eval,
+  gvl_state,
+  gvl_fees,
+  gvl_rem_of,
+  gvl_fees_no_cap,
+  gvl_fees_include_liq,
+  gvl_naive_lev,
+  gvl_wide_lev,
+  gvl_test_suite
+}
