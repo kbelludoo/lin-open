@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Zero-LIN radix-2^8 + OpenSSL auditor for schema 1.64 evidence.json.
+Zero-LIN radix-2^8 + OpenSSL auditor for schema 1.65 evidence.json.
 
 Python only decodes JSON / hex. Byte schoolbook checks n==a*b and
 q*d+r==n (never Python int multiply for the 512-bit product).
@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "test" / "oracles"))
 from u512_radix8 import ge_bytes, identity512, mul256, muldiv256  # noqa: E402
 
-SCHEMA = "LIN_U512_COPROCESSOR_EVIDENCE_1.64"
+SCHEMA = "LIN_U512_COPROCESSOR_EVIDENCE_1.65"
 RI_LEAF = b"LIN:U512:RI:LEAF:1"
 RI_NODE = b"LIN:U512:RI:NODE:1"
 UMAX = (1 << 256) - 1

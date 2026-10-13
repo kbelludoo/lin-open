@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Zero-LIN Node auditor (schema 1.64). Recomputes LNR1 + LCR2 + LCR2-full + LGE1
+/* Zero-LIN Node auditor (schema 1.65). Recomputes LNR1 + LCR2 + LCR2-full + LGE1
  * + LRI1 remainder identity. Does not run LinVM. */
 "use strict";
 
@@ -220,7 +220,7 @@ function main() {
     process.exit(2);
   }
   const ev = JSON.parse(fs.readFileSync(evPath, "utf8"));
-  if (ev.schema !== "LIN_U512_COPROCESSOR_EVIDENCE_1.64") fail("schema");
+  if (ev.schema !== "LIN_U512_COPROCESSOR_EVIDENCE_1.65") fail("schema");
   if (ev.class !== "EXPERIMENTAL") fail("class");
   const rootDir = path.resolve(path.dirname(evPath), "../..");
   const fm = crypto.createHash("sha256")

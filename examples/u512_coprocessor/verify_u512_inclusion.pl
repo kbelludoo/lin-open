@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Zero-LIN LIP1 auditor in Perl (schema 1.64).
+# Zero-LIN LIP1 auditor in Perl (schema 1.65).
 # Path walk + LRI1 identity + packed LCR2 vs SafeMath ref + packed LCR2-full
 # vs FullMath ref_amount_out_full. Math::BigInt::Calc, not GMP. No LinVM.
 use strict;
@@ -9,7 +9,7 @@ use Digest::SHA qw(sha256);
 use Math::BigInt lib => 'Calc';
 
 my $UMAX = (Math::BigInt->bone() << 256) - 1;
-my $SCHEMA = 'LIN_U512_COPROCESSOR_EVIDENCE_1.64';
+my $SCHEMA = 'LIN_U512_COPROCESSOR_EVIDENCE_1.65';
 
 sub fail {
     print "FAIL $_[0]\n";
