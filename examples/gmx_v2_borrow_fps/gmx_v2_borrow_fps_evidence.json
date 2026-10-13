@@ -1,0 +1,217 @@
+{
+  "schema": "LIN_GMX_V2_BORROW_FPS_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "excerpt contains reserved=0, skip-smaller, empty-pool revert, kink vs linear",
+      "note": ""
+    },
+    {
+      "id": "PIN-KINK",
+      "status": "PASS",
+      "description": "kink additional is raw muldiv, not applyFactor",
+      "note": ""
+    },
+    {
+      "id": "PIN-USAGE",
+      "status": "PASS",
+      "description": "getUsageFactor is reserved / applyFactor(pool, openInterestReserveFactor)",
+      "note": ""
+    },
+    {
+      "id": "PIN-CUM",
+      "status": "PASS",
+      "description": "cumulative delta is durationInSeconds * fps, not applyFactor and not V1 intervals",
+      "note": ""
+    },
+    {
+      "id": "PIN-PREC",
+      "status": "PASS",
+      "description": "Precision excerpt pins FLOAT=1e30 (LIN uses FLOAT prime=1e6)",
+      "note": ""
+    },
+    {
+      "id": "PIN-EXP",
+      "status": "PASS",
+      "description": "applyExponentFactor is identity when exponent == FLOAT; pow is not claimed",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned gmx-io/gmx-synthetics matches fixtures",
+      "note": "commit=a85ea3491c19c93bb4b5a002d9b358fb769b7849 blob=ad7a0b2b5a516ec86ce0afed89ff84ecba11038c"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of MarketUtils.sol + Precision.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (linear / skip / kink / wrap)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_gmx_v2_borrow_fps.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "g2b_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "21/21 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "21/21 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "SKIP-SMALLER",
+      "status": "PASS",
+      "description": "skip-smaller: long-light 0, short-heavy 10, equal OI still 10",
+      "note": ""
+    },
+    {
+      "id": "KINK-VS-LINEAR",
+      "status": "PASS",
+      "description": "kink below opt uses baseBorrowingFactor (8) not linear borrowingFactor (20)",
+      "note": ""
+    },
+    {
+      "id": "KINK-RAW",
+      "status": "PASS",
+      "description": "kink above opt additional is raw 48 (fps 64) vs applyFactor extra 24 (fps 40)",
+      "note": ""
+    },
+    {
+      "id": "RFACTOR",
+      "status": "PASS",
+      "description": "kink usage is reserved/(pool*rfactor); ignoring rfactor=0.5 yields 10 not 100",
+      "note": ""
+    },
+    {
+      "id": "CUM-DELTA",
+      "status": "PASS",
+      "description": "V2 delta duration*fps=36000; applyFactor floors to 0; V1 interval count yields 10",
+      "note": ""
+    },
+    {
+      "id": "EMPTY-POOL",
+      "status": "PASS",
+      "description": "empty pool with reserved>0 fail-closes; reserved==0 is ok even if pool==0",
+      "note": ""
+    },
+    {
+      "id": "NAIVE-WRAP",
+      "status": "PASS",
+      "description": "naive i64 7e9*2e9/1e6 wraps to -4446744073709; 128-bit = 14000000000000",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on g2b_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes reserved/pool/OI/skip/opt/rfactor/factor/base/above as arguments (no DataStore)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv",
+      "note": ""
+    },
+    {
+      "id": "NOT-V1-RATE",
+      "status": "PASS",
+      "description": "kernel is per-second fps vs V1 interval*reserved/pool",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects getBorrowingFactorPerSecond before ENV",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects get_borrowing_factor_per_second",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/gmx-io/gmx-synthetics",
+    "commit": "a85ea3491c19c93bb4b5a002d9b358fb769b7849",
+    "path": "contracts/market/MarketUtils.sol",
+    "precision_path": "contracts/utils/Precision.sol",
+    "git_blob_sha": "ad7a0b2b5a516ec86ce0afed89ff84ecba11038c",
+    "file_sha256": "8dfd271e4fc8e18d6a114b674dc1f520f38f6acd1f9c9a58b4b7509fe86e748f",
+    "precision_git_blob_sha": "047143722beaf6adceac3fc2ef1817f054dfe00a",
+    "precision_file_sha256": "8713db02a257238101fc62cc682a8f8061fba25951216863576afbbd00f34808",
+    "license": "GPL-2.0-or-later",
+    "license_note": "BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later",
+    "commercial_descendants": "GMX V2 synthetics: borrowing is per-second; skip-smaller-side zeros the lighter OI; kink additional is raw (above-base)*diff/(FLOAT-opt) not applyFactor; cumulative delta is duration*fps not V1 interval count."
+  },
+  "lin_clone": "src/lin_gmx_v2_borrow_fps.lin",
+  "c11_oracle": "test/oracles/gmx_v2_borrow_fps_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "linear_fps": 10,
+    "skip_long_smaller": 0,
+    "skip_short_larger": 10,
+    "skip_equal_both": 10,
+    "kink_below": 8,
+    "wrong_linear_below": 20,
+    "kink_above": 64,
+    "wrong_kink_apply": 40,
+    "wrong_linear_above": 24,
+    "rfactor_kink": 100,
+    "wrong_no_rfactor": 10,
+    "above_le_base": 80,
+    "wrong_add_neg": 50,
+    "delta_v2": 36000,
+    "delta_applyfactor": 0,
+    "delta_v1_interval": 10,
+    "wrap_wide": 14000000000000,
+    "wrap_naive": -4446744073709
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-gmx-v2-borrow-fps"
+}

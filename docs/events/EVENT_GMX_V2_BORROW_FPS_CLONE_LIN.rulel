@@ -1,0 +1,74 @@
+@RULEL:GMX_V2_BORROW_FPS_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GMX-V2-BORROW-FPS"
+@TITLE="Clone-lin of GMX V2 getBorrowingFactorPerSecond with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-gmx-v2-borrow-fps"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile GMX V2 borrowing-factor-per-second math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Arbitrum GMX V2"
+  operand_width="uint64 inputs, 128-bit product for (a*b)/d; Solidity uint256 / FLOAT=1e30 is NOT claimed"
+  commercial_hook="GMX V2 borrowing is a live perpetuals fee. Named contrasts vs V1 interval borrowing and vs applying applyFactor to the cumulative delta are audit improvements, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/gmx-io/gmx-synthetics"
+  path="contracts/market/MarketUtils.sol getBorrowingFactorPerSecond"
+  kink="contracts/market/MarketUtils.sol getKinkBorrowingFactor getUsageFactor"
+  cum="contracts/market/MarketUtils.sol getNextCumulativeBorrowingFactor"
+  precision="contracts/utils/Precision.sol applyFactor toFactor applyExponentFactor"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later"
+  commit="a85ea3491c19c93bb4b5a002d9b358fb769b7849"
+  git_blob_sha="ad7a0b2b5a516ec86ce0afed89ff84ecba11038c"
+  file_sha256="8dfd271e4fc8e18d6a114b674dc1f520f38f6acd1f9c9a58b4b7509fe86e748f"
+  precision_git_blob_sha="047143722beaf6adceac3fc2ef1817f054dfe00a"
+  precision_file_sha256="8713db02a257238101fc62cc682a8f8061fba25951216863576afbbd00f34808"
+  fixture="test/fixtures/external_proof/GetBorrowingFactorPerSecond.excerpt.sol"
+}
+
+.l{
+  clone="src/lin_gmx_v2_borrow_fps.lin"
+  prefix="g2b_"
+  transpiler_delta="src/lin_from_solidity.lin v3 REJ_SOLIDITY_GMX_V2_BORROW_FPS before ENV; split equals then ex-brace export emit; src/lin_from_rust.lin v2 REJ_RUST_GMX_V2_BORROW_FPS"
+  improvement_1="DataStore / view storage lifted to arguments"
+  improvement_2="FLOAT prime=1e6; 128-bit muldiv; naive i64 7e9*2e9/1e6 wraps to -4446744073709"
+  improvement_3="empty pool fail-closes (ok=0) instead of Solidity revert; reserved==0 returns 0 and is ok"
+  improvement_4="skipBorrowingFeeForSmallerSide zeros the lighter OI; equal OI still charges both"
+  improvement_5="kink additional is raw (above-base)*diff/(FLOAT-opt); applyFactor on that extra undercharges"
+  improvement_6="cumulative delta is duration*fps; applyFactor(duration,fps) floors 3600*10/1e6 to 0; V1 interval count yields duration/3600"
+  improvement_7="applyExponentFactor identity-skipped when exponent==FLOAT; PRBMath pow is not claimed"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 roundtrip-jit"
+  oracle="test/oracles/gmx_v2_borrow_fps_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="python3 test/prove_gmx_v2_borrow_fps_external.py"
+}
+
+.p{
+  harness="test/prove_gmx_v2_borrow_fps_external.py"
+  evidence_json="examples/gmx_v2_borrow_fps/gmx_v2_borrow_fps_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-gmx-v2-borrow-fps"
+  goldens="linear 10 | skip long-smaller 0 vs short-larger 10 vs equal 10 | kink below 8 vs linear 20 | kink above 64 vs applyFactor extra 40 vs linear 24 | rfactor 100 vs ignore 10 | above<=base 80 vs signed extra 50 | delta 36000 vs applyFactor 0 vs V1 10 | wrap 14000000000000 vs -4446744073709"
+}
+
+.n{
+  not_claimed_1="full uint256 / Arbitrum GMX V2 FLOAT=1e30 parity"
+  not_claimed_2="PRBMathUD60x18.pow / applyExponentFactor non-identity path"
+  not_claimed_3="LIN is faster than the EVM or solc"
+  not_claimed_4="this clone is a production GMX replacement"
+  not_claimed_5="zk / computational soundness of Merkle receipts"
+  not_claimed_6="V1 Vault.getNextBorrowingRate as a full port; V1 interval is a named contrast only"
+  not_claimed_7="getNextFundingFactorPerSecond / getCappedPnl / getPositionPnlUsd (other clone-lin PRs)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
