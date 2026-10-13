@@ -1,0 +1,191 @@
+@LIN:L1c:0.2
+@GMX_V2_POS_IMPACT{
+  version=1
+  repo="gmx-io/gmx-synthetics"
+  source="contracts/market/MarketUtils.sol capPositiveImpactUsdByMaxPositionImpact"
+  factors="contracts/market/MarketUtils.sol getMaxPositionImpactFactor getMaxPositionImpactFactors"
+  precision="contracts/utils/Precision.sol applyFactor"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later"
+  commit="a85ea3491c19c93bb4b5a002d9b358fb769b7849"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_gmx_v2_one_sided_positive_impact_cap_vs_capped_pnl"
+  note="Not mainnet uint256. Not FLOAT=1e30. FLOAT prime=1e6. DataStore factors are arguments. Negative impact passes through. Positive impact clips to applyFactor(sizeDelta, min(posFactor,negFactor)). Distinct from getCappedPnl (pool*maxPnlFactor) and from a symmetric abs cap."
+}
+
+!g2p_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!g2p_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(g2p_u_lt(s, a));
+}
+
+!g2p_mask32() -> int {
+  ^ 4294967295;
+}
+
+!g2p_float() -> int {
+  ^ 1000000;
+}
+
+!g2p_muldiv_part(a: int, b: int, d: int, want_rem: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  m32 = g2p_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = g2p_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = g2p_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(g2p_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = g2p_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!g2p_muldiv(a: int, b: int, d: int) -> int {
+  ^ g2p_muldiv_part(a, b, d, 0);
+}
+
+!g2p_apply(value: int, factor: int) -> int {
+  ^ g2p_muldiv(value, factor, g2p_float());
+}
+
+!g2p_pos_factor(posf: int, negf: int) -> int {
+  ?(g2p_u_lt(negf, posf) == 1) { ^ negf; };
+  ^ posf;
+}
+
+!g2p_cap(impact: int, size: int, posf: int, negf: int) -> int {
+  ?(impact < 0) { ^ impact; };
+  maxv = g2p_apply(size, g2p_pos_factor(posf, negf));
+  ?(impact > maxv) { ^ maxv; };
+  ^ impact;
+}
+
+!g2p_wrong_uncapped(impact: int, size: int, posf: int, negf: int) -> int {
+  ^ impact;
+}
+
+!g2p_wrong_noclamp(impact: int, size: int, posf: int, negf: int) -> int {
+  ?(impact < 0) { ^ impact; };
+  maxv = g2p_apply(size, posf);
+  ?(impact > maxv) { ^ maxv; };
+  ^ impact;
+}
+
+!g2p_wrong_abs(impact: int, size: int, posf: int, negf: int) -> int {
+  maxv = g2p_apply(size, g2p_pos_factor(posf, negf));
+  ?(impact < 0) {
+    nmax = 0 - maxv;
+    ?(impact < nmax) { ^ nmax; };
+    ^ impact;
+  };
+  ?(impact > maxv) { ^ maxv; };
+  ^ impact;
+}
+
+!g2p_wrong_pool(impact: int, pool: int, posf: int, negf: int) -> int {
+  ?(impact < 0) { ^ impact; };
+  maxv = g2p_apply(pool, g2p_pos_factor(posf, negf));
+  ?(impact > maxv) { ^ maxv; };
+  ^ impact;
+}
+
+!g2p_wrong_factor0_stay(impact: int, size: int, posf: int, negf: int) -> int {
+  ?(g2p_pos_factor(posf, negf) == 0) { ^ impact; };
+  ^ g2p_cap(impact, size, posf, negf);
+}
+
+!g2p_naive_i64(a: int, b: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ^ (a * b) / d;
+}
+
+!g2p_test_suite() -> int {
+  ?(g2p_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(g2p_float() != 1000000) { ^ -2; };
+  ?(g2p_cap(150000000, 200000000, 500000, 800000) != 100000000) { ^ -3; };
+  ?(g2p_wrong_uncapped(150000000, 200000000, 500000, 800000) != 150000000) { ^ -4; };
+  ?(g2p_cap(50000000, 200000000, 500000, 800000) != 50000000) { ^ -5; };
+  ?(g2p_cap(100000000, 200000000, 500000, 800000) != 100000000) { ^ -6; };
+  ?(g2p_cap(-200000000, 200000000, 500000, 800000) != -200000000) { ^ -7; };
+  ?(g2p_wrong_abs(-200000000, 200000000, 500000, 800000) != -100000000) { ^ -8; };
+  ?(g2p_cap(150000000, 200000000, 500000, 250000) != 50000000) { ^ -9; };
+  ?(g2p_wrong_noclamp(150000000, 200000000, 500000, 250000) != 100000000) { ^ -10; };
+  ?(g2p_cap(40000000, 200000000, 500000, 250000) != 40000000) { ^ -11; };
+  ?(g2p_cap(150000000, 200000000, 0, 1000000) != 0) { ^ -12; };
+  ?(g2p_wrong_factor0_stay(150000000, 200000000, 0, 1000000) != 150000000) { ^ -13; };
+  ?(g2p_wrong_pool(150000000, 400000000, 500000, 800000) != 150000000) { ^ -14; };
+  ?(g2p_cap(150000000, 200000000, 500000, 800000) == g2p_wrong_pool(150000000, 400000000, 500000, 800000)) { ^ -15; };
+  ?(g2p_pos_factor(500000, 250000) != 250000) { ^ -16; };
+  ?(g2p_pos_factor(500000, 800000) != 500000) { ^ -17; };
+  ?(g2p_muldiv(7000000000, 2000000000, 1000000) != 14000000000000) { ^ -18; };
+  ?(g2p_naive_i64(7000000000, 2000000000, 1000000) == 14000000000000) { ^ -19; };
+  ^ 1;
+}
+
+=ex{
+  g2p_u_lt,
+  g2p_u_add_carry,
+  g2p_mask32,
+  g2p_float,
+  g2p_muldiv_part,
+  g2p_muldiv,
+  g2p_apply,
+  g2p_pos_factor,
+  g2p_cap,
+  g2p_wrong_uncapped,
+  g2p_wrong_noclamp,
+  g2p_wrong_abs,
+  g2p_wrong_pool,
+  g2p_wrong_factor0_stay,
+  g2p_naive_i64,
+  g2p_test_suite
+}
