@@ -1,0 +1,194 @@
+@LIN:L1c:0.2
+@GMX_V2_CAPPED_PNL{
+  version=1
+  repo="gmx-io/gmx-synthetics"
+  source="contracts/market/MarketUtils.sol getCappedPnl"
+  precision="contracts/utils/Precision.sol applyFactor"
+  keys="contracts/data/Keys.sol MAX_PNL_FACTOR_FOR_TRADERS"
+  scale="contracts/position/PositionUtils.sol trader mulDiv after pool cap"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later"
+  commit="a85ea3491c19c93bb4b5a002d9b358fb769b7849"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_gmx_v2_getCappedPnl_vs_uncapped"
+  note="Not mainnet uint256. Not FLOAT=1e30. FLOAT prime=1e6. DataStore maxPnlFactor is an argument. Losses never capped. Trader scale is pool-pro-rata, not min(trader, maxPnl). Distinct from uncapped getPositionPnlUsd."
+}
+
+!g2c_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!g2c_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(g2c_u_lt(s, a));
+}
+
+!g2c_mask32() -> int {
+  ^ 4294967295;
+}
+
+!g2c_float() -> int {
+  ^ 1000000;
+}
+
+!g2c_muldiv_part(a: int, b: int, d: int, want_rem: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  m32 = g2c_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = g2c_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = g2c_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(g2c_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = g2c_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!g2c_muldiv(a: int, b: int, d: int) -> int {
+  ^ g2c_muldiv_part(a, b, d, 0);
+}
+
+!g2c_muldiv_rem(a: int, b: int, d: int) -> int {
+  ^ g2c_muldiv_part(a, b, d, 1);
+}
+
+!g2c_smuldiv(a: int, b: int, d: int) -> int {
+  neg = 0;
+  aa = a;
+  ?(a < 0) { neg = 1; aa = 0 - a; };
+  q = g2c_muldiv(aa, b, d);
+  ?(neg == 1) { ^ 0 - q; };
+  ^ q;
+}
+
+!g2c_apply(pool_usd: int, factor: int) -> int {
+  ?(pool_usd < 0) { ^ 0; };
+  ?(factor < 0) { ^ 0; };
+  ^ g2c_muldiv(pool_usd, factor, g2c_float());
+}
+
+!g2c_capped(pnl: int, pool_usd: int, factor: int) -> int {
+  ?(pnl < 0) { ^ pnl; };
+  maxp = g2c_apply(pool_usd, factor);
+  ?(pnl > maxp) { ^ maxp; };
+  ^ pnl;
+}
+
+!g2c_wrong_sym(pnl: int, pool_usd: int, factor: int) -> int {
+  maxp = g2c_apply(pool_usd, factor);
+  ?(pnl < 0) {
+    neg = 0 - pnl;
+    ?(neg > maxp) { ^ 0 - maxp; };
+    ^ pnl;
+  };
+  ?(pnl > maxp) { ^ maxp; };
+  ^ pnl;
+}
+
+!g2c_wrong_pos(trader_pnl: int, pool_usd: int, factor: int) -> int {
+  ?(trader_pnl <= 0) { ^ trader_pnl; };
+  maxp = g2c_apply(pool_usd, factor);
+  ?(trader_pnl > maxp) { ^ maxp; };
+  ^ trader_pnl;
+}
+
+!g2c_trader(trader_pnl: int, pool_pnl: int, pool_usd: int, factor: int) -> int {
+  ?(trader_pnl <= 0) { ^ trader_pnl; };
+  capped = g2c_capped(pool_pnl, pool_usd, factor);
+  ?(capped == pool_pnl) { ^ trader_pnl; };
+  ?(capped <= 0) { ^ trader_pnl; };
+  ?(pool_pnl <= 0) { ^ trader_pnl; };
+  ^ g2c_smuldiv(trader_pnl, capped, pool_pnl);
+}
+
+!g2c_naive_i64(a: int, b: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ^ (a * b) / d;
+}
+
+!g2c_test_suite() -> int {
+  ?(g2c_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(g2c_muldiv_rem(7, 9, 2) != 1) { ^ -2; };
+  ?(g2c_float() != 1000000) { ^ -3; };
+  ?(g2c_apply(200000000, 500000) != 100000000) { ^ -4; };
+  ?(g2c_capped(150000000, 200000000, 500000) != 100000000) { ^ -5; };
+  ?(g2c_capped(50000000, 200000000, 500000) != 50000000) { ^ -6; };
+  ?(g2c_capped(100000000, 200000000, 500000) != 100000000) { ^ -7; };
+  ?(g2c_capped(0 - 200000000, 200000000, 500000) != 0 - 200000000) { ^ -8; };
+  ?(g2c_wrong_sym(0 - 200000000, 200000000, 500000) != 0 - 100000000) { ^ -9; };
+  ?(g2c_trader(150000000, 300000000, 200000000, 500000) != 50000000) { ^ -10; };
+  ?(g2c_wrong_pos(150000000, 200000000, 500000) != 100000000) { ^ -11; };
+  ?(g2c_capped(150000000, 200000000, 0) != 0) { ^ -12; };
+  ?(g2c_trader(150000000, 300000000, 200000000, 0) != 150000000) { ^ -13; };
+  ?(g2c_trader(50000000, 80000000, 200000000, 500000) != 50000000) { ^ -14; };
+  ?(g2c_muldiv(7000000000, 2000000000, 1000000) != 14000000000000) { ^ -15; };
+  ?(g2c_naive_i64(7000000000, 2000000000, 1000000) == 14000000000000) { ^ -16; };
+  ?(g2c_apply(7000000000, 2000000000) != 14000000000000) { ^ -17; };
+  ?(g2c_capped(150000000, 0, 500000) != 0) { ^ -18; };
+  ?(g2c_capped(0, 200000000, 500000) != 0) { ^ -19; };
+  ^ 1;
+}
+
+=ex{
+  g2c_u_lt,
+  g2c_u_add_carry,
+  g2c_mask32,
+  g2c_float,
+  g2c_muldiv_part,
+  g2c_muldiv,
+  g2c_muldiv_rem,
+  g2c_smuldiv,
+  g2c_apply,
+  g2c_capped,
+  g2c_wrong_sym,
+  g2c_wrong_pos,
+  g2c_trader,
+  g2c_naive_i64,
+  g2c_test_suite
+}

@@ -1,0 +1,189 @@
+{
+  "schema": "LIN_GMX_V2_CAPPED_PNL_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "excerpt contains loss-passthrough and min(pnl, applyFactor)",
+      "note": ""
+    },
+    {
+      "id": "PIN-PREC",
+      "status": "PASS",
+      "description": "Precision.applyFactor excerpt is mulDiv(value, factor, FLOAT)",
+      "note": ""
+    },
+    {
+      "id": "PIN-KEYS",
+      "status": "PASS",
+      "description": "Keys excerpt pins MAX_PNL_FACTOR_FOR_TRADERS",
+      "note": ""
+    },
+    {
+      "id": "PIN-SCALE",
+      "status": "PASS",
+      "description": "PositionUtils scale is pro-rata iff capped!=pool && both > 0",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned gmx-io/gmx-synthetics matches fixtures",
+      "note": "commit=a85ea3491c19c93bb4b5a002d9b358fb769b7849 blob=ad7a0b2b5a516ec86ce0afed89ff84ecba11038c"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of MarketUtils.sol + Precision.sol + Keys.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (cap / loss / pro-rata / zero-factor / wrap)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_gmx_v2_capped_pnl.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "g2c_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "13/13 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "13/13 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "CAP-VS-FREE",
+      "status": "PASS",
+      "description": "pool 2e8 factor 50%: 1.5e8 clips to 1e8; 5e7 stays 5e7",
+      "note": ""
+    },
+    {
+      "id": "LOSS-FREE",
+      "status": "PASS",
+      "description": "loss -2e8 stays -2e8; wrong symmetric cap yields -1e8",
+      "note": ""
+    },
+    {
+      "id": "PRORATA",
+      "status": "PASS",
+      "description": "trader 1.5e8 of pool 3e8 is 5e7 pro-rata, not min(trader,maxPnl)=1e8",
+      "note": ""
+    },
+    {
+      "id": "ZERO-FACTOR",
+      "status": "PASS",
+      "description": "factor 0 caps pool to 0; trader stays 1.5e8 (capped>0 guard)",
+      "note": ""
+    },
+    {
+      "id": "NAIVE-WRAP",
+      "status": "PASS",
+      "description": "naive i64 7e9*2e9/1e6 wraps to -4446744073709; 128-bit = 14000000000000",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on g2c_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes pnl/poolUsd/factor as arguments (no DataStore)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit poolUsd*factor / FLOAT prime",
+      "note": ""
+    },
+    {
+      "id": "NOT-UNCAPPED",
+      "status": "PASS",
+      "description": "kernel is pool cap + trader pro-rata, not uncapped pickPriceForPnl",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects getCappedPnl / MAX_PNL_FACTOR_FOR_TRADERS before ENV",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects get_capped_pnl / max_pnl_factor_for_traders",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/gmx-io/gmx-synthetics",
+    "commit": "a85ea3491c19c93bb4b5a002d9b358fb769b7849",
+    "path": "contracts/market/MarketUtils.sol",
+    "precision_path": "contracts/utils/Precision.sol",
+    "keys_path": "contracts/data/Keys.sol",
+    "git_blob_sha": "ad7a0b2b5a516ec86ce0afed89ff84ecba11038c",
+    "file_sha256": "8dfd271e4fc8e18d6a114b674dc1f520f38f6acd1f9c9a58b4b7509fe86e748f",
+    "precision_git_blob_sha": "047143722beaf6adceac3fc2ef1817f054dfe00a",
+    "precision_file_sha256": "8713db02a257238101fc62cc682a8f8061fba25951216863576afbbd00f34808",
+    "keys_git_blob_sha": "5472e5b4ecd29bb372218caa142476eb95fe55f8",
+    "keys_file_sha256": "9940d62b9dca2f3a753d67d7e7339a6326278a35d752c4c80ab1eedf0ab0f075",
+    "license": "GPL-2.0-or-later",
+    "license_note": "BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later",
+    "commercial_descendants": "GMX V2 synthetics: trader PnL is pro-rata of pool getCappedPnl(MAX_PNL_FACTOR_FOR_TRADERS), not min(trader, poolUsd*factor)"
+  },
+  "lin_clone": "src/lin_gmx_v2_capped_pnl.lin",
+  "c11_oracle": "test/oracles/gmx_v2_capped_pnl_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "max_pnl_50pct": 100000000,
+    "profit_clipped": 100000000,
+    "profit_below": 50000000,
+    "loss_passthrough": -200000000,
+    "wrong_sym_loss": -100000000,
+    "trader_prorata": 50000000,
+    "wrong_pos_cap": 100000000,
+    "zero_factor_pool": 0,
+    "zero_factor_trader": 150000000,
+    "wrap_wide": 14000000000000,
+    "wrap_naive": -4446744073709
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-gmx-v2-capped-pnl"
+}
