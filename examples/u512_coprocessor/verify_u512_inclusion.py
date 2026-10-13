@@ -93,7 +93,7 @@ def main() -> int:
         print("usage: verify_u512_inclusion.py <evidence.json>")
         return 2
     ev = json.loads(Path(sys.argv[1]).read_text())
-    if ev.get("schema") != "LIN_U512_COPROCESSOR_EVIDENCE_1.63":
+    if ev.get("schema") != "LIN_U512_COPROCESSOR_EVIDENCE_1.64":
         return fail("schema")
     proofs = ev.get("lip1_proofs") or []
     if len(proofs) < 34:
