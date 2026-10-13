@@ -1,0 +1,295 @@
+@LIN:L1c:0.2
+@GMX_V2_FUNDING_FPS{
+  version=1
+  repo="gmx-io/gmx-synthetics"
+  source="contracts/market/MarketUtils.sol getNextFundingFactorPerSecond"
+  bound="contracts/utils/Calc.sol boundMagnitude"
+  precision="contracts/utils/Precision.sol applyFactor toFactor"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later"
+  commit="a85ea3491c19c93bb4b5a002d9b358fb769b7849"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_gmx_v2_adaptive_funding_factor_per_second_vs_min_bound_saved"
+  note="Not mainnet uint256. Not FLOAT=1e30. FLOAT prime=1e6. Exponent/pow is identity skip. DataStore params are arguments. nextFundingFactorPerSecond is bound by min; nextSavedFundingFactorPerSecond is not. Decrease uses raw decFps*duration not applyFactor. Decrease past magnitude becomes +/-1 not 0. Distinct from V1 getNextFundingRate and from getNextFundingAmountPerSize."
+}
+
+!g2r_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!g2r_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(g2r_u_lt(s, a));
+}
+
+!g2r_mask32() -> int {
+  ^ 4294967295;
+}
+
+!g2r_float() -> int {
+  ^ 1000000;
+}
+
+!g2r_muldiv_part(a: int, b: int, d: int, want_rem: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  m32 = g2r_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = g2r_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = g2r_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(g2r_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = g2r_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!g2r_muldiv(a: int, b: int, d: int) -> int {
+  ^ g2r_muldiv_part(a, b, d, 0);
+}
+
+!g2r_abs(a: int) -> int {
+  ?(a < 0) { ^ 0 - a; };
+  ^ a;
+}
+
+!g2r_sign(a: int) -> int {
+  ?(a == 0) { ^ 1; };
+  ?(a < 0) { ^ 0 - 1; };
+  ^ 1;
+}
+
+!g2r_bound(value: int, minv: int, maxv: int) -> int {
+  mag = g2r_abs(value);
+  ?(g2r_u_lt(mag, minv) == 1) { mag = minv; };
+  ?(g2r_u_lt(maxv, mag) == 1) { mag = maxv; };
+  ^ mag * g2r_sign(value);
+}
+
+!g2r_diff(a: int, b: int) -> int {
+  ?(a > b) { ^ a - b; };
+  ^ b - a;
+}
+
+!g2r_imb(lo: int, so: int) -> int {
+  total = lo + so;
+  ?(total == 0) { ^ 0; };
+  ^ g2r_muldiv(g2r_diff(lo, so), g2r_float(), total);
+}
+
+!g2r_change(lo: int, so: int, saved: int, stable: int, dthr: int) -> int {
+  same = 0;
+  ?(saved > 0 && lo > so) { same = 1; };
+  ?(saved < 0 && so > lo) { same = 1; };
+  ?(same == 0) { ^ 1; };
+  imb = g2r_imb(lo, so);
+  ?(g2r_u_lt(stable, imb) == 1) { ^ 1; };
+  ?(g2r_u_lt(imb, dthr) == 1) { ^ 2; };
+  ^ 0;
+}
+
+!g2r_raw(lo: int, so: int, saved: int, dur: int, inc: int, dec: int, stable: int, dthr: int, dec_as_factor: int, dec_to_zero: int) -> int {
+  d = g2r_diff(lo, so);
+  total = lo + so;
+  ?(d == 0 && inc == 0) { ^ 0; };
+  ?(total == 0) { ^ 0; };
+  ?(inc == 0) { ^ 0; };
+  ch = g2r_change(lo, so, saved, stable, dthr);
+  nexts = saved;
+  ?(ch == 1) {
+    incv = g2r_muldiv(g2r_muldiv(d, inc, total), dur, 1);
+    ?(lo < so) { incv = 0 - incv; };
+    nexts = saved + incv;
+  };
+  ?(ch == 2 && saved != 0) {
+    mag = g2r_abs(saved);
+    decv = g2r_muldiv(dec, dur, 1);
+    ?(dec_as_factor == 1) {
+      decv = g2r_muldiv(g2r_muldiv(g2r_imb(lo, so), dec, g2r_float()), dur, 1);
+    };
+    ?(g2r_u_lt(mag, decv) == 1) {
+      ?(dec_to_zero == 1) { nexts = 0; };
+      ?(dec_to_zero == 0) { nexts = g2r_sign(saved); };
+    };
+    ?(g2r_u_lt(mag, decv) == 0) {
+      ?(mag == decv) {
+        ?(dec_to_zero == 1) { nexts = 0; };
+        ?(dec_to_zero == 0) { nexts = g2r_sign(saved); };
+      };
+      ?(mag != decv) { nexts = (mag - decv) * g2r_sign(saved); };
+    };
+  };
+  ^ nexts;
+}
+
+!g2r_saved(lo: int, so: int, saved: int, dur: int, inc: int, dec: int, minf: int, maxf: int, stable: int, dthr: int, sfactor: int) -> int {
+  ?(inc == 0) { ^ 0; };
+  nxt = g2r_raw(lo, so, saved, dur, inc, dec, stable, dthr, 0, 0);
+  ^ g2r_bound(nxt, 0, maxf);
+}
+
+!g2r_minb(lo: int, so: int, saved: int, dur: int, inc: int, dec: int, minf: int, maxf: int, stable: int, dthr: int, sfactor: int) -> int {
+  s = g2r_saved(lo, so, saved, dur, inc, dec, minf, maxf, stable, dthr, sfactor);
+  ?(inc == 0) { ^ 0; };
+  ^ g2r_bound(s, minf, maxf);
+}
+
+!g2r_static_fps(lo: int, so: int, maxf: int, sfactor: int) -> int {
+  d = g2r_diff(lo, so);
+  total = lo + so;
+  ?(d == 0) { ^ 0; };
+  ?(total == 0) { ^ 0; };
+  fps = g2r_muldiv(g2r_imb(lo, so), sfactor, g2r_float());
+  ?(g2r_u_lt(maxf, fps) == 1) { ^ maxf; };
+  ^ fps;
+}
+
+!g2r_fps(lo: int, so: int, saved: int, dur: int, inc: int, dec: int, minf: int, maxf: int, stable: int, dthr: int, sfactor: int) -> int {
+  d = g2r_diff(lo, so);
+  total = lo + so;
+  ?(d == 0 && inc == 0) { ^ 0; };
+  ?(total == 0) { ^ 0; };
+  ?(inc == 0) { ^ g2r_static_fps(lo, so, maxf, sfactor); };
+  ^ g2r_abs(g2r_minb(lo, so, saved, dur, inc, dec, minf, maxf, stable, dthr, sfactor));
+}
+
+!g2r_pay(lo: int, so: int, saved: int, dur: int, inc: int, dec: int, minf: int, maxf: int, stable: int, dthr: int, sfactor: int) -> int {
+  d = g2r_diff(lo, so);
+  ?(d == 0 && inc == 0) { ^ 1; };
+  ?(lo + so == 0) { ^ 0; };
+  ?(inc == 0) {
+    ?(lo > so) { ^ 1; };
+    ^ 0;
+  };
+  m = g2r_minb(lo, so, saved, dur, inc, dec, minf, maxf, stable, dthr, sfactor);
+  ?(m > 0) { ^ 1; };
+  ^ 0;
+}
+
+!g2r_wrong_min_saved(lo: int, so: int, saved: int, dur: int, inc: int, dec: int, minf: int, maxf: int, stable: int, dthr: int, sfactor: int) -> int {
+  ?(inc == 0) { ^ 0; };
+  nxt = g2r_raw(lo, so, saved, dur, inc, dec, stable, dthr, 0, 0);
+  ^ g2r_bound(nxt, minf, maxf);
+}
+
+!g2r_wrong_dec_zero(lo: int, so: int, saved: int, dur: int, inc: int, dec: int, minf: int, maxf: int, stable: int, dthr: int, sfactor: int) -> int {
+  nxt = g2r_raw(lo, so, saved, dur, inc, dec, stable, dthr, 0, 1);
+  ^ g2r_bound(nxt, 0, maxf);
+}
+
+!g2r_wrong_dec_factor(lo: int, so: int, saved: int, dur: int, inc: int, dec: int, minf: int, maxf: int, stable: int, dthr: int, sfactor: int) -> int {
+  nxt = g2r_raw(lo, so, saved, dur, inc, dec, stable, dthr, 1, 0);
+  ^ g2r_bound(nxt, 0, maxf);
+}
+
+!g2r_wrong_nocap(lo: int, so: int, sfactor: int) -> int {
+  total = lo + so;
+  ?(total == 0) { ^ 0; };
+  ^ g2r_muldiv(g2r_imb(lo, so), sfactor, g2r_float());
+}
+
+!g2r_naive_i64(a: int, b: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ^ (a * b) / d;
+}
+
+!g2r_test_suite() -> int {
+  ?(g2r_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(g2r_float() != 1000000) { ^ -2; };
+  ?(g2r_bound(0 - 3, 10, 10000) != (0 - 10)) { ^ -3; };
+  ?(g2r_bound(0 - 3, 0, 10000) != (0 - 3)) { ^ -4; };
+  ?(g2r_sign(0) != 1) { ^ -5; };
+  ?(g2r_fps(600, 400, 0, 0, 0, 0, 0, 10000, 0, 0, 50) != 10) { ^ -6; };
+  ?(g2r_fps(900, 100, 0, 0, 0, 0, 0, 20, 0, 0, 50) != 20) { ^ -7; };
+  ?(g2r_wrong_nocap(900, 100, 50) != 40) { ^ -8; };
+  ?(g2r_fps(500, 500, 0, 0, 0, 0, 0, 10000, 0, 0, 50) != 0) { ^ -9; };
+  ?(g2r_pay(500, 500, 0, 0, 0, 0, 0, 10000, 0, 0, 50) != 1) { ^ -10; };
+  ?(g2r_fps(700, 300, 100, 5, 10, 0, 0, 10000, 100000, 0, 0) != 120) { ^ -11; };
+  ?(g2r_fps(300, 700, 100, 5, 10, 0, 0, 10000, 0, 0, 0) != 80) { ^ -12; };
+  ?(g2r_pay(300, 700, 100, 5, 10, 0, 0, 10000, 0, 0, 0) != 1) { ^ -13; };
+  ?(g2r_saved(300, 700, 10, 5, 10, 0, 0, 10000, 0, 0, 0) != (0 - 10)) { ^ -14; };
+  ?(g2r_pay(300, 700, 10, 5, 10, 0, 0, 10000, 0, 0, 0) != 0) { ^ -15; };
+  ?(g2r_saved(400, 600, 0 - 3, 0, 10, 0, 10, 10000, 500000, 50000, 0) != (0 - 3)) { ^ -16; };
+  ?(g2r_wrong_min_saved(400, 600, 0 - 3, 0, 10, 0, 10, 10000, 500000, 50000, 0) != (0 - 10)) { ^ -17; };
+  ?(g2r_fps(400, 600, 0 - 3, 0, 10, 0, 10, 10000, 500000, 50000, 0) != 10) { ^ -18; };
+  ?(g2r_saved(510, 490, 50, 7, 10, 8, 0, 10000, 500000, 100000, 0) != 1) { ^ -19; };
+  ?(g2r_wrong_dec_zero(510, 490, 50, 7, 10, 8, 0, 10000, 500000, 100000, 0) != 0) { ^ -20; };
+  ?(g2r_saved(800, 200, 100, 7, 10, 8, 0, 10000, 900000, 700000, 0) != 44) { ^ -21; };
+  ?(g2r_wrong_dec_factor(800, 200, 100, 7, 10, 8, 0, 10000, 900000, 700000, 0) != 72) { ^ -22; };
+  ?(g2r_fps(700, 300, 90, 5, 10, 0, 0, 100, 100000, 0, 0) != 100) { ^ -23; };
+  ?(g2r_muldiv(7000000000, 2000000000, 1000000) != 14000000000000) { ^ -24; };
+  ?(g2r_naive_i64(7000000000, 2000000000, 1000000) == 14000000000000) { ^ -25; };
+  ^ 1;
+}
+
+=ex{
+  g2r_u_lt,
+  g2r_u_add_carry,
+  g2r_mask32,
+  g2r_float,
+  g2r_muldiv_part,
+  g2r_muldiv,
+  g2r_abs,
+  g2r_sign,
+  g2r_bound,
+  g2r_diff,
+  g2r_imb,
+  g2r_change,
+  g2r_raw,
+  g2r_saved,
+  g2r_minb,
+  g2r_static_fps,
+  g2r_fps,
+  g2r_pay,
+  g2r_wrong_min_saved,
+  g2r_wrong_dec_zero,
+  g2r_wrong_dec_factor,
+  g2r_wrong_nocap,
+  g2r_naive_i64,
+  g2r_test_suite
+}

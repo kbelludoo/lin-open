@@ -1,0 +1,192 @@
+{
+  "schema": "LIN_GMX_V2_FUNDING_FPS_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "excerpt contains min-vs-saved split, raw decrease, abs(minBound)",
+      "note": ""
+    },
+    {
+      "id": "PIN-BOUND",
+      "status": "PASS",
+      "description": "Calc.boundMagnitude excerpt is min/max on abs, sign(0)=+1",
+      "note": ""
+    },
+    {
+      "id": "PIN-PREC",
+      "status": "PASS",
+      "description": "Precision excerpt pins FLOAT=1e30 (LIN uses FLOAT prime=1e6)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned gmx-io/gmx-synthetics matches fixtures",
+      "note": "commit=a85ea3491c19c93bb4b5a002d9b358fb769b7849 blob=ad7a0b2b5a516ec86ce0afed89ff84ecba11038c"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of MarketUtils.sol + Precision.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (static / min-trap / decrease / wrap)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_gmx_v2_funding_fps.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "g2r_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "19/19 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "19/19 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "MIN-TRAP",
+      "status": "PASS",
+      "description": "charged min-bound fps keeps saved=-3; wrongly min-binding saved yields -10",
+      "note": ""
+    },
+    {
+      "id": "DEC-SIGN",
+      "status": "PASS",
+      "description": "decrease past magnitude becomes +1; clamp-to-zero yields 0",
+      "note": ""
+    },
+    {
+      "id": "DEC-SCALE",
+      "status": "PASS",
+      "description": "decrease is raw 56 (saved 44) vs applyFactor-as-increase 28 (saved 72)",
+      "note": ""
+    },
+    {
+      "id": "SKEW-HOLD",
+      "status": "PASS",
+      "description": "after skew flip, saved=80 still longs-pay until signed saved crosses 0",
+      "note": ""
+    },
+    {
+      "id": "STATIC-CAP",
+      "status": "PASS",
+      "description": "static path caps 40 to max=20; ignoring max leaves 40",
+      "note": ""
+    },
+    {
+      "id": "NAIVE-WRAP",
+      "status": "PASS",
+      "description": "naive i64 7e9*2e9/1e6 wraps to -4446744073709; 128-bit = 14000000000000",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on g2r_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes OI/saved/inc/dec/min/max as arguments (no DataStore)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit diff*inc / total",
+      "note": ""
+    },
+    {
+      "id": "NOT-V1-RATE",
+      "status": "PASS",
+      "description": "kernel is adaptive signed fps vs min-bound saved, not V1 interval*reserved/pool",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects getNextFundingFactorPerSecond before ENV",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects get_next_funding_factor_per_second",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/gmx-io/gmx-synthetics",
+    "commit": "a85ea3491c19c93bb4b5a002d9b358fb769b7849",
+    "path": "contracts/market/MarketUtils.sol",
+    "calc_path": "contracts/utils/Calc.sol",
+    "precision_path": "contracts/utils/Precision.sol",
+    "git_blob_sha": "ad7a0b2b5a516ec86ce0afed89ff84ecba11038c",
+    "file_sha256": "8dfd271e4fc8e18d6a114b674dc1f520f38f6acd1f9c9a58b4b7509fe86e748f",
+    "precision_git_blob_sha": "047143722beaf6adceac3fc2ef1817f054dfe00a",
+    "precision_file_sha256": "8713db02a257238101fc62cc682a8f8061fba25951216863576afbbd00f34808",
+    "license": "GPL-2.0-or-later",
+    "license_note": "BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later",
+    "commercial_descendants": "GMX V2 synthetics: adaptive funding fps is signed; min binds the charged rate not the saved rate, otherwise min!=0 blocks sign flip. Decrease is raw dec*duration not applyFactor."
+  },
+  "lin_clone": "src/lin_gmx_v2_funding_fps.lin",
+  "c11_oracle": "test/oracles/gmx_v2_funding_fps_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "static_fps": 10,
+    "static_cap": 20,
+    "wrong_nocap": 40,
+    "zero_diff_pay": 1,
+    "adapt_inc": 120,
+    "skew_hold": 80,
+    "skew_flip_saved": -10,
+    "min_trap_saved": -3,
+    "min_trap_wrong": -10,
+    "dec_one": 1,
+    "dec_zero_wrong": 0,
+    "dec_partial": 44,
+    "dec_factor_wrong": 72,
+    "max_cap": 100,
+    "wrap_wide": 14000000000000,
+    "wrap_naive": -4446744073709
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-gmx-v2-funding-fps"
+}
