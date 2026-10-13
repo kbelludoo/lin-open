@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Zero-LIN FullMath CRT + Newton + OpenSSL auditor for schema 1.65 evidence.json.
+Zero-LIN FullMath CRT + Newton + OpenSSL auditor for schema 1.66 evidence.json.
 
 Python only decodes JSON / hex. CRT reconstructs n==a*b (prod0 wrapping,
 mm via Mersenne rotate-and-add, prod1 from CRT). Newton inverse checks
@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "test" / "oracles"))
 from u512_crt_fullmath import ge256, identity512, le256, mul256, muldiv256  # noqa: E402
 
-SCHEMA = "LIN_U512_COPROCESSOR_EVIDENCE_1.65"
+SCHEMA = "LIN_U512_COPROCESSOR_EVIDENCE_1.66"
 RI_LEAF = b"LIN:U512:RI:LEAF:1"
 RI_NODE = b"LIN:U512:RI:NODE:1"
 UMAX = (1 << 256) - 1

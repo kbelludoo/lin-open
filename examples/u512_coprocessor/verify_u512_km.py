@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Zero-LIN IEEE-754 binary80 + Karp–Markstein + OpenSSL auditor for schema 1.65
+Zero-LIN IEEE-754 binary80 + Karp–Markstein + OpenSSL auditor for schema 1.66
 evidence.json.
 
 Python only decodes JSON / hex. Binary80 reconstructs n==a*b.
@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "test" / "oracles"))
 from u512_b80_km import ge_limbs, identity512, le256, mul256, muldiv256  # noqa: E402
 
-SCHEMA = "LIN_U512_COPROCESSOR_EVIDENCE_1.65"
+SCHEMA = "LIN_U512_COPROCESSOR_EVIDENCE_1.66"
 RI_LEAF = b"LIN:U512:RI:LEAF:1"
 RI_NODE = b"LIN:U512:RI:NODE:1"
 UMAX = (1 << 256) - 1

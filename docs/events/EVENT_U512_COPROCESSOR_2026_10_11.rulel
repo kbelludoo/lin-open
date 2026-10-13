@@ -1,4 +1,4 @@
-@RULEL:U512_COPROCESSOR_EVENT:1.65.0
+@RULEL:U512_COPROCESSOR_EVENT:1.66.0
 @CHALLENGE_ID="LIN-U512-COPROCESSOR-2026-10-13"
 @TITLE="512-bit intermediate proved as numeric coprocessor with auditable receipt"
 @STATUS="REPRODUCED_THIS_RUN"
@@ -12,18 +12,18 @@
   why="u256 mulDiv(a,b,d)=(a*b)/d with a,b,d up to 2^256-1 needs a correct 512-bit product; otherwise the SafeMath-width settler lies or returns -2 where width-correct math approves"
   engine="src/lin_u512_coprocessor.lin (16-bit limbs) + 32-limb remainder ge in examples/defi_settlement_proof/u512_uniswap_v2_core.lin"
   make="make u512-coprocessor-proof"
-  harness="python3 test/prove_u512_coprocessor_external.py → 471/471 PASS this run"
-  delta="schema 1.65: unbalanced Toom-Cook 2x69 256x256->512 + Barrett mu=floor(2^8704/d) 512/256 is a sixty-seventh independent math. Product: 16-bit digits, thirty-five 32-bit groups of a times 69-digit b (1104-bit pad), sixty-nine eval products at {0,±1,±2,±3,±4,±5,±6,±7,±8,±9,±10,±11,±12,±13,±14,±15,±16,±17,±18,±19,±20,±21,±22,±23,±24,±25,±26,±27,±28,±29,±30,±31,±32,±33,±34} plus inf, Lagrange interpolation (precomputed basis over Q, same interpolant). Not unbalanced Toom-2x5/2x7/2x9/2x11/2x13/2x15/2x17/2x19/2x21/2x23/2x25/2x27/2x29/2x31/2x33/2x35/2x37/2x39/2x41/2x43/2x45/2x47/2x49/2x51/2x53/2x55/2x57/2x59/2x61/2x63/2x65/2x67/3x7, not balanced Toom-3..10, not IEEE-754 binary80/binary64/Dekker, not Solinas NTT, not Fermat SS, not FNT, not NTT p=998244353, not RNS, not Comba, not Karatsuba. Division: mu=floor(2^8704/d) from sparse 2^8704 restoring, q=(n*mu)>>8704, 512-bit ge so r<d. Not Barrett mu=floor(2^512/d) or floor(2^768/d) or floor(2^1024/d) or floor(2^1280/d) or floor(2^1536/d) or floor(2^1792/d) or floor(2^2048/d) or floor(2^2304/d) or floor(2^2560/d) or floor(2^2816/d) or floor(2^3072/d) or floor(2^3328/d) or floor(2^3584/d) or floor(2^3840/d) or floor(2^4096/d) or floor(2^4352/d) or floor(2^4608/d) or floor(2^4864/d) or floor(2^5120/d) or floor(2^5376/d) or floor(2^5632/d) or floor(2^5888/d) or floor(2^6144/d) or floor(2^6400/d) or floor(2^6656/d) or floor(2^6912/d) or floor(2^7168/d) or floor(2^7424/d) or floor(2^7680/d) or floor(2^7936/d) or floor(2^8192/d) or floor(2^8448/d), not Svoboda–Tung, not Karp–Markstein, not Cook–Sieveking, not SRT, not Newton, not Goldschmidt, not Granlund–Montgomery, not Montgomery REDC, not Jebelean, not Hensel-of-n, not restoring of n. Zero-LIN Toom-2x69 auditor (verify_u512_toom269.py) recomputes n==a*b via Toom-2x69, q*d+r==n via Barrett-8704, binds mulDiv(fee,rout,den) on 3 EXACT + 3 OVERPAID + PHANTOM_APPROVE, and OpenSSL dgst of the LRI1 Merkle tree (FIPS abc ba7816bf) — no gcc, no rustc, no LinVM. Still includes schema 1.64 Toom-2x67+Barrett-8448. Engine frozen (LNR1/LCR2/LCR2-full/LGE1/LRI1 match 1.64)."
+  harness="python3 test/prove_u512_coprocessor_external.py → 478/478 PASS this run"
+  delta="schema 1.66: unbalanced Toom-Cook 2x71 256x256->512 + Barrett mu=floor(2^8960/d) 512/256 is a sixty-eighth independent math. Product: 16-bit digits, thirty-six 32-bit groups of a times 71-digit b (1136-bit pad), seventy-one eval products at {0,±1,±2,±3,±4,±5,±6,±7,±8,±9,±10,±11,±12,±13,±14,±15,±16,±17,±18,±19,±20,±21,±22,±23,±24,±25,±26,±27,±28,±29,±30,±31,±32,±33,±34,±35} plus inf, Lagrange interpolation (precomputed basis over Q, same interpolant). Not unbalanced Toom-2x5/2x7/2x9/2x11/2x13/2x15/2x17/2x19/2x21/2x23/2x25/2x27/2x29/2x31/2x33/2x35/2x37/2x39/2x41/2x43/2x45/2x47/2x49/2x51/2x53/2x55/2x57/2x59/2x61/2x63/2x65/2x67/2x69/3x7, not balanced Toom-3..10, not IEEE-754 binary80/binary64/Dekker, not Solinas NTT, not Fermat SS, not FNT, not NTT p=998244353, not RNS, not Comba, not Karatsuba. Division: mu=floor(2^8960/d) from sparse 2^8960 restoring, q=(n*mu)>>8960, 512-bit ge so r<d. Not Barrett mu=floor(2^512/d) or floor(2^768/d) or floor(2^1024/d) or floor(2^1280/d) or floor(2^1536/d) or floor(2^1792/d) or floor(2^2048/d) or floor(2^2304/d) or floor(2^2560/d) or floor(2^2816/d) or floor(2^3072/d) or floor(2^3328/d) or floor(2^3584/d) or floor(2^3840/d) or floor(2^4096/d) or floor(2^4352/d) or floor(2^4608/d) or floor(2^4864/d) or floor(2^5120/d) or floor(2^5376/d) or floor(2^5632/d) or floor(2^5888/d) or floor(2^6144/d) or floor(2^6400/d) or floor(2^6656/d) or floor(2^6912/d) or floor(2^7168/d) or floor(2^7424/d) or floor(2^7680/d) or floor(2^7936/d) or floor(2^8192/d) or floor(2^8448/d) or floor(2^8704/d), not Svoboda–Tung, not Karp–Markstein, not Cook–Sieveking, not SRT, not Newton, not Goldschmidt, not Granlund–Montgomery, not Montgomery REDC, not Jebelean, not Hensel-of-n, not restoring of n. Zero-LIN Toom-2x71 auditor (verify_u512_toom271.py) recomputes n==a*b via Toom-2x71, q*d+r==n via Barrett-8960, binds mulDiv(fee,rout,den) on 3 EXACT + 3 OVERPAID + PHANTOM_APPROVE, and OpenSSL dgst of the LRI1 Merkle tree (FIPS abc ba7816bf) — no gcc, no rustc, no LinVM. Still includes schema 1.65 Toom-2x69+Barrett-8704. Engine frozen (LNR1/LCR2/LCR2-full/LGE1/LRI1 match 1.65).""
 }
 
 .p{
-  mul="256x256->512 schoolbook in the engine AND unbalanced Toom-2x69 independently; leftover-carry fail-closed; (2^256-1)^2 lo=1 hi=2^256-2 published leaf"
-  div="512/256 restoring div in the engine AND Barrett-8704 independently; remainder 32/16/8 limbs; 512-bit ge; q*d+r==n and r<d"
-  ge="u512_ge_word + LGE1 8-leaf power-of-two tree; Toom-2x69/Barrett-8704 ge_limbs agrees with Python int / Node / OpenSSL BN / Go / Java / GMP / Perl / radix32 / rust64 / radix8 / Knuth D / CRT / Karatsuba / Toom-3 / NTT / Comba / Toom-4 / FNT / Toom-5 / Toom-6 / Toom-7 / Toom-8 / Toom-9 / Toom-10 / RNS/Newton / SS/SRT-1024 / Toom-3x7/Barrett-768 / Toom-2x5/SRT-2048 / Toom-2x7/Barrett-1024 / FFT/Montgomery / Solinas/GM / Dekker-DD/Cook / binary80/KM / Toom-2x9/ST / Toom-2x11/Barrett-1280 / Toom-2x13/Barrett-1536 / Toom-2x15/Barrett-1792 / Toom-2x17/Barrett-2048 / Toom-2x19/Barrett-2304 / Toom-2x21/Barrett-2560 / Toom-2x23/Barrett-2816 / Toom-2x25/Barrett-3072 / Toom-2x27/Barrett-3328 / Toom-2x29/Barrett-3584 / Toom-2x31/Barrett-3840 / Toom-2x33/Barrett-4096 / Toom-2x35/Barrett-4352 / Toom-2x37/Barrett-4608 / Toom-2x39/Barrett-4864 / Toom-2x41/Barrett-5120 / Toom-2x43/Barrett-5376 / Toom-2x45/Barrett-5632 / Toom-2x47/Barrett-5888 / Toom-2x49/Barrett-6144 / Toom-2x51/Barrett-6400 / Toom-2x53/Barrett-6656 / Toom-2x55/Barrett-6912 / Toom-2x57/Barrett-7168 / Toom-2x59/Barrett-7424 / Toom-2x61/Barrett-7680 / Toom-2x63/Barrett-7936 / Toom-2x65/Barrett-8192 / Toom-2x67/Barrett-8448 / GNU bc"
-  identity="LRI1 8-leaf power-of-two tree binds the 512-bit product n plus d,q,r. Outsider (including Toom-2x69+Barrett-8704 + OpenSSL dgst) checks n==a*b and q*d+r==n and r<d without LinVM"
-  inclusion="LIP1: 34 published inclusion proofs (8 LRI1 + 8 LGE1 + LNR1 max_sq + 8 LCR2 E2E + 9 LCR2-full). Toom-2x69/Barrett-8704 auditor binds packed LCR2 EXACT/OVERPAID and PHANTOM_APPROVE via mulDiv(fee,rout,den)"
+  mul="256x256->512 schoolbook in the engine AND unbalanced Toom-2x71 independently; leftover-carry fail-closed; (2^256-1)^2 lo=1 hi=2^256-2 published leaf"
+  div="512/256 restoring div in the engine AND Barrett-8960 independently; remainder 32/16/8 limbs; 512-bit ge; q*d+r==n and r<d"
+  ge="u512_ge_word + LGE1 8-leaf power-of-two tree; Toom-2x71/Barrett-8960 ge_limbs agrees with Python int / Node / OpenSSL BN / Go / Java / GMP / Perl / radix32 / rust64 / radix8 / Knuth D / CRT / Karatsuba / Toom-3 / NTT / Comba / Toom-4 / FNT / Toom-5 / Toom-6 / Toom-7 / Toom-8 / Toom-9 / Toom-10 / RNS/Newton / SS/SRT-1024 / Toom-3x7/Barrett-768 / Toom-2x5/SRT-2048 / Toom-2x7/Barrett-1024 / FFT/Montgomery / Solinas/GM / Dekker-DD/Cook / binary80/KM / Toom-2x9/ST / Toom-2x11/Barrett-1280 / Toom-2x13/Barrett-1536 / Toom-2x15/Barrett-1792 / Toom-2x17/Barrett-2048 / Toom-2x19/Barrett-2304 / Toom-2x21/Barrett-2560 / Toom-2x23/Barrett-2816 / Toom-2x25/Barrett-3072 / Toom-2x27/Barrett-3328 / Toom-2x29/Barrett-3584 / Toom-2x31/Barrett-3840 / Toom-2x33/Barrett-4096 / Toom-2x35/Barrett-4352 / Toom-2x37/Barrett-4608 / Toom-2x39/Barrett-4864 / Toom-2x41/Barrett-5120 / Toom-2x43/Barrett-5376 / Toom-2x45/Barrett-5632 / Toom-2x47/Barrett-5888 / Toom-2x49/Barrett-6144 / Toom-2x51/Barrett-6400 / Toom-2x53/Barrett-6656 / Toom-2x55/Barrett-6912 / Toom-2x57/Barrett-7168 / Toom-2x59/Barrett-7424 / Toom-2x61/Barrett-7680 / Toom-2x63/Barrett-7936 / Toom-2x65/Barrett-8192 / Toom-2x67/Barrett-8448 / Toom-2x69/Barrett-8704 / GNU bc"
+  identity="LRI1 8-leaf power-of-two tree binds the 512-bit product n plus d,q,r. Outsider (including Toom-2x71+Barrett-8960 + OpenSSL dgst) checks n==a*b and q*d+r==n and r<d without LinVM"
+  inclusion="LIP1: 34 published inclusion proofs (8 LRI1 + 8 LGE1 + LNR1 max_sq + 8 LCR2 E2E + 9 LCR2-full). Toom-2x71/Barrett-8960 auditor binds packed LCR2 EXACT/OVERPAID and PHANTOM_APPROVE via mulDiv(fee,rout,den)"
   guards="-1 on d=0 (coprocessor) and zero amount_in (both LCR2 trees); -2 on q overflow, SafeMath-width phantom (LCR2), and ain=2^256-1 fee overflow (LCR2-full)"
-  oracles="previous 1.64 oracles plus unbalanced Toom-2x69+Barrett-8704 (TOOM269_BARRETT8704_CONSENSUS) on the n=1060 batch; Toom-2x69/Barrett-8704 on 6 LCR2 EXACT/OVERPAID and 6 LCR2-full + PHANTOM_APPROVE"
+  oracles="previous 1.65 oracles plus unbalanced Toom-2x71+Barrett-8960 (TOOM271_BARRETT8960_CONSENSUS) on the n=1060 batch; Toom-2x71/Barrett-8960 on 6 LCR2 EXACT/OVERPAID and 6 LCR2-full + PHANTOM_APPROVE"
   phantom="ain=1,rin=1,rout=ceil(2^256/997): coprocessor APPROVES; settle_u512_swap APPROVES; settle_u256_word -2. 512-bit intermediate off the suspect list; replacing the SafeMath-width settler body remains required"
   receipt="LNR1 240-byte records; LCR2 208-byte records; LGE1; LRI1; LIP1; quad-auditor Python hashlib == Node crypto == C11 lin_sha256 == OpenSSL dgst; 1-bit leaf tamper rejected"
   lcr2="3 EXACT_INPUT + 3 OVERPAID_INPUT with settle_u256_word == coprocessor == ref_amount_out and steps!=0; GUARD_ZERO -1; GUARD_OVERFLOW -2"
@@ -39,11 +39,12 @@
 }
 
 .m{
-  host="lin_c0 C11, gcc -std=c11, python3 unbalanced Toom-2x69+Barrett-8704 + Toom-2x67+Barrett-8448 + hashlib, node BigInt + crypto, openssl dgst, go math/big, javac BigInteger, libgmp.so.10, perl Math::BigInt::Calc, GNU bc 1.07.1, rustc zero-crate radix-2^64; no Zig"
+  host="lin_c0 C11, gcc -std=c11, python3 unbalanced Toom-2x71+Barrett-8960 + Toom-2x69+Barrett-8704 + hashlib, node BigInt + crypto, openssl dgst, go math/big, javac BigInteger, libgmp.so.10, perl Math::BigInt::Calc, GNU bc 1.07.1, rustc zero-crate radix-2^64; no Zig"
   t265_selftest="SELFTEST_PASS toom265_barrett8192 q*d+r==n ge512 toom265_prod barrett8192"
   t267_selftest="SELFTEST_PASS toom267_barrett8448 q*d+r==n ge512 toom267_prod barrett8448"
   t269_selftest="SELFTEST_PASS toom269_barrett8704 q*d+r==n ge512 toom269_prod barrett8704"
-  gate="471/471 PASS"
+  t271_selftest="SELFTEST_PASS toom271_barrett8960 q*d+r==n ge512 toom271_prod barrett8960"
+  gate="478/478 PASS"
   published_lip1_proofs=34
   self_gate_steps=6710747
   phantom_coprocessor_steps=1106942
@@ -56,12 +57,15 @@
   lin_src="sha256:2a66456eae1227cb9ec3571da3258313cd4a5c6c787c42d3877a67152e96bd4b"
   oracle_toom267="sha256:e1d412f76b0e5fb06a2a018f9e413c7c5af541f5fdff86eb54671f30db74b6de"
   oracle_toom269="sha256:f331b246e017d49f72b2c8e16a163e915c707fb7ce21e1c7edbf048ff63815c4"
+  oracle_toom271="sha256:7f6ed2bd7caad3d2dd3bace9bbab043899710c3a5e9a0a9f2419626ad224cb86"
   toom267_py="sha256:115c3816b62dc63791902cf1adbc78f567d7c4c12f8bb1512247f70a61f25cb5"
   toom269_py="sha256:e74331f4a6d2325988051beb93bf4d610bd84504030e01103b35cc9ad356d431"
+  toom271_py="sha256:e8df1b4df1a53c5b8a1bb5b1bc59c0ed3b8e39549fd02dcd1b09b381237755ef"
   verifier_toom267="sha256:8b27ba8e05c333704da4261d9ecf1a46e56761181ee2e0fc47a7a28f4148948a"
-  verifier_toom269="sha256:e4d97d6c1288f7cae0f1773dc5532e2a7800e1834d2363b897ae7ecb76e73981"
-  harness="sha256:ba2df74e1b7bafd596b7fb564f632e56b2a7ba5202d9f8d57d8cbe91e8eb0121"
-  evidence_json="sha256:e750724f3837f1f27b92423217458c9c81fccb36733a7adbf8c174fa76eec24f"
+  verifier_toom269="sha256:5a1097abba2bcfa8eda73e4e6bc9fa4cf93d0215dab5cf1d7797910ab06bdbc5"
+  verifier_toom271="sha256:2a716be0f540cff52ff9dee49d6c5611169357540f715127d4db0b81bff66f58"
+  harness="sha256:4928ea76659e557c80a855f69020bf208f8dd0e84766f3726c0035294451265e"
+  evidence_json="sha256:37570300fcb2ee43f33e3aa95a610820602c175bb498ec275b1f234b8d6acb2a"
   lnr1_merkle="sha256:f140dcbcde99052d0d415dfb22336e951f1efc2b0c29c8327af35f1a671b8d7a"
   lcr2_merkle="sha256:2b8edf02b63457f3dd8f882b1afaa91f8c29f98815e33ccecd21cd94558b1751"
   lcr2_full_merkle="sha256:0b25f19eb4b0eba086cc7753d44250808d83d55bce26edc07c44d5098d7446f8"
@@ -71,6 +75,6 @@
 }
 
 .v{
-  method="PYTHON_BIGINT && TOOM269_BARRETT8704 && TOOM267_BARRETT8448 && TOOM265_BARRETT8192 && TOOM263_BARRETT7936 && TOOM261_BARRETT7680 && TOOM259_BARRETT7424 && TOOM257_BARRETT7168 && TOOM255_BARRETT6912 && TOOM253_BARRETT6656 && TOOM251_BARRETT6400 && TOOM249_BARRETT6144 && TOOM247_BARRETT5888 && TOOM245_BARRETT5632 && TOOM243_BARRETT5376 && TOOM241_BARRETT5120 && TOOM239_BARRETT4864 && TOOM237_BARRETT4608 && TOOM235_BARRETT4352 && TOOM233_BARRETT4096 && TOOM231_BARRETT3840 && TOOM229_BARRETT3584 && TOOM227_BARRETT3328 && TOOM225_BARRETT3072 && TOOM223_BARRETT2816 && TOOM221_BARRETT2560 && TOOM219_BARRETT2304 && TOOM217_BARRETT2048 && TOOM215_BARRETT1792 && TOOM213_BARRETT1536 && TOOM211_BARRETT1280 && TOOM29_SVOBODA && B80_KM && DD_COOK && SOLINAS_GM && FFT_MONTGOMERY && TOOM27_BARRETT1024 && LIN_C0_VM && LNR1_QUAD_AUDITOR && LCR2_SETTLER_EQ_COPROCESSOR && LCR2_FULL_SETTLE_U512 && LGE1_GE512 && LRI1_REMAINDER_IDENTITY && LIP1_INCLUSION && TAMPER_REJECT && T269_OPENSSL_LRI1_MERKLE_AND_LCR2_BIND"
+  method="PYTHON_BIGINT && TOOM271_BARRETT8960 && TOOM269_BARRETT8704 && TOOM267_BARRETT8448 && TOOM265_BARRETT8192 && TOOM263_BARRETT7936 && TOOM261_BARRETT7680 && TOOM259_BARRETT7424 && TOOM257_BARRETT7168 && TOOM255_BARRETT6912 && TOOM253_BARRETT6656 && TOOM251_BARRETT6400 && TOOM249_BARRETT6144 && TOOM247_BARRETT5888 && TOOM245_BARRETT5632 && TOOM243_BARRETT5376 && TOOM241_BARRETT5120 && TOOM239_BARRETT4864 && TOOM237_BARRETT4608 && TOOM235_BARRETT4352 && TOOM233_BARRETT4096 && TOOM231_BARRETT3840 && TOOM229_BARRETT3584 && TOOM227_BARRETT3328 && TOOM225_BARRETT3072 && TOOM223_BARRETT2816 && TOOM221_BARRETT2560 && TOOM219_BARRETT2304 && TOOM217_BARRETT2048 && TOOM215_BARRETT1792 && TOOM213_BARRETT1536 && TOOM211_BARRETT1280 && TOOM29_SVOBODA && B80_KM && DD_COOK && SOLINAS_GM && FFT_MONTGOMERY && TOOM27_BARRETT1024 && LIN_C0_VM && LNR1_QUAD_AUDITOR && LCR2_SETTLER_EQ_COPROCESSOR && LCR2_FULL_SETTLE_U512 && LGE1_GE512 && LRI1_REMAINDER_IDENTITY && LIP1_INCLUSION && TAMPER_REJECT && T269_OPENSSL_LRI1_MERKLE_AND_LCR2_BIND && T271_OPENSSL_LRI1_MERKLE_AND_LCR2_BIND"
   on_fail="do not publish PASS"
 }

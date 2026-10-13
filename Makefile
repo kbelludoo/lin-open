@@ -314,8 +314,8 @@ independent-reproof: c0
 	@chmod +x test/prove_melhorias_independent.py
 	@python3 test/prove_melhorias_independent.py
 
-# Numeric coprocessor with auditable receipt (no Zig). Schema 1.65:
-# unbalanced Toom-2x69 + Barrett mu=floor(2^8704/d). Class: EXPERIMENTAL.
+# Numeric coprocessor with auditable receipt (no Zig). Schema 1.66:
+# unbalanced Toom-2x71 + Barrett mu=floor(2^8960/d). Class: EXPERIMENTAL.
 u512-coprocessor-proof: c0
 	@chmod +x test/prove_u512_coprocessor_external.py \
 		examples/u512_coprocessor/verify_u512_receipt.py \
@@ -379,6 +379,7 @@ u512-coprocessor-proof: c0
 		examples/u512_coprocessor/verify_u512_toom265.py \
 		examples/u512_coprocessor/verify_u512_toom267.py \
 		examples/u512_coprocessor/verify_u512_toom269.py \
+		examples/u512_coprocessor/verify_u512_toom271.py \
 		test/oracles/u512_node_oracle.js \
 		test/oracles/u512_perl_oracle.pl \
 		test/oracles/u512_radix8.py \
@@ -435,7 +436,8 @@ u512-coprocessor-proof: c0
 		test/oracles/u512_toom263_barrett7936.py \
 		test/oracles/u512_toom265_barrett8192.py \
 		test/oracles/u512_toom267_barrett8448.py \
-		test/oracles/u512_toom269_barrett8704.py
+		test/oracles/u512_toom269_barrett8704.py \
+		test/oracles/u512_toom271_barrett8960.py
 	@python3 test/prove_u512_coprocessor_external.py
 
 # Standalone no-Zig CLI (python3, stdlib only). `make install-cli PREFIX=~/.local`

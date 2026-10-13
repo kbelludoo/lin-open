@@ -1,4 +1,4 @@
-// Zero-crate rustc auditor for schema 1.65 evidence.json.
+// Zero-crate rustc auditor for schema 1.66 evidence.json.
 // Recomputes LRI1 q*d+r==n with radix-2^64 limbs, binds LCR2/LCR2-full
 // mulDiv(fee,rout,den), and SHA-256 (FIPS 180-4) of the LRI1 Merkle tree.
 // No LinVM, no gcc, no Python. EXPERIMENTAL FullMath width, not CRT.
@@ -10,7 +10,7 @@ use std::env;
 use std::fs;
 use std::process;
 
-const SCHEMA: &str = "LIN_U512_COPROCESSOR_EVIDENCE_1.65";
+const SCHEMA: &str = "LIN_U512_COPROCESSOR_EVIDENCE_1.66";
 const RI_LEAF: &[u8] = b"LIN:U512:RI:LEAF:1";
 const RI_NODE: &[u8] = b"LIN:U512:RI:NODE:1";
 const K: [u32; 64] = [
