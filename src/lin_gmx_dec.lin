@@ -1,0 +1,221 @@
+@LIN:L1c:0.2
+@GMX_ADJUST_DECIMALS{
+  version=1
+  repo="gmx-io/gmx-contracts"
+  source="contracts/core/Vault.sol"
+  license="MIT"
+  commit="fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_gmx_adjustForDecimals_and_tokenToUsdMin"
+  note="Not mainnet uint256. Kernel is GMX V1 adjustForDecimals: amount * 10^decMul / 10^decDiv. USDG uses USDG_DECIMALS=18 not PRICE_PRECISION=30. tokenToUsdMin is amount * price / 10^decimals. Storage (tokenDecimals, usdg) lifted to args. 128-bit muldiv. PRICE_PRECISION 1e30 is rejected (pow10>18 fail-closes). Not validateLiquidation, not getFundingFee, not getNextFundingRate, not getFeeBasisPoints, not Uniswap xy."
+}
+
+!gad_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!gad_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(gad_u_lt(s, a));
+}
+
+!gad_mask32() -> int {
+  ^ 4294967295;
+}
+
+!gad_usdg_decimals() -> int {
+  ^ 18;
+}
+
+!gad_muldiv_part(a: int, b: int, d: int, want_rem: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  m32 = gad_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = gad_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = gad_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(gad_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = gad_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!gad_muldiv(a: int, b: int, d: int) -> int {
+  ^ gad_muldiv_part(a, b, d, 0);
+}
+
+!gad_muldiv_rem(a: int, b: int, d: int) -> int {
+  ^ gad_muldiv_part(a, b, d, 1);
+}
+
+!gad_pow10(n: int) -> int {
+  ?(n < 0) { ^ 0; };
+  ?(n > 18) { ^ 0; };
+  p = 1;
+  i = 0;
+  while (i < n) {
+    p = p * 10;
+    i = i + 1;
+  };
+  ^ p;
+}
+
+!gad_decimals(is_usdg: int, token_dec: int) -> int {
+  ?(is_usdg != 0) { ^ gad_usdg_decimals(); };
+  ?(token_dec < 0) { ^ 0; };
+  ?(token_dec > 18) { ^ 0; };
+  ^ token_dec;
+}
+
+!gad_adjust(amount: int, decDiv: int, decMul: int) -> int {
+  ?(amount < 0) { ^ 0; };
+  pm = gad_pow10(decMul);
+  pd = gad_pow10(decDiv);
+  ?(pm == 0) { ^ 0; };
+  ?(pd == 0) { ^ 0; };
+  ?(decMul != 0) {
+    ?(pm == 1) { ^ 0; };
+  };
+  ?(decDiv != 0) {
+    ?(pd == 1) { ^ 0; };
+  };
+  ^ gad_muldiv(amount, pm, pd);
+}
+
+!gad_adjust_usdg(amount: int, div_is_usdg: int, div_dec: int, mul_is_usdg: int, mul_dec: int) -> int {
+  dd = gad_decimals(div_is_usdg, div_dec);
+  dm = gad_decimals(mul_is_usdg, mul_dec);
+  ^ gad_adjust(amount, dd, dm);
+}
+
+!gad_token_to_usd(amount: int, price: int, decimals: int) -> int {
+  ?(amount == 0) { ^ 0; };
+  ?(amount < 0) { ^ 0; };
+  ?(price < 0) { ^ 0; };
+  pd = gad_pow10(decimals);
+  ?(pd == 0) { ^ 0; };
+  ^ gad_muldiv(amount, price, pd);
+}
+
+!gad_usd_to_token(usd: int, price: int, decimals: int) -> int {
+  ?(usd == 0) { ^ 0; };
+  ?(usd < 0) { ^ 0; };
+  ?(price <= 0) { ^ 0; };
+  pm = gad_pow10(decimals);
+  ?(pm == 0) { ^ 0; };
+  ^ gad_muldiv(usd, pm, price);
+}
+
+!gad_naive_i64_adjust(amount: int, decDiv: int, decMul: int) -> int {
+  pm = gad_pow10(decMul);
+  pd = gad_pow10(decDiv);
+  ?(pd == 0) { ^ 0; };
+  ^ (amount * pm) / pd;
+}
+
+!gad_naive_ignore(amount: int) -> int {
+  ^ amount;
+}
+
+!gad_naive_as18_usd(amount: int, price: int) -> int {
+  ^ gad_muldiv(amount, price, gad_pow10(18));
+}
+
+!gad_wrong_prec_adjust(amount: int, decDiv: int) -> int {
+  ^ gad_adjust(amount, decDiv, 30);
+}
+
+!gad_test_suite() -> int {
+  ?(gad_pow10(0) != 1) { ^ -1; };
+  ?(gad_pow10(6) != 1000000) { ^ -2; };
+  ?(gad_pow10(8) != 100000000) { ^ -3; };
+  ?(gad_pow10(18) != 1000000000000000000) { ^ -4; };
+  ?(gad_pow10(19) != 0) { ^ -5; };
+  ?(gad_pow10(30) != 0) { ^ -6; };
+  ?(gad_adjust(1000000000000000000, 18, 18) != 1000000000000000000) { ^ -7; };
+  ?(gad_adjust(1000000, 6, 18) != 1000000000000000000) { ^ -8; };
+  ?(gad_naive_ignore(1000000) != 1000000) { ^ -9; };
+  ?(gad_adjust(100000000, 8, 18) != 1000000000000000000) { ^ -10; };
+  ?(gad_adjust(1000000000000000000, 18, 6) != 1000000) { ^ -11; };
+  ?(gad_adjust(5000000000, 6, 10) != 50000000000000) { ^ -12; };
+  ?(gad_naive_i64_adjust(5000000000, 6, 10) == 50000000000000) { ^ -13; };
+  ?(gad_token_to_usd(0, 100000000, 6) != 0) { ^ -14; };
+  ?(gad_token_to_usd(100000000, 4000000000000, 8) != 4000000000000) { ^ -15; };
+  ?(gad_token_to_usd(1000000, 100000000, 6) != 100000000) { ^ -16; };
+  ?(gad_naive_as18_usd(1000000, 100000000) != 0) { ^ -17; };
+  ?(gad_usd_to_token(4000000000000, 4000000000000, 8) != 100000000) { ^ -18; };
+  ?(gad_usd_to_token(100000000, 100000000, 6) != 1000000) { ^ -19; };
+  ?(gad_adjust_usdg(1000000, 0, 6, 1, 0) != 1000000000000000000) { ^ -20; };
+  ?(gad_wrong_prec_adjust(1000000, 6) != 0) { ^ -21; };
+  ?(gad_decimals(1, 8) != 18) { ^ -22; };
+  ?(gad_decimals(0, 8) != 8) { ^ -23; };
+  ?(gad_muldiv(100, 200, 50) != 400) { ^ -24; };
+  ^ 1;
+}
+
+=ex{
+  gad_u_lt,
+  gad_u_add_carry,
+  gad_mask32,
+  gad_usdg_decimals,
+  gad_muldiv_part,
+  gad_muldiv,
+  gad_muldiv_rem,
+  gad_pow10,
+  gad_decimals,
+  gad_adjust,
+  gad_adjust_usdg,
+  gad_token_to_usd,
+  gad_usd_to_token,
+  gad_naive_i64_adjust,
+  gad_naive_ignore,
+  gad_naive_as18_usd,
+  gad_wrong_prec_adjust,
+  gad_test_suite
+}
