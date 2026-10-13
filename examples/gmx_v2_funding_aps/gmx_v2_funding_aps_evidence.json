@@ -1,0 +1,188 @@
+{
+  "schema": "LIN_GMX_V2_FUNDING_APS_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "excerpt contains zero-OI skip, paying-side, applyFactor, /divisor",
+      "note": ""
+    },
+    {
+      "id": "PIN-DELTA",
+      "status": "PASS",
+      "description": "getFundingAmountPerSizeDelta excerpt is STORE-scale then /price",
+      "note": ""
+    },
+    {
+      "id": "PIN-DIV",
+      "status": "PASS",
+      "description": "getPoolDivisor excerpt is 2 iff longToken==shortToken",
+      "note": ""
+    },
+    {
+      "id": "PIN-PREC",
+      "status": "PASS",
+      "description": "Precision excerpt pins FLOAT=1e30 and SQRT=1e15 (LIN uses primes)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned gmx-io/gmx-synthetics matches fixtures",
+      "note": "commit=a85ea3491c19c93bb4b5a002d9b358fb769b7849 blob=ad7a0b2b5a516ec86ce0afed89ff84ecba11038c"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of MarketUtils.sol + Precision.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (zero-OI / divisor / split / aps / wrap)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_gmx_v2_funding_aps.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "g2f_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "14/14 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "14/14 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "DIVISOR",
+      "status": "PASS",
+      "description": "two-token funding 8e6; single-token /2 = 4e6; ignore-divisor stays 8e6 (2x charge)",
+      "note": ""
+    },
+    {
+      "id": "ZERO-OI",
+      "status": "PASS",
+      "description": "long OI 0 => funding 0; wrong still-charge shorts 4e6",
+      "note": ""
+    },
+    {
+      "id": "FPS-SCALE",
+      "status": "PASS",
+      "description": "paying 2e8 * 4000 * 10 / 1e6 = 8e6; forgotten fps = 8e5 (10x trap)",
+      "note": ""
+    },
+    {
+      "id": "APS-SCALE",
+      "status": "PASS",
+      "description": "GMX comment: $100 / $2000 / $10k fee aps=5000; claimable on $5k = 10000",
+      "note": ""
+    },
+    {
+      "id": "NAIVE-WRAP",
+      "status": "PASS",
+      "description": "naive i64 7e9*2e9/1e6 wraps to -4446744073709; 128-bit = 14000000000000",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on g2f_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes OI/duration/fps/divisor as arguments (no DataStore)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit size*rate / FLOAT prime",
+      "note": ""
+    },
+    {
+      "id": "NOT-V1-RATE",
+      "status": "PASS",
+      "description": "kernel is per-second paying-side fundingUsd, not V1 factor*reserved*intervals/pool",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects getNextFundingAmountPerSize before ENV",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects get_next_funding_amount_per_size",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/gmx-io/gmx-synthetics",
+    "commit": "a85ea3491c19c93bb4b5a002d9b358fb769b7849",
+    "path": "contracts/market/MarketUtils.sol",
+    "precision_path": "contracts/utils/Precision.sol",
+    "git_blob_sha": "ad7a0b2b5a516ec86ce0afed89ff84ecba11038c",
+    "file_sha256": "8dfd271e4fc8e18d6a114b674dc1f520f38f6acd1f9c9a58b4b7509fe86e748f",
+    "precision_git_blob_sha": "047143722beaf6adceac3fc2ef1817f054dfe00a",
+    "precision_file_sha256": "8713db02a257238101fc62cc682a8f8061fba25951216863576afbbd00f34808",
+    "license": "GPL-2.0-or-later",
+    "license_note": "BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later",
+    "commercial_descendants": "GMX V2 synthetics: fundingUsd is applyFactor(payingSide, duration*fps)/divisor, not V1 interval*reserved/pool. Single-token markets must divide by 2 or they double-charge."
+  },
+  "lin_clone": "src/lin_gmx_v2_funding_aps.lin",
+  "c11_oracle": "test/oracles/gmx_v2_funding_aps_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "funding_long_two_token": 8000000,
+    "funding_long_single_token": 4000000,
+    "wrong_nodiv": 8000000,
+    "zero_oi_skip": 0,
+    "wrong_zero_charge": 4000000,
+    "shorts_pay": 4000000,
+    "wrong_nofps": 800000,
+    "split_long_col": 100,
+    "split_short_col": 400,
+    "aps_fee": 5000,
+    "aps_claimable": 10000,
+    "wrap_wide": 14000000000000,
+    "wrap_naive": -4446744073709
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-gmx-v2-funding-aps"
+}

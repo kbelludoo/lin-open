@@ -1,0 +1,70 @@
+@RULEL:GMX_V2_FUNDING_APS_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GMX-V2-FUNDING-APS"
+@TITLE="Clone-lin of GMX V2 getNextFundingAmountPerSize with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-gmx-v2-funding-aps"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile GMX V2 funding-per-size (getNextFundingAmountPerSize + getFundingAmountPerSizeDelta + getPoolDivisor) into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Arbitrum/Avalanche mainnet"
+  operand_width="uint64 inputs, 128-bit product for size*duration*fps/FLOAT'; Solidity uint256 and FLOAT=1e30 / SQRT=1e15 are NOT claimed"
+  commercial_hook="GMX V2 funding is not V1 getNextFundingRate (factor*reserved*intervals/pool). It is applyFactor(payingSideOpenInterest, durationSeconds*fundingFactorPerSecond) then /getPoolDivisor. Either-side zero OI yields 0 (nobody to pay). Single-token markets must divide by 2 or fundingFeeAmountPerSize is incremented twice and charges 2x. Fee aps rounds up; claimable rounds down. This is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/gmx-io/gmx-synthetics"
+  path="contracts/market/MarketUtils.sol"
+  precision_path="contracts/utils/Precision.sol applyFactor FLOAT_PRECISION_SQRT"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later"
+  commit="a85ea3491c19c93bb4b5a002d9b358fb769b7849"
+  git_blob_sha="ad7a0b2b5a516ec86ce0afed89ff84ecba11038c"
+  file_sha256="8dfd271e4fc8e18d6a114b674dc1f520f38f6acd1f9c9a58b4b7509fe86e748f"
+  precision_blob_sha="047143722beaf6adceac3fc2ef1817f054dfe00a"
+  precision_sha256="8713db02a257238101fc62cc682a8f8061fba25951216863576afbbd00f34808"
+  fixture="test/fixtures/external_proof/GetNextFundingAmountPerSize.excerpt.sol"
+  delta_fixture="test/fixtures/external_proof/GetFundingAmountPerSizeDelta.excerpt.sol"
+  divisor_fixture="test/fixtures/external_proof/GetPoolDivisor.excerpt.sol"
+  precision_fixture="test/fixtures/external_proof/PrecisionApplySqrt.excerpt.sol"
+}
+
+.l{
+  clone="src/lin_gmx_v2_funding_aps.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_GMX_V2_FUNDING_APS before ENV; emit splits equals then ex-brace. src/lin_from_rust.lin v2: REJ_RUST_GMX_V2_FUNDING_APS"
+  improvement_1="DataStore / market / prices / Chain.currentTimestamp storage is lifted to longOI, shortOI, longsPay, duration, fps, sameToken arguments"
+  improvement_2="size * duration * fps overflows i64 on the 7e9*2e9 vector; LIN uses schoolbook 128-bit muldiv matching C11 __int128"
+  improvement_3="named contrast: long OI 0 => funding 0; wrong still-charge of the short side yields 4e6"
+  improvement_4="named contrast: single-token divisor 2 yields 4e6; ignoring divisor yields 8e6 (the $8 vs $16 double-charge in the GMX comment)"
+  improvement_5="named contrast: forgotten fps (duration as if already rate) is 8e5 vs 8e6 (10x). Not V1 interval-count 28800x"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/gmx_v2_funding_aps_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_gmx_v2_funding_aps.sh"
+}
+
+.p{
+  harness="test/prove_gmx_v2_funding_aps_external.py"
+  evidence_json="examples/gmx_v2_funding_aps/gmx_v2_funding_aps_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-gmx-v2-funding-aps"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet GMX V2 / FLOAT_PRECISION=1e30 / FLOAT_PRECISION_SQRT=1e15"
+  not_claimed_2="getNextFundingFactorPerSecond adaptive skew / minFundingFactorPerSecond (other kernel)"
+  not_claimed_3="V1 getNextFundingRate / getFundingFee (other clones)"
+  not_claimed_4="LIN is faster than the EVM or solc"
+  not_claimed_5="this clone is a production GMX reader replacement"
+  not_claimed_6="TVL or live funding paid"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS && JUMPRATE_REGRESSION"
+  on_fail="do not publish a PASS status"
+}
