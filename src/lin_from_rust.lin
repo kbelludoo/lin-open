@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: reject apply_delta_to_position_impact_pool / lent_position_impact_pool_amount (GMX V2 signed pool-plus-lent delta is a LIN port, not emit)"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,9 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "apply_delta_to_position_impact_pool") > 0) { ^"REJ_RUST_GMX_V2_IMPACT_DELTA" };
+  ?(rg_count_lit(body, "lent_position_impact_pool_amount") > 0) { ^"REJ_RUST_GMX_V2_IMPACT_DELTA" };
+  ?(rg_count_lit(body, "position_impact_pool_amount_key") > 0) { ^"REJ_RUST_GMX_V2_IMPACT_DELTA" };
   ^"OK";
 }
 
@@ -66,6 +70,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_cap = "pub fn apply_delta_to_position_impact_pool(pool: u64, lent: u64, delta: i64) -> i64";
+  body_cap = "let excess = mag - pool; lent_position_impact_pool_amount += excess;";
+  r3 = rs_reason(sig_cap, body_cap);
+  ?(starts_lit(r3, 0, "REJ_RUST_GMX_V2_IMPACT_DELTA") == 0) { ^0 };
 
   ^1;
 }

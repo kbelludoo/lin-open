@@ -1,0 +1,176 @@
+@LIN:L1c:0.2
+@GMX_V2_IMPACT_DELTA{
+  version=1
+  repo="gmx-io/gmx-synthetics"
+  source="contracts/market/MarketUtils.sol applyDeltaToPositionImpactPool"
+  swap_contrast="contracts/market/MarketUtils.sol applyDeltaToSwapImpactPool"
+  bound_contrast="contracts/data/DataStore.sol applyBoundedDeltaToUint"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later"
+  commit="a85ea3491c19c93bb4b5a002d9b358fb769b7849"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_gmx_v2_signed_position_impact_pool_delta"
+  note="Not mainnet uint256. DataStore lifted to args. Negative delta draws the pool then lends the excess. Positive delta first repays lent then credits the pool. Distinct from applyBoundedDeltaToUint (swap pool floors at 0, does not lend) and from capPositiveImpactUsdByPositionImpactPool (USD clip, not storage delta)."
+}
+
+!g2d_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!g2d_add_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  s = a + b;
+  ?(s < 0) { ^ 0; };
+  ?(g2d_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!g2d_mag(x: int) -> int {
+  ?(x >= 0) { ^ x; };
+  ^ 0 - x;
+}
+
+!g2d_mag_ok(x: int) -> int {
+  ?(x >= 0) { ^ 1; };
+  m = 0 - x;
+  ?(m < 0) { ^ 0; };
+  ^ 1;
+}
+
+!g2d_ok(pool: int, lent: int, delta: int) -> int {
+  ?(pool < 0) { ^ 0; };
+  ?(lent < 0) { ^ 0; };
+  ?(g2d_mag_ok(delta) == 0) { ^ 0; };
+  mag = g2d_mag(delta);
+  ?(delta < 0) {
+    ?(g2d_u_lt(pool, mag) == 1) {
+      excess = mag - pool;
+      ^ g2d_add_ok(lent, excess);
+    };
+    ^ 1;
+  };
+  ?(g2d_u_lt(lent, mag) == 1) {
+    excess = mag - lent;
+    ^ g2d_add_ok(pool, excess);
+  };
+  ^ 1;
+}
+
+!g2d_next_pool(pool: int, lent: int, delta: int) -> int {
+  ?(g2d_ok(pool, lent, delta) == 0) { ^ 0; };
+  mag = g2d_mag(delta);
+  ?(delta < 0) {
+    ?(g2d_u_lt(pool, mag) == 1) { ^ 0; };
+    ^ pool - mag;
+  };
+  ?(g2d_u_lt(lent, mag) == 1) {
+    excess = mag - lent;
+    ^ pool + excess;
+  };
+  ^ pool;
+}
+
+!g2d_next_lent(pool: int, lent: int, delta: int) -> int {
+  ?(g2d_ok(pool, lent, delta) == 0) { ^ 0; };
+  mag = g2d_mag(delta);
+  ?(delta < 0) {
+    ?(g2d_u_lt(pool, mag) == 1) {
+      excess = mag - pool;
+      ^ lent + excess;
+    };
+    ^ lent;
+  };
+  ?(g2d_u_lt(lent, mag) == 1) { ^ 0; };
+  ^ lent - mag;
+}
+
+!g2d_wrong_naive_pool(pool: int, lent: int, delta: int) -> int {
+  ^ pool + delta;
+}
+
+!g2d_wrong_swap_pool(pool: int, lent: int, delta: int) -> int {
+  ?(pool < 0) { ^ 0; };
+  ?(delta >= 0) {
+    ?(g2d_add_ok(pool, delta) == 0) { ^ 0; };
+    ^ pool + delta;
+  };
+  mag = g2d_mag(delta);
+  ?(g2d_u_lt(pool, mag) == 1) { ^ 0; };
+  ^ pool - mag;
+}
+
+!g2d_wrong_swap_lent(pool: int, lent: int, delta: int) -> int {
+  ^ lent;
+}
+
+!g2d_wrong_repay_only_pool(pool: int, lent: int, delta: int) -> int {
+  ?(delta <= 0) { ^ g2d_next_pool(pool, lent, delta); };
+  ^ pool;
+}
+
+!g2d_wrong_repay_only_lent(pool: int, lent: int, delta: int) -> int {
+  ?(delta <= 0) { ^ g2d_next_lent(pool, lent, delta); };
+  mag = g2d_mag(delta);
+  ?(g2d_u_lt(lent, mag) == 1) { ^ 0; };
+  ^ lent - mag;
+}
+
+!g2d_wrong_abs_pool(pool: int, lent: int, delta: int) -> int {
+  mag = g2d_mag(delta);
+  neg = 0 - mag;
+  ^ g2d_next_pool(pool, lent, neg);
+}
+
+!g2d_naive_i64_add(a: int, b: int) -> int {
+  ^ a + b;
+}
+
+!g2d_test_suite() -> int {
+  ?(g2d_next_pool(100000000, 20000000, -30000000) != 70000000) { ^ -1; };
+  ?(g2d_next_lent(100000000, 20000000, -30000000) != 20000000) { ^ -2; };
+  ?(g2d_next_pool(100000000, 20000000, -150000000) != 0) { ^ -3; };
+  ?(g2d_next_lent(100000000, 20000000, -150000000) != 70000000) { ^ -4; };
+  ?(g2d_wrong_naive_pool(100000000, 20000000, -150000000) != -50000000) { ^ -5; };
+  ?(g2d_wrong_swap_pool(100000000, 20000000, -150000000) != 0) { ^ -6; };
+  ?(g2d_wrong_swap_lent(100000000, 20000000, -150000000) != 20000000) { ^ -7; };
+  ?(g2d_next_pool(100000000, 20000000, 10000000) != 100000000) { ^ -8; };
+  ?(g2d_next_lent(100000000, 20000000, 10000000) != 10000000) { ^ -9; };
+  ?(g2d_next_pool(100000000, 20000000, 50000000) != 130000000) { ^ -10; };
+  ?(g2d_next_lent(100000000, 20000000, 50000000) != 0) { ^ -11; };
+  ?(g2d_wrong_naive_pool(100000000, 20000000, 50000000) != 150000000) { ^ -12; };
+  ?(g2d_wrong_repay_only_pool(100000000, 20000000, 50000000) != 100000000) { ^ -13; };
+  ?(g2d_wrong_abs_pool(100000000, 20000000, 50000000) != 50000000) { ^ -14; };
+  ?(g2d_next_pool(100000000, 20000000, 0) != 100000000) { ^ -15; };
+  ?(g2d_next_lent(0, 20000000, -10000000) != 30000000) { ^ -16; };
+  ?(g2d_next_pool(100000000, 0, 10000000) != 110000000) { ^ -17; };
+  ?(g2d_next_pool(100000000, 20000000, -100000000) != 0) { ^ -18; };
+  ?(g2d_next_lent(100000000, 20000000, 20000000) != 0) { ^ -19; };
+  ?(g2d_ok(7000000000000000000, 0, 3000000000000000000) != 0) { ^ -20; };
+  ?(g2d_next_pool(7000000000000000000, 0, 3000000000000000000) != 0) { ^ -21; };
+  ?(g2d_naive_i64_add(7000000000000000000, 3000000000000000000) != -8446744073709551616) { ^ -22; };
+  ?(g2d_ok(100000000, 20000000, -30000000) != 1) { ^ -23; };
+  ^ 1;
+}
+
+=ex{
+  g2d_u_lt,
+  g2d_add_ok,
+  g2d_mag,
+  g2d_mag_ok,
+  g2d_ok,
+  g2d_next_pool,
+  g2d_next_lent,
+  g2d_wrong_naive_pool,
+  g2d_wrong_swap_pool,
+  g2d_wrong_swap_lent,
+  g2d_wrong_repay_only_pool,
+  g2d_wrong_repay_only_lent,
+  g2d_wrong_abs_pool,
+  g2d_naive_i64_add,
+  g2d_test_suite
+}
