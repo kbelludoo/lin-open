@@ -1,0 +1,189 @@
+{
+  "schema": "LIN_GMX_V2_PNL_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-PRICE",
+      "status": "PASS",
+      "description": "pinned Price.sol sha256 matches upstream blob",
+      "note": ""
+    },
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "excerpt contains pickPriceForPnl(false) and long round-up dt",
+      "note": ""
+    },
+    {
+      "id": "PIN-CALC",
+      "status": "PASS",
+      "description": "Calc.roundUpDivision excerpt is (a+b-1)/b",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned gmx-io/gmx-synthetics matches fixtures",
+      "note": "commit=a85ea3491c19c93bb4b5a002d9b358fb769b7849 blob=53667b52746f5f74003b24290fa8ef0f37b83a84"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of PositionUtils.sol + Price.sol + Calc.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (long min / short max / round-up / wrap)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_gmx_v2_pnl.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "g2p_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "15/15 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "15/15 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "LONG-PNL",
+      "status": "PASS",
+      "description": "long 1e6 tokens at 2100 vs 2000 entry: +1e14; at 1900: -1e14",
+      "note": ""
+    },
+    {
+      "id": "SHORT-MIN",
+      "status": "PASS",
+      "description": "short minimize uses pmax=1950 not pmin=1900: +5e13 vs +1e14",
+      "note": ""
+    },
+    {
+      "id": "ORACLE-TRAP",
+      "status": "PASS",
+      "description": "long maximize=false uses min: 0 at 2000/2100; wrong max fakes +1e14",
+      "note": ""
+    },
+    {
+      "id": "V1-DUST",
+      "status": "PASS",
+      "description": "tokens=3 sizeUsd=3001 price=1100: V2=299 vs V1-style=300",
+      "note": ""
+    },
+    {
+      "id": "ROUNDUP",
+      "status": "PASS",
+      "description": "long half-close 3 tokens/3000 usd: ceil dt=2 PnL=200 vs floor dt=1",
+      "note": ""
+    },
+    {
+      "id": "NAIVE-WRAP",
+      "status": "PASS",
+      "description": "naive i64 7e9*2e9/1e6 wraps to -4446744073709; 128-bit = 14000000000000",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on g2p_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes isLong/tokens/sizeUsd/sizeDelta/pmin/pmax as arguments",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit tokens*price and tokens*sizeDeltaUsd",
+      "note": ""
+    },
+    {
+      "id": "NOT-V1",
+      "status": "PASS",
+      "description": "kernel is V2 tokens*price vs sizeInUsd, not V1 funding/fee/liquidation",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects getPositionPnlUsd / pickPriceForPnl before ENV",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects get_position_pnl_usd / pick_price_for_pnl",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/gmx-io/gmx-synthetics",
+    "commit": "a85ea3491c19c93bb4b5a002d9b358fb769b7849",
+    "path": "contracts/position/PositionUtils.sol",
+    "price_path": "contracts/price/Price.sol",
+    "calc_path": "contracts/utils/Calc.sol",
+    "git_blob_sha": "53667b52746f5f74003b24290fa8ef0f37b83a84",
+    "file_sha256": "38d1f1e4900b5c4fdb01476ab592adda8d58fa6188865b78423eb0a311d3cd06",
+    "price_git_blob_sha": "679ea9fb62a7077e49cdfbc6e0b9a2298ebd4340",
+    "price_file_sha256": "acc88f73f0d013e620b239ee90271143a75404ae07135f762fa57a2406711ea4",
+    "calc_git_blob_sha": "9e48fc4c851ef97c8c57b3755257968b3ea2d397",
+    "calc_file_sha256": "7499baf1f95b2c55bf674104ea41ed62bbacc897f4fd7101b9590684fd7bb952",
+    "license": "GPL-2.0-or-later",
+    "license_note": "BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later",
+    "commercial_descendants": "GMX V2 synthetics: trader PnL is tokens*indexPrice vs sizeInUsd; longs round sizeDeltaInTokens up"
+  },
+  "lin_clone": "src/lin_gmx_v2_pnl.lin",
+  "c11_oracle": "test/oracles/gmx_v2_pnl_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "long_profit": 100000000000000,
+    "long_loss": -100000000000000,
+    "short_min_pmax": 50000000000000,
+    "long_min_flat": 0,
+    "wrong_max": 100000000000000,
+    "v2_dust": 299,
+    "v1_dust": 300,
+    "long_half_pnl": 200,
+    "floor_dt": 1,
+    "wrap_wide": 14000000000000,
+    "wrap_naive": -4446744073709
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-gmx-v2-pnl"
+}

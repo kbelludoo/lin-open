@@ -1,0 +1,71 @@
+@RULEL:GMX_V2_PNL_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GMX-V2-POSITION-PNL"
+@TITLE="Clone-lin of GMX V2 uncapped getPositionPnlUsd with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-gmx-v2-pnl"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile GMX V2 trader PnL (tokens*indexPrice vs sizeInUsd) into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Arbitrum/Avalanche mainnet"
+  operand_width="uint64 inputs, 128-bit product for tokens*price and tokens*sizeDeltaUsd; Solidity uint256 is NOT claimed"
+  commercial_hook="GMX V2 marks PnL as sizeInTokens*indexPrice minus sizeInUsd (long) or the reverse (short). getPositionPnlUsd always pickPriceForPnl(isLong,false): longs use the min oracle, shorts the max. Partial longs round sizeDeltaInTokens UP. A wallet that uses V1-style size*(price-entry)/entry disagrees by dust, and a wallet that uses the max oracle on a long fakes profit. This is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/gmx-io/gmx-synthetics"
+  path="contracts/position/PositionUtils.sol"
+  price_path="contracts/price/Price.sol pickPriceForPnl"
+  calc_path="contracts/utils/Calc.sol roundUpDivision"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later"
+  commit="a85ea3491c19c93bb4b5a002d9b358fb769b7849"
+  git_blob_sha="53667b52746f5f74003b24290fa8ef0f37b83a84"
+  file_sha256="38d1f1e4900b5c4fdb01476ab592adda8d58fa6188865b78423eb0a311d3cd06"
+  price_blob_sha="679ea9fb62a7077e49cdfbc6e0b9a2298ebd4340"
+  price_sha256="acc88f73f0d013e620b239ee90271143a75404ae07135f762fa57a2406711ea4"
+  calc_blob_sha="9e48fc4c851ef97c8c57b3755257968b3ea2d397"
+  calc_sha256="7499baf1f95b2c55bf674104ea41ed62bbacc897f4fd7101b9590684fd7bb952"
+  fixture="test/fixtures/external_proof/PositionPnlUsd.excerpt.sol"
+  price_fixture="test/fixtures/external_proof/Price.sol"
+  calc_fixture="test/fixtures/external_proof/CalcRoundUp.excerpt.sol"
+}
+
+.l{
+  clone="src/lin_gmx_v2_pnl.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_GMX_V2_PNL before ENV; emit splits equals then ex-brace. src/lin_from_rust.lin v2: REJ_RUST_GMX_V2_PNL"
+  improvement_1="DataStore / Market.Props / Position.Props storage is lifted to isLong, tokens, sizeUsd, sizeDeltaUsd, pmin, pmax arguments"
+  improvement_2="tokens * price and tokens * sizeDeltaUsd overflow i64 on the 7e9*2e9 vector; LIN uses schoolbook 128-bit muldiv matching C11 __int128"
+  improvement_3="long partial close uses ceil((tokens*sizeDelta)/sizeUsd); short uses floor. Named contrast: 3 tokens / 3000 usd / 1500 delta is 2 vs 1"
+  improvement_4="named contrast: pickPriceForPnl(false) long min / short max; wrong maximize fakes long profit; V1-style size*(p-e)/e disagrees by dust when tokens*entry != sizeUsd"
+  improvement_5="pool DataStore PnL cap is NOT implemented (uncapped kernel only); zero tokens fail-closes"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/gmx_v2_pnl_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_gmx_v2_pnl.sh"
+}
+
+.p{
+  harness="test/prove_gmx_v2_pnl_external.py"
+  evidence_json="examples/gmx_v2_pnl/gmx_v2_pnl_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-gmx-v2-pnl"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet GMX V2 / pool-capped PnL / DataStore MAX_PNL_FACTOR_FOR_TRADERS"
+  not_claimed_2="GMX V1 adjustForDecimals, validateLiquidation, getNextFundingRate, getFundingFee, or getFeeBasisPoints (other clones)"
+  not_claimed_3="LIN is faster than the EVM or solc"
+  not_claimed_4="this clone is a production GMX reader replacement"
+  not_claimed_5="TVL or live trader-PnL profit"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS && JUMPRATE_REGRESSION"
+  on_fail="do not publish a PASS status"
+}
