@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Zero-LIN LIP1 auditor (schema 1.59). Path + LRI1 identity + packed LCR2 vs
+/* Zero-LIN LIP1 auditor (schema 1.60). Path + LRI1 identity + packed LCR2 vs
  * SafeMath ref + packed LCR2-full vs FullMath ref. */
 "use strict";
 
@@ -91,7 +91,7 @@ function refFull(ain, rin, rout) {
 
 function main() {
   const ev = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
-  if (ev.schema !== "LIN_U512_COPROCESSOR_EVIDENCE_1.59") fail("schema");
+  if (ev.schema !== "LIN_U512_COPROCESSOR_EVIDENCE_1.60") fail("schema");
   const proofs = ev.lip1_proofs || [];
   if (proofs.length < 34) fail("proofs");
   const roots = {
