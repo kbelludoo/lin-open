@@ -1,0 +1,176 @@
+@LIN:L1c:0.2
+@COMET_ACCRUAL_DESCALE{
+  version=1
+  repo="compound-finance/comet"
+  source="contracts/CometWithExtendedAssetList.sol"
+  constants="contracts/CometCore.sol BASE_ACCRUAL_SCALE"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2025-12-31 elapsed; Change License GPL-2.0-or-later"
+  commit="f766f51583c23acc33b2a7824654ef2029a96804"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_comet_accrualDescaleFactor_and_baseTrackingAccrued"
+  note="Not mainnet uint256. Kernel is Compound III accrualDescaleFactor=baseScale/1e6 then principal*indexDelta/trackingIndexScale/factor. USDC 6-dec factor=1 preserves 6-dec reward wei. WETH 18-dec factor=1e12. Forgetting descale over-accrues 1e12x. Opposite of GMX adjustForDecimals (which scales 6-dec UP). Not divBaseWei tracking-index wrap, not accruedInterestIndices, not presentValue."
+}
+
+!cad_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!cad_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(cad_u_lt(s, a));
+}
+
+!cad_mask32() -> int {
+  ^ 4294967295;
+}
+
+!cad_base_accrual() -> int {
+  ^ 1000000;
+}
+
+!cad_wad() -> int {
+  ^ 1000000000000000000;
+}
+
+!cad_muldiv_part(a: int, b: int, d: int, want_rem: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  m32 = cad_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = cad_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = cad_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(cad_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = cad_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!cad_muldiv(a: int, b: int, d: int) -> int {
+  ^ cad_muldiv_part(a, b, d, 0);
+}
+
+!cad_muldiv_rem(a: int, b: int, d: int) -> int {
+  ^ cad_muldiv_part(a, b, d, 1);
+}
+
+!cad_factor(base_scale: int) -> int {
+  ?(base_scale < 0) { ^ 0; };
+  acc = cad_base_accrual();
+  ?(cad_u_lt(base_scale, acc) == 1) { ^ 0; };
+  ^ cad_muldiv(base_scale, 1, acc);
+}
+
+!cad_accrued(principal: int, index_delta: int, tracking_scale: int, base_scale: int) -> int {
+  ?(principal <= 0) { ^ 0; };
+  ?(index_delta < 0) { ^ 0; };
+  ?(tracking_scale <= 0) { ^ 0; };
+  f = cad_factor(base_scale);
+  ?(f == 0) { ^ 0; };
+  step = cad_muldiv(principal, index_delta, tracking_scale);
+  ^ cad_muldiv(step, 1, f);
+}
+
+!cad_forget(principal: int, index_delta: int, tracking_scale: int) -> int {
+  ?(principal <= 0) { ^ 0; };
+  ?(index_delta < 0) { ^ 0; };
+  ?(tracking_scale <= 0) { ^ 0; };
+  ^ cad_muldiv(principal, index_delta, tracking_scale);
+}
+
+!cad_gmx_upscale(amount: int, base_scale: int) -> int {
+  ?(amount <= 0) { ^ 0; };
+  ?(base_scale <= 0) { ^ 0; };
+  ^ cad_muldiv(amount, cad_wad(), base_scale);
+}
+
+!cad_naive_i64(principal: int, index_delta: int, tracking_scale: int, base_scale: int) -> int {
+  ?(tracking_scale == 0) { ^ 0; };
+  f = cad_factor(base_scale);
+  ?(f == 0) { ^ 0; };
+  ^ ((principal * index_delta) / tracking_scale) / f;
+}
+
+!cad_test_suite() -> int {
+  ?(cad_factor(1000000) != 1) { ^ -1; };
+  ?(cad_factor(1000000000000000000) != 1000000000000) { ^ -2; };
+  ?(cad_factor(100000000) != 100) { ^ -3; };
+  ?(cad_factor(10000) != 0) { ^ -4; };
+  ?(cad_factor(999999) != 0) { ^ -5; };
+  ?(cad_accrued(1000000, 1000000000000000, 1000000000000000, 1000000) != 1000000) { ^ -6; };
+  ?(cad_forget(1000000, 1000000000000000, 1000000000000000) != 1000000) { ^ -7; };
+  ?(cad_accrued(1000000000000000000, 1000000000000000, 1000000000000000, 1000000000000000000) != 1000000) { ^ -8; };
+  ?(cad_forget(1000000000000000000, 1000000000000000, 1000000000000000) != 1000000000000000000) { ^ -9; };
+  ?(cad_accrued(1000000, 1000000000000000, 1000000000000000, 1000000000000000000) != 0) { ^ -10; };
+  ?(cad_accrued(100000000, 1000000000000000, 1000000000000000, 100000000) != 1000000) { ^ -11; };
+  ?(cad_gmx_upscale(1000000, 1000000) != 1000000000000000000) { ^ -12; };
+  ?(cad_accrued(5000000000, 10000000000, 1000000, 1000000) != 50000000000000) { ^ -13; };
+  ?(cad_naive_i64(5000000000, 10000000000, 1000000, 1000000) == 50000000000000) { ^ -14; };
+  ?(cad_accrued(0, 1000000000000000, 1000000000000000, 1000000) != 0) { ^ -15; };
+  ?(cad_muldiv(100, 200, 50) != 400) { ^ -16; };
+  ?(cad_muldiv_rem(7, 9, 2) != 1) { ^ -17; };
+  ^ 1;
+}
+
+=ex{
+  cad_u_lt,
+  cad_u_add_carry,
+  cad_mask32,
+  cad_base_accrual,
+  cad_wad,
+  cad_muldiv_part,
+  cad_muldiv,
+  cad_muldiv_rem,
+  cad_factor,
+  cad_accrued,
+  cad_forget,
+  cad_gmx_upscale,
+  cad_naive_i64,
+  cad_test_suite
+}

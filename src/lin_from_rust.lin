@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: reject accrual_descale / base_tracking_accrued / BASE_ACCRUAL_SCALE (Comet reward-wei descale is a LIN port, not emit)"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,9 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "accrual_descale") > 0) { ^"REJ_RUST_COMET_DESCALE" };
+  ?(rg_count_lit(body, "base_tracking_accrued") > 0) { ^"REJ_RUST_COMET_DESCALE" };
+  ?(rg_count_lit(body, "BASE_ACCRUAL_SCALE") > 0) { ^"REJ_RUST_COMET_DESCALE" };
   ^"OK";
 }
 
