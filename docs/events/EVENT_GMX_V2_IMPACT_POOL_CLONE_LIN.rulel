@@ -1,0 +1,71 @@
+@RULEL:GMX_V2_IMPACT_POOL_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GMX-V2-IMPACT-POOL"
+@TITLE="Clone-lin of GMX V2 capPositiveImpactUsdByPositionImpactPool with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-gmx-v2-impact-pool"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile GMX V2 impact-pool plus lendable positive price-impact cap into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Arbitrum GMX V2"
+  operand_width="uint64 pool/factors, signed i64 impact, 128-bit product for (a*b)/d; Solidity uint256 / FLOAT=1e30 is NOT claimed"
+  commercial_hook="GMX V2 pays a positive rebate first from the position impact pool, then by lending from the GM pool up to min(applyFactor(poolUsd, maxLendableFactor), maxLendableUsd) minus already-lent. Named contrasts vs sizeDelta factor cap and vs pool-only clip are audit improvements, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/gmx-io/gmx-synthetics"
+  path="contracts/market/MarketUtils.sol capPositiveImpactUsdByPositionImpactPool"
+  lendable="contracts/market/MarketUtils.sol getMaxLendableUsdAvailable"
+  precision="contracts/utils/Precision.sol applyFactor"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later"
+  commit="a85ea3491c19c93bb4b5a002d9b358fb769b7849"
+  git_blob_sha="ad7a0b2b5a516ec86ce0afed89ff84ecba11038c"
+  file_sha256="8dfd271e4fc8e18d6a114b674dc1f520f38f6acd1f9c9a58b4b7509fe86e748f"
+  precision_git_blob_sha="047143722beaf6adceac3fc2ef1817f054dfe00a"
+  precision_file_sha256="8713db02a257238101fc62cc682a8f8061fba25951216863576afbbd00f34808"
+  fixture="test/fixtures/external_proof/CapPositiveImpactUsdByPositionImpactPool.excerpt.sol"
+}
+
+.l{
+  clone="src/lin_gmx_v2_impact_pool.lin"
+  prefix="g2l_"
+  transpiler_delta="src/lin_from_solidity.lin v3 REJ_SOLIDITY_GMX_V2_IMPACT_POOL before ENV; split equals then ex-brace export emit; src/lin_from_rust.lin v2 REJ_RUST_GMX_V2_IMPACT_POOL"
+  improvement_1="DataStore / view storage lifted to arguments"
+  improvement_2="FLOAT prime=1e6; 128-bit muldiv; naive i64 7e9*2e9/1e6 wraps to -4446744073709"
+  improvement_3="need > lendable clips to pool+avail 1.5e8; uncapped stays 2e8; pool-only would clip to 1e8"
+  improvement_4="cap is not applyFactor(sizeDelta, factor); sizeDelta 0.25 clips 2e8 to 5e7"
+  improvement_5="configUsd min vs applyFactor: 4e7 beats 1e8 so clip 1.4e8; skip-config stays 2e8"
+  improvement_6="already-lent 8e7 leaves 2e7 headroom (clip 1.2e8); over-lent returns 0 available"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 roundtrip-jit"
+  oracle="test/oracles/gmx_v2_impact_pool_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="python3 test/prove_gmx_v2_impact_pool_external.py"
+}
+
+.p{
+  harness="test/prove_gmx_v2_impact_pool_external.py"
+  evidence_json="examples/gmx_v2_impact_pool/gmx_v2_impact_pool_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-gmx-v2-impact-pool"
+  goldens="clip 1.5e8 vs uncapped 2e8 vs pool-only 1e8 vs size 5e7 | config 1.4e8 vs noconfig 2e8 | lent 1.2e8 vs nolent 2e8 | over-lent 1e8 | neg -2e8 vs abs -1.5e8 | factor0 1e8 vs stay 2e8 | long-only 1.25e8 | wrap 14000000000000 vs -4446744073709"
+}
+
+.n{
+  not_claimed_1="full uint256 / Arbitrum GMX V2 FLOAT=1e30 parity"
+  not_claimed_2="capPositiveImpactUsdByMaxPositionImpact (sizeDelta factor path); that is a different clone-lin PR"
+  not_claimed_3="LIN is faster than the EVM or solc"
+  not_claimed_4="this clone is a production GMX replacement"
+  not_claimed_5="zk / computational soundness of Merkle receipts"
+  not_claimed_6="getCappedPnl / getPositionPnlUsd / getBorrowingFactorPerSecond as a full port"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

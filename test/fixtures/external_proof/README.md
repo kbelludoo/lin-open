@@ -11,6 +11,9 @@ independent proof harness. They are **test fixtures**, not vendored libraries.
 | `qoi.h` | [phoboslab/qoi](https://github.com/phoboslab/qoi) | MIT |
 | `tinyexpr.c` | [codeplea/tinyexpr](https://github.com/codeplea/tinyexpr) | zlib |
 | `BaseJumpRateModelV2.sol` | [compound-finance/compound-protocol](https://github.com/compound-finance/compound-protocol) | BSD-3-Clause |
+| `CapPositiveImpactUsdByPositionImpactPool.excerpt.sol` | [gmx-io/gmx-synthetics](https://github.com/gmx-io/gmx-synthetics) | GPL-2.0-or-later (after BUSL Change Date 2026-08-31) |
+| `GetMaxLendableUsdAvailable.excerpt.sol` | [gmx-io/gmx-synthetics](https://github.com/gmx-io/gmx-synthetics) | GPL-2.0-or-later (after BUSL Change Date 2026-08-31) |
+| `PrecisionApplyFactor.excerpt.sol` | [gmx-io/gmx-synthetics](https://github.com/gmx-io/gmx-synthetics) | GPL-2.0-or-later (after BUSL Change Date 2026-08-31) |
 
 They are only pinned so an auditor can hash the exact bytes and, with `--fetch`,
 re-download them from the GitHub Contents API. No upstream code is compiled or

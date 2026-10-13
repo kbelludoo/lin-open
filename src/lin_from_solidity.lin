@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: reject GMX V2 capPositiveImpactUsdByPositionImpactPool / getMaxLendableUsdAvailable / usdRequiredToBeLent / maxLendableImpact before ENV so the impact-pool lendable cap is named not generic view. Split equals then ex-brace export emit so C0 does not steal the export list. v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
 }
 
 !sol_is_kw(nm: string): int {
@@ -41,6 +41,11 @@
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
+  ?(rg_count_lit(sig, "capPositiveImpactUsdByPositionImpactPool") > 0) { ^"REJ_SOLIDITY_GMX_V2_IMPACT_POOL" };
+  ?(rg_count_lit(sig, "getMaxLendableUsdAvailable") > 0) { ^"REJ_SOLIDITY_GMX_V2_IMPACT_POOL" };
+  ?(rg_count_lit(body, "getMaxLendableUsdAvailable") > 0) { ^"REJ_SOLIDITY_GMX_V2_IMPACT_POOL" };
+  ?(rg_count_lit(body, "usdRequiredToBeLent") > 0) { ^"REJ_SOLIDITY_GMX_V2_IMPACT_POOL" };
+  ?(rg_count_lit(body, "maxLendableImpact") > 0) { ^"REJ_SOLIDITY_GMX_V2_IMPACT_POOL" };
   ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
   ?(rg_count_lit(body, "assembly") > 0) { ^"REJ_SOLIDITY_INLINE_ASM" };
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
@@ -64,6 +69,10 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_cap = "function capPositiveImpactUsdByPositionImpactPool(DataStore dataStore, Market.Props memory market, MarketPrices memory prices, int256 priceImpactUsd) internal view returns (int256)";
+  body_cap = "cache.usdRequiredToBeLent = priceImpactUsd.toUint256() - cache.impactPoolUsd; cache.maxLendableUsd = getMaxLendableUsdAvailable(dataStore, market.marketToken, poolUsd, indexTokenPrice, lentAmount);";
+  r4 = sol_reason(sig_cap, body_cap);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_GMX_V2_IMPACT_POOL") == 0) { ^0 };
   ^1;
 }
 
@@ -317,7 +326,8 @@
     };
     i = i + 1;
   };
-  out = out + "=ex{";
+  out = out + "=";
+  out = out + "ex{";
   out = out + names;
   out = out + "}";
   out = out + rgs_ch(10);
