@@ -1,0 +1,64 @@
+@RULEL:GMX_LIQ_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GMX-VALIDATE-LIQUIDATION-V1"
+@TITLE="Clone-lin of GMX VaultUtils.validateLiquidation with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-gmx-liq"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile GMX V1 liquidation remaining-vs-fees math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Arbitrum/Avalanche"
+  operand_width="uint64 inputs; remaining*maxLeverage vs size*10000 uses 128-bit products; Solidity uint256 is NOT claimed"
+  commercial_hook="validateLiquidation is the GMX V1 keeper/liquidator gate: cap fees to remainingCollateral when remaining < marginFees, return marginFees (not remaining, not margin+liq) when remaining sits between marginFees and margin+liquidationFeeUsd, flag state=2 when remaining*maxLeverage < size*BASIS_POINTS. Getting the cap wrong over-extracts fees; getting the mid band wrong misprices the liquidator; adding profit when raise=1 under-liquidates"
+}
+
+.u{
+  repo="https://github.com/gmx-io/gmx-contracts"
+  path="contracts/core/VaultUtils.sol"
+  license="MIT"
+  commit="fe55c4ba8911ae2378b50bfb9bece5ee50cf2af8"
+  git_blob_sha="8e29c3ff19258d191f6d2459c110a917ba1f9906"
+  file_sha256="ad831f3c8d675c42665c854368bc06696e1cba23bd3294f91aa2ce4c0a8fc495"
+  fixture="test/fixtures/external_proof/VaultUtils.sol"
+  not_this_kernel="getNextFundingRate / getFundingFee / getFeeBasisPoints / getPositionFee / usdToTokenMin"
+}
+
+.l{
+  clone="src/lin_gmx_liq.lin"
+  prefix="gvl_"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_GMX_LIQ before ENV; equals-ex emit split. src/lin_from_rust.lin v2: REJ_RUST_GMX_LIQ"
+  improvement_1="VaultUtils.validateLiquidation is view-on-storage (getPosition/getDelta/vault.liquidationFeeUsd/maxLeverage); LIN takes size/collateral/has_profit/delta/funding/position/liq/max_lev/raise as arguments"
+  improvement_2="remaining*maxLeverage vs size*10000: naive i64 (4e9*3e9) wraps and false-flags maxLeverage; LIN uses 128-bit product compare matching C11 __int128"
+  improvement_3="raise=true Solidity reverts; LIN fail-closes to negative codes (-1 losses, -2 fees, -3 liq, -4 lev) instead of host abort"
+  improvement_4="named contrasts: no-cap 950 vs cap 900; include-liq 950 vs mid 900; profit omitted on raise=1"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/gmx_liq_c11.c (gcc -O2 -std=c11, __int128 XOR limb product)"
+  gate="python3 test/prove_gmx_liq_external.py"
+}
+
+.p{
+  harness="test/prove_gmx_liq_external.py"
+  evidence_json="examples/gmx_liq/gmx_liq_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-gmx-liq"
+  goldens="cap remaining 900 margin 950 fees=900; mid 920 in [900,950) fees=900; losses fees=100; maxLev state=2; healthy 0; raise profit -4 vs 0; naive wrap 1 vs wide 0"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet GMX Vault / GLP / token-address parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production liquidator or keeper replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="this kernel is getFundingFee, getNextFundingRate, getFeeBasisPoints, Uniswap xy, Solidly cubic, or Maker rpow"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
