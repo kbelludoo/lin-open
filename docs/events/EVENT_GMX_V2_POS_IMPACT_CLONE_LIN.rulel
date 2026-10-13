@@ -1,0 +1,71 @@
+@RULEL:GMX_V2_POS_IMPACT_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GMX-V2-POS-IMPACT"
+@TITLE="Clone-lin of GMX V2 capPositiveImpactUsdByMaxPositionImpact with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-gmx-v2-pos-impact"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile GMX V2 one-sided positive price-impact cap into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Arbitrum GMX V2"
+  operand_width="uint64 size/factors, signed i64 impact, 128-bit product for (a*b)/d; Solidity uint256 / FLOAT=1e30 is NOT claimed"
+  commercial_hook="GMX V2 pays a rebate when a trade rebalances OI, but that rebate is capped by applyFactor(sizeDelta, min(posFactor,negFactor)) while negative impact is charged in full. Named contrasts vs getCappedPnl (pool*maxPnlFactor) and vs a symmetric abs cap are audit improvements, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/gmx-io/gmx-synthetics"
+  path="contracts/market/MarketUtils.sol capPositiveImpactUsdByMaxPositionImpact"
+  factors="contracts/market/MarketUtils.sol getMaxPositionImpactFactor getMaxPositionImpactFactors"
+  precision="contracts/utils/Precision.sol applyFactor"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later"
+  commit="a85ea3491c19c93bb4b5a002d9b358fb769b7849"
+  git_blob_sha="ad7a0b2b5a516ec86ce0afed89ff84ecba11038c"
+  file_sha256="8dfd271e4fc8e18d6a114b674dc1f520f38f6acd1f9c9a58b4b7509fe86e748f"
+  precision_git_blob_sha="047143722beaf6adceac3fc2ef1817f054dfe00a"
+  precision_file_sha256="8713db02a257238101fc62cc682a8f8061fba25951216863576afbbd00f34808"
+  fixture="test/fixtures/external_proof/CapPositiveImpactUsdByMaxPositionImpact.excerpt.sol"
+}
+
+.l{
+  clone="src/lin_gmx_v2_pos_impact.lin"
+  prefix="g2p_"
+  transpiler_delta="src/lin_from_solidity.lin v3 REJ_SOLIDITY_GMX_V2_POS_IMPACT before ENV; split equals then ex-brace export emit; src/lin_from_rust.lin v2 REJ_RUST_GMX_V2_POS_IMPACT"
+  improvement_1="DataStore / view storage lifted to arguments"
+  improvement_2="FLOAT prime=1e6; 128-bit muldiv; naive i64 7e9*2e9/1e6 wraps to -4446744073709"
+  improvement_3="negative impact passes through; a symmetric abs cap would clip -2e8 to -1e8"
+  improvement_4="cap is applyFactor(sizeDelta, factor) not applyFactor(pool, maxPnlFactor); pool=4e8 leaves 1.5e8, sizeDelta clips to 1e8"
+  improvement_5="getMaxPositionImpactFactors clamps stored pos factor down to neg factor; skipping the clamp over-rebates 1e8 vs 5e7"
+  improvement_6="factor 0 clips positive impact to 0; getCappedPnl-style stay would keep 1.5e8"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 roundtrip-jit"
+  oracle="test/oracles/gmx_v2_pos_impact_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="python3 test/prove_gmx_v2_pos_impact_external.py"
+}
+
+.p{
+  harness="test/prove_gmx_v2_pos_impact_external.py"
+  evidence_json="examples/gmx_v2_pos_impact/gmx_v2_pos_impact_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-gmx-v2-pos-impact"
+  goldens="clip 1e8 vs uncapped 1.5e8 | stay 5e7 | equal 1e8 | neg -2e8 vs abs -1e8 | clamp 5e7 vs noclamp 1e8 | factor0 0 vs stay 1.5e8 | pool 1.5e8 vs size 1e8 | wrap 14000000000000 vs -4446744073709"
+}
+
+.n{
+  not_claimed_1="full uint256 / Arbitrum GMX V2 FLOAT=1e30 parity"
+  not_claimed_2="capPositiveImpactUsdByPositionImpactPool (impact-pool / lendable path)"
+  not_claimed_3="LIN is faster than the EVM or solc"
+  not_claimed_4="this clone is a production GMX replacement"
+  not_claimed_5="zk / computational soundness of Merkle receipts"
+  not_claimed_6="getCappedPnl / getPositionPnlUsd / getBorrowingFactorPerSecond as a full port; those are other clone-lin PRs"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
