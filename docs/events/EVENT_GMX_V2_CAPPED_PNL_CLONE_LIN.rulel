@@ -1,0 +1,73 @@
+@RULEL:GMX_V2_CAPPED_PNL_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GMX-V2-CAPPED-PNL"
+@TITLE="Clone-lin of GMX V2 getCappedPnl / MAX_PNL_FACTOR_FOR_TRADERS with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-10-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-gmx-v2-capped-pnl"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile GMX V2 pool-capped PnL (getCappedPnl + trader pro-rata after MAX_PNL_FACTOR_FOR_TRADERS) into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Arbitrum/Avalanche mainnet"
+  operand_width="uint64 inputs, 128-bit product for poolUsd*factor/FLOAT'; Solidity uint256 and FLOAT=1e30 are NOT claimed"
+  commercial_hook="GMX V2 does not pay uncapped pool profit to traders. getCappedPnl leaves losses untouched and clips profit to applyFactor(poolUsd, maxPnlFactor). getPositionPnlUsd then scales the trader pro-rata of the capped pool, not min(trader, maxPnl). A wallet that caps the position against poolUsd*factor overpays relative to the pool split. Zero factor returns capped pool 0 but does not zero trader PnL because of the capped>0 guard. This is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/gmx-io/gmx-synthetics"
+  path="contracts/market/MarketUtils.sol"
+  precision_path="contracts/utils/Precision.sol applyFactor"
+  keys_path="contracts/data/Keys.sol MAX_PNL_FACTOR_FOR_TRADERS"
+  scale_path="contracts/position/PositionUtils.sol trader mulDiv after pool cap"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later"
+  commit="a85ea3491c19c93bb4b5a002d9b358fb769b7849"
+  git_blob_sha="ad7a0b2b5a516ec86ce0afed89ff84ecba11038c"
+  file_sha256="8dfd271e4fc8e18d6a114b674dc1f520f38f6acd1f9c9a58b4b7509fe86e748f"
+  precision_blob_sha="047143722beaf6adceac3fc2ef1817f054dfe00a"
+  precision_sha256="8713db02a257238101fc62cc682a8f8061fba25951216863576afbbd00f34808"
+  keys_blob_sha="5472e5b4ecd29bb372218caa142476eb95fe55f8"
+  keys_sha256="9940d62b9dca2f3a753d67d7e7339a6326278a35d752c4c80ab1eedf0ab0f075"
+  fixture="test/fixtures/external_proof/GetCappedPnl.excerpt.sol"
+  precision_fixture="test/fixtures/external_proof/PrecisionApply.excerpt.sol"
+  keys_fixture="test/fixtures/external_proof/KeysMaxPnl.excerpt.sol"
+  scale_fixture="test/fixtures/external_proof/PositionCappedScale.excerpt.sol"
+}
+
+.l{
+  clone="src/lin_gmx_v2_capped_pnl.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_GMX_V2_CAPPED_PNL before ENV; emit splits equals then ex-brace. src/lin_from_rust.lin v2: REJ_RUST_GMX_V2_CAPPED_PNL"
+  improvement_1="DataStore / market / isLong / pnlFactorType storage is lifted to pnl, poolUsd, factor arguments"
+  improvement_2="poolUsd * factor overflows i64 on the 7e9*2e9 vector; LIN uses schoolbook 128-bit muldiv matching C11 __int128"
+  improvement_3="named contrast: losses never capped (-2e8 stays -2e8); wrong symmetric cap yields -1e8"
+  improvement_4="named contrast: trader 1.5e8 of pool 3e8 against 50 percent cap is pro-rata 5e7, not min(trader, maxPnl)=1e8"
+  improvement_5="named contrast: factor=0 caps the pool to 0 but does not zero trader PnL because getPositionPnlUsd requires cappedPoolPnl>0"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/gmx_v2_capped_pnl_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_gmx_v2_capped_pnl.sh"
+}
+
+.p{
+  harness="test/prove_gmx_v2_capped_pnl_external.py"
+  evidence_json="examples/gmx_v2_capped_pnl/gmx_v2_capped_pnl_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-gmx-v2-capped-pnl"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet GMX V2 / FLOAT_PRECISION=1e30"
+  not_claimed_2="uncapped getPositionPnlUsd / pickPriceForPnl (other clone)"
+  not_claimed_3="LIN is faster than the EVM or solc"
+  not_claimed_4="this clone is a production GMX reader replacement"
+  not_claimed_5="TVL or live trader-PnL profit"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS && JUMPRATE_REGRESSION"
+  on_fail="do not publish a PASS status"
+}
