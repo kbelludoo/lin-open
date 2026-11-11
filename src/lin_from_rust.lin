@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: reject usd_to_market_token_amount / market_token_amount_to_usd / empty_market_token_supply / float_to_wei_divisor (GMX V2 market-token mint is a LIN port, not emit)"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,10 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "usd_to_market_token_amount") > 0) { ^"REJ_RUST_GMX_V2_MARKET_TOKEN" };
+  ?(rg_count_lit(sig, "market_token_amount_to_usd") > 0) { ^"REJ_RUST_GMX_V2_MARKET_TOKEN" };
+  ?(rg_count_lit(body, "empty_market_token_supply") > 0) { ^"REJ_RUST_GMX_V2_MARKET_TOKEN" };
+  ?(rg_count_lit(body, "float_to_wei_divisor") > 0) { ^"REJ_RUST_GMX_V2_MARKET_TOKEN" };
   ^"OK";
 }
 
@@ -66,6 +71,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_mt = "pub fn usd_to_market_token_amount(usd: u64, pool: u64, supply: u64) -> u64";
+  body_mt = "if supply == 0 && pool == 0 { return usd / float_to_wei_divisor; } supply * usd / pool";
+  r3 = rs_reason(sig_mt, body_mt);
+  ?(starts_lit(r3, 0, "REJ_RUST_GMX_V2_MARKET_TOKEN") == 0) { ^0 };
 
   ^1;
 }

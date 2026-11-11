@@ -1,0 +1,70 @@
+@RULEL:GMX_V2_MARKET_TOKEN_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GMX-V2-MARKET-TOKEN"
+@TITLE="Clone-lin of GMX V2 usdToMarketTokenAmount with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-11"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-gmx-v2-market-token"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile GMX V2 usdToMarketTokenAmount (three-branch first deposit: floatToWei when supply AND pool are empty, floatToWei(pool+usd) leftover, else floor mulDiv) into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Arbitrum GMX V2"
+  operand_width="int64 unsigned usd/pool/supply + DIV 1e6; Solidity uint256 / FLOAT_TO_WEI_DIVISOR 1e12 / FLOAT 1e30 is NOT claimed"
+  commercial_hook="GMX V2 GLP-style market tokens are not a Lido/Rocket 1:1 empty mint. Empty supply AND empty pool uses floatToWei (USD 30-dec to token 18-dec). Leftover poolValue is included so the post-mint price is 1 USD. Inverse reverts EmptyMarketTokenSupply. Treating supply==0 OR pool==0 as 1:1, or forgetting floatToWei on leftover, misprices the first deposit. Making the three branches and fail-closed overflow explicit is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/gmx-io/gmx-synthetics"
+  path="contracts/market/MarketUtils.sol"
+  precision_path="contracts/utils/Precision.sol"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later"
+  commit="a85ea3491c19c93bb4b5a002d9b358fb769b7849"
+  git_blob_sha="ad7a0b2b5a516ec86ce0afed89ff84ecba11038c"
+  file_sha256="8dfd271e4fc8e18d6a114b674dc1f520f38f6acd1f9c9a58b4b7509fe86e748f"
+  precision_git_blob_sha="047143722beaf6adceac3fc2ef1817f054dfe00a"
+  precision_file_sha256="8713db02a257238101fc62cc682a8f8061fba25951216863576afbbd00f34808"
+  fixture="test/fixtures/external_proof/UsdToMarketTokenAmount.excerpt.sol"
+}
+
+.l{
+  clone="src/lin_gmx_v2_market_token.lin"
+  prefix="g2m_"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_GMX_V2_MARKET_TOKEN before ENV; Chain.currentTimestamp is ENV; split equals then ex-brace emit. src/lin_from_rust.lin v2: REJ_RUST_GMX_V2_MARKET_TOKEN"
+  improvement_1="usd, pool, and supply are explicit arguments; DataStore lifted"
+  improvement_2="first deposit is floatToWei, not Lido/Rocket 1:1"
+  improvement_3="leftover poolValue is included then scaled, so post-mint price is 1 USD"
+  improvement_4="inverse fail-closes EmptyMarketTokenSupply; pool=0 with supply>0 fail-closes (not 1:1)"
+  improvement_5="pool+usd overflow and supply*usd overflow fail-close instead of wrapping"
+  named_contrast_1="Lido getSharesByPooledEth is 1:1 when totalPooled==0 and 0 when totalShares==0 with pool>0"
+  named_contrast_2="supply==0 OR pool==0 is not the kernel; the empty branch is AND"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/gmx_v2_market_token_c11.c (gcc -O2 -std=c11, __int128 XOR portable umul_ok)"
+  gate="test/verify_gmx_v2_market_token.sh"
+}
+
+.p{
+  harness="test/prove_gmx_v2_market_token_external.py"
+  evidence_json="examples/gmx_v2_market_token/gmx_v2_market_token_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-gmx-v2-market-token"
+}
+
+.n{
+  not_claimed_1="full uint256 / Arbitrum GMX V2 mainnet parity / FLOAT 1e30 / FLOAT_TO_WEI_DIVISOR 1e12"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production GMX market replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces GMX, Lido, Rocket Pool, Uniswap, or the EVM"
+  not_claimed_6="this is Lido getSharesByPooledEth, Rocket getRethValue, 1:1 empty mint, or supply==0 OR pool==0"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_PORTABLE && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
