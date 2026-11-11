@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: reject get_next_total_borrowing / update_total_borrowing / prev_position_borrowing_factor / next_position_borrowing_factor (GMX V2 total borrowing is a LIN port, not emit)"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,10 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "get_next_total_borrowing") > 0) { ^"REJ_RUST_GMX_V2_TOTAL_BORROW" };
+  ?(rg_count_lit(sig, "update_total_borrowing") > 0) { ^"REJ_RUST_GMX_V2_TOTAL_BORROW" };
+  ?(rg_count_lit(body, "prev_position_borrowing_factor") > 0) { ^"REJ_RUST_GMX_V2_TOTAL_BORROW" };
+  ?(rg_count_lit(body, "next_position_borrowing_factor") > 0) { ^"REJ_RUST_GMX_V2_TOTAL_BORROW" };
   ^"OK";
 }
 
@@ -66,6 +71,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_tb = "pub fn get_next_total_borrowing(total: u64, prev_size: u64, prev_factor: u64, next_size: u64, next_factor: u64) -> u64";
+  body_tb = "let prev_c = apply_factor(prev_size, prev_position_borrowing_factor); let next_c = apply_factor(next_size, next_position_borrowing_factor); total - prev_c + next_c";
+  r3 = rs_reason(sig_tb, body_tb);
+  ?(starts_lit(r3, 0, "REJ_RUST_GMX_V2_TOTAL_BORROW") == 0) { ^0 };
 
   ^1;
 }

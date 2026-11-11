@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: reject GMX V2 getNextTotalBorrowing / updateTotalBorrowing / prevPositionBorrowingFactor / nextPositionBorrowingFactor before ENV so unsigned sub-then-add of applyFactor is named not generic view-lift. Treat Chain.currentTimestamp as ENV. Split equals then ex-brace export emit so C0 does not steal the export list. v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
 }
 
 !sol_is_kw(nm: string): int {
@@ -41,6 +41,11 @@
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
+  ?(rg_count_lit(sig, "getNextTotalBorrowing") > 0) { ^"REJ_SOLIDITY_GMX_V2_TOTAL_BORROW" };
+  ?(rg_count_lit(sig, "updateTotalBorrowing") > 0) { ^"REJ_SOLIDITY_GMX_V2_TOTAL_BORROW" };
+  ?(rg_count_lit(body, "prevPositionBorrowingFactor") > 0) { ^"REJ_SOLIDITY_GMX_V2_TOTAL_BORROW" };
+  ?(rg_count_lit(body, "nextPositionBorrowingFactor") > 0) { ^"REJ_SOLIDITY_GMX_V2_TOTAL_BORROW" };
+  ?(rg_count_lit(body, "Chain.currentTimestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
   ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
   ?(rg_count_lit(body, "assembly") > 0) { ^"REJ_SOLIDITY_INLINE_ASM" };
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
@@ -64,6 +69,14 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_tb = "function getNextTotalBorrowing(DataStore dataStore, address market, bool isLong, uint256 prevPositionSizeInUsd, uint256 prevPositionBorrowingFactor, uint256 nextPositionSizeInUsd, uint256 nextPositionBorrowingFactor) internal view returns (uint256)";
+  body_tb = "uint256 totalBorrowing = getTotalBorrowing(dataStore, market, isLong); totalBorrowing -= Precision.applyFactor(prevPositionSizeInUsd, prevPositionBorrowingFactor); totalBorrowing += Precision.applyFactor(nextPositionSizeInUsd, nextPositionBorrowingFactor); return totalBorrowing;";
+  r4 = sol_reason(sig_tb, body_tb);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_GMX_V2_TOTAL_BORROW") == 0) { ^0 };
+  sig_env = "function getSecondsSincePositionImpactPoolDistributed(DataStore dataStore, address market) internal view returns (uint256)";
+  body_env = "uint256 distributedAt = dataStore.getUint(key); if (distributedAt == 0) { return 0; } return Chain.currentTimestamp() - distributedAt;";
+  r5 = sol_reason(sig_env, body_env);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_ENV") == 0) { ^0 };
   ^1;
 }
 
@@ -317,7 +330,8 @@
     };
     i = i + 1;
   };
-  out = out + "=ex{";
+  out = out + "=";
+  out = out + "ex{";
   out = out + names;
   out = out + "}";
   out = out + rgs_ch(10);
