@@ -1,0 +1,23 @@
+@RULEL:CURVE_3POOL_GETY_PIN:1.0.0
+@NOTE="Upstream Curve.Fi source is published informational-only with no reproduction license. This pin records hashes only; do not vendor StableSwap3Pool.vy into lin-open."
+
+~R{.u=upstream .h=hashes .s=scope}
+
+.u{
+  repo="https://github.com/curvefi/curve-contract"
+  path="contracts/pools/3pool/StableSwap3Pool.vy"
+  commit="bae23a2fc9a0302d174ea1ffce8219a44a92149c"
+  license="all_rights_reserved_informational"
+}
+
+.h{
+  file_sha256="03e0bf29ae2fe945a3629b8085062da8f9d9d25957e86001dfc3df68c895f9dc"
+  git_blob_sha="04d170189a1b5ddfecfc0af9ea3fe23eb0840423"
+}
+
+.s{
+  functions="get_D get_y"
+  class="EXPERIMENTAL"
+  operand_width="i64-positive SCALE=1e9 N=3 explicit x0,x1,x2"
+  not_vendored="true"
+}
