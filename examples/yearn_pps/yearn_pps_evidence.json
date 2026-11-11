@@ -1,0 +1,174 @@
+{
+  "schema": "LIN_YEARN_PPS_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned Vault.vy sha256 (hash-only; AGPL source not vendored)",
+      "note": "bc36fcf88e8662a7e1bd5f9c8213645214697dd72afda4e0cd87bfaeb0c4a19b"
+    },
+    {
+      "id": "PIN-BLOB",
+      "status": "PASS",
+      "description": "pinned git blob sha of contracts/Vault.vy",
+      "note": "1159912c093b12cf8d758f71d2d568cda69990af"
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned yearn-vaults v0.4.6 matches hashes",
+      "note": "commit=97ca1b2e4fcf20f4be0ff456dabd020bfeb6697b blob=1159912c093b12cf8d758f71d2d568cda69990af"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of contracts/Vault.vy",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-MARKERS",
+      "status": "PASS",
+      "description": "live Vault.vy contains pricePerShare and _calculateLockedProfit",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_yearn_pps.lin",
+      "note": ""
+    },
+    {
+      "id": "VY-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_vyper.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "yps_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VY-GATE",
+      "status": "PASS",
+      "description": "lin_from_vyper.lin typechecked; Yearn PPS reject + 10 ** N present (string gate is check-only: C0 VM refuses string literals)",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 typechecked; Yearn pricePerShare fail-closed before ENV",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "5/5 PPS vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "empty=1e18; t0 harvest=0.9e18; 3h linear=0.94968e18; 6h unlocked=1e18; now<last=0",
+      "note": ""
+    },
+    {
+      "id": "VS-LIDO",
+      "status": "PASS",
+      "description": "Lido-style ignore-lock overstates t0 PPS (1e18 vs 0.9e18)",
+      "note": "ignore=1000000000000000000 yearn_t0=900000000000000000"
+    },
+    {
+      "id": "VS-STEP",
+      "status": "PASS",
+      "description": "all-or-nothing 6h unlock understates 3h PPS vs Yearn linear",
+      "note": "step=900000000000000000 linear=949680000000000000"
+    },
+    {
+      "id": "EMPTY-MINT",
+      "status": "PASS",
+      "description": "empty vault mints 1:1 (no ERC-4626 virtual offset)",
+      "note": "shares=123"
+    },
+    {
+      "id": "T0-MINT",
+      "status": "PASS",
+      "description": "deposit 0.1e18 into 0.9e18 free / 1e18 supply mints 111111111111111111",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "7e18*3e18/1 fail-closes to 0; naive i64 wraps",
+      "note": "wrap=-5389669316318724096"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes now/last/locked/idle/debt/supply/decimals/deg as arguments",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv (naive i64 a*b/d wraps on 7e18*3e18)",
+      "note": ""
+    },
+    {
+      "id": "VY-EMIT",
+      "status": "PASS",
+      "description": "lin_from_vyper.lin v1 rejects Yearn PPS/storage and expands 10 ** N",
+      "note": ""
+    },
+    {
+      "id": "SOL-YEARN",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 fail-closes Yearn pricePerShare before ENV",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/yearn/yearn-vaults",
+    "commit": "97ca1b2e4fcf20f4be0ff456dabd020bfeb6697b",
+    "path": "contracts/Vault.vy",
+    "git_blob_sha": "1159912c093b12cf8d758f71d2d568cda69990af",
+    "file_sha256": "bc36fcf88e8662a7e1bd5f9c8213645214697dd72afda4e0cd87bfaeb0c4a19b",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false,
+    "note": "hash-only pin; Vault.vy is not copied into lin-open"
+  },
+  "lin_clone": "src/lin_yearn_pps.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-yearn-pps",
+  "c11_oracle": "test/oracles/yearn_pps_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "empty_pps": 1000000000000000000,
+    "t0_pps": 900000000000000000,
+    "linear_3h_pps": 949680000000000000,
+    "unlocked_pps": 1000000000000000000,
+    "ignore_lock_pps": 1000000000000000000,
+    "step_3h_pps": 900000000000000000,
+    "empty_mint": 123,
+    "t0_mint": 111111111111111111
+  }
+}
