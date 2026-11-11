@@ -1,0 +1,131 @@
+{
+  "schema": "LIN_CURVE_GETY_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pin file records StableSwap3Pool.vy sha256 and git blob",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned curve-contract commit matches pin",
+      "note": "commit=bae23a2fc9a0302d174ea1ffce8219a44a92149c blob=04d170189a1b5ddfecfc0af9ea3fe23eb0840423"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of StableSwap3Pool.vy",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb Newton agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_curve_gety.lin",
+      "note": ""
+    },
+    {
+      "id": "VY-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Vyper transpiler v1 (10 ** N + Curve rejects)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "cgy_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "8/8 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "8/8 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "AMP-TIGHTENS",
+      "status": "PASS",
+      "description": "A=2000 keeps y closer to 1e9 than A=100 after +10% x0",
+      "note": ""
+    },
+    {
+      "id": "DY-UNDERFLOW",
+      "status": "PASS",
+      "description": "get_dy dx=0 fail-closes to 0 instead of uint256 wrap of -1",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (imbalanced D)^2 wraps; 128-bit Newton does not",
+      "note": "i64_wrap=-8838116264523025375"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "WIDE-NEWTON",
+      "status": "PASS",
+      "description": "clone uses 128-bit (a*b+add)/d for D and y Newton steps",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-AMP",
+      "status": "PASS",
+      "description": "LIN takes amp and x0,x1,x2 as arguments (no storage field / timestamp ramp)",
+      "note": ""
+    },
+    {
+      "id": "VY-EMIT",
+      "status": "PASS",
+      "description": "lin_from_vyper.lin v1 expands 10 ** N and rejects Curve get_y storage/arrays",
+      "note": ""
+    },
+    {
+      "id": "VY-GATE",
+      "status": "PASS",
+      "description": "vy_parse_test_gate asserts get_y/self._A/raw_call/array rejects",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/curvefi/curve-contract",
+    "commit": "bae23a2fc9a0302d174ea1ffce8219a44a92149c",
+    "path": "contracts/pools/3pool/StableSwap3Pool.vy",
+    "git_blob_sha": "04d170189a1b5ddfecfc0af9ea3fe23eb0840423",
+    "file_sha256": "03e0bf29ae2fe945a3629b8085062da8f9d9d25957e86001dfc3df68c895f9dc",
+    "license": "all-rights-reserved informational (not vendored)"
+  },
+  "lin_clone": "src/lin_curve_gety.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-curve-gety",
+  "c11_oracle": "test/oracles/curve_gety_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "get_D_1e9x3_A100": 3000000000,
+    "get_y_identity_A100": 1000000000,
+    "get_y_plus10pct_A100": 900099889,
+    "get_y_plus10pct_A2000": 900005047,
+    "get_dy_nofee_plus10pct_A100": 99900110,
+    "get_dy_dx0": 0,
+    "get_D_imbal_A100": 3099778671,
+    "get_y_imbal_A100": 999810078,
+    "naive_i64_D2": -8838116264523025375
+  }
+}
