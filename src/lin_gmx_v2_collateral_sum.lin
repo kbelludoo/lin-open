@@ -1,0 +1,195 @@
+@LIN:L1c:0.2
+@GMX_V2_COLLATERAL_SUM{
+  version=1
+  repo="gmx-io/gmx-synthetics"
+  source="contracts/market/MarketUtils.sol applyDeltaToCollateralSum"
+  max_contrast="contracts/market/MarketUtils.sol validateOpenInterest"
+  oi_contrast="contracts/market/MarketUtils.sol applyDeltaToOpenInterest"
+  read_contrast="contracts/market/MarketUtils.sol getCollateralSum"
+  reject_contrast="contracts/data/DataStore.sol applyDeltaToUint"
+  bound_contrast="contracts/data/DataStore.sol applyBoundedDeltaToUint"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later"
+  commit="a85ea3491c19c93bb4b5a002d9b358fb769b7849"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_gmx_v2_unsigned_collateral_sum_max_always_reject_negative"
+  note="Not mainnet uint256. DataStore lifted to args. applyDeltaToUint rejects a negative next uint, then ALWAYS checks nextValue > maxCollateralSum (including on decrease). Distinct from OI (max only when delta>0, swap-only market revert, signed VI). Distinct from applyBoundedDeltaToUint (floor at 0). getCollateralSum divides; this kernel returns the undivided next uint."
+}
+
+!g2c_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!g2c_uadd_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  s = a + b;
+  ?(s < 0) { ^ 0; };
+  ?(g2c_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!g2c_mag(x: int) -> int {
+  ?(x >= 0) { ^ x; };
+  ^ 0 - x;
+}
+
+!g2c_mag_ok(x: int) -> int {
+  ?(x >= 0) { ^ 1; };
+  m = 0 - x;
+  ?(m < 0) { ^ 0; };
+  ^ 1;
+}
+
+!g2c_delta_ok(sum: int, delta: int) -> int {
+  ?(sum < 0) { ^ 0; };
+  ?(g2c_mag_ok(delta) == 0) { ^ 0; };
+  ?(delta >= 0) {
+    ?(g2c_uadd_ok(sum, delta) == 0) { ^ 0; };
+    ^ 1;
+  };
+  ?(g2c_u_lt(sum, g2c_mag(delta)) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!g2c_next_uint(sum: int, delta: int) -> int {
+  ?(g2c_delta_ok(sum, delta) == 0) { ^ 0; };
+  ?(delta >= 0) { ^ sum + delta; };
+  ^ sum - g2c_mag(delta);
+}
+
+!g2c_ok(is_long: int, sum: int, delta: int, max_value: int, index_token: int) -> int {
+  ?(max_value < 0) { ^ 0; };
+  ?(g2c_delta_ok(sum, delta) == 0) { ^ 0; };
+  nxt = g2c_next_uint(sum, delta);
+  ?(g2c_u_lt(max_value, nxt) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!g2c_next_value(is_long: int, sum: int, delta: int, max_value: int, index_token: int) -> int {
+  ?(g2c_ok(is_long, sum, delta, max_value, index_token) == 0) { ^ 0; };
+  ^ g2c_next_uint(sum, delta);
+}
+
+!g2c_wrong_bounded_next(sum: int, delta: int) -> int {
+  ?(delta >= 0) { ^ sum + delta; };
+  mag = g2c_mag(delta);
+  ?(g2c_u_lt(sum, mag) == 1) { ^ 0; };
+  ^ sum - mag;
+}
+
+!g2c_wrong_bounded_ok(is_long: int, sum: int, delta: int, max_value: int, index_token: int) -> int {
+  ?(sum < 0) { ^ 0; };
+  ?(max_value < 0) { ^ 0; };
+  ?(g2c_mag_ok(delta) == 0) { ^ 0; };
+  ?(delta >= 0) {
+    ?(g2c_uadd_ok(sum, delta) == 0) { ^ 0; };
+  };
+  nxt = g2c_wrong_bounded_next(sum, delta);
+  ?(g2c_u_lt(max_value, nxt) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!g2c_wrong_signed_next(sum: int, delta: int) -> int {
+  ^ sum + delta;
+}
+
+!g2c_wrong_no_max_ok(is_long: int, sum: int, delta: int, max_value: int, index_token: int) -> int {
+  ^ g2c_delta_ok(sum, delta);
+}
+
+!g2c_wrong_no_max_next(is_long: int, sum: int, delta: int, max_value: int, index_token: int) -> int {
+  ?(g2c_delta_ok(sum, delta) == 0) { ^ 0; };
+  ^ g2c_next_uint(sum, delta);
+}
+
+!g2c_wrong_max_on_inc_ok(is_long: int, sum: int, delta: int, max_value: int, index_token: int) -> int {
+  ?(max_value < 0) { ^ 0; };
+  ?(g2c_delta_ok(sum, delta) == 0) { ^ 0; };
+  ?(delta > 0) {
+    nxt = g2c_next_uint(sum, delta);
+    ?(g2c_u_lt(max_value, nxt) == 1) { ^ 0; };
+  };
+  ^ 1;
+}
+
+!g2c_wrong_max_on_inc_next(is_long: int, sum: int, delta: int, max_value: int, index_token: int) -> int {
+  ?(g2c_wrong_max_on_inc_ok(is_long, sum, delta, max_value, index_token) == 0) { ^ 0; };
+  ^ g2c_next_uint(sum, delta);
+}
+
+!g2c_wrong_swap_only_ok(is_long: int, sum: int, delta: int, max_value: int, index_token: int) -> int {
+  ?(index_token == 0) { ^ 0; };
+  ^ g2c_ok(is_long, sum, delta, max_value, index_token);
+}
+
+!g2c_wrong_flip_next(is_long: int, sum: int, delta: int) -> int {
+  ?(is_long == 1) { ^ sum + (0 - delta); };
+  ^ sum + delta;
+}
+
+!g2c_wrong_div(sum: int, delta: int) -> int {
+  ?(g2c_delta_ok(sum, delta) == 0) { ^ 0; };
+  ^ g2c_next_uint(sum, delta) / 2;
+}
+
+!g2c_naive_i64_add(a: int, b: int) -> int {
+  ^ a + b;
+}
+
+!g2c_test_suite() -> int {
+  ?(g2c_ok(1, 100000000, 30000000, 200000000, 1) != 1) { ^ -1; };
+  ?(g2c_next_value(1, 100000000, 30000000, 200000000, 1) != 130000000) { ^ -2; };
+  ?(g2c_ok(0, 100000000, 30000000, 200000000, 1) != 1) { ^ -3; };
+  ?(g2c_next_value(0, 100000000, 30000000, 200000000, 1) != 130000000) { ^ -4; };
+  ?(g2c_wrong_flip_next(1, 100000000, 30000000) != 70000000) { ^ -5; };
+  ?(g2c_ok(1, 100000000, 30000000, 120000000, 1) != 0) { ^ -6; };
+  ?(g2c_next_value(1, 100000000, 30000000, 120000000, 1) != 0) { ^ -7; };
+  ?(g2c_wrong_no_max_ok(1, 100000000, 30000000, 120000000, 1) != 1) { ^ -8; };
+  ?(g2c_wrong_no_max_next(1, 100000000, 30000000, 120000000, 1) != 130000000) { ^ -9; };
+  ?(g2c_ok(1, 150000000, -20000000, 120000000, 1) != 0) { ^ -10; };
+  ?(g2c_wrong_max_on_inc_ok(1, 150000000, -20000000, 120000000, 1) != 1) { ^ -11; };
+  ?(g2c_wrong_max_on_inc_next(1, 150000000, -20000000, 120000000, 1) != 130000000) { ^ -12; };
+  ?(g2c_next_value(1, 100000000, -30000000, 200000000, 1) != 70000000) { ^ -13; };
+  ?(g2c_ok(1, 100000000, 30000000, 130000000, 1) != 1) { ^ -14; };
+  ?(g2c_next_value(1, 100000000, 30000000, 130000000, 1) != 130000000) { ^ -15; };
+  ?(g2c_ok(1, 100000000, -150000000, 200000000, 1) != 0) { ^ -16; };
+  ?(g2c_wrong_bounded_ok(1, 100000000, -150000000, 200000000, 1) != 1) { ^ -17; };
+  ?(g2c_wrong_bounded_next(100000000, -150000000) != 0) { ^ -18; };
+  ?(g2c_wrong_signed_next(100000000, -150000000) != -50000000) { ^ -19; };
+  ?(g2c_ok(1, 0, 1, 0, 1) != 0) { ^ -20; };
+  ?(g2c_ok(1, 0, 0, 0, 1) != 1) { ^ -21; };
+  ?(g2c_ok(1, 100000000, 30000000, 200000000, 0) != 1) { ^ -22; };
+  ?(g2c_wrong_swap_only_ok(1, 100000000, 30000000, 200000000, 0) != 0) { ^ -23; };
+  ?(g2c_wrong_div(100000000, 30000000) != 65000000) { ^ -24; };
+  ?(g2c_ok(1, 7000000000000000000, 3000000000000000000, 9223372036854775807, 1) != 0) { ^ -25; };
+  ?(g2c_naive_i64_add(7000000000000000000, 3000000000000000000) != -8446744073709551616) { ^ -26; };
+  ^ 1;
+}
+
+=ex{
+  g2c_u_lt,
+  g2c_uadd_ok,
+  g2c_mag,
+  g2c_mag_ok,
+  g2c_delta_ok,
+  g2c_next_uint,
+  g2c_ok,
+  g2c_next_value,
+  g2c_wrong_bounded_next,
+  g2c_wrong_bounded_ok,
+  g2c_wrong_signed_next,
+  g2c_wrong_no_max_ok,
+  g2c_wrong_no_max_next,
+  g2c_wrong_max_on_inc_ok,
+  g2c_wrong_max_on_inc_next,
+  g2c_wrong_swap_only_ok,
+  g2c_wrong_flip_next,
+  g2c_wrong_div,
+  g2c_naive_i64_add,
+  g2c_test_suite
+}

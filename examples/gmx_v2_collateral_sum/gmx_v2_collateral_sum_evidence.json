@@ -1,0 +1,258 @@
+{
+  "schema": "LIN_GMX_V2_COLLATERAL_SUM_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "excerpt contains reject-negative then always-max",
+      "note": ""
+    },
+    {
+      "id": "PIN-OI",
+      "status": "PASS",
+      "description": "OI sibling checks max only on increase and rejects swap-only markets",
+      "note": ""
+    },
+    {
+      "id": "PIN-MAXOI",
+      "status": "PASS",
+      "description": "validateOpenInterest is the OI max helper, not this kernel",
+      "note": ""
+    },
+    {
+      "id": "PIN-GET",
+      "status": "PASS",
+      "description": "getCollateralSum divides; applyDeltaToCollateralSum does not",
+      "note": ""
+    },
+    {
+      "id": "PIN-UINT",
+      "status": "PASS",
+      "description": "applyDeltaToUint rejects a negative next uint",
+      "note": ""
+    },
+    {
+      "id": "PIN-BOUND",
+      "status": "PASS",
+      "description": "applyBoundedDeltaToUint floors at 0 instead of rejecting",
+      "note": ""
+    },
+    {
+      "id": "PIN-INT",
+      "status": "PASS",
+      "description": "applyDeltaToInt is signed and may go negative",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned gmx-io/gmx-synthetics matches fixtures",
+      "note": "commit=a85ea3491c19c93bb4b5a002d9b358fb769b7849 blob=ad7a0b2b5a516ec86ce0afed89ff84ecba11038c"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of MarketUtils.sol + DataStore.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (max-always / reject / overflow)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_gmx_v2_collateral_sum.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "g2c_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "26/26 vectors: C11 i128 == portable == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "26/26 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "UNDER-MAX",
+      "status": "PASS",
+      "description": "long +3e7 under max 2e8 yields next 1.3e8",
+      "note": ""
+    },
+    {
+      "id": "NOT-SIDE",
+      "status": "PASS",
+      "description": "isLong is a storage key only; short +3e7 is also 1.3e8 not a sign flip",
+      "note": ""
+    },
+    {
+      "id": "NOT-FLIP",
+      "status": "PASS",
+      "description": "position-style long-flip would drop 1e8->7e7; collateral sum does not flip",
+      "note": ""
+    },
+    {
+      "id": "MAX-INC",
+      "status": "PASS",
+      "description": "1e8+3e7 vs max 1.2e8 rejects; skipping max would yield 1.3e8",
+      "note": ""
+    },
+    {
+      "id": "MAX-DEC",
+      "status": "PASS",
+      "description": "decrease 1.5e8-2e7 still over max 1.2e8 rejects; OI-style max-on-inc would accept 1.3e8",
+      "note": ""
+    },
+    {
+      "id": "EQUAL-MAX",
+      "status": "PASS",
+      "description": "nextValue == maxValue is allowed (strict greater-than)",
+      "note": ""
+    },
+    {
+      "id": "REJECT-NEG",
+      "status": "PASS",
+      "description": "1e8-1.5e8 rejects; bounded floor would succeed at 0",
+      "note": ""
+    },
+    {
+      "id": "NOT-SIGNED",
+      "status": "PASS",
+      "description": "signed int add would be -5e7; collateral sum stays unsigned",
+      "note": ""
+    },
+    {
+      "id": "MAX-ZERO",
+      "status": "PASS",
+      "description": "max=0 disables any positive next; zero-delta on zero sum is ok",
+      "note": ""
+    },
+    {
+      "id": "NOT-SWAP-ONLY",
+      "status": "PASS",
+      "description": "indexToken==0 still updates collateral; OI would revert swap-only",
+      "note": ""
+    },
+    {
+      "id": "NOT-DIV",
+      "status": "PASS",
+      "description": "getCollateralSum /2 would be 6.5e7; applyDelta returns undivided 1.3e8",
+      "note": ""
+    },
+    {
+      "id": "I64-OVERFLOW",
+      "status": "PASS",
+      "description": "7e18+3e18 fail-closes; naive i64 wraps to -8446744073709551616",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on g2c_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes is_long/sum/delta/max_value/index_token as arguments",
+      "note": ""
+    },
+    {
+      "id": "FAIL-CLOSED-ADD",
+      "status": "PASS",
+      "description": "clone fail-closes unsigned add and rejects a negative next uint",
+      "note": ""
+    },
+    {
+      "id": "NOT-OI",
+      "status": "PASS",
+      "description": "kernel always checks max; OI max-on-increase is the named contrast",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects applyDeltaToCollateralSum before ENV",
+      "note": ""
+    },
+    {
+      "id": "SOL-HEADER",
+      "status": "PASS",
+      "description": "transpiler header changelog does not contain the export token",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects apply_delta_to_collateral_sum",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/gmx-io/gmx-synthetics",
+    "commit": "a85ea3491c19c93bb4b5a002d9b358fb769b7849",
+    "path": "contracts/market/MarketUtils.sol",
+    "datastore_path": "contracts/data/DataStore.sol",
+    "git_blob_sha": "ad7a0b2b5a516ec86ce0afed89ff84ecba11038c",
+    "file_sha256": "8dfd271e4fc8e18d6a114b674dc1f520f38f6acd1f9c9a58b4b7509fe86e748f",
+    "datastore_git_blob_sha": "36279a5f32eae0882bd53418e04590da97aee154",
+    "datastore_file_sha256": "ab332edb2d32bb94cf47c06d2fe1fc7fb6dff101ab6b210282879514f6b05b3d",
+    "license": "GPL-2.0-or-later",
+    "license_note": "BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later",
+    "commercial_descendants": "GMX V2 collateral sum is an unsigned per-(market, collateralToken, isLong) total. applyDeltaToUint rejects a negative next uint, then ALWAYS checks maxCollateralSum (including on decrease). Distinct from OI (max only when delta>0, swap-only revert) and from applyBoundedDeltaToUint (floor at 0)."
+  },
+  "lin_clone": "src/lin_gmx_v2_collateral_sum.lin",
+  "c11_oracle": "test/oracles/gmx_v2_collateral_sum_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "under_next": 130000000,
+    "short_next": 130000000,
+    "wrong_flip": 70000000,
+    "over_inc_ok": 0,
+    "wrong_no_max": 130000000,
+    "over_dec_ok": 0,
+    "wrong_max_on_inc": 130000000,
+    "neg_ok": 0,
+    "wrong_bounded_ok": 1,
+    "wrong_signed": -50000000,
+    "max0_ok": 0,
+    "max0_zero_ok": 1,
+    "swap_ok": 1,
+    "wrong_swap": 0,
+    "wrong_div": 65000000,
+    "overflow_ok": 0,
+    "wrap_naive": -8446744073709551616
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-gmx-v2-collateral-sum"
+}
