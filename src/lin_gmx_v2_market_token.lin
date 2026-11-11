@@ -1,0 +1,233 @@
+@LIN:L1c:0.2
+@GMX_V2_MARKET_TOKEN{
+  version=1
+  repo="gmx-io/gmx-synthetics"
+  source="contracts/market/MarketUtils.sol usdToMarketTokenAmount"
+  inverse="contracts/market/MarketUtils.sol marketTokenAmountToUsd"
+  wei_contrast="contracts/utils/Precision.sol floatToWei"
+  muldiv_contrast="contracts/utils/Precision.sol mulDiv"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later"
+  commit="a85ea3491c19c93bb4b5a002d9b358fb769b7849"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_gmx_v2_usd_to_market_token_three_branch_first_deposit_not_lido_1to1"
+  note="Not mainnet uint256. DIV is 1e6 not FLOAT_TO_WEI_DIVISOR 1e12. Distinct from Lido/Rocket 1:1 when empty, from supply==0 OR pool==0, from leftover that forgets floatToWei, and from always-mulDiv."
+}
+
+!g2m_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!g2m_uadd_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  s = a + b;
+  ?(s < 0) { ^ 0; };
+  ?(g2m_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!g2m_umul_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(a == 0) { ^ 1; };
+  ?(b == 0) { ^ 1; };
+  q = 9223372036854775807 / a;
+  ?(g2m_u_lt(q, b) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!g2m_div() -> int {
+  ^ 1000000;
+}
+
+!g2m_wei(value: int) -> int {
+  ?(value < 0) { ^ 0; };
+  ^ value / g2m_div();
+}
+
+!g2m_usd_ok(usd: int, pool: int, supply: int) -> int {
+  ?(usd < 0) { ^ 0; };
+  ?(pool < 0) { ^ 0; };
+  ?(supply < 0) { ^ 0; };
+  ?(supply == 0) {
+    ?(pool == 0) { ^ 1; };
+    ^ g2m_uadd_ok(pool, usd);
+  };
+  ?(pool == 0) { ^ 0; };
+  ^ g2m_umul_ok(supply, usd);
+}
+
+!g2m_ok(usd: int, pool: int, supply: int) -> int {
+  ^ g2m_usd_ok(usd, pool, supply);
+}
+
+!g2m_usd(usd: int, pool: int, supply: int) -> int {
+  ?(g2m_usd_ok(usd, pool, supply) == 0) { ^ 0; };
+  ?(supply == 0) {
+    ?(pool == 0) { ^ g2m_wei(usd); };
+    ^ g2m_wei(pool + usd);
+  };
+  ^ (supply * usd) / pool;
+}
+
+!g2m_tok_ok(tokens: int, pool: int, supply: int) -> int {
+  ?(tokens < 0) { ^ 0; };
+  ?(pool < 0) { ^ 0; };
+  ?(supply < 0) { ^ 0; };
+  ?(supply == 0) { ^ 0; };
+  ^ g2m_umul_ok(pool, tokens);
+}
+
+!g2m_tok(tokens: int, pool: int, supply: int) -> int {
+  ?(g2m_tok_ok(tokens, pool, supply) == 0) { ^ 0; };
+  ^ (pool * tokens) / supply;
+}
+
+!g2m_wrong_lido(usd: int, pool: int, supply: int) -> int {
+  ?(usd < 0) { ^ 0; };
+  ?(pool < 0) { ^ 0; };
+  ?(supply < 0) { ^ 0; };
+  ?(pool == 0) { ^ usd; };
+  ?(g2m_umul_ok(supply, usd) == 0) { ^ 0; };
+  ^ (supply * usd) / pool;
+}
+
+!g2m_wrong_ignore(usd: int, pool: int, supply: int) -> int {
+  ?(usd < 0) { ^ 0; };
+  ?(pool < 0) { ^ 0; };
+  ?(supply < 0) { ^ 0; };
+  ?(supply == 0) { ^ g2m_wei(usd); };
+  ?(pool == 0) { ^ 0; };
+  ?(g2m_umul_ok(supply, usd) == 0) { ^ 0; };
+  ^ (supply * usd) / pool;
+}
+
+!g2m_wrong_sum(usd: int, pool: int, supply: int) -> int {
+  ?(usd < 0) { ^ 0; };
+  ?(pool < 0) { ^ 0; };
+  ?(supply < 0) { ^ 0; };
+  ?(supply == 0) {
+    ?(pool == 0) { ^ usd; };
+    ?(g2m_uadd_ok(pool, usd) == 0) { ^ 0; };
+    ^ pool + usd;
+  };
+  ?(pool == 0) { ^ 0; };
+  ?(g2m_umul_ok(supply, usd) == 0) { ^ 0; };
+  ^ (supply * usd) / pool;
+}
+
+!g2m_wrong_or(usd: int, pool: int, supply: int) -> int {
+  ?(usd < 0) { ^ 0; };
+  ?(pool < 0) { ^ 0; };
+  ?(supply < 0) { ^ 0; };
+  ?(supply == 0) { ^ g2m_wei(usd); };
+  ?(pool == 0) { ^ g2m_wei(usd); };
+  ?(g2m_umul_ok(supply, usd) == 0) { ^ 0; };
+  ^ (supply * usd) / pool;
+}
+
+!g2m_wrong_always(usd: int, pool: int, supply: int) -> int {
+  ?(usd < 0) { ^ 0; };
+  ?(pool < 0) { ^ 0; };
+  ?(supply < 0) { ^ 0; };
+  ?(pool == 0) { ^ 0; };
+  ?(g2m_umul_ok(supply, usd) == 0) { ^ 0; };
+  ^ (supply * usd) / pool;
+}
+
+!g2m_wrong_wei(usd: int, pool: int, supply: int) -> int {
+  ?(usd < 0) { ^ 0; };
+  ?(pool < 0) { ^ 0; };
+  ?(supply < 0) { ^ 0; };
+  ^ g2m_wei(usd);
+}
+
+!g2m_wrong_ceil(usd: int, pool: int, supply: int) -> int {
+  ?(usd < 0) { ^ 0; };
+  ?(pool < 0) { ^ 0; };
+  ?(supply < 0) { ^ 0; };
+  ?(supply == 0) { ^ 0; };
+  ?(pool == 0) { ^ 0; };
+  ?(g2m_umul_ok(supply, usd) == 0) { ^ 0; };
+  prod = supply * usd;
+  ?(g2m_uadd_ok(prod, pool - 1) == 0) { ^ 0; };
+  ^ (prod + (pool - 1)) / pool;
+}
+
+!g2m_wrong_inv(tokens: int, pool: int, supply: int) -> int {
+  ?(tokens < 0) { ^ 0; };
+  ?(pool < 0) { ^ 0; };
+  ?(supply < 0) { ^ 0; };
+  ?(supply == 0) { ^ tokens; };
+  ?(g2m_umul_ok(pool, tokens) == 0) { ^ 0; };
+  ^ (pool * tokens) / supply;
+}
+
+!g2m_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!g2m_naive_i64_add(a: int, b: int) -> int {
+  ^ a + b;
+}
+
+!g2m_test_suite() -> int {
+  ?(g2m_usd(100000000, 0, 0) != 100) { ^ -1; };
+  ?(g2m_wrong_lido(100000000, 0, 0) != 100000000) { ^ -2; };
+  ?(g2m_usd(100000000, 20000000, 0) != 120) { ^ -3; };
+  ?(g2m_wrong_lido(100000000, 20000000, 0) != 0) { ^ -4; };
+  ?(g2m_wrong_ignore(100000000, 20000000, 0) != 100) { ^ -5; };
+  ?(g2m_wrong_sum(100000000, 20000000, 0) != 120000000) { ^ -6; };
+  ?(g2m_usd(50000000, 200000000, 100000000) != 25000000) { ^ -7; };
+  ?(g2m_wrong_wei(50000000, 200000000, 100000000) != 50) { ^ -8; };
+  ?(g2m_tok(25000000, 200000000, 100000000) != 50000000) { ^ -9; };
+  ?(g2m_tok_ok(100, 0, 0) != 0) { ^ -10; };
+  ?(g2m_wrong_inv(100, 0, 0) != 100) { ^ -11; };
+  ?(g2m_usd_ok(50000000, 0, 100000000) != 0) { ^ -12; };
+  ?(g2m_wrong_lido(50000000, 0, 100000000) != 50000000) { ^ -13; };
+  ?(g2m_wrong_or(50000000, 0, 100000000) != 50) { ^ -14; };
+  ?(g2m_usd(4, 5, 3) != 2) { ^ -15; };
+  ?(g2m_wrong_ceil(4, 5, 3) != 3) { ^ -16; };
+  ?(g2m_usd(1, 3, 1) != 0) { ^ -17; };
+  ?(g2m_usd(0, 20000000, 0) != 20) { ^ -18; };
+  ?(g2m_tok(100, 100000000, 100) != 100000000) { ^ -19; };
+  ?(g2m_usd_ok(3000000000000000000, 7000000000000000000, 0) != 0) { ^ -20; };
+  ?(g2m_naive_i64_add(7000000000000000000, 3000000000000000000) != -8446744073709551616) { ^ -21; };
+  ?(g2m_usd_ok(2000000000, 1, 7000000000) != 0) { ^ -22; };
+  ?(g2m_naive_i64_mul(7000000000, 2000000000) != -4446744073709551616) { ^ -23; };
+  ?(g2m_usd(50000000, 100000000, 100000000) != 50000000) { ^ -24; };
+  ?(g2m_usd_ok(100000000, 0, 0) != 1) { ^ -25; };
+  ?(g2m_wrong_always(100000000, 0, 0) != 0) { ^ -26; };
+  ?(g2m_wrong_or(100000000, 20000000, 0) != 100) { ^ -27; };
+  ?(g2m_usd(0, 0, 0) != 0) { ^ -28; };
+  ^ 1;
+}
+
+=ex{
+  g2m_u_lt,
+  g2m_uadd_ok,
+  g2m_umul_ok,
+  g2m_div,
+  g2m_wei,
+  g2m_usd_ok,
+  g2m_ok,
+  g2m_usd,
+  g2m_tok_ok,
+  g2m_tok,
+  g2m_wrong_lido,
+  g2m_wrong_ignore,
+  g2m_wrong_sum,
+  g2m_wrong_or,
+  g2m_wrong_always,
+  g2m_wrong_wei,
+  g2m_wrong_ceil,
+  g2m_wrong_inv,
+  g2m_naive_i64_mul,
+  g2m_naive_i64_add,
+  g2m_test_suite
+}

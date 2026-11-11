@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: reject GMX V2 usdToMarketTokenAmount / marketTokenAmountToUsd / EmptyMarketTokenSupply / FLOAT_TO_WEI_DIVISOR before ENV so three-branch first-deposit plus inverse is named not generic pure emit. Treat Chain.currentTimestamp as ENV. Split equals then ex-brace export emit so C0 does not steal the export list. v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
 }
 
 !sol_is_kw(nm: string): int {
@@ -41,6 +41,11 @@
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
+  ?(rg_count_lit(sig, "usdToMarketTokenAmount") > 0) { ^"REJ_SOLIDITY_GMX_V2_MARKET_TOKEN" };
+  ?(rg_count_lit(sig, "marketTokenAmountToUsd") > 0) { ^"REJ_SOLIDITY_GMX_V2_MARKET_TOKEN" };
+  ?(rg_count_lit(body, "EmptyMarketTokenSupply") > 0) { ^"REJ_SOLIDITY_GMX_V2_MARKET_TOKEN" };
+  ?(rg_count_lit(body, "FLOAT_TO_WEI_DIVISOR") > 0) { ^"REJ_SOLIDITY_GMX_V2_MARKET_TOKEN" };
+  ?(rg_count_lit(body, "Chain.currentTimestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
   ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
   ?(rg_count_lit(body, "assembly") > 0) { ^"REJ_SOLIDITY_INLINE_ASM" };
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
@@ -64,6 +69,18 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_mt = "function usdToMarketTokenAmount(uint256 usdValue, uint256 poolValue, uint256 supply) internal pure returns (uint256)";
+  body_mt = "if (supply == 0 && poolValue == 0) { return Precision.floatToWei(usdValue); } if (supply == 0 && poolValue > 0) { return Precision.floatToWei(poolValue + usdValue); } return Precision.mulDiv(supply, usdValue, poolValue);";
+  r4 = sol_reason(sig_mt, body_mt);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_GMX_V2_MARKET_TOKEN") == 0) { ^0 };
+  sig_inv = "function marketTokenAmountToUsd(uint256 marketTokenAmount, uint256 poolValue, uint256 supply) internal pure returns (uint256)";
+  body_inv = "if (supply == 0) { revert Errors.EmptyMarketTokenSupply(); } return Precision.mulDiv(poolValue, marketTokenAmount, supply);";
+  r5 = sol_reason(sig_inv, body_inv);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_GMX_V2_MARKET_TOKEN") == 0) { ^0 };
+  sig_env = "function getSecondsSincePositionImpactPoolDistributed(DataStore dataStore, address market) internal view returns (uint256)";
+  body_env = "uint256 distributedAt = dataStore.getUint(key); if (distributedAt == 0) { return 0; } return Chain.currentTimestamp() - distributedAt;";
+  r6 = sol_reason(sig_env, body_env);
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_ENV") == 0) { ^0 };
   ^1;
 }
 
@@ -317,7 +334,8 @@
     };
     i = i + 1;
   };
-  out = out + "=ex{";
+  out = out + "=";
+  out = out + "ex{";
   out = out + names;
   out = out + "}";
   out = out + rgs_ch(10);
