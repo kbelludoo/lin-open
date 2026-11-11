@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: reject apply_delta_to_virtual_inventory_for_swaps / virtual_inventory_for_swaps (GMX V2 unsigned long/short swap-inventory pair is a LIN port, not emit)"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,9 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "apply_delta_to_virtual_inventory_for_swaps") > 0) { ^"REJ_RUST_GMX_V2_SWAP_VI" };
+  ?(rg_count_lit(body, "virtual_inventory_for_swaps") > 0) { ^"REJ_RUST_GMX_V2_SWAP_VI" };
+  ?(rg_count_lit(body, "virtual_market_id") > 0) { ^"REJ_RUST_GMX_V2_SWAP_VI" };
   ^"OK";
 }
 
@@ -66,6 +70,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_sw = "pub fn apply_delta_to_virtual_inventory_for_swaps(long_inv: u64, short_inv: u64, is_long_token: bool, delta: i64) -> u64";
+  body_sw = "let key = virtual_inventory_for_swaps(virtual_market_id, is_long_token); apply_bounded_delta_to_uint(key, delta);";
+  r3 = rs_reason(sig_sw, body_sw);
+  ?(starts_lit(r3, 0, "REJ_RUST_GMX_V2_SWAP_VI") == 0) { ^0 };
 
   ^1;
 }

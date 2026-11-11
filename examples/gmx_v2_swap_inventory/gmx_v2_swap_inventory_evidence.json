@@ -1,0 +1,250 @@
+{
+  "schema": "LIN_GMX_V2_SWAP_INVENTORY_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "excerpt contains unsigned pair, bounded delta, early (false, 0)",
+      "note": ""
+    },
+    {
+      "id": "PIN-PAIR",
+      "status": "PASS",
+      "description": "getVirtualInventoryForSwaps returns (has, long uint, short uint)",
+      "note": ""
+    },
+    {
+      "id": "PIN-POSITIONS",
+      "status": "PASS",
+      "description": "position VI sibling is signed applyDeltaToInt, not this pair",
+      "note": ""
+    },
+    {
+      "id": "PIN-POOL",
+      "status": "PASS",
+      "description": "pool amount rejects negative then calls this bounded swap-VI update",
+      "note": ""
+    },
+    {
+      "id": "PIN-BOUND",
+      "status": "PASS",
+      "description": "applyBoundedDeltaToUint floors at 0 instead of rejecting",
+      "note": ""
+    },
+    {
+      "id": "PIN-UINT",
+      "status": "PASS",
+      "description": "applyDeltaToUint rejects a negative next uint",
+      "note": ""
+    },
+    {
+      "id": "PIN-INT",
+      "status": "PASS",
+      "description": "applyDeltaToInt is signed and may go negative",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned gmx-io/gmx-synthetics matches fixtures",
+      "note": "commit=a85ea3491c19c93bb4b5a002d9b358fb769b7849 blob=ad7a0b2b5a516ec86ce0afed89ff84ecba11038c"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of MarketUtils.sol + DataStore.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (pair / floor / overflow)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_gmx_v2_swap_inventory.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "g2s_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "30/30 vectors: C11 i128 == portable == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "30/30 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "LONG-SIDE",
+      "status": "PASS",
+      "description": "long-token +3e7 raises long 1e8->1.3e8 and leaves short 5e7",
+      "note": ""
+    },
+    {
+      "id": "NOT-BOTH",
+      "status": "PASS",
+      "description": "updating both sides would raise short 5e7->8e7; kernel does not",
+      "note": ""
+    },
+    {
+      "id": "NOT-OTHER",
+      "status": "PASS",
+      "description": "other-side would leave long 1e8 and raise short 8e7",
+      "note": ""
+    },
+    {
+      "id": "NOT-POS-FLIP",
+      "status": "PASS",
+      "description": "position-style long-flip would drop long 1e8->7e7; swap VI does not flip",
+      "note": ""
+    },
+    {
+      "id": "SHORT-SIDE",
+      "status": "PASS",
+      "description": "short-token +3e7 raises short 5e7->8e7 and leaves long 1e8",
+      "note": ""
+    },
+    {
+      "id": "FLOOR-NOT-REJECT",
+      "status": "PASS",
+      "description": "long -1.5e8 floors at 0; applyDeltaToUint would reject",
+      "note": ""
+    },
+    {
+      "id": "NOT-SIGNED",
+      "status": "PASS",
+      "description": "signed position VI would be -5e7; swap inventory stays unsigned",
+      "note": ""
+    },
+    {
+      "id": "SHORT-FLOOR",
+      "status": "PASS",
+      "description": "short -8e7 floors short at 0 and leaves long 1e8",
+      "note": ""
+    },
+    {
+      "id": "NO-VIRT",
+      "status": "PASS",
+      "description": "missing virtualMarketId returns applied=0 / nextValue=0 and leaves the pair",
+      "note": ""
+    },
+    {
+      "id": "TOKEN-AFTER-VIRT",
+      "status": "PASS",
+      "description": "unexpected token reverts only after virtualMarketId is set; no-virt path does not",
+      "note": ""
+    },
+    {
+      "id": "I64-OVERFLOW",
+      "status": "PASS",
+      "description": "7e18+3e18 fail-closes; naive i64 wraps to -8446744073709551616",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on g2s_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes has_v/token_ok/is_long_token/long_inv/short_inv/delta as arguments",
+      "note": ""
+    },
+    {
+      "id": "FAIL-CLOSED-ADD",
+      "status": "PASS",
+      "description": "clone fail-closes unsigned add and floors a negative next uint",
+      "note": ""
+    },
+    {
+      "id": "NOT-SIGNED-POS",
+      "status": "PASS",
+      "description": "kernel is unsigned long/short swap pair, not signed position VI",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects applyDeltaToVirtualInventoryForSwaps before ENV",
+      "note": ""
+    },
+    {
+      "id": "SOL-HEADER",
+      "status": "PASS",
+      "description": "transpiler header changelog does not contain the export token",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects apply_delta_to_virtual_inventory_for_swaps",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/gmx-io/gmx-synthetics",
+    "commit": "a85ea3491c19c93bb4b5a002d9b358fb769b7849",
+    "path": "contracts/market/MarketUtils.sol",
+    "datastore_path": "contracts/data/DataStore.sol",
+    "git_blob_sha": "ad7a0b2b5a516ec86ce0afed89ff84ecba11038c",
+    "file_sha256": "8dfd271e4fc8e18d6a114b674dc1f520f38f6acd1f9c9a58b4b7509fe86e748f",
+    "datastore_git_blob_sha": "36279a5f32eae0882bd53418e04590da97aee154",
+    "datastore_file_sha256": "ab332edb2d32bb94cf47c06d2fe1fc7fb6dff101ab6b210282879514f6b05b3d",
+    "license": "GPL-2.0-or-later",
+    "license_note": "BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later",
+    "commercial_descendants": "GMX V2 swap virtual inventory is an unsigned long-token/short-token pair updated one side at a time via applyBoundedDeltaToUint (floor at 0). Distinct from signed position VI (applyDeltaToInt) and from pool amount (applyDeltaToUint reject)."
+  },
+  "lin_clone": "src/lin_gmx_v2_swap_inventory.lin",
+  "c11_oracle": "test/oracles/gmx_v2_swap_inventory_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "long_inc_long": 130000000,
+    "long_inc_short": 50000000,
+    "wrong_both_short": 80000000,
+    "wrong_flip_long": 70000000,
+    "short_inc_short": 80000000,
+    "short_inc_long": 100000000,
+    "floor_ok": 1,
+    "floor_long": 0,
+    "wrong_reject_ok": 0,
+    "wrong_signed_long": -50000000,
+    "no_virt_applied": 0,
+    "no_virt_bad_ok": 1,
+    "bad_token_ok": 0,
+    "overflow_ok": 0,
+    "wrap_naive": -8446744073709551616
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-gmx-v2-swap-inventory"
+}

@@ -1,0 +1,205 @@
+@LIN:L1c:0.2
+@GMX_V2_SWAP_INVENTORY{
+  version=1
+  repo="gmx-io/gmx-synthetics"
+  source="contracts/market/MarketUtils.sol applyDeltaToVirtualInventoryForSwaps"
+  pair_contrast="contracts/market/MarketUtils.sol getVirtualInventoryForSwaps"
+  bound_contrast="contracts/data/DataStore.sol applyBoundedDeltaToUint"
+  reject_contrast="contracts/data/DataStore.sol applyDeltaToUint"
+  signed_contrast="contracts/market/MarketUtils.sol applyDeltaToVirtualInventoryForPositions"
+  pool_contrast="contracts/market/MarketUtils.sol applyDeltaToPoolAmount"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later"
+  commit="a85ea3491c19c93bb4b5a002d9b358fb769b7849"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_gmx_v2_unsigned_swap_virtual_inventory_pair"
+  note="Not mainnet uint256. DataStore lifted to args. Two unsigned inventories (long-token / short-token) updated one side at a time via applyBoundedDeltaToUint (floor at 0). Distinct from signed position VI (applyDeltaToInt, long-flipped) and from applyDeltaToUint (reject-negative)."
+}
+
+!g2s_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!g2s_uadd_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  s = a + b;
+  ?(s < 0) { ^ 0; };
+  ?(g2s_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!g2s_mag(x: int) -> int {
+  ?(x >= 0) { ^ x; };
+  ^ 0 - x;
+}
+
+!g2s_mag_ok(x: int) -> int {
+  ?(x >= 0) { ^ 1; };
+  m = 0 - x;
+  ?(m < 0) { ^ 0; };
+  ^ 1;
+}
+
+!g2s_bounded(inv: int, delta: int) -> int {
+  ?(delta >= 0) { ^ inv + delta; };
+  mag = g2s_mag(delta);
+  ?(g2s_u_lt(inv, mag) == 1) { ^ 0; };
+  ^ inv - mag;
+}
+
+!g2s_ok(has_v: int, token_ok: int, is_long_token: int, long_inv: int, short_inv: int, delta: int) -> int {
+  ?(long_inv < 0) { ^ 0; };
+  ?(short_inv < 0) { ^ 0; };
+  ?(g2s_mag_ok(delta) == 0) { ^ 0; };
+  ?(has_v == 0) { ^ 1; };
+  ?(token_ok == 0) { ^ 0; };
+  ?(is_long_token == 1) {
+    ?(delta >= 0) {
+      ?(g2s_uadd_ok(long_inv, delta) == 0) { ^ 0; };
+    };
+    ^ 1;
+  };
+  ?(delta >= 0) {
+    ?(g2s_uadd_ok(short_inv, delta) == 0) { ^ 0; };
+  };
+  ^ 1;
+}
+
+!g2s_applied(has_v: int, token_ok: int, is_long_token: int, long_inv: int, short_inv: int, delta: int) -> int {
+  ?(g2s_ok(has_v, token_ok, is_long_token, long_inv, short_inv, delta) == 0) { ^ 0; };
+  ?(has_v == 0) { ^ 0; };
+  ^ 1;
+}
+
+!g2s_next_long(has_v: int, token_ok: int, is_long_token: int, long_inv: int, short_inv: int, delta: int) -> int {
+  ?(g2s_ok(has_v, token_ok, is_long_token, long_inv, short_inv, delta) == 0) { ^ 0; };
+  ?(has_v == 0) { ^ long_inv; };
+  ?(is_long_token == 1) { ^ g2s_bounded(long_inv, delta); };
+  ^ long_inv;
+}
+
+!g2s_next_short(has_v: int, token_ok: int, is_long_token: int, long_inv: int, short_inv: int, delta: int) -> int {
+  ?(g2s_ok(has_v, token_ok, is_long_token, long_inv, short_inv, delta) == 0) { ^ 0; };
+  ?(has_v == 0) { ^ short_inv; };
+  ?(is_long_token == 1) { ^ short_inv; };
+  ^ g2s_bounded(short_inv, delta);
+}
+
+!g2s_next_value(has_v: int, token_ok: int, is_long_token: int, long_inv: int, short_inv: int, delta: int) -> int {
+  ?(g2s_ok(has_v, token_ok, is_long_token, long_inv, short_inv, delta) == 0) { ^ 0; };
+  ?(has_v == 0) { ^ 0; };
+  ?(is_long_token == 1) { ^ g2s_bounded(long_inv, delta); };
+  ^ g2s_bounded(short_inv, delta);
+}
+
+!g2s_wrong_both_long(has_v: int, token_ok: int, is_long_token: int, long_inv: int, short_inv: int, delta: int) -> int {
+  ^ g2s_bounded(long_inv, delta);
+}
+
+!g2s_wrong_both_short(has_v: int, token_ok: int, is_long_token: int, long_inv: int, short_inv: int, delta: int) -> int {
+  ^ g2s_bounded(short_inv, delta);
+}
+
+!g2s_wrong_other_long(has_v: int, token_ok: int, is_long_token: int, long_inv: int, short_inv: int, delta: int) -> int {
+  ?(is_long_token == 1) { ^ long_inv; };
+  ^ g2s_bounded(long_inv, delta);
+}
+
+!g2s_wrong_other_short(has_v: int, token_ok: int, is_long_token: int, long_inv: int, short_inv: int, delta: int) -> int {
+  ?(is_long_token == 1) { ^ g2s_bounded(short_inv, delta); };
+  ^ short_inv;
+}
+
+!g2s_wrong_flip_long(has_v: int, token_ok: int, is_long_token: int, long_inv: int, short_inv: int, delta: int) -> int {
+  ?(is_long_token == 1) { ^ g2s_bounded(long_inv, 0 - delta); };
+  ^ long_inv;
+}
+
+!g2s_wrong_reject_ok(has_v: int, token_ok: int, is_long_token: int, long_inv: int, short_inv: int, delta: int) -> int {
+  ?(has_v == 0) { ^ 1; };
+  ?(token_ok == 0) { ^ 0; };
+  ?(long_inv < 0) { ^ 0; };
+  ?(short_inv < 0) { ^ 0; };
+  ?(g2s_mag_ok(delta) == 0) { ^ 0; };
+  inv = short_inv;
+  ?(is_long_token == 1) { inv = long_inv; };
+  ?(delta < 0) {
+    ?(g2s_u_lt(inv, g2s_mag(delta)) == 1) { ^ 0; };
+  };
+  ?(delta >= 0) {
+    ?(g2s_uadd_ok(inv, delta) == 0) { ^ 0; };
+  };
+  ^ 1;
+}
+
+!g2s_wrong_signed_long(has_v: int, token_ok: int, is_long_token: int, long_inv: int, short_inv: int, delta: int) -> int {
+  ^ long_inv + delta;
+}
+
+!g2s_wrong_token_first(has_v: int, token_ok: int, is_long_token: int, long_inv: int, short_inv: int, delta: int) -> int {
+  ?(token_ok == 0) { ^ 0; };
+  ^ g2s_ok(has_v, token_ok, is_long_token, long_inv, short_inv, delta);
+}
+
+!g2s_naive_i64_add(a: int, b: int) -> int {
+  ^ a + b;
+}
+
+!g2s_test_suite() -> int {
+  ?(g2s_next_long(1, 1, 1, 100000000, 50000000, 30000000) != 130000000) { ^ -1; };
+  ?(g2s_next_short(1, 1, 1, 100000000, 50000000, 30000000) != 50000000) { ^ -2; };
+  ?(g2s_wrong_both_short(1, 1, 1, 100000000, 50000000, 30000000) != 80000000) { ^ -3; };
+  ?(g2s_wrong_other_short(1, 1, 1, 100000000, 50000000, 30000000) != 80000000) { ^ -4; };
+  ?(g2s_wrong_flip_long(1, 1, 1, 100000000, 50000000, 30000000) != 70000000) { ^ -5; };
+  ?(g2s_next_long(1, 1, 0, 100000000, 50000000, 30000000) != 100000000) { ^ -6; };
+  ?(g2s_next_short(1, 1, 0, 100000000, 50000000, 30000000) != 80000000) { ^ -7; };
+  ?(g2s_wrong_both_long(1, 1, 0, 100000000, 50000000, 30000000) != 130000000) { ^ -8; };
+  ?(g2s_next_long(1, 1, 1, 100000000, 50000000, -30000000) != 70000000) { ^ -9; };
+  ?(g2s_ok(1, 1, 1, 100000000, 50000000, -150000000) != 1) { ^ -10; };
+  ?(g2s_next_long(1, 1, 1, 100000000, 50000000, -150000000) != 0) { ^ -11; };
+  ?(g2s_wrong_reject_ok(1, 1, 1, 100000000, 50000000, -150000000) != 0) { ^ -12; };
+  ?(g2s_wrong_signed_long(1, 1, 1, 100000000, 50000000, -150000000) != -50000000) { ^ -13; };
+  ?(g2s_next_short(1, 1, 0, 100000000, 50000000, -80000000) != 0) { ^ -14; };
+  ?(g2s_next_long(1, 1, 0, 100000000, 50000000, -80000000) != 100000000) { ^ -15; };
+  ?(g2s_applied(0, 1, 1, 100000000, 50000000, 30000000) != 0) { ^ -16; };
+  ?(g2s_next_long(0, 1, 1, 100000000, 50000000, 30000000) != 100000000) { ^ -17; };
+  ?(g2s_next_value(0, 1, 1, 100000000, 50000000, 30000000) != 0) { ^ -18; };
+  ?(g2s_ok(0, 0, 0, 100000000, 50000000, 30000000) != 1) { ^ -19; };
+  ?(g2s_wrong_token_first(0, 0, 0, 100000000, 50000000, 30000000) != 0) { ^ -20; };
+  ?(g2s_ok(1, 0, 0, 100000000, 50000000, 30000000) != 0) { ^ -21; };
+  ?(g2s_ok(1, 1, 1, 7000000000000000000, 0, 3000000000000000000) != 0) { ^ -22; };
+  ?(g2s_naive_i64_add(7000000000000000000, 3000000000000000000) != -8446744073709551616) { ^ -23; };
+  ?(g2s_ok(1, 1, 1, 100000000, 50000000, 30000000) != 1) { ^ -24; };
+  ?(g2s_applied(1, 1, 1, 100000000, 50000000, 30000000) != 1) { ^ -25; };
+  ?(g2s_next_value(1, 1, 1, 100000000, 50000000, 30000000) != 130000000) { ^ -26; };
+  ?(g2s_next_value(1, 1, 0, 100000000, 50000000, 30000000) != 80000000) { ^ -27; };
+  ^ 1;
+}
+
+=ex{
+  g2s_u_lt,
+  g2s_uadd_ok,
+  g2s_mag,
+  g2s_mag_ok,
+  g2s_bounded,
+  g2s_ok,
+  g2s_applied,
+  g2s_next_long,
+  g2s_next_short,
+  g2s_next_value,
+  g2s_wrong_both_long,
+  g2s_wrong_both_short,
+  g2s_wrong_other_long,
+  g2s_wrong_other_short,
+  g2s_wrong_flip_long,
+  g2s_wrong_reject_ok,
+  g2s_wrong_signed_long,
+  g2s_wrong_token_first,
+  g2s_naive_i64_add,
+  g2s_test_suite
+}
