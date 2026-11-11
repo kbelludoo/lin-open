@@ -1,0 +1,64 @@
+@RULEL:BALANCER_FIXEDPOINT_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-BALANCER-V2-FIXEDPOINT"
+@TITLE="Clone-lin of Balancer V2 FixedPoint mulDown/mulUp/divDown/divUp with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_POSITIVE"
+@DATE="2026-11-11"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-balancer-fixedpoint"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Balancer V2 FixedPoint floor/ceil 1e18 math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="i64-positive inputs; 128-bit product for (a*b)/1e18 floor and ceil; Solidity uint256 is NOT claimed"
+  commercial_hook="FixedPoint mulDown/mulUp is the 1e18 library of Balancer V2 WeightedPool swaps; proving ceil mulUp is not Aave half-up wadMul and proving naive i64 wrap on 3e18*3e18 is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/balancer/balancer-v2-monorepo"
+  path="pkg/solidity-utils/contracts/math/FixedPoint.sol"
+  license="GPL-3.0-or-later"
+  commit="e91a2b643a49856f51a648d175667c1b48cf3377"
+  git_blob_sha="f3c74182db0cb5085ef3066ad069ecf76ef1df9f"
+  file_sha256="db8645a642a965744b15cbdedbf0214c6b8807cf98d359cfb00727a82967a944"
+  fixture="test/fixtures/external_proof/FixedPoint.sol"
+}
+
+.l{
+  clone="src/lin_balancer_fixedpoint.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: 0.NeN expand (0.7e18) + REJ_SOLIDITY_BALANCER_FP; src/lin_from_rust.lin v2 REJ_RUST_BALANCER_FP; src/lin_from_c.lin v2 REJ_C_BALANCER_FP"
+  improvement_1="upstream mulUp is Yul ((product-1)/ONE)+1; LIN takes explicit 128-bit floor/ceil and fail-closes if the quotient does not fit i64"
+  improvement_2="named goldens: mulDown(3,0.5e18)=1 vs mulUp=2 vs Aave half-up=2; divUp(1,3)=333...334 vs Aave wadDiv half-up 333...333"
+  improvement_3="naive i64 (3e18*3e18) wraps to 5595889181738926080; 128-bit mulDown yields 9e18"
+  improvement_4="mulDown(4e18,3e18)=12e18 does not fit i64 and fail-closes to 0 (no silent wrap)"
+  improvement_5="powDown/powUp/LogExpMath are out of scope (not claimed)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/balancer_fixedpoint_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_balancer_fixedpoint.sh"
+}
+
+.p{
+  harness="test/prove_balancer_fixedpoint_external.py"
+  evidence_json="examples/balancer_fixedpoint/balancer_fixedpoint_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-balancer-fixedpoint"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet Vault or WeightedPool parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production pool or Vault replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Balancer, Uniswap, or the EVM"
+  not_claimed_6="LIN saves Balancer TVL / any dollar figure derived from TVL"
+  not_claimed_7="powDown / powUp / LogExpMath"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
