@@ -1,0 +1,73 @@
+@RULEL:GMX_V2_FUNDING_AMOUNT_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GMX-V2-FUNDING-AMOUNT"
+@TITLE="Clone-lin of GMX V2 getFundingAmount with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-11"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-gmx-v2-funding-amount"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile GMX V2 funding amount (mulDiv size*(latest-entry)/(FLOAT*SQRT) with round-up charge vs round-down claim) into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Arbitrum GMX V2"
+  operand_width="int64 unsigned size/latest/entry + FLOAT 1e6 * SQRT 1e3 denom 1e9; Solidity uint256 / FLOAT 1e30 * SQRT 1e15 is NOT claimed"
+  commercial_hook="GMX V2 charges funding with Rounding.Up so a trader cannot dodge dust by updating the position before the fee is chargeable; claimable funding uses Rounding.Down. Making the rounding flag, FLOAT*SQRT denominator, and fail-closed underflow/overflow explicit is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/gmx-io/gmx-synthetics"
+  path="contracts/market/MarketUtils.sol"
+  precision_path="contracts/utils/Precision.sol"
+  pricing_path="contracts/pricing/PositionPricingUtils.sol"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later"
+  commit="a85ea3491c19c93bb4b5a002d9b358fb769b7849"
+  git_blob_sha="ad7a0b2b5a516ec86ce0afed89ff84ecba11038c"
+  file_sha256="8dfd271e4fc8e18d6a114b674dc1f520f38f6acd1f9c9a58b4b7509fe86e748f"
+  precision_git_blob_sha="047143722beaf6adceac3fc2ef1817f054dfe00a"
+  precision_file_sha256="8713db02a257238101fc62cc682a8f8061fba25951216863576afbbd00f34808"
+  pricing_git_blob_sha="c8e772da3417db9b5493361f92e3ab4f11ab471c"
+  pricing_file_sha256="59661f2ab60aa09924e34418357f15064ce7136e7440449c5f31ca3ce8fa050d"
+  fixture="test/fixtures/external_proof/GetFundingAmount.excerpt.sol"
+}
+
+.l{
+  clone="src/lin_gmx_v2_funding_amount.lin"
+  prefix="g2a_"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_GMX_V2_FUNDING_AMT before ENV; Chain.currentTimestamp is ENV; split equals then ex-brace emit. src/lin_from_rust.lin v2: REJ_RUST_GMX_V2_FUNDING_AMT"
+  improvement_1="latest, entry, size, and round_up are explicit arguments; DataStore / position storage lifted"
+  improvement_2="charge uses ceil((size*diff)/denom); claim uses floor; remainder 0 keeps them equal"
+  improvement_3="denominator is FLOAT*SQRT (1e6*1e3=1e9), not FLOAT alone (V1 / applyFactor trap)"
+  improvement_4="dust size 100 still charges 1 so a trader cannot dodge by updating before the fee is chargeable"
+  improvement_5="latest<entry underflow and size*diff overflow fail-close instead of wrapping"
+  named_contrast_1="GMX V1 getFundingFee is size*(cum-entry)/FLOAT with no SQRT and no round-up flag"
+  named_contrast_2="getFundingAmountPerSizeDelta is the inverse mulDiv (funding*FLOAT*SQRT/OI)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/gmx_v2_funding_amount_c11.c (gcc -O2 -std=c11, __int128 XOR portable umul_ok)"
+  gate="test/verify_gmx_v2_funding_amount.sh"
+}
+
+.p{
+  harness="test/prove_gmx_v2_funding_amount_external.py"
+  evidence_json="examples/gmx_v2_funding_amount/gmx_v2_funding_amount_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-gmx-v2-funding-amount"
+}
+
+.n{
+  not_claimed_1="full uint256 / Arbitrum GMX V2 mainnet parity / FLOAT 1e30 * SQRT 1e15"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production GMX market replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces GMX, Uniswap, or the EVM"
+  not_claimed_6="this is GMX V1 getFundingFee (no SQRT) or getFundingAmountPerSizeDelta (inverse) or getNextFundingAmountPerSize"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_PORTABLE && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

@@ -1,0 +1,27 @@
+    function getFundingFees(
+        PositionFundingFees memory fundingFees,
+        Position.Props memory position
+    ) internal pure returns (PositionFundingFees memory) {
+        fundingFees.fundingFeeAmount = MarketUtils.getFundingAmount(
+            fundingFees.latestFundingFeeAmountPerSize,
+            position.fundingFeeAmountPerSize(),
+            position.sizeInUsd(),
+            true // roundUpMagnitude
+        );
+
+        fundingFees.claimableLongTokenAmount = MarketUtils.getFundingAmount(
+            fundingFees.latestLongTokenClaimableFundingAmountPerSize,
+            position.longTokenClaimableFundingAmountPerSize(),
+            position.sizeInUsd(),
+            false // roundUpMagnitude
+        );
+
+        fundingFees.claimableShortTokenAmount = MarketUtils.getFundingAmount(
+            fundingFees.latestShortTokenClaimableFundingAmountPerSize,
+            position.shortTokenClaimableFundingAmountPerSize(),
+            position.sizeInUsd(),
+            false // roundUpMagnitude
+        );
+
+        return fundingFees;
+    }
