@@ -1,0 +1,183 @@
+{
+  "schema": "LIN_BALANCER_FIXEDPOINT_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned FixedPoint.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned balancer-v2-monorepo commit matches fixture",
+      "note": "commit=e91a2b643a49856f51a648d175667c1b48cf3377 blob=f3c74182db0cb5085ef3066ad069ecf76ef1df9f"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of FixedPoint.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb floor/ceil agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_balancer_fixedpoint.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3 (0.7eN + Balancer reject)",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2 (Balancer FixedPoint reject)",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 (Balancer FixedPoint reject)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "bfp_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "15/15 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "15/15 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "FLOOR-VS-CEIL",
+      "status": "PASS",
+      "description": "mulDown(3, 0.5e18)=1 floor vs mulUp=2 vs Aave half-up=2",
+      "note": ""
+    },
+    {
+      "id": "CEIL-VS-HALFUP",
+      "status": "PASS",
+      "description": "divUp(1,3)=333...334 ceil vs Aave half-up 333...333 vs floor 333...333",
+      "note": ""
+    },
+    {
+      "id": "DUST-CEIL",
+      "status": "PASS",
+      "description": "mulUp(1,1)=1 ceil of 1e-18 vs mulDown=0",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (3e18*3e18) wraps; 128-bit mulDown yields 9e18",
+      "note": "i64_wrap=5595889181738926080 muldown=9000000000000000000"
+    },
+    {
+      "id": "OV-FAILCLOSED",
+      "status": "PASS",
+      "description": "mulDown(4e18,3e18)=12e18 does not fit i64 and fail-closes to 0",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "UPSTREAM-YUL",
+      "status": "PASS",
+      "description": "upstream mulUp is Yul ceil ((product-1)/ONE)+1; LIN is explicit 128-bit",
+      "note": ""
+    },
+    {
+      "id": "WIDE-CEIL",
+      "status": "PASS",
+      "description": "clone uses 128-bit floor/ceil; naive i64 a*b wraps on 3e18*3e18",
+      "note": ""
+    },
+    {
+      "id": "NO-POW",
+      "status": "PASS",
+      "description": "clone has no pow kernel; powDown/powUp/LogExpMath remain out of scope",
+      "note": ""
+    },
+    {
+      "id": "SOL-EMIT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 expands 0.7eN and rejects Balancer mulUp Yul",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE",
+      "status": "PASS",
+      "description": "sol_parse_test_gate source asserts Balancer mulUp rejections (C0 check-only; string VM refused)",
+      "note": ""
+    },
+    {
+      "id": "SOL-EXPAND",
+      "status": "PASS",
+      "description": "sol_from_sol_gate asserts 0.7e18 -> 700000000000000000 (MIN_POW_BASE_FREE_EXPONENT)",
+      "note": ""
+    },
+    {
+      "id": "RS-EMIT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects mul_up / MAX_POW_RELATIVE_ERROR",
+      "note": ""
+    },
+    {
+      "id": "C-EMIT",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 rejects mul_up / MAX_POW_RELATIVE_ERROR",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/balancer/balancer-v2-monorepo",
+    "commit": "e91a2b643a49856f51a648d175667c1b48cf3377",
+    "path": "pkg/solidity-utils/contracts/math/FixedPoint.sol",
+    "git_blob_sha": "f3c74182db0cb5085ef3066ad069ecf76ef1df9f",
+    "file_sha256": "db8645a642a965744b15cbdedbf0214c6b8807cf98d359cfb00727a82967a944",
+    "license": "GPL-3.0-or-later"
+  },
+  "lin_clone": "src/lin_balancer_fixedpoint.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-balancer-fixedpoint",
+  "c11_oracle": "test/oracles/balancer_fixedpoint_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "mulDown_3_HALF": 1,
+    "mulUp_3_HALF": 2,
+    "aave_wadMul_3_HALF": 2,
+    "mulDown_1_1": 0,
+    "mulUp_1_1": 1,
+    "divDown_1_3": 333333333333333333,
+    "divUp_1_3": 333333333333333334,
+    "aave_wadDiv_1_3": 333333333333333333,
+    "mulDown_3e18_3e18": 9000000000000000000,
+    "naive_i64_3e18_3e18": 5595889181738926080,
+    "mulDown_4e18_3e18": 0,
+    "complement_1e17": 900000000000000000,
+    "MIN_POW_BASE_0_7e18": 700000000000000000
+  }
+}
