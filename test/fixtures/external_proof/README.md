@@ -11,6 +11,11 @@ independent proof harness. They are **test fixtures**, not vendored libraries.
 | `qoi.h` | [phoboslab/qoi](https://github.com/phoboslab/qoi) | MIT |
 | `tinyexpr.c` | [codeplea/tinyexpr](https://github.com/codeplea/tinyexpr) | zlib |
 | `BaseJumpRateModelV2.sol` | [compound-finance/compound-protocol](https://github.com/compound-finance/compound-protocol) | BSD-3-Clause |
+| `ApplyDeltaToCollateralSum.excerpt.sol` | [gmx-io/gmx-synthetics](https://github.com/gmx-io/gmx-synthetics) `MarketUtils.sol` | GPL-2.0-or-later (after BUSL Change Date 2026-08-31) |
+| `ApplyDeltaToOpenInterest.excerpt.sol` | same, named OI contrast (max-on-increase + swap-only) | GPL-2.0-or-later |
+| `ValidateOpenInterest.excerpt.sol` | same, named max-OI helper | GPL-2.0-or-later |
+| `GetCollateralSum.excerpt.sol` | same, named divisor contrast | GPL-2.0-or-later |
+| `ApplyDeltaToUint.excerpt.sol` | [gmx-io/gmx-synthetics](https://github.com/gmx-io/gmx-synthetics) `DataStore.sol` | GPL-2.0-or-later |
 
 They are only pinned so an auditor can hash the exact bytes and, with `--fetch`,
 re-download them from the GitHub Contents API. No upstream code is compiled or

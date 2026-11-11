@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: reject apply_delta_to_collateral_sum / collateral_sum / max_collateral_sum (GMX V2 unsigned collateral sum with max-always is a LIN port, not emit)"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,9 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "apply_delta_to_collateral_sum") > 0) { ^"REJ_RUST_GMX_V2_COLLATERAL_SUM" };
+  ?(rg_count_lit(body, "collateral_sum") > 0) { ^"REJ_RUST_GMX_V2_COLLATERAL_SUM" };
+  ?(rg_count_lit(body, "max_collateral_sum") > 0) { ^"REJ_RUST_GMX_V2_COLLATERAL_SUM" };
   ^"OK";
 }
 
@@ -66,6 +70,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_cs = "pub fn apply_delta_to_collateral_sum(sum: u64, delta: i64, max_value: u64) -> u64";
+  body_cs = "let next = apply_delta_to_uint(collateral_sum_key, delta); if next > max_collateral_sum { revert(); }";
+  r3 = rs_reason(sig_cs, body_cs);
+  ?(starts_lit(r3, 0, "REJ_RUST_GMX_V2_COLLATERAL_SUM") == 0) { ^0 };
 
   ^1;
 }

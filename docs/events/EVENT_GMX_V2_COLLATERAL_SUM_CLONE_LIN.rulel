@@ -1,0 +1,71 @@
+@RULEL:GMX_V2_COLLATERAL_SUM_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-GMX-V2-COLLATERAL-SUM"
+@TITLE="Clone-lin of GMX V2 applyDeltaToCollateralSum with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-11"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-gmx-v2-collateral-sum"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile GMX V2 unsigned collateral sum with always-on max into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Arbitrum GMX V2"
+  operand_width="int64 unsigned sum + signed delta + unsigned max; Solidity uint256/int256 is NOT claimed"
+  commercial_hook="GMX V2 collateralSum is the per-(market, collateralToken, isLong) total backing positions. Making DataStore explicit, rejecting a negative next uint, always checking maxCollateralSum (including on decrease), and fail-closing i64 overflow is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/gmx-io/gmx-synthetics"
+  path="contracts/market/MarketUtils.sol"
+  datastore_path="contracts/data/DataStore.sol"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later"
+  commit="a85ea3491c19c93bb4b5a002d9b358fb769b7849"
+  git_blob_sha="ad7a0b2b5a516ec86ce0afed89ff84ecba11038c"
+  file_sha256="8dfd271e4fc8e18d6a114b674dc1f520f38f6acd1f9c9a58b4b7509fe86e748f"
+  datastore_git_blob_sha="36279a5f32eae0882bd53418e04590da97aee154"
+  datastore_file_sha256="ab332edb2d32bb94cf47c06d2fe1fc7fb6dff101ab6b210282879514f6b05b3d"
+  fixture="test/fixtures/external_proof/ApplyDeltaToCollateralSum.excerpt.sol"
+}
+
+.l{
+  clone="src/lin_gmx_v2_collateral_sum.lin"
+  prefix="g2c_"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_GMX_V2_COLLATERAL_SUM before ENV; split equals then ex-brace emit. src/lin_from_rust.lin v2: REJ_RUST_GMX_V2_COLLATERAL_SUM"
+  improvement_1="DataStore / EventEmitter / market / collateralToken lifted to explicit is_long,sum,delta,max_value,index_token arguments; events stripped"
+  improvement_2="applyDeltaToUint rejects a negative next uint; maxCollateralSum is checked ALWAYS after the update, including on decrease"
+  improvement_3="indexToken==0 still updates collateral (OI would revert OpenInterestCannotBeUpdatedForSwapOnlyMarket)"
+  improvement_4="getCollateralSum divides by divisor; this kernel returns the undivided next uint"
+  improvement_5="signed i64 add of the unsigned sum fail-closes (ok=0) instead of wrapping 7e18+3e18 to -8446744073709551616"
+  named_contrast_1="applyDeltaToOpenInterest checks max only when delta>0 and rejects swap-only markets"
+  named_contrast_2="applyBoundedDeltaToUint floors a negative next uint at 0; this kernel rejects"
+  named_contrast_3="applyDeltaToInt is signed and may go negative; this kernel stays unsigned"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/gmx_v2_collateral_sum_c11.c (gcc -O2 -std=c11, __int128 XOR portable add_ok)"
+  gate="test/verify_gmx_v2_collateral_sum.sh"
+}
+
+.p{
+  harness="test/prove_gmx_v2_collateral_sum_external.py"
+  evidence_json="examples/gmx_v2_collateral_sum/gmx_v2_collateral_sum_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-gmx-v2-collateral-sum"
+}
+
+.n{
+  not_claimed_1="full uint256 / Arbitrum GMX V2 mainnet parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production GMX market replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces GMX, Uniswap, or the EVM"
+  not_claimed_6="this is applyDeltaToOpenInterest (max-on-increase + swap-only + signed VI) or applyDeltaToVirtualInventoryForSwaps (unsigned pair, floor-at-zero)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_PORTABLE && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
