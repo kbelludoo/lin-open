@@ -1,0 +1,160 @@
+{
+  "schema": "LIN_AAVE_PERCENT_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned PercentageMath.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned aave-v3-core commit matches fixture",
+      "note": "commit=782f51917056a53a2c228701058a6c3fb233684a blob=c000be3a6c38a959aa3d28737445eaa5762c53b0"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of PercentageMath.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb (a*b+add)/d agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_aave_percent.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3 (0.5eN + percent reject)",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2 (Aave percent reject)",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 (Aave percent reject)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "apc_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "12/12 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "12/12 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "HALF-UP",
+      "status": "PASS",
+      "description": "percentMul(3, 0.5e4)=2 half-up vs floor 1",
+      "note": ""
+    },
+    {
+      "id": "DIV-HALF-UP",
+      "status": "PASS",
+      "description": "percentDiv(2,3)=6667 half-up vs floor 6666",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (3e18*5000) wraps; 128-bit half-up percentMul does not",
+      "note": "i64_wrap=2797068074134536192 percentmul=1500000000000000000"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "UPSTREAM-YUL",
+      "status": "PASS",
+      "description": "upstream percentMul is Yul (a*b+HALF)/1e4; LIN is explicit 128-bit",
+      "note": ""
+    },
+    {
+      "id": "WIDE-HALFUP",
+      "status": "PASS",
+      "description": "clone uses 128-bit (a*b+add)/d; naive i64 a*b wraps on 3e18*5000",
+      "note": ""
+    },
+    {
+      "id": "SOL-EMIT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 expands 0.5eN and rejects Aave percent Yul",
+      "note": ""
+    },
+    {
+      "id": "RS-EMIT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects percent_mul / HALF_PERCENTAGE_FACTOR",
+      "note": ""
+    },
+    {
+      "id": "C-EMIT",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 rejects percent_mul / HALF_PERCENTAGE_FACTOR",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE",
+      "status": "PASS",
+      "description": "sol_parse_test_gate source asserts Aave percent rejections (C0 check-only)",
+      "note": ""
+    },
+    {
+      "id": "SOL-EXPAND",
+      "status": "PASS",
+      "description": "sol_from_sol_gate asserts 0.5e4 -> 5000 (HALF_PERCENTAGE_FACTOR)",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/aave/aave-v3-core",
+    "commit": "782f51917056a53a2c228701058a6c3fb233684a",
+    "path": "contracts/protocol/libraries/math/PercentageMath.sol",
+    "git_blob_sha": "c000be3a6c38a959aa3d28737445eaa5762c53b0",
+    "file_sha256": "6f165ad32ddcc3383cbb611cc3045c1a4bb28f16f83a85015fe202803de0161f",
+    "license": "MIT",
+    "license_note": "BUSL-1.1 Change Date 2023-01-27 elapsed; Change License MIT"
+  },
+  "lin_clone": "src/lin_aave_percent.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-aave-percent",
+  "c11_oracle": "test/oracles/aave_percent_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "percentMul_3_HALF": 2,
+    "floorMul_3_HALF": 1,
+    "percentDiv_2_3": 6667,
+    "floorDiv_2_3": 6666,
+    "percentMul_3e18_HALF": 1500000000000000000,
+    "naive_i64_3e18_HALF": 2797068074134536192,
+    "percentMul_4e18_300pct": 0
+  }
+}

@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: fail-closed Aave PercentageMath HALF_PERCENTAGE_FACTOR / percent_mul"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,8 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(body, "HALF_PERCENTAGE_FACTOR") > 0) { ^"REJ_RUST_AAVE_PERCENT" };
+  ?(rg_count_lit(sig, "percent_mul") > 0) { ^"REJ_RUST_AAVE_PERCENT" };
   ^"OK";
 }
 
@@ -66,6 +69,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_pct = "pub fn percent_mul(a: u64, b: u64) -> u64";
+  body_pct = "let c = (a * b + HALF_PERCENTAGE_FACTOR) / PERCENTAGE_FACTOR; c";
+  r3 = rs_reason(sig_pct, body_pct);
+  ?(starts_lit(r3, 0, "REJ_RUST_AAVE_PERCENT") == 0) { ^0 };
 
   ^1;
 }
