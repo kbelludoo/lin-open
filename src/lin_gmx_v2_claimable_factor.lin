@@ -1,0 +1,253 @@
+@LIN:L1c:0.2
+@GMX_V2_CLAIMABLE_FACTOR{
+  version=1
+  repo="gmx-io/gmx-synthetics"
+  source="contracts/market/MarketUtils.sol _getClaimableFactor"
+  claim_contrast="contracts/market/MarketUtils.sol claimCollateral"
+  timekey_contrast="contracts/market/MarketUtils.sol incrementClaimableCollateralAmount"
+  dist_contrast="contracts/market/MarketUtils.sol getPendingPositionImpactPoolDistributionAmount"
+  apply_contrast="contracts/utils/Precision.sol applyFactor"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later"
+  commit="a85ea3491c19c93bb4b5a002d9b358fb769b7849"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_gmx_v2_claimable_factor_max_time_account_delay_default_then_reduction"
+  note="Not mainnet uint256. DataStore and Chain.currentTimestamp lifted to args. FLOAT is 1e6 not 1e30. Distinct from pending impact-pool distribution (rate*duration clip) and from always-max collateral sum."
+}
+
+!g2f_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!g2f_uadd_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  s = a + b;
+  ?(s < 0) { ^ 0; };
+  ?(g2f_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!g2f_umul_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(a == 0) { ^ 1; };
+  ?(b == 0) { ^ 1; };
+  q = 9223372036854775807 / a;
+  ?(g2f_u_lt(q, b) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!g2f_float() -> int {
+  ^ 1000000;
+}
+
+!g2f_inputs_ok(ft: int, fa: int, red: int, div: int, delay: int, tkey: int, now_ts: int) -> int {
+  ?(ft < 0) { ^ 0; };
+  ?(fa < 0) { ^ 0; };
+  ?(red < 0) { ^ 0; };
+  ?(div < 0) { ^ 0; };
+  ?(delay < 0) { ^ 0; };
+  ?(tkey < 0) { ^ 0; };
+  ?(now_ts < 0) { ^ 0; };
+  ?(g2f_umul_ok(tkey, div) == 0) { ^ 0; };
+  prod = tkey * div;
+  ?(g2f_u_lt(now_ts, prod) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!g2f_time_diff(div: int, tkey: int, now_ts: int) -> int {
+  ?(g2f_inputs_ok(0, 0, 0, div, 0, tkey, now_ts) == 0) { ^ 0; };
+  ^ now_ts - (tkey * div);
+}
+
+!g2f_pick(ft: int, fa: int) -> int {
+  ?(g2f_u_lt(ft, fa) == 1) { ^ fa; };
+  ^ ft;
+}
+
+!g2f_factor(ft: int, fa: int, red: int, div: int, delay: int, tkey: int, now_ts: int) -> int {
+  ?(g2f_inputs_ok(ft, fa, red, div, delay, tkey, now_ts) == 0) { ^ 0; };
+  f = g2f_pick(ft, fa);
+  td = now_ts - (tkey * div);
+  ?(f == 0) {
+    ?(red == 0) {
+      ?(g2f_u_lt(delay, td) == 1) { f = g2f_float(); };
+    };
+  };
+  ?(g2f_u_lt(red, f) == 1) { ^ f - red; };
+  ^ 0;
+}
+
+!g2f_ok(ft: int, fa: int, red: int, div: int, delay: int, tkey: int, now_ts: int) -> int {
+  ?(g2f_inputs_ok(ft, fa, red, div, delay, tkey, now_ts) == 0) { ^ 0; };
+  f = g2f_factor(ft, fa, red, div, delay, tkey, now_ts);
+  ?(g2f_u_lt(g2f_float(), f) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!g2f_apply(amount: int, factor: int) -> int {
+  ?(amount < 0) { ^ 0; };
+  ?(factor < 0) { ^ 0; };
+  ?(g2f_umul_ok(amount, factor) == 0) { ^ 0; };
+  ^ (amount * factor) / g2f_float();
+}
+
+!g2f_claim_ok(amount: int, factor: int, claimed: int) -> int {
+  ?(amount < 0) { ^ 0; };
+  ?(claimed < 0) { ^ 0; };
+  ?(g2f_u_lt(g2f_float(), factor) == 1) { ^ 0; };
+  ?(g2f_umul_ok(amount, factor) == 0) { ^ 0; };
+  adj = g2f_apply(amount, factor);
+  ?(g2f_u_lt(claimed, adj) == 0) { ^ 0; };
+  ^ 1;
+}
+
+!g2f_amount_to_claim(amount: int, factor: int, claimed: int) -> int {
+  ?(g2f_claim_ok(amount, factor, claimed) == 0) { ^ 0; };
+  ^ g2f_apply(amount, factor) - claimed;
+}
+
+!g2f_wrong_min(ft: int, fa: int) -> int {
+  ?(g2f_u_lt(fa, ft) == 1) { ^ fa; };
+  ^ ft;
+}
+
+!g2f_wrong_time_only(ft: int, fa: int) -> int {
+  ^ ft;
+}
+
+!g2f_wrong_no_default(ft: int, fa: int, red: int, div: int, delay: int, tkey: int, now_ts: int) -> int {
+  ?(g2f_inputs_ok(ft, fa, red, div, delay, tkey, now_ts) == 0) { ^ 0; };
+  f = g2f_pick(ft, fa);
+  ?(g2f_u_lt(red, f) == 1) { ^ f - red; };
+  ^ 0;
+}
+
+!g2f_wrong_ge_delay(ft: int, fa: int, red: int, div: int, delay: int, tkey: int, now_ts: int) -> int {
+  ?(g2f_inputs_ok(ft, fa, red, div, delay, tkey, now_ts) == 0) { ^ 0; };
+  f = g2f_pick(ft, fa);
+  td = now_ts - (tkey * div);
+  ?(f == 0) {
+    ?(red == 0) {
+      ?(g2f_u_lt(td, delay) == 0) { f = g2f_float(); };
+    };
+  };
+  ?(g2f_u_lt(red, f) == 1) { ^ f - red; };
+  ^ 0;
+}
+
+!g2f_wrong_default_then_reduce(ft: int, fa: int, red: int, div: int, delay: int, tkey: int, now_ts: int) -> int {
+  ?(g2f_inputs_ok(ft, fa, red, div, delay, tkey, now_ts) == 0) { ^ 0; };
+  f = g2f_pick(ft, fa);
+  td = now_ts - (tkey * div);
+  ?(f == 0) {
+    ?(g2f_u_lt(delay, td) == 1) { f = g2f_float(); };
+  };
+  ?(g2f_u_lt(red, f) == 1) { ^ f - red; };
+  ^ 0;
+}
+
+!g2f_wrong_ignore_reduction(ft: int, fa: int, red: int, div: int, delay: int, tkey: int, now_ts: int) -> int {
+  ?(g2f_inputs_ok(ft, fa, red, div, delay, tkey, now_ts) == 0) { ^ 0; };
+  f = g2f_pick(ft, fa);
+  td = now_ts - (tkey * div);
+  ?(f == 0) {
+    ?(red == 0) {
+      ?(g2f_u_lt(delay, td) == 1) { f = g2f_float(); };
+    };
+  };
+  ^ f;
+}
+
+!g2f_wrong_signed_reduction(ft: int, fa: int, red: int) -> int {
+  ^ g2f_pick(ft, fa) - red;
+}
+
+!g2f_wrong_add_reduction(ft: int, fa: int, red: int) -> int {
+  ^ g2f_pick(ft, fa) + red;
+}
+
+!g2f_wrong_cap(ft: int, fa: int, red: int, div: int, delay: int, tkey: int, now_ts: int) -> int {
+  f = g2f_factor(ft, fa, red, div, delay, tkey, now_ts);
+  ?(g2f_u_lt(g2f_float(), f) == 1) { ^ g2f_float(); };
+  ^ f;
+}
+
+!g2f_wrong_rate_dist(pool: int, min_pool: int, duration: int, rate: int) -> int {
+  ?(g2f_u_lt(pool, min_pool) == 1) { ^ 0; };
+  ?(g2f_u_lt(pool, min_pool) == 0) {
+    ?(pool == min_pool) { ^ 0; };
+  };
+  ?(g2f_umul_ok(duration, rate) == 0) { ^ 0; };
+  dist = g2f_apply(duration, rate);
+  cap = pool - min_pool;
+  ?(g2f_u_lt(cap, dist) == 1) { ^ cap; };
+  ^ dist;
+}
+
+!g2f_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!g2f_test_suite() -> int {
+  ?(g2f_factor(400000, 600000, 0, 3600, 86400, 1000, 3686399) != 600000) { ^ -1; };
+  ?(g2f_wrong_min(400000, 600000) != 400000) { ^ -2; };
+  ?(g2f_wrong_time_only(400000, 600000) != 400000) { ^ -3; };
+  ?(g2f_factor(0, 0, 0, 3600, 86400, 1000, 3686401) != 1000000) { ^ -4; };
+  ?(g2f_wrong_no_default(0, 0, 0, 3600, 86400, 1000, 3686401) != 0) { ^ -5; };
+  ?(g2f_factor(0, 0, 0, 3600, 86400, 1000, 3686400) != 0) { ^ -6; };
+  ?(g2f_wrong_ge_delay(0, 0, 0, 3600, 86400, 1000, 3686400) != 1000000) { ^ -7; };
+  ?(g2f_factor(800000, 0, 300000, 3600, 86400, 1000, 3686399) != 500000) { ^ -8; };
+  ?(g2f_wrong_ignore_reduction(800000, 0, 300000, 3600, 86400, 1000, 3686399) != 800000) { ^ -9; };
+  ?(g2f_factor(300000, 0, 500000, 3600, 86400, 1000, 3686399) != 0) { ^ -10; };
+  ?(g2f_wrong_signed_reduction(300000, 0, 500000) != -200000) { ^ -11; };
+  ?(g2f_wrong_add_reduction(800000, 0, 300000) != 1100000) { ^ -12; };
+  ?(g2f_factor(0, 0, 200000, 3600, 86400, 1000, 3686401) != 0) { ^ -13; };
+  ?(g2f_wrong_default_then_reduce(0, 0, 200000, 3600, 86400, 1000, 3686401) != 800000) { ^ -14; };
+  ?(g2f_ok(2000000, 0, 0, 3600, 86400, 1000, 3686399) != 0) { ^ -15; };
+  ?(g2f_factor(2000000, 0, 0, 3600, 86400, 1000, 3686399) != 2000000) { ^ -16; };
+  ?(g2f_wrong_cap(2000000, 0, 0, 3600, 86400, 1000, 3686399) != 1000000) { ^ -17; };
+  ?(g2f_ok(0, 0, 0, 3600, 86400, 1000, 1) != 0) { ^ -18; };
+  ?(g2f_ok(0, 0, 0, 2000000000, 0, 7000000000, 0) != 0) { ^ -19; };
+  ?(g2f_amount_to_claim(100000000, 500000, 0) != 50000000) { ^ -20; };
+  ?(g2f_amount_to_claim(100000000, 500000, 10000000) != 40000000) { ^ -21; };
+  ?(g2f_claim_ok(100000000, 500000, 50000000) != 0) { ^ -22; };
+  ?(g2f_claim_ok(100000000, 2000000, 0) != 0) { ^ -23; };
+  ?(g2f_factor(500000, 500000, 0, 3600, 86400, 1000, 3686399) != 500000) { ^ -24; };
+  ?(g2f_wrong_rate_dist(200000000, 100000000, 500000, 1000000) != 500000) { ^ -25; };
+  ?(g2f_naive_i64_mul(7000000000, 2000000000) != -4446744073709551616) { ^ -26; };
+  ?(g2f_ok(400000, 600000, 0, 3600, 86400, 1000, 3686399) != 1) { ^ -27; };
+  ^ 1;
+}
+
+=ex{
+  g2f_u_lt,
+  g2f_uadd_ok,
+  g2f_umul_ok,
+  g2f_float,
+  g2f_inputs_ok,
+  g2f_time_diff,
+  g2f_pick,
+  g2f_factor,
+  g2f_ok,
+  g2f_apply,
+  g2f_claim_ok,
+  g2f_amount_to_claim,
+  g2f_wrong_min,
+  g2f_wrong_time_only,
+  g2f_wrong_no_default,
+  g2f_wrong_ge_delay,
+  g2f_wrong_default_then_reduce,
+  g2f_wrong_ignore_reduction,
+  g2f_wrong_signed_reduction,
+  g2f_wrong_add_reduction,
+  g2f_wrong_cap,
+  g2f_wrong_rate_dist,
+  g2f_naive_i64_mul,
+  g2f_test_suite
+}

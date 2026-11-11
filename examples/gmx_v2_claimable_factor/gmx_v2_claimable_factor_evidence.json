@@ -1,0 +1,255 @@
+{
+  "schema": "LIN_GMX_V2_CLAIMABLE_FACTOR_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "excerpt contains max(time,account) then delay-default then reduction",
+      "note": ""
+    },
+    {
+      "id": "PIN-CLAIM",
+      "status": "PASS",
+      "description": "claimCollateral rejects factor>FLOAT, then applyFactor minus claimed",
+      "note": ""
+    },
+    {
+      "id": "PIN-TIMEKEY",
+      "status": "PASS",
+      "description": "incrementClaimableCollateralAmount buckets timeKey as now/divisor",
+      "note": ""
+    },
+    {
+      "id": "PIN-DIST",
+      "status": "PASS",
+      "description": "pending impact-pool distribution is rate*duration clip, not delay-default",
+      "note": ""
+    },
+    {
+      "id": "PIN-FLOAT",
+      "status": "PASS",
+      "description": "Precision.applyFactor is value*factor/1e30; LIN uses FLOAT 1e6",
+      "note": ""
+    },
+    {
+      "id": "PIN-KEYS",
+      "status": "PASS",
+      "description": "Keys split time-only factor vs account factor vs reduction factor",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned gmx-io/gmx-synthetics matches fixtures",
+      "note": "commit=a85ea3491c19c93bb4b5a002d9b358fb769b7849 blob=ad7a0b2b5a516ec86ce0afed89ff84ecba11038c"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of MarketUtils.sol + Precision.sol + Keys.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (max/delay-default/reduction/overflow)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_gmx_v2_claimable_factor.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "g2f_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "27/27 vectors: C11 i128 == portable == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "27/27 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "MAX-PAIR",
+      "status": "PASS",
+      "description": "max(time 4e5, account 6e5) yields 600000 vs min 400000 vs time-only 400000",
+      "note": ""
+    },
+    {
+      "id": "DELAY-DEFAULT",
+      "status": "PASS",
+      "description": "both factors and reduction 0 after delay+1 default to FLOAT 1e6; skipping default stays 0",
+      "note": ""
+    },
+    {
+      "id": "STRICT-GT",
+      "status": "PASS",
+      "description": "timeDiff == delay does not default; >= delay would wrongly yield 1e6",
+      "note": ""
+    },
+    {
+      "id": "REDUCTION",
+      "status": "PASS",
+      "description": "8e5-3e5 reduction yields 500000 vs ignore-reduction 800000 vs add 1100000",
+      "note": ""
+    },
+    {
+      "id": "FLOOR-ZERO",
+      "status": "PASS",
+      "description": "reduction above factor floors at 0; signed subtract would be -200000",
+      "note": ""
+    },
+    {
+      "id": "NO-DEFAULT-RED",
+      "status": "PASS",
+      "description": "reduction!=0 blocks delay-default; default-then-reduce would be 800000",
+      "note": ""
+    },
+    {
+      "id": "INVALID-FACTOR",
+      "status": "PASS",
+      "description": "factor 2e6 > FLOAT is InvalidClaimableFactor; capping would yield 1e6",
+      "note": ""
+    },
+    {
+      "id": "TIME-UNDER",
+      "status": "PASS",
+      "description": "now < timeKey*divisor fail-closes (Solidity 0.8 underflow revert)",
+      "note": ""
+    },
+    {
+      "id": "MUL-OVERFLOW",
+      "status": "PASS",
+      "description": "7e9*2e9 timeKey*divisor fail-closes; naive i64 wraps to -4446744073709551616",
+      "note": ""
+    },
+    {
+      "id": "APPLY-CLAIM",
+      "status": "PASS",
+      "description": "1e8 * 5e5 / 1e6 claimed 0 is 5e7; claimed 1e7 is 4e7; claimed==adjusted rejects",
+      "note": ""
+    },
+    {
+      "id": "NOT-DIST",
+      "status": "PASS",
+      "description": "impact-pool distribution is rate*duration 5e5; claimable delay-default is 1e6 not a rate clip",
+      "note": ""
+    },
+    {
+      "id": "EQUAL-KEYS",
+      "status": "PASS",
+      "description": "equal time and account factors keep 500000",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on g2f_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes factor_time/account/reduction/divisor/delay/time_key/now as arguments",
+      "note": ""
+    },
+    {
+      "id": "FAIL-CLOSED-MUL",
+      "status": "PASS",
+      "description": "clone fail-closes timeKey*divisor overflow and now-prod underflow",
+      "note": ""
+    },
+    {
+      "id": "NOT-MAX-SUM",
+      "status": "PASS",
+      "description": "kernel is max of two factor keys then delay-default; not always-max collateral sum",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects _getClaimableFactor before ENV",
+      "note": ""
+    },
+    {
+      "id": "SOL-HEADER",
+      "status": "PASS",
+      "description": "transpiler header changelog does not contain the export token",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects get_claimable_factor",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/gmx-io/gmx-synthetics",
+    "commit": "a85ea3491c19c93bb4b5a002d9b358fb769b7849",
+    "path": "contracts/market/MarketUtils.sol",
+    "precision_path": "contracts/utils/Precision.sol",
+    "keys_path": "contracts/data/Keys.sol",
+    "git_blob_sha": "ad7a0b2b5a516ec86ce0afed89ff84ecba11038c",
+    "file_sha256": "8dfd271e4fc8e18d6a114b674dc1f520f38f6acd1f9c9a58b4b7509fe86e748f",
+    "precision_git_blob_sha": "047143722beaf6adceac3fc2ef1817f054dfe00a",
+    "precision_file_sha256": "8713db02a257238101fc62cc682a8f8061fba25951216863576afbbd00f34808",
+    "keys_git_blob_sha": "5472e5b4ecd29bb372218caa142476eb95fe55f8",
+    "keys_file_sha256": "9940d62b9dca2f3a753d67d7e7339a6326278a35d752c4c80ab1eedf0ab0f075",
+    "license": "GPL-2.0-or-later",
+    "license_note": "BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later",
+    "commercial_descendants": "GMX V2 claimable collateral after ADL/liquidation uses a time-bucket factor: max(timeKey factor, account factor), default 100% only after CLAIMABLE_COLLATERAL_DELAY when both factors and the reduction are zero, then subtract the reduction (floor at 0). claimCollateral rejects factor>FLOAT and pays applyFactor(amount, factor)-claimed."
+  },
+  "lin_clone": "src/lin_gmx_v2_claimable_factor.lin",
+  "c11_oracle": "test/oracles/gmx_v2_claimable_factor_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "max_pair": 600000,
+    "wrong_min": 400000,
+    "delay_default": 1000000,
+    "exact_delay": 0,
+    "wrong_ge_delay": 1000000,
+    "reduction": 500000,
+    "ignore_reduction": 800000,
+    "over_reduction": 0,
+    "signed_reduction": -200000,
+    "block_default": 0,
+    "default_then_reduce": 800000,
+    "invalid_ok": 0,
+    "amount0": 50000000,
+    "amount_claimed": 40000000,
+    "already_claimed_ok": 0,
+    "rate_dist": 500000,
+    "wrap_naive": -4446744073709551616
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-gmx-v2-claimable-factor"
+}
