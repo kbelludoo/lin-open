@@ -1,0 +1,201 @@
+@LIN:L1c:0.2
+@GMX_V2_USAGE_FACTOR{
+  version=1
+  repo="gmx-io/gmx-synthetics"
+  source="contracts/market/MarketUtils.sol getUsageFactor"
+  apply_contrast="contracts/utils/Precision.sol applyFactor"
+  tofactor_contrast="contracts/utils/Precision.sol toFactor"
+  borrow_contrast="contracts/market/MarketUtils.sol getBorrowingFees"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later"
+  commit="a85ea3491c19c93bb4b5a002d9b358fb769b7849"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_gmx_v2_usage_factor_nested_applyfactor_then_tofactor"
+  note="Not mainnet uint256. FLOAT is 1e6 not 1e30. Distinct from reserved/pool utilization, from Compound borrows/(cash+borrows), from fused reserved*FLOAT^2/(pool*factor), and from getBorrowingFees (single applyFactor USD fee)."
+}
+
+!g2u_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!g2u_uadd_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  s = a + b;
+  ?(s < 0) { ^ 0; };
+  ?(g2u_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!g2u_umul_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(a == 0) { ^ 1; };
+  ?(b == 0) { ^ 1; };
+  q = 9223372036854775807 / a;
+  ?(g2u_u_lt(q, b) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!g2u_float() -> int {
+  ^ 1000000;
+}
+
+!g2u_apply(value: int, factor: int) -> int {
+  ?(value < 0) { ^ 0; };
+  ?(factor < 0) { ^ 0; };
+  ?(g2u_umul_ok(value, factor) == 0) { ^ 0; };
+  ^ (value * factor) / g2u_float();
+}
+
+!g2u_to_factor(value: int, divisor: int, round_up: int) -> int {
+  ?(value < 0) { ^ 0; };
+  ?(divisor < 0) { ^ 0; };
+  ?(round_up < 0) { ^ 0; };
+  ?(g2u_u_lt(1, round_up) == 1) { ^ 0; };
+  ?(value == 0) { ^ 0; };
+  ?(divisor == 0) { ^ 0; };
+  ?(g2u_umul_ok(value, g2u_float()) == 0) { ^ 0; };
+  prod = value * g2u_float();
+  q = prod / divisor;
+  r = prod - (q * divisor);
+  ?(round_up == 0) { ^ q; };
+  ?(r == 0) { ^ q; };
+  ?(g2u_uadd_ok(q, 1) == 0) { ^ 0; };
+  ^ q + 1;
+}
+
+!g2u_max_reserved(pool: int, rfactor: int) -> int {
+  ^ g2u_apply(pool, rfactor);
+}
+
+!g2u_inputs_ok(reserved: int, pool: int, rfactor: int) -> int {
+  ?(reserved < 0) { ^ 0; };
+  ?(pool < 0) { ^ 0; };
+  ?(rfactor < 0) { ^ 0; };
+  ?(reserved == 0) { ^ 1; };
+  ?(g2u_umul_ok(pool, rfactor) == 0) { ^ 0; };
+  mx = g2u_max_reserved(pool, rfactor);
+  ?(mx == 0) { ^ 0; };
+  ?(g2u_umul_ok(reserved, g2u_float()) == 0) { ^ 0; };
+  ^ 1;
+}
+
+!g2u_ok(reserved: int, pool: int, rfactor: int) -> int {
+  ^ g2u_inputs_ok(reserved, pool, rfactor);
+}
+
+!g2u_usage(reserved: int, pool: int, rfactor: int) -> int {
+  ?(g2u_inputs_ok(reserved, pool, rfactor) == 0) { ^ 0; };
+  ?(reserved == 0) { ^ 0; };
+  mx = g2u_max_reserved(pool, rfactor);
+  ^ g2u_to_factor(reserved, mx, 0);
+}
+
+!g2u_wrong_pool(reserved: int, pool: int, rfactor: int) -> int {
+  ?(rfactor < 0) { ^ 0; };
+  ^ g2u_to_factor(reserved, pool, 0);
+}
+
+!g2u_wrong_compound(reserved: int, pool: int, rfactor: int) -> int {
+  ?(rfactor < 0) { ^ 0; };
+  ?(reserved < 0) { ^ 0; };
+  ?(pool < 0) { ^ 0; };
+  ?(reserved == 0) { ^ 0; };
+  ?(g2u_uadd_ok(pool, reserved) == 0) { ^ 0; };
+  den = pool + reserved;
+  ?(den == 0) { ^ 0; };
+  ?(g2u_umul_ok(reserved, g2u_float()) == 0) { ^ 0; };
+  ^ (reserved * g2u_float()) / den;
+}
+
+!g2u_wrong_apply(reserved: int, pool: int, rfactor: int) -> int {
+  ?(reserved < 0) { ^ 0; };
+  ^ g2u_apply(pool, rfactor);
+}
+
+!g2u_wrong_fused(reserved: int, pool: int, rfactor: int) -> int {
+  ?(reserved < 0) { ^ 0; };
+  ?(pool < 0) { ^ 0; };
+  ?(rfactor < 0) { ^ 0; };
+  ?(reserved == 0) { ^ 0; };
+  ?(g2u_umul_ok(pool, rfactor) == 0) { ^ 0; };
+  den = pool * rfactor;
+  ?(den == 0) { ^ 0; };
+  ?(g2u_umul_ok(reserved, g2u_float()) == 0) { ^ 0; };
+  n1 = reserved * g2u_float();
+  ?(g2u_umul_ok(n1, g2u_float()) == 0) { ^ 0; };
+  ^ (n1 * g2u_float()) / den;
+}
+
+!g2u_wrong_ceil(reserved: int, pool: int, rfactor: int) -> int {
+  ?(g2u_inputs_ok(reserved, pool, rfactor) == 0) { ^ 0; };
+  ?(reserved == 0) { ^ 0; };
+  mx = g2u_max_reserved(pool, rfactor);
+  ^ g2u_to_factor(reserved, mx, 1);
+}
+
+!g2u_wrong_cap(reserved: int, pool: int, rfactor: int) -> int {
+  u = g2u_usage(reserved, pool, rfactor);
+  ?(g2u_u_lt(g2u_float(), u) == 1) { ^ g2u_float(); };
+  ^ u;
+}
+
+!g2u_wrong_borrow(size: int, factor: int) -> int {
+  ^ g2u_apply(size, factor);
+}
+
+!g2u_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!g2u_test_suite() -> int {
+  ?(g2u_usage(40000000, 100000000, 500000) != 800000) { ^ -1; };
+  ?(g2u_wrong_pool(40000000, 100000000, 500000) != 400000) { ^ -2; };
+  ?(g2u_wrong_compound(40000000, 100000000, 500000) != 285714) { ^ -3; };
+  ?(g2u_wrong_apply(40000000, 100000000, 500000) != 50000000) { ^ -4; };
+  ?(g2u_usage(400, 1001, 500000) != 800000) { ^ -5; };
+  ?(g2u_wrong_fused(400, 1001, 500000) != 799200) { ^ -6; };
+  ?(g2u_wrong_fused(40000000, 100000000, 500000) != 0) { ^ -7; };
+  ?(g2u_usage(1, 3, 1000000) != 333333) { ^ -8; };
+  ?(g2u_wrong_ceil(1, 3, 1000000) != 333334) { ^ -9; };
+  ?(g2u_usage(0, 0, 0) != 0) { ^ -10; };
+  ?(g2u_ok(0, 0, 0) != 1) { ^ -11; };
+  ?(g2u_ok(1, 0, 500000) != 0) { ^ -12; };
+  ?(g2u_usage(60000000, 100000000, 500000) != 1200000) { ^ -13; };
+  ?(g2u_wrong_cap(60000000, 100000000, 500000) != 1000000) { ^ -14; };
+  ?(g2u_usage(50000000, 100000000, 500000) != 1000000) { ^ -15; };
+  ?(g2u_ok(40000000, 100000000, 0) != 0) { ^ -16; };
+  ?(g2u_ok(1, 7000000000, 2000000000) != 0) { ^ -17; };
+  ?(g2u_naive_i64_mul(7000000000, 2000000000) != -4446744073709551616) { ^ -18; };
+  ?(g2u_ok(10000000000000, 100000000, 1000000) != 0) { ^ -19; };
+  ?(g2u_wrong_borrow(100000000, 500000) != 50000000) { ^ -20; };
+  ?(g2u_ok(40000000, 100000000, 500000) != 1) { ^ -21; };
+  ^ 1;
+}
+
+=ex{
+  g2u_u_lt,
+  g2u_uadd_ok,
+  g2u_umul_ok,
+  g2u_float,
+  g2u_apply,
+  g2u_to_factor,
+  g2u_max_reserved,
+  g2u_inputs_ok,
+  g2u_ok,
+  g2u_usage,
+  g2u_wrong_pool,
+  g2u_wrong_compound,
+  g2u_wrong_apply,
+  g2u_wrong_fused,
+  g2u_wrong_ceil,
+  g2u_wrong_cap,
+  g2u_wrong_borrow,
+  g2u_naive_i64_mul,
+  g2u_test_suite
+}

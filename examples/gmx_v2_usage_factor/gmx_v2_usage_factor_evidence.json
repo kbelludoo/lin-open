@@ -1,0 +1,242 @@
+{
+  "schema": "LIN_GMX_V2_USAGE_FACTOR_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "excerpt is toFactor(reserved, applyFactor(pool, reserveFactor))",
+      "note": ""
+    },
+    {
+      "id": "PIN-APPLY",
+      "status": "PASS",
+      "description": "applyFactor is value*factor/1e30; LIN FLOAT is 1e6",
+      "note": ""
+    },
+    {
+      "id": "PIN-TOFACTOR",
+      "status": "PASS",
+      "description": "toFactor early-returns 0 and the 2-arg form always floors",
+      "note": ""
+    },
+    {
+      "id": "PIN-BORROW",
+      "status": "PASS",
+      "description": "getBorrowingFees is a single applyFactor USD fee, not nested usage",
+      "note": ""
+    },
+    {
+      "id": "PIN-RESERVE",
+      "status": "PASS",
+      "description": "isLong selects the reserve-factor storage key; it does not flip the math",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned gmx-io/gmx-synthetics matches fixtures",
+      "note": "commit=a85ea3491c19c93bb4b5a002d9b358fb769b7849 blob=ad7a0b2b5a516ec86ce0afed89ff84ecba11038c"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of MarketUtils.sol + Precision.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (nested usage / fused / overflow)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_gmx_v2_usage_factor.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "g2u_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "21/21 vectors: C11 i128 == portable == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "21/21 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NESTED-VS-POOL",
+      "status": "PASS",
+      "description": "reserved 4e7 / maxReserved 5e7 is 800000; reserved/pool is 400000 (understates by 2x at 50% reserveFactor)",
+      "note": ""
+    },
+    {
+      "id": "NOT-COMPOUND",
+      "status": "PASS",
+      "description": "Compound-style reserved/(pool+reserved) is 285714, not GMX nested usage",
+      "note": ""
+    },
+    {
+      "id": "INNER-FLOOR",
+      "status": "PASS",
+      "description": "nested floor of applyFactor raises usage 800000 vs fused reserved*FLOAT^2/(pool*factor) 799200",
+      "note": ""
+    },
+    {
+      "id": "FUSED-OVF",
+      "status": "PASS",
+      "description": "fusing FLOAT^2 at production-scale 4e7 overflows i64; nested sequential mulDiv stays in range",
+      "note": ""
+    },
+    {
+      "id": "TOFACTOR-FLOOR",
+      "status": "PASS",
+      "description": "2-arg toFactor floors dust 1/3 to 333333; Rounding.Up would be 333334",
+      "note": ""
+    },
+    {
+      "id": "ZERO-EARLY",
+      "status": "PASS",
+      "description": "reserved=0 returns 0 even when maxReserved=0 (toFactor early return, not div0)",
+      "note": ""
+    },
+    {
+      "id": "DIV0-MAX",
+      "status": "PASS",
+      "description": "reserved>0 and maxReserved=0 fail-closes (pool=0 or reserveFactor=0)",
+      "note": ""
+    },
+    {
+      "id": "OVER-RESERVE",
+      "status": "PASS",
+      "description": "usage is not capped at FLOAT: 6e7/5e7 = 1200000 vs min(usage,1e6) 1000000",
+      "note": ""
+    },
+    {
+      "id": "FULL-MAX",
+      "status": "PASS",
+      "description": "reserved == maxReserved yields FLOAT (100% of the reserve cap, 50% of pool)",
+      "note": ""
+    },
+    {
+      "id": "NOT-BORROW-FEE",
+      "status": "PASS",
+      "description": "getBorrowingFees applyFactor(size, factor) is 50000000 USD, not a 0-1 usage factor",
+      "note": ""
+    },
+    {
+      "id": "MUL-OVERFLOW",
+      "status": "PASS",
+      "description": "7e9*2e9 pool*rfactor fail-closes; naive i64 wraps to -4446744073709551616",
+      "note": ""
+    },
+    {
+      "id": "TOFACTOR-OVF",
+      "status": "PASS",
+      "description": "1e13*FLOAT reserved*1e6 fail-closes instead of wrapping",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on g2u_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes reserved/pool/rfactor as arguments; DataStore lifted",
+      "note": ""
+    },
+    {
+      "id": "FAIL-CLOSED-MUL",
+      "status": "PASS",
+      "description": "clone fail-closes pool*rfactor and reserved*FLOAT overflow and maxReserved=0",
+      "note": ""
+    },
+    {
+      "id": "NOT-UTIL",
+      "status": "PASS",
+      "description": "kernel is nested applyFactor then toFactor, not reserved/pool or Compound util",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects getUsageFactor before ENV",
+      "note": ""
+    },
+    {
+      "id": "SOL-HEADER",
+      "status": "PASS",
+      "description": "transpiler header changelog does not contain the export token",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects get_usage_factor",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/gmx-io/gmx-synthetics",
+    "commit": "a85ea3491c19c93bb4b5a002d9b358fb769b7849",
+    "path": "contracts/market/MarketUtils.sol",
+    "precision_path": "contracts/utils/Precision.sol",
+    "git_blob_sha": "ad7a0b2b5a516ec86ce0afed89ff84ecba11038c",
+    "file_sha256": "8dfd271e4fc8e18d6a114b674dc1f520f38f6acd1f9c9a58b4b7509fe86e748f",
+    "precision_git_blob_sha": "047143722beaf6adceac3fc2ef1817f054dfe00a",
+    "precision_file_sha256": "8713db02a257238101fc62cc682a8f8061fba25951216863576afbbd00f34808",
+    "license": "GPL-2.0-or-later",
+    "license_note": "BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later",
+    "commercial_descendants": "GMX V2 usage is reserved / (pool * reserveFactor), not reserved/pool. Nested floor of applyFactor then toFactor is strictly larger than fused reserved*FLOAT^2/(pool*factor) when the inner remainder is nonzero. Over-reserve is not capped at 100%. FLOAT is 1e30 on chain; this clone uses 1e6."
+  },
+  "lin_clone": "src/lin_gmx_v2_usage_factor.lin",
+  "c11_oracle": "test/oracles/gmx_v2_usage_factor_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "usage": 800000,
+    "pool_ratio": 400000,
+    "compound": 285714,
+    "apply_only": 50000000,
+    "fused_rem": 799200,
+    "fused_main": 0,
+    "dust_floor": 333333,
+    "dust_ceil": 333334,
+    "over": 1200000,
+    "capped": 1000000,
+    "full": 1000000,
+    "borrow_fee": 50000000,
+    "wrap_naive": -4446744073709551616
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-gmx-v2-usage-factor"
+}
