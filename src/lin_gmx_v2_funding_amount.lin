@@ -1,0 +1,174 @@
+@LIN:L1c:0.2
+@GMX_V2_FUNDING_AMOUNT{
+  version=1
+  repo="gmx-io/gmx-synthetics"
+  source="contracts/market/MarketUtils.sol getFundingAmount"
+  charge_contrast="contracts/pricing/PositionPricingUtils.sol getFundingFees roundUp true"
+  claim_contrast="contracts/pricing/PositionPricingUtils.sol getFundingFees roundUp false"
+  inverse_contrast="contracts/market/MarketUtils.sol getFundingAmountPerSizeDelta"
+  apply_contrast="contracts/utils/Precision.sol applyFactor"
+  license="GPL-2.0-or-later"
+  license_note="BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later"
+  commit="a85ea3491c19c93bb4b5a002d9b358fb769b7849"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_gmx_v2_funding_amount_round_up_charge_vs_round_down_claim"
+  note="Not mainnet uint256. FLOAT is 1e6 and SQRT is 1e3 so denom=1e9 not 1e45. Distinct from V1 size*(cum-entry)/FLOAT and from applyFactor (no SQRT) and from getFundingAmountPerSizeDelta (inverse mulDiv)."
+}
+
+!g2a_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!g2a_uadd_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  s = a + b;
+  ?(s < 0) { ^ 0; };
+  ?(g2a_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!g2a_umul_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(a == 0) { ^ 1; };
+  ?(b == 0) { ^ 1; };
+  q = 9223372036854775807 / a;
+  ?(g2a_u_lt(q, b) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!g2a_float() -> int {
+  ^ 1000000;
+}
+
+!g2a_sqrt() -> int {
+  ^ 1000;
+}
+
+!g2a_denom() -> int {
+  ^ 1000000000;
+}
+
+!g2a_inputs_ok(size: int, latest: int, entry: int) -> int {
+  ?(size < 0) { ^ 0; };
+  ?(latest < 0) { ^ 0; };
+  ?(entry < 0) { ^ 0; };
+  ?(g2a_u_lt(latest, entry) == 1) { ^ 0; };
+  diff = latest - entry;
+  ?(g2a_umul_ok(size, diff) == 0) { ^ 0; };
+  ^ 1;
+}
+
+!g2a_ok(size: int, latest: int, entry: int) -> int {
+  ^ g2a_inputs_ok(size, latest, entry);
+}
+
+!g2a_amount(size: int, latest: int, entry: int, round_up: int) -> int {
+  ?(g2a_inputs_ok(size, latest, entry) == 0) { ^ 0; };
+  ?(round_up < 0) { ^ 0; };
+  ?(g2a_u_lt(1, round_up) == 1) { ^ 0; };
+  d = g2a_denom();
+  ?(d == 0) { ^ 0; };
+  diff = latest - entry;
+  prod = size * diff;
+  q = prod / d;
+  r = prod - (q * d);
+  ?(round_up == 0) { ^ q; };
+  ?(r == 0) { ^ q; };
+  ?(g2a_uadd_ok(q, 1) == 0) { ^ 0; };
+  ^ q + 1;
+}
+
+!g2a_charge(size: int, latest: int, entry: int) -> int {
+  ^ g2a_amount(size, latest, entry, 1);
+}
+
+!g2a_claim(size: int, latest: int, entry: int) -> int {
+  ^ g2a_amount(size, latest, entry, 0);
+}
+
+!g2a_wrong_v1(size: int, latest: int, entry: int) -> int {
+  ?(size < 0) { ^ 0; };
+  ?(g2a_u_lt(latest, entry) == 1) { ^ 0; };
+  diff = latest - entry;
+  ?(g2a_umul_ok(size, diff) == 0) { ^ 0; };
+  ^ (size * diff) / g2a_float();
+}
+
+!g2a_wrong_apply(size: int, latest: int, entry: int) -> int {
+  ^ g2a_wrong_v1(size, latest, entry);
+}
+
+!g2a_wrong_floor(size: int, latest: int, entry: int) -> int {
+  ^ g2a_amount(size, latest, entry, 0);
+}
+
+!g2a_wrong_ceil(size: int, latest: int, entry: int) -> int {
+  ^ g2a_amount(size, latest, entry, 1);
+}
+
+!g2a_wrong_signed(latest: int, entry: int) -> int {
+  ^ latest - entry;
+}
+
+!g2a_wrong_inverse(funding: int, size: int) -> int {
+  ?(funding < 0) { ^ 0; };
+  ?(size <= 0) { ^ 0; };
+  ?(g2a_umul_ok(funding, g2a_denom()) == 0) { ^ 0; };
+  ^ (funding * g2a_denom()) / size;
+}
+
+!g2a_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!g2a_test_suite() -> int {
+  ?(g2a_charge(100000000, 5000123, 4000000) != 100013) { ^ -1; };
+  ?(g2a_claim(100000000, 5000123, 4000000) != 100012) { ^ -2; };
+  ?(g2a_wrong_floor(100000000, 5000123, 4000000) != 100012) { ^ -3; };
+  ?(g2a_wrong_ceil(100000000, 5000123, 4000000) != 100013) { ^ -4; };
+  ?(g2a_wrong_v1(100000000, 5000123, 4000000) != 100012300) { ^ -5; };
+  ?(g2a_wrong_apply(100000000, 5000123, 4000000) != 100012300) { ^ -6; };
+  ?(g2a_charge(100, 5000123, 4000000) != 1) { ^ -7; };
+  ?(g2a_claim(100, 5000123, 4000000) != 0) { ^ -8; };
+  ?(g2a_charge(100000000, 5000000, 4000000) != 100000) { ^ -9; };
+  ?(g2a_claim(100000000, 5000000, 4000000) != 100000) { ^ -10; };
+  ?(g2a_charge(100000000, 5000000, 5000000) != 0) { ^ -11; };
+  ?(g2a_ok(100000000, 4000000, 5000000) != 0) { ^ -12; };
+  ?(g2a_wrong_signed(4000000, 5000000) != -1000000) { ^ -13; };
+  ?(g2a_ok(7000000000, 2000000000, 0) != 0) { ^ -14; };
+  ?(g2a_naive_i64_mul(7000000000, 2000000000) != -4446744073709551616) { ^ -15; };
+  ?(g2a_wrong_inverse(100012, 100000000) != 1000120) { ^ -16; };
+  ?(g2a_charge(0, 5000123, 4000000) != 0) { ^ -17; };
+  ?(g2a_ok(100000000, 5000123, 4000000) != 1) { ^ -18; };
+  ?(g2a_amount(100000000, 5000123, 4000000, 1) != 100013) { ^ -19; };
+  ?(g2a_amount(100000000, 5000123, 4000000, 0) != 100012) { ^ -20; };
+  ^ 1;
+}
+
+=ex{
+  g2a_u_lt,
+  g2a_uadd_ok,
+  g2a_umul_ok,
+  g2a_float,
+  g2a_sqrt,
+  g2a_denom,
+  g2a_inputs_ok,
+  g2a_ok,
+  g2a_amount,
+  g2a_charge,
+  g2a_claim,
+  g2a_wrong_v1,
+  g2a_wrong_apply,
+  g2a_wrong_floor,
+  g2a_wrong_ceil,
+  g2a_wrong_signed,
+  g2a_wrong_inverse,
+  g2a_naive_i64_mul,
+  g2a_test_suite
+}

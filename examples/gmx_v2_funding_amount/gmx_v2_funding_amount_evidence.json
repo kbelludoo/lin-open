@@ -1,0 +1,227 @@
+{
+  "schema": "LIN_GMX_V2_FUNDING_AMOUNT_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-EXCERPT",
+      "status": "PASS",
+      "description": "excerpt is mulDiv(size, latest-entry, FLOAT*SQRT, roundUp)",
+      "note": ""
+    },
+    {
+      "id": "PIN-FEES",
+      "status": "PASS",
+      "description": "getFundingFees charges round-up and claims round-down",
+      "note": ""
+    },
+    {
+      "id": "PIN-DELTA",
+      "status": "PASS",
+      "description": "getFundingAmountPerSizeDelta is inverse mulDiv (funding*FLOAT*SQRT/OI)",
+      "note": ""
+    },
+    {
+      "id": "PIN-MULDIV",
+      "status": "PASS",
+      "description": "Precision.mulDiv round-up uses Math.Rounding.Up; SQRT is 1e15",
+      "note": ""
+    },
+    {
+      "id": "PIN-APPLY",
+      "status": "PASS",
+      "description": "applyFactor is value*factor/1e30 (no SQRT); LIN denom is 1e9",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned gmx-io/gmx-synthetics matches fixtures",
+      "note": "commit=a85ea3491c19c93bb4b5a002d9b358fb769b7849 blob=ad7a0b2b5a516ec86ce0afed89ff84ecba11038c"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of MarketUtils.sol + Precision.sol + PositionPricingUtils.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 selftest (charge/claim/dust/overflow)",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_gmx_v2_funding_amount.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "g2a_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "20/20 vectors: C11 i128 == portable == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "20/20 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "ROUND-PAIR",
+      "status": "PASS",
+      "description": "size 1e8 diff 1000123 / 1e9 charges 100013 (ceil) vs claims 100012 (floor)",
+      "note": ""
+    },
+    {
+      "id": "DUST-FEE",
+      "status": "PASS",
+      "description": "dust size 100 charges 1 (cannot dodge) vs claim 0",
+      "note": ""
+    },
+    {
+      "id": "EXACT-REM",
+      "status": "PASS",
+      "description": "remainder 0: charge equals claim 100000",
+      "note": ""
+    },
+    {
+      "id": "ZERO-DIFF",
+      "status": "PASS",
+      "description": "latest==entry yields 0",
+      "note": ""
+    },
+    {
+      "id": "V1-TRAP",
+      "status": "PASS",
+      "description": "V1 size*diff/FLOAT (no SQRT) is 100012300, 1000x the V2 scaled amount",
+      "note": ""
+    },
+    {
+      "id": "NOT-APPLY",
+      "status": "PASS",
+      "description": "applyFactor (no SQRT) matches the V1 trap, not FLOAT*SQRT",
+      "note": ""
+    },
+    {
+      "id": "NOT-INVERSE",
+      "status": "PASS",
+      "description": "per-size-delta inverse 100012*1e9/1e8 is 1000120, not 100012",
+      "note": ""
+    },
+    {
+      "id": "UNDERFLOW",
+      "status": "PASS",
+      "description": "latest < entry fail-closes; signed subtract would be -1000000",
+      "note": ""
+    },
+    {
+      "id": "MUL-OVERFLOW",
+      "status": "PASS",
+      "description": "7e9*2e9 size*diff fail-closes; naive i64 wraps to -4446744073709551616",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "PASS",
+      "description": "lin_c0 roundtrip-jit CONSENSUS on g2a_test_suite (in-memory libtcc)",
+      "note": ""
+    },
+    {
+      "id": "CJR-REGRESS",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes size/latest/entry/round_up as arguments",
+      "note": ""
+    },
+    {
+      "id": "FAIL-CLOSED-MUL",
+      "status": "PASS",
+      "description": "clone fail-closes size*diff overflow and latest<entry underflow",
+      "note": ""
+    },
+    {
+      "id": "NOT-V1-FEE",
+      "status": "PASS",
+      "description": "kernel is FLOAT*SQRT round-up/down, not V1 size*(cum-entry)/FLOAT",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJECT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects getFundingAmount before ENV",
+      "note": ""
+    },
+    {
+      "id": "SOL-HEADER",
+      "status": "PASS",
+      "description": "transpiler header changelog does not contain the export token",
+      "note": ""
+    },
+    {
+      "id": "RS-REJECT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects get_funding_amount",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/gmx-io/gmx-synthetics",
+    "commit": "a85ea3491c19c93bb4b5a002d9b358fb769b7849",
+    "path": "contracts/market/MarketUtils.sol",
+    "precision_path": "contracts/utils/Precision.sol",
+    "pricing_path": "contracts/pricing/PositionPricingUtils.sol",
+    "git_blob_sha": "ad7a0b2b5a516ec86ce0afed89ff84ecba11038c",
+    "file_sha256": "8dfd271e4fc8e18d6a114b674dc1f520f38f6acd1f9c9a58b4b7509fe86e748f",
+    "precision_git_blob_sha": "047143722beaf6adceac3fc2ef1817f054dfe00a",
+    "precision_file_sha256": "8713db02a257238101fc62cc682a8f8061fba25951216863576afbbd00f34808",
+    "pricing_git_blob_sha": "c8e772da3417db9b5493361f92e3ab4f11ab471c",
+    "pricing_file_sha256": "59661f2ab60aa09924e34418357f15064ce7136e7440449c5f31ca3ce8fa050d",
+    "license": "GPL-2.0-or-later",
+    "license_note": "BUSL-1.1 Change Date 2026-08-31 elapsed; Change License GPL-2.0-or-later",
+    "commercial_descendants": "GMX V2 funding charges round up so a trader cannot dodge dust by updating the position before the fee is chargeable; claimable funding rounds down. Same mulDiv(size, latest-entry, FLOAT*SQRT) with opposite Rounding flags. FLOAT is 1e30*1e15 on chain; this clone uses 1e6*1e3."
+  },
+  "lin_clone": "src/lin_gmx_v2_funding_amount.lin",
+  "c11_oracle": "test/oracles/gmx_v2_funding_amount_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "charge": 100013,
+    "claim": 100012,
+    "wrong_floor": 100012,
+    "wrong_ceil": 100013,
+    "v1_trap": 100012300,
+    "dust_charge": 1,
+    "dust_claim": 0,
+    "exact": 100000,
+    "zero_diff": 0,
+    "under_ok": 0,
+    "signed_under": -1000000,
+    "inverse": 1000120,
+    "wrap_naive": -4446744073709551616
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-gmx-v2-funding-amount"
+}
