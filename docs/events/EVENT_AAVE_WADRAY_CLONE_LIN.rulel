@@ -1,0 +1,63 @@
+@RULEL:AAVE_WADRAY_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-AAVE-V3-WADRAY"
+@TITLE="Clone-lin of Aave V3 WadRayMath wadMul/wadDiv with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_POSITIVE"
+@DATE="2026-11-11"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-aave-wadray"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Aave V3 WadRayMath wad half-up into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="i64-positive inputs; 128-bit product plus addend for (a*b+HALF)/WAD; Solidity uint256 and RAY=1e27 are NOT claimed"
+  commercial_hook="WadRayMath is the wad/ray unit library of Aave V3 markets; proving half-up wadMul vs floor mulWad and proving RAY=1e27 unrepresentable in u64 is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/aave/aave-v3-core"
+  path="contracts/protocol/libraries/math/WadRayMath.sol"
+  license="MIT"
+  license_note="BUSL-1.1 Change Date 2023-01-27 elapsed; Change License MIT"
+  commit="782f51917056a53a2c228701058a6c3fb233684a"
+  git_blob_sha="f61fe87f2f2748144cd4d113c848e649c41a4e5d"
+  file_sha256="fae5b995ec613cc213050c99ea6352c9c18ceebba106d03b1726cfa8f1f0124e"
+  fixture="test/fixtures/external_proof/WadRayMath.sol"
+}
+
+.l{
+  clone="src/lin_aave_wadray.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: 0.5eN expand + REJ_SOLIDITY_AAVE_WADRAY + REJ_SOLIDITY_RAY_GT_U64; src/lin_from_rust.lin v2 REJ_RUST_AAVE_WADRAY"
+  improvement_1="upstream wadMul is Yul (a*b+HALF_WAD)/WAD; LIN takes explicit 128-bit (a*b+add)/d and fail-closes if the quotient does not fit i64"
+  improvement_2="half-up named goldens: wadMul(3,HALF_WAD)=2 vs floor mulWad=1; wadDiv(2,3)=666...667 vs floor 666...666"
+  improvement_3="RAY=1e27 and wadToRay(1 WAD)=1e27 do not fit i64/u64 (awr_ray_fits=0); scaled RAY'=1e9 is labeled experimental and is not Aave 1e27"
+  improvement_4="naive i64 (3e18*3e18) wraps to 5595889181738926080; 128-bit wadMul yields 9e18"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/aave_wadray_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_aave_wadray.sh"
+}
+
+.p{
+  harness="test/prove_aave_wadray_external.py"
+  evidence_json="examples/aave_wadray/aave_wadray_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-aave-wadray"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet Aave RAY=1e27 parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production IRM or pool replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Aave, Uniswap, or the EVM"
+  not_claimed_6="LIN saves Aave TVL / any dollar figure derived from TVL"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

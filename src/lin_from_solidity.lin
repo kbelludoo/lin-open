@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: expand 0.5eN fractional scientific literals; fail-closed Aave WadRayMath HALF_WAD/Yul and RAY=1e27 (unrepresentable in i64). v2: emit LIN for eligible pure functions; expand 1eN; view without msg.sender is OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -42,6 +42,11 @@
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
+  ?(rg_count_lit(body, "HALF_WAD") > 0) { ^"REJ_SOLIDITY_AAVE_WADRAY" };
+  ?(rg_count_lit(body, "0.5e18") > 0) { ^"REJ_SOLIDITY_AAVE_WADRAY" };
+  ?(rg_count_lit(body, "HALF_RAY") > 0) { ^"REJ_SOLIDITY_RAY_GT_U64" };
+  ?(rg_count_lit(body, "1e27") > 0) { ^"REJ_SOLIDITY_RAY_GT_U64" };
+  ?(rg_count_lit(body, "0.5e27") > 0) { ^"REJ_SOLIDITY_RAY_GT_U64" };
   ?(rg_count_lit(body, "assembly") > 0) { ^"REJ_SOLIDITY_INLINE_ASM" };
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
@@ -64,6 +69,14 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_wad = "function wadMul(uint256 a, uint256 b) internal pure returns (uint256 c)";
+  body_wad = "c = (a * b + HALF_WAD) / WAD";
+  r4 = sol_reason(sig_wad, body_wad);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_AAVE_WADRAY") == 0) { ^0 };
+  sig_ray = "function rayMul(uint256 a, uint256 b) internal pure returns (uint256 c)";
+  body_ray = "c = (a * b + HALF_RAY) / RAY";
+  r5 = sol_reason(sig_ray, body_ray);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_RAY_GT_U64") == 0) { ^0 };
   ^1;
 }
 
@@ -85,6 +98,13 @@
   en = 0;
   expn = 0;
   z = 0;
+  frac_st = 0;
+  frac_en = 0;
+  has_frac = 0;
+  zeros = 0;
+  k = 0;
+  ip = "";
+  mant = "";
   while (i < n) {
     ?(s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) {
       ?(i > 0 && is_ident(s.charCodeAt(i - 1)) == true) {
@@ -94,12 +114,42 @@
       };
       st = i;
       while (i < n && s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) { i = i + 1 };
+      has_frac = 0;
+      frac_st = i;
+      frac_en = i;
+      ?(i < n && s.charCodeAt(i) == 46 && i + 1 < n && s.charCodeAt(i + 1) >= 48 && s.charCodeAt(i + 1) <= 57) {
+        i = i + 1;
+        frac_st = i;
+        while (i < n && s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) { i = i + 1 };
+        frac_en = i;
+        has_frac = 1;
+      };
       ?(i < n && (s.charCodeAt(i) == 101 || s.charCodeAt(i) == 69) && i + 1 < n && s.charCodeAt(i + 1) >= 48 && s.charCodeAt(i + 1) <= 57) {
         i = i + 1;
         en = i;
         while (i < n && s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) { i = i + 1 };
-        out = out + slice2(s, st, en - 1);
         expn = sol_parse_uint(s, en, i);
+        ?(has_frac == 1) {
+          zeros = expn - (frac_en - frac_st);
+          ?(zeros < 0) {
+            out = out + slice2(s, st, i);
+            continue;
+          };
+          ip = slice2(s, st, frac_st - 1);
+          k = 0;
+          while (k < ip.length && ip.charCodeAt(k) == 48) { k = k + 1 };
+          mant = slice2(ip, k, ip.length);
+          mant = mant + slice2(s, frac_st, frac_en);
+          ?(mant.length == 0) { mant = "0"; };
+          out = out + mant;
+          z = 0;
+          while (z < zeros) {
+            out = out + "0";
+            z = z + 1;
+          };
+          continue;
+        };
+        out = out + slice2(s, st, en - 1);
         z = 0;
         while (z < expn) {
           out = out + "0";
@@ -334,6 +384,10 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  half = sol_expand_exp("0.5e18");
+  ?(starts_lit(half, 0, "500000000000000000") == 0) { ^0 };
+  ?(half.length != 18) { ^0 };
+  ?(rg_count_lit(sol_expand_exp("1e18"), "1000000000000000000") == 0) { ^0 };
   ^1;
 }
 

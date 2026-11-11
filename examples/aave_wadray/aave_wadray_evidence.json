@@ -1,0 +1,161 @@
+{
+  "schema": "LIN_AAVE_WADRAY_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned WadRayMath.sol sha256 matches manifest",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned aave-v3-core commit matches fixture",
+      "note": "commit=782f51917056a53a2c228701058a6c3fb233684a blob=f61fe87f2f2748144cd4d113c848e649c41a4e5d"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of WadRayMath.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb (a*b+add)/d agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_aave_wadray.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3 (0.5eN + RAY reject)",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2 (Aave wad reject)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "awr_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "13/13 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "13/13 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "HALF-UP",
+      "status": "PASS",
+      "description": "wadMul(3, 0.5e18)=2 half-up vs floor mulWad=1 (Solady-style)",
+      "note": ""
+    },
+    {
+      "id": "DIV-HALF-UP",
+      "status": "PASS",
+      "description": "wadDiv(2,3)=666...667 half-up vs floor 666...666",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (3e18*3e18) wraps; 128-bit half-up wadMul does not",
+      "note": "i64_wrap=5595889181738926080 wadmul=9000000000000000000"
+    },
+    {
+      "id": "RAY-U64",
+      "status": "PASS",
+      "description": "RAY=1e27 is unrepresentable in i64/u64 (awr_ray_fits=0)",
+      "note": ""
+    },
+    {
+      "id": "WAD2RAY-1W",
+      "status": "PASS",
+      "description": "wadToRay(1e18) fail-closed (1e27 does not fit i64); naive wraps",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "UPSTREAM-YUL",
+      "status": "PASS",
+      "description": "upstream wadMul is Yul (a*b+HALF_WAD)/WAD; LIN is explicit 128-bit",
+      "note": ""
+    },
+    {
+      "id": "WIDE-HALFUP",
+      "status": "PASS",
+      "description": "clone uses 128-bit (a*b+add)/d; naive i64 a*b wraps on 3e18*3e18",
+      "note": ""
+    },
+    {
+      "id": "SOL-EMIT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 expands 0.5eN and rejects Aave RAY/Yul wadMul",
+      "note": ""
+    },
+    {
+      "id": "RS-EMIT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 rejects wad_mul / HALF_WAD",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE",
+      "status": "PASS",
+      "description": "sol_parse_test_gate source asserts Aave wad/RAY rejections (C0 check-only; strings are not C0-VM)",
+      "note": ""
+    },
+    {
+      "id": "SOL-EXPAND",
+      "status": "PASS",
+      "description": "sol_from_sol_gate asserts 0.5e18 -> 500000000000000000 (HALF_WAD)",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/aave/aave-v3-core",
+    "commit": "782f51917056a53a2c228701058a6c3fb233684a",
+    "path": "contracts/protocol/libraries/math/WadRayMath.sol",
+    "git_blob_sha": "f61fe87f2f2748144cd4d113c848e649c41a4e5d",
+    "file_sha256": "fae5b995ec613cc213050c99ea6352c9c18ceebba106d03b1726cfa8f1f0124e",
+    "license": "MIT",
+    "license_note": "BUSL-1.1 Change Date 2023-01-27 elapsed; Change License MIT"
+  },
+  "lin_clone": "src/lin_aave_wadray.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-aave-wadray",
+  "c11_oracle": "test/oracles/aave_wadray_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "wadMul_3_HALF": 2,
+    "floorMul_3_HALF": 1,
+    "wadDiv_2_3": 666666666666666667,
+    "floorDiv_2_3": 666666666666666666,
+    "wadMul_3W_3W": 9000000000000000000,
+    "naive_i64_3W_3W": 5595889181738926080,
+    "ray_fits": 0,
+    "wadToRay_1W": 0
+  }
+}

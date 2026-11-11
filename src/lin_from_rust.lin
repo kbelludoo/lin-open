@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: fail-closed Aave WadRayMath HALF_WAD / RAY=1e27 (unrepresentable in i64)"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,9 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(body, "HALF_WAD") > 0) { ^"REJ_RUST_AAVE_WADRAY" };
+  ?(rg_count_lit(sig, "wad_mul") > 0) { ^"REJ_RUST_AAVE_WADRAY" };
+  ?(rg_count_lit(body, "1e27") > 0) { ^"REJ_RUST_RAY_GT_U64" };
   ^"OK";
 }
 
@@ -66,6 +70,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_wad = "pub fn wad_mul(a: u64, b: u64) -> u64";
+  body_wad = "let c = (a * b + HALF_WAD) / WAD; c";
+  r3 = rs_reason(sig_wad, body_wad);
+  ?(starts_lit(r3, 0, "REJ_RUST_AAVE_WADRAY") == 0) { ^0 };
 
   ^1;
 }
