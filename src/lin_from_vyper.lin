@@ -1,0 +1,112 @@
+@LIN:L1c:0.2
+@LIN_FROM_VYPER{
+  version=1
+  purpose="fail_closed_classify_vyper_yearn_and_stableswap_and_expand_10_pow_N"
+  profile="LINVM-1"
+  status="EXPERIMENTAL_V1"
+  changelog="v1: reject Yearn V2 pricePerShare/lockedProfit/self/raw_call/arrays/assert; expand 10 ** N used by decimals and DEGRADATION_COEFFICIENT"
+}
+
+!vy_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "pricePerShare") > 0) { ^"REJ_VYPER_YEARN_PPS" };
+  ?(rg_count_lit(body, "_calculateLockedProfit") > 0) { ^"REJ_VYPER_YEARN_PPS" };
+  ?(rg_count_lit(body, "lockedProfitDegradation") > 0) { ^"REJ_VYPER_YEARN_PPS" };
+  ?(rg_count_lit(body, "_shareValue") > 0) { ^"REJ_VYPER_YEARN_PPS" };
+  ?(rg_count_lit(body, "_freeFunds") > 0) { ^"REJ_VYPER_YEARN_PPS" };
+  ?(rg_count_lit(body, "self.") > 0) { ^"REJ_VYPER_STORAGE" };
+  ?(rg_count_lit(sig, "self.") > 0) { ^"REJ_VYPER_STORAGE" };
+  ?(rg_count_lit(body, "raw_call") > 0) { ^"REJ_VYPER_RAWCALL" };
+  ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_VYPER_ENV" };
+  ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_VYPER_STATE" };
+  ?(rg_count_lit(sig, "nonreentrant") > 0) { ^"REJ_VYPER_LOCK" };
+  ?(rg_count_lit(body, "nonreentrant") > 0) { ^"REJ_VYPER_LOCK" };
+  ?(rg_count_lit(sig, "uint256[") > 0) { ^"REJ_VYPER_ARRAY" };
+  ?(rg_count_lit(body, "uint256[") > 0) { ^"REJ_VYPER_ARRAY" };
+  ?(rg_count_lit(body, "log ") > 0) { ^"REJ_VYPER_EVENT" };
+  ?(rg_count_lit(body, "ZERO_ADDRESS") > 0) { ^"REJ_VYPER_ADDRESS" };
+  ?(rg_count_lit(body, "assert ") > 0) { ^"REJ_VYPER_ASSERT" };
+  ?(rg_count_lit(sig, "@pure") > 0) { ^"OK" };
+  ?(rg_count_lit(sig, "@view") > 0) { ^"OK_VIEW" };
+  ^"REJ_VYPER_NON_PURE";
+}
+
+!vy_parse_uint(s: string, a: int, b: int) -> int {
+  v = 0;
+  k = a;
+  while (k < b) {
+    v = v * 10 + (s.charCodeAt(k) - 48);
+    k = k + 1;
+  };
+  ^v;
+}
+
+!vy_expand_pow10(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  while (i < n) {
+    ok = 0;
+    ?(s.charCodeAt(i) == 49 && i + 1 < n && s.charCodeAt(i + 1) == 48) {
+      prev_ok = 1;
+      ?(i > 0) {
+        pc = s.charCodeAt(i - 1);
+        ?(is_ident(pc) == true) { prev_ok = 0; };
+        ?(pc >= 48 && pc <= 57) { prev_ok = 0; };
+      };
+      ?(prev_ok == 1) {
+        k = i + 2;
+        while (k < n && (s.charCodeAt(k) == 32 || s.charCodeAt(k) == 9)) { k = k + 1; };
+        ?(k + 1 < n && s.charCodeAt(k) == 42 && s.charCodeAt(k + 1) == 42) {
+          k = k + 2;
+          while (k < n && (s.charCodeAt(k) == 32 || s.charCodeAt(k) == 9)) { k = k + 1; };
+          ?(k < n && s.charCodeAt(k) >= 48 && s.charCodeAt(k) <= 57) {
+            st = k;
+            while (k < n && s.charCodeAt(k) >= 48 && s.charCodeAt(k) <= 57) { k = k + 1; };
+            expn = vy_parse_uint(s, st, k);
+            ?(expn >= 0 && expn <= 18) {
+              out = out + "1";
+              z = 0;
+              while (z < expn) {
+                out = out + "0";
+                z = z + 1;
+              };
+              i = k;
+              ok = 1;
+            };
+          };
+        };
+      };
+    };
+    ?(ok == 0) {
+      out = out + s.charAt(i);
+      i = i + 1;
+    };
+  };
+  ^out;
+}
+
+!vy_parse_test_gate() -> int {
+  r1 = vy_reason("@pure def add_one(x: uint256) -> uint256", "return x + 1");
+  ?(r1.length != 2) { ^0; };
+  rY = vy_reason("@view @external def pricePerShare() -> uint256", "return self._shareValue(10 ** self.decimals)");
+  ?(starts_lit(rY, 0, "REJ_VYPER_YEARN_PPS") == 0) { ^0; };
+  rL = vy_reason("@view @internal def _calculateLockedProfit() -> uint256", "lockedFundsRatio: uint256 = (block.timestamp - self.lastReport) * self.lockedProfitDegradation");
+  ?(starts_lit(rL, 0, "REJ_VYPER_YEARN_PPS") == 0) { ^0; };
+  r2 = vy_reason("@view @internal def get_y(i: int128, j: int128, x: uint256, xp_: uint256[N_COINS]) -> uint256", "amp: uint256 = self._A()");
+  ?(starts_lit(r2, 0, "REJ_VYPER_STORAGE") == 0) { ^0; };
+  r3 = vy_reason("@pure @internal def get_D(xp: uint256[N_COINS], amp: uint256) -> uint256", "S: uint256 = 0");
+  ?(starts_lit(r3, 0, "REJ_VYPER_ARRAY") == 0) { ^0; };
+  r4 = vy_reason("@external @nonreentrant('lock') def exchange(i: int128, j: int128, dx: uint256, min_dy: uint256)", "raw_call(input_coin, concat())");
+  ?(starts_lit(r4, 0, "REJ_VYPER_") == 0) { ^0; };
+  exp = vy_expand_pow10("10 ** 18");
+  ?(starts_lit(exp, 0, "1000000000000000000") == 0) { ^0; };
+  ?(exp.length != 19) { ^0; };
+  deg = vy_expand_pow10("DEGRADATION_COEFFICIENT: constant(uint256) = 10 ** 18");
+  ?(rg_count_lit(deg, "1000000000000000000") == 0) { ^0; };
+  ?(rg_count_lit(deg, "10 ** 18") > 0) { ^0; };
+  keep = vy_expand_pow10("110 ** 2");
+  ?(rg_count_lit(keep, "110 ** 2") == 0) { ^0; };
+  ^1;
+}
+
+=ex{vy_reason, vy_parse_uint, vy_expand_pow10, vy_parse_test_gate}

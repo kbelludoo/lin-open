@@ -1,0 +1,259 @@
+@LIN:L1c:0.2
+@YEARN_V2_PPS{
+  version=1
+  repo="yearn/yearn-vaults"
+  source="contracts/Vault.vy _calculateLockedProfit/_shareValue/pricePerShare"
+  license="AGPL-3.0-or-later"
+  commit="97ca1b2e4fcf20f4be0ff456dabd020bfeb6697b"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_yearn_v2_locked_profit_price_per_share_128bit"
+  note="Not mainnet uint256. Storage now/lastReport/lockedProfit/idle/debt/supply/decimals are arguments. Linear unlock of harvest profit; empty vault is 1:1 shares=amount (no ERC-4626 virtual offset). DEGRADATION_COEFFICIENT=1e18 fits i64; 128-bit floor muldiv; now<lastReport and overflow fail-close."
+}
+
+!yps_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!yps_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(yps_u_lt(s, a));
+}
+
+!yps_mask32() -> int {
+  ^ 4294967295;
+}
+
+!yps_deg_coef() -> int {
+  ^ 1000000000000000000;
+}
+
+!yps_default_deg() -> int {
+  ^ 46000000000000;
+}
+
+!yps_muldiv_part(a: int, b: int, d: int, want_rem: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  m32 = yps_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = yps_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = yps_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(yps_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = yps_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(q < 0) { ov = 1; };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!yps_muldiv(a: int, b: int, d: int) -> int {
+  ^ yps_muldiv_part(a, b, d, 0);
+}
+
+!yps_muldiv_rem(a: int, b: int, d: int) -> int {
+  ^ yps_muldiv_part(a, b, d, 1);
+}
+
+!yps_muldiv_ov(a: int, b: int, d: int) -> int {
+  ?(d == 0) { ^ 1; };
+  ?(a < 0) { ^ 1; };
+  ?(b < 0) { ^ 1; };
+  q = yps_muldiv(a, b, d);
+  ?(q == 0) {
+    ?(a != 0 && b != 0) { ^ 1; };
+  };
+  ^ 0;
+}
+
+!yps_pow10(n: int) -> int {
+  ?(n < 0) { ^ 0; };
+  ?(n > 18) { ^ 0; };
+  v = 1;
+  i = 0;
+  while (i < n) {
+    v = v * 10;
+    i = i + 1;
+  };
+  ^ v;
+}
+
+!yps_locked_remaining(now_ts: int, last_report: int, locked: int, deg: int) -> int {
+  ?(now_ts < 0) { ^ 0; };
+  ?(last_report < 0) { ^ 0; };
+  ?(locked < 0) { ^ 0; };
+  ?(deg < 0) { ^ 0; };
+  ?(yps_u_lt(now_ts, last_report) == 1) { ^ 0; };
+  dt = now_ts - last_report;
+  ?(deg == 0) { ^ locked; };
+  ?(yps_muldiv_ov(dt, deg, 1) == 1) { ^ 0; };
+  ratio = yps_muldiv(dt, deg, 1);
+  ?(yps_u_lt(ratio, yps_deg_coef()) == 0) { ^ 0; };
+  unlocked = yps_muldiv(ratio, locked, yps_deg_coef());
+  ?(yps_u_lt(locked, unlocked) == 1) { ^ 0; };
+  ^ locked - unlocked;
+}
+
+!yps_locked_ok(now_ts: int, last_report: int, locked: int, deg: int) -> int {
+  ?(now_ts < 0) { ^ 0; };
+  ?(last_report < 0) { ^ 0; };
+  ?(locked < 0) { ^ 0; };
+  ?(deg < 0) { ^ 0; };
+  ?(yps_u_lt(now_ts, last_report) == 1) { ^ 0; };
+  dt = now_ts - last_report;
+  ?(deg == 0) { ^ 1; };
+  ?(yps_muldiv_ov(dt, deg, 1) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!yps_free_funds(idle: int, debt: int, locked_rem: int) -> int {
+  ?(idle < 0) { ^ 0; };
+  ?(debt < 0) { ^ 0; };
+  ?(locked_rem < 0) { ^ 0; };
+  ?(yps_u_add_carry(idle, debt) == 1) { ^ 0; };
+  assets = idle + debt;
+  ?(yps_u_lt(assets, locked_rem) == 1) { ^ 0; };
+  ^ assets - locked_rem;
+}
+
+!yps_share_value(shares: int, free: int, supply: int) -> int {
+  ?(shares < 0) { ^ 0; };
+  ?(free < 0) { ^ 0; };
+  ?(supply < 0) { ^ 0; };
+  ?(supply == 0) { ^ shares; };
+  ^ yps_muldiv(shares, free, supply);
+}
+
+!yps_price_per_share(decimals: int, idle: int, debt: int, supply: int, now_ts: int, last_report: int, locked: int, deg: int) -> int {
+  ?(yps_locked_ok(now_ts, last_report, locked, deg) == 0) { ^ 0; };
+  unit = yps_pow10(decimals);
+  ?(unit == 0) { ^ 0; };
+  rem = yps_locked_remaining(now_ts, last_report, locked, deg);
+  free = yps_free_funds(idle, debt, rem);
+  ^ yps_share_value(unit, free, supply);
+}
+
+!yps_shares_for_amount(amount: int, idle: int, debt: int, supply: int, now_ts: int, last_report: int, locked: int, deg: int) -> int {
+  ?(amount < 0) { ^ 0; };
+  ?(yps_locked_ok(now_ts, last_report, locked, deg) == 0) { ^ 0; };
+  rem = yps_locked_remaining(now_ts, last_report, locked, deg);
+  free = yps_free_funds(idle, debt, rem);
+  ?(supply == 0) { ^ amount; };
+  ?(free == 0) { ^ 0; };
+  ^ yps_muldiv(amount, supply, free);
+}
+
+!yps_ignore_lock_pps(decimals: int, idle: int, debt: int, supply: int) -> int {
+  unit = yps_pow10(decimals);
+  ?(unit == 0) { ^ 0; };
+  ?(yps_u_add_carry(idle, debt) == 1) { ^ 0; };
+  ^ yps_share_value(unit, idle + debt, supply);
+}
+
+!yps_step_lock_pps(decimals: int, idle: int, debt: int, supply: int, now_ts: int, last_report: int, locked: int, deg: int) -> int {
+  ?(yps_u_lt(now_ts, last_report) == 1) { ^ 0; };
+  dt = now_ts - last_report;
+  ?(yps_muldiv_ov(dt, deg, 1) == 1) { ^ 0; };
+  ratio = yps_muldiv(dt, deg, 1);
+  rem = locked;
+  ?(yps_u_lt(ratio, yps_deg_coef()) == 0) { rem = 0; };
+  unit = yps_pow10(decimals);
+  ?(unit == 0) { ^ 0; };
+  free = yps_free_funds(idle, debt, rem);
+  ^ yps_share_value(unit, free, supply);
+}
+
+!yps_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!yps_test_suite() -> int {
+  e18 = 1000000000000000000;
+  e17 = 100000000000000000;
+  deg = yps_default_deg();
+  ?(yps_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(yps_pow10(18) != e18) { ^ -2; };
+  ?(yps_pow10(19) != 0) { ^ -3; };
+  ?(yps_price_per_share(18, 0, 0, 0, 0, 0, 0, deg) != e18) { ^ -4; };
+  ?(yps_price_per_share(18, e18, 0, e18, 1000, 1000, e17, deg) != 900000000000000000) { ^ -5; };
+  ?(yps_price_per_share(18, e18, 0, e18, 11800, 1000, e17, deg) != 949680000000000000) { ^ -6; };
+  ?(yps_price_per_share(18, e18, 0, e18, 22740, 1000, e17, deg) != e18) { ^ -7; };
+  ?(yps_price_per_share(18, e18, 0, e18, 999, 1000, e17, deg) != 0) { ^ -8; };
+  ?(yps_muldiv(7000000000000000000, 3000000000000000000, 1) != 0) { ^ -9; };
+  ?(yps_naive_i64_mul(7000000000000000000, 3000000000000000000) != -5389669316318724096) { ^ -10; };
+  ?(yps_ignore_lock_pps(18, e18, 0, e18) != e18) { ^ -11; };
+  ?(yps_step_lock_pps(18, e18, 0, e18, 11800, 1000, e17, deg) != 900000000000000000) { ^ -12; };
+  ?(yps_shares_for_amount(123, 0, 0, 0, 0, 0, 0, deg) != 123) { ^ -13; };
+  ?(yps_shares_for_amount(e17, e18, 0, e18, 1000, 1000, e17, deg) != 111111111111111111) { ^ -14; };
+  ?(yps_muldiv_rem(3, 4, 5) != 2) { ^ -15; };
+  ?(yps_locked_remaining(1000, 1000, e17, deg) != e17) { ^ -16; };
+  ?(yps_locked_remaining(22740, 1000, e17, deg) != 0) { ^ -17; };
+  ^(1);
+}
+
+=ex{
+  yps_u_lt,
+  yps_u_add_carry,
+  yps_mask32,
+  yps_deg_coef,
+  yps_default_deg,
+  yps_muldiv_part,
+  yps_muldiv,
+  yps_muldiv_rem,
+  yps_muldiv_ov,
+  yps_pow10,
+  yps_locked_remaining,
+  yps_locked_ok,
+  yps_free_funds,
+  yps_share_value,
+  yps_price_per_share,
+  yps_shares_for_amount,
+  yps_ignore_lock_pps,
+  yps_step_lock_pps,
+  yps_naive_i64_mul,
+  yps_test_suite
+}

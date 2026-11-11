@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: fail-close Yearn price_per_share / locked_profit_degradation"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -40,6 +41,9 @@
 
 // 3. Critérios fail-closed de rejeição de código Rust não-puro
 !rs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "price_per_share") > 0) { ^"REJ_RUST_YEARN_PPS" };
+  ?(rg_count_lit(body, "locked_profit_degradation") > 0) { ^"REJ_RUST_YEARN_PPS" };
+  ?(rg_count_lit(body, "calculate_locked_profit") > 0) { ^"REJ_RUST_YEARN_PPS" };
   ?(rg_count_lit(sig, "&mut") > 0) { ^"REJ_RUST_MUTABLE_REF" };
   ?(rg_count_lit(sig, "&") > 0) { ^"REJ_RUST_BORROW" };
   ?(rg_count_lit(body, "unsafe") > 0) { ^"REJ_RUST_UNSAFE" };
@@ -66,6 +70,9 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  r3 = rs_reason("pub fn price_per_share(decimals: u64) -> u64", "let locked = last * locked_profit_degradation;");
+  ?(starts_lit(r3, 0, "REJ_RUST_YEARN_PPS") == 0) { ^0 };
 
   ^1;
 }
