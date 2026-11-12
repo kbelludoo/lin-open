@@ -1,0 +1,182 @@
+{
+  "schema": "LIN_MAKER_JUG_DRIP_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned jug.sol sha256 (hash-only; AGPL source not vendored)",
+      "note": "cefc440545885a916920ce2dc251916f2fc218701ba32413d3ce4884fba07927"
+    },
+    {
+      "id": "PIN-BLOB",
+      "status": "PASS",
+      "description": "pinned git blob sha of src/jug.sol",
+      "note": "dae9b263f699ed917e1d0a16bb51dc8b0326764f"
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss matches hashes",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 blob=dae9b263f699ed917e1d0a16bb51dc8b0326764f"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/jug.sol",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-MARKERS",
+      "status": "PASS",
+      "description": "live jug.sol contains drip, _rpow, and 10 ** 27",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb rpow/rmul/drip agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_jug_drip.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "jgd_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin typechecked; Maker drip/now/RAY27 reject + 10 ** N present (string gate is check-only: C0 VM refuses string literals)",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "7/7 drip vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "identity=1e9; dt0 prev2=2e9; now<rho=0; k1e6 dt2=1002001000; dt10=1010045120; x=0 n>0=0",
+      "note": ""
+    },
+    {
+      "id": "VS-LINEAR",
+      "status": "PASS",
+      "description": "Maker rpow compounds; first-order linear understates dt=2 by 1000",
+      "note": "drip=1002001000 linear=1002000000"
+    },
+    {
+      "id": "VS-LINEAR10",
+      "status": "PASS",
+      "description": "dt=10 drip=1010045120 vs linear=1010000000 (extra 45120)",
+      "note": ""
+    },
+    {
+      "id": "VS-RPOW",
+      "status": "PASS",
+      "description": "drip is rmul(rpow(base+duty,dt,RAY'), prev); duty=RAY' is identity on prev",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-FOLD",
+      "status": "PASS",
+      "description": "LIN returns fold delta as jgd_diff; no hidden vat.fold",
+      "note": "delta=2001000"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "7e18*3e18/1 fail-closes to 0; naive i64 wraps",
+      "note": "wrap=-5389669316318724096"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes now/rho/base/duty/prev as arguments",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product rpow/rmul (naive i64 a*b/d wraps on 7e18*3e18)",
+      "note": ""
+    },
+    {
+      "id": "SOL-EMIT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects drip/now/10**27 and expands 10 ** N<=18",
+      "note": ""
+    },
+    {
+      "id": "C-EMIT",
+      "status": "PASS",
+      "description": "lin_from_c.lin v2 fail-closes Maker drip / vat.fold",
+      "note": ""
+    },
+    {
+      "id": "RS-EMIT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin v2 fail-closes Maker drip / vat_fold",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/jug.sol",
+    "git_blob_sha": "dae9b263f699ed917e1d0a16bb51dc8b0326764f",
+    "file_sha256": "cefc440545885a916920ce2dc251916f2fc218701ba32413d3ce4884fba07927",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false,
+    "note": "hash-only pin; jug.sol is not copied into lin-open"
+  },
+  "lin_clone": "src/lin_maker_jug_drip.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-jug-drip",
+  "c11_oracle": "test/oracles/maker_jug_drip_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "identity_drip": 1000000000,
+    "dt0_prev2": 2000000000,
+    "now_lt_rho": 0,
+    "k1e6_dt2_drip": 1002001000,
+    "k1e6_dt2_linear": 1002000000,
+    "k1e6_dt10_drip": 1010045120,
+    "k1e6_dt10_linear": 1010000000,
+    "fold_delta_dt2": 2001000,
+    "x0_n": 0,
+    "x0_n0": 1000000000
+  }
+}

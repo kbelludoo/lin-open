@@ -1,0 +1,64 @@
+@RULEL:MAKER_JUG_DRIP_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MAKER-SKY-JUG-DRIP"
+@TITLE="Clone-lin of Maker/Sky jug.drip with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-maker-jug-drip"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Maker/Sky jug.drip stability-fee compounding into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, RAY'=1e9, 128-bit product for rpow half-up and floor rmul; Solidity uint256 RAY=1e27 is NOT claimed"
+  commercial_hook="jug.drip is the Maker/Sky stability-fee engine: rate = rmul(rpow(base+duty, now-rho, RAY), prev) then vat.fold. Making now/rho/base/duty/prev explicit and replacing wrapping i64 multiply with 128-bit rpow/rmul is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/makerdao/dss"
+  path="src/jug.sol"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  git_blob_sha="dae9b263f699ed917e1d0a16bb51dc8b0326764f"
+  file_sha256="cefc440545885a916920ce2dc251916f2fc218701ba32413d3ce4884fba07927"
+  fixture="hash_only_not_vendored"
+  note="Maker publishes jug.sol under AGPL-3.0-or-later; lin-open pins hashes only and does not redistribute the Solidity source"
+}
+
+.l{
+  clone="src/lin_maker_jug_drip.lin"
+  lin_sha256="557ce7eb8ba7e33f50d34375101b9fb370cea33a1cc9e9c0937dc3c2a5665975"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_MAKER_DRIP + REJ_SOLIDITY_RAY27 + Solidity 0.6 now ENV + 10 ** N<=18 expander; src/lin_from_c.lin v2 REJ_C_MAKER_DRIP; src/lin_from_rust.lin v2 REJ_RUST_MAKER_DRIP"
+  improvement_1="drip is storage/now/vat.fold in Solidity; LIN takes now/rho/base/duty/prev as arguments and returns fold delta via jgd_diff"
+  improvement_2="rpow assembly mul and rmul x*y overflow uint256 revert; LIN uses schoolbook 128-bit product matching C11 __int128, fail-closed if the quotient does not fit i64"
+  improvement_3="now < rho: Solidity require reverts; LIN fail-closes to 0"
+  improvement_4="RAY=10**27 does not fit i64; transpiler fail-closes 10 ** 27 and expands 10 ** N only for N<=18 (RAY'=1e9). First-order linear understates rpow: dt=2 drip=1002001000 vs linear=1002000000"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/maker_jug_drip_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="python3 test/prove_maker_jug_drip_external.py"
+}
+
+.p{
+  harness="test/prove_maker_jug_drip_external.py"
+  evidence_json="examples/maker_jug_drip/maker_jug_drip_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-jug-drip"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet vat.ilks.rate / RAY=1e27 parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production Maker/Sky IRM replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Maker, Sky, Dai, USDS, or the EVM"
+  not_claimed_6="TVL or dollar savings from running this kernel"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
