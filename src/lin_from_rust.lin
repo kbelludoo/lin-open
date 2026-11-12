@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: fail-close bands_x/bands_y/_user_shares (LLAMMA get_xy_up storage lift)"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,9 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(body, "bands_x") > 0) { ^"REJ_RUST_BANDS_X" };
+  ?(rg_count_lit(body, "bands_y") > 0) { ^"REJ_RUST_BANDS_Y" };
+  ?(rg_count_lit(body, "_user_shares") > 0) { ^"REJ_RUST_USER_SHARES" };
   ^"OK";
 }
 
@@ -66,6 +70,10 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  body_band = "return bands_x[n];";
+  r3 = rs_reason(sig_ok, body_band);
+  ?(starts_lit(r3, 0, "REJ_RUST_BANDS_X") == 0) { ^0 };
 
   ^1;
 }

@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: fail-close self.bands_x / self.bands_y / _user_shares / user: address (LLAMMA get_xy_up storage lift). v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,11 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(body, "self.bands_x") > 0) { ^"REJ_SOLIDITY_BANDS_X" };
+  ?(rg_count_lit(body, "self.bands_y") > 0) { ^"REJ_SOLIDITY_BANDS_Y" };
+  ?(rg_count_lit(body, "_user_shares") > 0) { ^"REJ_SOLIDITY_USER_SHARES" };
+  ?(rg_count_lit(sig, "user: address") > 0) { ^"REJ_SOLIDITY_USER_ADDRESS" };
+  ?(rg_count_lit(sig, "address user") > 0) { ^"REJ_SOLIDITY_USER_ADDRESS" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +69,16 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_band = "function x(address user) view returns (uint)";
+  body_band = "return self.bands_x[n];";
+  r4 = sol_reason(sig_band, body_band);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_BANDS_X") == 0) { ^0 };
+  body_by = "return self.bands_y[n];";
+  r5 = sol_reason(sig_band, body_by);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_BANDS_Y") == 0) { ^0 };
+  body_us = "return _user_shares[u];";
+  r6 = sol_reason(sig_band, body_us);
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_USER_SHARES") == 0) { ^0 };
   ^1;
 }
 
