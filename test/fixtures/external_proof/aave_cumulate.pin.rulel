@@ -1,0 +1,16 @@
+@RULEL:AAVE_CUMULATE_PIN:1.0.0
+@NOTE="Hash pin only. Aave V3 Solidity is not vendored (BUSL then MIT after Change Date 2023-01-27)."
+
+.u{
+  repo="https://github.com/aave/aave-v3-core"
+  path="contracts/protocol/libraries/logic/ReserveLogic.sol"
+  math_path="contracts/protocol/libraries/math/WadRayMath.sol"
+  commit="782f51917056a53a2c228701058a6c3fb233684a"
+  git_blob_sha="bc48163dbbfcac7c832d2e9dfef71a9ddadfe836"
+  file_sha256="6b827ea494fa5bb1b38fa9e7db973bd0aed0ee3d53677cac950f6614cb8fd0c9"
+  wad_ray_blob="f61fe87f2f2748144cd4d113c848e649c41a4e5d"
+  wad_ray_sha256="fae5b995ec613cc213050c99ea6352c9c18ceebba106d03b1726cfa8f1f0124e"
+  license="MIT_after_BUSL_Change_Date_2023-01-27"
+  kernel="cumulateToLiquidityIndex"
+  class="EXPERIMENTAL"
+}

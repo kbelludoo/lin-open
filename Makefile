@@ -305,10 +305,14 @@ else
 	@python3 test/prove_all_claims_external.py --iterations 10000
 endif
 
-.PHONY: compound-jumprate-proof independent-reproof
+.PHONY: compound-jumprate-proof independent-reproof aave-cumulate-proof
 compound-jumprate-proof: c0
 	@chmod +x test/verify_compound_jumprate.sh test/prove_compound_jumprate_external.py
 	@test/verify_compound_jumprate.sh
+
+aave-cumulate-proof: c0
+	@chmod +x test/verify_aave_cumulate.sh test/prove_aave_cumulate_external.py
+	@test/verify_aave_cumulate.sh
 
 independent-reproof: c0
 	@chmod +x test/prove_melhorias_independent.py

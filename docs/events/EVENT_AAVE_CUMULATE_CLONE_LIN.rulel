@@ -1,0 +1,68 @@
+@RULEL:AAVE_CUMULATE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-AAVE-CUMULATE-LIQUIDITY-INDEX"
+@TITLE="Clone-lin of Aave V3 cumulateToLiquidityIndex with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-aave-cumulate"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Aave V3 flashloan-premium-into-liquidity-index math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs RAY'=1e9 WAD_RAY_RATIO=1e9 half-up 128-bit (a*b+add)/d; Solidity uint256 / RAY=1e27 is NOT claimed"
+  commercial_hook="cumulateToLiquidityIndex is how every Aave V3 flashloan premium is folded into the aToken exchange rate. Making liquidityIndex an argument, fail-closing totalLiquidity=0 and wadToRay overflow, and using 128-bit half-up instead of wrapping i64 is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/aave/aave-v3-core"
+  path="contracts/protocol/libraries/logic/ReserveLogic.sol"
+  math_path="contracts/protocol/libraries/math/WadRayMath.sol"
+  license="MIT_after_BUSL_Change_Date_2023-01-27"
+  commit="782f51917056a53a2c228701058a6c3fb233684a"
+  git_blob_sha="bc48163dbbfcac7c832d2e9dfef71a9ddadfe836"
+  file_sha256="6b827ea494fa5bb1b38fa9e7db973bd0aed0ee3d53677cac950f6614cb8fd0c9"
+  wad_ray_blob="f61fe87f2f2748144cd4d113c848e649c41a4e5d"
+  wad_ray_sha256="fae5b995ec613cc213050c99ea6352c9c18ceebba106d03b1726cfa8f1f0124e"
+  fixture="test/fixtures/external_proof/aave_cumulate.pin.rulel"
+}
+
+.l{
+  clone="src/lin_aave_cumulate.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-aave-cumulate"
+  transpiler_delta="src/lin_from_solidity.lin: REJ_SOLIDITY_CUMULATE / REJ_SOLIDITY_HALF_RAY27 + 0.5eN expand; src/lin_from_c.lin v2 REJ_C_CUMULATE; src/lin_from_rust.lin v2 REJ_RUST_CUMULATE"
+  improvement_1="cumulateToLiquidityIndex writes reserve.liquidityIndex via toUint128 in Solidity; LIN takes total_liq, amount, index as arguments and returns the next index"
+  improvement_2="wadToRay(amount)*rayDiv uses 128-bit half-up; naive i64 1e10*1e10 wraps to 7766279631452241920"
+  improvement_3="totalLiquidity=0 fail-closes to 0 (Solidity rayDiv by zero reverts)"
+  improvement_4="mainnet RAY=1e27 / HALF_RAY=0.5e27 do not fit i64; transpilers fail-close 0.5e27 instead of silently dropping the kernel"
+  improvement_5="amount=0 is identity on the index (ratio=0, rayMul(RAY, index)=index) without a hidden storage no-op"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/aave_cumulate_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="make aave-cumulate-proof"
+}
+
+.p{
+  harness="test/prove_aave_cumulate_external.py"
+  evidence_json="examples/aave_cumulate/aave_cumulate_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-aave-cumulate"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet RAY=1e27 / aToken parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production Aave IRM / aToken replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="any TVL or dollar-savings figure"
+  not_claimed_6="rayMul/rayDiv/wadToRay as standalone clones (see clone-lin-aave-raymul and clone-lin-aave-raytowad)"
+  not_claimed_7="getNormalizedIncome time-index (see clone-lin-aave-norm)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

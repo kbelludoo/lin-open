@@ -1,0 +1,196 @@
+@LIN:L1c:0.2
+@AAVE_CUMULATE_LIQUIDITY_INDEX{
+  version=1
+  repo="aave/aave-v3-core"
+  source="contracts/protocol/libraries/logic/ReserveLogic.sol cumulateToLiquidityIndex + WadRayMath wadToRay/rayDiv/rayMul"
+  license="MIT_after_BUSL_Change_Date_2023-01-27"
+  commit="782f51917056a53a2c228701058a6c3fb233684a"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_aave_v3_flashloan_premium_into_liquidity_index_128bit"
+  note="Not mainnet uint256/RAY=1e27. RAY'=1e9, WAD_RAY_RATIO=1e9. liquidityIndex is an argument (not storage write / toUint128). wadToRay overflow and totalLiquidity=0 fail-close to 0. Upstream Solidity is hash-pinned, not vendored."
+}
+
+!acl_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!acl_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(acl_u_lt(s, a));
+}
+
+!acl_mask32() -> int {
+  ^ 4294967295;
+}
+
+!acl_ray() -> int {
+  ^ 1000000000;
+}
+
+!acl_half_ray() -> int {
+  ^ 500000000;
+}
+
+!acl_wad_ray_ratio() -> int {
+  ^ 1000000000;
+}
+
+!acl_ray27_fits() -> int {
+  ^ 0;
+}
+
+!acl_muldiv_add_part(a: int, b: int, add: int, d: int, want: int) -> int {
+  ?(d == 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(a < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(b < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(add < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  m32 = acl_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = acl_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = acl_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  lo2 = lo + add;
+  hi = hi + acl_u_add_carry(lo, add);
+  lo = lo2;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(acl_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = acl_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(q < 0) { ov = 1; };
+  ?(want == 2) { ^ ov; };
+  ?(want == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!acl_muldiv(a: int, b: int, d: int) -> int {
+  ^ acl_muldiv_add_part(a, b, 0, d, 0);
+}
+
+!acl_ray_mul(a: int, b: int) -> int {
+  ?(b == 0) { ^ 0; };
+  ^ acl_muldiv_add_part(a, b, acl_half_ray(), acl_ray(), 0);
+}
+
+!acl_wrong_floor_ray_mul(a: int, b: int) -> int {
+  ^ acl_muldiv_add_part(a, b, 0, acl_ray(), 0);
+}
+
+!acl_ray_div(a: int, b: int) -> int {
+  ?(b == 0) { ^ 0; };
+  half = b / 2;
+  ^ acl_muldiv_add_part(a, acl_ray(), half, b, 0);
+}
+
+!acl_wrong_floor_ray_div(a: int, b: int) -> int {
+  ?(b == 0) { ^ 0; };
+  ^ acl_muldiv_add_part(a, acl_ray(), 0, b, 0);
+}
+
+!acl_wad_to_ray(a: int) -> int {
+  ^ acl_muldiv_add_part(a, acl_wad_ray_ratio(), 0, 1, 0);
+}
+
+!acl_cumulate(total_liq: int, amount: int, index: int) -> int {
+  ?(total_liq <= 0) { ^ 0; };
+  ?(amount < 0) { ^ 0; };
+  ?(index < 0) { ^ 0; };
+  a_ray = acl_wad_to_ray(amount);
+  t_ray = acl_wad_to_ray(total_liq);
+  ?(amount != 0) {
+    ?(a_ray == 0) { ^ 0; };
+  };
+  ?(t_ray == 0) { ^ 0; };
+  ratio = acl_ray_div(a_ray, t_ray);
+  sum = ratio + acl_ray();
+  ?(acl_u_lt(sum, ratio) == 1) { ^ 0; };
+  ^ acl_ray_mul(sum, index);
+}
+
+!acl_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!acl_test_suite() -> int {
+  e9 = 1000000000;
+  ?(acl_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(acl_ray_mul(1, 500000000) != 1) { ^ -2; };
+  ?(acl_wrong_floor_ray_mul(1, 500000000) != 0) { ^ -3; };
+  ?(acl_ray_div(2, 3) != 666666667) { ^ -4; };
+  ?(acl_wrong_floor_ray_div(2, 3) != 666666666) { ^ -5; };
+  ?(acl_wad_to_ray(1) != e9) { ^ -6; };
+  ?(acl_cumulate(e9, 0, e9) != e9) { ^ -7; };
+  ?(acl_cumulate(e9, 1000000, e9) != 1001000000) { ^ -8; };
+  ?(acl_cumulate(e9, 900000, e9) != 1000900000) { ^ -9; };
+  ?(acl_cumulate(e9, 1000000, 1050000000) != 1051050000) { ^ -10; };
+  ?(acl_cumulate(0, 1000000, e9) != 0) { ^ -11; };
+  ?(acl_wad_to_ray(10000000000) != 0) { ^ -12; };
+  ?(acl_cumulate(e9, 10000000000, e9) != 0) { ^ -13; };
+  ?(acl_naive_i64_mul(10000000000, 10000000000) != 7766279631452241920) { ^ -14; };
+  ?(acl_ray_mul(10000000000, 10000000000) != 100000000000) { ^ -15; };
+  ?(acl_ray27_fits() != 0) { ^ -16; };
+  ?(acl_cumulate(2000000000, 100000000, e9) != 1050000000) { ^ -17; };
+  ?(acl_wad_to_ray(e9) != 1000000000000000000) { ^ -18; };
+  ^ 1;
+}
+
+=ex{
+  acl_u_lt,
+  acl_u_add_carry,
+  acl_mask32,
+  acl_ray,
+  acl_half_ray,
+  acl_wad_ray_ratio,
+  acl_ray27_fits,
+  acl_muldiv_add_part,
+  acl_muldiv,
+  acl_ray_mul,
+  acl_wrong_floor_ray_mul,
+  acl_ray_div,
+  acl_wrong_floor_ray_div,
+  acl_wad_to_ray,
+  acl_cumulate,
+  acl_naive_i64_mul,
+  acl_test_suite
+}
