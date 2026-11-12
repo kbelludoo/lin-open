@@ -1,0 +1,208 @@
+{
+  "schema": "LIN_UNISWAP_V2_MINTFEE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-COMMIT",
+      "status": "PASS",
+      "description": "pinned Uniswap v2-core v1.0.1 commit",
+      "note": "4dd59067c76dea4a0e8e4bfdda41877a6b16dedc"
+    },
+    {
+      "id": "PIN-PAIR",
+      "status": "PASS",
+      "description": "pinned UniswapV2Pair.sol sha256 (hash-only; not vendored)",
+      "note": "43a5421b31415868367b62bfa161ca10bcee03778873faad905f5a3e2cce9cbd"
+    },
+    {
+      "id": "PIN-MATH",
+      "status": "PASS",
+      "description": "pinned Math.sol sha256",
+      "note": "e4a9d451964a0689be2b244322a353de143ca4248d8736d91aca4ffadca4325f"
+    },
+    {
+      "id": "PIN-SAFEMATH",
+      "status": "PASS",
+      "description": "pinned SafeMath.sol sha256",
+      "note": "4b1c95ff75de7342e0fadff58064820a4eb7c2fcb422a75b4994980ce8e216ae"
+    },
+    {
+      "id": "NO-VENDOR",
+      "status": "PASS",
+      "description": "GPL Solidity is not vendored; pin is hash-only",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned v2-core matches hashes",
+      "note": "commit=4dd59067c76dea4a0e8e4bfdda41877a6b16dedc"
+    },
+    {
+      "id": "UPSTREAM-MARKERS",
+      "status": "PASS",
+      "description": "live files contain _mintFee / Math.sqrt / SafeMath.mul",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb sqrt/mintFee agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_uniswap_v2_mintfee.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "uvf_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin rejects _mintFee/factory.feeTo/_mint and types uint112",
+      "note": ""
+    },
+    {
+      "id": "VEC-SQRT",
+      "status": "PASS",
+      "description": "10/10 Babylonian sqrts: C11 i128 == limbs == LIN == math.isqrt",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "7/7 mintFee vectors: C11 i128 == limbs == LIN == Python isqrt",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "no-growth=0; 1100/1100 vs kLast=1e6 supply=1000 -> 15; 2x -> 90; feeOff=0",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "7e18*3e18/1 fail-closes to 0; naive i64 wraps",
+      "note": "wrap=-5389669316318724096"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN takes fee_on/kLast/totalSupply as args; sqrt loop bound=80",
+      "note": ""
+    },
+    {
+      "id": "VS-SIXTH",
+      "status": "PASS",
+      "description": "liquidity = supply*(rootK-rootKLast)/(5*rootK+rootKLast); small-growth ~ supply/6",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "SOL-EMIT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin rejects _mintFee and expands SafeMath .mul/.add/.sub",
+      "note": ""
+    },
+    {
+      "id": "C-EMIT",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes Uniswap V2 _mintFee / feeTo / _mint",
+      "note": ""
+    },
+    {
+      "id": "RS-EMIT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes Uniswap V2 _mint_fee / fee_to / _mint",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/Uniswap/v2-core",
+    "commit": "4dd59067c76dea4a0e8e4bfdda41877a6b16dedc",
+    "tag": "v1.0.1",
+    "paths": [
+      "contracts/UniswapV2Pair.sol",
+      "contracts/libraries/Math.sol",
+      "contracts/libraries/SafeMath.sol"
+    ],
+    "pins": {
+      "contracts/UniswapV2Pair.sol": {
+        "sha256": "43a5421b31415868367b62bfa161ca10bcee03778873faad905f5a3e2cce9cbd",
+        "blob": "f87a1db262fba132862eae377d8cdaef74c79f97",
+        "markers": [
+          "function _mintFee",
+          "Math.sqrt",
+          "IUniswapV2Factory",
+          "feeTo()"
+        ]
+      },
+      "contracts/libraries/Math.sol": {
+        "sha256": "e4a9d451964a0689be2b244322a353de143ca4248d8736d91aca4ffadca4325f",
+        "blob": "1cab10d2628630dfad34a0810f4fd56282208366",
+        "markers": [
+          "function sqrt",
+          "y > 3",
+          "y / 2 + 1"
+        ]
+      },
+      "contracts/libraries/SafeMath.sol": {
+        "sha256": "4b1c95ff75de7342e0fadff58064820a4eb7c2fcb422a75b4994980ce8e216ae",
+        "blob": "f2fbe164ffb143bc1c7116674654edd9113cbc54",
+        "markers": [
+          "function mul",
+          "function add",
+          "function sub"
+        ]
+      }
+    },
+    "license": "GPL-3.0-or-later",
+    "vendored": false,
+    "note": "hash-only pin; GPL UniswapV2Pair.sol / Math.sol / SafeMath.sol are not copied into lin-open"
+  },
+  "lin_clone": "src/lin_uniswap_v2_mintfee.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-uniswap-v2-mintfee",
+  "c11_oracle": "test/oracles/uniswap_v2_mintfee_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "sqrt_0": 0,
+    "sqrt_4": 2,
+    "sqrt_1e18": 1000000000,
+    "mint_no_growth": 0,
+    "mint_1100_vs_1000": 15,
+    "mint_2000_vs_1000": 90,
+    "mint_fee_off": 0,
+    "mint_1e9": 199760047,
+    "muldiv_7e18_3e18": 0
+  }
+}

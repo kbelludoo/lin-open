@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: uint112/uint224; SafeMath .mul/.add/.sub/.div -> operators; reject Uniswap V2 _mintFee/factory.feeTo/_mint. v2: emit LIN for eligible pure functions; expand 1eN; view without msg.sender is OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -25,7 +25,9 @@
 
 !sol_is_type(nm: string): int {
   ?(starts_lit(nm, 0, "uint256") == 1 && nm.length == 7) { ^1 };
+  ?(starts_lit(nm, 0, "uint224") == 1 && nm.length == 7) { ^1 };
   ?(starts_lit(nm, 0, "uint128") == 1 && nm.length == 7) { ^1 };
+  ?(starts_lit(nm, 0, "uint112") == 1 && nm.length == 7) { ^1 };
   ?(starts_lit(nm, 0, "uint64") == 1 && nm.length == 6) { ^1 };
   ?(starts_lit(nm, 0, "uint32") == 1 && nm.length == 6) { ^1 };
   ?(starts_lit(nm, 0, "uint16") == 1 && nm.length == 6) { ^1 };
@@ -38,6 +40,10 @@
 }
 
 !sol_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "_mintFee") > 0) { ^"REJ_SOLIDITY_UNIV2_MINTFEE" };
+  ?(rg_count_lit(body, "IUniswapV2Factory") > 0) { ^"REJ_SOLIDITY_UNIV2_MINTFEE" };
+  ?(rg_count_lit(body, "feeTo()") > 0) { ^"REJ_SOLIDITY_UNIV2_MINTFEE" };
+  ?(rg_count_lit(body, "_mint(") > 0) { ^"REJ_SOLIDITY_UNIV2_MINTFEE" };
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
@@ -64,6 +70,10 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_fee = "function _mintFee(uint112 _reserve0, uint112 _reserve1) private returns (bool feeOn)";
+  body_fee = "address feeTo = IUniswapV2Factory(factory).feeTo(); if (liquidity > 0) _mint(feeTo, liquidity);";
+  r4 = sol_reason(sig_fee, body_fee);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_UNIV2_MINTFEE") == 0) { ^0 };
   ^1;
 }
 
@@ -114,6 +124,60 @@
     i = i + 1;
   };
   ^out;
+}
+
+!sol_atom_left(s: string, at: int): int {
+  k = at - 1;
+  while (k >= 0 && (s.charCodeAt(k) == 32 || s.charCodeAt(k) == 9)) { k = k - 1 };
+  ?(k < 0) { ^0 };
+  ?(s.charCodeAt(k) == 41) {
+    d = 1;
+    k = k - 1;
+    while (k >= 0 && d > 0) {
+      ?(s.charCodeAt(k) == 41) { d = d + 1 };
+      ?(s.charCodeAt(k) == 40) { d = d - 1 };
+      k = k - 1;
+    };
+    ^(k + 1);
+  };
+  ?(is_ident(s.charCodeAt(k)) == true || (s.charCodeAt(k) >= 48 && s.charCodeAt(k) <= 57)) {
+    while (k > 0 && (is_ident(s.charCodeAt(k - 1)) == true || (s.charCodeAt(k - 1) >= 48 && s.charCodeAt(k - 1) <= 57))) { k = k - 1 };
+    ^k;
+  };
+  ^at;
+}
+
+!sol_expand_safemath(s: string): string {
+  t = s;
+  guard = 0;
+  while (guard < 64) {
+    n = t.length;
+    i = 0;
+    hit = 0;
+    opch = "";
+    opl = 0;
+    while (i < n) {
+      ?(starts_lit(t, i, ".mul(") == 1) { hit = 1; opch = "*"; opl = 5 };
+      ?(hit == 0 && starts_lit(t, i, ".add(") == 1) { hit = 1; opch = "+"; opl = 5 };
+      ?(hit == 0 && starts_lit(t, i, ".sub(") == 1) { hit = 1; opch = "-"; opl = 5 };
+      ?(hit == 0 && starts_lit(t, i, ".div(") == 1) { hit = 1; opch = "/"; opl = 5 };
+      ?(hit == 1) {
+        lp = match_paren(t, i + opl - 1);
+        ?(lp <= i) { hit = 0; i = i + 1; continue };
+        ls = sol_atom_left(t, i);
+        left = slice2(t, ls, i);
+        right = slice2(t, i + opl, lp);
+        t = slice2(t, 0, ls) + "(" + left + " " + opch + " " + right + ")" + slice2(t, lp + 1, n);
+        hit = 2;
+        i = n;
+        continue;
+      };
+      i = i + 1;
+    };
+    ?(hit != 2) { ^t };
+    guard = guard + 1;
+  };
+  ^t;
 }
 
 !sol_strip_types(s: string): string {
@@ -172,7 +236,7 @@
 }
 
 !sol_body(b: string): string {
-  t = jss_trim(sol_strip_types(sol_expand_exp(b)));
+  t = jss_trim(sol_strip_types(sol_expand_safemath(sol_expand_exp(b))));
   out = "";
   n = t.length;
   i = 0;
@@ -334,7 +398,11 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  sm = sol_expand_safemath("rootK.mul(5).add(rootKLast)");
+  ?(rg_count_lit(sm, ".mul(") > 0) { ^0 };
+  ?(rg_count_lit(sm, "*") == 0) { ^0 };
+  ?(rg_count_lit(sm, "+") == 0) { ^0 };
   ^1;
 }
 
-=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
+=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_atom_left, sol_expand_safemath, sol_from_sol, sol_from_sol_gate}
