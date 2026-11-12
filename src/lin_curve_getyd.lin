@@ -1,0 +1,334 @@
+@LIN:L1c:0.2
+@CURVE_3POOL_GETYD{
+  version=1
+  repo="curvefi/curve-contract"
+  source="contracts/pools/3pool/StableSwap3Pool.vy get_y_D/_calc_withdraw_one_coin"
+  license="all_rights_reserved_informational_upstream"
+  commit="bae23a2fc9a0302d174ea1ffce8219a44a92149c"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_curve_3pool_newton_get_y_D_128bit"
+  note="Not mainnet uint256. N=3 explicit x0,x1,x2. D, amp, burn/supply are arguments (not ramped A, self.balances, or token.totalSupply). SCALE=1e9. FEE_DEN=1e9 with 3pool 0.04% baked as 400000. Upstream Vyper is hash-pinned, not vendored."
+}
+
+!cyd_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!cyd_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(cyd_u_lt(s, a));
+}
+
+!cyd_mask32() -> int {
+  ^ 4294967295;
+}
+
+!cyd_n() -> int {
+  ^ 3;
+}
+
+!cyd_fee_den() -> int {
+  ^ 1000000000;
+}
+
+!cyd_pool_fee() -> int {
+  ^ 400000;
+}
+
+!cyd_close1(a: int, b: int) -> int {
+  ?(a >= b) {
+    ?(a - b <= 1) { ^ 1; };
+    ^ 0;
+  };
+  ?(b - a <= 1) { ^ 1; };
+  ^ 0;
+}
+
+!cyd_muldiv_add_part(a: int, b: int, add: int, d: int, want: int) -> int {
+  ?(d == 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(a < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(b < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(add < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  m32 = cyd_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = cyd_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = cyd_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  lo2 = lo + add;
+  hi = hi + cyd_u_add_carry(lo, add);
+  lo = lo2;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(cyd_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = cyd_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(q < 0) { ov = 1; };
+  ?(want == 2) { ^ ov; };
+  ?(want == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!cyd_muldiv(a: int, b: int, d: int) -> int {
+  ^ cyd_muldiv_add_part(a, b, 0, d, 0);
+}
+
+!cyd_pick(i: int, x0: int, x1: int, x2: int) -> int {
+  ?(i == 0) { ^ x0; };
+  ?(i == 1) { ^ x1; };
+  ?(i == 2) { ^ x2; };
+  ^ 0;
+}
+
+!cyd_xp_ok(x0: int, x1: int, x2: int, amp: int) -> int {
+  ?(amp <= 0) { ^ 0; };
+  ?(x0 <= 0) { ^ 0; };
+  ?(x1 <= 0) { ^ 0; };
+  ?(x2 <= 0) { ^ 0; };
+  ^ 1;
+}
+
+!cyd_accum_s(k: int, i: int, xk: int, s: int) -> int {
+  ?(k == i) { ^ s; };
+  ?(xk <= 0) { ^ 0; };
+  t = s + xk;
+  ?(cyd_u_lt(t, s) == 1) { ^ 0; };
+  ^ t;
+}
+
+!cyd_accum_c(k: int, i: int, xk: int, d: int, c: int) -> int {
+  ?(k == i) { ^ c; };
+  ?(xk <= 0) { ^ 0; };
+  den = xk * cyd_n();
+  ?(cyd_u_lt(den, xk) == 1) { ^ 0; };
+  ^ cyd_muldiv(c, d, den);
+}
+
+!cyd_get_y_d(i: int, d: int, x0: int, x1: int, x2: int, amp: int) -> int {
+  ?(i < 0) { ^ 0; };
+  ?(i > 2) { ^ 0; };
+  ?(d <= 0) { ^ 0; };
+  ?(cyd_xp_ok(x0, x1, x2, amp) == 0) { ^ 0; };
+  n = cyd_n();
+  ann = amp * n;
+  ?(ann <= amp) { ^ 0; };
+  c = d;
+  s_ = 0;
+  s_ = cyd_accum_s(0, i, x0, s_);
+  s_ = cyd_accum_s(1, i, x1, s_);
+  s_ = cyd_accum_s(2, i, x2, s_);
+  c = cyd_accum_c(0, i, x0, d, c);
+  c = cyd_accum_c(1, i, x1, d, c);
+  c = cyd_accum_c(2, i, x2, d, c);
+  ?(c <= 0) { ^ 0; };
+  ?(cyd_muldiv_add_part(ann, n, 0, 1, 2) == 1) { ^ 0; };
+  ann_n = cyd_muldiv(ann, n, 1);
+  ?(ann_n <= 0) { ^ 0; };
+  c = cyd_muldiv(c, d, ann_n);
+  ?(c <= 0) { ^ 0; };
+  d_ann = cyd_muldiv(d, 1, ann);
+  b = s_ + d_ann;
+  ?(cyd_u_lt(b, s_) == 1) { ^ 0; };
+  y = d;
+  iter = 0;
+  done = 0;
+  while (iter < 255) {
+    ?(done == 0) {
+      yprev = y;
+      two_y = y + y;
+      ?(cyd_u_lt(two_y, y) == 1) { y = 0; done = 1; };
+      ?(done == 0) {
+        num_ok = 1;
+        ?(cyd_u_add_carry(two_y, b) == 1) { num_ok = 0; };
+        tb = two_y + b;
+        ?(cyd_u_lt(tb, d) == 1) { num_ok = 0; };
+        ?(num_ok == 0) { y = 0; done = 1; };
+        ?(done == 0) {
+          den = tb - d;
+          ?(den <= 0) { y = 0; done = 1; };
+          ?(done == 0) {
+            ?(cyd_muldiv_add_part(y, y, c, den, 2) == 1) { y = 0; done = 1; };
+            ?(done == 0) {
+              y = cyd_muldiv_add_part(y, y, c, den, 0);
+              ?(cyd_close1(y, yprev) == 1) { done = 1; };
+            };
+          };
+        };
+      };
+    };
+    iter = iter + 1;
+  };
+  ^ y;
+}
+
+!cyd_d1(d0: int, burn: int, supply: int) -> int {
+  ?(d0 <= 0) { ^ 0; };
+  ?(burn <= 0) { ^ 0; };
+  ?(supply <= 0) { ^ 0; };
+  ?(cyd_u_lt(supply, burn) == 1) { ^ 0; };
+  ?(burn == supply) { ^ 0; };
+  sub = cyd_muldiv(burn, d0, supply);
+  ?(cyd_u_lt(d0, sub) == 1) { ^ 0; };
+  ^ d0 - sub;
+}
+
+!cyd_dy0(i: int, d1: int, x0: int, x1: int, x2: int, amp: int) -> int {
+  y = cyd_get_y_d(i, d1, x0, x1, x2, amp);
+  ?(y <= 0) { ^ 0; };
+  xi = cyd_pick(i, x0, x1, x2);
+  ?(cyd_u_lt(xi, y) == 1) { ^ 0; };
+  ^ xi - y;
+}
+
+!cyd_n_fee() -> int {
+  ^ cyd_muldiv(cyd_pool_fee(), cyd_n(), 4 * (cyd_n() - 1));
+}
+
+!cyd_dx_expected(j: int, i: int, xj: int, new_y: int, d0: int, d1: int) -> int {
+  prop = cyd_muldiv(xj, d1, d0);
+  ?(j == i) {
+    ?(cyd_u_lt(prop, new_y) == 1) { ^ 0; };
+    ^ prop - new_y;
+  };
+  ?(cyd_u_lt(xj, prop) == 1) { ^ 0; };
+  ^ xj - prop;
+}
+
+!cyd_reduce(xp: int, dx: int, nf: int) -> int {
+  cut = cyd_muldiv(nf, dx, cyd_fee_den());
+  ?(cyd_u_lt(xp, cut) == 1) { ^ 0; };
+  ^ xp - cut;
+}
+
+!cyd_withdraw_fee(i: int, d0: int, d1: int, x0: int, x1: int, x2: int, amp: int) -> int {
+  ?(d0 <= 0) { ^ 0; };
+  ?(d1 <= 0) { ^ 0; };
+  new_y = cyd_get_y_d(i, d1, x0, x1, x2, amp);
+  ?(new_y <= 0) { ^ 0; };
+  nf = cyd_n_fee();
+  dx0 = cyd_dx_expected(0, i, x0, new_y, d0, d1);
+  dx1 = cyd_dx_expected(1, i, x1, new_y, d0, d1);
+  dx2 = cyd_dx_expected(2, i, x2, new_y, d0, d1);
+  r0 = cyd_reduce(x0, dx0, nf);
+  r1 = cyd_reduce(x1, dx1, nf);
+  r2 = cyd_reduce(x2, dx2, nf);
+  ?(r0 <= 0) { ^ 0; };
+  ?(r1 <= 0) { ^ 0; };
+  ?(r2 <= 0) { ^ 0; };
+  y2 = cyd_get_y_d(i, d1, r0, r1, r2, amp);
+  ?(y2 <= 0) { ^ 0; };
+  xi = cyd_pick(i, r0, r1, r2);
+  ?(cyd_u_lt(xi, y2) == 1) { ^ 0; };
+  raw = xi - y2;
+  ?(raw <= 0) { ^ 0; };
+  ^ raw - 1;
+}
+
+!cyd_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!cyd_totalsupply_claimed() -> int {
+  ^ 0;
+}
+
+!cyd_balances_claimed() -> int {
+  ^ 0;
+}
+
+!cyd_test_suite() -> int {
+  e9 = 1000000000;
+  d0 = 3000000000;
+  dimb = 3099778671;
+  ?(cyd_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(cyd_get_y_d(0, d0, e9, e9, e9, 100) != e9) { ^ -2; };
+  ?(cyd_get_y_d(1, d0, e9, e9, e9, 100) != e9) { ^ -3; };
+  ?(cyd_get_y_d(0, d0, e9, e9, e9, 2000) != e9) { ^ -4; };
+  ?(cyd_d1(d0, 300000000, d0) != 2700000000) { ^ -5; };
+  ?(cyd_get_y_d(0, 2700000000, e9, e9, e9, 100) != 700367933) { ^ -6; };
+  ?(cyd_dy0(0, 2700000000, e9, e9, e9, 100) != 299632067) { ^ -7; };
+  ?(cyd_get_y_d(0, 2700000000, e9, e9, e9, 2000) != 700018630) { ^ -8; };
+  ?(cyd_dy0(0, 2700000000, e9, e9, e9, 2000) != 299981370) { ^ -9; };
+  ?(cyd_n_fee() != 150000) { ^ -10; };
+  ?(cyd_withdraw_fee(0, d0, 2700000000, e9, e9, e9, 100) != 299572241) { ^ -11; };
+  ?(cyd_dy0(0, d0, e9, e9, e9, 100) != 0) { ^ -12; };
+  ?(cyd_d1(d0, 0, d0) != 0) { ^ -13; };
+  ?(cyd_get_y_d(3, d0, e9, e9, e9, 100) != 0) { ^ -14; };
+  ?(cyd_get_y_d(0, dimb, 1200000000, 900000000, e9, 100) != 1200000000) { ^ -15; };
+  ?(cyd_n() != 3) { ^ -16; };
+  ?(cyd_totalsupply_claimed() != 0) { ^ -17; };
+  ?(cyd_balances_claimed() != 0) { ^ -18; };
+  ?(cyd_naive_i64_mul(3099778671, 3099778671) != -8838116264523025375) { ^ -19; };
+  ?(cyd_muldiv(3099778671, 3099778671, 1) != 0) { ^ -20; };
+  ?(cyd_d1(d0, d0, d0) != 0) { ^ -21; };
+  ?(cyd_dy0(0, 2970000000, e9, e9, e9, 100) != 29996980) { ^ -22; };
+  ?(cyd_withdraw_fee(0, d0, 2970000000, e9, e9, e9, 100) != 29990981) { ^ -23; };
+  ^ 1;
+}
+
+=ex{
+  cyd_u_lt,
+  cyd_u_add_carry,
+  cyd_mask32,
+  cyd_n,
+  cyd_fee_den,
+  cyd_pool_fee,
+  cyd_close1,
+  cyd_muldiv_add_part,
+  cyd_muldiv,
+  cyd_pick,
+  cyd_xp_ok,
+  cyd_accum_s,
+  cyd_accum_c,
+  cyd_get_y_d,
+  cyd_d1,
+  cyd_dy0,
+  cyd_n_fee,
+  cyd_dx_expected,
+  cyd_reduce,
+  cyd_withdraw_fee,
+  cyd_naive_i64_mul,
+  cyd_totalsupply_claimed,
+  cyd_balances_claimed,
+  cyd_test_suite
+}

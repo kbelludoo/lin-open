@@ -1,0 +1,167 @@
+{
+  "schema": "LIN_CURVE_GETYD_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_curve_getyd.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler TOTALSUPPLY/SELF_BALANCES",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 TOTALSUPPLY/SELF_BALANCES reject",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2 TOTAL_SUPPLY/SELF_BALANCES reject",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "cyd_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned curve-contract 3pool matches hash pin",
+      "note": "commit=bae23a2fc9a0302d174ea1ffce8219a44a92149c StableSwap3Pool blob=04d170189a1b5ddfecfc0af9ea3fe23eb0840423"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of StableSwap3Pool.vy",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb (a*b+add)/d agree",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "11/11 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "IDENTITY",
+      "status": "PASS",
+      "description": "get_y_D recovers xp[i] when D is the equal-pool invariant",
+      "note": "y=1000000000"
+    },
+    {
+      "id": "WITHDRAW-10",
+      "status": "PASS",
+      "description": "10% LP burn at A=100 returns 299632067 of coin 0, not 300000000",
+      "note": "dy0=299632067 haircut=367933"
+    },
+    {
+      "id": "AMP-TIGHTEN",
+      "status": "PASS",
+      "description": "same 10% burn at A=2000 haircut shrinks to 18630 vs 367933",
+      "note": "dy0=299981370"
+    },
+    {
+      "id": "FEE-PATH",
+      "status": "PASS",
+      "description": "3pool 0.04% fee path returns 299572241 (dy0 minus imbalance fee)",
+      "note": "wfee=299572241"
+    },
+    {
+      "id": "BURN-ZERO",
+      "status": "PASS",
+      "description": "identity D and burn>=supply fail-close to 0",
+      "note": "dy0_id=0 d1_all=0"
+    },
+    {
+      "id": "UINT256-CAP",
+      "status": "PASS",
+      "description": "mainnet uint256 / RATES / totalSupply / self.balances are not claimed",
+      "note": "ts=0 bal=0"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 D^2 wraps; 128-bit muldiv fail-closes to 0",
+      "note": "i64_wrap=-8838116264523025375 muldiv=0"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes i, D, x0/x1/x2, amp as arguments (not storage)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit Newton (a*b+add)/d; N=3 and FEE_DEN=1e9 are constants",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJ",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin fail-closes totalSupply and self.balances",
+      "note": ""
+    },
+    {
+      "id": "C-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes totalSupply / self.balances",
+      "note": ""
+    },
+    {
+      "id": "RS-REJ",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes total_supply / self.balances",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after the transpiler delta",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/curvefi/curve-contract",
+    "commit": "bae23a2fc9a0302d174ea1ffce8219a44a92149c",
+    "path": "contracts/pools/3pool/StableSwap3Pool.vy",
+    "blob": "04d170189a1b5ddfecfc0af9ea3fe23eb0840423",
+    "sha256": "03e0bf29ae2fe945a3629b8085062da8f9d9d25957e86001dfc3df68c895f9dc",
+    "license": "all-rights-reserved-informational-only",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_curve_getyd.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-curve-getyd",
+  "c11_oracle": "test/oracles/curve_getyd_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "get_y_d_identity_1e9": 1000000000,
+    "d1_burn10": 2700000000,
+    "y_after_burn10_A100": 700367933,
+    "dy0_burn10_A100": 299632067,
+    "dy0_burn10_A2000": 299981370,
+    "wfee_burn10_A100": 299572241,
+    "dy0_burn1_A100": 29996980,
+    "naive_i64_Dimb_sq": -8838116264523025375
+  }
+}
