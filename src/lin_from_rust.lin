@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: fail-close total_supply (REJ_RUST_TOTAL_SUPPLY) and self.balances (REJ_RUST_SELF_BALANCES)"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -40,6 +41,8 @@
 
 // 3. Critérios fail-closed de rejeição de código Rust não-puro
 !rs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(body, "total_supply") > 0) { ^"REJ_RUST_TOTAL_SUPPLY" };
+  ?(rg_count_lit(body, "self.balances") > 0) { ^"REJ_RUST_SELF_BALANCES" };
   ?(rg_count_lit(sig, "&mut") > 0) { ^"REJ_RUST_MUTABLE_REF" };
   ?(rg_count_lit(sig, "&") > 0) { ^"REJ_RUST_BORROW" };
   ?(rg_count_lit(body, "unsafe") > 0) { ^"REJ_RUST_UNSAFE" };
@@ -65,7 +68,16 @@
   ?(r1.length != 2) { ^0 }; // "OK"
 
   r2 = rs_reason(sig_bad, body_bad);
-  ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+  ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 };
+
+  sig_ts = "fn calc_withdraw(token_amount: u64) -> u64";
+  body_ts = "total_supply()";
+  r3 = rs_reason(sig_ts, body_ts);
+  ?(starts_lit(r3, 0, "REJ_RUST_TOTAL_SUPPLY") == 0) { ^0 };
+  sig_bal = "fn xp(i: u64) -> u64";
+  body_bal = "self.balances";
+  r4 = rs_reason(sig_bal, body_bal);
+  ?(starts_lit(r4, 0, "REJ_RUST_SELF_BALANCES") == 0) { ^0 };
 
   ^1;
 }
