@@ -1,0 +1,197 @@
+{
+  "schema": "LIN_COMPOUND_ACCRUE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-COMMIT",
+      "status": "PASS",
+      "description": "pinned compound-protocol commit",
+      "note": "a3214f67b73310d547e00fc578e8355911c9d376"
+    },
+    {
+      "id": "PIN-CTOKEN",
+      "status": "PASS",
+      "description": "pinned CToken.sol sha256 (hash-only; not vendored)",
+      "note": "b64790f41ef851b09856af286ce8253b95ef34fda4ae836f924a519e8f792785"
+    },
+    {
+      "id": "PIN-IFACE",
+      "status": "PASS",
+      "description": "pinned CTokenInterfaces.sol sha256",
+      "note": "0246c7789d36fca84a7861ab39693f02dfb7bde904011f4efda654d4286fe93a"
+    },
+    {
+      "id": "PIN-EXP",
+      "status": "PASS",
+      "description": "pinned ExponentialNoError.sol sha256",
+      "note": "dd272760b2d9082db9c94f6198896402fe3681bf41fc3f9d8bba31ada290c3c5"
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned compound-protocol matches hashes",
+      "note": "commit=a3214f67b73310d547e00fc578e8355911c9d376"
+    },
+    {
+      "id": "UPSTREAM-MARKERS",
+      "status": "PASS",
+      "description": "live files contain accrueInterest / 0.0005e16 / mul_ScalarTruncate",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb accrue math agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_compound_accrue.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "cac_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin typechecked; CToken accrue reject + 0.0005e16 expander present (string gate is check-only)",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "7/7 accrue vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "dt1 interest=1e10 borrows/index=1000000010000000000; rf 10% adds 1e9; dt0 identity; rate>max=0",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "7e18*3e18/1 fail-closes to 0; naive i64 wraps",
+      "note": "wrap=-5389669316318724096"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN takes current/prior/rate/borrows/index/rf as args; same-block is identity",
+      "note": ""
+    },
+    {
+      "id": "VS-LINEAR",
+      "status": "PASS",
+      "description": "Compound simpleInterestFactor is linear in blockDelta (not rpow)",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "WIDE-SIG",
+      "status": "PASS",
+      "description": "clone uses 128-bit product; IRM getBorrowRate and getBlockNumber are arguments",
+      "note": ""
+    },
+    {
+      "id": "SOL-EMIT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 rejects accrueInterest/getBlockNumber and expands 0.0005e16",
+      "note": ""
+    },
+    {
+      "id": "C-EMIT",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes CToken accrue / getBlockNumber",
+      "note": ""
+    },
+    {
+      "id": "RS-EMIT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes CToken accrue / get_block_number",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/compound-finance/compound-protocol",
+    "commit": "a3214f67b73310d547e00fc578e8355911c9d376",
+    "paths": [
+      "contracts/CToken.sol",
+      "contracts/CTokenInterfaces.sol",
+      "contracts/ExponentialNoError.sol"
+    ],
+    "pins": {
+      "contracts/CToken.sol": {
+        "sha256": "b64790f41ef851b09856af286ce8253b95ef34fda4ae836f924a519e8f792785",
+        "blob": "b8c878c79c75855808f6e7303099a367c8bad98b",
+        "markers": [
+          "function accrueInterest",
+          "mul_ScalarTruncate"
+        ]
+      },
+      "contracts/CTokenInterfaces.sol": {
+        "sha256": "0246c7789d36fca84a7861ab39693f02dfb7bde904011f4efda654d4286fe93a",
+        "blob": "ba8d69a00f5aef0b8a019dfa513f6c3835ba9e60",
+        "markers": [
+          "borrowRateMaxMantissa",
+          "0.0005e16"
+        ]
+      },
+      "contracts/ExponentialNoError.sol": {
+        "sha256": "dd272760b2d9082db9c94f6198896402fe3681bf41fc3f9d8bba31ada290c3c5",
+        "blob": "23f833760db898ebdc6b2fef9654cb9bc1dd21c3",
+        "markers": [
+          "mul_ScalarTruncate",
+          "expScale = 1e18"
+        ]
+      }
+    },
+    "license": "BSD-3-Clause",
+    "vendored": false,
+    "note": "hash-only pin; full CToken.sol is not copied into lin-open"
+  },
+  "lin_clone": "src/lin_compound_accrue.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-compound-accrue",
+  "c11_oracle": "test/oracles/compound_accrue_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "interest_dt1": 10000000000,
+    "borrows_dt1": 1000000010000000000,
+    "index_dt1": 1000000010000000000,
+    "reserves_rf10pct_dt1": 1000000000,
+    "borrows_dt0": 1000000000000000000,
+    "interest_dt2": 20000000000,
+    "rate_above_max": 0,
+    "muldiv_7e18_3e18": 0,
+    "rate_max": 5000000000000
+  }
+}

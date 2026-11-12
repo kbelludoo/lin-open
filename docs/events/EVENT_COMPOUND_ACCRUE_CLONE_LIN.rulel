@@ -1,0 +1,67 @@
+@RULEL:COMPOUND_ACCRUE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-COMPOUND-CTOKEN-ACCRUE"
+@TITLE="Clone-lin of Compound CToken.accrueInterest with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-compound-accrue"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Compound cToken accrueInterest into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for (a*b)/d; Solidity uint256 is NOT claimed"
+  commercial_hook="accrueInterest is the per-block money clock of Compound v2 cTokens (simpleInterestFactor * totalBorrows); making IRM/block/storage explicit and replacing wrapping i64 multiply with 128-bit muldiv is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/compound-finance/compound-protocol"
+  path="contracts/CToken.sol"
+  helpers="contracts/ExponentialNoError.sol mul_ScalarTruncate; contracts/CTokenInterfaces.sol borrowRateMaxMantissa=0.0005e16"
+  license="BSD-3-Clause"
+  commit="a3214f67b73310d547e00fc578e8355911c9d376"
+  ctoken_blob="b8c878c79c75855808f6e7303099a367c8bad98b"
+  ctoken_sha256="b64790f41ef851b09856af286ce8253b95ef34fda4ae836f924a519e8f792785"
+  iface_blob="ba8d69a00f5aef0b8a019dfa513f6c3835ba9e60"
+  iface_sha256="0246c7789d36fca84a7861ab39693f02dfb7bde904011f4efda654d4286fe93a"
+  exp_blob="23f833760db898ebdc6b2fef9654cb9bc1dd21c3"
+  exp_sha256="dd272760b2d9082db9c94f6198896402fe3681bf41fc3f9d8bba31ada290c3c5"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_compound_accrue.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: sol_expand_dec_exp for 0.0005e16/2.8eN; REJ_SOLIDITY_CTOKEN_ACCRUE. src/lin_from_c.lin v2 and src/lin_from_rust.lin v2 matching rejects"
+  improvement_1="getBlockNumber + interestRateModel.getBorrowRate + storage fields are arguments"
+  improvement_2="(rate*delta*borrows)/1e18 uses 128-bit product; quotient that does not fit uint64 fail-closes to 0"
+  improvement_3="rate > 0.0005e16 fail-closes (Solidity require reverts)"
+  improvement_4="same-block current==prior is a no-op; current<prior fail-closes instead of Solidity 0.8 underflow revert"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/compound_accrue_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_compound_accrue.sh"
+}
+
+.p{
+  harness="test/prove_compound_accrue_external.py"
+  evidence_json="examples/compound_accrue/compound_accrue_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-compound-accrue"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet cToken parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production IRM/cToken replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Compound, Uniswap, or the EVM"
+  not_claimed_6="TVL or dollar savings from this clone"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
