@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN changelog="v2: fail-close vat_fold / live==1 / dai[u] (REJ_C_VAT_FOLD/LIVE/DAI_SLOT)"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -33,6 +33,9 @@
 }
 
 !cfs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "vat_fold") > 0){ ^"REJ_C_VAT_FOLD" };
+  ?(rg_count_lit(body, "dai[u]") > 0){ ^"REJ_C_DAI_SLOT" };
+  ?(rg_count_lit(body, "live == 1") > 0){ ^"REJ_C_LIVE" };
   ?(rg_count_lit(sig, "*") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(body, "->") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(sig, "struct") > 0 || rg_count_lit(body, "struct") > 0){ ^"REJ_C_STRUCT" };
@@ -756,4 +759,14 @@
   ^out;
 }
 
-=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type}
+!cfs_vat_gate(): int {
+  r = cfs_reason("int vat_fold(uint64_t art)", "return art;");
+  ?(starts_lit(r, 0, "REJ_C_VAT_FOLD") == 0) { ^0 };
+  r2 = cfs_reason("int now_live(void)", "if (live == 1) return 1; return 0;");
+  ?(starts_lit(r2, 0, "REJ_C_LIVE") == 0) { ^0 };
+  r3 = cfs_reason("int slot(void)", "return dai[u];");
+  ?(starts_lit(r3, 0, "REJ_C_DAI_SLOT") == 0) { ^0 };
+  ^1;
+}
+
+=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type, cfs_vat_gate}

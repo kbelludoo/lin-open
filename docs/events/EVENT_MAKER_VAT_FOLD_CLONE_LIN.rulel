@@ -1,0 +1,66 @@
+@RULEL:MAKER_VAT_FOLD_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MAKER-VAT-FOLD-V1"
+@TITLE="Clone-lin of Maker/Sky vat.fold (signed ilk.rate / dai / debt) with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-maker-vat-fold"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Maker/Sky vat.fold stability-fee rate fold into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 Art/rate/dai/debt, signed rate_delta, RAY'=1e9, 128-bit |Art|*|delta|; Solidity uint256 / RAY=1e27 / wad*ray rad is NOT claimed"
+  commercial_hook="vat.fold is how jug.drip writes every Maker/Sky ilk.rate and credits the Vow dai slot: rad = Art * rate_delta (signed). Making Art/rate/dai/debt/live explicit, fail-closing hidden live/auth/dai[u], and replacing wrapping i64 multiply with 128-bit magnitude is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/makerdao/dss"
+  path="src/vat.sol"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  git_blob_sha="ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+  file_sha256="9016fd94f0f1b014abf184edab86a3f5843042b17e3734407e0f0fabb920f49f"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_maker_vat_fold.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-vat-fold"
+  transpiler_delta="src/lin_from_solidity.lin: REJ_SOLIDITY_VAT_FOLD / LIVE / AUTH / DAI_SLOT before OK_VIEW; src/lin_from_c.lin REJ_C_VAT_FOLD/LIVE/DAI_SLOT; src/lin_from_rust.lin REJ_RUST_VAT_FOLD/LIVE/DAI_SLOT"
+  improvement_1="ilk.Art / ilk.rate / dai[u] / debt / live and the signed rate delta become explicit arguments; no mapping write"
+  improvement_2="require(live == 1) and the auth modifier are fail-closed by the transpiler (REJ_SOLIDITY_LIVE / AUTH)"
+  improvement_3="dai[u] slot writes are REJ_SOLIDITY_DAI_SLOT; LIN mvf_fold_dai is a pure function of (dai, art, rate_delta, live)"
+  improvement_4="signed Art*rate uses 128-bit |Art|*|delta|; naive i64 7e18*3e18 wraps to -5389669316318724096"
+  improvement_5="negative rate_delta underflows dai/rate fail-close to 0 (Maker require on wrapped uint+int)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/maker_vat_fold_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="make maker-vat-fold-proof"
+}
+
+.p{
+  harness="test/prove_maker_vat_fold_external.py"
+  evidence_json="examples/maker_vat_fold/maker_vat_fold_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-vat-fold"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet RAY=1e27 / wad*ray rad / vat.ilks.rate parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production Vat or Sky CDP replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Maker, Sky, Dai, USDS, or the EVM"
+  not_claimed_6="jug.drip / pot.drip as this clone (separate clone-lin repos)"
+  not_claimed_7="any TVL or dollar-savings figure"
+  not_claimed_8="AGPL source vendored into lin-open (hash-pinned only)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

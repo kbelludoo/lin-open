@@ -1,0 +1,13 @@
+@RULEL:MAKER_VAT_FOLD_PIN:1.0.0
+@NOTE="Hash pin only. Maker vat.sol is not vendored (AGPL-3.0-or-later). Kernel is fold + signed _add/_mul."
+
+.u{
+  repo="https://github.com/makerdao/dss"
+  path="src/vat.sol"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  git_blob_sha="ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+  file_sha256="9016fd94f0f1b014abf184edab86a3f5843042b17e3734407e0f0fabb920f49f"
+  license="AGPL-3.0-or-later"
+  kernel="fold+_add(uint,int)+_mul(uint,int)+live+dai[u]+debt"
+  class="EXPERIMENTAL"
+}

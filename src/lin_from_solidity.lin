@@ -4,7 +4,7 @@
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
   status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit); fail-close vat.fold / require(live == 1) / external auth / dai[u] (REJ_SOLIDITY_VAT_FOLD/LIVE/AUTH/DAI_SLOT) before OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -38,6 +38,10 @@
 }
 
 !sol_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "fold") > 0 && rg_count_lit(body, "_mul(ilk.Art") > 0) { ^"REJ_SOLIDITY_VAT_FOLD" };
+  ?(rg_count_lit(body, "dai[u]") > 0) { ^"REJ_SOLIDITY_DAI_SLOT" };
+  ?(rg_count_lit(body, "require(live == 1") > 0) { ^"REJ_SOLIDITY_LIVE" };
+  ?(rg_count_lit(sig, " external auth") > 0) { ^"REJ_SOLIDITY_AUTH" };
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
@@ -64,6 +68,18 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_fold = "function fold(bytes32 i, address u, int rate) external auth";
+  body_fold = "require(live == 1); ilk.rate = _add(ilk.rate, rate); int rad = _mul(ilk.Art, rate); dai[u] = _add(dai[u], rad);";
+  r4 = sol_reason(sig_fold, body_fold);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_VAT_FOLD") == 0) { ^0 };
+  sig_live = "function file(bytes32 what, uint data) external";
+  body_live = "require(live == 1); Line = data;";
+  r5 = sol_reason(sig_live, body_live);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_LIVE") == 0) { ^0 };
+  sig_auth = "function cage() external auth";
+  body_auth = "live = 0;";
+  r6 = sol_reason(sig_auth, body_auth);
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_AUTH") == 0) { ^0 };
   ^1;
 }
 
