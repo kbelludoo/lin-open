@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN changelog="v2: fail-close inline asm and Aave rayMul/rayDiv/HALF_RAY"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -33,6 +33,11 @@
 }
 
 !cfs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(body, "HALF_RAY") > 0){ ^"REJ_C_AAVE_RAYMUL" };
+  ?(rg_count_lit(sig, "rayMul") > 0){ ^"REJ_C_AAVE_RAYMUL" };
+  ?(rg_count_lit(sig, "rayDiv") > 0){ ^"REJ_C_AAVE_RAYMUL" };
+  ?(rg_count_lit(body, "__asm") > 0){ ^"REJ_C_INLINE_ASM" };
+  ?(rg_count_lit(body, "asm volatile") > 0){ ^"REJ_C_INLINE_ASM" };
   ?(rg_count_lit(sig, "*") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(body, "->") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(sig, "struct") > 0 || rg_count_lit(body, "struct") > 0){ ^"REJ_C_STRUCT" };

@@ -1,0 +1,194 @@
+@LIN:L1c:0.2
+@AAVE_V3_RAYMUL{
+  version=1
+  repo="aave/aave-v3-core"
+  source="contracts/protocol/libraries/math/WadRayMath.sol rayMul/rayDiv"
+  license="MIT"
+  license_note="BUSL-1.1 Change Date 2023-01-27 elapsed; Change License MIT"
+  commit="782f51917056a53a2c228701058a6c3fb233684a"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_aave_ray_half_up_128bit_RAY_prime_1e9"
+  note="Not mainnet uint256. RAY'=1e9 half-up (Aave RAY=1e27 does not fit i64). Distinct from wadMul (WAD=1e18) and from floor (a*b)/RAY."
+}
+
+!arm_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!arm_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(arm_u_lt(s, a));
+}
+
+!arm_mask32() -> int {
+  ^ 4294967295;
+}
+
+!arm_ray() -> int {
+  ^ 1000000000;
+}
+
+!arm_half_ray() -> int {
+  ^ 500000000;
+}
+
+!arm_mainnet_ray_fits() -> int {
+  ^ 0;
+}
+
+!arm_muldiv_add_part(a: int, b: int, add: int, d: int, want_ov: int) -> int {
+  ?(d == 0) { ?(want_ov == 1) { ^ 1; }; ^ 0; };
+  ?(a < 0) { ?(want_ov == 1) { ^ 1; }; ^ 0; };
+  ?(b < 0) { ?(want_ov == 1) { ^ 1; }; ^ 0; };
+  ?(add < 0) { ?(want_ov == 1) { ^ 1; }; ^ 0; };
+  m32 = arm_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = arm_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = arm_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  lo2 = lo + add;
+  hi = hi + arm_u_add_carry(lo, add);
+  lo = lo2;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(arm_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = arm_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(q < 0) { ov = 1; };
+  ?(want_ov == 1) { ^ ov; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!arm_ray_mul_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(arm_muldiv_add_part(a, b, arm_half_ray(), arm_ray(), 1) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!arm_ray_mul(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(a == 0) { ^ 0; };
+  ?(b == 0) { ^ 0; };
+  ^ arm_muldiv_add_part(a, b, arm_half_ray(), arm_ray(), 0);
+}
+
+!arm_ray_div_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b <= 0) { ^ 0; };
+  ?(arm_muldiv_add_part(a, arm_ray(), b / 2, b, 1) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!arm_ray_div(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b <= 0) { ^ 0; };
+  ^ arm_muldiv_add_part(a, arm_ray(), b / 2, b, 0);
+}
+
+!arm_wrong_floor_mul(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(a == 0) { ^ 0; };
+  ?(b == 0) { ^ 0; };
+  ^ arm_muldiv_add_part(a, b, 0, arm_ray(), 0);
+}
+
+!arm_wrong_floor_div(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b <= 0) { ^ 0; };
+  ^ arm_muldiv_add_part(a, arm_ray(), 0, b, 0);
+}
+
+!arm_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!arm_test_suite() -> int {
+  r = arm_ray();
+  h = arm_half_ray();
+  ?(arm_mainnet_ray_fits() != 0) { ^ -1; };
+  ?(arm_ray_mul(r, r) != r) { ^ -2; };
+  ?(arm_ray_mul(r + r, r + r + r) != (r * 6)) { ^ -3; };
+  ?(arm_ray_mul(1, h) != 1) { ^ -4; };
+  ?(arm_wrong_floor_mul(1, h) != 0) { ^ -5; };
+  ?(arm_ray_mul(3, h) != 2) { ^ -6; };
+  ?(arm_wrong_floor_mul(3, h) != 1) { ^ -7; };
+  ?(arm_ray_mul(1, h - 1) != 0) { ^ -8; };
+  ?(arm_ray_div(2, 3) != 666666667) { ^ -9; };
+  ?(arm_wrong_floor_div(2, 3) != 666666666) { ^ -10; };
+  ?(arm_ray_div(r, r + r) != h) { ^ -11; };
+  ?(arm_ray_div(r, r) != r) { ^ -12; };
+  ?(arm_ray_mul(0, r) != 0) { ^ -13; };
+  ?(arm_ray_div_ok(1, 0) != 0) { ^ -14; };
+  ?(arm_ray_div(1, 0) != 0) { ^ -15; };
+  ?(arm_ray_mul(10000000000, 10000000000) != 100000000000) { ^ -16; };
+  ?(arm_naive_i64_mul(10000000000, 10000000000) != 7766279631452241920) { ^ -17; };
+  ?(arm_ray_mul_ok(4000000000000000000, 3000000000000000000) != 0) { ^ -18; };
+  ?(arm_ray_mul(4000000000000000000, 3000000000000000000) != 0) { ^ -19; };
+  ?(arm_ray_mul(1, 1) != 0) { ^ -20; };
+  ?(arm_ray_mul_ok(0, r) != 1) { ^ -21; };
+  ?(arm_ray_div(1, 3) != 333333333) { ^ -22; };
+  ?(arm_wrong_floor_div(1, 3) != 333333333) { ^ -23; };
+  ^ 1;
+}
+
+=ex{
+  arm_u_lt,
+  arm_u_add_carry,
+  arm_mask32,
+  arm_ray,
+  arm_half_ray,
+  arm_mainnet_ray_fits,
+  arm_muldiv_add_part,
+  arm_ray_mul_ok,
+  arm_ray_mul,
+  arm_ray_div_ok,
+  arm_ray_div,
+  arm_wrong_floor_mul,
+  arm_wrong_floor_div,
+  arm_naive_i64_mul,
+  arm_test_suite
+}

@@ -1,0 +1,148 @@
+{
+  "schema": "LIN_AAVE_RAYMUL_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_aave_raymul.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "arm_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned aave-v3-core commit matches hash pin",
+      "note": "commit=782f51917056a53a2c228701058a6c3fb233684a blob=f61fe87f2f2748144cd4d113c848e649c41a4e5d sha256=fae5b995ec613cc213050c99ea6352c9c18ceebba106d03b1726cfa8f1f0124e"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of WadRayMath.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb (a*b+add)/d agree",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "15/15 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "HALF-UP-MUL",
+      "status": "PASS",
+      "description": "rayMul(1, 5e8) half-up 1 vs floor 0",
+      "note": "half_up=1 floor=0"
+    },
+    {
+      "id": "HALF-UP-DIV",
+      "status": "PASS",
+      "description": "rayDiv(2, 3) half-up 666666667 vs floor 666666666",
+      "note": "half_up=666666667 floor=666666666"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (1e10*1e10) wraps; 128-bit rayMul does not",
+      "note": "i64_wrap=7766279631452241920 rayMul=100000000000"
+    },
+    {
+      "id": "OVERFLOW-FC",
+      "status": "PASS",
+      "description": "rayMul(4e18, 3e18) fail-closes to 0 (quotient > i64)",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes rayMul/rayDiv operands as arguments (no Yul)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product (naive i64 a*b wraps on 1e10*1e10)",
+      "note": ""
+    },
+    {
+      "id": "SOL-EMIT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin expands 0.5eN and fail-closes Yul rayMul",
+      "note": ""
+    },
+    {
+      "id": "C-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes inline asm and Aave rayMul",
+      "note": ""
+    },
+    {
+      "id": "RS-REJ",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes asm! and Aave rayMul",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after the transpiler delta",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/aave/aave-v3-core",
+    "commit": "782f51917056a53a2c228701058a6c3fb233684a",
+    "path": "contracts/protocol/libraries/math/WadRayMath.sol",
+    "git_blob_sha": "f61fe87f2f2748144cd4d113c848e649c41a4e5d",
+    "file_sha256": "fae5b995ec613cc213050c99ea6352c9c18ceebba106d03b1726cfa8f1f0124e",
+    "license": "MIT after BUSL-1.1 Change Date 2023-01-27",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_aave_raymul.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-aave-raymul",
+  "c11_oracle": "test/oracles/aave_raymul_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "ray_prime": 1000000000,
+  "named_goldens": {
+    "rayMul(1, 5e8)": 1,
+    "floor_mul(1, 5e8)": 0,
+    "rayDiv(2, 3)": 666666667,
+    "floor_div(2, 3)": 666666666,
+    "rayMul(1e10, 1e10)": 100000000000,
+    "naive_i64(1e10, 1e10)": 7766279631452241920
+  }
+}
