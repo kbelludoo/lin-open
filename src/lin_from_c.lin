@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN changelog="v2: fail-close LogExpMath/powDown/powUp (REJ_C_LOGEXP) and C array params (REJ_C_ARRAY)"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -33,6 +33,11 @@
 }
 
 !cfs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "LogExpMath") > 0){ ^"REJ_C_LOGEXP" };
+  ?(rg_count_lit(body, "LogExpMath") > 0){ ^"REJ_C_LOGEXP" };
+  ?(rg_count_lit(body, "powDown") > 0){ ^"REJ_C_LOGEXP" };
+  ?(rg_count_lit(body, "powUp") > 0){ ^"REJ_C_LOGEXP" };
+  ?(rg_count_lit(sig, "[]") > 0){ ^"REJ_C_ARRAY" };
   ?(rg_count_lit(sig, "*") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(body, "->") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(sig, "struct") > 0 || rg_count_lit(body, "struct") > 0){ ^"REJ_C_STRUCT" };
@@ -756,4 +761,20 @@
   ^out;
 }
 
-=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type}
+!cfs_logexp_gate(): int {
+  sig_bad = "int pow_up(uint64_t x)";
+  body_bad = "return powUp(x);";
+  r = cfs_reason(sig_bad, body_bad);
+  ?(starts_lit(r, 0, "REJ_C_LOGEXP") == 0) { ^0 };
+  sig_arr = "int join(uint64_t amounts[])";
+  body_arr = "return amounts[0];";
+  r2 = cfs_reason(sig_arr, body_arr);
+  ?(starts_lit(r2, 0, "REJ_C_ARRAY") == 0) { ^0 };
+  sig_ok = "int add_one(int x)";
+  body_ok = "return x + 1;";
+  r3 = cfs_reason(sig_ok, body_ok);
+  ?(r3.length != 2) { ^0 };
+  ^1;
+}
+
+=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type, cfs_logexp_gate}

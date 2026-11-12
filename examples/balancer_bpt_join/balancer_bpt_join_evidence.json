@@ -1,0 +1,172 @@
+{
+  "schema": "LIN_BALANCER_BPT_JOIN_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_balancer_bpt_join.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler ARRAY/BPT_JOIN/LOGEXP / 0.XeN",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 LOGEXP/ARRAY reject",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2 LOGEXP/SLICE reject",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "bbj_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned balancer-v2-monorepo matches hash pin",
+      "note": "commit=e91a2b643a49856f51a648d175667c1b48cf3377 WeightedMath blob=564887f01a497eb267e22aa22dae6799498ad859 FixedPoint blob=f3c74182db0cb5085ef3066ad069ecf76ef1df9f LogExpMath blob=3af242d4358d2da31fa485eeafd613df648f4e9a"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of WeightedMath/FixedPoint/LogExpMath",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb (a*b+add)/d agree",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "8/8 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "FIFTY-FIFTY",
+      "status": "PASS",
+      "description": "50/50 fee-0 join 1e9/1e8 mints 48808848 BPT (sqrt(1.1)-1)",
+      "note": "bpt=48808848"
+    },
+    {
+      "id": "FEE-SPLIT",
+      "status": "PASS",
+      "description": "50/50 0.3% fee taxable-excess path \u2192 48737336 (less BPT than fee-0)",
+      "note": "bpt=48737336"
+    },
+    {
+      "id": "EIGHTY-TWENTY",
+      "status": "PASS",
+      "description": "80/20 uses powDown 4/5-path \u2192 79230342",
+      "note": "bpt=79230342"
+    },
+    {
+      "id": "POW-ROUND",
+      "status": "PASS",
+      "description": "80/20 invariantRatio powDown 1079230342 (powUp would be 1079230345)",
+      "note": "down=1079230342"
+    },
+    {
+      "id": "ZERO-IN",
+      "status": "PASS",
+      "description": "amountIn=0 fail-closes to 0 BPT",
+      "note": "z=0"
+    },
+    {
+      "id": "UINT256-ONE",
+      "status": "PASS",
+      "description": "mainnet ONE=1e18 fits i64; LogExpMath and array joins are not claimed",
+      "note": "one18_fits=1 logexp=0 arrays=0"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 2e15*1e9 wraps; 128-bit mulDown stays 2000000000000000",
+      "note": "i64_wrap=4007528410413793280 mulDown=2000000000000000"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes balance, weight, amountIn, supply, fee as arguments",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit mulDown/mulUp; integer powDown replaces LogExpMath",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJ",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin fail-closes powDown, uint256[] and TokensIn array joins",
+      "note": ""
+    },
+    {
+      "id": "C-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes powDown / C array params",
+      "note": ""
+    },
+    {
+      "id": "RS-REJ",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes powDown / [u64] slices",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after the transpiler delta",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/balancer/balancer-v2-monorepo",
+    "commit": "e91a2b643a49856f51a648d175667c1b48cf3377",
+    "path": "pkg/pool-weighted/contracts/WeightedMath.sol",
+    "math_path": "pkg/solidity-utils/contracts/math/FixedPoint.sol",
+    "logexp_path": "pkg/solidity-utils/contracts/math/LogExpMath.sol",
+    "blob": "564887f01a497eb267e22aa22dae6799498ad859",
+    "sha256": "21c247fe3b45eb22511363aa1802f03766b476e8522dc33c1f29041ab9000cc8",
+    "fp_blob": "f3c74182db0cb5085ef3066ad069ecf76ef1df9f",
+    "fp_sha256": "db8645a642a965744b15cbdedbf0214c6b8807cf98d359cfb00727a82967a944",
+    "le_blob": "3af242d4358d2da31fa485eeafd613df648f4e9a",
+    "le_sha256": "ed748287e341abc9b28972da8f075bbd2b00d1f1d28c6bbb16030e856b94b9fd",
+    "license": "GPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_balancer_bpt_join.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-balancer-bpt-join",
+  "c11_oracle": "test/oracles/balancer_bpt_join_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "bpt_50_50_fee0_1e9_1e8": 48808848,
+    "bpt_50_50_fee30bps_1e9_1e8": 48737336,
+    "bpt_80_20_fee0_1e9_1e8": 79230342,
+    "bpt_20_80_fee0_1e9_1e8": 19244876,
+    "bpt_60_40_fee0_1e9_1e8": 58852851,
+    "pow_down_80_1p1e9": 1079230342,
+    "naive_i64_2e15*1e9": 4007528410413793280
+  }
+}
