@@ -1,0 +1,366 @@
+@LIN:L1c:0.2
+@BALANCER_TOKEN_OUT_GIVEN_BPT_IN{
+  version=1
+  repo="balancer/balancer-v2-monorepo"
+  source="pkg/pool-weighted/contracts/WeightedMath.sol _calcTokenOutGivenExactBptIn + FixedPoint mulDown/mulUp/divUp/divDown/complement/powUp"
+  license="GPL-3.0-or-later_upstream_not_vendored"
+  commit="e91a2b643a49856f51a648d175667c1b48cf3377"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_balancer_exact_bpt_in_token_out_powUp_128bit"
+  note="Not mainnet uint256/ONE=1e18/LogExpMath/uint256[] exits. ONE=1e9. Integer powUp plus bounded Newton. Inverse of _calcTokenInGivenExactBptOut. Upstream Solidity is hash-pinned, not vendored."
+}
+
+!bbo_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!bbo_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(bbo_u_lt(s, a));
+}
+
+!bbo_mask32() -> int {
+  ^ 4294967295;
+}
+
+!bbo_one() -> int {
+  ^ 1000000000;
+}
+
+!bbo_min_inv() -> int {
+  ^ 700000000;
+}
+
+!bbo_one_e18_claimed() -> int {
+  ^ 0;
+}
+
+!bbo_logexp_claimed() -> int {
+  ^ 0;
+}
+
+!bbo_array_exit_claimed() -> int {
+  ^ 0;
+}
+
+!bbo_muldiv_add_part(a: int, b: int, add: int, d: int, want: int) -> int {
+  ?(d == 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(a < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(b < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(add < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  m32 = bbo_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = bbo_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = bbo_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  lo2 = lo + add;
+  hi = hi + bbo_u_add_carry(lo, add);
+  lo = lo2;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(bbo_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = bbo_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(q < 0) { ov = 1; };
+  ?(want == 2) { ^ ov; };
+  ?(want == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!bbo_mul_down(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ^ bbo_muldiv_add_part(a, b, 0, bbo_one(), 0);
+}
+
+!bbo_mul_up(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(a == 0) { ^ 0; };
+  ?(b == 0) { ^ 0; };
+  ?(bbo_muldiv_add_part(a, b, 0, bbo_one(), 2) == 1) { ^ 0; };
+  q = bbo_muldiv_add_part(a, b, 0, bbo_one(), 0);
+  r = bbo_muldiv_add_part(a, b, 0, bbo_one(), 1);
+  ?(r == 0) { ^ q; };
+  s = q + 1;
+  ?(s < 0) { ^ 0; };
+  ?(bbo_u_lt(s, q) == 1) { ^ 0; };
+  ^ s;
+}
+
+!bbo_div_up(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b <= 0) { ^ 0; };
+  ?(a == 0) { ^ 0; };
+  ?(bbo_muldiv_add_part(a, bbo_one(), 0, b, 2) == 1) { ^ 0; };
+  q = bbo_muldiv_add_part(a, bbo_one(), 0, b, 0);
+  r = bbo_muldiv_add_part(a, bbo_one(), 0, b, 1);
+  ?(r == 0) { ^ q; };
+  s = q + 1;
+  ?(s < 0) { ^ 0; };
+  ?(bbo_u_lt(s, q) == 1) { ^ 0; };
+  ^ s;
+}
+
+!bbo_div_down(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b <= 0) { ^ 0; };
+  ^ bbo_muldiv_add_part(a, bbo_one(), 0, b, 0);
+}
+
+!bbo_complement(x: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(bbo_u_lt(x, bbo_one()) == 0) { ^ 0; };
+  ^ bbo_one() - x;
+}
+
+!bbo_gcd(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  x = a;
+  y = b;
+  k = 0;
+  while (y != 0) {
+    ?(k >= 80) { ^ 0; };
+    q = x / y;
+    r = x - q * y;
+    x = y;
+    y = r;
+    k = k + 1;
+  };
+  ^ x;
+}
+
+!bbo_pow_int_up(base: int, n: int) -> int {
+  ?(base < 0) { ^ 0; };
+  ?(n < 0) { ^ 0; };
+  ?(n == 0) { ^ bbo_one(); };
+  ?(n > 16) { ^ 0; };
+  r = bbo_one();
+  i = 0;
+  while (i < n) {
+    r = bbo_mul_up(r, base);
+    i = i + 1;
+  };
+  ^ r;
+}
+
+!bbo_pow_int_down(base: int, n: int) -> int {
+  ?(base < 0) { ^ 0; };
+  ?(n < 0) { ^ 0; };
+  ?(n == 0) { ^ bbo_one(); };
+  ?(n > 16) { ^ 0; };
+  r = bbo_one();
+  i = 0;
+  while (i < n) {
+    r = bbo_mul_down(r, base);
+    i = i + 1;
+  };
+  ^ r;
+}
+
+!bbo_nth_root_up(x: int, n: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(n <= 1) { ^ x; };
+  ?(n > 8) { ^ 0; };
+  ?(x == 0) { ^ 0; };
+  y = bbo_one();
+  k = 0;
+  done = 0;
+  while (k < 32) {
+    ?(done == 0) {
+      ynm1 = bbo_pow_int_up(y, n - 1);
+      ?(ynm1 == 0) { ^ 0; };
+      term = bbo_div_up(x, ynm1);
+      nxt = ((n - 1) * y + term) / n;
+      ?(nxt == y) { done = 1; };
+      ?(nxt != y) { y = nxt; };
+    };
+    k = k + 1;
+  };
+  k = 0;
+  done = 0;
+  while (k < 8) {
+    ?(done == 0) {
+      pdown = bbo_pow_int_down(y, n);
+      ?(bbo_u_lt(pdown, x) == 0) {
+        step = 0;
+        ?(y > 0) {
+          prev = bbo_pow_int_down(y - 1, n);
+          ?(bbo_u_lt(prev, x) == 0) { y = y - 1; step = 1; };
+        };
+        ?(step == 0) { done = 1; };
+      };
+      ?(bbo_u_lt(pdown, x) == 1) {
+        ?(y < 0) { ^ 0; };
+        y = y + 1;
+      };
+    };
+    k = k + 1;
+  };
+  ^ y;
+}
+
+!bbo_pow_fp_up(base: int, fp_exp: int) -> int {
+  ?(base < 0) { ^ 0; };
+  ?(fp_exp < 0) { ^ 0; };
+  ?(fp_exp == 0) { ^ bbo_one(); };
+  ?(fp_exp == bbo_one()) { ^ base; };
+  g = bbo_gcd(fp_exp, bbo_one());
+  ?(g == 0) { ^ 0; };
+  num = fp_exp / g;
+  den = bbo_one() / g;
+  ?(num > 16) { ^ 0; };
+  ?(den > 8) { ^ 0; };
+  ?(den == 1) { ^ bbo_pow_int_up(base, num); };
+  raised = bbo_pow_int_up(base, num);
+  ^ bbo_nth_root_up(raised, den);
+}
+
+!bbo_token_out(bal: int, w: int, bpt_in: int, supply: int, fee: int) -> int {
+  ?(bal <= 0) { ^ 0; };
+  ?(w <= 0) { ^ 0; };
+  ?(bbo_u_lt(w, bbo_one()) == 0) { ^ 0; };
+  ?(supply <= 0) { ^ 0; };
+  ?(bpt_in <= 0) { ^ 0; };
+  ?(fee < 0) { ^ 0; };
+  ?(bbo_u_lt(bpt_in, supply) == 0) { ^ 0; };
+  rem = supply - bpt_in;
+  ir = bbo_div_up(rem, supply);
+  ?(bbo_u_lt(ir, bbo_min_inv()) == 1) { ^ 0; };
+  exp = bbo_div_down(bbo_one(), w);
+  br = bbo_pow_fp_up(ir, exp);
+  aout_nf = bbo_mul_down(bal, bbo_complement(br));
+  tax = bbo_mul_up(aout_nf, bbo_complement(w));
+  ?(bbo_u_lt(aout_nf, tax) == 1) { ^ 0; };
+  ntax = aout_nf - tax;
+  cf = bbo_complement(fee);
+  taxf = bbo_mul_up(tax, cf);
+  s = ntax + taxf;
+  ?(bbo_u_lt(s, ntax) == 1) { ^ 0; };
+  ^ s;
+}
+
+!bbo_naive_linear(bal: int, bpt_in: int, supply: int) -> int {
+  ?(bal < 0) { ^ 0; };
+  ?(bpt_in < 0) { ^ 0; };
+  ?(supply <= 0) { ^ 0; };
+  ^ bbo_muldiv_add_part(bal, bpt_in, 0, supply, 0);
+}
+
+!bbo_full_fee(bal: int, w: int, bpt_in: int, supply: int, fee: int) -> int {
+  ?(bal <= 0) { ^ 0; };
+  ?(w <= 0) { ^ 0; };
+  ?(bbo_u_lt(w, bbo_one()) == 0) { ^ 0; };
+  ?(supply <= 0) { ^ 0; };
+  ?(bpt_in <= 0) { ^ 0; };
+  ?(bbo_u_lt(bpt_in, supply) == 0) { ^ 0; };
+  rem = supply - bpt_in;
+  ir = bbo_div_up(rem, supply);
+  ?(bbo_u_lt(ir, bbo_min_inv()) == 1) { ^ 0; };
+  exp = bbo_div_down(bbo_one(), w);
+  br = bbo_pow_fp_up(ir, exp);
+  aout_nf = bbo_mul_down(bal, bbo_complement(br));
+  cf = bbo_complement(fee);
+  ^ bbo_mul_up(aout_nf, cf);
+}
+
+!bbo_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!bbo_test_suite() -> int {
+  e9 = 1000000000;
+  bin = 100000000;
+  w50 = 500000000;
+  w80 = 800000000;
+  w20 = 200000000;
+  fee = 3000000;
+  ?(bbo_mul_down(e9, e9) != e9) { ^ -1; };
+  ?(bbo_div_up(e9 - bin, e9) != 900000000) { ^ -2; };
+  ?(bbo_token_out(e9, w50, bin, e9, 0) != 190000000) { ^ -3; };
+  ?(bbo_token_out(e9, w50, bin, e9, fee) != 189715000) { ^ -4; };
+  ?(bbo_token_out(e9, w80, bin, e9, 0) != 123396627) { ^ -5; };
+  ?(bbo_token_out(e9, w20, bin, e9, 0) != 409510000) { ^ -6; };
+  ?(bbo_token_out(e9, w80, bin, e9, fee) != 123322590) { ^ -7; };
+  ?(bbo_token_out(e9, w50, 0, e9, 0) != 0) { ^ -8; };
+  ?(bbo_pow_fp_up(900000000, 2000000000) != 810000000) { ^ -9; };
+  ?(bbo_naive_linear(e9, bin, e9) != 100000000) { ^ -10; };
+  ?(bbo_naive_i64_mul(2000000000000000, e9) != 4007528410413793280) { ^ -11; };
+  ?(bbo_mul_down(2000000000000000, e9) != 2000000000000000) { ^ -12; };
+  ?(bbo_logexp_claimed() != 0) { ^ -13; };
+  ?(bbo_one_e18_claimed() != 0) { ^ -14; };
+  ?(bbo_array_exit_claimed() != 0) { ^ -15; };
+  ?(bbo_token_out(e9, w50, 310000000, e9, 0) != 0) { ^ -16; };
+  ?(bbo_gcd(800000000, e9) != 200000000) { ^ -17; };
+  ?(bbo_full_fee(e9, w50, bin, e9, fee) != 189430000) { ^ -18; };
+  ^ 1;
+}
+
+=ex{
+  bbo_u_lt,
+  bbo_u_add_carry,
+  bbo_mask32,
+  bbo_one,
+  bbo_min_inv,
+  bbo_one_e18_claimed,
+  bbo_logexp_claimed,
+  bbo_array_exit_claimed,
+  bbo_muldiv_add_part,
+  bbo_mul_down,
+  bbo_mul_up,
+  bbo_div_up,
+  bbo_div_down,
+  bbo_complement,
+  bbo_gcd,
+  bbo_pow_int_up,
+  bbo_pow_int_down,
+  bbo_nth_root_up,
+  bbo_pow_fp_up,
+  bbo_token_out,
+  bbo_naive_linear,
+  bbo_full_fee,
+  bbo_naive_i64_mul,
+  bbo_test_suite
+}

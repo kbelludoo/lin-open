@@ -1,0 +1,20 @@
+@RULEL:BALANCER_BPT_OUT_PIN:1.0.0
+@NOTE="Hash pin only. Balancer V2 Solidity is not vendored (GPL-3.0-or-later)."
+
+.u{
+  repo="https://github.com/balancer/balancer-v2-monorepo"
+  path="pkg/pool-weighted/contracts/WeightedMath.sol"
+  math_path="pkg/solidity-utils/contracts/math/FixedPoint.sol"
+  logexp_path="pkg/solidity-utils/contracts/math/LogExpMath.sol"
+  commit="e91a2b643a49856f51a648d175667c1b48cf3377"
+  git_blob_sha="564887f01a497eb267e22aa22dae6799498ad859"
+  file_sha256="21c247fe3b45eb22511363aa1802f03766b476e8522dc33c1f29041ab9000cc8"
+  fp_blob="f3c74182db0cb5085ef3066ad069ecf76ef1df9f"
+  fp_sha256="db8645a642a965744b15cbdedbf0214c6b8807cf98d359cfb00727a82967a944"
+  le_blob="3af242d4358d2da31fa485eeafd613df648f4e9a"
+  le_sha256="ed748287e341abc9b28972da8f075bbd2b00d1f1d28c6bbb16030e856b94b9fd"
+  license="GPL-3.0-or-later"
+  kernel="_calcTokenOutGivenExactBptIn+mulDown+mulUp+divUp+divDown+complement+powUp"
+  class="EXPERIMENTAL"
+  not_this_kernel="_calcTokenInGivenExactBptOut_see_clone_lin_balancer_bpt_in"
+}
