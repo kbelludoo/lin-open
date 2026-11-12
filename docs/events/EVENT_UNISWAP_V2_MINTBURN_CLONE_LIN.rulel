@@ -1,0 +1,69 @@
+@RULEL:UNISWAP_V2_MINTBURN_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-UNISWAP-V2-MINTBURN"
+@TITLE="Clone-lin of Uniswap V2 Pair.mint / Pair.burn LP amounts with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-uniswap-v2-mintburn"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Uniswap V2 LP mint/burn math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for (a*b)/d; Solidity uint256/uint112 is NOT claimed"
+  commercial_hook="Uniswap V2 mint/burn is the LP-share issuance formula used by every Uniswap V2 pair; making IERC20.balanceOf/getReserves/totalSupply explicit and replacing wrapping i64 multiply with 128-bit muldiv plus unsigned min is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/Uniswap/v2-core"
+  paths="contracts/UniswapV2Pair.sol mint+burn; contracts/libraries/Math.sol min+sqrt; contracts/libraries/SafeMath.sol mul/sub"
+  license="GPL-3.0-or-later"
+  tag="v1.0.1"
+  commit="4dd59067c76dea4a0e8e4bfdda41877a6b16dedc"
+  pair_sha256="43a5421b31415868367b62bfa161ca10bcee03778873faad905f5a3e2cce9cbd"
+  pair_blob="f87a1db262fba132862eae377d8cdaef74c79f97"
+  math_sha256="e4a9d451964a0689be2b244322a353de143ca4248d8736d91aca4ffadca4325f"
+  math_blob="1cab10d2628630dfad34a0810f4fd56282208366"
+  safemath_sha256="4b1c95ff75de7342e0fadff58064820a4eb7c2fcb422a75b4994980ce8e216ae"
+  safemath_blob="f2fbe164ffb143bc1c7116674654edd9113cbc54"
+  vendored="false"
+}
+
+.l{
+  clone="src/lin_uniswap_v2_mintburn.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: sol_expand_math_min + sol_expand_safemath + uint112/uint224 + REJ_SOLIDITY_UNIV2_MINT/BURN; src/lin_from_c.lin REJ_C_UNIV2_MINT/BURN; src/lin_from_rust.lin REJ_RUST_UNIV2_MINT/BURN"
+  improvement_1="mint/burn are lock+IERC20+emit in Solidity; LIN takes amount0/amount1/reserve0/reserve1/totalSupply as arguments"
+  improvement_2="amount0.mul(amount1) and amount.mul(supply)/reserve overflow i64; LIN uses schoolbook 128-bit muldiv matching C11 __int128"
+  improvement_3="Math.min uses signed < in naive C; LIN uv2_u_min is unsigned (negative i64 bit-patterns compare as large uint64)"
+  improvement_4="first mint sqrt(k)-MINIMUM_LIQUIDITY underflow: Solidity SafeMath reverts; LIN fail-closes to 0 (uv2_mint_ok=0)"
+  improvement_5="Babylonian sqrt is bounded at 80 steps; quotient that does not fit uint64 fail-closes to 0"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/uniswap_v2_mintburn_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_uniswap_v2_mintburn.sh"
+}
+
+.p{
+  harness="test/prove_uniswap_v2_mintburn_external.py"
+  evidence_json="examples/uniswap_v2_mintburn/uniswap_v2_mintburn_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-uniswap-v2-mintburn"
+  named_goldens="first 10000/10000 -> 9000 LP; subsequent 1000/1000 vs 10000/9000 -> 900; unbalanced 2000/1000 -> 900 (min); burn 1000 of 10000 -> 1000; first mint 1000/1000 -> 0 fail-closed"
+}
+
+.n{
+  not_claimed_1="full uint256 / uint112 / mainnet pair parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production Uniswap V2 pair replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Uniswap, or captures Uniswap TVL"
+  not_claimed_6="protocol-fee _mintFee (separate clone-lin-uniswap-v2-mintfee)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PYTHON_ISQRT_EQ && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
