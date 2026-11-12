@@ -1,0 +1,66 @@
+@RULEL:CURVE_GETDY_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-CURVE-3POOL-GETDY"
+@TITLE="Clone-lin of Curve 3pool get_dy (quote + fee) with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-curve-getdy"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Curve 3pool stableswap get_dy quote into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs SCALE=1e9, N=3, equal rates, fee floor against 1e10, 128-bit Newton; Vyper uint256 / RATES=1e30 is NOT claimed"
+  commercial_hook="get_dy is the aggregator quote kernel for Curve 3pool (DAI/USDC/USDT). Making amp, balances and fee explicit, fail-closing dx=0 underflow, and charging the 0.04% fee in the open is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/curvefi/curve-contract"
+  path="contracts/pools/3pool/StableSwap3Pool.vy"
+  license="all_rights_reserved_informational_not_vendored"
+  commit="bae23a2fc9a0302d174ea1ffce8219a44a92149c"
+  git_blob_sha="04d170189a1b5ddfecfc0af9ea3fe23eb0840423"
+  file_sha256="03e0bf29ae2fe945a3629b8085062da8f9d9d25957e86001dfc3df68c895f9dc"
+  fixture="test/fixtures/external_proof/curve_3pool_getdy.pin.rulel"
+}
+
+.l{
+  clone="src/lin_curve_getdy.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-curve-getdy"
+  transpiler_delta="src/lin_from_vyper.lin v2: REJ_VYPER_GET_DY/RATES + 10 ** N; src/lin_from_c.lin v2 REJ_C_GET_DY; src/lin_from_rust.lin v2 REJ_RUST_GET_DY; src/lin_from_solidity.lin REJ_SOLIDITY_GET_DY"
+  improvement_1="get_dy is @view on self._xp()/self._A()/self.fee in Vyper; LIN takes x0,x1,x2,amp,fee as arguments"
+  improvement_2="y*y on imbalanced D overflows i64; LIN uses 128-bit (y*y+c)/den matching C11 __int128"
+  improvement_3="get_dy dx=0 computes xp[j]-y-1 = -1 which wraps uint256; LIN fail-closes to 0"
+  improvement_4="fee is floor(fee*dy/1e10) with explicit 3pool 0.04% (4e6); fee>1e10 fail-closes"
+  improvement_5="Vyper/C/Rust/Solidity transpilers fail-close get_dy storage quotes and RATES 1e30 instead of silently dropping the kernel"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/curve_getdy_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="make curve-getdy-proof"
+}
+
+.p{
+  harness="test/prove_curve_getdy_external.py"
+  evidence_json="examples/curve_getdy/curve_getdy_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-curve-getdy"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet 3pool / RATES 1e30 / PRECISION / USDC-USDT 6-dec parity"
+  not_claimed_2="LIN is faster than the EVM or vyper"
+  not_claimed_3="this clone is a production Curve pool replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="a license to redistribute Curve.Fi source"
+  not_claimed_6="get_y as a standalone clone (see clone-lin-curve-gety)"
+  not_claimed_7="any TVL or dollar-savings figure"
+  not_claimed_8="exchange() ERC-20 transfers / admin fee / ramp A"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

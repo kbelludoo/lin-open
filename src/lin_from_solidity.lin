@@ -4,7 +4,7 @@
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
   status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit). Also fail-close Curve get_dy storage quotes (REJ_SOLIDITY_GET_DY)."
 }
 
 !sol_is_kw(nm: string): int {
@@ -38,6 +38,7 @@
 }
 
 !sol_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "get_dy") > 0) { ^"REJ_SOLIDITY_GET_DY" };
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
@@ -64,6 +65,10 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_dy = "function get_dy(uint256 i, uint256 j, uint256 dx) external view returns (uint256)";
+  body_dy = "uint256 y = get_y(i, j, xp[i] + dx, xp); return xp[j] - y - 1;";
+  r4 = sol_reason(sig_dy, body_dy);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_GET_DY") == 0) { ^0 };
   ^1;
 }
 

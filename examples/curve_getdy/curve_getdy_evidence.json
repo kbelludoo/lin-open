@@ -1,0 +1,170 @@
+{
+  "schema": "LIN_CURVE_GETDY_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_curve_getdy.lin",
+      "note": ""
+    },
+    {
+      "id": "VY-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Vyper transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler get_dy reject",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "cgd_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned curvefi/curve-contract 3pool matches hash pin",
+      "note": "commit=bae23a2fc9a0302d174ea1ffce8219a44a92149c StableSwap3Pool.vy blob=04d170189a1b5ddfecfc0af9ea3fe23eb0840423"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of StableSwap3Pool.vy",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb (a*b+add)/d agree",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "9/9 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "FEE-DELTA",
+      "status": "PASS",
+      "description": "A=100 +10% dx: no-fee 99900110 vs 0.04% fee 99860150 (fee=39960)",
+      "note": "nofee=99900110 fee=99860150"
+    },
+    {
+      "id": "MINUS1",
+      "status": "PASS",
+      "description": "Curve xp[j]-y-1 vs omit-minus-1: 99900110 vs 99900111 (one unit, trader-unfavorable)",
+      "note": "with=99900110 omit=99900111"
+    },
+    {
+      "id": "DX0-FAILCLOSED",
+      "status": "PASS",
+      "description": "dx=0 fail-closes to 0 (uint256 would wrap xp[j]-y-1 = -1)",
+      "note": "dy0=0"
+    },
+    {
+      "id": "RATES-1E30",
+      "status": "PASS",
+      "description": "3pool USDC/USDT RATES=1e30 does not fit i64; clone documents equal-rate SCALE=1e9",
+      "note": "fits=0"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 D^2 wraps; 128-bit muldiv fail-closes",
+      "note": "i64_wrap=-8838116264523025375 muldiv=0"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes i,j,dx,x0,x1,x2,amp,fee as arguments (no self.fee)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit (a*b+add)/d (naive i64 D^2 wraps)",
+      "note": ""
+    },
+    {
+      "id": "VY-EMIT",
+      "status": "PASS",
+      "description": "lin_from_vyper.lin fail-closes get_dy storage quotes and RATES",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJ",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin fail-closes get_dy",
+      "note": ""
+    },
+    {
+      "id": "C-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes get_dy / RATES",
+      "note": ""
+    },
+    {
+      "id": "RS-REJ",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes get_dy / RATES",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after the transpiler delta",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/curvefi/curve-contract",
+    "commit": "bae23a2fc9a0302d174ea1ffce8219a44a92149c",
+    "path": "contracts/pools/3pool/StableSwap3Pool.vy",
+    "blob": "04d170189a1b5ddfecfc0af9ea3fe23eb0840423",
+    "sha256": "03e0bf29ae2fe945a3629b8085062da8f9d9d25957e86001dfc3df68c895f9dc",
+    "license": "all_rights_reserved_informational_not_vendored",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_curve_getdy.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-curve-getdy",
+  "c11_oracle": "test/oracles/curve_getdy_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "scale": 1000000000,
+  "fee_denominator": 10000000000,
+  "named_goldens": {
+    "get_D(1e9,1e9,1e9,A=100)": 3000000000,
+    "get_y(+10%,A=100)": 900099889,
+    "get_dy_nofee(+10%,A=100)": 99900110,
+    "get_dy(0.04% fee,A=100)": 99860150,
+    "get_dy(0.04% fee,A=2000)": 99954955,
+    "fee_of(99900110,4e6)": 39960,
+    "omit_minus1": 99900111,
+    "imbalanced_get_dy_fee": 99559723,
+    "naive_i64_D2": -8838116264523025375
+  }
+}
