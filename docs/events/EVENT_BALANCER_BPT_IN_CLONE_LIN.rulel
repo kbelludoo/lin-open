@@ -1,0 +1,62 @@
+@RULEL:BALANCER_BPT_IN_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-BALANCER-TOKEN-IN-GIVEN-BPT-OUT-V1"
+@TITLE="Clone-lin of Balancer V2 _calcTokenInGivenExactBptOut with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-balancer-bpt-in"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Balancer WeightedMath exact-BPT-out token-in into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for mulUp/divUp; Solidity uint256 and ONE=1e18 are NOT claimed"
+  commercial_hook="exact-BPT-out is the LP join inverse of _calcBptOutGivenExactTokenIn; making weights/fees/supply explicit, rounding up with powUp, and replacing wrapping i64 multiply with 128-bit muldiv is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/balancer/balancer-v2-monorepo"
+  path="pkg/pool-weighted/contracts/WeightedMath.sol"
+  license="GPL-3.0-or-later"
+  vendored=false
+  commit="e91a2b643a49856f51a648d175667c1b48cf3377"
+  git_blob_sha="564887f01a497eb267e22aa22dae6799498ad859"
+  file_sha256="21c247fe3b45eb22511363aa1802f03766b476e8522dc33c1f29041ab9000cc8"
+  pin="test/fixtures/external_proof/balancer_bpt_in.pin.rulel"
+}
+
+.l{
+  clone="src/lin_balancer_bpt_in.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_BPT_IN + POWUP + LOGEXP + ARRAY and 0.XeN expand; src/lin_from_c.lin v2 and src/lin_from_rust.lin v2 gain the same fail-closed tokens"
+  improvement_1="hidden pool storage (balances, normalized weights, totalSupply, swapFeePercentage) is lifted to function arguments"
+  improvement_2="powUp/mulUp/divUp overflow i64 at 1e9-scale; LIN uses schoolbook 128-bit muldiv matching C11 __int128 and fail-closes if the quotient exceeds i64"
+  improvement_3="MAX_INVARIANT_RATIO=3e9 (scaled from 3e18) fail-closes instead of Solidity revert; naive linear bal*bpt/supply is an explicit second oracle"
+  improvement_4="fee is charged only on complement(weight); a full-fee-on-amountInWithoutFee misuse is an explicit contrast oracle"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/balancer_bpt_in_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_balancer_bpt_in.sh"
+}
+
+.p{
+  harness="test/prove_balancer_bpt_in_external.py"
+  evidence_json="examples/balancer_bpt_in/balancer_bpt_in_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-balancer-bpt-in"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet ONE=1e18 / LogExpMath / uint256[] multi-token join parity"
+  not_claimed_2="LIN is faster than solc or the EVM"
+  not_claimed_3="this clone is a production Balancer WeightedPool replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Balancer, WeightedMath, or the EVM"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PYTHON_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

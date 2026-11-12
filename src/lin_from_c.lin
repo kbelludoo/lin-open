@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN changelog="v2: fail-close powUp / TokenInGivenExactBpt / uint256[]"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -40,6 +40,10 @@
   ?(rg_count_lit(sig, "float") > 0 || rg_count_lit(body, "float") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(sig, "double") > 0 || rg_count_lit(body, "double") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(body, "goto") > 0){ ^"REJ_C_GOTO" };
+  ?(rg_count_lit(sig, "TokenInGivenExactBpt") > 0){ ^"REJ_C_BPT_IN" };
+  ?(rg_count_lit(body, "powUp") > 0){ ^"REJ_C_POWUP" };
+  ?(rg_count_lit(sig, "uint256[]") > 0){ ^"REJ_C_ARRAY" };
+  ?(rg_count_lit(body, "uint256[]") > 0){ ^"REJ_C_ARRAY" };
   ^"OK";
 }
 
