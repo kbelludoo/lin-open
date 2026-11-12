@@ -1,0 +1,166 @@
+{
+  "schema": "LIN_AAVE_CUMULATE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_aave_cumulate.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler cumulate reject / 0.5eN",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "acl_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned aave/aave-v3-core matches hash pin",
+      "note": "commit=782f51917056a53a2c228701058a6c3fb233684a ReserveLogic blob=bc48163dbbfcac7c832d2e9dfef71a9ddadfe836 WadRayMath blob=f61fe87f2f2748144cd4d113c848e649c41a4e5d"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of ReserveLogic.sol and WadRayMath.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb (a*b+add)/d agree",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "13/13 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "HALF-UP",
+      "status": "PASS",
+      "description": "rayMul(1, 5e8) half-up 1 vs floor 0; rayDiv(2,3) 666666667 vs floor 666666666",
+      "note": "mul=1 div=666666667"
+    },
+    {
+      "id": "PREMIUM-01",
+      "status": "PASS",
+      "description": "0.1% of 1e9 liquidity at index=1e9 \u2192 1001000000 (flashloan premium into aToken index)",
+      "note": "idx=1001000000"
+    },
+    {
+      "id": "PREMIUM-009",
+      "status": "PASS",
+      "description": "typical 0.09% Aave V3 flashloan premium \u2192 1000900000",
+      "note": "idx=1000900000"
+    },
+    {
+      "id": "LIQ0-FAILCLOSED",
+      "status": "PASS",
+      "description": "totalLiquidity=0 fail-closes to 0 (Solidity rayDiv by zero reverts)",
+      "note": "z=0"
+    },
+    {
+      "id": "RAY27",
+      "status": "PASS",
+      "description": "mainnet RAY=1e27 / HALF_RAY=0.5e27 do not fit i64; clone documents RAY'=1e9",
+      "note": "fits=0"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 1e10*1e10 wraps; 128-bit rayMul stays 100000000000",
+      "note": "i64_wrap=7766279631452241920 rayMul=100000000000"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes total_liq, amount, index as arguments (no reserve.liquidityIndex write)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit half-up (a*b+add)/d (naive i64 1e10*1e10 wraps)",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJ",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin fail-closes cumulate storage and expands 0.5eN",
+      "note": ""
+    },
+    {
+      "id": "C-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes cumulate / liquidityIndex",
+      "note": ""
+    },
+    {
+      "id": "RS-REJ",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes cumulate / liquidityIndex",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after the transpiler delta",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/aave/aave-v3-core",
+    "commit": "782f51917056a53a2c228701058a6c3fb233684a",
+    "path": "contracts/protocol/libraries/logic/ReserveLogic.sol",
+    "math_path": "contracts/protocol/libraries/math/WadRayMath.sol",
+    "blob": "bc48163dbbfcac7c832d2e9dfef71a9ddadfe836",
+    "sha256": "6b827ea494fa5bb1b38fa9e7db973bd0aed0ee3d53677cac950f6614cb8fd0c9",
+    "wad_ray_blob": "f61fe87f2f2748144cd4d113c848e649c41a4e5d",
+    "wad_ray_sha256": "fae5b995ec613cc213050c99ea6352c9c18ceebba106d03b1726cfa8f1f0124e",
+    "license": "MIT_after_BUSL_Change_Date_2023-01-27",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_aave_cumulate.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-aave-cumulate",
+  "c11_oracle": "test/oracles/aave_cumulate_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "scale": 1000000000,
+  "named_goldens": {
+    "identity_amount=0": 1000000000,
+    "premium_0.1pct": 1001000000,
+    "premium_0.09pct": 1000900000,
+    "index_already_5pct_then_0.1pct": 1051050000,
+    "rayMul(1,5e8)_half_up": 1,
+    "rayMul(1,5e8)_floor": 0,
+    "rayDiv(2,3)_half_up": 666666667,
+    "wadToRay(1)": 1000000000,
+    "naive_i64_1e10*1e10": 7766279631452241920
+  }
+}
