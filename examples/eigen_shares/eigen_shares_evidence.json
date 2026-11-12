@@ -1,0 +1,167 @@
+{
+  "schema": "LIN_EIGEN_SHARES_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_eigen_shares.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler BALANCEOF/ADDRESS/WIDE_LIT / 1e3",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 BALANCEOF/ADDRESS reject",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2 BALANCE/ADDRESS reject",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "els_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned eigenlayer-contracts v1.13.0 matches hash pin",
+      "note": "commit=ef8f97992241338cb88335b9d74295e33321b780 StrategyBase blob=e68f5940e365f69210f4f23ff8aa03d2b5de7e72"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of StrategyBase.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb (a*b)/d agree",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "13/13 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "EMPTY-BOOK",
+      "status": "PASS",
+      "description": "empty strategy 1000 shares -> 1000 underlying (virtual 1:1)",
+      "note": "s2u=1000"
+    },
+    {
+      "id": "PAR-BOOK",
+      "status": "PASS",
+      "description": "1:1 book 1e9 shares -> 1e9 underlying",
+      "note": "s2u=1000000000"
+    },
+    {
+      "id": "YIELD-HAIRCUT",
+      "status": "PASS",
+      "description": "10% yield converts 1e9 shares to 1099999900 not 1100000000",
+      "note": "s2u=1099999900 naive=1100000000"
+    },
+    {
+      "id": "FIRST-DEPOSIT",
+      "status": "PASS",
+      "description": "first deposit 1e9 into empty book mints 1e9 shares",
+      "note": "dep=1000000000"
+    },
+    {
+      "id": "YIELD-DEPOSIT",
+      "status": "PASS",
+      "description": "deposit 1e8 after 10% yield mints 90909099 shares",
+      "note": "dep=90909099"
+    },
+    {
+      "id": "UINT256-CAP",
+      "status": "PASS",
+      "description": "mainnet 1e18 fits i64; 1e38 and balanceOf are not claimed",
+      "note": "one18_fits=1 max38=0 bal=0"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 2e15*1e9 wraps; 128-bit muldiv fail-closes to 0",
+      "note": "i64_wrap=4007528410413793280 muldiv=0"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes shares/underlying, totalShares, tokenBalance as arguments",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit muldiv; OFFSET=1000 is an argument-free constant",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJ",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin fail-closes balanceOf, address, and 1e38",
+      "note": ""
+    },
+    {
+      "id": "C-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes balanceOf / address params",
+      "note": ""
+    },
+    {
+      "id": "RS-REJ",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes balance_of / Address params",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after the transpiler delta",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/Layr-Labs/eigenlayer-contracts",
+    "tag": "v1.13.0",
+    "commit": "ef8f97992241338cb88335b9d74295e33321b780",
+    "path": "src/contracts/strategies/StrategyBase.sol",
+    "blob": "e68f5940e365f69210f4f23ff8aa03d2b5de7e72",
+    "sha256": "36cb7a4681935d4ac588166a1ab92591a4309412cfdcf5246ed6082e13767dbc",
+    "license": "BUSL-1.1",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_eigen_shares.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-eigen-shares",
+  "c11_oracle": "test/oracles/eigen_shares_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "s2u_empty_1000": 1000,
+    "s2u_par_1e9": 1000000000,
+    "s2u_yield10_1e9": 1099999900,
+    "u2s_yield10_1p1e9": 1000000090,
+    "dep_first_1e9": 1000000000,
+    "dep_after_yield_1e8": 90909099,
+    "naive_i64_2e15*1e9": 4007528410413793280
+  }
+}

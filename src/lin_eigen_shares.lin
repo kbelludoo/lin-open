@@ -1,0 +1,203 @@
+@LIN:L1c:0.2
+@EIGENLAYER_STRATEGY_SHARES{
+  version=1
+  repo="Layr-Labs/eigenlayer-contracts"
+  source="src/contracts/strategies/StrategyBase.sol sharesToUnderlyingView/underlyingToSharesView/deposit-newShares + virtual SHARES_OFFSET/BALANCE_OFFSET"
+  license="BUSL-1.1_upstream_not_vendored"
+  commit="ef8f97992241338cb88335b9d74295e33321b780"
+  tag="v1.13.0"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_eigenlayer_virtual_share_conversion_128bit"
+  note="Not mainnet uint256 / MAX_TOTAL_SHARES=1e38 / IERC20.balanceOf. OFFSET=1000. totalShares and tokenBalance are explicit arguments. Upstream Solidity is hash-pinned, not vendored."
+}
+
+!els_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!els_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(els_u_lt(s, a));
+}
+
+!els_u_add_ok(a: int, b: int) -> int {
+  s = a + b;
+  ?(els_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!els_mask32() -> int {
+  ^ 4294967295;
+}
+
+!els_offset() -> int {
+  ^ 1000;
+}
+
+!els_one_e18_fits() -> int {
+  ^ 1;
+}
+
+!els_max_shares_claimed() -> int {
+  ^ 0;
+}
+
+!els_balanceof_claimed() -> int {
+  ^ 0;
+}
+
+!els_muldiv_part(a: int, b: int, d: int, want_rem: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  m32 = els_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = els_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = els_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(els_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = els_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ?(q < 0) { ^ 0; };
+  ^ q;
+}
+
+!els_muldiv(a: int, b: int, d: int) -> int {
+  ^ els_muldiv_part(a, b, d, 0);
+}
+
+!els_muldiv_rem(a: int, b: int, d: int) -> int {
+  ^ els_muldiv_part(a, b, d, 1);
+}
+
+!els_shares_to_underlying(shares: int, total: int, bal: int) -> int {
+  ?(shares < 0) { ^ 0; };
+  ?(total < 0) { ^ 0; };
+  ?(bal < 0) { ^ 0; };
+  ?(els_u_add_ok(total, els_offset()) == 0) { ^ 0; };
+  ?(els_u_add_ok(bal, els_offset()) == 0) { ^ 0; };
+  vt = total + els_offset();
+  vb = bal + els_offset();
+  ^ els_muldiv(vb, shares, vt);
+}
+
+!els_underlying_to_shares(und: int, total: int, bal: int) -> int {
+  ?(und < 0) { ^ 0; };
+  ?(total < 0) { ^ 0; };
+  ?(bal < 0) { ^ 0; };
+  ?(els_u_add_ok(total, els_offset()) == 0) { ^ 0; };
+  ?(els_u_add_ok(bal, els_offset()) == 0) { ^ 0; };
+  vt = total + els_offset();
+  vb = bal + els_offset();
+  ^ els_muldiv(und, vt, vb);
+}
+
+!els_deposit_shares(amount: int, prior: int, bal_after: int) -> int {
+  ?(amount <= 0) { ^ 0; };
+  ?(prior < 0) { ^ 0; };
+  ?(bal_after < 0) { ^ 0; };
+  ?(els_u_lt(bal_after, amount) == 1) { ^ 0; };
+  ?(els_u_add_ok(prior, els_offset()) == 0) { ^ 0; };
+  ?(els_u_add_ok(bal_after, els_offset()) == 0) { ^ 0; };
+  virt_prior = (bal_after + els_offset()) - amount;
+  ?(virt_prior == 0) { ^ 0; };
+  q = els_muldiv(amount, prior + els_offset(), virt_prior);
+  ?(q == 0) { ^ 0; };
+  ^ q;
+}
+
+!els_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!els_test_suite() -> int {
+  e9 = 1000000000;
+  off = 1000;
+  ?(els_offset() != off) { ^ -1; };
+  ?(els_muldiv(100, 200, 50) != 400) { ^ -2; };
+  ?(els_shares_to_underlying(off, 0, 0) != off) { ^ -3; };
+  ?(els_underlying_to_shares(off, 0, 0) != off) { ^ -4; };
+  ?(els_shares_to_underlying(e9, e9, e9) != e9) { ^ -5; };
+  ?(els_underlying_to_shares(e9, e9, e9) != e9) { ^ -6; };
+  ?(els_shares_to_underlying(1000000, e9, e9) != 1000000) { ^ -7; };
+  ?(els_shares_to_underlying(e9, e9, 1100000000) != 1099999900) { ^ -8; };
+  ?(els_underlying_to_shares(1100000000, e9, 1100000000) != 1000000090) { ^ -9; };
+  ?(els_deposit_shares(e9, 0, e9) != e9) { ^ -10; };
+  ?(els_deposit_shares(100000000, e9, 1200000000) != 90909099) { ^ -11; };
+  ?(els_shares_to_underlying(0, e9, e9) != 0) { ^ -12; };
+  ?(els_underlying_to_shares(0, e9, e9) != 0) { ^ -13; };
+  ?(els_shares_to_underlying(1000000, e9, 1100000000) != 1099999) { ^ -14; };
+  ?(els_underlying_to_shares(1000000, e9, 1100000000) != 909090) { ^ -15; };
+  ?(els_naive_i64_mul(2000000000000000, e9) != 4007528410413793280) { ^ -16; };
+  ?(els_muldiv(2000000000000000, e9, 1) != 0) { ^ -17; };
+  ?(els_muldiv(2000000000000000, off, off) != 2000000000000000) { ^ -18; };
+  ?(els_max_shares_claimed() != 0) { ^ -19; };
+  ?(els_balanceof_claimed() != 0) { ^ -20; };
+  ?(els_one_e18_fits() != 1) { ^ -21; };
+  ?(els_deposit_shares(0, e9, e9) != 0) { ^ -22; };
+  ?(els_muldiv_rem(7, 9, 2) != 1) { ^ -23; };
+  ^ 1;
+}
+
+=ex{
+  els_u_lt,
+  els_u_add_carry,
+  els_u_add_ok,
+  els_mask32,
+  els_offset,
+  els_one_e18_fits,
+  els_max_shares_claimed,
+  els_balanceof_claimed,
+  els_muldiv_part,
+  els_muldiv,
+  els_muldiv_rem,
+  els_shares_to_underlying,
+  els_underlying_to_shares,
+  els_deposit_shares,
+  els_naive_i64_mul,
+  els_test_suite
+}
