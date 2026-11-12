@@ -1,0 +1,68 @@
+@RULEL:UNISWAP_V2_MINTFEE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-UNISWAP-V2-MINTFEE"
+@TITLE="Clone-lin of Uniswap V2 _mintFee / Math.sqrt with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-uniswap-v2-mintfee"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Uniswap V2 protocol-fee mint (1/6 of sqrt(k) growth) into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for (a*b)/d; Solidity uint256/uint112 is NOT claimed"
+  commercial_hook="Uniswap V2 _mintFee mints LP to factory.feeTo equal to supply*(rootK-rootKLast)/(5*rootK+rootKLast); making feeTo/kLast/totalSupply/_mint explicit and bounding Babylonian sqrt is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/Uniswap/v2-core"
+  tag="v1.0.1"
+  path="contracts/UniswapV2Pair.sol _mintFee"
+  helpers="contracts/libraries/Math.sol sqrt; contracts/libraries/SafeMath.sol mul/add/sub"
+  license="GPL-3.0-or-later"
+  commit="4dd59067c76dea4a0e8e4bfdda41877a6b16dedc"
+  pair_blob="f87a1db262fba132862eae377d8cdaef74c79f97"
+  pair_sha256="43a5421b31415868367b62bfa161ca10bcee03778873faad905f5a3e2cce9cbd"
+  math_blob="1cab10d2628630dfad34a0810f4fd56282208366"
+  math_sha256="e4a9d451964a0689be2b244322a353de143ca4248d8736d91aca4ffadca4325f"
+  safemath_blob="f2fbe164ffb143bc1c7116674654edd9113cbc54"
+  safemath_sha256="4b1c95ff75de7342e0fadff58064820a4eb7c2fcb422a75b4994980ce8e216ae"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_uniswap_v2_mintfee.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: uint112/uint224; SafeMath .mul/.add/.sub/.div expander; REJ_SOLIDITY_UNIV2_MINTFEE. src/lin_from_c.lin and src/lin_from_rust.lin matching rejects"
+  improvement_1="IUniswapV2Factory(factory).feeTo, kLast, totalSupply and _mint are arguments / a returned liquidity amount"
+  improvement_2="(a*b)/d uses a 128-bit product; quotient that does not fit uint64 fail-closes to 0"
+  improvement_3="Babylonian sqrt is bounded at 80 steps (Solidity while (x < z) is unbounded); unsigned udiv avoids signed i64 wrap on high-bit operands"
+  improvement_4="fee_on==0 returns 0 liquidity (caller clears kLast); no hidden storage write"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/uniswap_v2_mintfee_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_uniswap_v2_mintfee.sh"
+}
+
+.p{
+  harness="test/prove_uniswap_v2_mintfee_external.py"
+  evidence_json="examples/uniswap_v2_mintfee/uniswap_v2_mintfee_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-uniswap-v2-mintfee"
+}
+
+.n{
+  not_claimed_1="full uint256 / uint112 / mainnet pair parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production Uniswap V2 pair replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Uniswap, Compound, or the EVM"
+  not_claimed_6="TVL or dollar savings from this clone"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_ISQRT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

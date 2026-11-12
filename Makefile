@@ -305,10 +305,14 @@ else
 	@python3 test/prove_all_claims_external.py --iterations 10000
 endif
 
-.PHONY: compound-jumprate-proof independent-reproof
+.PHONY: compound-jumprate-proof independent-reproof uniswap-v2-mintfee-proof
 compound-jumprate-proof: c0
 	@chmod +x test/verify_compound_jumprate.sh test/prove_compound_jumprate_external.py
 	@test/verify_compound_jumprate.sh
+
+uniswap-v2-mintfee-proof: c0
+	@chmod +x test/verify_uniswap_v2_mintfee.sh test/prove_uniswap_v2_mintfee_external.py
+	@test/verify_uniswap_v2_mintfee.sh
 
 independent-reproof: c0
 	@chmod +x test/prove_melhorias_independent.py
