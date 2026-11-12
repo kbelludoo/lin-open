@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: fail-close Maker jug.drip / vat.fold / now / 10 ** 27; expand 10 ** N<=18 (RAY'=1e9); v2 emit + 1eN + OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -38,10 +38,18 @@
 }
 
 !sol_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "function drip") > 0) { ^"REJ_SOLIDITY_MAKER_DRIP" };
+  ?(rg_count_lit(body, "vat.fold") > 0) { ^"REJ_SOLIDITY_MAKER_DRIP" };
+  ?(rg_count_lit(body, "_rpow") > 0) { ^"REJ_SOLIDITY_MAKER_DRIP" };
+  ?(rg_count_lit(body, "10 ** 27") > 0) { ^"REJ_SOLIDITY_RAY27" };
+  ?(rg_count_lit(sig, "10 ** 27") > 0) { ^"REJ_SOLIDITY_RAY27" };
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
+  ?(rg_count_lit(body, "now >=") > 0) { ^"REJ_SOLIDITY_ENV" };
+  ?(rg_count_lit(body, "now -") > 0) { ^"REJ_SOLIDITY_ENV" };
+  ?(rg_count_lit(body, "= now") > 0) { ^"REJ_SOLIDITY_ENV" };
   ?(rg_count_lit(body, "assembly") > 0) { ^"REJ_SOLIDITY_INLINE_ASM" };
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
@@ -64,6 +72,14 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_d = "function drip(bytes32 ilk) external returns (uint rate)";
+  body_d = "require(now >= ilks[ilk].rho); rate = _rmul(_rpow(_add(base, duty), now - rho, ONE), prev); vat.fold(ilk, vow, _diff(rate, prev));";
+  r4 = sol_reason(sig_d, body_d);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_MAKER_DRIP") == 0) { ^0 };
+  sig_ray = "function one() public pure returns (uint)";
+  body_ray = "return 10 ** 27;";
+  r5 = sol_reason(sig_ray, body_ray);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_RAY27") == 0) { ^0 };
   ^1;
 }
 
@@ -112,6 +128,51 @@
     };
     out = out + s.charAt(i);
     i = i + 1;
+  };
+  ^out;
+}
+
+!sol_expand_pow10(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  while (i < n) {
+    ok = 0;
+    ?(s.charCodeAt(i) == 49 && i + 1 < n && s.charCodeAt(i + 1) == 48) {
+      prev_ok = 1;
+      ?(i > 0) {
+        pc = s.charCodeAt(i - 1);
+        ?(is_ident(pc) == true) { prev_ok = 0; };
+        ?(pc >= 48 && pc <= 57) { prev_ok = 0; };
+      };
+      ?(prev_ok == 1) {
+        k = i + 2;
+        while (k < n && (s.charCodeAt(k) == 32 || s.charCodeAt(k) == 9)) { k = k + 1; };
+        ?(k + 1 < n && s.charCodeAt(k) == 42 && s.charCodeAt(k + 1) == 42) {
+          k = k + 2;
+          while (k < n && (s.charCodeAt(k) == 32 || s.charCodeAt(k) == 9)) { k = k + 1; };
+          ?(k < n && s.charCodeAt(k) >= 48 && s.charCodeAt(k) <= 57) {
+            st = k;
+            while (k < n && s.charCodeAt(k) >= 48 && s.charCodeAt(k) <= 57) { k = k + 1; };
+            expn = sol_parse_uint(s, st, k);
+            ?(expn >= 0 && expn <= 18) {
+              out = out + "1";
+              z = 0;
+              while (z < expn) {
+                out = out + "0";
+                z = z + 1;
+              };
+              i = k;
+              ok = 1;
+            };
+          };
+        };
+      };
+    };
+    ?(ok == 0) {
+      out = out + s.charAt(i);
+      i = i + 1;
+    };
   };
   ^out;
 }
@@ -172,7 +233,7 @@
 }
 
 !sol_body(b: string): string {
-  t = jss_trim(sol_strip_types(sol_expand_exp(b)));
+  t = jss_trim(sol_strip_types(sol_expand_pow10(sol_expand_exp(b))));
   out = "";
   n = t.length;
   i = 0;
@@ -334,7 +395,14 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  p9 = sol_expand_pow10("10 ** 9");
+  ?(starts_lit(p9, 0, "1000000000") == 0) { ^0 };
+  ?(p9.length != 10) { ^0 };
+  keep = sol_expand_pow10("110 ** 2");
+  ?(rg_count_lit(keep, "110 ** 2") == 0) { ^0 };
+  ray27 = sol_expand_pow10("10 ** 27");
+  ?(rg_count_lit(ray27, "10 ** 27") == 0) { ^0 };
   ^1;
 }
 
-=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
+=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_expand_pow10, sol_from_sol, sol_from_sol_gate}
