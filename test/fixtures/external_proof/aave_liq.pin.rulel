@@ -1,0 +1,16 @@
+@RULEL:AAVE_LIQ_PIN:1.0.0
+@NOTE="Hash pin only. Aave V3 Solidity is not vendored (BUSL then MIT after Change Date 2023-01-27)."
+
+.u{
+  repo="https://github.com/aave/aave-v3-core"
+  path="contracts/protocol/libraries/logic/LiquidationLogic.sol"
+  math_path="contracts/protocol/libraries/math/PercentageMath.sol"
+  commit="782f51917056a53a2c228701058a6c3fb233684a"
+  git_blob_sha="57f00fd47d14af2643dd8103a47adb70b664ec00"
+  file_sha256="4fecfabd4ebbeccba176f41b3417dd5b3f16d65100d9e9cd373b7ed0dec51d5a"
+  pct_blob="c000be3a6c38a959aa3d28737445eaa5762c53b0"
+  pct_sha256="6f165ad32ddcc3383cbb611cc3045c1a4bb28f16f83a85015fe202803de0161f"
+  license="MIT_after_BUSL_Change_Date_2023-01-27"
+  kernel="_calculateAvailableCollateralToLiquidate+_calculateDebt+percentMul"
+  class="EXPERIMENTAL"
+}

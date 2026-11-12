@@ -1,0 +1,178 @@
+{
+  "schema": "LIN_AAVE_LIQ_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_aave_liq.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler liquidation reject / 0.XeN",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "aliq_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned aave/aave-v3-core matches hash pin",
+      "note": "commit=782f51917056a53a2c228701058a6c3fb233684a LiquidationLogic blob=57f00fd47d14af2643dd8103a47adb70b664ec00 PercentageMath blob=c000be3a6c38a959aa3d28737445eaa5762c53b0"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of LiquidationLogic.sol and PercentageMath.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb (a*b+add)/d agree",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "12/12 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "HALF-UP",
+      "status": "PASS",
+      "description": "percentMul(1, 0.5e4) half-up 1 vs floor 0; percentDiv(2,3) 6667 vs floor 6666",
+      "note": "mul=1 div=6667"
+    },
+    {
+      "id": "BONUS-05",
+      "status": "PASS",
+      "description": "equal-price 5% liquidation bonus \u2192 collateral 1050000000 (debt 1e9)",
+      "note": "coll=1050000000"
+    },
+    {
+      "id": "FEE-10",
+      "status": "PASS",
+      "description": "10% protocol fee of the 5% bonus \u2192 liquidator 1045000000 fee 5000000",
+      "note": "fee=5000000"
+    },
+    {
+      "id": "CAP-BAL",
+      "status": "PASS",
+      "description": "user collateral 5e8 < max 1.05e9 \u2192 debtNeeded 476190476 (percentDiv)",
+      "note": "dneed=476190476"
+    },
+    {
+      "id": "PRICE0-FAILCLOSED",
+      "status": "PASS",
+      "description": "collateralPrice=0 fail-closes to 0 (Solidity would divide by zero)",
+      "note": "z=0"
+    },
+    {
+      "id": "CLOSE-50",
+      "status": "PASS",
+      "description": "HF > 0.95*WAD' uses 50% close factor; 1e9 debt \u2192 5e8",
+      "note": "d=500000000"
+    },
+    {
+      "id": "WAD18",
+      "status": "PASS",
+      "description": "mainnet 0.95e18 fits i64; 0.5e27 does not; clone documents WAD'=1e9",
+      "note": "hf18_fits=1 ray27_fits=0"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 1e15*10500 wraps; 128-bit percentMul stays 1050000000000000",
+      "note": "i64_wrap=-7946744073709551616 percentMul=1050000000000000"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes prices/units/bonus/fee as arguments (no oracle.getAssetPrice / storage)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit half-up percentMul (naive i64 1e15*10500 wraps)",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJ",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin fail-closes liquidation storage and expands 0.XeN",
+      "note": ""
+    },
+    {
+      "id": "C-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes executeLiquidationCall / getAssetPrice",
+      "note": ""
+    },
+    {
+      "id": "RS-REJ",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes executeLiquidationCall / getAssetPrice",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after the transpiler delta",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/aave/aave-v3-core",
+    "commit": "782f51917056a53a2c228701058a6c3fb233684a",
+    "path": "contracts/protocol/libraries/logic/LiquidationLogic.sol",
+    "math_path": "contracts/protocol/libraries/math/PercentageMath.sol",
+    "blob": "57f00fd47d14af2643dd8103a47adb70b664ec00",
+    "sha256": "4fecfabd4ebbeccba176f41b3417dd5b3f16d65100d9e9cd373b7ed0dec51d5a",
+    "pct_blob": "c000be3a6c38a959aa3d28737445eaa5762c53b0",
+    "pct_sha256": "6f165ad32ddcc3383cbb611cc3045c1a4bb28f16f83a85015fe202803de0161f",
+    "license": "MIT_after_BUSL_Change_Date_2023-01-27",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_aave_liq.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-aave-liq",
+  "c11_oracle": "test/oracles/aave_liq_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "scale": 1000000000,
+  "named_goldens": {
+    "percentMul(1,0.5e4)_half_up": 1,
+    "percentMul(1,0.5e4)_floor": 0,
+    "percentDiv(2,3)_half_up": 6667,
+    "equal_price_5pct_bonus": 1050000000,
+    "equal_price_5pct_bonus_10pct_fee": 1045000000,
+    "protocol_fee_10pct_of_bonus": 5000000,
+    "capped_user_bal_5e8_debt_needed": 476190476,
+    "hf_above_0.95_close_50pct": 500000000,
+    "naive_i64_1e15*10500": -7946744073709551616
+  }
+}
