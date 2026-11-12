@@ -1,0 +1,197 @@
+@LIN:L1c:0.2
+@COMPOUND_EXCHANGE_RATE{
+  version=1
+  repo="compound-finance/compound-protocol"
+  source="contracts/CToken.sol exchangeRateStoredInternal + ExponentialNoError expScale"
+  license="BSD-3-Clause_upstream_not_vendored"
+  commit="a3214f67b73310d547e00fc578e8355911c9d376"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_compound_ctoken_exchange_rate_128bit"
+  note="Not mainnet uint256. Storage cash/borrows/reserves/supply/scale/initial are arguments. getCashPrior is fail-closed in the transpiler. (cash+borrows-reserves)*scale/supply uses 128-bit muldiv."
+}
+
+!cxr_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!cxr_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(cxr_u_lt(s, a));
+}
+
+!cxr_mask32() -> int {
+  ^ 4294967295;
+}
+
+!cxr_scale() -> int {
+  ^ 1000000000;
+}
+
+!cxr_initial() -> int {
+  ^ 20000000;
+}
+
+!cxr_cash_prior_claimed() -> int {
+  ^ 0;
+}
+
+!cxr_uint256_claimed() -> int {
+  ^ 0;
+}
+
+!cxr_muldiv_part(a: int, b: int, d: int, want: int) -> int {
+  ?(d == 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(a < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(b < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  m32 = cxr_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = cxr_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = cxr_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(cxr_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = cxr_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(q < 0) { ov = 1; };
+  ?(want == 2) { ^ ov; };
+  ?(want == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!cxr_muldiv(a: int, b: int, d: int) -> int {
+  ^ cxr_muldiv_part(a, b, d, 0);
+}
+
+!cxr_muldiv_rem(a: int, b: int, d: int) -> int {
+  ^ cxr_muldiv_part(a, b, d, 1);
+}
+
+!cxr_u_add_ok(a: int, b: int) -> int {
+  s = a + b;
+  ?(cxr_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!cxr_underlying(cash: int, borrows: int, reserves: int) -> int {
+  ?(cash < 0) { ^ 0; };
+  ?(borrows < 0) { ^ 0; };
+  ?(reserves < 0) { ^ 0; };
+  ?(cxr_u_add_ok(cash, borrows) == 0) { ^ 0; };
+  sum = cash + borrows;
+  ?(cxr_u_lt(sum, reserves) == 1) { ^ 0; };
+  ^ sum - reserves;
+}
+
+!cxr_underlying_ok(cash: int, borrows: int, reserves: int) -> int {
+  ?(cash < 0) { ^ 0; };
+  ?(borrows < 0) { ^ 0; };
+  ?(reserves < 0) { ^ 0; };
+  ?(cxr_u_add_ok(cash, borrows) == 0) { ^ 0; };
+  sum = cash + borrows;
+  ?(cxr_u_lt(sum, reserves) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!cxr_exchange_rate(cash: int, borrows: int, reserves: int, supply: int, scale: int, initial: int) -> int {
+  ?(cash < 0) { ^ 0; };
+  ?(borrows < 0) { ^ 0; };
+  ?(reserves < 0) { ^ 0; };
+  ?(supply < 0) { ^ 0; };
+  ?(scale <= 0) { ^ 0; };
+  ?(initial < 0) { ^ 0; };
+  ?(supply == 0) { ^ initial; };
+  ?(cxr_underlying_ok(cash, borrows, reserves) == 0) { ^ 0; };
+  u = cxr_underlying(cash, borrows, reserves);
+  ^ cxr_muldiv(u, scale, supply);
+}
+
+!cxr_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!cxr_test_suite() -> int {
+  e9 = 1000000000;
+  init = 20000000;
+  ?(cxr_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(cxr_muldiv(7, 9, 1) != 63) { ^ -2; };
+  ?(cxr_exchange_rate(e9, 0, 0, e9, e9, init) != e9) { ^ -3; };
+  ?(cxr_exchange_rate(e9, 100000000, 0, e9, e9, init) != 1100000000) { ^ -4; };
+  ?(cxr_exchange_rate(e9, 0, 100000000, e9, e9, init) != 900000000) { ^ -5; };
+  ?(cxr_exchange_rate(0, 0, 0, 0, e9, init) != init) { ^ -6; };
+  ?(cxr_exchange_rate(100, 0, 200, e9, e9, init) != 0) { ^ -7; };
+  ?(cxr_exchange_rate(0, e9, 0, 500000000, e9, init) != 2000000000) { ^ -8; };
+  ?(cxr_underlying_ok(100, 0, 200) != 0) { ^ -9; };
+  ?(cxr_underlying_ok(e9, 0, 0) != 1) { ^ -10; };
+  ?(cxr_muldiv_rem(7, 9, 2) != 1) { ^ -11; };
+  ?(cxr_cash_prior_claimed() != 0) { ^ -12; };
+  ?(cxr_uint256_claimed() != 0) { ^ -13; };
+  ?(cxr_scale() != e9) { ^ -14; };
+  ?(cxr_initial() != init) { ^ -15; };
+  ?(cxr_naive_i64_mul(2000000000000000, e9) != 4007528410413793280) { ^ -16; };
+  ?(cxr_muldiv(2000000000000000, e9, e9) != 2000000000000000) { ^ -17; };
+  ?(cxr_exchange_rate(2000000000000000, 0, 0, e9, e9, init) != 2000000000000000) { ^ -18; };
+  ?(cxr_exchange_rate(e9, 0, 0, e9, 0, init) != 0) { ^ -19; };
+  ?(cxr_muldiv(2000000000000000, e9, 1) != 0) { ^ -20; };
+  ^ 1;
+}
+
+=ex{
+  cxr_u_lt,
+  cxr_u_add_carry,
+  cxr_mask32,
+  cxr_scale,
+  cxr_initial,
+  cxr_cash_prior_claimed,
+  cxr_uint256_claimed,
+  cxr_muldiv_part,
+  cxr_muldiv,
+  cxr_muldiv_rem,
+  cxr_u_add_ok,
+  cxr_underlying,
+  cxr_underlying_ok,
+  cxr_exchange_rate,
+  cxr_naive_i64_mul,
+  cxr_test_suite
+}

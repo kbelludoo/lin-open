@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: fail-close getCashPrior/balance_of (REJ_RUST_CASH_PRIOR)"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -40,6 +41,9 @@
 
 // 3. Critérios fail-closed de rejeição de código Rust não-puro
 !rs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(body, "getCashPrior") > 0) { ^"REJ_RUST_CASH_PRIOR" };
+  ?(rg_count_lit(body, "balance_of") > 0) { ^"REJ_RUST_CASH_PRIOR" };
+  ?(rg_count_lit(body, "balanceOf") > 0) { ^"REJ_RUST_CASH_PRIOR" };
   ?(rg_count_lit(sig, "&mut") > 0) { ^"REJ_RUST_MUTABLE_REF" };
   ?(rg_count_lit(sig, "&") > 0) { ^"REJ_RUST_BORROW" };
   ?(rg_count_lit(body, "unsafe") > 0) { ^"REJ_RUST_UNSAFE" };
@@ -66,6 +70,15 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_cash = "fn cash() -> u64";
+  body_cash = "getCashPrior()";
+  r3 = rs_reason(sig_cash, body_cash);
+  ?(starts_lit(r3, 0, "REJ_RUST_CASH_PRIOR") == 0) { ^0 };
+  sig_bal = "fn tok() -> u64";
+  body_bal = "balance_of()";
+  r4 = rs_reason(sig_bal, body_bal);
+  ?(starts_lit(r4, 0, "REJ_RUST_CASH_PRIOR") == 0) { ^0 };
 
   ^1;
 }

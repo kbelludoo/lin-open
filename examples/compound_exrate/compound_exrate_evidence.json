@@ -1,0 +1,150 @@
+{
+  "schema": "LIN_COMPOUND_EXRATE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_compound_exrate.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler CASH_PRIOR reject / 0.02e18",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler CASH_PRIOR reject",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler CASH_PRIOR reject",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "cxr_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned compound-protocol matches hash pin",
+      "note": "commit=a3214f67b73310d547e00fc578e8355911c9d376 CToken blob=b8c878c79c75855808f6e7303099a367c8bad98b ExponentialNoError blob=23f833760db898ebdc6b2fef9654cb9bc1dd21c3"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of CToken.sol / ExponentialNoError.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb (a*b)/d agree",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "8/8 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PAR-ONE",
+      "status": "PASS",
+      "description": "cash=supply=1e9, zero borrows/reserves \u2192 rate 1e9",
+      "note": "rate=1000000000"
+    },
+    {
+      "id": "ZERO-SUPPLY",
+      "status": "PASS",
+      "description": "totalSupply==0 returns explicit initial (0.02*SCALE=2e7)",
+      "note": "rate=20000000"
+    },
+    {
+      "id": "UNDERFLOW",
+      "status": "PASS",
+      "description": "cash+borrows < reserves fail-closes to 0 (Solidity 0.8 reverts)",
+      "note": "z=0"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 2e15*1e9 wraps; 128-bit muldiv stays 2000000000000000",
+      "note": "i64_wrap=4007528410413793280 muldiv=2000000000000000"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes cash, borrows, reserves, supply, scale, initial as arguments",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit (cash+borrows-reserves)*scale/supply; getCashPrior is not claimed",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJ",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin fail-closes getCashPrior and expands 0.02e18",
+      "note": ""
+    },
+    {
+      "id": "C-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes getCashPrior / balanceOf",
+      "note": ""
+    },
+    {
+      "id": "RS-REJ",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes getCashPrior / balance_of",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after the transpiler delta",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/compound-finance/compound-protocol",
+    "commit": "a3214f67b73310d547e00fc578e8355911c9d376",
+    "path": "contracts/CToken.sol",
+    "math_path": "contracts/ExponentialNoError.sol",
+    "blob": "b8c878c79c75855808f6e7303099a367c8bad98b",
+    "sha256": "b64790f41ef851b09856af286ce8253b95ef34fda4ae836f924a519e8f792785",
+    "exp_blob": "23f833760db898ebdc6b2fef9654cb9bc1dd21c3",
+    "exp_sha256": "dd272760b2d9082db9c94f6198896402fe3681bf41fc3f9d8bba31ada290c3c5",
+    "license": "BSD-3-Clause",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_compound_exrate.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-compound-xrate",
+  "c11_oracle": "test/oracles/compound_exrate_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "par_one_1e9": 1000000000,
+    "borrow_10pct": 1100000000,
+    "reserve_10pct": 900000000,
+    "zero_supply_initial": 20000000,
+    "underflow_fail": 0,
+    "naive_i64_2e15*1e9": 4007528410413793280
+  }
+}

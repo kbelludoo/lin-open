@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN changelog="v2: fail-close getCashPrior/balanceOf (REJ_C_CASH_PRIOR)"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -33,6 +33,8 @@
 }
 
 !cfs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(body, "getCashPrior") > 0){ ^"REJ_C_CASH_PRIOR" };
+  ?(rg_count_lit(body, "balanceOf") > 0){ ^"REJ_C_CASH_PRIOR" };
   ?(rg_count_lit(sig, "*") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(body, "->") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(sig, "struct") > 0 || rg_count_lit(body, "struct") > 0){ ^"REJ_C_STRUCT" };
@@ -756,4 +758,20 @@
   ^out;
 }
 
-=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type}
+!cfs_cash_prior_gate(): int {
+  sig_bad = "int cash(void)";
+  body_bad = "return getCashPrior();";
+  r = cfs_reason(sig_bad, body_bad);
+  ?(starts_lit(r, 0, "REJ_C_CASH_PRIOR") == 0) { ^0 };
+  sig_bal = "int tok(void)";
+  body_bal = "return balanceOf();";
+  r2 = cfs_reason(sig_bal, body_bal);
+  ?(starts_lit(r2, 0, "REJ_C_CASH_PRIOR") == 0) { ^0 };
+  sig_ok = "int add_one(int x)";
+  body_ok = "return x + 1;";
+  r3 = cfs_reason(sig_ok, body_ok);
+  ?(r3.length != 2) { ^0 };
+  ^1;
+}
+
+=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type, cfs_cash_prior_gate}
