@@ -1,0 +1,63 @@
+@RULEL:AAVE_IRM_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-AAVE-V3-IRM"
+@TITLE="Clone-lin of Aave V3 DefaultReserveInterestRateStrategy variable IRM with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_RAY_PRIME_1E9"
+@DATE="2026-11-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-aave-irm"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Aave V3 two-slope variable borrow/liquidity rate math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="RAY'=1e9 (not RAY=1e27); uint64 inputs; 128-bit product for rayMul/rayDiv/percentMul; Solidity uint256 is NOT claimed"
+  commercial_hook="DefaultReserveInterestRateStrategy is the IRM used by Aave V3 variable-rate reserves; making IERC20.balanceOf and immutable slopes explicit arguments plus 128-bit half-up muldiv is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/aave/aave-v3-core"
+  path="contracts/protocol/pool/DefaultReserveInterestRateStrategy.sol"
+  license="MIT after BUSL-1.1 Change Date 2023-01-27"
+  commit="782f51917056a53a2c228701058a6c3fb233684a"
+  git_blob_sha="bb03f2cae5421c00175589a633fe9e8ca1015169"
+  file_sha256="0e5aa1d968ed81567de83660f8335d91b7d62d3d084cae5f40373b26ed0e22f0"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_aave_irm.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: sol_lower_using rewrites ident.rayMul/rayDiv/percentMul; REJ_SOLIDITY_BALANCEOF/IERC20/ADDRESSES_PROVIDER; src/lin_from_c.lin REJ_C_INLINE_ASM/REJ_C_AAVE_IRM_STATE; src/lin_from_rust.lin REJ_RUST_INLINE_ASM/REJ_RUST_AAVE_IRM_STATE"
+  improvement_1="calculateInterestRates is view-on-storage plus IERC20.balanceOf; LIN takes availableLiquidity and slope/optimal/base as arguments"
+  improvement_2="WadRayMath Yul uses uint256; LIN uses schoolbook 128-bit muldiv, fail-closed if the quotient does not fit uint64"
+  improvement_3="rayMul/rayDiv/percentMul are unsigned half-up (remainder>=half) vs floor; goldens: rayMul(1,5e8)=1 vs floor 0; rayDiv(2,3)=666666667 vs floor 666666666"
+  improvement_4="stable-rate branch omitted on purpose (Aave V3.2 deprecated stable borrows); variable+liquidity kernel only"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/aave_irm_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_aave_irm.sh"
+}
+
+.p{
+  harness="test/prove_aave_irm_external.py"
+  evidence_json="examples/aave_irm/aave_irm_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-aave-irm"
+  reproduce="make aave-irm-proof"
+}
+
+.n{
+  not_claimed_1="full uint256 / RAY=1e27 / mainnet aToken parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production IRM replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Aave, Uniswap, or the EVM"
+  not_claimed_6="stable borrow rate / excess stable-debt premium"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

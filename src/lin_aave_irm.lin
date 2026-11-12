@@ -1,0 +1,245 @@
+@LIN:L1c:0.2
+@AAVE_V3_IRM{
+  version=1
+  repo="aave/aave-v3-core"
+  source="contracts/protocol/pool/DefaultReserveInterestRateStrategy.sol calculateInterestRates variable branch"
+  license="MIT"
+  license_note="BUSL-1.1 Change Date 2023-01-27 elapsed; Change License MIT"
+  commit="782f51917056a53a2c228701058a6c3fb233684a"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="i64_positive_aave_v3_two_slope_variable_irm_RAY_prime_1e9_128bit"
+  note="Not mainnet uint256. RAY'=1e9 not RAY=1e27. IERC20.balanceOf and immutable slopes become arguments. Stable-rate branch is out of scope (Aave V3.2 deprecated it). Yul WadRayMath is not executed; rayMul/rayDiv/percentMul are scalar 128-bit half-up."
+}
+
+!air_ray() -> int {
+  ^ 1000000000;
+}
+
+!air_half_ray() -> int {
+  ^ 500000000;
+}
+
+!air_pct() -> int {
+  ^ 10000;
+}
+
+!air_half_pct() -> int {
+  ^ 5000;
+}
+
+!air_i64_max() -> int {
+  ^ 9223372036854775807;
+}
+
+!air_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!air_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(air_u_lt(s, a));
+}
+
+!air_mask32() -> int {
+  ^ 4294967295;
+}
+
+!air_muldiv_part(a: int, b: int, d: int, want_rem: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  m32 = air_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = air_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = air_u_add_carry(p0, t);
+  hi = p3 + _lia_ushr(mid, 32);
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(air_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = air_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!air_muldiv(a: int, b: int, d: int) -> int {
+  ^ air_muldiv_part(a, b, d, 0);
+}
+
+!air_muldiv_rem(a: int, b: int, d: int) -> int {
+  ^ air_muldiv_part(a, b, d, 1);
+}
+
+!air_ray_mul(a: int, b: int) -> int {
+  ?(a <= 0) { ^ 0; };
+  ?(b <= 0) { ^ 0; };
+  ray = air_ray();
+  q = air_muldiv(a, b, ray);
+  r = air_muldiv_rem(a, b, ray);
+  ?(air_u_lt(r, air_half_ray()) == 1) { ^ q; };
+  ?(q == air_i64_max()) { ^ 0; };
+  ^ q + 1;
+}
+
+!air_ray_div(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b <= 0) { ^ 0; };
+  ray = air_ray();
+  q = air_muldiv(a, ray, b);
+  r = air_muldiv_rem(a, ray, b);
+  half_b = b / 2;
+  ?(air_u_lt(r, b - half_b) == 1) { ^ q; };
+  ?(q == air_i64_max()) { ^ 0; };
+  ^ q + 1;
+}
+
+!air_pct_mul(a: int, bps: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(bps < 0) { ^ 0; };
+  q = air_muldiv(a, bps, air_pct());
+  r = air_muldiv_rem(a, bps, air_pct());
+  ?(air_u_lt(r, air_half_pct()) == 1) { ^ q; };
+  ?(q == air_i64_max()) { ^ 0; };
+  ^ q + 1;
+}
+
+!air_u_add_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  s = a + b;
+  ?(air_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!air_borrow_usage(liq: int, debt: int) -> int {
+  ?(debt <= 0) { ^ 0; };
+  ?(liq < 0) { ^ 0; };
+  ?(air_u_add_ok(liq, debt) == 0) { ^ 0; };
+  den = liq + debt;
+  ?(den == 0) { ^ 0; };
+  ^ air_ray_div(debt, den);
+}
+
+!air_variable_borrow_rate(liq: int, debt: int, optimal: int, base: int, slope1: int, slope2: int) -> int {
+  ?(optimal <= 0) { ^ 0; };
+  ?(air_u_lt(air_ray(), optimal) == 1) { ^ 0; };
+  ?(base < 0) { ^ 0; };
+  ?(slope1 < 0) { ^ 0; };
+  ?(slope2 < 0) { ^ 0; };
+  u = air_borrow_usage(liq, debt);
+  ?(air_u_lt(optimal, u) == 1) {
+    excess_num = u - optimal;
+    excess_den = air_ray() - optimal;
+    ?(excess_den == 0) { ^ 0; };
+    excess = air_ray_div(excess_num, excess_den);
+    extra = air_ray_mul(slope2, excess);
+    ?(air_u_add_ok(base, slope1) == 0) { ^ 0; };
+    mid = base + slope1;
+    ?(air_u_add_ok(mid, extra) == 0) { ^ 0; };
+    ^ mid + extra;
+  };
+  stepped = air_ray_div(air_ray_mul(slope1, u), optimal);
+  ?(air_u_add_ok(base, stepped) == 0) { ^ 0; };
+  ^ base + stepped;
+}
+
+!air_liquidity_rate(var_rate: int, usage: int, reserve_factor: int) -> int {
+  ?(var_rate < 0) { ^ 0; };
+  ?(usage < 0) { ^ 0; };
+  ?(air_u_lt(air_pct(), reserve_factor) == 1) { ^ 0; };
+  one_minus = air_pct() - reserve_factor;
+  ^ air_pct_mul(air_ray_mul(var_rate, usage), one_minus);
+}
+
+!air_test_suite() -> int {
+  ray = air_ray();
+  ?(air_ray_mul(0, ray) != 0) { ^ -1; };
+  ?(air_ray_mul(1, air_half_ray()) != 1) { ^ -2; };
+  ?(air_muldiv(1, air_half_ray(), ray) != 0) { ^ -3; };
+  ?(air_ray_div(2, 3) != 666666667) { ^ -4; };
+  ?(air_muldiv(2, ray, 3) != 666666666) { ^ -5; };
+  ?(air_pct_mul(1, 5000) != 1) { ^ -6; };
+  ?(air_muldiv(1, 5000, 10000) != 0) { ^ -7; };
+  ?(air_borrow_usage(1000000000, 0) != 0) { ^ -8; };
+  ?(air_borrow_usage(1000000000, 1000000000) != 500000000) { ^ -9; };
+  opt = 800000000;
+  s1 = 40000000;
+  s2 = 800000000;
+  r50 = air_variable_borrow_rate(1000000000, 1000000000, opt, 0, s1, s2);
+  ?(r50 != 25000000) { ^ -10; };
+  r80 = air_variable_borrow_rate(200000000, 800000000, opt, 0, s1, s2);
+  ?(r80 != 40000000) { ^ -11; };
+  r90 = air_variable_borrow_rate(100000000, 900000000, opt, 0, s1, s2);
+  ?(r90 != 440000000) { ^ -12; };
+  r100 = air_variable_borrow_rate(0, 1000000000, opt, 0, s1, s2);
+  ?(r100 != 840000000) { ^ -13; };
+  ?(air_u_lt(r90, r50) == 1) { ^ -14; };
+  lr50 = air_liquidity_rate(r50, 500000000, 1500);
+  ?(lr50 != 10625000) { ^ -15; };
+  ?(air_ray_mul(10000000000, 10000000000) != 100000000000) { ^ -16; };
+  ?(air_variable_borrow_rate(-1, 1, opt, 0, s1, s2) != 0) { ^ -17; };
+  ?(air_ray_div(1, 0) != 0) { ^ -18; };
+  ^ 1;
+}
+
+=ex{
+  air_ray,
+  air_half_ray,
+  air_pct,
+  air_half_pct,
+  air_i64_max,
+  air_u_lt,
+  air_u_add_carry,
+  air_mask32,
+  air_muldiv_part,
+  air_muldiv,
+  air_muldiv_rem,
+  air_ray_mul,
+  air_ray_div,
+  air_pct_mul,
+  air_u_add_ok,
+  air_borrow_usage,
+  air_variable_borrow_rate,
+  air_liquidity_rate,
+  air_test_suite
+}
