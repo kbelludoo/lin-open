@@ -1,0 +1,253 @@
+@LIN:L1c:0.2
+@MAKER_POT_DRIP{
+  version=1
+  repo="makerdao/dss"
+  source="src/pot.sol drip/_rpow/_rmul/join"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_sky_pot_drip_dsr_chi_128bit"
+  note="Not mainnet uint256. RAY=1e27 does not fit i64; RAY'=1e9. Storage dsr/chi/rho and Solidity 0.6 now are arguments. 128-bit rpow half-up and floor rmul; now<rho and overflow fail-close. No vat.suck side effect. Upstream AGPL is not vendored."
+}
+
+!mpd_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!mpd_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(mpd_u_lt(s, a));
+}
+
+!mpd_mask32() -> int {
+  ^ 4294967295;
+}
+
+!mpd_ray() -> int {
+  ^ 1000000000;
+}
+
+!mpd_mainnet_ray_fits() -> int {
+  ^ 0;
+}
+
+!mpd_muldiv_part(a: int, b: int, d: int, want_rem: int, round: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(d < 0) { ^ 0; };
+  m32 = mpd_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = mpd_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = mpd_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  ?(round == 1) {
+    half = _lia_ushr(d, 1);
+    lo2 = lo + half;
+    c = mpd_u_add_carry(lo, half);
+    lo = lo2;
+    hi2 = hi + c;
+    ?(mpd_u_lt(hi2, hi) == 1) { ^ 0; };
+    hi = hi2;
+  };
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(mpd_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = mpd_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(q < 0) { ov = 1; };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!mpd_muldiv(a: int, b: int, d: int) -> int {
+  ^ mpd_muldiv_part(a, b, d, 0, 0);
+}
+
+!mpd_muldiv_half(a: int, b: int, d: int) -> int {
+  ^ mpd_muldiv_part(a, b, d, 0, 1);
+}
+
+!mpd_muldiv_rem(a: int, b: int, d: int) -> int {
+  ^ mpd_muldiv_part(a, b, d, 1, 0);
+}
+
+!mpd_rmul(x: int, y: int) -> int {
+  ^ mpd_muldiv(x, y, mpd_ray());
+}
+
+!mpd_rpow(x: int, n: int, b: int) -> int {
+  ?(b <= 0) { ^ 0; };
+  ?(x < 0) { ^ 0; };
+  ?(n < 0) { ^ 0; };
+  ?(x == 0) {
+    ?(n == 0) { ^ b; };
+    ^ 0;
+  };
+  z = b;
+  ?( (n & 1) == 1 ) { z = x; };
+  n2 = _lia_ushr(n, 1);
+  steps = 0;
+  while (n2 != 0) {
+    x = mpd_muldiv_half(x, x, b);
+    ?( (n2 & 1) == 1 ) {
+      z = mpd_muldiv_half(z, x, b);
+    };
+    n2 = _lia_ushr(n2, 1);
+    steps = steps + 1;
+    ?(steps > 63) { ^ 0; };
+  };
+  ^ z;
+}
+
+!mpd_drip(dsr: int, chi: int, now_ts: int, rho: int) -> int {
+  ?(dsr < 0) { ^ 0; };
+  ?(chi < 0) { ^ 0; };
+  ?(now_ts < 0) { ^ 0; };
+  ?(rho < 0) { ^ 0; };
+  ?(mpd_u_lt(now_ts, rho) == 1) { ^ 0; };
+  dt = now_ts - rho;
+  acc = mpd_rpow(dsr, dt, mpd_ray());
+  ^ mpd_rmul(acc, chi);
+}
+
+!mpd_linear(dsr: int, chi: int, now_ts: int, rho: int) -> int {
+  ?(dsr < 0) { ^ 0; };
+  ?(chi < 0) { ^ 0; };
+  ?(now_ts < 0) { ^ 0; };
+  ?(rho < 0) { ^ 0; };
+  ?(mpd_u_lt(now_ts, rho) == 1) { ^ 0; };
+  ray = mpd_ray();
+  ?(mpd_u_lt(dsr, ray) == 1) { ^ 0; };
+  dt = now_ts - rho;
+  extra = mpd_muldiv(dsr - ray, dt, 1);
+  ?(mpd_u_add_carry(ray, extra) == 1) { ^ 0; };
+  ^ mpd_rmul(ray + extra, chi);
+}
+
+!mpd_chi_delta(dsr: int, chi: int, now_ts: int, rho: int) -> int {
+  tmp = mpd_drip(dsr, chi, now_ts, rho);
+  ?(mpd_u_lt(tmp, chi) == 1) { ^ 0; };
+  ^ tmp - chi;
+}
+
+!mpd_join_rad(pie: int, chi: int) -> int {
+  ?(pie < 0) { ^ 0; };
+  ?(chi < 0) { ^ 0; };
+  ^ mpd_muldiv(pie, chi, 1);
+}
+
+!mpd_suck_rad(pie: int, chi_delta: int) -> int {
+  ?(pie < 0) { ^ 0; };
+  ?(chi_delta < 0) { ^ 0; };
+  ^ mpd_muldiv(pie, chi_delta, 1);
+}
+
+!mpd_file_ok(now_ts: int, rho: int) -> int {
+  ?(now_ts < 0) { ^ 0; };
+  ?(rho < 0) { ^ 0; };
+  ?(now_ts == rho) { ^ 1; };
+  ^ 0;
+}
+
+!mpd_wrong_ignore_dt(chi: int) -> int {
+  ^ chi;
+}
+
+!mpd_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!mpd_test_suite() -> int {
+  ray = mpd_ray();
+  dsr = ray + 1000000;
+  ?(mpd_mainnet_ray_fits() != 0) { ^ -1; };
+  ?(mpd_muldiv(100, 200, 50) != 400) { ^ -2; };
+  ?(mpd_muldiv_rem(3, 4, 5) != 2) { ^ -3; };
+  ?(mpd_rpow(ray, 100, ray) != ray) { ^ -4; };
+  ?(mpd_rpow(0, 5, ray) != 0) { ^ -5; };
+  ?(mpd_rpow(0, 0, ray) != ray) { ^ -6; };
+  ?(mpd_rmul(ray, ray) != ray) { ^ -7; };
+  ?(mpd_drip(ray, ray, 1000, 1000) != ray) { ^ -8; };
+  ?(mpd_drip(dsr, 2000000000, 50, 50) != 2000000000) { ^ -9; };
+  ?(mpd_drip(dsr, ray, 9, 10) != 0) { ^ -10; };
+  ?(mpd_drip(dsr, ray, 2, 0) != 1002001000) { ^ -11; };
+  ?(mpd_linear(dsr, ray, 2, 0) != 1002000000) { ^ -12; };
+  ?(mpd_drip(dsr, ray, 10, 0) != 1010045120) { ^ -13; };
+  ?(mpd_linear(dsr, ray, 10, 0) != 1010000000) { ^ -14; };
+  ?(mpd_drip(0, ray, 10, 0) != 0) { ^ -15; };
+  ?(mpd_chi_delta(dsr, ray, 2, 0) != 2001000) { ^ -16; };
+  ?(mpd_drip(dsr, 2000000000, 2, 0) != 2004002000) { ^ -17; };
+  ?(mpd_join_rad(1000000000, ray) != 1000000000000000000) { ^ -18; };
+  ?(mpd_suck_rad(1000000000, 2001000) != 2001000000000000) { ^ -19; };
+  ?(mpd_file_ok(100, 100) != 1) { ^ -20; };
+  ?(mpd_file_ok(101, 100) != 0) { ^ -21; };
+  ?(mpd_wrong_ignore_dt(ray) == mpd_drip(dsr, ray, 2, 0)) { ^ -22; };
+  ?(mpd_muldiv(7000000000000000000, 3000000000000000000, 1) != 0) { ^ -23; };
+  ?(mpd_naive_i64_mul(7000000000000000000, 3000000000000000000) != -5389669316318724096) { ^ -24; };
+  ^(1);
+}
+
+=ex{
+  mpd_u_lt,
+  mpd_u_add_carry,
+  mpd_mask32,
+  mpd_ray,
+  mpd_mainnet_ray_fits,
+  mpd_muldiv_part,
+  mpd_muldiv,
+  mpd_muldiv_half,
+  mpd_muldiv_rem,
+  mpd_rmul,
+  mpd_rpow,
+  mpd_drip,
+  mpd_linear,
+  mpd_chi_delta,
+  mpd_join_rad,
+  mpd_suck_rad,
+  mpd_file_ok,
+  mpd_wrong_ignore_dt,
+  mpd_naive_i64_mul,
+  mpd_test_suite
+}

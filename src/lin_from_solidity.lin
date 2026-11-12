@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: expand `10 ** N` for N<=18; fail-close `10 ** 27` (REJ_SOLIDITY_RAY27), Solidity 0.6 `now` (REJ_SOLIDITY_NOW), and pot.drip/vat.suck (REJ_SOLIDITY_POT_DRIP). v2: emit LIN for eligible pure functions; expand 1eN; view without msg.sender is OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -41,6 +41,12 @@
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
+  ?(rg_count_lit(body, "10 ** 27") > 0) { ^"REJ_SOLIDITY_RAY27" };
+  ?(rg_count_lit(body, "10**27") > 0) { ^"REJ_SOLIDITY_RAY27" };
+  ?(rg_count_lit(sig, "drip") > 0 && rg_count_lit(body, "vat.suck") > 0) { ^"REJ_SOLIDITY_POT_DRIP" };
+  ?(rg_count_lit(body, "now - rho") > 0) { ^"REJ_SOLIDITY_NOW" };
+  ?(rg_count_lit(body, "now >= rho") > 0) { ^"REJ_SOLIDITY_NOW" };
+  ?(rg_count_lit(body, "now == rho") > 0) { ^"REJ_SOLIDITY_NOW" };
   ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
   ?(rg_count_lit(body, "assembly") > 0) { ^"REJ_SOLIDITY_INLINE_ASM" };
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
@@ -64,7 +70,31 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_drip = "function drip() external returns (uint tmp)";
+  body_drip = "require(now >= rho); tmp = _rmul(_rpow(dsr, now - rho, ONE), chi); vat.suck(vow, address(this), _mul(Pie, chi_));";
+  r4 = sol_reason(sig_drip, body_drip);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_POT_DRIP") == 0) { ^0 };
+  sig_now = "function file(uint256 data) external";
+  body_now = "require(now == rho); dsr = data;";
+  r5 = sol_reason(sig_now, body_now);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_NOW") == 0) { ^0 };
+  sig_ray = "function one() public pure returns (uint)";
+  body_ray = "return 10 ** 27;";
+  r6 = sol_reason(sig_ray, body_ray);
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_RAY27") == 0) { ^0 };
   ^1;
+}
+
+!sol_pow10(n: int): string {
+  ?(n < 0) { ^"" };
+  ?(n > 18) { ^"" };
+  out = "1";
+  z = 0;
+  while (z < n) {
+    out = out + "0";
+    z = z + 1;
+  };
+  ^out;
 }
 
 !sol_parse_uint(s: string, a: int, b: int) -> int {
@@ -85,6 +115,9 @@
   en = 0;
   expn = 0;
   z = 0;
+  j = 0;
+  k = 0;
+  basev = 0;
   while (i < n) {
     ?(s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) {
       ?(i > 0 && is_ident(s.charCodeAt(i - 1)) == true) {
@@ -106,6 +139,21 @@
           z = z + 1;
         };
         continue;
+      };
+      j = skip_ws(s, i);
+      ?(j + 1 < n && s.charCodeAt(j) == 42 && s.charCodeAt(j + 1) == 42) {
+        k = skip_ws(s, j + 2);
+        ?(k < n && s.charCodeAt(k) >= 48 && s.charCodeAt(k) <= 57) {
+          en = k;
+          while (k < n && s.charCodeAt(k) >= 48 && s.charCodeAt(k) <= 57) { k = k + 1 };
+          basev = sol_parse_uint(s, st, i);
+          expn = sol_parse_uint(s, en, k);
+          ?(basev == 10 && expn >= 0 && expn <= 18) {
+            out = out + sol_pow10(expn);
+            i = k;
+            continue;
+          };
+        };
       };
       out = out + slice2(s, st, i);
       continue;
@@ -334,7 +382,11 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  pow = sol_expand_exp("10 ** 18");
+  ?(starts_lit(pow, 0, "1000000000000000000") == 0) { ^0 };
+  ?(pow.length != 19) { ^0 };
+  ?(rg_count_lit(sol_expand_exp("10 ** 18"), "**") > 0) { ^0 };
   ^1;
 }
 
-=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
+=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_pow10, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
