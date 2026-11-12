@@ -1,0 +1,172 @@
+{
+  "schema": "LIN_AAVE_BORROWS_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_aave_borrows.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler account-data reject / 0.XeN",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "aab_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned aave/aave-v3-core matches hash pin",
+      "note": "commit=782f51917056a53a2c228701058a6c3fb233684a GenericLogic blob=3342316e772a7e733723ef2963ab79566904fb30 PercentageMath blob=c000be3a6c38a959aa3d28737445eaa5762c53b0 ValidationLogic blob=75218f0549067bf1a1a037d401668abe3fcba648"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of GenericLogic/PercentageMath/ValidationLogic",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb (a*b+add)/d agree",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "14/14 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "HALF-UP",
+      "status": "PASS",
+      "description": "percentMul(1, 0.5e4) half-up 1 vs floor 0",
+      "note": "mul=1 floor=0"
+    },
+    {
+      "id": "LTV-80",
+      "status": "PASS",
+      "description": "80% LTV on 1e9 collateral with 1e8 debt \u2192 700000000 available",
+      "note": "avail=700000000"
+    },
+    {
+      "id": "SAT-ZERO",
+      "status": "PASS",
+      "description": "percentMul(1000, 80%)=800 < debt 900 \u2192 available 0 (no underflow)",
+      "note": "z=0"
+    },
+    {
+      "id": "ISO-USDC",
+      "status": "PASS",
+      "description": "1e6 units / 10**(6-2) = 100 isolation-debt units; 9999+100 exceeds 10000",
+      "note": "units=100 ok=0"
+    },
+    {
+      "id": "ISO-INACTIVE",
+      "status": "PASS",
+      "description": "isolationModeActive=0 skips the ceiling (Solidity if-guard)",
+      "note": "ok=1"
+    },
+    {
+      "id": "UINT256-MAX",
+      "status": "PASS",
+      "description": "mainnet 1e18 HF threshold fits i64; type(uint256).max does not",
+      "note": "hf18_fits=1 u256max_fits=0"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 2e15*8000 wraps; 128-bit percentMul stays 1600000000000000",
+      "note": "i64_wrap=-2446744073709551616 percentMul=1600000000000000"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes collateral/debt/ltv and isolation current/ceiling as arguments",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit half-up percentMul (naive i64 2e15*8000 wraps)",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJ",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin fail-closes calculateUserAccountData and expands 0.XeN",
+      "note": ""
+    },
+    {
+      "id": "C-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes calculateUserAccountData / getAssetPrice",
+      "note": ""
+    },
+    {
+      "id": "RS-REJ",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes calculateUserAccountData / getAssetPrice",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after the transpiler delta",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/aave/aave-v3-core",
+    "commit": "782f51917056a53a2c228701058a6c3fb233684a",
+    "path": "contracts/protocol/libraries/logic/GenericLogic.sol",
+    "math_path": "contracts/protocol/libraries/math/PercentageMath.sol",
+    "validation_path": "contracts/protocol/libraries/logic/ValidationLogic.sol",
+    "blob": "3342316e772a7e733723ef2963ab79566904fb30",
+    "sha256": "6a5dbf307801b001ae5cd450c7bc6a7c77947b50f4bc29bdb93661ed22ea795b",
+    "pct_blob": "c000be3a6c38a959aa3d28737445eaa5762c53b0",
+    "pct_sha256": "6f165ad32ddcc3383cbb611cc3045c1a4bb28f16f83a85015fe202803de0161f",
+    "vl_blob": "75218f0549067bf1a1a037d401668abe3fcba648",
+    "vl_sha256": "5d5f7a76a4e03b258679792885c068e2974293679d7baea09c0b7d6de0c2d329",
+    "license": "MIT_after_BUSL_Change_Date_2023-01-27",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_aave_borrows.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-aave-borrows",
+  "c11_oracle": "test/oracles/aave_borrows_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "percentMul(1,0.5e4)_half_up": 1,
+    "percentMul(1,0.5e4)_floor": 0,
+    "available_1e9_coll_1e8_debt_80ltv": 700000000,
+    "available_underwater_1000_900_80ltv": 0,
+    "iso_units_1e6_usdc6": 100,
+    "iso_ok_9999_plus_100_vs_10000": 0,
+    "naive_i64_2e15*8000": -2446744073709551616
+  }
+}

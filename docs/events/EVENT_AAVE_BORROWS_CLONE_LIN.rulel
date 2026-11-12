@@ -1,0 +1,71 @@
+@RULEL:AAVE_BORROWS_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-AAVE-AVAILABLE-BORROWS"
+@TITLE="Clone-lin of Aave V3 calculateAvailableBorrows with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-aave-borrows"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Aave V3 available-borrows / isolation-ceiling math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs PERCENTAGE_FACTOR=1e4 half-up 128-bit (a*b+add)/d; Solidity uint256 / WAD=1e18 oracle/aToken is NOT claimed"
+  commercial_hook="GenericLogic.calculateAvailableBorrows is how every Aave V3 borrow sizes remaining capacity (percentMul(collateral, ltv) minus debt). ValidationLogic isolationModeDebtCeiling is how isolated collateral (e.g. LUSD) caps total exposure. Making LTV/ceiling explicit arguments, saturating underwater accounts to 0, and using 128-bit half-up percentMul instead of wrapping i64 is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/aave/aave-v3-core"
+  path="contracts/protocol/libraries/logic/GenericLogic.sol"
+  math_path="contracts/protocol/libraries/math/PercentageMath.sol"
+  validation_path="contracts/protocol/libraries/logic/ValidationLogic.sol"
+  license="MIT_after_BUSL_Change_Date_2023-01-27"
+  commit="782f51917056a53a2c228701058a6c3fb233684a"
+  git_blob_sha="3342316e772a7e733723ef2963ab79566904fb30"
+  file_sha256="6a5dbf307801b001ae5cd450c7bc6a7c77947b50f4bc29bdb93661ed22ea795b"
+  pct_blob="c000be3a6c38a959aa3d28737445eaa5762c53b0"
+  pct_sha256="6f165ad32ddcc3383cbb611cc3045c1a4bb28f16f83a85015fe202803de0161f"
+  vl_blob="75218f0549067bf1a1a037d401668abe3fcba648"
+  vl_sha256="5d5f7a76a4e03b258679792885c068e2974293679d7baea09c0b7d6de0c2d329"
+  fixture="test/fixtures/external_proof/aave_borrows.pin.rulel"
+}
+
+.l{
+  clone="src/lin_aave_borrows.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-aave-borrows"
+  transpiler_delta="src/lin_from_solidity.lin: REJ_SOLIDITY_ACCOUNT_DATA / REJ_SOLIDITY_UINT256_MAX + 0.XeN expand (0.5e4, 0.9e4, 0.95e18); src/lin_from_c.lin v2 REJ_C_ACCOUNT_DATA; src/lin_from_rust.lin v2 REJ_RUST_ACCOUNT_DATA"
+  improvement_1="oracle/storage calculateUserAccountData becomes explicit collateral/debt/ltv arguments"
+  improvement_2="percentMul uses 128-bit half-up; naive i64 2e15*8000 wraps to -2446744073709551616"
+  improvement_3="underwater (cap < debt) fail-closes to 0 instead of wrapping unsigned sub"
+  improvement_4="isolation debt units = amount/10**(decimals-2) with decimals<2 fail-closed; ceiling is an argument"
+  improvement_5="0.5e4 / 0.9e4 / 0.95e18 expand in the Solidity transpiler; type(uint256).max still fail-closes (does not fit i64)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/aave_borrows_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="make aave-borrows-proof"
+}
+
+.p{
+  harness="test/prove_aave_borrows_external.py"
+  evidence_json="examples/aave_borrows/aave_borrows_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-aave-borrows"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet WAD=1e18 / Chainlink oracle / aToken parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production Aave borrow replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="any TVL or dollar-savings figure"
+  not_claimed_6="percentMul as a standalone clone (see clone-lin-aave-percent)"
+  not_claimed_7="health-factor account data (see clone-lin-aave-health); calculateUserAccountData is fail-closed"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

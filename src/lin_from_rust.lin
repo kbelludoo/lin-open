@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: fail-close Aave calculateUserAccountData / getAssetPrice (REJ_RUST_ACCOUNT_DATA)"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -40,6 +41,8 @@
 
 // 3. Critérios fail-closed de rejeição de código Rust não-puro
 !rs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "calculateUserAccountData") > 0) { ^"REJ_RUST_ACCOUNT_DATA" };
+  ?(rg_count_lit(body, "getAssetPrice") > 0) { ^"REJ_RUST_ACCOUNT_DATA" };
   ?(rg_count_lit(sig, "&mut") > 0) { ^"REJ_RUST_MUTABLE_REF" };
   ?(rg_count_lit(sig, "&") > 0) { ^"REJ_RUST_BORROW" };
   ?(rg_count_lit(body, "unsafe") > 0) { ^"REJ_RUST_UNSAFE" };
@@ -66,6 +69,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  r3 = rs_reason("fn calculateUserAccountData(user: u64) -> u64", "user");
+  ?(starts_lit(r3, 0, "REJ_RUST_ACCOUNT_DATA") == 0) { ^0 };
+  r4 = rs_reason("fn next_price() -> u64", "getAssetPrice()");
+  ?(starts_lit(r4, 0, "REJ_RUST_ACCOUNT_DATA") == 0) { ^0 };
 
   ^1;
 }
