@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN changelog="v2: fail-close Uniswap V2 mint/burn IERC20/balanceOf/_safeTransfer"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -33,6 +33,12 @@
 }
 
 !cfs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(body, "IERC20(") > 0){ ^"REJ_C_UNIV2_MINT" };
+  ?(rg_count_lit(body, "emit Mint") > 0){ ^"REJ_C_UNIV2_MINT" };
+  ?(rg_count_lit(body, "MINIMUM_LIQUIDITY") > 0){ ^"REJ_C_UNIV2_MINT" };
+  ?(rg_count_lit(body, "emit Burn") > 0){ ^"REJ_C_UNIV2_BURN" };
+  ?(rg_count_lit(body, "_safeTransfer") > 0){ ^"REJ_C_UNIV2_BURN" };
+  ?(rg_count_lit(body, "balanceOf[") > 0){ ^"REJ_C_UNIV2_BURN" };
   ?(rg_count_lit(sig, "*") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(body, "->") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(sig, "struct") > 0 || rg_count_lit(body, "struct") > 0){ ^"REJ_C_STRUCT" };

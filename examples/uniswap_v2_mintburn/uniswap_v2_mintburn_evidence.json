@@ -1,0 +1,243 @@
+{
+  "schema": "LIN_UNISWAP_V2_MINTBURN_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-COMMIT",
+      "status": "PASS",
+      "description": "pinned Uniswap v2-core v1.0.1 commit",
+      "note": "4dd59067c76dea4a0e8e4bfdda41877a6b16dedc"
+    },
+    {
+      "id": "PIN-PAIR",
+      "status": "PASS",
+      "description": "pinned UniswapV2Pair.sol sha256 (hash-only; not vendored)",
+      "note": "43a5421b31415868367b62bfa161ca10bcee03778873faad905f5a3e2cce9cbd"
+    },
+    {
+      "id": "PIN-MATH",
+      "status": "PASS",
+      "description": "pinned Math.sol sha256",
+      "note": "e4a9d451964a0689be2b244322a353de143ca4248d8736d91aca4ffadca4325f"
+    },
+    {
+      "id": "PIN-SAFEMATH",
+      "status": "PASS",
+      "description": "pinned SafeMath.sol sha256",
+      "note": "4b1c95ff75de7342e0fadff58064820a4eb7c2fcb422a75b4994980ce8e216ae"
+    },
+    {
+      "id": "NO-VENDOR",
+      "status": "PASS",
+      "description": "GPL Solidity is not vendored; pin is hash-only",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned v2-core matches hashes",
+      "note": "commit=4dd59067c76dea4a0e8e4bfdda41877a6b16dedc"
+    },
+    {
+      "id": "UPSTREAM-MARKERS",
+      "status": "PASS",
+      "description": "live files contain mint/burn / Math.min / Math.sqrt",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb sqrt/mint/burn agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_uniswap_v2_mintburn.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "uv2_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin rejects IERC20 mint/burn and expands Math.min",
+      "note": ""
+    },
+    {
+      "id": "SOL-SAFEMATH",
+      "status": "PASS",
+      "description": "sol_expand_safemath + uint112/uint224 present (C0 vm cannot run string gates)",
+      "note": ""
+    },
+    {
+      "id": "RS-GATE",
+      "status": "PASS",
+      "description": "rs_parse_test_gate source includes Uniswap V2 mint/burn rejects",
+      "note": ""
+    },
+    {
+      "id": "VEC-SQRT",
+      "status": "PASS",
+      "description": "10/10 Babylonian sqrts: C11 i128 == limbs == LIN == math.isqrt",
+      "note": ""
+    },
+    {
+      "id": "VEC-MINT",
+      "status": "PASS",
+      "description": "7/7 mint LP vectors: C11 i128 == limbs == LIN == Python",
+      "note": ""
+    },
+    {
+      "id": "VEC-BURN",
+      "status": "PASS",
+      "description": "4/4 burn pro-rata vectors: C11 i128 == limbs == LIN == Python",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "mint + burn + sqrt: C11 i128 == limbs == LIN vm == Python bigint",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "first 10k/10k -> 9000; next 1k vs 10k/9k supply -> 900; unbalanced min=900; burn 1k/10k -> 1000",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "7e18*3e18/1 fail-closes to 0; naive i64 wraps",
+      "note": "wrap=-5389669316318724096"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN takes amounts/reserves/supply as args; sqrt loop bound=80",
+      "note": ""
+    },
+    {
+      "id": "VS-REQUIRE",
+      "status": "PASS",
+      "description": "sqrt<MINIMUM_LIQUIDITY fail-closes to 0 instead of SafeMath revert",
+      "note": ""
+    },
+    {
+      "id": "MATH-MIN-SEL",
+      "status": "PASS",
+      "description": "C0 vm of sol_expand_math_min select agrees with uv2_u_min on non-negatives",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "SOL-EMIT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin expands Math.min + SafeMath and types uint112",
+      "note": ""
+    },
+    {
+      "id": "C-EMIT",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes Uniswap V2 mint IERC20 and burn _safeTransfer",
+      "note": ""
+    },
+    {
+      "id": "RS-EMIT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes Uniswap V2 mint/burn host calls",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/Uniswap/v2-core",
+    "commit": "4dd59067c76dea4a0e8e4bfdda41877a6b16dedc",
+    "tag": "v1.0.1",
+    "paths": [
+      "contracts/UniswapV2Pair.sol",
+      "contracts/libraries/Math.sol",
+      "contracts/libraries/SafeMath.sol"
+    ],
+    "pins": {
+      "contracts/UniswapV2Pair.sol": {
+        "sha256": "43a5421b31415868367b62bfa161ca10bcee03778873faad905f5a3e2cce9cbd",
+        "blob": "f87a1db262fba132862eae377d8cdaef74c79f97",
+        "markers": [
+          "function mint(address to)",
+          "function burn(address to)",
+          "Math.sqrt(amount0.mul(amount1))",
+          "Math.min(",
+          "MINIMUM_LIQUIDITY",
+          "IERC20(token0).balanceOf"
+        ]
+      },
+      "contracts/libraries/Math.sol": {
+        "sha256": "e4a9d451964a0689be2b244322a353de143ca4248d8736d91aca4ffadca4325f",
+        "blob": "1cab10d2628630dfad34a0810f4fd56282208366",
+        "markers": [
+          "function min",
+          "function sqrt",
+          "y > 3",
+          "y / 2 + 1"
+        ]
+      },
+      "contracts/libraries/SafeMath.sol": {
+        "sha256": "4b1c95ff75de7342e0fadff58064820a4eb7c2fcb422a75b4994980ce8e216ae",
+        "blob": "f2fbe164ffb143bc1c7116674654edd9113cbc54",
+        "markers": [
+          "function mul",
+          "function add",
+          "function sub"
+        ]
+      }
+    },
+    "license": "GPL-3.0-or-later",
+    "vendored": false,
+    "note": "hash-only pin; GPL UniswapV2Pair.sol / Math.sol / SafeMath.sol are not copied into lin-open"
+  },
+  "lin_clone": "src/lin_uniswap_v2_mintburn.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-uniswap-v2-mintburn",
+  "c11_oracle": "test/oracles/uniswap_v2_mintburn_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "sqrt_0": 0,
+    "sqrt_4": 2,
+    "sqrt_1e18": 1000000000,
+    "mint_first_insufficient": 0,
+    "mint_first_1001": 1,
+    "mint_first_10k": 9000,
+    "mint_next_balanced": 900,
+    "mint_next_unbalanced": 900,
+    "mint_first_1e9": 999999000,
+    "burn_1k_of_10k": 1000,
+    "muldiv_7e18_3e18": 0
+  }
+}
