@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: uint40 type; expand `N days|hours|minutes|weeks|seconds` (365 days -> 31536000); fail-close Aave getNormalizedIncome/getNormalizedDebt (block.timestamp + storage) as REJ_SOLIDITY_AAVE_NORM. v2: emit LIN for eligible pure functions; expand 1eN; view without msg.sender is OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -27,6 +27,7 @@
   ?(starts_lit(nm, 0, "uint256") == 1 && nm.length == 7) { ^1 };
   ?(starts_lit(nm, 0, "uint128") == 1 && nm.length == 7) { ^1 };
   ?(starts_lit(nm, 0, "uint64") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "uint40") == 1 && nm.length == 6) { ^1 };
   ?(starts_lit(nm, 0, "uint32") == 1 && nm.length == 6) { ^1 };
   ?(starts_lit(nm, 0, "uint16") == 1 && nm.length == 6) { ^1 };
   ?(starts_lit(nm, 0, "uint8") == 1 && nm.length == 5) { ^1 };
@@ -41,6 +42,9 @@
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
+  ?(rg_count_lit(sig, "getNormalizedIncome") > 0) { ^"REJ_SOLIDITY_AAVE_NORM" };
+  ?(rg_count_lit(sig, "getNormalizedDebt") > 0) { ^"REJ_SOLIDITY_AAVE_NORM" };
+  ?(rg_count_lit(sig, "calculateLinearInterest") > 0 && rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_AAVE_NORM" };
   ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
   ?(rg_count_lit(body, "assembly") > 0) { ^"REJ_SOLIDITY_INLINE_ASM" };
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
@@ -64,7 +68,22 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_norm = "function getNormalizedIncome(DataTypes.ReserveData storage reserve) internal view returns (uint256)";
+  body_norm = "if (reserve.lastUpdateTimestamp == block.timestamp) { return reserve.liquidityIndex; }";
+  r4 = sol_reason(sig_norm, body_norm);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_AAVE_NORM") == 0) { ^0 };
+  u40 = "uint40";
+  ?(sol_is_type(u40) == 0) { ^0 };
   ^1;
+}
+
+!sol_time_mul(unit: string): int {
+  ?(starts_lit(unit, 0, "days") == 1 && unit.length == 4) { ^86400 };
+  ?(starts_lit(unit, 0, "hours") == 1 && unit.length == 5) { ^3600 };
+  ?(starts_lit(unit, 0, "minutes") == 1 && unit.length == 7) { ^60 };
+  ?(starts_lit(unit, 0, "seconds") == 1 && unit.length == 7) { ^1 };
+  ?(starts_lit(unit, 0, "weeks") == 1 && unit.length == 5) { ^604800 };
+  ^0;
 }
 
 !sol_parse_uint(s: string, a: int, b: int) -> int {
@@ -85,6 +104,9 @@
   en = 0;
   expn = 0;
   z = 0;
+  j = 0;
+  unit = "";
+  mul = 0;
   while (i < n) {
     ?(s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) {
       ?(i > 0 && is_ident(s.charCodeAt(i - 1)) == true) {
@@ -105,6 +127,14 @@
           out = out + "0";
           z = z + 1;
         };
+        continue;
+      };
+      j = skip_ws(s, i);
+      unit = read_ident(s, j);
+      mul = sol_time_mul(unit);
+      ?(mul > 0) {
+        out = out + rgs_num(sol_parse_uint(s, st, i) * mul);
+        i = j + unit.length;
         continue;
       };
       out = out + slice2(s, st, i);
@@ -334,7 +364,13 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  days = sol_expand_exp("365 days");
+  ?(starts_lit(days, 0, "31536000") == 0) { ^0 };
+  ?(days.length != 8) { ^0 };
+  ?(rg_count_lit(sol_expand_exp("365 days"), "days") > 0) { ^0 };
+  hrs = sol_expand_exp("2 hours");
+  ?(starts_lit(hrs, 0, "7200") == 0) { ^0 };
   ^1;
 }
 
-=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
+=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_time_mul, sol_expand_exp, sol_from_sol, sol_from_sol_gate}

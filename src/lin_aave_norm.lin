@@ -1,0 +1,223 @@
+@LIN:L1c:0.2
+@AAVE_V3_NORM{
+  version=1
+  repo="aave/aave-v3-core"
+  source="ReserveLogic.getNormalizedIncome/getNormalizedDebt + MathUtils.calculateLinearInterest/calculateCompoundedInterest"
+  license="MIT"
+  license_note="BUSL-1.1 Change Date 2023-01-27 elapsed; Change License MIT"
+  commit="782f51917056a53a2c228701058a6c3fb233684a"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_aave_normalized_income_debt_RAY_prime_1e9"
+  note="Not mainnet uint256. RAY'=1e9 (Aave RAY=1e27 does not fit i64). dt is an explicit argument; Aave uses block.timestamp. Binomial x^2/x^3 terms floor to 0 at RAY' for typical APRs — that is a documented scale limit, not mainnet parity."
+}
+
+!ani_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!ani_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(ani_u_lt(s, a));
+}
+
+!ani_mask32() -> int {
+  ^ 4294967295;
+}
+
+!ani_ray() -> int {
+  ^ 1000000000;
+}
+
+!ani_half_ray() -> int {
+  ^ 500000000;
+}
+
+!ani_day() -> int {
+  ^ 86400;
+}
+
+!ani_spy() -> int {
+  ^ 31536000;
+}
+
+!ani_mainnet_ray_fits() -> int {
+  ^ 0;
+}
+
+!ani_muldiv_add_part(a: int, b: int, add: int, d: int, want_ov: int) -> int {
+  ?(d == 0) { ?(want_ov == 1) { ^ 1; }; ^ 0; };
+  ?(a < 0) { ?(want_ov == 1) { ^ 1; }; ^ 0; };
+  ?(b < 0) { ?(want_ov == 1) { ^ 1; }; ^ 0; };
+  ?(add < 0) { ?(want_ov == 1) { ^ 1; }; ^ 0; };
+  m32 = ani_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = ani_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = ani_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  lo2 = lo + add;
+  hi = hi + ani_u_add_carry(lo, add);
+  lo = lo2;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(ani_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = ani_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(q < 0) { ov = 1; };
+  ?(want_ov == 1) { ^ ov; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!ani_ray_mul(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(a == 0) { ^ 0; };
+  ?(b == 0) { ^ 0; };
+  ^ ani_muldiv_add_part(a, b, ani_half_ray(), ani_ray(), 0);
+}
+
+!ani_linear_interest(rate: int, dt: int) -> int {
+  ?(rate < 0) { ^ 0; };
+  ?(dt < 0) { ^ 0; };
+  inc = ani_muldiv_add_part(rate, dt, 0, ani_spy(), 0);
+  s = ani_ray() + inc;
+  ?(ani_u_lt(s, ani_ray()) == 1) { ^ 0; };
+  ?(s < 0) { ^ 0; };
+  ^ s;
+}
+
+!ani_normalized_income(rate: int, index: int, dt: int) -> int {
+  ?(rate < 0) { ^ 0; };
+  ?(index < 0) { ^ 0; };
+  ?(dt < 0) { ^ 0; };
+  ?(dt == 0) { ^ index; };
+  ^ ani_ray_mul(ani_linear_interest(rate, dt), index);
+}
+
+!ani_compounded_interest(rate: int, dt: int) -> int {
+  ?(rate < 0) { ^ 0; };
+  ?(dt < 0) { ^ 0; };
+  ?(dt == 0) { ^ ani_ray(); };
+  spy = ani_spy();
+  spy2 = ani_muldiv_add_part(spy, spy, 0, 1, 0);
+  ?(spy2 == 0) { ^ 0; };
+  bp2 = ani_muldiv_add_part(ani_ray_mul(rate, rate), 1, 0, spy2, 0);
+  bp3 = ani_muldiv_add_part(ani_ray_mul(bp2, rate), 1, 0, spy, 0);
+  e1 = dt - 1;
+  e2 = 0;
+  ?(dt > 2) { e2 = dt - 2; };
+  second = ani_muldiv_add_part(ani_muldiv_add_part(dt, e1, 0, 1, 0), bp2, 0, 2, 0);
+  third = ani_muldiv_add_part(ani_muldiv_add_part(ani_muldiv_add_part(dt, e1, 0, 1, 0), e2, 0, 1, 0), bp3, 0, 6, 0);
+  first = ani_muldiv_add_part(rate, dt, 0, spy, 0);
+  s = ani_ray() + first;
+  ?(ani_u_lt(s, ani_ray()) == 1) { ^ 0; };
+  s2 = s + second;
+  ?(ani_u_lt(s2, s) == 1) { ^ 0; };
+  s3 = s2 + third;
+  ?(ani_u_lt(s3, s2) == 1) { ^ 0; };
+  ?(s3 < 0) { ^ 0; };
+  ^ s3;
+}
+
+!ani_normalized_debt(rate: int, index: int, dt: int) -> int {
+  ?(rate < 0) { ^ 0; };
+  ?(index < 0) { ^ 0; };
+  ?(dt < 0) { ^ 0; };
+  ?(dt == 0) { ^ index; };
+  ^ ani_ray_mul(ani_compounded_interest(rate, dt), index);
+}
+
+!ani_wrong_ignore_dt(index: int) -> int {
+  ^ index;
+}
+
+!ani_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!ani_test_suite() -> int {
+  r = ani_ray();
+  spy = ani_spy();
+  day = ani_day();
+  ?(ani_mainnet_ray_fits() != 0) { ^ -1; };
+  ?(spy != (365 * day)) { ^ -2; };
+  ?(ani_linear_interest(0, spy) != r) { ^ -3; };
+  ?(ani_linear_interest(50000000, spy) != 1050000000) { ^ -4; };
+  ?(ani_normalized_income(50000000, r, 0) != r) { ^ -5; };
+  ?(ani_normalized_income(50000000, r, spy) != 1050000000) { ^ -6; };
+  ?(ani_normalized_income(50000000, r + r, spy) != 2100000000) { ^ -7; };
+  ?(ani_normalized_income(50000000, r, day) != 1000136986) { ^ -8; };
+  ?(ani_compounded_interest(50000000, spy) != 1050000000) { ^ -9; };
+  ?(ani_normalized_debt(50000000, r, spy) != 1050000000) { ^ -10; };
+  ?(ani_compounded_interest(1000000000000, spy) != 498260632232000) { ^ -11; };
+  ?(ani_linear_interest(1000000000000, spy) != 1001000000000) { ^ -12; };
+  ?(ani_compounded_interest(1000000000000, spy) == ani_linear_interest(1000000000000, spy)) { ^ -13; };
+  ?(ani_normalized_debt(50000000, r, 0) != r) { ^ -14; };
+  ?(ani_normalized_income(-1, r, 1) != 0) { ^ -15; };
+  ?(ani_ray_mul(10000000000, 10000000000) != 100000000000) { ^ -16; };
+  ?(ani_naive_i64_mul(10000000000, 10000000000) != 7766279631452241920) { ^ -17; };
+  ?(ani_wrong_ignore_dt(r) != r) { ^ -18; };
+  ?(ani_wrong_ignore_dt(r) == ani_normalized_income(50000000, r, spy)) { ^ -19; };
+  ?(ani_linear_interest(0, 0) != r) { ^ -20; };
+  ^ 1;
+}
+
+=ex{
+  ani_u_lt,
+  ani_u_add_carry,
+  ani_mask32,
+  ani_ray,
+  ani_half_ray,
+  ani_day,
+  ani_spy,
+  ani_mainnet_ray_fits,
+  ani_muldiv_add_part,
+  ani_ray_mul,
+  ani_linear_interest,
+  ani_normalized_income,
+  ani_compounded_interest,
+  ani_normalized_debt,
+  ani_wrong_ignore_dt,
+  ani_naive_i64_mul,
+  ani_test_suite
+}
