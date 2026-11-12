@@ -1,0 +1,65 @@
+@RULEL:EIGEN_SHARES_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-EIGENLAYER-STRATEGY-SHARES"
+@TITLE="Clone-lin of EigenLayer StrategyBase sharesToUnderlying/underlyingToShares with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-eigen-shares"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile EigenLayer StrategyBase virtual-share conversion into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, OFFSET=1000, 128-bit (a*b)/d; Solidity uint256 / MAX_TOTAL_SHARES=1e38 / IERC20.balanceOf are NOT claimed"
+  commercial_hook="StrategyBase.sharesToUnderlyingView and underlyingToSharesView are how every EigenLayer restaking strategy converts staker shares to underlying (and the reverse), with SHARES_OFFSET=BALANCE_OFFSET=1e3 virtual shares against ERC4626 inflation. Making totalShares/tokenBalance explicit, fail-closing balanceOf/address/1e38, and replacing wrapping i64 multiply with 128-bit muldiv is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/Layr-Labs/eigenlayer-contracts"
+  path="src/contracts/strategies/StrategyBase.sol"
+  license="BUSL-1.1"
+  tag="v1.13.0"
+  commit="ef8f97992241338cb88335b9d74295e33321b780"
+  git_blob_sha="e68f5940e365f69210f4f23ff8aa03d2b5de7e72"
+  file_sha256="36cb7a4681935d4ac588166a1ab92591a4309412cfdcf5246ed6082e13767dbc"
+  fixture="test/fixtures/external_proof/eigen_shares.pin.rulel"
+}
+
+.l{
+  clone="src/lin_eigen_shares.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-eigen-shares"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_BALANCEOF / REJ_SOLIDITY_ADDRESS / REJ_SOLIDITY_WIDE_LIT + 1e3 expand + exp>18 unexpanded; src/lin_from_c.lin v2 REJ_C_BALANCEOF / REJ_C_ADDRESS; src/lin_from_rust.lin v2 REJ_RUST_BALANCE / REJ_RUST_ADDRESS"
+  improvement_1="storage totalShares and IERC20.balanceOf(_tokenBalance) become explicit arguments"
+  improvement_2="virtual-share haircut is explicit: 10% yield on 1e9/1e9 mints 1099999900 underlying not 1100000000"
+  improvement_3="128-bit muldiv; naive i64 2e15*1e9 wraps to 4007528410413793280"
+  improvement_4="MAX_TOTAL_SHARES=1e38 and address/userUnderlying and balanceOf are fail-closed in the transpilers"
+  improvement_5="deposit newShares uses pre-transfer virtualPriorTokenBalance (tokens already received)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/eigen_shares_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="make eigen-shares-proof"
+}
+
+.p{
+  harness="test/prove_eigen_shares_external.py"
+  evidence_json="examples/eigen_shares/eigen_shares_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-eigen-shares"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet MAX_TOTAL_SHARES=1e38 / IERC20.balanceOf parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production EigenLayer strategy replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="any TVL or dollar-savings figure"
+  not_claimed_6="userUnderlying(address) / StrategyManager.stakerDepositShares lookups"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

@@ -1,0 +1,15 @@
+@RULEL:EIGEN_SHARES_PIN:1.0.0
+@NOTE="Hash pin only. EigenLayer StrategyBase.sol is not vendored (BUSL-1.1)."
+
+.u{
+  repo="https://github.com/Layr-Labs/eigenlayer-contracts"
+  path="src/contracts/strategies/StrategyBase.sol"
+  tag="v1.13.0"
+  commit="ef8f97992241338cb88335b9d74295e33321b780"
+  git_blob_sha="e68f5940e365f69210f4f23ff8aa03d2b5de7e72"
+  file_sha256="36cb7a4681935d4ac588166a1ab92591a4309412cfdcf5246ed6082e13767dbc"
+  license="BUSL-1.1"
+  kernel="sharesToUnderlyingView+underlyingToSharesView+deposit-newShares+SHARES_OFFSET+BALANCE_OFFSET"
+  class="EXPERIMENTAL"
+  not_this_kernel="userUnderlying_address_StrategyManager_stakerDepositShares"
+}
