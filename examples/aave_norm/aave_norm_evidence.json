@@ -1,0 +1,162 @@
+{
+  "schema": "LIN_AAVE_NORM_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_aave_norm.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "ani_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned aave-v3-core commit matches hash pin",
+      "note": "commit=782f51917056a53a2c228701058a6c3fb233684a ReserveLogic.sol blob=bc48163dbbfcac7c832d2e9dfef71a9ddadfe836; MathUtils.sol blob=9adca939db36cbe1009d0a00600def9314fc7332"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of ReserveLogic.sol and MathUtils.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb (a*b+add)/d agree",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "12/12 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "DT-SHORT",
+      "status": "PASS",
+      "description": "dt==0 returns the stored index (Aave same-block short-circuit)",
+      "note": "income=1000000000"
+    },
+    {
+      "id": "EXPLICIT-DT",
+      "status": "PASS",
+      "description": "5% RAY' for 1 year: income 1.05e9 vs ignore-dt still 1e9",
+      "note": "income=1050000000 ignore=1000000000"
+    },
+    {
+      "id": "BINOM-SCALE",
+      "status": "PASS",
+      "description": "typical 5% APR: compound extra terms floor to 0 at RAY'=1e9; extreme 1e12 rate is distinct",
+      "note": "c5=1050000000 c_big=498260632232000 lin_big=1001000000000"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (1e10*1e10) wraps; 128-bit rayMul does not",
+      "note": "i64_wrap=7766279631452241920 rayMul=100000000000"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes rate/index/dt as arguments (no block.timestamp)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product (naive i64 a*b wraps on 1e10*1e10)",
+      "note": ""
+    },
+    {
+      "id": "SOL-EMIT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin expands N days and fail-closes Aave-norm storage/time",
+      "note": ""
+    },
+    {
+      "id": "C-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes wall-clock time and Aave getNormalizedIncome",
+      "note": ""
+    },
+    {
+      "id": "RS-REJ",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes Instant::now/SystemTime and normalized_income",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after the transpiler delta",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/aave/aave-v3-core",
+    "commit": "782f51917056a53a2c228701058a6c3fb233684a",
+    "paths": [
+      "contracts/protocol/libraries/logic/ReserveLogic.sol",
+      "contracts/protocol/libraries/math/MathUtils.sol"
+    ],
+    "files": {
+      "contracts/protocol/libraries/logic/ReserveLogic.sol": {
+        "blob": "bc48163dbbfcac7c832d2e9dfef71a9ddadfe836",
+        "sha256": "6b827ea494fa5bb1b38fa9e7db973bd0aed0ee3d53677cac950f6614cb8fd0c9"
+      },
+      "contracts/protocol/libraries/math/MathUtils.sol": {
+        "blob": "9adca939db36cbe1009d0a00600def9314fc7332",
+        "sha256": "7f73c927e9801debfe0666e2a6364b92f62fd2d58d0c4b485ff04765fd4dc58d"
+      }
+    },
+    "license": "MIT after BUSL-1.1 Change Date 2023-01-27",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_aave_norm.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-aave-norm",
+  "c11_oracle": "test/oracles/aave_norm_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "ray_prime": 1000000000,
+  "seconds_per_year": 31536000,
+  "named_goldens": {
+    "linear(5e7, 1y)": 1050000000,
+    "income(5e7, RAY, 0)": 1000000000,
+    "income(5e7, RAY, 1y)": 1050000000,
+    "income(5e7, RAY, 1d)": 1000136986,
+    "compound(5e7, 1y)": 1050000000,
+    "compound(1e12, 1y)": 498260632232000,
+    "rayMul(1e10, 1e10)": 100000000000,
+    "naive_i64(1e10, 1e10)": 7766279631452241920
+  }
+}

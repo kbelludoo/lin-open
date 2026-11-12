@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN changelog="v2: fail-close wall-clock time and Aave getNormalizedIncome/getNormalizedDebt"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -33,6 +33,12 @@
 }
 
 !cfs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "getNormalizedIncome") > 0){ ^"REJ_C_AAVE_NORM" };
+  ?(rg_count_lit(sig, "getNormalizedDebt") > 0){ ^"REJ_C_AAVE_NORM" };
+  ?(rg_count_lit(body, "block.timestamp") > 0){ ^"REJ_C_AAVE_NORM" };
+  ?(rg_count_lit(body, "gettimeofday") > 0){ ^"REJ_C_TIME" };
+  ?(rg_count_lit(body, "clock()") > 0){ ^"REJ_C_TIME" };
+  ?(rg_count_lit(body, "time.h") > 0){ ^"REJ_C_TIME" };
   ?(rg_count_lit(sig, "*") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(body, "->") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(sig, "struct") > 0 || rg_count_lit(body, "struct") > 0){ ^"REJ_C_STRUCT" };
@@ -756,4 +762,12 @@
   ^out;
 }
 
-=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type}
+!cfs_norm_gate(): int {
+  r = cfs_reason("int getNormalizedIncome(uint64_t rate)", "return rate;");
+  ?(starts_lit(r, 0, "REJ_C_AAVE_NORM") == 0) { ^0 };
+  r2 = cfs_reason("int now_ts(void)", "gettimeofday(&tv, 0); return 0;");
+  ?(starts_lit(r2, 0, "REJ_C_TIME") == 0) { ^0 };
+  ^1;
+}
+
+=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type, cfs_norm_gate}
