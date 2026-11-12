@@ -1,0 +1,71 @@
+@RULEL:BALANCER_WEIGHTED_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-BALANCER-WEIGHTED-OUT-GIVEN-IN"
+@TITLE="Clone-lin of Balancer V2 WeightedMath._calcOutGivenIn with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-balancer-weighted"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Balancer V2 weighted-pool outGivenIn math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs ONE=1e9 floor/ceil 128-bit (a*b+add)/d; Solidity uint256 / ONE=1e18 / LogExpMath is NOT claimed"
+  commercial_hook="WeightedMath._calcOutGivenIn is how every Balancer V2 weighted-pool swap sizes amountOut: balanceOut * (1 - (balanceIn/(balanceIn+amountIn))^(weightIn/weightOut)). Making weights explicit, fail-closing amountIn>30% of balance, and replacing LogExpMath ln/exp with integer 1/2/4 powUp plus bounded Newton is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/balancer/balancer-v2-monorepo"
+  path="pkg/pool-weighted/contracts/WeightedMath.sol"
+  math_path="pkg/solidity-utils/contracts/math/FixedPoint.sol"
+  logexp_path="pkg/solidity-utils/contracts/math/LogExpMath.sol"
+  license="GPL-3.0-or-later"
+  commit="e91a2b643a49856f51a648d175667c1b48cf3377"
+  git_blob_sha="564887f01a497eb267e22aa22dae6799498ad859"
+  file_sha256="21c247fe3b45eb22511363aa1802f03766b476e8522dc33c1f29041ab9000cc8"
+  fp_blob="f3c74182db0cb5085ef3066ad069ecf76ef1df9f"
+  fp_sha256="db8645a642a965744b15cbdedbf0214c6b8807cf98d359cfb00727a82967a944"
+  le_blob="3af242d4358d2da31fa485eeafd613df648f4e9a"
+  le_sha256="ed748287e341abc9b28972da8f075bbd2b00d1f1d28c6bbb16030e856b94b9fd"
+  fixture="test/fixtures/external_proof/balancer_weighted.pin.rulel"
+}
+
+.l{
+  clone="src/lin_balancer_weighted.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-balancer-weighted"
+  transpiler_delta="src/lin_from_solidity.lin: REJ_SOLIDITY_LOGEXP (powDown/powUp/LogExpMath/ln/exp) + 0.XeN expand (0.01e18, 0.3e18, 0.7e18); src/lin_from_c.lin v2 REJ_C_LOGEXP; src/lin_from_rust.lin v2 REJ_RUST_LOGEXP"
+  improvement_1="storage/normalized weights become explicit weightIn/weightOut arguments; amountIn is an argument"
+  improvement_2="integer 1/2/4 powUp (Balancer FixedPoint fast path) plus bounded rational Newton instead of LogExpMath ln/exp + MAX_POW_RELATIVE_ERROR pad"
+  improvement_3="amountIn > mulDown(balanceIn, 0.3*ONE) fail-closes to 0 (Solidity reverts)"
+  improvement_4="128-bit mulDown/divUp; naive i64 2e15*1e9 wraps to 4007528410413793280"
+  improvement_5="0.01e18 / 0.3e18 / 0.7e18 expand in the Solidity transpiler; powUp still fail-closes (LogExpMath is not i64)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/balancer_weighted_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="make balancer-weighted-proof"
+}
+
+.p{
+  harness="test/prove_balancer_weighted_external.py"
+  evidence_json="examples/balancer_weighted/balancer_weighted_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-balancer-weighted"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet ONE=1e18 / LogExpMath parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production Balancer pool replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="any TVL or dollar-savings figure"
+  not_claimed_6="FixedPoint mulDown/divUp as a standalone clone (see clone-lin-balancer-fixedpoint)"
+  not_claimed_7="_calcInGivenOut / _calculateInvariant / BPT joins (arrays, LogExpMath)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
