@@ -1,0 +1,256 @@
+@LIN:L1c:0.2
+@MAKER_VAT_FOLD{
+  version=1
+  repo="makerdao/dss"
+  source="src/vat.sol fold/_add(uint,int)/_mul(uint,int)"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_sky_vat_fold_signed_rate_128bit"
+  note="Not mainnet uint256. RAY=1e27 and rad=wad*ray do not fit i64; RAY'=1e9. Storage Art/rate/dai/debt/live and signed rate delta are arguments. 128-bit unsigned product then signed apply; live!=1 and overflow/underflow fail-close. No mapping/auth/dai[u] slot. Upstream AGPL is not vendored."
+}
+
+!mvf_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!mvf_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(mvf_u_lt(s, a));
+}
+
+!mvf_mask32() -> int {
+  ^ 4294967295;
+}
+
+!mvf_ray() -> int {
+  ^ 1000000000;
+}
+
+!mvf_mainnet_ray_fits() -> int {
+  ^ 0;
+}
+
+!mvf_muldiv_part(a: int, b: int, d: int, want: int) -> int {
+  ?(d == 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(a < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(b < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  m32 = mvf_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = mvf_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = mvf_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(mvf_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = mvf_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(q < 0) { ov = 1; };
+  ?(want == 2) { ^ ov; };
+  ?(want == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!mvf_muldiv(a: int, b: int, d: int) -> int {
+  ^ mvf_muldiv_part(a, b, d, 0);
+}
+
+!mvf_muldiv_rem(a: int, b: int, d: int) -> int {
+  ^ mvf_muldiv_part(a, b, d, 1);
+}
+
+!mvf_mag(y: int) -> int {
+  ?(y >= 0) { ^ y; };
+  m = 0 - y;
+  ?(m < 0) { ^ 0; };
+  ^ m;
+}
+
+!mvf_neg_ok(y: int) -> int {
+  ?(y >= 0) { ^ 1; };
+  m = 0 - y;
+  ?(m < 0) { ^ 0; };
+  ^ 1;
+}
+
+!mvf_add_ui_ok(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y == 0) { ^ 1; };
+  ?(y > 0) {
+    s = x + y;
+    ?(s < x) { ^ 0; };
+    ?(s < 0) { ^ 0; };
+    ^ 1;
+  };
+  ?(mvf_neg_ok(y) == 0) { ^ 0; };
+  mag = mvf_mag(y);
+  ?(x < mag) { ^ 0; };
+  ^ 1;
+}
+
+!mvf_add_ui(x: int, y: int) -> int {
+  ?(mvf_add_ui_ok(x, y) == 0) { ^ 0; };
+  ?(y >= 0) { ^ x + y; };
+  ^ x - mvf_mag(y);
+}
+
+!mvf_rad_ok(art: int, rate_delta: int) -> int {
+  ?(art < 0) { ^ 0; };
+  ?(rate_delta == 0) { ^ 1; };
+  ?(mvf_neg_ok(rate_delta) == 0) { ^ 0; };
+  mag = mvf_mag(rate_delta);
+  ov = mvf_muldiv_part(art, mag, 1, 2);
+  ?(ov == 1) { ^ 0; };
+  ^ 1;
+}
+
+!mvf_rad(art: int, rate_delta: int) -> int {
+  ?(mvf_rad_ok(art, rate_delta) == 0) { ^ 0; };
+  ?(rate_delta == 0) { ^ 0; };
+  mag = mvf_mag(rate_delta);
+  q = mvf_muldiv(art, mag, 1);
+  ?(rate_delta < 0) { ^ 0 - q; };
+  ^ q;
+}
+
+!mvf_fold_rate(rate: int, rate_delta: int, live: int) -> int {
+  ?(live != 1) { ^ 0; };
+  ^ mvf_add_ui(rate, rate_delta);
+}
+
+!mvf_fold_rad(art: int, rate_delta: int, live: int) -> int {
+  ?(live != 1) { ^ 0; };
+  ^ mvf_rad(art, rate_delta);
+}
+
+!mvf_fold_dai(dai: int, art: int, rate_delta: int, live: int) -> int {
+  ?(live != 1) { ^ 0; };
+  ?(mvf_rad_ok(art, rate_delta) == 0) { ^ 0; };
+  ^ mvf_add_ui(dai, mvf_rad(art, rate_delta));
+}
+
+!mvf_fold_debt(debt: int, art: int, rate_delta: int, live: int) -> int {
+  ?(live != 1) { ^ 0; };
+  ?(mvf_rad_ok(art, rate_delta) == 0) { ^ 0; };
+  ^ mvf_add_ui(debt, mvf_rad(art, rate_delta));
+}
+
+!mvf_fold_ok(rate: int, art: int, rate_delta: int, dai: int, debt: int, live: int) -> int {
+  ?(live != 1) { ^ 0; };
+  ?(rate < 0) { ^ 0; };
+  ?(art < 0) { ^ 0; };
+  ?(dai < 0) { ^ 0; };
+  ?(debt < 0) { ^ 0; };
+  ?(mvf_add_ui_ok(rate, rate_delta) == 0) { ^ 0; };
+  ?(mvf_rad_ok(art, rate_delta) == 0) { ^ 0; };
+  rad = mvf_rad(art, rate_delta);
+  ?(mvf_add_ui_ok(dai, rad) == 0) { ^ 0; };
+  ?(mvf_add_ui_ok(debt, rad) == 0) { ^ 0; };
+  ^ 1;
+}
+
+!mvf_wrong_ignore_live(rate: int, rate_delta: int) -> int {
+  ^ mvf_add_ui(rate, rate_delta);
+}
+
+!mvf_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!mvf_test_suite() -> int {
+  ray = mvf_ray();
+  art = ray;
+  dlt = 1000000;
+  nd = 0 - 1000000;
+  ?(mvf_mainnet_ray_fits() != 0) { ^ -1; };
+  ?(mvf_muldiv(100, 200, 50) != 400) { ^ -2; };
+  ?(mvf_muldiv_rem(3, 4, 5) != 2) { ^ -3; };
+  ?(mvf_fold_ok(ray, art, 0, 0, 0, 1) != 1) { ^ -4; };
+  ?(mvf_fold_rate(ray, 0, 1) != ray) { ^ -5; };
+  ?(mvf_fold_rad(art, 0, 1) != 0) { ^ -6; };
+  ?(mvf_fold_rate(ray, dlt, 1) != 1001000000) { ^ -7; };
+  ?(mvf_fold_rad(art, dlt, 1) != 1000000000000000) { ^ -8; };
+  ?(mvf_fold_dai(0, art, dlt, 1) != 1000000000000000) { ^ -9; };
+  ?(mvf_fold_debt(0, art, dlt, 1) != 1000000000000000) { ^ -10; };
+  ?(mvf_fold_rate(ray, nd, 1) != 999000000) { ^ -11; };
+  ?(mvf_fold_rad(art, nd, 1) != 0 - 1000000000000000) { ^ -12; };
+  ?(mvf_fold_dai(2000000000000000, art, nd, 1) != 1000000000000000) { ^ -13; };
+  ?(mvf_fold_ok(ray, art, dlt, 0, 0, 0) != 0) { ^ -14; };
+  ?(mvf_fold_rate(ray, dlt, 0) != 0) { ^ -15; };
+  ?(mvf_wrong_ignore_live(ray, dlt) != 1001000000) { ^ -16; };
+  ?(mvf_fold_ok(100, art, 0 - 200, 0, 0, 1) != 0) { ^ -17; };
+  ?(mvf_fold_rate(100, 0 - 200, 1) != 0) { ^ -18; };
+  ?(mvf_fold_ok(ray, art, nd, 100, 100, 1) != 0) { ^ -19; };
+  ?(mvf_fold_dai(100, art, nd, 1) != 0) { ^ -20; };
+  ?(mvf_muldiv(7000000000000000000, 3000000000000000000, 1) != 0) { ^ -21; };
+  ?(mvf_naive_i64_mul(7000000000000000000, 3000000000000000000) != 0 - 5389669316318724096) { ^ -22; };
+  ?(mvf_rad_ok(7000000000000000000, 3000000000000000000) != 0) { ^ -23; };
+  ?(mvf_fold_ok(ray, art, dlt, 0, 0, 1) != 1) { ^ -24; };
+  ^(1);
+}
+
+=ex{
+  mvf_u_lt,
+  mvf_u_add_carry,
+  mvf_mask32,
+  mvf_ray,
+  mvf_mainnet_ray_fits,
+  mvf_muldiv_part,
+  mvf_muldiv,
+  mvf_muldiv_rem,
+  mvf_mag,
+  mvf_neg_ok,
+  mvf_add_ui_ok,
+  mvf_add_ui,
+  mvf_rad_ok,
+  mvf_rad,
+  mvf_fold_rate,
+  mvf_fold_rad,
+  mvf_fold_dai,
+  mvf_fold_debt,
+  mvf_fold_ok,
+  mvf_wrong_ignore_live,
+  mvf_naive_i64_mul,
+  mvf_test_suite
+}

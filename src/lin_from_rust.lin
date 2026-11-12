@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: fail-close vat_fold / live == 1 / dai_slot (REJ_RUST_VAT_FOLD/LIVE/DAI_SLOT)"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -40,6 +41,9 @@
 
 // 3. Critérios fail-closed de rejeição de código Rust não-puro
 !rs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "vat_fold") > 0) { ^"REJ_RUST_VAT_FOLD" };
+  ?(rg_count_lit(body, "dai_slot") > 0) { ^"REJ_RUST_DAI_SLOT" };
+  ?(rg_count_lit(body, "live == 1") > 0) { ^"REJ_RUST_LIVE" };
   ?(rg_count_lit(sig, "&mut") > 0) { ^"REJ_RUST_MUTABLE_REF" };
   ?(rg_count_lit(sig, "&") > 0) { ^"REJ_RUST_BORROW" };
   ?(rg_count_lit(body, "unsafe") > 0) { ^"REJ_RUST_UNSAFE" };
@@ -66,6 +70,15 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_fold = "pub fn vat_fold(art: u64, rate: i64) -> i64";
+  body_fold = "art";
+  r3 = rs_reason(sig_fold, body_fold);
+  ?(starts_lit(r3, 0, "REJ_RUST_VAT_FOLD") == 0) { ^0 };
+  sig_live = "pub fn mix(a: u64) -> u64";
+  body_live = "if live == 1 { a } else { 0 }";
+  r4 = rs_reason(sig_live, body_live);
+  ?(starts_lit(r4, 0, "REJ_RUST_LIVE") == 0) { ^0 };
 
   ^1;
 }

@@ -1,0 +1,149 @@
+{
+  "schema": "LIN_MAKER_VAT_FOLD_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_vat_fold.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler VAT_FOLD/LIVE/AUTH/DAI_SLOT",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler VAT_FOLD/LIVE/DAI_SLOT",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler VAT_FOLD/LIVE/DAI_SLOT",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "mvf_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss vat.sol matches hash pin",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 vat.sol blob=ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/vat.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb (a*b)/d agree",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "12/12 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "POS-FOLD",
+      "status": "PASS",
+      "description": "Art=1e9 delta=+1e6 \u2192 rate 1001000000 rad 1e15",
+      "note": "rate=1001000000 rad=1000000000000000"
+    },
+    {
+      "id": "NEG-FOLD",
+      "status": "PASS",
+      "description": "Art=1e9 delta=-1e6 \u2192 rate 999000000 rad -1e15",
+      "note": "rate=999000000 rad=-1000000000000000"
+    },
+    {
+      "id": "LIVE-GATE",
+      "status": "PASS",
+      "description": "live!=1 fail-closes; wrong_ignore_live still applies +1e6",
+      "note": "dead=0 ignore=1001000000"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e18*3e18) wraps; 128-bit muldiv fail-closes",
+      "note": "i64_wrap=-5389669316318724096 muldiv=0"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes rate/art/rate_delta/dai/debt/live as arguments",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit |Art|*|delta|; naive i64 7e18*3e18 wraps",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJ",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin fail-closes vat.fold / live / auth / dai[u]",
+      "note": ""
+    },
+    {
+      "id": "C-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes vat_fold / live / dai[u]",
+      "note": ""
+    },
+    {
+      "id": "RS-REJ",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes vat_fold / live / dai_slot",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after the transpiler delta",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/vat.sol",
+    "blob": "ff90bbed5b36e54318bd5461cbf32e4167df2b28",
+    "sha256": "9016fd94f0f1b014abf184edab86a3f5843042b17e3734407e0f0fabb920f49f",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_vat_fold.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-vat-fold",
+  "c11_oracle": "test/oracles/maker_vat_fold_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "ray_prime": 1000000000,
+  "named_goldens": {
+    "fold_rate(RAY, +1e6)": 1001000000,
+    "fold_rad(Art=1e9, +1e6)": 1000000000000000,
+    "fold_rate(RAY, -1e6)": 999000000,
+    "fold_rad(Art=1e9, -1e6)": -1000000000000000,
+    "fold_dai(2e15, -1e6)": 1000000000000000,
+    "live=0": 0,
+    "naive_i64(7e18, 3e18)": -5389669316318724096
+  }
+}
