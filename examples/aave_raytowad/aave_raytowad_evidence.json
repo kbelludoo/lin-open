@@ -1,0 +1,212 @@
+{
+  "schema": "LIN_AAVE_RAYTOWAD_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-COMMIT",
+      "status": "PASS",
+      "description": "pinned aave-v3-core WadRayMath commit",
+      "note": "782f51917056a53a2c228701058a6c3fb233684a"
+    },
+    {
+      "id": "PIN-WADRAY",
+      "status": "PASS",
+      "description": "pinned WadRayMath.sol sha256 (hash-only; not vendored)",
+      "note": "fae5b995ec613cc213050c99ea6352c9c18ceebba106d03b1726cfa8f1f0124e"
+    },
+    {
+      "id": "NO-VENDOR",
+      "status": "PASS",
+      "description": "Solidity is not vendored; pin is hash-only",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned aave-v3-core matches hashes",
+      "note": "commit=782f51917056a53a2c228701058a6c3fb233684a"
+    },
+    {
+      "id": "UPSTREAM-MARKERS",
+      "status": "PASS",
+      "description": "live file contains rayToWad / wadToRay / WAD_RAY_RATIO",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 native uint64 and restoring divider agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_aave_raytowad.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "art_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin lowers rayToWad/wadToRay Yul to scalar",
+      "note": ""
+    },
+    {
+      "id": "SOL-HALF-EXP",
+      "status": "PASS",
+      "description": "sol_expand_exp handles 0.5eN (HALF_WAD / half ratio)",
+      "note": ""
+    },
+    {
+      "id": "RS-GATE",
+      "status": "PASS",
+      "description": "rs_parse_test_gate source includes Aave Yul reject",
+      "note": ""
+    },
+    {
+      "id": "VEC-R2W",
+      "status": "PASS",
+      "description": "10/10 rayToWad vectors: C11 native == restore == LIN == Python",
+      "note": ""
+    },
+    {
+      "id": "VEC-FLOOR",
+      "status": "PASS",
+      "description": "10/10 floor rayToWad vectors agree",
+      "note": ""
+    },
+    {
+      "id": "HALF-UP",
+      "status": "PASS",
+      "description": "remainder==5e8 rounds up: rayToWad(5e8)=1 vs floor=0; 1.5e9 -> 2 vs floor 1",
+      "note": ""
+    },
+    {
+      "id": "VEC-W2R",
+      "status": "PASS",
+      "description": "4/4 wadToRay vectors: C11 i128 == LIN == Python",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "rayToWad + wadToRay: C11 native == restore == LIN vm == Python bigint",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "half-up 5e8->1; 1.5e9->2 vs floor 1; wadToRay(1)->1e9; wadToRay(1e18)->0 fail-closed",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "wadToRay(1e18) fail-closes to 0; naive i64 1e18*1e9 wraps",
+      "note": "wrap=-6930898827444486144"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN takes ray/wad as args; half-up is r >= ratio/2",
+      "note": ""
+    },
+    {
+      "id": "ROUNDTRIP",
+      "status": "PASS",
+      "description": "exact wad->ray->wad roundtrip for values that fit i64",
+      "note": ""
+    },
+    {
+      "id": "VS-REVERT",
+      "status": "PASS",
+      "description": "wadToRay overflow fail-closes to 0 instead of Yul revert",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "SOL-EMIT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin emits scalar rayToWad/wadToRay from Yul",
+      "note": ""
+    },
+    {
+      "id": "C-EMIT",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes Aave Yul WAD_RAY_RATIO and __asm__",
+      "note": ""
+    },
+    {
+      "id": "RS-EMIT",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes Aave Yul asm! WAD_RAY_RATIO",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/aave/aave-v3-core",
+    "commit": "782f51917056a53a2c228701058a6c3fb233684a",
+    "path": "contracts/protocol/libraries/math/WadRayMath.sol",
+    "pins": {
+      "contracts/protocol/libraries/math/WadRayMath.sol": {
+        "sha256": "fae5b995ec613cc213050c99ea6352c9c18ceebba106d03b1726cfa8f1f0124e",
+        "blob": "f61fe87f2f2748144cd4d113c848e649c41a4e5d",
+        "markers": [
+          "function rayToWad",
+          "function wadToRay",
+          "WAD_RAY_RATIO = 1e9",
+          "div(a, WAD_RAY_RATIO)",
+          "mod(a, WAD_RAY_RATIO)",
+          "mul(a, WAD_RAY_RATIO)"
+        ]
+      }
+    },
+    "license": "MIT",
+    "license_note": "BUSL-1.1 Change Date 2023-01-27 elapsed; Change License MIT",
+    "vendored": false,
+    "note": "hash-only pin; WadRayMath.sol is not copied into lin-open"
+  },
+  "lin_clone": "src/lin_aave_raytowad.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-aave-raytowad",
+  "c11_oracle": "test/oracles/aave_raytowad_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "ray_to_wad_0": 0,
+    "ray_to_wad_half": 1,
+    "ray_to_wad_floor_half": 0,
+    "ray_to_wad_1_5e9": 2,
+    "ray_to_wad_floor_1_5e9": 1,
+    "wad_to_ray_1": 1000000000,
+    "wad_to_ray_1e9": 1000000000000000000,
+    "wad_to_ray_1e18": 0,
+    "naive_wrap_1e18_x_1e9": -6930898827444486144
+  }
+}
