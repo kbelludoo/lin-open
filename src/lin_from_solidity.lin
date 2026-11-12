@@ -4,7 +4,7 @@
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
   status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  changelog="v2: emit LIN for eligible pure functions; expand 1eN and 0.XeN (0.01e18, 0.3e18, 0.7e18) integer literals; view without msg.sender is OK_VIEW; fail-close LogExpMath/powDown/powUp/ln/exp (REJ_SOLIDITY_LOGEXP) and uint256[] memory (REJ_SOLIDITY_ARRAY)"
 }
 
 !sol_is_kw(nm: string): int {
@@ -38,6 +38,13 @@
 }
 
 !sol_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "LogExpMath") > 0) { ^"REJ_SOLIDITY_LOGEXP" };
+  ?(rg_count_lit(body, "LogExpMath") > 0) { ^"REJ_SOLIDITY_LOGEXP" };
+  ?(rg_count_lit(body, "powDown") > 0) { ^"REJ_SOLIDITY_LOGEXP" };
+  ?(rg_count_lit(body, "powUp") > 0) { ^"REJ_SOLIDITY_LOGEXP" };
+  ?(rg_count_lit(body, ".ln(") > 0) { ^"REJ_SOLIDITY_LOGEXP" };
+  ?(rg_count_lit(body, ".exp(") > 0) { ^"REJ_SOLIDITY_LOGEXP" };
+  ?(rg_count_lit(sig, "[]") > 0) { ^"REJ_SOLIDITY_ARRAY" };
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
@@ -64,6 +71,14 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_pow = "function calcInGivenOut(uint256 x) internal pure";
+  body_pow = "return base.powUp(e);";
+  r4 = sol_reason(sig_pow, body_pow);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_LOGEXP") == 0) { ^0 };
+  sig_arr = "function inv(uint256[] memory w) internal pure";
+  body_arr = "return 1;";
+  r5 = sol_reason(sig_arr, body_arr);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_ARRAY") == 0) { ^0 };
   ^1;
 }
 
@@ -85,7 +100,44 @@
   en = 0;
   expn = 0;
   z = 0;
+  prev_ok = 0;
+  k = 0;
+  frac_st = 0;
+  e_pos = 0;
+  frac_len = 0;
+  pad = 0;
   while (i < n) {
+    ?(s.charCodeAt(i) == 48 && i + 1 < n && s.charCodeAt(i + 1) == 46) {
+      prev_ok = 1;
+      ?(i > 0 && is_ident(s.charCodeAt(i - 1)) == true) { prev_ok = 0; };
+      ?(prev_ok == 1) {
+        k = i + 2;
+        frac_st = k;
+        while (k < n && s.charCodeAt(k) >= 48 && s.charCodeAt(k) <= 57) { k = k + 1 };
+        ?(k > frac_st && k < n && (s.charCodeAt(k) == 101 || s.charCodeAt(k) == 69) && k + 1 < n && s.charCodeAt(k + 1) >= 48 && s.charCodeAt(k + 1) <= 57) {
+          e_pos = k;
+          k = k + 1;
+          en = k;
+          while (k < n && s.charCodeAt(k) >= 48 && s.charCodeAt(k) <= 57) { k = k + 1 };
+          expn = sol_parse_uint(s, en, k);
+          frac_len = e_pos - frac_st;
+          ?(expn >= frac_len && expn <= 18) {
+            out = out + slice2(s, frac_st, e_pos);
+            z = 0;
+            pad = expn - frac_len;
+            while (z < pad) {
+              out = out + "0";
+              z = z + 1;
+            };
+            i = k;
+            continue;
+          };
+          out = out + slice2(s, i, k);
+          i = k;
+          continue;
+        };
+      };
+    };
     ?(s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) {
       ?(i > 0 && is_ident(s.charCodeAt(i - 1)) == true) {
         out = out + s.charAt(i);
@@ -331,9 +383,24 @@
   ?(rg_count_lit(out, "utilizationRate") == 0) { ^0 };
   ?(rg_count_lit(out, "1000000000000000000") == 0) { ^0 };
   ?(rg_count_lit(out, "1e18") > 0) { ^0 };
-  exp = sol_expand_exp("1e2");
+  s1 = "1e2";
+  exp = sol_expand_exp(s1);
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  s3 = "0.3e18";
+  ratio = sol_expand_exp(s3);
+  ?(starts_lit(ratio, 0, "300000000000000000") == 0) { ^0 };
+  ?(ratio.length != 18) { ^0 };
+  s01 = "0.01e18";
+  minw = sol_expand_exp(s01);
+  ?(rg_count_lit(minw, "10000000000000000") == 0) { ^0 };
+  s7 = "0.7e18";
+  inv = sol_expand_exp(s7);
+  ?(starts_lit(inv, 0, "700000000000000000") == 0) { ^0 };
+  ?(inv.length != 18) { ^0 };
+  s27 = "0.5e27";
+  keep = sol_expand_exp(s27);
+  ?(rg_count_lit(keep, "0.5e27") == 0) { ^0 };
   ^1;
 }
 
