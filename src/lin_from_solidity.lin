@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: expand 0.0005e16 / 2.8eN decimal scientific; reject CToken accrueInterest/getBlockNumber/interestRateModel (storage+env). v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -38,6 +38,10 @@
 }
 
 !sol_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "accrueInterest") > 0) { ^"REJ_SOLIDITY_CTOKEN_ACCRUE" };
+  ?(rg_count_lit(body, "getBlockNumber") > 0) { ^"REJ_SOLIDITY_CTOKEN_ACCRUE" };
+  ?(rg_count_lit(body, "interestRateModel") > 0) { ^"REJ_SOLIDITY_CTOKEN_ACCRUE" };
+  ?(rg_count_lit(body, "accrualBlockNumber") > 0) { ^"REJ_SOLIDITY_CTOKEN_ACCRUE" };
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
@@ -64,6 +68,10 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_acc = "function accrueInterest() virtual override public returns (uint)";
+  body_acc = "uint currentBlockNumber = getBlockNumber(); uint borrowRateMantissa = interestRateModel.getBorrowRate(cashPrior, borrowsPrior, reservesPrior);";
+  r4 = sol_reason(sig_acc, body_acc);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_CTOKEN_ACCRUE") == 0) { ^0 };
   ^1;
 }
 
@@ -77,14 +85,26 @@
   ^v;
 }
 
-!sol_expand_exp(s: string): string {
+!sol_strip_leading_zeros(s: string): string {
+  n = s.length;
+  k = 0;
+  while (k < n && s.charCodeAt(k) == 48) { k = k + 1 };
+  ?(k == n) { ^"0" };
+  ^slice2(s, k, n);
+}
+
+!sol_expand_dec_exp(s: string): string {
   out = "";
   n = s.length;
   i = 0;
   st = 0;
+  frac_st = 0;
+  frac_en = 0;
+  frac_len = 0;
   en = 0;
   expn = 0;
   z = 0;
+  coeff = "";
   while (i < n) {
     ?(s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) {
       ?(i > 0 && is_ident(s.charCodeAt(i - 1)) == true) {
@@ -94,12 +114,68 @@
       };
       st = i;
       while (i < n && s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) { i = i + 1 };
-      ?(i < n && (s.charCodeAt(i) == 101 || s.charCodeAt(i) == 69) && i + 1 < n && s.charCodeAt(i + 1) >= 48 && s.charCodeAt(i + 1) <= 57) {
+      ?(i < n && s.charCodeAt(i) == 46 && i + 1 < n && s.charCodeAt(i + 1) >= 48 && s.charCodeAt(i + 1) <= 57) {
+        i = i + 1;
+        frac_st = i;
+        while (i < n && s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) { i = i + 1 };
+        frac_en = i;
+        ?(i < n && (s.charCodeAt(i) == 101 || s.charCodeAt(i) == 69) && i + 1 < n && s.charCodeAt(i + 1) >= 48 && s.charCodeAt(i + 1) <= 57) {
+          i = i + 1;
+          en = i;
+          while (i < n && s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) { i = i + 1 };
+          frac_len = frac_en - frac_st;
+          expn = sol_parse_uint(s, en, i);
+          ?(expn < frac_len) {
+            out = out + slice2(s, st, i);
+            continue;
+          };
+          coeff = slice2(s, st, frac_st - 1);
+          coeff = coeff + slice2(s, frac_st, frac_en);
+          coeff = sol_strip_leading_zeros(coeff);
+          out = out + coeff;
+          z = 0;
+          while (z < (expn - frac_len)) {
+            out = out + "0";
+            z = z + 1;
+          };
+          continue;
+        };
+        out = out + slice2(s, st, i);
+        continue;
+      };
+      out = out + slice2(s, st, i);
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!sol_expand_exp(s: string): string {
+  t = sol_expand_dec_exp(s);
+  out = "";
+  n = t.length;
+  i = 0;
+  st = 0;
+  en = 0;
+  expn = 0;
+  z = 0;
+  while (i < n) {
+    ?(t.charCodeAt(i) >= 48 && t.charCodeAt(i) <= 57) {
+      ?(i > 0 && is_ident(t.charCodeAt(i - 1)) == true) {
+        out = out + t.charAt(i);
+        i = i + 1;
+        continue;
+      };
+      st = i;
+      while (i < n && t.charCodeAt(i) >= 48 && t.charCodeAt(i) <= 57) { i = i + 1 };
+      ?(i < n && (t.charCodeAt(i) == 101 || t.charCodeAt(i) == 69) && i + 1 < n && t.charCodeAt(i + 1) >= 48 && t.charCodeAt(i + 1) <= 57) {
         i = i + 1;
         en = i;
-        while (i < n && s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) { i = i + 1 };
-        out = out + slice2(s, st, en - 1);
-        expn = sol_parse_uint(s, en, i);
+        while (i < n && t.charCodeAt(i) >= 48 && t.charCodeAt(i) <= 57) { i = i + 1 };
+        out = out + slice2(t, st, en - 1);
+        expn = sol_parse_uint(t, en, i);
         z = 0;
         while (z < expn) {
           out = out + "0";
@@ -107,10 +183,10 @@
         };
         continue;
       };
-      out = out + slice2(s, st, i);
+      out = out + slice2(t, st, i);
       continue;
     };
-    out = out + s.charAt(i);
+    out = out + t.charAt(i);
     i = i + 1;
   };
   ^out;
@@ -334,7 +410,16 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  d1 = sol_expand_exp("0.0005e16");
+  ?(starts_lit(d1, 0, "5000000000000") == 0) { ^0 };
+  ?(d1.length != 13) { ^0 };
+  d2 = sol_expand_exp("2.8e16");
+  ?(starts_lit(d2, 0, "28000000000000000") == 0) { ^0 };
+  ?(d2.length != 17) { ^0 };
+  d3 = sol_expand_exp("0.5e18");
+  ?(starts_lit(d3, 0, "500000000000000000") == 0) { ^0 };
+  ?(d3.length != 18) { ^0 };
   ^1;
 }
 
-=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
+=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_strip_leading_zeros, sol_expand_dec_exp, sol_expand_exp, sol_from_sol, sol_from_sol_gate}

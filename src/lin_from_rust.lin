@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: fail-close CToken accrueInterest / get_block_number / interest_rate_model"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -40,6 +41,11 @@
 
 // 3. Critérios fail-closed de rejeição de código Rust não-puro
 !rs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "accrueInterest") > 0) { ^"REJ_RUST_CTOKEN_ACCRUE" };
+  ?(rg_count_lit(body, "get_block_number") > 0) { ^"REJ_RUST_CTOKEN_ACCRUE" };
+  ?(rg_count_lit(body, "getBlockNumber") > 0) { ^"REJ_RUST_CTOKEN_ACCRUE" };
+  ?(rg_count_lit(body, "interest_rate_model") > 0) { ^"REJ_RUST_CTOKEN_ACCRUE" };
+  ?(rg_count_lit(body, "interestRateModel") > 0) { ^"REJ_RUST_CTOKEN_ACCRUE" };
   ?(rg_count_lit(sig, "&mut") > 0) { ^"REJ_RUST_MUTABLE_REF" };
   ?(rg_count_lit(sig, "&") > 0) { ^"REJ_RUST_BORROW" };
   ?(rg_count_lit(body, "unsafe") > 0) { ^"REJ_RUST_UNSAFE" };
@@ -66,6 +72,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_acc = "pub fn accrueInterest() -> u64";
+  body_acc = "let n = get_block_number(); let r = interest_rate_model;";
+  r3 = rs_reason(sig_acc, body_acc);
+  ?(starts_lit(r3, 0, "REJ_RUST_CTOKEN_ACCRUE") == 0) { ^0 };
 
   ^1;
 }

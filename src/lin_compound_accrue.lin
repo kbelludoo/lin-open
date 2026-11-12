@@ -1,0 +1,205 @@
+@LIN:L1c:0.2
+@COMPOUND_CTOKEN_ACCRUE{
+  version=1
+  repo="compound-finance/compound-protocol"
+  source="contracts/CToken.sol accrueInterest + ExponentialNoError.mul_ScalarTruncate"
+  interfaces="contracts/CTokenInterfaces.sol borrowRateMaxMantissa=0.0005e16"
+  license="BSD-3-Clause"
+  commit="a3214f67b73310d547e00fc578e8355911c9d376"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_compound_ctoken_accrue_with_128bit_muldiv"
+  note="Not mainnet uint256. Real deltas: block/IRM/storage are arguments; (a*b)/d uses 128-bit product; rate>max and add overflow fail-close to 0 (Solidity 0.8 reverts)."
+}
+
+!cac_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!cac_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(cac_u_lt(s, a));
+}
+
+!cac_mask32() -> int {
+  ^ 4294967295;
+}
+
+!cac_base() -> int {
+  ^ 1000000000000000000;
+}
+
+!cac_rate_max() -> int {
+  ^ 5000000000000;
+}
+
+!cac_muldiv_part(a: int, b: int, d: int, want_rem: int) -> int {
+  ?(d == 0) { ^ 0; };
+  m32 = cac_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = cac_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = cac_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(cac_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = cac_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!cac_muldiv(a: int, b: int, d: int) -> int {
+  ^ cac_muldiv_part(a, b, d, 0);
+}
+
+!cac_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!cac_u_add_ok(a: int, b: int) -> int {
+  s = a + b;
+  ?(cac_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!cac_rate_ok(rate: int) -> int {
+  ?(cac_u_lt(cac_rate_max(), rate) == 1) { ^ 0; };
+  ?(rate < 0) { ^ 0; };
+  ^ 1;
+}
+
+!cac_block_delta(current: int, prior: int) -> int {
+  ?(current < 0 || prior < 0) { ^ 0; };
+  ?(cac_u_lt(current, prior) == 1) { ^ 0; };
+  ^ current - prior;
+}
+
+!cac_should_accrue(current: int, prior: int, rate: int) -> int {
+  ?(cac_rate_ok(rate) == 0) { ^ 0; };
+  ?(cac_u_lt(current, prior) == 1) { ^ 0; };
+  ?(current == prior) { ^ 0; };
+  ^ 1;
+}
+
+!cac_simple_factor(rate: int, delta: int) -> int {
+  ?(cac_rate_ok(rate) == 0) { ^ 0; };
+  ?(rate == 0 || delta == 0) { ^ 0; };
+  ?(delta < 0) { ^ 0; };
+  ^ cac_muldiv(rate, delta, 1);
+}
+
+!cac_interest(borrows: int, rate: int, delta: int) -> int {
+  ?(borrows < 0) { ^ 0; };
+  factor = cac_simple_factor(rate, delta);
+  ?(factor == 0) { ^ 0; };
+  ^ cac_muldiv(factor, borrows, cac_base());
+}
+
+!cac_borrows_new(borrows: int, rate: int, delta: int) -> int {
+  ?(cac_rate_ok(rate) == 0) { ^ 0; };
+  acc = cac_interest(borrows, rate, delta);
+  ?(cac_u_add_ok(borrows, acc) == 0) { ^ 0; };
+  ^ borrows + acc;
+}
+
+!cac_reserves_new(reserves: int, borrows: int, rate: int, delta: int, rf: int) -> int {
+  ?(cac_rate_ok(rate) == 0) { ^ 0; };
+  ?(rf < 0 || cac_u_lt(cac_base(), rf) == 1) { ^ 0; };
+  acc = cac_interest(borrows, rate, delta);
+  addend = cac_muldiv(rf, acc, cac_base());
+  ?(cac_u_add_ok(reserves, addend) == 0) { ^ 0; };
+  ^ reserves + addend;
+}
+
+!cac_index_new(index: int, rate: int, delta: int) -> int {
+  ?(cac_rate_ok(rate) == 0) { ^ 0; };
+  ?(index < 0) { ^ 0; };
+  factor = cac_simple_factor(rate, delta);
+  addend = cac_muldiv(factor, index, cac_base());
+  ?(cac_u_add_ok(index, addend) == 0) { ^ 0; };
+  ^ index + addend;
+}
+
+!cac_test_suite() -> int {
+  ?(cac_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(cac_rate_max() != 5000000000000) { ^ -2; };
+  ?(cac_rate_ok(5000000000000) != 1) { ^ -3; };
+  ?(cac_rate_ok(5000000000001) != 0) { ^ -4; };
+  ?(cac_should_accrue(10, 10, 10000000000) != 0) { ^ -5; };
+  ?(cac_should_accrue(9, 10, 10000000000) != 0) { ^ -6; };
+  ?(cac_should_accrue(11, 10, 10000000000) != 1) { ^ -7; };
+  ?(cac_block_delta(11, 10) != 1) { ^ -8; };
+  ?(cac_block_delta(9, 10) != 0) { ^ -9; };
+  ?(cac_interest(1000000000000000000, 10000000000, 1) != 10000000000) { ^ -10; };
+  ?(cac_borrows_new(1000000000000000000, 10000000000, 1) != 1000000010000000000) { ^ -11; };
+  ?(cac_index_new(1000000000000000000, 10000000000, 1) != 1000000010000000000) { ^ -12; };
+  ?(cac_reserves_new(0, 1000000000000000000, 10000000000, 1, 100000000000000000) != 1000000000) { ^ -13; };
+  ?(cac_borrows_new(1000000000000000000, 10000000000, 0) != 1000000000000000000) { ^ -14; };
+  ?(cac_interest(1000000000000000000, 10000000000, 2) != 20000000000) { ^ -15; };
+  ?(cac_borrows_new(1, 5000000000001, 1) != 0) { ^ -16; };
+  ?(cac_muldiv(7000000000000000000, 3000000000000000000, 1) != 0) { ^ -17; };
+  ?(cac_u_add_ok(1, 1) != 1) { ^ -18; };
+  ^ 1;
+}
+
+=ex{
+  cac_u_lt,
+  cac_u_add_carry,
+  cac_mask32,
+  cac_base,
+  cac_rate_max,
+  cac_muldiv_part,
+  cac_muldiv,
+  cac_naive_i64_mul,
+  cac_u_add_ok,
+  cac_rate_ok,
+  cac_block_delta,
+  cac_should_accrue,
+  cac_simple_factor,
+  cac_interest,
+  cac_borrows_new,
+  cac_reserves_new,
+  cac_index_new,
+  cac_test_suite
+}
