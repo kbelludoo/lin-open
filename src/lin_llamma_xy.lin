@@ -1,0 +1,343 @@
+@LIN:L1c:0.2
+@CURVE_LLAMMA_XY{
+  version=1
+  repo="curvefi/curve-stablecoin"
+  source="curve_stablecoin/AMM.vy get_xy_up/get_y_up/get_x_down"
+  license="all_rights_reserved_informational_upstream"
+  commit="81b3bea490e9b45221c82e78387920ccfeb05b33"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_llamma_single_band_adiabatic_xy_128bit"
+  note="Not mainnet uint256. One band, explicit x/y/p_o/p_o_up/amp/shares (not user address, bands_x/y, _user_shares, active_band, p_oracle storage). SCALE=1e9 stands in for WAD=1e18. Inv=(f+x)*(g+y) is not materialized; 128-bit muldiv(fx,gy,den) fail-closes. Upstream Vyper is hash-pinned, not vendored."
+}
+
+!cll_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!cll_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(cll_u_lt(s, a));
+}
+
+!cll_mask32() -> int {
+  ^ 4294967295;
+}
+
+!cll_scale() -> int {
+  ^ 1000000000;
+}
+
+!cll_dead_shares() -> int {
+  ^ 1000;
+}
+
+!cll_muldiv_add_part(a: int, b: int, add: int, d: int, want: int) -> int {
+  ?(d == 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(a < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(b < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(add < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  m32 = cll_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = cll_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = cll_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  lo2 = lo + add;
+  hi = hi + cll_u_add_carry(lo, add);
+  lo = lo2;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(cll_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = cll_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(q < 0) { ov = 1; };
+  ?(want == 2) { ^ ov; };
+  ?(want == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!cll_muldiv(a: int, b: int, d: int) -> int {
+  ^ cll_muldiv_add_part(a, b, 0, d, 0);
+}
+
+!cll_sub0(a: int, b: int) -> int {
+  ?(cll_u_lt(a, b) == 1) { ^ 0; };
+  ^ (a - b);
+}
+
+!cll_isqrt(n: int) -> int {
+  ?(n <= 0) { ^ 0; };
+  ?(n < 4) { ^ 1; };
+  x = n;
+  y = (n / 2) + 1;
+  iter = 0;
+  done = 0;
+  while (iter < 64) {
+    ?(done == 0) {
+      ?(y >= x) { done = 1; };
+      ?(done == 0) {
+        x = y;
+        ?(x <= 0) { ^ 0; };
+        y = (x + (n / x)) / 2;
+      };
+    };
+    iter = iter + 1;
+  };
+  ^ x;
+}
+
+!cll_sqrt_band_ratio(amp: int) -> int {
+  ?(amp <= 1) { ^ 0; };
+  num = cll_muldiv(amp, cll_scale(), 1);
+  ?(num <= 0) { ^ 0; };
+  rad = cll_muldiv(num, cll_scale(), amp - 1);
+  ^ cll_isqrt(rad);
+}
+
+!cll_p_down(p_up: int, amp: int) -> int {
+  ?(amp <= 1) { ^ 0; };
+  ?(p_up <= 0) { ^ 0; };
+  ^ cll_muldiv(p_up, amp - 1, amp);
+}
+
+!cll_p_mid(p_o: int, p_up: int, p_dn: int) -> int {
+  ?(p_o <= 0) { ^ 0; };
+  ?(p_up <= 0) { ^ 0; };
+  ?(p_dn <= 0) { ^ 0; };
+  t = cll_muldiv(p_o, p_o, p_dn);
+  ^ cll_muldiv(t, p_o, p_up);
+}
+
+!cll_get_y0(x: int, y: int, p_o: int, p_up: int, amp: int) -> int {
+  ?(p_o <= 0) { ^ 0; };
+  ?(p_up <= 0) { ^ 0; };
+  ?(amp <= 1) { ^ 0; };
+  ?(x < 0) { ^ 0; };
+  ?(y < 0) { ^ 0; };
+  b = 0;
+  ?(x != 0) {
+    b = cll_muldiv(cll_muldiv(p_up, amp - 1, 1), x, p_o);
+    ?(b <= 0) { ^ 0; };
+  };
+  ?(y != 0) {
+    po2 = cll_muldiv(p_o, p_o, p_up);
+    term = cll_muldiv(cll_muldiv(amp, po2, 1), y, cll_scale());
+    ?(cll_u_add_carry(b, term) == 1) { ^ 0; };
+    b = b + term;
+  };
+  ?(x > 0 && y > 0) {
+    b2 = cll_muldiv(b, b, 1);
+    ?(b2 == 0 && b != 0) { ^ 0; };
+    four = cll_muldiv(cll_muldiv(4, amp, 1), p_o, 1);
+    inner = cll_muldiv(four, y, cll_scale());
+    extra = cll_muldiv(inner, x, 1);
+    ?(cll_u_add_carry(b2, extra) == 1) { ^ 0; };
+    dlt = b2 + extra;
+    s = cll_isqrt(dlt);
+    den = cll_muldiv(cll_muldiv(2, amp, 1), p_o, 1);
+    ?(den <= 0) { ^ 0; };
+    ?(cll_u_add_carry(b, s) == 1) { ^ 0; };
+    ^ cll_muldiv(b + s, cll_scale(), den);
+  };
+  den2 = cll_muldiv(amp, p_o, 1);
+  ?(den2 <= 0) { ^ 0; };
+  ^ cll_muldiv(b, cll_scale(), den2);
+}
+
+!cll_xy_up(x: int, y: int, p_o: int, p_up: int, amp: int, use_y: int) -> int {
+  ?(p_o <= 0) { ^ 0; };
+  ?(p_up <= 0) { ^ 0; };
+  ?(amp <= 1) { ^ 0; };
+  ?(x < 0) { ^ 0; };
+  ?(y < 0) { ^ 0; };
+  ?(x == 0 && y == 0) { ^ 0; };
+  p_dn = cll_p_down(p_up, amp);
+  ?(p_dn <= 0) { ^ 0; };
+  pmid = cll_p_mid(p_o, p_up, p_dn);
+  ?(pmid <= 0) { ^ 0; };
+  sbr = cll_sqrt_band_ratio(amp);
+  ?(sbr <= 0) { ^ 0; };
+  pure = 0;
+  ?(x == 0) { pure = 1; };
+  ?(y == 0) { pure = 1; };
+  ?(pure == 1) {
+    ?(p_o > p_up) {
+      y_eq = y;
+      ?(y == 0) { y_eq = cll_muldiv(x, cll_scale(), pmid); };
+      ?(use_y != 0) { ^ y_eq; };
+      ^ cll_muldiv(y_eq, p_up, sbr);
+    };
+    ?(p_o < p_dn) {
+      x_eq = x;
+      ?(x == 0) { x_eq = cll_muldiv(y, pmid, cll_scale()); };
+      ?(use_y != 0) { ^ cll_muldiv(x_eq, sbr, p_up); };
+      ^ x_eq;
+    };
+  };
+  y0 = cll_get_y0(x, y, p_o, p_up, amp);
+  ?(y0 <= 0) { ^ 0; };
+  f = cll_muldiv(cll_muldiv(cll_muldiv(amp, y0, 1), p_o, p_up), p_o, cll_scale());
+  g = cll_muldiv(cll_muldiv(amp - 1, y0, 1), p_up, p_o);
+  ?(f <= 0) { ^ 0; };
+  ?(g <= 0) { ^ 0; };
+  ?(cll_u_add_carry(f, x) == 1) { ^ 0; };
+  ?(cll_u_add_carry(g, y) == 1) { ^ 0; };
+  fx = f + x;
+  gy = g + y;
+  ?(p_o > p_up) {
+    yo = cll_sub0(cll_muldiv(fx, gy, f), g);
+    ?(use_y != 0) { ^ yo; };
+    ^ cll_muldiv(yo, p_up, sbr);
+  };
+  ?(p_o < p_dn) {
+    xo = cll_sub0(cll_muldiv(fx, gy, g), f);
+    ?(use_y != 0) { ^ cll_muldiv(xo, sbr, p_up); };
+    ^ xo;
+  };
+  yo2 = cll_muldiv(cll_muldiv(amp, y0, 1), p_o - p_dn, p_o);
+  ?(cll_u_add_carry(g, yo2) == 1) { ^ 0; };
+  den = g + yo2;
+  ?(den <= 0) { ^ 0; };
+  xo2 = cll_sub0(cll_muldiv(fx, gy, den), f);
+  ?(use_y != 0) {
+    sp = cll_isqrt(cll_muldiv(p_up, p_o, 1));
+    ?(sp <= 0) { ^ 0; };
+    add = cll_muldiv(xo2, cll_scale(), sp);
+    ?(cll_u_add_carry(yo2, add) == 1) { ^ 0; };
+    ^ (yo2 + add);
+  };
+  sp2 = cll_isqrt(cll_muldiv(p_dn, p_o, 1));
+  add2 = cll_muldiv(yo2, sp2, cll_scale());
+  ?(cll_u_add_carry(xo2, add2) == 1) { ^ 0; };
+  ^ (xo2 + add2);
+}
+
+!cll_y_up(x: int, y: int, p_o: int, p_up: int, amp: int) -> int {
+  ^ cll_xy_up(x, y, p_o, p_up, amp, 1);
+}
+
+!cll_x_down(x: int, y: int, p_o: int, p_up: int, amp: int) -> int {
+  ^ cll_xy_up(x, y, p_o, p_up, amp, 0);
+}
+
+!cll_xy_up_share(x: int, y: int, p_o: int, p_up: int, amp: int, use_y: int, user_share: int, total_share: int) -> int {
+  ?(user_share <= 0) { ^ 0; };
+  ?(total_share <= 0) { ^ 0; };
+  xy = cll_xy_up(x, y, p_o, p_up, amp, use_y);
+  den = total_share + cll_dead_shares();
+  ?(cll_u_lt(den, total_share) == 1) { ^ 0; };
+  ^ cll_muldiv(xy, user_share, den);
+}
+
+!cll_naive_mark(y: int, p_o: int) -> int {
+  ^ cll_muldiv(y, p_o, cll_scale());
+}
+
+!cll_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!cll_bands_x_claimed() -> int {
+  ^ 0;
+}
+
+!cll_bands_y_claimed() -> int {
+  ^ 0;
+}
+
+!cll_user_shares_claimed() -> int {
+  ^ 0;
+}
+
+!cll_test_suite() -> int {
+  e9 = 1000000000;
+  amp = 100;
+  ?(cll_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(cll_p_down(e9, amp) != 990000000) { ^ -2; };
+  ?(cll_sqrt_band_ratio(amp) != 1005037815) { ^ -3; };
+  ?(cll_y_up(0, e9, 1100000000, e9, amp) != e9) { ^ -4; };
+  ?(cll_x_down(0, e9, 1100000000, e9, amp) != 994987437) { ^ -5; };
+  ?(cll_y_up(e9, 0, 900000000, e9, amp) != 1005037815) { ^ -6; };
+  ?(cll_x_down(e9, 0, 900000000, e9, amp) != e9) { ^ -7; };
+  ?(cll_y_up(0, e9, e9, e9, amp) != e9) { ^ -8; };
+  ?(cll_x_down(e9, 0, e9, e9, amp) != 985037562) { ^ -9; };
+  ?(cll_y_up(1000000, 1000000, e9, e9, amp) != 1995012) { ^ -10; };
+  ?(cll_x_down(1000000, 1000000, e9, e9, amp) != 1985011) { ^ -11; };
+  ?(cll_y_up(0, e9, 995000000, e9, amp) != 996254691) { ^ -12; };
+  ?(cll_xy_up_share(0, e9, 1100000000, e9, amp, 1, 1000000, 2000000) != 499750124) { ^ -13; };
+  ?(cll_naive_mark(e9, 1100000000) != 1100000000) { ^ -14; };
+  ?(cll_y_up(0, 0, e9, e9, amp) != 0) { ^ -15; };
+  ?(cll_bands_x_claimed() != 0) { ^ -16; };
+  ?(cll_bands_y_claimed() != 0) { ^ -17; };
+  ?(cll_user_shares_claimed() != 0) { ^ -18; };
+  ?(cll_muldiv(12000000000, e9, 1) != 0) { ^ -19; };
+  ?(cll_naive_i64_mul(12000000000, e9) != -6446744073709551616) { ^ -20; };
+  ?(cll_dead_shares() != 1000) { ^ -21; };
+  ^ 1;
+}
+
+=ex{
+  cll_u_lt,
+  cll_u_add_carry,
+  cll_mask32,
+  cll_scale,
+  cll_dead_shares,
+  cll_muldiv_add_part,
+  cll_muldiv,
+  cll_sub0,
+  cll_isqrt,
+  cll_sqrt_band_ratio,
+  cll_p_down,
+  cll_p_mid,
+  cll_get_y0,
+  cll_xy_up,
+  cll_y_up,
+  cll_x_down,
+  cll_xy_up_share,
+  cll_naive_mark,
+  cll_naive_i64_mul,
+  cll_bands_x_claimed,
+  cll_bands_y_claimed,
+  cll_user_shares_claimed,
+  cll_test_suite
+}

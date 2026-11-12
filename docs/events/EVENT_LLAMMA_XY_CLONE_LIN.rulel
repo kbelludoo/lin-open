@@ -1,0 +1,62 @@
+@RULEL:LLAMMA_XY_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-CRVUSD-LLAMMA-XY-V1"
+@TITLE="Clone-lin of crvUSD LLAMMA get_x_down/get_y_up with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-llamma-xy"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Curve LLAMMA single-band adiabatic get_xy_up into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for (f+x)*(g+y)/den and p_o^3/p_mid; Solidity/Vyper uint256 and WAD=1e18 are NOT claimed"
+  commercial_hook="get_x_down/get_y_up back crvUSD Controller._health and liquidation; making bands/oracle/A/shares explicit and replacing wrapping i64 Inv=(f+x)*(g+y) with 128-bit muldiv is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/curvefi/curve-stablecoin"
+  path="curve_stablecoin/AMM.vy"
+  license="all-rights-reserved-informational-only"
+  vendored=false
+  commit="81b3bea490e9b45221c82e78387920ccfeb05b33"
+  git_blob_sha="d14d0329c145d7c5d3e1c61301c93b072184ba02"
+  file_sha256="17700ab4d36b289a0c688259d40b3898421af5360c6da29440af0da363a7d736"
+  pin="test/fixtures/external_proof/llamma_xy.pin.rulel"
+}
+
+.l{
+  clone="src/lin_llamma_xy.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_BANDS_X + BANDS_Y + USER_SHARES + USER_ADDRESS; src/lin_from_c.lin and src/lin_from_rust.lin gain the same fail-closed tokens"
+  improvement_1="get_xy_up is view-on-storage in Vyper (self.bands_x/y, _user_shares, active_band, p_oracle); LIN takes x/y/p_o/p_o_up/amp/shares as arguments"
+  improvement_2="Inv=(f+x)*(g+y) overflows i64 at 1e9-scale; LIN uses schoolbook 128-bit muldiv(fx,gy,den) matching C11 __int128 and fail-closes if the quotient exceeds i64"
+  improvement_3="DEAD_SHARES=1000 is an explicit denominator addend (user_share / (total_share+1000)); a zero band or zero oracle fail-closes to 0"
+  improvement_4="naive mark y*p_o/SCALE vs LLAMMA x_down is an explicit second oracle so the adiabatic haircut is auditable"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/llamma_xy_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_llamma_xy.sh"
+}
+
+.p{
+  harness="test/prove_llamma_xy_external.py"
+  evidence_json="examples/llamma_xy/llamma_xy_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-llamma-xy"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet crvUSD WAD=1e18 / multi-tick user position parity"
+  not_claimed_2="LIN is faster than vyper or the EVM"
+  not_claimed_3="this clone is a production LLAMMA or Controller replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Curve, crvUSD, LlamaLend, or the EVM"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PYTHON_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

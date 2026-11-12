@@ -1,0 +1,161 @@
+{
+  "schema": "LIN_LLAMMA_XY_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_llamma_xy.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler BANDS_X/BANDS_Y/USER_SHARES",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 BANDS_X/BANDS_Y reject",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2 BANDS_X/USER_SHARES reject",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "cll_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned curve-stablecoin AMM.vy matches hash pin",
+      "note": "commit=81b3bea490e9b45221c82e78387920ccfeb05b33 AMM.vy blob=d14d0329c145d7c5d3e1c61301c93b072184ba02"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of AMM.vy",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb (a*b+add)/d agree",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "10/10 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "Y-HIGH",
+      "status": "PASS",
+      "description": "collateral-only, p_o above band: y_up=y, x_down=y*p_up/sbr",
+      "note": "y_up=1000000000 x_down=994987437"
+    },
+    {
+      "id": "HAIRCUT",
+      "status": "PASS",
+      "description": "naive mark 1.1e9 vs LLAMMA x_down 994987437 (adiabatic haircut 105012563)",
+      "note": "naive=1100000000 x_down=994987437"
+    },
+    {
+      "id": "DEAD-SHARE",
+      "status": "PASS",
+      "description": "DEAD_SHARES=1000: 1e6 of 2e6+1000 of y_up is 499750124",
+      "note": "share=499750124"
+    },
+    {
+      "id": "ZERO-BAND",
+      "status": "PASS",
+      "description": "empty band and zero oracle fail-close to 0",
+      "note": "z=0"
+    },
+    {
+      "id": "UINT256-CAP",
+      "status": "PASS",
+      "description": "mainnet uint256 / bands_x / bands_y / user_shares are not claimed",
+      "note": "bx=0 by=0 us=0"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (f+x)*(g+y) wraps; 128-bit muldiv fail-closes to 0",
+      "note": "i64_wrap=-6446744073709551616 muldiv=0"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes x/y/p_o/p_o_up/amp/shares as arguments (not storage/user)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit muldiv(fx,gy,den); does not materialize Inv; SCALE=1e9",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJ",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin fail-closes self.bands_x, self.bands_y, _user_shares",
+      "note": ""
+    },
+    {
+      "id": "C-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes bands_x[/bands_y[/_user_shares",
+      "note": ""
+    },
+    {
+      "id": "RS-REJ",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes bands_x / bands_y / _user_shares",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after the transpiler delta",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/curvefi/curve-stablecoin",
+    "commit": "81b3bea490e9b45221c82e78387920ccfeb05b33",
+    "path": "curve_stablecoin/AMM.vy",
+    "blob": "d14d0329c145d7c5d3e1c61301c93b072184ba02",
+    "sha256": "17700ab4d36b289a0c688259d40b3898421af5360c6da29440af0da363a7d736",
+    "license": "all-rights-reserved-informational-only",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_llamma_xy.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-llamma-xy",
+  "c11_oracle": "test/oracles/llamma_xy_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "y_up_collateral_high": 1000000000,
+    "x_down_collateral_high": 994987437,
+    "y_up_debt_low": 1005037815,
+    "x_down_inband_debt": 985037562,
+    "y_up_mixed": 1995012,
+    "share_dead_1000": 499750124,
+    "naive_mark_vs_x_down": 1100000000,
+    "naive_i64_12e9_times_1e9": -6446744073709551616
+  }
+}
