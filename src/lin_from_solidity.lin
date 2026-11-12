@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: expand 0.5eN; lower Aave Yul rayToWad/wadToRay to scalar half-up / fail-closed mul; leftover WAD_RAY_RATIO Yul is REJ_SOLIDITY_AAVE_RAYTOWAD. v2: emit LIN for eligible pure functions; expand 1eN; view without msg.sender is OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -42,6 +42,7 @@
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
+  ?(rg_count_lit(body, "assembly") > 0 && rg_count_lit(body, "WAD_RAY_RATIO") > 0) { ^"REJ_SOLIDITY_AAVE_RAYTOWAD" };
   ?(rg_count_lit(body, "assembly") > 0) { ^"REJ_SOLIDITY_INLINE_ASM" };
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
@@ -64,6 +65,10 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_yul = "function leftoverYul(uint256 a) internal pure returns (uint256 b)";
+  body_yul = "assembly { b := div(a, WAD_RAY_RATIO) }";
+  r4 = sol_reason(sig_yul, body_yul);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_AAVE_RAYTOWAD") == 0) { ^0 };
   ^1;
 }
 
@@ -85,6 +90,13 @@
   en = 0;
   expn = 0;
   z = 0;
+  frac_st = 0;
+  frac_en = 0;
+  has_frac = 0;
+  zeros = 0;
+  k = 0;
+  ip = "";
+  mant = "";
   while (i < n) {
     ?(s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) {
       ?(i > 0 && is_ident(s.charCodeAt(i - 1)) == true) {
@@ -94,12 +106,42 @@
       };
       st = i;
       while (i < n && s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) { i = i + 1 };
+      has_frac = 0;
+      frac_st = i;
+      frac_en = i;
+      ?(i < n && s.charCodeAt(i) == 46 && i + 1 < n && s.charCodeAt(i + 1) >= 48 && s.charCodeAt(i + 1) <= 57) {
+        i = i + 1;
+        frac_st = i;
+        while (i < n && s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) { i = i + 1 };
+        frac_en = i;
+        has_frac = 1;
+      };
       ?(i < n && (s.charCodeAt(i) == 101 || s.charCodeAt(i) == 69) && i + 1 < n && s.charCodeAt(i + 1) >= 48 && s.charCodeAt(i + 1) <= 57) {
         i = i + 1;
         en = i;
         while (i < n && s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) { i = i + 1 };
-        out = out + slice2(s, st, en - 1);
         expn = sol_parse_uint(s, en, i);
+        ?(has_frac == 1) {
+          zeros = expn - (frac_en - frac_st);
+          ?(zeros < 0) {
+            out = out + slice2(s, st, i);
+            continue;
+          };
+          ip = slice2(s, st, frac_st - 1);
+          k = 0;
+          while (k < ip.length && ip.charCodeAt(k) == 48) { k = k + 1 };
+          mant = slice2(ip, k, ip.length);
+          mant = mant + slice2(s, frac_st, frac_en);
+          ?(mant.length == 0) { mant = "0"; };
+          out = out + mant;
+          z = 0;
+          while (z < zeros) {
+            out = out + "0";
+            z = z + 1;
+          };
+          continue;
+        };
+        out = out + slice2(s, st, en - 1);
         z = 0;
         while (z < expn) {
           out = out + "0";
@@ -114,6 +156,18 @@
     i = i + 1;
   };
   ^out;
+}
+
+!sol_lower_wadray_yul(nm: string, body: string): string {
+  ?(rg_count_lit(body, "assembly") == 0) { ^ body };
+  ?(rg_count_lit(body, "WAD_RAY_RATIO") == 0) { ^ body };
+  ?(starts_lit(nm, 0, "rayToWad") == 1 && nm.length == 8) {
+    ^ "uint256 q = a / 1000000000; uint256 r = a % 1000000000; if (r >= 500000000) { return q + 1; } return q;";
+  };
+  ?(starts_lit(nm, 0, "wadToRay") == 1 && nm.length == 8) {
+    ^ "if (a != 0 && a > (9223372036854775807 / 1000000000)) { return 0; } return a * 1000000000;";
+  };
+  ^ body;
 }
 
 !sol_strip_types(s: string): string {
@@ -300,7 +354,7 @@
               cb = match_brace(pass, b);
               ?(cb > b) {
                 pr = slice2(pass, p + 1, cl);
-                bd = slice2(pass, b + 1, cb);
+                bd = sol_lower_wadray_yul(nm, slice2(pass, b + 1, cb));
                 sig = slice2(pass, i, b);
                 reason = sol_reason(sig, bd);
                 ?(starts_lit(reason, 0, "OK") == 1 && reason.length == 2) {
@@ -334,7 +388,22 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  half = sol_expand_exp("0.5e18");
+  ?(starts_lit(half, 0, "500000000000000000") == 0) { ^0 };
+  ?(half.length != 18) { ^0 };
+  half9 = sol_expand_exp("0.5e9");
+  ?(starts_lit(half9, 0, "500000000") == 0) { ^0 };
+  ?(half9.length != 9) { ^0 };
+  src_rtw = "function rayToWad(uint256 a) internal pure returns (uint256 b) { assembly { b := div(a, WAD_RAY_RATIO) let remainder := mod(a, WAD_RAY_RATIO) if iszero(lt(remainder, div(WAD_RAY_RATIO, 2))) { b := add(b, 1) } } }";
+  out_rtw = sol_from_sol(src_rtw);
+  ?(rg_count_lit(out_rtw, "rayToWad") == 0) { ^0 };
+  ?(rg_count_lit(out_rtw, "assembly") > 0) { ^0 };
+  ?(rg_count_lit(out_rtw, "1000000000") == 0) { ^0 };
+  src_w2r = "function wadToRay(uint256 a) internal pure returns (uint256 b) { assembly { b := mul(a, WAD_RAY_RATIO) if iszero(eq(div(b, WAD_RAY_RATIO), a)) { revert(0, 0) } } }";
+  out_w2r = sol_from_sol(src_w2r);
+  ?(rg_count_lit(out_w2r, "wadToRay") == 0) { ^0 };
+  ?(rg_count_lit(out_w2r, "assembly") > 0) { ^0 };
   ^1;
 }
 
-=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
+=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_lower_wadray_yul, sol_from_sol, sol_from_sol_gate}

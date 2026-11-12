@@ -1,0 +1,124 @@
+@LIN:L1c:0.2
+@AAVE_V3_RAYTOWAD{
+  version=1
+  repo="aave/aave-v3-core"
+  source="contracts/protocol/libraries/math/WadRayMath.sol rayToWad/wadToRay"
+  license="MIT"
+  license_note="BUSL-1.1 Change Date 2023-01-27 elapsed; Change License MIT"
+  commit="782f51917056a53a2c228701058a6c3fb233684a"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="i64_positive_aave_rayToWad_half_up_and_wadToRay_overflow_fail_close"
+  note="Not mainnet uint256. WAD_RAY_RATIO=1e9 is the real Aave constant (fits i64). rayToWad is unsigned half-up on remainder>=ratio/2. wadToRay is a*ratio and fail-closes if the product does not fit i64 (Aave Yul reverts). RAY=1e27 is not claimed. Yul is lowered by lin_from_solidity.lin, not executed."
+}
+
+!art_ratio() -> int {
+  ^ 1000000000;
+}
+
+!art_half_ratio() -> int {
+  ^ 500000000;
+}
+
+!art_i64_max() -> int {
+  ^ 9223372036854775807;
+}
+
+!art_max_wad() -> int {
+  ^ art_i64_max() / art_ratio();
+}
+
+!art_ray_to_wad_floor(a: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ^ a / art_ratio();
+}
+
+!art_ray_to_wad_ceil(a: int) -> int {
+  ?(a < 0) { ^ 0; };
+  q = a / art_ratio();
+  r = a % art_ratio();
+  ?(r != 0) { ^ q + 1; };
+  ^ q;
+}
+
+!art_ray_to_wad(a: int) -> int {
+  ?(a < 0) { ^ 0; };
+  q = a / art_ratio();
+  r = a % art_ratio();
+  ?(r >= art_half_ratio()) { ^ q + 1; };
+  ^ q;
+}
+
+!art_ray_to_wad_ok(a: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ^ 1;
+}
+
+!art_wad_to_ray_ok(a: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(a > art_max_wad()) { ^ 0; };
+  ^ 1;
+}
+
+!art_wad_to_ray(a: int) -> int {
+  ?(art_wad_to_ray_ok(a) == 0) { ^ 0; };
+  ^ a * art_ratio();
+}
+
+!art_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!art_roundtrip_wad(a: int) -> int {
+  r = art_wad_to_ray(a);
+  ?(art_wad_to_ray_ok(a) == 0) { ^ 0; };
+  ?(art_ray_to_wad(r) != a) { ^ 0; };
+  ^ 1;
+}
+
+!art_test_suite() -> int {
+  ratio = art_ratio();
+  half = art_half_ratio();
+  ?(art_ray_to_wad(0) != 0) { ^ -1; };
+  ?(art_ray_to_wad(1) != 0) { ^ -2; };
+  ?(art_ray_to_wad(half - 1) != 0) { ^ -3; };
+  ?(art_ray_to_wad(half) != 1) { ^ -4; };
+  ?(art_ray_to_wad_floor(half) != 0) { ^ -5; };
+  ?(art_ray_to_wad_ceil(half) != 1) { ^ -6; };
+  ?(art_ray_to_wad(half + 1) != 1) { ^ -7; };
+  ?(art_ray_to_wad(ratio) != 1) { ^ -8; };
+  ?(art_ray_to_wad(ratio + half - 1) != 1) { ^ -9; };
+  ?(art_ray_to_wad(ratio + half) != 2) { ^ -10; };
+  ?(art_ray_to_wad_floor(ratio + half) != 1) { ^ -11; };
+  ?(art_ray_to_wad_ceil(ratio + half) != 2) { ^ -12; };
+  ?(art_wad_to_ray(0) != 0) { ^ -13; };
+  ?(art_wad_to_ray(1) != ratio) { ^ -14; };
+  ?(art_wad_to_ray(ratio) != 1000000000000000000) { ^ -15; };
+  ?(art_wad_to_ray_ok(1000000000000000000) != 0) { ^ -16; };
+  ?(art_wad_to_ray(1000000000000000000) != 0) { ^ -17; };
+  ?(art_wad_to_ray_ok(art_max_wad()) != 1) { ^ -18; };
+  ?(art_wad_to_ray_ok(art_max_wad() + 1) != 0) { ^ -19; };
+  ?(art_roundtrip_wad(1) != 1) { ^ -20; };
+  ?(art_roundtrip_wad(ratio) != 1) { ^ -21; };
+  ?(art_roundtrip_wad(1000000000000000000) != 0) { ^ -22; };
+  ?(art_ray_to_wad_ok(-1) != 0) { ^ -23; };
+  ?(art_wad_to_ray(-1) != 0) { ^ -24; };
+  ?(art_ray_to_wad(1500000000) != 2) { ^ -25; };
+  ^ 1;
+}
+
+=ex{
+  art_ratio,
+  art_half_ratio,
+  art_i64_max,
+  art_max_wad,
+  art_ray_to_wad_floor,
+  art_ray_to_wad_ceil,
+  art_ray_to_wad,
+  art_ray_to_wad_ok,
+  art_wad_to_ray_ok,
+  art_wad_to_ray,
+  art_naive_i64_mul,
+  art_roundtrip_wad,
+  art_test_suite
+}

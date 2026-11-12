@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: fail-close Aave Yul WAD_RAY_RATIO / asm! rayToWad"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -40,6 +41,7 @@
 
 // 3. Critérios fail-closed de rejeição de código Rust não-puro
 !rs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(body, "WAD_RAY_RATIO") > 0 && rg_count_lit(body, "asm!") > 0) { ^"REJ_RUST_AAVE_YUL" };
   ?(rg_count_lit(sig, "&mut") > 0) { ^"REJ_RUST_MUTABLE_REF" };
   ?(rg_count_lit(sig, "&") > 0) { ^"REJ_RUST_BORROW" };
   ?(rg_count_lit(body, "unsafe") > 0) { ^"REJ_RUST_UNSAFE" };
@@ -66,6 +68,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_yul = "pub fn ray_to_wad(a: u64) -> u64";
+  body_yul = "unsafe { asm!(\"div {0}\", in(reg) WAD_RAY_RATIO) }";
+  r3 = rs_reason(sig_yul, body_yul);
+  ?(starts_lit(r3, 0, "REJ_RUST_AAVE_YUL") == 0) { ^0 };
 
   ^1;
 }

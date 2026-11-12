@@ -1,0 +1,66 @@
+@RULEL:AAVE_RAYTOWAD_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-AAVE-V3-RAYTOWAD"
+@TITLE="Clone-lin of Aave V3 WadRayMath rayToWad / wadToRay with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_POSITIVE"
+@DATE="2026-11-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-aave-raytowad"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Aave V3 WadRayMath rayToWad/wadToRay into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="i64-positive inputs; WAD_RAY_RATIO=1e9 is the real Aave constant; Solidity uint256 and RAY=1e27 are NOT claimed"
+  commercial_hook="rayToWad/wadToRay is the unit conversion used whenever Aave indexes (RAY) meet token amounts (WAD); proving half-up at remainder==ratio/2 versus floor, and proving wadToRay(1 WAD)=1e27 does not fit i64, is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/aave/aave-v3-core"
+  path="contracts/protocol/libraries/math/WadRayMath.sol"
+  license="MIT"
+  license_note="BUSL-1.1 Change Date 2023-01-27 elapsed; Change License MIT"
+  commit="782f51917056a53a2c228701058a6c3fb233684a"
+  git_blob_sha="f61fe87f2f2748144cd4d113c848e649c41a4e5d"
+  file_sha256="fae5b995ec613cc213050c99ea6352c9c18ceebba106d03b1726cfa8f1f0124e"
+  vendored="false"
+}
+
+.l{
+  clone="src/lin_aave_raytowad.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: 0.5eN expand + sol_lower_wadray_yul (rayToWad/wadToRay Yul -> scalar) + REJ_SOLIDITY_AAVE_RAYTOWAD; src/lin_from_c.lin REJ_C_AAVE_YUL/REJ_C_INLINE_ASM; src/lin_from_rust.lin REJ_RUST_AAVE_YUL"
+  improvement_1="upstream rayToWad is Yul div/mod + half-up; LIN takes the ray as an argument and uses r >= ratio/2 (named golden 5e8 -> 1 vs floor 0)"
+  improvement_2="upstream wadToRay Yul reverts if a*ratio overflows uint256; LIN fail-closes to 0 when a*1e9 does not fit i64 (wadToRay(1e18)=0)"
+  improvement_3="WAD_RAY_RATIO=1e9 is the real Aave constant and fits i64; RAY=1e27 does not, so wadToRay(1 WAD) cannot be claimed"
+  improvement_4="naive i64 1e18*1e9 wraps; 128-bit/check-then-mul wadToRay yields 0"
+  improvement_5="sol_expand_exp now lowers 0.5eN (HALF_WAD / half-ratio) so the rounding constant is a decimal integer, not a float literal"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/aave_raytowad_c11.c (gcc -O2 -std=c11, native uint64 XOR restoring divider XOR __int128 overflow)"
+  gate="test/verify_aave_raytowad.sh"
+}
+
+.p{
+  harness="test/prove_aave_raytowad_external.py"
+  evidence_json="examples/aave_raytowad/aave_raytowad_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-aave-raytowad"
+  named_goldens="half-up 5e8->1 vs floor 0; 1.5e9->2 vs floor 1; wadToRay(1)->1e9; wadToRay(1e9)->1e18; wadToRay(1e18)->0 fail-closed"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet Aave RAY=1e27 parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production Aave pool or IRM replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Aave, Uniswap, or the EVM"
+  not_claimed_6="LIN saves Aave TVL / any dollar figure derived from TVL"
+  not_claimed_7="wadMul/wadDiv (separate clone-lin-aave-wadray)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_NATIVE_EQ_RESTORE && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
