@@ -1,0 +1,66 @@
+@RULEL:MAKER_POT_DRIP_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MAKER-POT-DRIP-V1"
+@TITLE="Clone-lin of Maker/Sky pot.drip (Dai Savings Rate chi) with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-maker-pot-drip"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Maker/Sky Dai Savings Rate chi accrual into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, RAY'=1e9, now/rho explicit, 128-bit product; Solidity uint256 / RAY=1e27 / now is NOT claimed"
+  commercial_hook="pot.drip is the DSR chi kernel behind Savings Dai / sDAI / sUSDS; making Solidity 0.6 now an explicit dt is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/makerdao/dss"
+  path="src/pot.sol"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  git_blob_sha="cae58cdafe7b4014fd87dcfb002968f61dc89eee"
+  file_sha256="8b22fb58d37e5eba6c5d1f42c8651a2c5077d39a93edd13082029bc3bfb3edc6"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_maker_pot_drip.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-pot-drip"
+  transpiler_delta="src/lin_from_solidity.lin v3: 10 ** N expansion N<=18 + REJ_SOLIDITY_RAY27/NOW/POT_DRIP; src/lin_from_c.lin v2 REJ_C_TIME/POT_DRIP; src/lin_from_rust.lin v2 REJ_RUST_TIME/POT_DRIP"
+  improvement_1="pot.drip is state-changing with Solidity 0.6 now and vat.suck; LIN takes dsr/chi/now/rho as arguments and has no hidden mint"
+  improvement_2="Solidity 0.6 now is fail-closed by the transpiler (REJ_SOLIDITY_NOW); LIN uses explicit dt = now-rho"
+  improvement_3="10 ** 27 (Maker RAY) is rejected as REJ_SOLIDITY_RAY27; 10 ** N for N<=18 expands to a decimal literal"
+  improvement_4="rpow is LIN while-loop half-up, not inline assembly; rmul is floor 128-bit matching pot._rmul"
+  improvement_5="naive i64 7e18*3e18 wraps; 128-bit muldiv fail-closes to 0"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/maker_pot_drip_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="make maker-pot-drip-proof"
+}
+
+.p{
+  harness="test/prove_maker_pot_drip_external.py"
+  evidence_json="examples/maker_pot_drip/maker_pot_drip_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-pot-drip"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet RAY=1e27 / vat.ilks.rate / sDAI parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production DSR or sUSDS replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Maker, Sky, Dai, USDS, or the EVM"
+  not_claimed_6="jug.drip / pot.rpow as standalone clones (separate clone-lin repos)"
+  not_claimed_7="any TVL or dollar-savings figure"
+  not_claimed_8="AGPL source vendored into lin-open (hash-pinned only)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

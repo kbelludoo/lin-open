@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: fail-close Instant::now/SystemTime and Maker pot_drip"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -40,6 +41,9 @@
 
 // 3. Critérios fail-closed de rejeição de código Rust não-puro
 !rs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "pot_drip") > 0) { ^"REJ_RUST_POT_DRIP" };
+  ?(rg_count_lit(body, "Instant::now") > 0) { ^"REJ_RUST_TIME" };
+  ?(rg_count_lit(body, "SystemTime") > 0) { ^"REJ_RUST_TIME" };
   ?(rg_count_lit(sig, "&mut") > 0) { ^"REJ_RUST_MUTABLE_REF" };
   ?(rg_count_lit(sig, "&") > 0) { ^"REJ_RUST_BORROW" };
   ?(rg_count_lit(body, "unsafe") > 0) { ^"REJ_RUST_UNSAFE" };
@@ -66,6 +70,16 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_pot = "pub fn pot_drip(dsr: u64, chi: u64) -> u64";
+  body_pot = "let now = Instant::now(); dsr";
+  r3 = rs_reason(sig_pot, body_pot);
+  ?(starts_lit(r3, 0, "REJ_RUST_POT_DRIP") == 0) { ^0 };
+
+  sig_time = "pub fn mix(a: u64) -> u64";
+  body_time = "let _t = SystemTime::now(); a";
+  r4 = rs_reason(sig_time, body_time);
+  ?(starts_lit(r4, 0, "REJ_RUST_TIME") == 0) { ^0 };
 
   ^1;
 }

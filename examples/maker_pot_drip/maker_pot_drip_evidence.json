@@ -1,0 +1,150 @@
+{
+  "schema": "LIN_MAKER_POT_DRIP_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_pot_drip.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "mpd_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss pot.sol matches hash pin",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 pot.sol blob=cae58cdafe7b4014fd87dcfb002968f61dc89eee"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/pot.sol",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb (a*b)/d agree",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "12/12 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "DT-IDENTITY",
+      "status": "PASS",
+      "description": "now==rho returns stored chi (no elapsed DSR)",
+      "note": "chi=2000000000"
+    },
+    {
+      "id": "EXPLICIT-DT",
+      "status": "PASS",
+      "description": "dsr=RAY'+1e6 dt=2: compound 1002001000 vs linear 1002000000 vs ignore-dt 1e9",
+      "note": "drip=1002001000 linear=1002000000 ignore=1000000000"
+    },
+    {
+      "id": "FILE-RHO",
+      "status": "PASS",
+      "description": "file() requires now==rho; LIN mpd_file_ok makes that explicit",
+      "note": "eq=1 ne=0"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e18*3e18) wraps; 128-bit muldiv fail-closes",
+      "note": "i64_wrap=-5389669316318724096 muldiv=0"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes dsr/chi/now/rho as arguments (no Solidity now)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product (naive i64 a*b wraps on 7e18*3e18)",
+      "note": ""
+    },
+    {
+      "id": "SOL-EMIT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin expands 10**N<=18 and fail-closes pot.drip/now/RAY27",
+      "note": ""
+    },
+    {
+      "id": "C-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes wall-clock time and pot_drip",
+      "note": ""
+    },
+    {
+      "id": "RS-REJ",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes Instant::now/SystemTime and pot_drip",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after the transpiler delta",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/pot.sol",
+    "blob": "cae58cdafe7b4014fd87dcfb002968f61dc89eee",
+    "sha256": "8b22fb58d37e5eba6c5d1f42c8651a2c5077d39a93edd13082029bc3bfb3edc6",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_pot_drip.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-pot-drip",
+  "c11_oracle": "test/oracles/maker_pot_drip_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "ray_prime": 1000000000,
+  "named_goldens": {
+    "drip(dsr, RAY, 0)": 1000000000,
+    "drip(dsr, RAY, dt=2)": 1002001000,
+    "linear(dsr, RAY, dt=2)": 1002000000,
+    "drip(dsr, RAY, dt=10)": 1010045120,
+    "linear(dsr, RAY, dt=10)": 1010000000,
+    "chi_delta(dt=2)": 2001000,
+    "join_rad(1e9, RAY)": 1000000000000000000,
+    "naive_i64(7e18, 3e18)": -5389669316318724096
+  }
+}
