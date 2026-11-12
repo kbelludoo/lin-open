@@ -40,6 +40,8 @@
   ?(rg_count_lit(sig, "float") > 0 || rg_count_lit(body, "float") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(sig, "double") > 0 || rg_count_lit(body, "double") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(body, "goto") > 0){ ^"REJ_C_GOTO" };
+  ?(rg_count_lit(body, "__asm") > 0 || rg_count_lit(body, "asm(") > 0){ ^"REJ_C_INLINE_ASM" };
+  ?(rg_count_lit(body, "balanceOf") > 0){ ^"REJ_C_AAVE_IRM_STATE" };
   ^"OK";
 }
 

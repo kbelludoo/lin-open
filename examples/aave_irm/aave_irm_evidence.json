@@ -1,0 +1,135 @@
+{
+  "schema": "LIN_AAVE_IRM_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned aave-v3-core commit matches recorded sha256",
+      "note": "commit=782f51917056a53a2c228701058a6c3fb233684a blob=bb03f2cae5421c00175589a633fe9e8ca1015169 sha256=0e5aa1d968ed81567de83660f8335d91b7d62d3d084cae5f40373b26ed0e22f0"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of DefaultReserveInterestRateStrategy.sol",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-TEXT",
+      "status": "PASS",
+      "description": "pinned strategy contains calculateInterestRates and rayMul",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-STATE",
+      "status": "PASS",
+      "description": "upstream reads IERC20.balanceOf (LIN takes liq as an argument)",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree on IRM goldens",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_aave_irm.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3 (using-for lower)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "air_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "8/8 vectors: C11 i128 == limbs == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "8/8 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (1e10*1e10) wraps; 128-bit rayMul(1e10,1e10)=1e11",
+      "note": "i64_wrap=7766279631452241920 bigint=100000000000"
+    },
+    {
+      "id": "SLOPE-KINK",
+      "status": "PASS",
+      "description": "90% util variable rate exceeds 50% util (kink at 80%)",
+      "note": "r50=25000000 r90=440000000"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes liquidity and immutable slopes as arguments (no IERC20.balanceOf)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv (naive i64 a*b wraps on 1e10*1e10)",
+      "note": ""
+    },
+    {
+      "id": "SOL-EMIT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 lowers using-for rayMul/rayDiv/percentMul and rejects balanceOf",
+      "note": ""
+    },
+    {
+      "id": "C-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin rejects inline asm and balanceOf (Aave IRM state analog)",
+      "note": ""
+    },
+    {
+      "id": "RS-REJ",
+      "status": "PASS",
+      "description": "lin_from_rust.lin rejects asm! and balanceOf",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE",
+      "status": "PASS",
+      "description": "sol_from_sol_gate present (string VM is reject-by-design; check path already passed)",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/aave/aave-v3-core",
+    "commit": "782f51917056a53a2c228701058a6c3fb233684a",
+    "path": "contracts/protocol/pool/DefaultReserveInterestRateStrategy.sol",
+    "git_blob_sha": "bb03f2cae5421c00175589a633fe9e8ca1015169",
+    "file_sha256": "0e5aa1d968ed81567de83660f8335d91b7d62d3d084cae5f40373b26ed0e22f0",
+    "license": "MIT after BUSL-1.1 Change Date 2023-01-27",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_aave_irm.lin",
+  "c11_oracle": "test/oracles/aave_irm_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-aave-irm",
+  "variable_borrow_rate_50_util": 25000000,
+  "variable_borrow_rate_90_util": 440000000
+}
