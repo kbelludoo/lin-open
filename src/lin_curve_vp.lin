@@ -1,0 +1,276 @@
+@LIN:L1c:0.2
+@CURVE_3POOL_VP{
+  version=1
+  repo="curvefi/curve-contract"
+  source="contracts/pools/3pool/StableSwap3Pool.vy get_D/get_virtual_price"
+  license="all_rights_reserved_informational_upstream"
+  commit="bae23a2fc9a0302d174ea1ffce8219a44a92149c"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_curve_3pool_newton_get_D_virtual_price_128bit"
+  note="Not mainnet uint256. N=3 explicit x0,x1,x2. amp and supply are arguments (not ramped A, self.balances, self._xp/RATES, or token.totalSupply). SCALE=1e9 stands in for PRECISION=1e18. Upstream Vyper is hash-pinned, not vendored."
+}
+
+!cvp_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!cvp_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(cvp_u_lt(s, a));
+}
+
+!cvp_mask32() -> int {
+  ^ 4294967295;
+}
+
+!cvp_n() -> int {
+  ^ 3;
+}
+
+!cvp_scale() -> int {
+  ^ 1000000000;
+}
+
+!cvp_close1(a: int, b: int) -> int {
+  ?(a >= b) {
+    ?(a - b <= 1) { ^ 1; };
+    ^ 0;
+  };
+  ?(b - a <= 1) { ^ 1; };
+  ^ 0;
+}
+
+!cvp_muldiv_add_part(a: int, b: int, add: int, d: int, want: int) -> int {
+  ?(d == 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(a < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(b < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(add < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  m32 = cvp_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = cvp_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = cvp_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  lo2 = lo + add;
+  hi = hi + cvp_u_add_carry(lo, add);
+  lo = lo2;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(cvp_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = cvp_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(q < 0) { ov = 1; };
+  ?(want == 2) { ^ ov; };
+  ?(want == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!cvp_muldiv(a: int, b: int, d: int) -> int {
+  ^ cvp_muldiv_add_part(a, b, 0, d, 0);
+}
+
+!cvp_xp_ok(x0: int, x1: int, x2: int, amp: int) -> int {
+  ?(amp <= 0) { ^ 0; };
+  ?(x0 <= 0) { ^ 0; };
+  ?(x1 <= 0) { ^ 0; };
+  ?(x2 <= 0) { ^ 0; };
+  ^ 1;
+}
+
+!cvp_sum3(x0: int, x1: int, x2: int) -> int {
+  s = x0 + x1;
+  ?(cvp_u_lt(s, x0) == 1) { ^ 0; };
+  t = s + x2;
+  ?(cvp_u_lt(t, s) == 1) { ^ 0; };
+  ^ t;
+}
+
+!cvp_get_d(x0: int, x1: int, x2: int, amp: int) -> int {
+  ?(cvp_xp_ok(x0, x1, x2, amp) == 0) { ^ 0; };
+  n = cvp_n();
+  s = cvp_sum3(x0, x1, x2);
+  ?(s <= 0) { ^ 0; };
+  ann = amp * n;
+  ?(ann <= amp) { ^ 0; };
+  d = s;
+  iter = 0;
+  done = 0;
+  while (iter < 255) {
+    ?(done == 0) {
+      dp = d;
+      x0n = cvp_muldiv(x0, n, 1);
+      x1n = cvp_muldiv(x1, n, 1);
+      x2n = cvp_muldiv(x2, n, 1);
+      ?(x0n <= 0) { d = 0; done = 1; };
+      ?(x1n <= 0) { d = 0; done = 1; };
+      ?(x2n <= 0) { d = 0; done = 1; };
+      ?(done == 0) {
+        dp = cvp_muldiv(dp, d, x0n);
+        ?(dp <= 0) { d = 0; done = 1; };
+      };
+      ?(done == 0) {
+        dp = cvp_muldiv(dp, d, x1n);
+        ?(dp <= 0) { d = 0; done = 1; };
+      };
+      ?(done == 0) {
+        dp = cvp_muldiv(dp, d, x2n);
+        ?(dp <= 0) { d = 0; done = 1; };
+      };
+      ?(done == 0) {
+        dprev = d;
+        ann_s = cvp_muldiv(ann, s, 1);
+        dp_n = cvp_muldiv(dp, n, 1);
+        ?(ann_s <= 0) { d = 0; done = 1; };
+        ?(dp_n <= 0) { d = 0; done = 1; };
+        ?(done == 0) {
+          ?(cvp_u_add_carry(ann_s, dp_n) == 1) { d = 0; done = 1; };
+        };
+        ?(done == 0) {
+          left = ann_s + dp_n;
+          ann1_d = cvp_muldiv(ann - 1, d, 1);
+          n1_dp = cvp_muldiv(n + 1, dp, 1);
+          ?(ann1_d <= 0) { d = 0; done = 1; };
+          ?(n1_dp <= 0) { d = 0; done = 1; };
+          ?(done == 0) {
+            ?(cvp_u_add_carry(ann1_d, n1_dp) == 1) { d = 0; done = 1; };
+          };
+          ?(done == 0) {
+            den = ann1_d + n1_dp;
+            ?(den <= 0) { d = 0; done = 1; };
+            ?(done == 0) {
+              d = cvp_muldiv(left, d, den);
+              ?(d <= 0) { done = 1; };
+              ?(cvp_close1(d, dprev) == 1) { done = 1; };
+            };
+          };
+        };
+      };
+    };
+    iter = iter + 1;
+  };
+  ^ d;
+}
+
+!cvp_from_d(d: int, supply: int) -> int {
+  ?(d <= 0) { ^ 0; };
+  ?(supply <= 0) { ^ 0; };
+  ^ cvp_muldiv(d, cvp_scale(), supply);
+}
+
+!cvp_virtual_price(x0: int, x1: int, x2: int, amp: int, supply: int) -> int {
+  ?(supply <= 0) { ^ 0; };
+  d = cvp_get_d(x0, x1, x2, amp);
+  ^ cvp_from_d(d, supply);
+}
+
+!cvp_constant_sum_price(x0: int, x1: int, x2: int, supply: int) -> int {
+  ?(supply <= 0) { ^ 0; };
+  s = cvp_sum3(x0, x1, x2);
+  ?(s <= 0) { ^ 0; };
+  ^ cvp_muldiv(s, cvp_scale(), supply);
+}
+
+!cvp_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!cvp_token_supply_claimed() -> int {
+  ^ 0;
+}
+
+!cvp_balances_claimed() -> int {
+  ^ 0;
+}
+
+!cvp_rates_claimed() -> int {
+  ^ 0;
+}
+
+!cvp_test_suite() -> int {
+  e9 = 1000000000;
+  d0 = 3000000000;
+  dimb = 3099778671;
+  ?(cvp_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(cvp_get_d(e9, e9, e9, 100) != d0) { ^ -2; };
+  ?(cvp_get_d(e9, e9, e9, 2000) != d0) { ^ -3; };
+  ?(cvp_virtual_price(e9, e9, e9, 100, d0) != e9) { ^ -4; };
+  ?(cvp_get_d(1200000000, 900000000, e9, 100) != dimb) { ^ -5; };
+  ?(cvp_virtual_price(1200000000, 900000000, e9, 100, d0) != 1033259557) { ^ -6; };
+  ?(cvp_virtual_price(1200000000, 900000000, e9, 100, 3100000000) != 999928603) { ^ -7; };
+  ?(cvp_constant_sum_price(1200000000, 900000000, e9, 3100000000) != e9) { ^ -8; };
+  ?(cvp_from_d(3001000000, d0) != 1000333333) { ^ -9; };
+  ?(cvp_virtual_price(e9, e9, e9, 100, 0) != 0) { ^ -10; };
+  ?(cvp_from_d(d0, 0) != 0) { ^ -11; };
+  ?(cvp_get_d(e9, e9, 0, 100) != 0) { ^ -12; };
+  ?(cvp_n() != 3) { ^ -13; };
+  ?(cvp_token_supply_claimed() != 0) { ^ -14; };
+  ?(cvp_balances_claimed() != 0) { ^ -15; };
+  ?(cvp_rates_claimed() != 0) { ^ -16; };
+  ?(cvp_muldiv(12000000000, e9, 1) != 0) { ^ -17; };
+  ?(cvp_naive_i64_mul(12000000000, e9) != -6446744073709551616) { ^ -18; };
+  ?(cvp_from_d(12000000000, 12000000000) != e9) { ^ -19; };
+  ?(cvp_virtual_price(e9, e9, e9, 100, dimb) != 967811033) { ^ -20; };
+  ^ 1;
+}
+
+=ex{
+  cvp_u_lt,
+  cvp_u_add_carry,
+  cvp_mask32,
+  cvp_n,
+  cvp_scale,
+  cvp_close1,
+  cvp_muldiv_add_part,
+  cvp_muldiv,
+  cvp_xp_ok,
+  cvp_sum3,
+  cvp_get_d,
+  cvp_from_d,
+  cvp_virtual_price,
+  cvp_constant_sum_price,
+  cvp_naive_i64_mul,
+  cvp_token_supply_claimed,
+  cvp_balances_claimed,
+  cvp_rates_claimed,
+  cvp_test_suite
+}

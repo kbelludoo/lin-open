@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: fail-close token./total_supply/self.balances (Curve get_virtual_price storage lift)"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,9 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(body, "token.") > 0) { ^"REJ_RUST_TOKEN_CALL" };
+  ?(rg_count_lit(body, "total_supply") > 0) { ^"REJ_RUST_TOTAL_SUPPLY" };
+  ?(rg_count_lit(body, "self.balances") > 0) { ^"REJ_RUST_SELF_BALANCES" };
   ^"OK";
 }
 
@@ -66,6 +70,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_tok = "pub fn virtual_price() -> u64";
+  body_tok = "let supply = token.total_supply(); return d * precision / supply;";
+  r3 = rs_reason(sig_tok, body_tok);
+  ?(starts_lit(r3, 0, "REJ_RUST_TOKEN_CALL") == 0) { ^0 };
 
   ^1;
 }

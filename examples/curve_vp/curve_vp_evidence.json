@@ -1,0 +1,160 @@
+{
+  "schema": "LIN_CURVE_VP_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_curve_vp.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler TOKEN_CALL/TOTALSUPPLY/SELF_BALANCES",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 TOKEN_CALL/TOTALSUPPLY reject",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Rust transpiler v2 TOKEN/TOTAL_SUPPLY reject",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "cvp_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned curve-contract 3pool matches hash pin",
+      "note": "commit=bae23a2fc9a0302d174ea1ffce8219a44a92149c StableSwap3Pool blob=04d170189a1b5ddfecfc0af9ea3fe23eb0840423"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of StableSwap3Pool.vy",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb (a*b+add)/d agree",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "10/10 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "IDENTITY",
+      "status": "PASS",
+      "description": "equal 1e9 balances, supply=D, A=100: virtual price = SCALE (1.0)",
+      "note": "vp=1000000000"
+    },
+    {
+      "id": "IMB-HAIRCUT",
+      "status": "PASS",
+      "description": "imbalance vs constant-sum: vp 999928603 vs 1e9 (haircut 71397)",
+      "note": "vp=999928603 csum=1000000000"
+    },
+    {
+      "id": "FEE-MARK",
+      "status": "PASS",
+      "description": "D grown by fees to 3001000000 / supply 3e9 marks vp=1000333333",
+      "note": "from_d=1000333333"
+    },
+    {
+      "id": "SUPPLY-ZERO",
+      "status": "PASS",
+      "description": "token.totalSupply()=0 and zero coin fail-close to 0",
+      "note": "vp0=0 d0=0"
+    },
+    {
+      "id": "UINT256-CAP",
+      "status": "PASS",
+      "description": "mainnet uint256 / RATES / totalSupply / self.balances are not claimed",
+      "note": "ts=0 bal=0 rates=0"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 D*SCALE wraps; 128-bit muldiv fail-closes to 0",
+      "note": "i64_wrap=-6446744073709551616 muldiv=0"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes xp, amp, supply as arguments (not storage/token)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit Newton get_D and D*SCALE/supply; N=3 SCALE=1e9",
+      "note": ""
+    },
+    {
+      "id": "SOL-REJ",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin fail-closes self.token, totalSupply, self.balances",
+      "note": ""
+    },
+    {
+      "id": "C-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes token./totalSupply / self.balances",
+      "note": ""
+    },
+    {
+      "id": "RS-REJ",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes token./total_supply / self.balances",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound V2 JumpRate still PASS after the transpiler delta",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/curvefi/curve-contract",
+    "commit": "bae23a2fc9a0302d174ea1ffce8219a44a92149c",
+    "path": "contracts/pools/3pool/StableSwap3Pool.vy",
+    "blob": "04d170189a1b5ddfecfc0af9ea3fe23eb0840423",
+    "sha256": "03e0bf29ae2fe945a3629b8085062da8f9d9d25957e86001dfc3df68c895f9dc",
+    "license": "all-rights-reserved-informational-only",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_curve_vp.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-curve-vp",
+  "c11_oracle": "test/oracles/curve_vp_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "get_d_equal_1e9": 3000000000,
+    "vp_equal_supply_d": 1000000000,
+    "get_d_imbalance": 3099778671,
+    "vp_imbalance_supply_d0": 1033259557,
+    "vp_imbalance_supply_sum": 999928603,
+    "from_d_fee_mark": 1000333333,
+    "naive_i64_12e9_times_1e9": -6446744073709551616
+  }
+}

@@ -1,0 +1,62 @@
+@RULEL:CURVE_VP_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-CURVE-3POOL-VP-V1"
+@TITLE="Clone-lin of Curve 3pool get_D/get_virtual_price with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-curve-vp"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Curve 3pool invariant and LP virtual price into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for Newton get_D and D*SCALE/supply; Solidity/Vyper uint256 and PRECISION=1e18 are NOT claimed"
+  commercial_hook="get_virtual_price is the LP mark used by Convex/Yearn/StakeDAO Curve strategies; making xp/amp/supply explicit and replacing wrapping i64 D*PRECISION with 128-bit muldiv is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/curvefi/curve-contract"
+  path="contracts/pools/3pool/StableSwap3Pool.vy"
+  license="all-rights-reserved-informational-only"
+  vendored=false
+  commit="bae23a2fc9a0302d174ea1ffce8219a44a92149c"
+  git_blob_sha="04d170189a1b5ddfecfc0af9ea3fe23eb0840423"
+  file_sha256="03e0bf29ae2fe945a3629b8085062da8f9d9d25957e86001dfc3df68c895f9dc"
+  pin="test/fixtures/external_proof/curve_vp.pin.rulel"
+}
+
+.l{
+  clone="src/lin_curve_vp.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_TOKEN_CALL + TOTALSUPPLY + SELF_BALANCES; src/lin_from_c.lin and src/lin_from_rust.lin gain the same fail-closed tokens"
+  improvement_1="get_virtual_price is view-on-storage in Vyper (self._xp, self._A, token.totalSupply); LIN takes x0/x1/x2, amp, supply as arguments"
+  improvement_2="D * PRECISION overflows i64 for D>=1e10; LIN uses schoolbook 128-bit muldiv matching C11 __int128 and fail-closes if the quotient exceeds i64"
+  improvement_3="Newton get_D intermediates (Ann*S+D_P*N)*D also use 128-bit muldiv; a zero coin or zero supply fail-closes to 0"
+  improvement_4="imbalance vs constant-sum is an explicit second oracle (cvp_constant_sum_price) so the haircut is auditable"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/curve_vp_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_curve_vp.sh"
+}
+
+.p{
+  harness="test/prove_curve_vp_external.py"
+  evidence_json="examples/curve_vp/curve_vp_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-curve-vp"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet 3pool RATES/PRECISION_MUL parity"
+  not_claimed_2="LIN is faster than vyper or the EVM"
+  not_claimed_3="this clone is a production pool or Yearn strategy replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Curve, Convex, Yearn, or the EVM"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PYTHON_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
