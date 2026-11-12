@@ -4,7 +4,7 @@
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
   status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  changelog="v2: emit LIN for eligible pure functions; expand 1eN and 0.XeN (0.5e4, 0.9e4, 0.95e18) integer literals; view without msg.sender is OK_VIEW; fail-close calculateUserAccountData / getAssetPrice / type(uint256).max (REJ_SOLIDITY_ACCOUNT_DATA, REJ_SOLIDITY_UINT256_MAX)"
 }
 
 !sol_is_kw(nm: string): int {
@@ -38,6 +38,9 @@
 }
 
 !sol_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "calculateUserAccountData") > 0) { ^"REJ_SOLIDITY_ACCOUNT_DATA" };
+  ?(rg_count_lit(body, "getAssetPrice") > 0) { ^"REJ_SOLIDITY_ACCOUNT_DATA" };
+  ?(rg_count_lit(body, "type(uint256).max") > 0) { ^"REJ_SOLIDITY_UINT256_MAX" };
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
@@ -64,6 +67,10 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  r4 = sol_reason("function calculateUserAccountData(address user) internal view", "return oracle.getAssetPrice(user);");
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_ACCOUNT_DATA") == 0) { ^0 };
+  r5 = sol_reason("function noDebtHf() internal pure returns (uint256)", "return type(uint256).max;");
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_UINT256_MAX") == 0) { ^0 };
   ^1;
 }
 
@@ -85,7 +92,44 @@
   en = 0;
   expn = 0;
   z = 0;
+  prev_ok = 0;
+  k = 0;
+  frac_st = 0;
+  e_pos = 0;
+  frac_len = 0;
+  pad = 0;
   while (i < n) {
+    ?(s.charCodeAt(i) == 48 && i + 1 < n && s.charCodeAt(i + 1) == 46) {
+      prev_ok = 1;
+      ?(i > 0 && is_ident(s.charCodeAt(i - 1)) == true) { prev_ok = 0; };
+      ?(prev_ok == 1) {
+        k = i + 2;
+        frac_st = k;
+        while (k < n && s.charCodeAt(k) >= 48 && s.charCodeAt(k) <= 57) { k = k + 1 };
+        ?(k > frac_st && k < n && (s.charCodeAt(k) == 101 || s.charCodeAt(k) == 69) && k + 1 < n && s.charCodeAt(k + 1) >= 48 && s.charCodeAt(k + 1) <= 57) {
+          e_pos = k;
+          k = k + 1;
+          en = k;
+          while (k < n && s.charCodeAt(k) >= 48 && s.charCodeAt(k) <= 57) { k = k + 1 };
+          expn = sol_parse_uint(s, en, k);
+          frac_len = e_pos - frac_st;
+          ?(expn >= frac_len && expn <= 18) {
+            out = out + slice2(s, frac_st, e_pos);
+            z = 0;
+            pad = expn - frac_len;
+            while (z < pad) {
+              out = out + "0";
+              z = z + 1;
+            };
+            i = k;
+            continue;
+          };
+          out = out + slice2(s, i, k);
+          i = k;
+          continue;
+        };
+      };
+    };
     ?(s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) {
       ?(i > 0 && is_ident(s.charCodeAt(i - 1)) == true) {
         out = out + s.charAt(i);
@@ -334,6 +378,17 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  half = sol_expand_exp("0.5e4");
+  ?(starts_lit(half, 0, "5000") == 0) { ^0 };
+  ?(half.length != 4) { ^0 };
+  nine = sol_expand_exp("0.9e4");
+  ?(starts_lit(nine, 0, "9000") == 0) { ^0 };
+  ?(nine.length != 4) { ^0 };
+  hf = sol_expand_exp("0.95e18");
+  ?(starts_lit(hf, 0, "950000000000000000") == 0) { ^0 };
+  ?(hf.length != 18) { ^0 };
+  keep = sol_expand_exp("0.5e27");
+  ?(rg_count_lit(keep, "0.5e27") == 0) { ^0 };
   ^1;
 }
 

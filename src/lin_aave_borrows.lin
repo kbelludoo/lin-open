@@ -1,0 +1,253 @@
+@LIN:L1c:0.2
+@AAVE_AVAILABLE_BORROWS{
+  version=1
+  repo="aave/aave-v3-core"
+  source="contracts/protocol/libraries/logic/GenericLogic.sol calculateAvailableBorrows + ValidationLogic isolation ceiling + PercentageMath percentMul"
+  license="MIT_after_BUSL_Change_Date_2023-01-27"
+  commit="782f51917056a53a2c228701058a6c3fb233684a"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_aave_v3_available_borrows_and_isolation_ceiling_128bit"
+  note="Not mainnet uint256/WAD=1e18/oracle/aToken. PERCENTAGE_FACTOR=1e4 (same bps). LTV, isolation debt and ceiling are arguments (not storage / calculateUserAccountData). percentMul uses 128-bit half-up. type(uint256).max HF does not fit i64. Upstream Solidity is hash-pinned, not vendored."
+}
+
+!aab_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!aab_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(aab_u_lt(s, a));
+}
+
+!aab_mask32() -> int {
+  ^ 4294967295;
+}
+
+!aab_pct() -> int {
+  ^ 10000;
+}
+
+!aab_half_pct() -> int {
+  ^ 5000;
+}
+
+!aab_debt_ceiling_decimals() -> int {
+  ^ 2;
+}
+
+!aab_hf18() -> int {
+  ^ 1000000000000000000;
+}
+
+!aab_rebalance_bps() -> int {
+  ^ 9000;
+}
+
+!aab_hf18_fits() -> int {
+  ^ 1;
+}
+
+!aab_uint256_max_fits() -> int {
+  ^ 0;
+}
+
+!aab_muldiv_add_part(a: int, b: int, add: int, d: int, want: int) -> int {
+  ?(d == 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(a < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(b < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(add < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  m32 = aab_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = aab_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = aab_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  lo2 = lo + add;
+  hi = hi + aab_u_add_carry(lo, add);
+  lo = lo2;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(aab_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = aab_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(q < 0) { ov = 1; };
+  ?(want == 2) { ^ ov; };
+  ?(want == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!aab_muldiv(a: int, b: int, d: int) -> int {
+  ^ aab_muldiv_add_part(a, b, 0, d, 0);
+}
+
+!aab_percent_mul(v: int, p: int) -> int {
+  ?(p == 0) { ^ 0; };
+  ?(v == 0) { ^ 0; };
+  ^ aab_muldiv_add_part(v, p, aab_half_pct(), aab_pct(), 0);
+}
+
+!aab_wrong_floor_percent_mul(v: int, p: int) -> int {
+  ?(p == 0) { ^ 0; };
+  ^ aab_muldiv_add_part(v, p, 0, aab_pct(), 0);
+}
+
+!aab_percent_div(v: int, p: int) -> int {
+  ?(p == 0) { ^ 0; };
+  half = p / 2;
+  ^ aab_muldiv_add_part(v, aab_pct(), half, p, 0);
+}
+
+!aab_available(coll: int, debt: int, ltv: int) -> int {
+  ?(coll < 0) { ^ 0; };
+  ?(debt < 0) { ^ 0; };
+  ?(ltv < 0) { ^ 0; };
+  cap = aab_percent_mul(coll, ltv);
+  ?(aab_u_lt(cap, debt) == 1) { ^ 0; };
+  ^ cap - debt;
+}
+
+!aab_cover_ok(coll: int, debt: int, amount: int, ltv: int) -> int {
+  ?(coll < 0) { ^ 0; };
+  ?(debt < 0) { ^ 0; };
+  ?(amount < 0) { ^ 0; };
+  ?(ltv == 0) { ^ 0; };
+  ?(aab_u_add_carry(debt, amount) == 1) { ^ 0; };
+  need = aab_percent_div(debt + amount, ltv);
+  ?(aab_u_lt(coll, need) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!aab_pow10(e: int) -> int {
+  ?(e < 0) { ^ 0; };
+  ?(e > 18) { ^ 0; };
+  p = 1;
+  i = 0;
+  while (i < e) {
+    nxt = p * 10;
+    ?(p != 0) {
+      ?(nxt / 10 != p) { ^ 0; };
+    };
+    p = nxt;
+    i = i + 1;
+  };
+  ^ p;
+}
+
+!aab_iso_units(amount: int, decimals: int) -> int {
+  ?(amount < 0) { ^ 0; };
+  ?(aab_u_lt(decimals, aab_debt_ceiling_decimals()) == 1) { ^ 0; };
+  expn = decimals - aab_debt_ceiling_decimals();
+  den = aab_pow10(expn);
+  ?(den == 0) { ^ 0; };
+  ^ aab_muldiv(amount, 1, den);
+}
+
+!aab_iso_ok(active: int, current: int, amount: int, decimals: int, ceiling: int) -> int {
+  ?(active == 0) { ^ 1; };
+  ?(current < 0) { ^ 0; };
+  ?(ceiling < 0) { ^ 0; };
+  units = aab_iso_units(amount, decimals);
+  s = current + units;
+  ?(aab_u_lt(s, current) == 1) { ^ 0; };
+  ?(aab_u_lt(ceiling, s) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!aab_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!aab_test_suite() -> int {
+  e9 = 1000000000;
+  ?(aab_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(aab_percent_mul(1, 5000) != 1) { ^ -2; };
+  ?(aab_wrong_floor_percent_mul(1, 5000) != 0) { ^ -3; };
+  ?(aab_percent_mul(10000, 8000) != 8000) { ^ -4; };
+  ?(aab_available(10000, 0, 8000) != 8000) { ^ -5; };
+  ?(aab_available(e9, 100000000, 8000) != 700000000) { ^ -6; };
+  ?(aab_available(1000, 900, 8000) != 0) { ^ -7; };
+  ?(aab_available(0, 0, 8000) != 0) { ^ -8; };
+  ?(aab_available(e9, 0, 0) != 0) { ^ -9; };
+  ?(aab_cover_ok(e9, 0, 800000000, 8000) != 1) { ^ -10; };
+  ?(aab_cover_ok(e9, 0, 800000001, 8000) != 0) { ^ -11; };
+  ?(aab_iso_units(1000000, 6) != 100) { ^ -12; };
+  ?(aab_iso_units(e9, 18) != 0) { ^ -13; };
+  ?(aab_iso_ok(0, 0, 1000000, 6, 10000) != 1) { ^ -14; };
+  ?(aab_iso_ok(1, 0, 1000000, 6, 10000) != 1) { ^ -15; };
+  ?(aab_iso_ok(1, 9999, 1000000, 6, 10000) != 0) { ^ -16; };
+  ?(aab_iso_ok(1, 9900, 1000000, 6, 10000) != 1) { ^ -17; };
+  ?(aab_iso_units(1000000, 1) != 0) { ^ -18; };
+  ?(aab_naive_i64_mul(2000000000000000, 8000) != 0 - 2446744073709551616) { ^ -19; };
+  ?(aab_percent_mul(2000000000000000, 8000) != 1600000000000000) { ^ -20; };
+  ?(aab_hf18_fits() != 1) { ^ -21; };
+  ?(aab_uint256_max_fits() != 0) { ^ -22; };
+  ?(aab_hf18() != 1000000000000000000) { ^ -23; };
+  ?(aab_rebalance_bps() != 9000) { ^ -24; };
+  ?(aab_percent_mul(0, 8000) != 0) { ^ -25; };
+  ^ 1;
+}
+
+=ex{
+  aab_u_lt,
+  aab_u_add_carry,
+  aab_mask32,
+  aab_pct,
+  aab_half_pct,
+  aab_debt_ceiling_decimals,
+  aab_hf18,
+  aab_rebalance_bps,
+  aab_hf18_fits,
+  aab_uint256_max_fits,
+  aab_muldiv_add_part,
+  aab_muldiv,
+  aab_percent_mul,
+  aab_wrong_floor_percent_mul,
+  aab_percent_div,
+  aab_available,
+  aab_cover_ok,
+  aab_pow10,
+  aab_iso_units,
+  aab_iso_ok,
+  aab_naive_i64_mul,
+  aab_test_suite
+}

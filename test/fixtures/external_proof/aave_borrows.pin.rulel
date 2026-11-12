@@ -1,0 +1,19 @@
+@RULEL:AAVE_BORROWS_PIN:1.0.0
+@NOTE="Hash pin only. Aave V3 Solidity is not vendored (BUSL then MIT after Change Date 2023-01-27)."
+
+.u{
+  repo="https://github.com/aave/aave-v3-core"
+  path="contracts/protocol/libraries/logic/GenericLogic.sol"
+  math_path="contracts/protocol/libraries/math/PercentageMath.sol"
+  validation_path="contracts/protocol/libraries/logic/ValidationLogic.sol"
+  commit="782f51917056a53a2c228701058a6c3fb233684a"
+  git_blob_sha="3342316e772a7e733723ef2963ab79566904fb30"
+  file_sha256="6a5dbf307801b001ae5cd450c7bc6a7c77947b50f4bc29bdb93661ed22ea795b"
+  pct_blob="c000be3a6c38a959aa3d28737445eaa5762c53b0"
+  pct_sha256="6f165ad32ddcc3383cbb611cc3045c1a4bb28f16f83a85015fe202803de0161f"
+  vl_blob="75218f0549067bf1a1a037d401668abe3fcba648"
+  vl_sha256="5d5f7a76a4e03b258679792885c068e2974293679d7baea09c0b7d6de0c2d329"
+  license="MIT_after_BUSL_Change_Date_2023-01-27"
+  kernel="calculateAvailableBorrows+isolationCeiling+percentMul"
+  class="EXPERIMENTAL"
+}
