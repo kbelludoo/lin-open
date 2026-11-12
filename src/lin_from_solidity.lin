@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: expand 0.DeN (0.5e9 -> 500000000); fail-close Aave Yul rayMul/rayDiv/HALF_RAY as REJ_SOLIDITY_AAVE_RAYMUL. v2: emit LIN for eligible pure functions; expand 1eN; view without msg.sender is OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -42,6 +42,9 @@
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
+  ?(rg_count_lit(body, "HALF_RAY") > 0) { ^"REJ_SOLIDITY_AAVE_RAYMUL" };
+  ?(rg_count_lit(sig, "rayMul") > 0 && rg_count_lit(body, "assembly") > 0) { ^"REJ_SOLIDITY_AAVE_RAYMUL" };
+  ?(rg_count_lit(sig, "rayDiv") > 0 && rg_count_lit(body, "assembly") > 0) { ^"REJ_SOLIDITY_AAVE_RAYMUL" };
   ?(rg_count_lit(body, "assembly") > 0) { ^"REJ_SOLIDITY_INLINE_ASM" };
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
@@ -64,6 +67,10 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_ray = "function rayMul(uint256 a, uint256 b) internal pure returns (uint256 c)";
+  body_ray = "assembly { c := div(add(mul(a, b), HALF_RAY), RAY) }";
+  r4 = sol_reason(sig_ray, body_ray);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_AAVE_RAYMUL") == 0) { ^0 };
   ^1;
 }
 
@@ -90,6 +97,20 @@
       ?(i > 0 && is_ident(s.charCodeAt(i - 1)) == true) {
         out = out + s.charAt(i);
         i = i + 1;
+        continue;
+      };
+      ?(s.charCodeAt(i) == 48 && i + 3 < n && s.charCodeAt(i + 1) == 46 && s.charCodeAt(i + 2) >= 49 && s.charCodeAt(i + 2) <= 57 && (s.charCodeAt(i + 3) == 101 || s.charCodeAt(i + 3) == 69) && i + 4 < n && s.charCodeAt(i + 4) >= 48 && s.charCodeAt(i + 4) <= 57) {
+        en = i + 4;
+        while (en < n && s.charCodeAt(en) >= 48 && s.charCodeAt(en) <= 57) { en = en + 1 };
+        expn = sol_parse_uint(s, i + 4, en);
+        ?(expn == 0) { out = out + "0"; i = en; continue };
+        out = out + s.charAt(i + 2);
+        z = 0;
+        while (z + 1 < expn) {
+          out = out + "0";
+          z = z + 1;
+        };
+        i = en;
         continue;
       };
       st = i;
@@ -334,6 +355,13 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  half = sol_expand_exp("0.5e9");
+  ?(starts_lit(half, 0, "500000000") == 0) { ^0 };
+  ?(half.length != 9) { ^0 };
+  half4 = sol_expand_exp("0.5e4");
+  ?(starts_lit(half4, 0, "5000") == 0) { ^0 };
+  ?(half4.length != 4) { ^0 };
+  ?(rg_count_lit(sol_expand_exp("0.5e9"), ".") > 0) { ^0 };
   ^1;
 }
 

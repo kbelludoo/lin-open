@@ -1,0 +1,64 @@
+@RULEL:AAVE_RAYMUL_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-AAVE-RAYMUL-V1"
+@TITLE="Clone-lin of Aave V3 WadRayMath.rayMul/rayDiv with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-12"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-aave-raymul"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Aave V3 rayMul/rayDiv into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, RAY'=1e9, 128-bit product for (a*b+HALF)/RAY; Solidity uint256 / RAY=1e27 is NOT claimed"
+  commercial_hook="rayMul/rayDiv is the half-up fixed-point used by every Aave V3 liquidity index and variable rate; making Yul overflow checks explicit 128-bit muldiv is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/aave/aave-v3-core"
+  path="contracts/protocol/libraries/math/WadRayMath.sol"
+  license="MIT after BUSL-1.1 Change Date 2023-01-27"
+  commit="782f51917056a53a2c228701058a6c3fb233684a"
+  git_blob_sha="f61fe87f2f2748144cd4d113c848e649c41a4e5d"
+  file_sha256="fae5b995ec613cc213050c99ea6352c9c18ceebba106d03b1726cfa8f1f0124e"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_aave_raymul.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-aave-raymul"
+  transpiler_delta="src/lin_from_solidity.lin v3: 0.DeN expansion + REJ_SOLIDITY_AAVE_RAYMUL; src/lin_from_c.lin v2 REJ_C_INLINE_ASM/REJ_C_AAVE_RAYMUL; src/lin_from_rust.lin v2 REJ_RUST_INLINE_ASM/REJ_RUST_AAVE_RAYMUL"
+  improvement_1="Aave Yul rayMul is assembly; LIN is scalar 128-bit (a*b+HALF_RAY')/RAY' with explicit args"
+  improvement_2="naive i64 1e10*1e10 wraps to 7766279631452241920; 128-bit rayMul -> 100000000000"
+  improvement_3="half-up vs floor: rayMul(1,5e8)=1 vs 0; rayDiv(2,3)=666666667 vs 666666666"
+  improvement_4="quotient that does not fit i64 fail-closes to 0 (rayMul(4e18,3e18))"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/aave_raymul_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="make aave-raymul-proof"
+}
+
+.p{
+  harness="test/prove_aave_raymul_external.py"
+  evidence_json="examples/aave_raymul/aave_raymul_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-aave-raymul"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet RAY=1e27 / aToken parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production IRM or pool replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Aave, Uniswap, or the EVM"
+  not_claimed_6="wadMul/wadDiv/rayToWad (separate clone-lin repos)"
+  not_claimed_7="any TVL or dollar-savings figure"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
