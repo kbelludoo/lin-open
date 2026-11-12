@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: fail-close powUp / TokenOutGivenExactBpt / slice []"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,10 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "TokenOutGivenExactBpt") > 0) { ^"REJ_RUST_BPT_OUT" };
+  ?(rg_count_lit(body, "powUp") > 0) { ^"REJ_RUST_POWUP" };
+  ?(rg_count_lit(body, "pow_up") > 0) { ^"REJ_RUST_POWUP" };
+  ?(rg_count_lit(sig, "[]") > 0) { ^"REJ_RUST_SLICE" };
   ^"OK";
 }
 
@@ -66,6 +71,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_bpt = "fn calc_token_out_given_exact_bpt_in(x: u64) -> u64";
+  body_bpt = "let p = pow_up(x); p";
+  r3 = rs_reason(sig_bpt, body_bpt);
+  ?(starts_lit(r3, 0, "REJ_RUST_POWUP") == 0) { ^0 };
 
   ^1;
 }

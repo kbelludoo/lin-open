@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: fail-close TokenOutGivenExactBpt / powUp / LogExpMath / uint256[]; expand 0.XeN (0.7e18, 0.01e18, 0.3e18). v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,11 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(sig, "TokenOutGivenExactBpt") > 0) { ^"REJ_SOLIDITY_BPT_OUT" };
+  ?(rg_count_lit(body, "powUp") > 0) { ^"REJ_SOLIDITY_POWUP" };
+  ?(rg_count_lit(body, "LogExpMath") > 0) { ^"REJ_SOLIDITY_LOGEXP" };
+  ?(rg_count_lit(sig, "uint256[]") > 0) { ^"REJ_SOLIDITY_ARRAY" };
+  ?(rg_count_lit(body, "uint256[]") > 0) { ^"REJ_SOLIDITY_ARRAY" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +69,14 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_bpt = "function _calcTokenOutGivenExactBptIn(uint256 balance) internal pure returns (uint256)";
+  body_bpt = "return invariantRatio.powUp(FixedPoint.ONE);";
+  r4 = sol_reason(sig_bpt, body_bpt);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_BPT_OUT") == 0) { ^0 };
+  sig_arr = "function _calcBptInGivenExactTokensOut(uint256[] memory amountsOut) internal pure returns (uint256)";
+  body_arr = "return amountsOut.length;";
+  r5 = sol_reason(sig_arr, body_arr);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_ARRAY") == 0) { ^0 };
   ^1;
 }
 
@@ -85,7 +98,31 @@
   en = 0;
   expn = 0;
   z = 0;
+  j = 0;
+  k = 0;
+  t = 0;
+  flen = 0;
   while (i < n) {
+    ?(s.charCodeAt(i) == 48 && i + 1 < n && s.charCodeAt(i + 1) == 46 && (i == 0 || is_ident(s.charCodeAt(i - 1)) == false)) {
+      j = i + 2;
+      while (j < n && s.charCodeAt(j) >= 48 && s.charCodeAt(j) <= 57) { j = j + 1 };
+      ?(j > i + 2 && j < n && (s.charCodeAt(j) == 101 || s.charCodeAt(j) == 69) && j + 1 < n && s.charCodeAt(j + 1) >= 48 && s.charCodeAt(j + 1) <= 57) {
+        k = j + 1;
+        while (k < n && s.charCodeAt(k) >= 48 && s.charCodeAt(k) <= 57) { k = k + 1 };
+        expn = sol_parse_uint(s, j + 1, k);
+        flen = j - (i + 2);
+        ?(expn >= flen && flen > 0) {
+          t = i + 2;
+          while (t < j && s.charCodeAt(t) == 48) { t = t + 1 };
+          ?(t == j) { out = out + "0"; i = k; continue; };
+          while (t < j) { out = out + s.charAt(t); t = t + 1 };
+          z = 0;
+          while (z < expn - flen) { out = out + "0"; z = z + 1 };
+          i = k;
+          continue;
+        };
+      };
+    };
     ?(s.charCodeAt(i) >= 48 && s.charCodeAt(i) <= 57) {
       ?(i > 0 && is_ident(s.charCodeAt(i - 1)) == true) {
         out = out + s.charAt(i);
@@ -334,6 +371,10 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  d01 = sol_expand_exp("0.01e18");
+  ?(rg_count_lit(d01, "10000000000000000") == 0) { ^0 };
+  d7 = sol_expand_exp("0.7e18");
+  ?(rg_count_lit(d7, "700000000000000000") == 0) { ^0 };
   ^1;
 }
 
