@@ -1,0 +1,155 @@
+@LIN:L1c:0.2
+@MAKER_VAT_FLUX{
+  version=1
+  repo="makerdao/dss"
+  source="src/vat.sol flux/unsigned _add/_sub/wish"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_sky_vat_flux_gem_transfer"
+  note="Not mainnet uint256. Storage gem[ilk][usr] and wish(src,msg.sender) are arguments. Unsigned wad add/sub fail-closed. Src-only wish: dst cannot refuse incoming gem. No live (flux works after cage). No wards. Distinct from vat.move (dai rad) and vat.fork (signed dual CDP). Upstream AGPL is not vendored."
+}
+
+!mx_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!mx_live_required() -> int {
+  ^ 0;
+}
+
+!mx_auth_required() -> int {
+  ^ 0;
+}
+
+!mx_wish_required() -> int {
+  ^ 1;
+}
+
+!mx_dst_consent_required() -> int {
+  ^ 0;
+}
+
+!mx_u_sub_ok(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y < 0) { ^ 0; };
+  ?(mx_u_lt(x, y) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!mx_u_sub(x: int, y: int) -> int {
+  ?(mx_u_sub_ok(x, y) == 0) { ^ 0; };
+  ^ x - y;
+}
+
+!mx_u_add_ok(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y < 0) { ^ 0; };
+  s = x + y;
+  ?(s < 0) { ^ 0; };
+  ?(mx_u_lt(s, x) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!mx_u_add(x: int, y: int) -> int {
+  ?(mx_u_add_ok(x, y) == 0) { ^ 0; };
+  ^ x + y;
+}
+
+!mx_wish_ok(wish_src: int) -> int {
+  ?(wish_src != 1) { ^ 0; };
+  ^ 1;
+}
+
+!mx_flux_ok(src: int, dst: int, wad: int, wish_src: int) -> int {
+  ?(src < 0) { ^ 0; };
+  ?(dst < 0) { ^ 0; };
+  ?(wad < 0) { ^ 0; };
+  ?(mx_wish_ok(wish_src) == 0) { ^ 0; };
+  ?(mx_u_sub_ok(src, wad) == 0) { ^ 0; };
+  ?(mx_u_add_ok(dst, wad) == 0) { ^ 0; };
+  ^ 1;
+}
+
+!mx_new_src(src: int, dst: int, wad: int, wish_src: int) -> int {
+  ?(mx_flux_ok(src, dst, wad, wish_src) == 0) { ^ 0; };
+  ^ mx_u_sub(src, wad);
+}
+
+!mx_new_dst(src: int, dst: int, wad: int, wish_src: int) -> int {
+  ?(mx_flux_ok(src, dst, wad, wish_src) == 0) { ^ 0; };
+  ^ mx_u_add(dst, wad);
+}
+
+!mx_conserved(src: int, dst: int, wad: int, wish_src: int) -> int {
+  ?(mx_flux_ok(src, dst, wad, wish_src) == 0) { ^ 0; };
+  ns = mx_u_sub(src, wad);
+  nd = mx_u_add(dst, wad);
+  ?(mx_u_add(ns, nd) != mx_u_add(src, dst)) { ^ 0; };
+  ^ 1;
+}
+
+!mx_moved(src: int, dst: int, wad: int, wish_src: int) -> int {
+  ?(mx_flux_ok(src, dst, wad, wish_src) == 0) { ^ 0; };
+  ^ wad;
+}
+
+!mx_naive_i64_add(a: int, b: int) -> int {
+  ^ a + b;
+}
+
+!mx_test_suite() -> int {
+  e9 = 1000000000;
+  e9_3 = 3000000000;
+  e9_4 = 4000000000;
+  e9_5 = 5000000000;
+  e9_8 = 8000000000;
+  wrap_a = 7000000000000000000;
+  wrap_b = 3000000000000000000;
+  ?(mx_live_required() != 0) { ^ -1; };
+  ?(mx_auth_required() != 0) { ^ -2; };
+  ?(mx_wish_required() != 1) { ^ -3; };
+  ?(mx_dst_consent_required() != 0) { ^ -4; };
+  ?(mx_flux_ok(e9_5, e9_3, e9, 1) != 1) { ^ -5; };
+  ?(mx_new_src(e9_5, e9_3, e9, 1) != e9_4) { ^ -6; };
+  ?(mx_new_dst(e9_5, e9_3, e9, 1) != e9_4) { ^ -7; };
+  ?(mx_conserved(e9_5, e9_3, e9, 1) != 1) { ^ -8; };
+  ?(mx_moved(e9_5, e9_3, e9, 1) != e9) { ^ -9; };
+  ?(mx_flux_ok(e9_5, e9_3, e9, 0) != 0) { ^ -10; };
+  ?(mx_flux_ok(e9_5, e9_3, 6000000000, 1) != 0) { ^ -11; };
+  ?(mx_flux_ok(wrap_b, wrap_a, wrap_b, 1) != 0) { ^ -12; };
+  ?(mx_flux_ok(e9_5, e9_3, 0, 1) != 1) { ^ -13; };
+  ?(mx_new_src(e9_5, e9_3, 0, 1) != e9_5) { ^ -14; };
+  ?(mx_flux_ok(e9_5, e9_3, e9_5, 1) != 1) { ^ -15; };
+  ?(mx_new_src(e9_5, e9_3, e9_5, 1) != 0) { ^ -16; };
+  ?(mx_new_dst(e9_5, e9_3, e9_5, 1) != e9_8) { ^ -17; };
+  ?(mx_u_add(wrap_a, wrap_b) != 0) { ^ -18; };
+  ?(mx_naive_i64_add(wrap_a, wrap_b) != 0 - 8446744073709551616) { ^ -19; };
+  ?(mx_u_sub(e9_3, e9) != 2000000000) { ^ -20; };
+  ?(mx_u_add(2000000000, e9) != e9_3) { ^ -21; };
+  ^ 1;
+}
+
+=ex{
+  mx_u_lt,
+  mx_live_required,
+  mx_auth_required,
+  mx_wish_required,
+  mx_dst_consent_required,
+  mx_u_sub_ok,
+  mx_u_sub,
+  mx_u_add_ok,
+  mx_u_add,
+  mx_wish_ok,
+  mx_flux_ok,
+  mx_new_src,
+  mx_new_dst,
+  mx_conserved,
+  mx_moved,
+  mx_naive_i64_add,
+  mx_test_suite
+}

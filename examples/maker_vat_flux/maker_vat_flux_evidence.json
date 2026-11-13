@@ -1,0 +1,160 @@
+{
+  "schema": "LIN_MAKER_VAT_FLUX_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 wrap-detect add and __int128 add agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss vat.sol matches hash pin",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 blob=ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+    },
+    {
+      "id": "UPSTREAM-FLUX",
+      "status": "PASS",
+      "description": "pinned vat.sol contains flux, unsigned gem _add/_sub, src-only wish (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/vat.sol",
+      "note": "ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_vat_flux.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "mx_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "15/15 vectors: C11 wrap-detect == __int128 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "15/15 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "SAFE_XFER 1e9 gem src\u2192dst ok; no-wish=0; underflow=0; dst overflow=0; zero wad ok; full drain; no live/auth; src-only wish",
+      "note": "safe=1 src=4e9 dst=4e9 conserved=1 moved=1e9 nowish=0 under=0 overflow=0 zero=1 full=0/8e9 live=0 auth=0 wish=1 dst_consent=0"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured gem transfer (not TVL): 1e9 unlocked collateral moved src\u2192dst with src-only wish; dst cannot refuse; conserved",
+      "note": "moved_wad=1000000000 leftover_src=4000000000 leftover_dst=4000000000 dst_consent_required=0"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e18+3e18) wraps; checked u_add fail-closes to 0",
+      "note": "i64_add_wrap=-8446744073709551616 u_add_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes src/dst gem balances, wad and src wish (no hidden gem[ilk]/msg.sender)",
+      "note": ""
+    },
+    {
+      "id": "SRC-ONLY-WISH",
+      "status": "PASS",
+      "description": "src-only wish is explicit; dst cannot refuse incoming gem (unlike vat.fork dual wish)",
+      "note": ""
+    },
+    {
+      "id": "NO-LIVE",
+      "status": "PASS",
+      "description": "flux does not require vat.live (works after cage); LIN measures live_required=0",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close vat.flux / gem[ / wish(",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/vat.sol",
+    "git_blob_sha": "ff90bbed5b36e54318bd5461cbf32e4167df2b28",
+    "file_sha256": "9016fd94f0f1b014abf184edab86a3f5843042b17e3734407e0f0fabb920f49f",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_vat_flux.lin",
+  "c11_oracle": "test/oracles/maker_vat_flux_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "safe_xfer_ok": 1,
+    "new_src": 4000000000,
+    "new_dst": 4000000000,
+    "conserved": 1,
+    "moved_wad": 1000000000,
+    "no_wish": 0,
+    "underflow": 0,
+    "overflow": 0,
+    "zero_wad": 1,
+    "full_src": 0,
+    "full_dst": 8000000000,
+    "live_required": 0,
+    "auth_required": 0,
+    "wish_required": 1,
+    "dst_consent_required": 0
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-vat-flux",
+  "clone_lin_head": "6232518354a908a8e95b6d4223efd030fbf495bf",
+  "clone_lin_lin_commit": "6232518354a908a8e95b6d4223efd030fbf495bf",
+  "clone_lin_lin_blob": "eda737a31a3096135ac056464bb9626641eb39e6",
+  "clone_lin_c_blob": "e8eb4b5cf2cca2e22b26bf1be9dc885e14d031b6"
+}

@@ -4,7 +4,7 @@
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
   status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit); v2.3: fail-close function flux / gem[ / wish( so Maker gem-transfer storage cannot be silently emitted"
 }
 
 !sol_is_kw(nm: string): int {
@@ -38,6 +38,9 @@
 }
 
 !sol_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "function flux") > 0) { ^"REJ_SOLIDITY_VAT_FLUX" };
+  ?(rg_count_lit(body, "gem[") > 0) { ^"REJ_SOLIDITY_GEM" };
+  ?(rg_count_lit(body, "wish(") > 0) { ^"REJ_SOLIDITY_WISH" };
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
@@ -64,6 +67,16 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  ^1;
+}
+
+!sol_flux_rej_gate(): int {
+  r = sol_reason("function flux(", "live");
+  ?(starts_lit(r, 0, "REJ_SOLIDITY_VAT_FLUX") == 0) { ^0 };
+  r2 = sol_reason("function x()", "gem[");
+  ?(starts_lit(r2, 0, "REJ_SOLIDITY_GEM") == 0) { ^0 };
+  r3 = sol_reason("function x()", "wish(");
+  ?(starts_lit(r3, 0, "REJ_SOLIDITY_WISH") == 0) { ^0 };
   ^1;
 }
 
@@ -337,4 +350,4 @@
   ^1;
 }
 
-=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
+=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_flux_rej_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
