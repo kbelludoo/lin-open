@@ -1,0 +1,254 @@
+@LIN:L1c:0.2
+@MAKER_ABACUS_EXP{
+  version=1
+  repo="makerdao/dss"
+  source="src/abaci.sol ExponentialDecrease.price"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  abaci_sol_sha256="a4c3dc0368d66a5bf84e586f0cf76e2e80fb8b336c00348a97cc0d4ddcb016ca"
+  abaci_sol_blob="6cbd666267fc9f534ae52a45926eec5aa44b3bc5"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_continuous_exponential_decrease_price"
+  note="Not mainnet uint256/ray=1e27. cut/wards/file/block.timestamp stripped: cut, top, dur are arguments. price=rmul(top, rpow(cut, dur, RAY')); no step (n=dur, not dur/step). cut>RAY' fail-closes to 0. Distinct from LinearDecrease (tau) and from StairstepExponentialDecrease (n=dur/step). Assembly rpow is rejected by lin_from_solidity, not emitted. Upstream AGPL is not vendored."
+}
+
+!ed_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!ed_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(ed_u_lt(s, a));
+}
+
+!ed_mask32() -> int {
+  ^ 4294967295;
+}
+
+!ed_ray() -> int {
+  ^ 1000000000;
+}
+
+!ed_muldiv_part(a: int, b: int, d: int, want: int) -> int {
+  ?(d <= 0) { ^ 0; };
+  m32 = ed_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = ed_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = ed_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  do_round = 0;
+  ?(want == 3) { do_round = 1; };
+  ?(want == 4) { do_round = 1; };
+  ?(do_round == 1) {
+    half = d / 2;
+    nlo = lo + half;
+    add_c = ed_u_lt(nlo, lo);
+    lo = nlo;
+    nhi = hi + add_c;
+    ?(add_c == 1) {
+      ?(ed_u_lt(nhi, hi) == 1) { ^ 0; };
+    };
+    hi = nhi;
+  };
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(ed_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = ed_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want == 1) { ^ r_lo; };
+  ?(want == 2) { ^ ov; };
+  ?(want == 4) { ^ ov; };
+  ?(ov == 1) { ^ 0; };
+  ?( _lia_ushr(q, 63) == 1 ) { ^ 0; };
+  ^ q;
+}
+
+!ed_muldiv(a: int, b: int, d: int) -> int {
+  ^ ed_muldiv_part(a, b, d, 0);
+}
+
+!ed_muldiv_round(a: int, b: int, d: int) -> int {
+  ^ ed_muldiv_part(a, b, d, 3);
+}
+
+!ed_rpow_loop(x: int, n: int, z: int, base: int) -> int {
+  while (n > 0) {
+    ?(ed_muldiv_part(x, x, base, 2) == 1) { ^ 0; };
+    x = ed_muldiv_round(x, x, base);
+    odd = n - (n / 2) * 2;
+    ?(odd == 1) {
+      z = ed_muldiv_round(z, x, base);
+    };
+    n = n / 2;
+  };
+  ^ z;
+}
+
+!ed_rpow(x: int, n: int, base: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(n < 0) { ^ 0; };
+  ?(base <= 0) { ^ 0; };
+  ?(x == 0) {
+    ?(n == 0) { ^ base; };
+    ^ 0;
+  };
+  z = x;
+  odd0 = n - (n / 2) * 2;
+  ?(odd0 == 0) { z = base; };
+  ^ ed_rpow_loop(x, n / 2, z, base);
+}
+
+!ed_rmul(x: int, y: int) -> int {
+  ^ ed_muldiv(x, y, ed_ray());
+}
+
+!ed_ok(top: int, dur: int, cut: int) -> int {
+  ?(top < 0) { ^ 0; };
+  ?(dur < 0) { ^ 0; };
+  ?(cut < 0) { ^ 0; };
+  ?(ed_u_lt(ed_ray(), cut) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!ed_price(top: int, dur: int, cut: int) -> int {
+  ?(ed_ok(top, dur, cut) == 0) { ^ 0; };
+  p = ed_rpow(cut, dur, ed_ray());
+  ^ ed_rmul(top, p);
+}
+
+!ed_auth_required() -> int {
+  ^ 0;
+}
+
+!ed_uses_tau() -> int {
+  ^ 0;
+}
+
+!ed_uses_rpow() -> int {
+  ^ 1;
+}
+
+!ed_uses_step() -> int {
+  ^ 0;
+}
+
+!ed_uses_block_time() -> int {
+  ^ 0;
+}
+
+!ed_is_linear_kernel() -> int {
+  ^ 0;
+}
+
+!ed_is_stairstep() -> int {
+  ^ 0;
+}
+
+!ed_is_continuous_exp() -> int {
+  ^ 1;
+}
+
+!ed_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!ed_test_suite() -> int {
+  r = ed_ray();
+  ?(ed_auth_required() != 0) { ^ -1; };
+  ?(ed_uses_tau() != 0) { ^ -2; };
+  ?(ed_uses_rpow() != 1) { ^ -3; };
+  ?(ed_uses_step() != 0) { ^ -4; };
+  ?(ed_uses_block_time() != 0) { ^ -5; };
+  ?(ed_is_linear_kernel() != 0) { ^ -6; };
+  ?(ed_is_stairstep() != 0) { ^ -7; };
+  ?(ed_is_continuous_exp() != 1) { ^ -8; };
+  ?(ed_ray() != 1000000000) { ^ -9; };
+  ?(ed_rpow(0, 0, r) != 1000000000) { ^ -10; };
+  ?(ed_rpow(0, 5, r) != 0) { ^ -11; };
+  ?(ed_rpow(3, 2, 2) != 5) { ^ -12; };
+  ?(ed_rpow(990000000, 1, r) != 990000000) { ^ -13; };
+  ?(ed_rpow(990000000, 2, r) != 980100000) { ^ -14; };
+  ?(ed_rpow(990000000, 3, r) != 970299000) { ^ -15; };
+  ?(ed_rpow(r, 11, r) != 1000000000) { ^ -16; };
+  ?(ed_price(1000000000, 0, 990000000) != 1000000000) { ^ -17; };
+  ?(ed_price(1000000000, 1, 990000000) != 990000000) { ^ -18; };
+  ?(ed_price(1000000000, 2, 990000000) != 980100000) { ^ -19; };
+  ?(ed_price(1000000000, 3, 990000000) != 970299000) { ^ -20; };
+  ?(ed_price(1000000000, 1000, r) != 1000000000) { ^ -21; };
+  ?(ed_price(0, 1, 990000000) != 0) { ^ -22; };
+  ?(ed_price(1000000000, 1, 1000000001) != 0) { ^ -23; };
+  ?(ed_price(123456789, 1, 990000000) != 122222221) { ^ -24; };
+  ?(ed_price(1000000000, 89, 990000000) != 408820172) { ^ -25; };
+  ?(ed_ok(1000000000, 0, 990000000) != 1) { ^ -26; };
+  ?(ed_ok(1000000000, 0, 1000000001) != 0) { ^ -27; };
+  ?(ed_muldiv(100, 200, 50) != 400) { ^ -28; };
+  ?(ed_naive_i64_mul(10000000000, 1000000000) != -8446744073709551616) { ^ -29; };
+  ?(ed_muldiv(1000000000000000000, 1000000000000000000, 1) != 0) { ^ -30; };
+  ?(ed_muldiv(10000000000, 1000000000, 1) != 0) { ^ -31; };
+  ^ 1;
+}
+
+=ex{
+  ed_u_lt,
+  ed_u_add_carry,
+  ed_mask32,
+  ed_ray,
+  ed_muldiv_part,
+  ed_muldiv,
+  ed_muldiv_round,
+  ed_rpow_loop,
+  ed_rpow,
+  ed_rmul,
+  ed_ok,
+  ed_price,
+  ed_auth_required,
+  ed_uses_tau,
+  ed_uses_rpow,
+  ed_uses_step,
+  ed_uses_block_time,
+  ed_is_linear_kernel,
+  ed_is_stairstep,
+  ed_is_continuous_exp,
+  ed_naive_i64_mul,
+  ed_test_suite
+}
