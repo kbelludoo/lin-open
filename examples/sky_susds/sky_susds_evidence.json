@@ -1,0 +1,198 @@
+{
+  "schema": "LIN_SKY_SUSDS_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 wrap-detect shares*chi/assets*RAY and __int128 mul agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned sky-ecosystem/sdai SUsds.sol matches hash pin",
+      "note": "commit=dfc7f41cb7599afcb0f0eb1ddaadbf9dd4015dce blob=efe937675bbbbc7f93bde453fd5648fa885655ab"
+    },
+    {
+      "id": "UPSTREAM-CHI",
+      "status": "PASS",
+      "description": "pinned SUsds.sol contains convertToAssets/Shares, chi, _rpow, _divup (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/SUsds.sol",
+      "note": "efe937675bbbbc7f93bde453fd5648fa885655ab"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_sky_susds.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "su_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "17/17 vectors: C11 wrap-detect == __int128 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "17/17 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "PAR 500; ACCRUED 1000 shares@chi1100=1100 assets; floor 1/0; ceil mint=2; roundtrip loss=1; chi0=0",
+      "note": "acc_assets=1100 acc_shares=1000 mint=2 withdraw=1 loss=1 auth=0 rpow=0 oz=0"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured sUSDS conversion (not TVL): 1000 shares at chi=1100 redeem 1100 assets; ceil mint of 1 share costs 2 (floor pays 1)",
+      "note": "shares=1000 chi=1100 assets=1100 unit=reduced_ray preview_mint_1=2"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e9*3e9) wraps; checked shares*chi fail-closes to 0",
+      "note": "i64_mul_wrap=2553255926290448384 u_mul_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-CHI",
+      "status": "PASS",
+      "description": "LIN clone takes shares/assets/chi as arguments (no hidden rho/ssr storage)",
+      "note": ""
+    },
+    {
+      "id": "NO-RPOW",
+      "status": "PASS",
+      "description": "clone does not run _rpow(ssr, now-rho); chi is already-accrued",
+      "note": ""
+    },
+    {
+      "id": "NO-AUTH",
+      "status": "PASS",
+      "description": "convertTo* are public view, not wards auth; LIN measures auth_required=0",
+      "note": ""
+    },
+    {
+      "id": "NOT-OZ",
+      "status": "PASS",
+      "description": "clone uses chi, not OpenZeppelin ERC-4626 virtual shares offset",
+      "note": ""
+    },
+    {
+      "id": "NOT-DRIP",
+      "status": "PASS",
+      "description": "clone is convertToAssets/Shares, not pot.drip / sUSDS.drip rpow",
+      "note": ""
+    },
+    {
+      "id": "FLOOR-VS-CEIL",
+      "status": "PASS",
+      "description": "previewMint ceil vs convertToAssets floor is explicit (1 share: 2 vs 1)",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close convertToAssets / chi / _rpow",
+      "note": ""
+    },
+    {
+      "id": "TR-RPOW",
+      "status": "PASS",
+      "description": "Solidity transpiler fail-closes _rpow assembly savings-rate exponentiation",
+      "note": ""
+    },
+    {
+      "id": "TR-WIDE",
+      "status": "PASS",
+      "description": "C/Rust transpilers fail-close __int128 / i128 (oracle width, not LIN emit)",
+      "note": ""
+    },
+    {
+      "id": "C-KERNEL",
+      "status": "PASS",
+      "description": "pointer-free C kernel (sky_susds_kernel.c) is eligible for lin_from_c; oracle __int128 is not",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/sky-ecosystem/sdai",
+    "commit": "dfc7f41cb7599afcb0f0eb1ddaadbf9dd4015dce",
+    "path": "src/SUsds.sol",
+    "branch": "susds",
+    "git_blob_sha": "efe937675bbbbc7f93bde453fd5648fa885655ab",
+    "file_sha256": "9fe0c713751142e75a1da60ad6c0127d5ad01cb6d24289183ac48b202f3c5d69",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_sky_susds.lin",
+  "c11_oracle": "test/oracles/sky_susds_c11.c",
+  "c_kernel_for_transpiler": "test/oracles/sky_susds_kernel.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "par_assets": 500,
+    "accrued_assets": 1100,
+    "accrued_shares": 1000,
+    "floor_assets": 1,
+    "floor_shares": 0,
+    "preview_mint": 2,
+    "preview_withdraw": 1,
+    "roundtrip_loss": 1,
+    "chi0": 0,
+    "auth_required": 0,
+    "uses_chi": 1,
+    "uses_rpow": 0,
+    "uses_oz_offset": 0,
+    "uses_block_time": 0,
+    "is_drip_kernel": 0
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-sky-susds",
+  "clone_lin_head": "ad3ec95f088ebe29e08449c35a35bca10571a17e",
+  "clone_lin_lin_commit": "ad3ec95f088ebe29e08449c35a35bca10571a17e",
+  "clone_lin_lin_blob": "fe4712231060246a6ae34dbd68e40577b9a2459d",
+  "clone_lin_c_blob": "d1daff37fc748c8df294f32e08979194582ee03f"
+}

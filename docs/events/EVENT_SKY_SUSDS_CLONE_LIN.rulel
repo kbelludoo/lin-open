@@ -1,0 +1,66 @@
+@RULEL:SKY_SUSDS_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-SKY-SUSDS-CHI"
+@TITLE="Clone-lin of Sky sUSDS convertToAssets/convertToShares with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-sky-susds"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Sky sUSDS ERC-4626 convertToAssets/convertToShares (chi rate accumulator; floor vs _divup ceil) into deterministic LIN, compile in memory with C11 compiler 0, publish LIN copy in clone-lin-sky-susds and only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64-scale shares/assets/chi; Solidity uint256 ray (1e27) is NOT claimed"
+  commercial_hook="sUSDS is Sky Savings Rate (ERC-4626) over USDS: convertToAssets=shares*chi/RAY, convertToShares=assets*RAY/chi, previewMint=_divup(shares*chi,RAY). Making chi an explicit argument (no hidden rho/ssr/_rpow/block.timestamp) and fail-closing i64 mul wrap plus floor-vs-ceil dust is an audit improvement, not a TVL claim. Distinct from OZ virtual-offset ERC-4626 and from pot.drip rpow."
+}
+
+.u{
+  repo="https://github.com/sky-ecosystem/sdai"
+  path="src/SUsds.sol"
+  branch="susds"
+  license="AGPL-3.0-or-later"
+  commit="dfc7f41cb7599afcb0f0eb1ddaadbf9dd4015dce"
+  git_blob_sha="efe937675bbbbc7f93bde453fd5648fa885655ab"
+  file_sha256="9fe0c713751142e75a1da60ad6c0127d5ad01cb6d24289183ac48b202f3c5d69"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_sky_susds.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-sky-susds"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_SUSDS_CHI + REJ_SOLIDITY_RPOW; src/lin_from_c.lin v2: REJ_C_WIDE_INT + REJ_C_SUSDS_CHI; src/lin_from_rust.lin v2: REJ_RUST_SUSDS_CHI + REJ_RUST_WIDE_INT"
+  improvement_1="chi/rho/ssr/_rpow/block.timestamp are arguments-or-absent; convert uses explicit chi (already-accrued), not drip"
+  improvement_2="shares*chi and assets*RAY fail-close on i64 overflow instead of wrapping; 7e9*3e9 naive i64 wraps, checked mul returns 0"
+  improvement_3="floor convert vs ceil previewMint/previewWithdraw (_divup) is explicit; 1 share at chi=1100 floors to 1 asset and ceils to 2"
+  improvement_4="_rpow assembly / UUPS / vat.suck / block.timestamp are not LIN types; transpiler fail-closes them"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/sky_susds_c11.c (gcc -O2 -std=c11, wrap-detect XOR __int128)"
+  kernel="test/oracles/sky_susds_kernel.c (pointer-free; eligible for lin_from_c)"
+  gate="test/verify_sky_susds.sh"
+}
+
+.p{
+  harness="test/prove_sky_susds_external.py"
+  evidence_json="examples/sky_susds/sky_susds_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-sky-susds"
+  named_goldens="PAR 500@chi1000=500; ACCRUED 1000 shares @chi1100 = 1100 assets; floor 1 share=1 asset / 1 asset=0 shares; ceil mint 1 share=2 assets; roundtrip 100 assets loses 1; chi=0 fail-closes; 7e9*3e9=0"
+}
+
+.n{
+  not_claimed_1="full uint256 ray / mainnet sUSDS convertToAssets / drip rpow parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production sUSDS replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Sky, Maker, sUSDS, or the EVM"
+  not_claimed_6="TVL or dollar savings"
+}
+
+.v{
+  method="PINNED_BYTES && C11_WRAP_EQ_I128 && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
