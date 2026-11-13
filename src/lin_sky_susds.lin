@@ -1,0 +1,175 @@
+@LIN:L1c:0.2
+@SKY_SUSDS{
+  version=1
+  repo="sky-ecosystem/sdai"
+  source="src/SUsds.sol convertToAssets/convertToShares/_divup"
+  license="AGPL-3.0-or-later"
+  commit="dfc7f41cb7599afcb0f0eb1ddaadbf9dd4015dce"
+  susds_sol_sha256="9fe0c713751142e75a1da60ad6c0127d5ad01cb6d24289183ac48b202f3c5d69"
+  susds_sol_blob="efe937675bbbbc7f93bde453fd5648fa885655ab"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_sky_susds_erc4626_chi_convert"
+  note="Not mainnet uint256/ray. chi/rho/ssr/_rpow/block.timestamp/UUPS/vat.suck are stripped: chi is an argument (already-accrued). convertToAssets=shares*chi/RAY floor; convertToShares=assets*RAY/chi floor; previewMint=_divup(shares*chi,RAY) ceil. Distinct from OZ ERC-4626 virtual offset and from pot.drip rpow. Upstream AGPL is not vendored."
+}
+
+!su_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!su_u_mul_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(a == 0) { ^ 1; };
+  ?(b == 0) { ^ 1; };
+  p = a * b;
+  ?(p < 0) { ^ 0; };
+  ?(p / a != b) { ^ 0; };
+  ^ 1;
+}
+
+!su_u_mul(a: int, b: int) -> int {
+  ?(su_u_mul_ok(a, b) == 0) { ^ 0; };
+  ^ a * b;
+}
+
+!su_ray() -> int {
+  ^ 1000;
+}
+
+!su_auth_required() -> int {
+  ^ 0;
+}
+
+!su_uses_chi() -> int {
+  ^ 1;
+}
+
+!su_uses_rpow() -> int {
+  ^ 0;
+}
+
+!su_uses_oz_offset() -> int {
+  ^ 0;
+}
+
+!su_uses_block_time() -> int {
+  ^ 0;
+}
+
+!su_is_drip_kernel() -> int {
+  ^ 0;
+}
+
+!su_divup(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y < 1) { ^ 0; };
+  ?(x == 0) { ^ 0; };
+  ^ ((x - 1) / y) + 1;
+}
+
+!su_to_assets(shares: int, chi: int) -> int {
+  ?(shares < 0) { ^ 0; };
+  ?(chi < 1) { ^ 0; };
+  ray = su_ray();
+  ?(su_u_mul_ok(shares, chi) == 0) { ^ 0; };
+  ^ (shares * chi) / ray;
+}
+
+!su_to_shares(assets: int, chi: int) -> int {
+  ?(assets < 0) { ^ 0; };
+  ?(chi < 1) { ^ 0; };
+  ray = su_ray();
+  ?(su_u_mul_ok(assets, ray) == 0) { ^ 0; };
+  ^ (assets * ray) / chi;
+}
+
+!su_preview_mint(shares: int, chi: int) -> int {
+  ?(shares < 0) { ^ 0; };
+  ?(chi < 1) { ^ 0; };
+  ?(su_u_mul_ok(shares, chi) == 0) { ^ 0; };
+  ^ su_divup(shares * chi, su_ray());
+}
+
+!su_preview_withdraw(assets: int, chi: int) -> int {
+  ?(assets < 0) { ^ 0; };
+  ?(chi < 1) { ^ 0; };
+  ray = su_ray();
+  ?(su_u_mul_ok(assets, ray) == 0) { ^ 0; };
+  ^ su_divup(assets * ray, chi);
+}
+
+!su_ok(shares: int, chi: int) -> int {
+  ?(shares < 0) { ^ 0; };
+  ?(chi < 1) { ^ 0; };
+  ?(su_u_mul_ok(shares, chi) == 0) { ^ 0; };
+  ^ 1;
+}
+
+!su_roundtrip_loss(assets: int, chi: int) -> int {
+  sh = su_to_shares(assets, chi);
+  back = su_to_assets(sh, chi);
+  ?(su_u_lt(assets, back) == 1) { ^ 0; };
+  ^ assets - back;
+}
+
+!su_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!su_test_suite() -> int {
+  ?(su_auth_required() != 0) { ^ -1; };
+  ?(su_uses_chi() != 1) { ^ -2; };
+  ?(su_uses_rpow() != 0) { ^ -3; };
+  ?(su_uses_oz_offset() != 0) { ^ -4; };
+  ?(su_uses_block_time() != 0) { ^ -5; };
+  ?(su_is_drip_kernel() != 0) { ^ -6; };
+  ?(su_ray() != 1000) { ^ -7; };
+  ?(su_to_assets(500, 1000) != 500) { ^ -8; };
+  ?(su_to_shares(500, 1000) != 500) { ^ -9; };
+  ?(su_to_assets(1000, 1100) != 1100) { ^ -10; };
+  ?(su_to_shares(1100, 1100) != 1000) { ^ -11; };
+  ?(su_to_assets(1, 1100) != 1) { ^ -12; };
+  ?(su_to_shares(1, 1100) != 0) { ^ -13; };
+  ?(su_preview_mint(1, 1100) != 2) { ^ -14; };
+  ?(su_preview_withdraw(1, 1100) != 1) { ^ -15; };
+  ?(su_roundtrip_loss(100, 1100) != 1) { ^ -16; };
+  ?(su_ok(1000, 1100) != 1) { ^ -17; };
+  ?(su_ok(1, 0) != 0) { ^ -18; };
+  ?(su_to_assets(1000, 0) != 0) { ^ -19; };
+  ?(su_to_shares(1000, 0) != 0) { ^ -20; };
+  ?(su_divup(0, 1000) != 0) { ^ -21; };
+  ?(su_divup(1100, 1000) != 2) { ^ -22; };
+  wrap_a = 7000000000;
+  wrap_b = 3000000000;
+  ?(su_u_mul_ok(wrap_a, wrap_b) != 0) { ^ -23; };
+  ?(su_to_assets(wrap_a, wrap_b) != 0) { ^ -24; };
+  ?(su_naive_i64_mul(wrap_a, wrap_b) != 2553255926290448384) { ^ -25; };
+  ?(su_u_mul(1000, 1100) != 1100000) { ^ -26; };
+  ^ 1;
+}
+
+=ex{
+  su_u_lt,
+  su_u_mul_ok,
+  su_u_mul,
+  su_ray,
+  su_auth_required,
+  su_uses_chi,
+  su_uses_rpow,
+  su_uses_oz_offset,
+  su_uses_block_time,
+  su_is_drip_kernel,
+  su_divup,
+  su_to_assets,
+  su_to_shares,
+  su_preview_mint,
+  su_preview_withdraw,
+  su_ok,
+  su_roundtrip_loss,
+  su_naive_i64_mul,
+  su_test_suite
+}
