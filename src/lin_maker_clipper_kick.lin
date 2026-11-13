@@ -1,0 +1,222 @@
+@LIN:L1c:0.2
+@MAKER_CLIPPER_KICK{
+  version=1
+  repo="makerdao/dss"
+  source="src/clip.sol kick/rmul/rdiv/wmul/add/getFeedPrice/chip/tip"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  clip_sol_sha256="1ea897fc0e8e0964a2e5098716d86fdcd93d11e0b2e4f65998eb1b7650d167de"
+  clip_sol_blob="c43d8fff46a4ad225d1fa031b4b1de618345cba7"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_sky_clipper_kick_auction_start_chip_tip"
+  note="Not mainnet uint256/rad/wad/ray. sales[], lock, vat.suck, OSM peek, block.timestamp and bytes32 ilk are stripped: tab/lot/usr/kicks/val/par/buf/tip/chip/auth/stopped are arguments. top=rmul(rdiv(mul(val,BLN),par),buf); coin=add(tip,wmul(tab,chip)). Mul/add fail-close instead of wrapping. Distinct from clipper.take and dog.bark. Upstream AGPL is not vendored."
+}
+
+!ck_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!ck_u_mul_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(a == 0) { ^ 1; };
+  ?(b == 0) { ^ 1; };
+  p = a * b;
+  ?(p < 0) { ^ 0; };
+  ?(p / a != b) { ^ 0; };
+  ^ 1;
+}
+
+!ck_u_mul(a: int, b: int) -> int {
+  ?(ck_u_mul_ok(a, b) == 0) { ^ 0; };
+  ^ a * b;
+}
+
+!ck_u_add_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  s = a + b;
+  ?(s < 0) { ^ 0; };
+  ?(ck_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!ck_wad() -> int {
+  ^ 1000;
+}
+
+!ck_ray() -> int {
+  ^ 1000000;
+}
+
+!ck_bln() -> int {
+  ^ 1000;
+}
+
+!ck_auth_required() -> int {
+  ^ 1;
+}
+
+!ck_chip_tip_in_kick() -> int {
+  ^ 1;
+}
+
+!ck_breaker_kick_level() -> int {
+  ^ 1;
+}
+
+!ck_uses_suck() -> int {
+  ^ 1;
+}
+
+!ck_uses_abacus() -> int {
+  ^ 0;
+}
+
+!ck_is_take_kernel() -> int {
+  ^ 0;
+}
+
+!ck_is_bark_kernel() -> int {
+  ^ 0;
+}
+
+!ck_eval(tab: int, lot: int, usr: int, kicks: int, val: int, par: int, buf: int, tip: int, chip: int, auth: int, stopped: int, want: int) -> int {
+  ?(auth != 1) { ^ 0; };
+  ?(ck_u_lt(stopped, 1) == 0) { ^ 0; };
+  ?(tab < 1) { ^ 0; };
+  ?(lot < 1) { ^ 0; };
+  ?(usr != 1) { ^ 0; };
+  ?(kicks < 0) { ^ 0; };
+  ?(ck_u_add_ok(kicks, 1) == 0) { ^ 0; };
+  id = kicks + 1;
+  ?(id < 1) { ^ 0; };
+  ?(val < 0) { ^ 0; };
+  ?(par < 1) { ^ 0; };
+  ?(buf < 0) { ^ 0; };
+  ?(tip < 0) { ^ 0; };
+  ?(chip < 0) { ^ 0; };
+  ?(ck_u_mul_ok(val, ck_bln()) == 0) { ^ 0; };
+  prod1 = val * ck_bln();
+  ?(ck_u_mul_ok(prod1, ck_ray()) == 0) { ^ 0; };
+  feed = (prod1 * ck_ray()) / par;
+  ?(ck_u_mul_ok(feed, buf) == 0) { ^ 0; };
+  top = (feed * buf) / ck_ray();
+  ?(top < 1) { ^ 0; };
+  coin = 0;
+  sucks = 0;
+  go = 0;
+  ?(ck_u_lt(0, tip) == 1) { go = 1; };
+  ?(ck_u_lt(0, chip) == 1) { go = 1; };
+  ?(go == 1) {
+    ?(ck_u_mul_ok(tab, chip) == 0) { ^ 0; };
+    w = (tab * chip) / ck_wad();
+    ?(ck_u_add_ok(tip, w) == 0) { ^ 0; };
+    coin = tip + w;
+    sucks = 1;
+  };
+  ?(want == 0) { ^ 1; };
+  ?(want == 1) { ^ id; };
+  ?(want == 2) { ^ top; };
+  ?(want == 3) { ^ coin; };
+  ?(want == 4) { ^ sucks; };
+  ?(want == 5) { ^ feed; };
+  ^ 0;
+}
+
+!ck_kick_ok(tab: int, lot: int, usr: int, kicks: int, val: int, par: int, buf: int, tip: int, chip: int, auth: int, stopped: int) -> int {
+  ^ ck_eval(tab, lot, usr, kicks, val, par, buf, tip, chip, auth, stopped, 0);
+}
+
+!ck_id(tab: int, lot: int, usr: int, kicks: int, val: int, par: int, buf: int, tip: int, chip: int, auth: int, stopped: int) -> int {
+  ^ ck_eval(tab, lot, usr, kicks, val, par, buf, tip, chip, auth, stopped, 1);
+}
+
+!ck_top(tab: int, lot: int, usr: int, kicks: int, val: int, par: int, buf: int, tip: int, chip: int, auth: int, stopped: int) -> int {
+  ^ ck_eval(tab, lot, usr, kicks, val, par, buf, tip, chip, auth, stopped, 2);
+}
+
+!ck_coin(tab: int, lot: int, usr: int, kicks: int, val: int, par: int, buf: int, tip: int, chip: int, auth: int, stopped: int) -> int {
+  ^ ck_eval(tab, lot, usr, kicks, val, par, buf, tip, chip, auth, stopped, 3);
+}
+
+!ck_sucks(tab: int, lot: int, usr: int, kicks: int, val: int, par: int, buf: int, tip: int, chip: int, auth: int, stopped: int) -> int {
+  ^ ck_eval(tab, lot, usr, kicks, val, par, buf, tip, chip, auth, stopped, 4);
+}
+
+!ck_feed(tab: int, lot: int, usr: int, kicks: int, val: int, par: int, buf: int, tip: int, chip: int, auth: int, stopped: int) -> int {
+  ^ ck_eval(tab, lot, usr, kicks, val, par, buf, tip, chip, auth, stopped, 5);
+}
+
+!ck_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!ck_test_suite() -> int {
+  ?(ck_auth_required() != 1) { ^ -1; };
+  ?(ck_chip_tip_in_kick() != 1) { ^ -2; };
+  ?(ck_breaker_kick_level() != 1) { ^ -3; };
+  ?(ck_uses_suck() != 1) { ^ -4; };
+  ?(ck_uses_abacus() != 0) { ^ -5; };
+  ?(ck_is_take_kernel() != 0) { ^ -6; };
+  ?(ck_is_bark_kernel() != 0) { ^ -7; };
+  ?(ck_wad() != 1000) { ^ -8; };
+  ?(ck_ray() != 1000000) { ^ -9; };
+  ?(ck_bln() != 1000) { ^ -10; };
+  ?(ck_kick_ok(50000, 1000, 1, 7, 2000, 1000000, 1100000, 100, 10, 1, 0) != 1) { ^ -11; };
+  ?(ck_id(50000, 1000, 1, 7, 2000, 1000000, 1100000, 100, 10, 1, 0) != 8) { ^ -12; };
+  ?(ck_feed(50000, 1000, 1, 7, 2000, 1000000, 1100000, 100, 10, 1, 0) != 2000000) { ^ -13; };
+  ?(ck_top(50000, 1000, 1, 7, 2000, 1000000, 1100000, 100, 10, 1, 0) != 2200000) { ^ -14; };
+  ?(ck_coin(50000, 1000, 1, 7, 2000, 1000000, 1100000, 100, 10, 1, 0) != 600) { ^ -15; };
+  ?(ck_sucks(50000, 1000, 1, 7, 2000, 1000000, 1100000, 100, 10, 1, 0) != 1) { ^ -16; };
+  ?(ck_coin(50000, 1000, 1, 7, 2000, 1000000, 1100000, 0, 10, 1, 0) != 500) { ^ -17; };
+  ?(ck_coin(50000, 1000, 1, 7, 2000, 1000000, 1100000, 100, 0, 1, 0) != 100) { ^ -18; };
+  ?(ck_sucks(50000, 1000, 1, 7, 2000, 1000000, 1100000, 0, 0, 1, 0) != 0) { ^ -19; };
+  ?(ck_kick_ok(50000, 1000, 1, 7, 2000, 1000000, 1100000, 0, 0, 1, 0) != 1) { ^ -20; };
+  ?(ck_top(50000, 1000, 1, 7, 2000, 2000000, 1100000, 100, 10, 1, 0) != 1100000) { ^ -21; };
+  ?(ck_top(50000, 1000, 1, 7, 2000, 1000000, 1000000, 100, 10, 1, 0) != 2000000) { ^ -22; };
+  ?(ck_kick_ok(0, 1000, 1, 7, 2000, 1000000, 1100000, 100, 10, 1, 0) != 0) { ^ -23; };
+  ?(ck_kick_ok(50000, 0, 1, 7, 2000, 1000000, 1100000, 100, 10, 1, 0) != 0) { ^ -24; };
+  ?(ck_kick_ok(50000, 1000, 0, 7, 2000, 1000000, 1100000, 100, 10, 1, 0) != 0) { ^ -25; };
+  ?(ck_kick_ok(50000, 1000, 1, 7, 0, 1000000, 1100000, 100, 10, 1, 0) != 0) { ^ -26; };
+  ?(ck_kick_ok(50000, 1000, 1, 7, 2000, 1000000, 1100000, 100, 10, 0, 0) != 0) { ^ -27; };
+  ?(ck_kick_ok(50000, 1000, 1, 7, 2000, 1000000, 1100000, 100, 10, 1, 1) != 0) { ^ -28; };
+  wrap_a = 7000000000;
+  wrap_b = 3000000000;
+  ?(ck_u_mul_ok(wrap_a, wrap_b) != 0) { ^ -29; };
+  ?(ck_kick_ok(wrap_a, 1000, 1, 7, 2000, 1000000, 1100000, 100, wrap_b, 1, 0) != 0) { ^ -30; };
+  ?(ck_naive_i64_mul(wrap_a, wrap_b) != 2553255926290448384) { ^ -31; };
+  ?(ck_u_mul(2000, 1000) != 2000000) { ^ -32; };
+  ?(ck_kick_ok(50000, 1000, 1, 9223372036854775807, 2000, 1000000, 1100000, 100, 10, 1, 0) != 0) { ^ -33; };
+  ^ 1;
+}
+
+=ex{
+  ck_u_lt,
+  ck_u_mul_ok,
+  ck_u_mul,
+  ck_u_add_ok,
+  ck_wad,
+  ck_ray,
+  ck_bln,
+  ck_auth_required,
+  ck_chip_tip_in_kick,
+  ck_breaker_kick_level,
+  ck_uses_suck,
+  ck_uses_abacus,
+  ck_is_take_kernel,
+  ck_is_bark_kernel,
+  ck_eval,
+  ck_kick_ok,
+  ck_id,
+  ck_top,
+  ck_coin,
+  ck_sucks,
+  ck_feed,
+  ck_naive_i64_mul,
+  ck_test_suite
+}
