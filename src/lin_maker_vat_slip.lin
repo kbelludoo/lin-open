@@ -1,0 +1,164 @@
+@LIN:L1c:0.2
+@MAKER_VAT_SLIP{
+  version=1
+  repo="makerdao/dss"
+  source="src/vat.sol slip/signed _add/auth gem wad"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  vat_sol_sha256="9016fd94f0f1b014abf184edab86a3f5843042b17e3734407e0f0fabb920f49f"
+  vat_sol_blob="ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_sky_vat_slip_auth_gem_signed_wad"
+  note="Not mainnet uint256. Storage gem[ilk][usr], wards[msg.sender] and signed wad are arguments. Signed _add fail-closed. Wards required. No wish. No live. Distinct from vat.flux (src-dst unsigned wad + wish). Upstream AGPL is not vendored."
+}
+
+!sl_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!sl_live_required() -> int {
+  ^ 0;
+}
+
+!sl_auth_required() -> int {
+  ^ 1;
+}
+
+!sl_wish_required() -> int {
+  ^ 0;
+}
+
+!sl_unit_is_wad() -> int {
+  ^ 1;
+}
+
+!sl_moves_dai() -> int {
+  ^ 0;
+}
+
+!sl_signed_delta() -> int {
+  ^ 1;
+}
+
+!sl_src_dst_transfer() -> int {
+  ^ 0;
+}
+
+!sl_s_add_ok(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  s = x + y;
+  ?(y >= 0) {
+    ?(s < 0) { ^ 0; };
+    ?(sl_u_lt(s, x) == 1) { ^ 0; };
+    ^ 1;
+  };
+  ?(s < 0) { ^ 0; };
+  ?(sl_u_lt(x, s) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!sl_s_add(x: int, y: int) -> int {
+  ?(sl_s_add_ok(x, y) == 0) { ^ 0; };
+  ^ x + y;
+}
+
+!sl_auth_ok(wards: int) -> int {
+  ?(wards != 1) { ^ 0; };
+  ^ 1;
+}
+
+!sl_slip_ok(gem: int, wad: int, wards: int) -> int {
+  ?(gem < 0) { ^ 0; };
+  ?(sl_auth_ok(wards) == 0) { ^ 0; };
+  ?(sl_s_add_ok(gem, wad) == 0) { ^ 0; };
+  ^ 1;
+}
+
+!sl_new_gem(gem: int, wad: int, wards: int) -> int {
+  ?(sl_slip_ok(gem, wad, wards) == 0) { ^ 0; };
+  ^ sl_s_add(gem, wad);
+}
+
+!sl_applied(gem: int, wad: int, wards: int) -> int {
+  ?(sl_slip_ok(gem, wad, wards) == 0) { ^ 0; };
+  ^ wad;
+}
+
+!sl_join_amt(gem: int, wad: int, wards: int) -> int {
+  ?(sl_slip_ok(gem, wad, wards) == 0) { ^ 0; };
+  ?(wad < 1) { ^ 0; };
+  ^ wad;
+}
+
+!sl_exit_amt(gem: int, wad: int, wards: int) -> int {
+  ?(sl_slip_ok(gem, wad, wards) == 0) { ^ 0; };
+  ?(wad >= 0) { ^ 0; };
+  ^ 0 - wad;
+}
+
+!sl_naive_i64_add(a: int, b: int) -> int {
+  ^ a + b;
+}
+
+!sl_test_suite() -> int {
+  e9 = 1000000000;
+  e9_4 = 4000000000;
+  e9_5 = 5000000000;
+  e9_6 = 6000000000;
+  neg_e9 = 0 - e9;
+  wrap_a = 7000000000000000000;
+  wrap_b = 3000000000000000000;
+  ?(sl_live_required() != 0) { ^ -1; };
+  ?(sl_auth_required() != 1) { ^ -2; };
+  ?(sl_wish_required() != 0) { ^ -3; };
+  ?(sl_unit_is_wad() != 1) { ^ -4; };
+  ?(sl_moves_dai() != 0) { ^ -5; };
+  ?(sl_signed_delta() != 1) { ^ -6; };
+  ?(sl_src_dst_transfer() != 0) { ^ -7; };
+  ?(sl_slip_ok(e9_5, e9, 1) != 1) { ^ -8; };
+  ?(sl_new_gem(e9_5, e9, 1) != e9_6) { ^ -9; };
+  ?(sl_join_amt(e9_5, e9, 1) != e9) { ^ -10; };
+  ?(sl_slip_ok(e9_5, neg_e9, 1) != 1) { ^ -11; };
+  ?(sl_new_gem(e9_5, neg_e9, 1) != e9_4) { ^ -12; };
+  ?(sl_exit_amt(e9_5, neg_e9, 1) != e9) { ^ -13; };
+  ?(sl_slip_ok(e9_5, e9, 0) != 0) { ^ -14; };
+  ?(sl_slip_ok(e9, 0 - 2000000000, 1) != 0) { ^ -15; };
+  ?(sl_slip_ok(wrap_a, wrap_b, 1) != 0) { ^ -16; };
+  ?(sl_slip_ok(e9_5, 0, 1) != 1) { ^ -17; };
+  ?(sl_new_gem(e9_5, 0, 1) != e9_5) { ^ -18; };
+  ?(sl_slip_ok(e9_5, 0 - e9_5, 1) != 1) { ^ -19; };
+  ?(sl_new_gem(e9_5, 0 - e9_5, 1) != 0) { ^ -20; };
+  ?(sl_slip_ok(0, e9, 1) != 1) { ^ -21; };
+  ?(sl_new_gem(0, e9, 1) != e9) { ^ -22; };
+  ?(sl_s_add_ok(wrap_a, wrap_b) != 0) { ^ -23; };
+  ?(sl_s_add(wrap_a, wrap_b) != 0) { ^ -24; };
+  ?(sl_naive_i64_add(wrap_a, wrap_b) != 0 - 8446744073709551616) { ^ -25; };
+  ?(sl_s_add(e9_5, e9) != e9_6) { ^ -26; };
+  ?(sl_s_add(e9_5, neg_e9) != e9_4) { ^ -27; };
+  ^ 1;
+}
+
+=ex{
+  sl_u_lt,
+  sl_live_required,
+  sl_auth_required,
+  sl_wish_required,
+  sl_unit_is_wad,
+  sl_moves_dai,
+  sl_signed_delta,
+  sl_src_dst_transfer,
+  sl_s_add_ok,
+  sl_s_add,
+  sl_auth_ok,
+  sl_slip_ok,
+  sl_new_gem,
+  sl_applied,
+  sl_join_amt,
+  sl_exit_amt,
+  sl_naive_i64_add,
+  sl_test_suite
+}

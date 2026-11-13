@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: REJ_SOLIDITY_VAT_SLIP / REJ_SOLIDITY_BYTES32 / REJ_SOLIDITY_AUTH_MODIFIER fail-close Maker vat.slip storage+auth; v2 emit+1eN+OK_VIEW kept"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,11 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(sig, "function slip") > 0) { ^"REJ_SOLIDITY_VAT_SLIP" };
+  ?(rg_count_lit(body, "gem[") > 0) { ^"REJ_SOLIDITY_VAT_SLIP" };
+  ?(rg_count_lit(sig, "bytes32") > 0) { ^"REJ_SOLIDITY_BYTES32" };
+  ?(rg_count_lit(sig, "external auth") > 0) { ^"REJ_SOLIDITY_AUTH_MODIFIER" };
+  ?(rg_count_lit(sig, "modifier auth") > 0) { ^"REJ_SOLIDITY_AUTH_MODIFIER" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +69,18 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_slip = "function slip(bytes32 ilk, address usr, int256 wad) external auth";
+  body_slip = "gem[ilk][usr] = _add(gem[ilk][usr], wad);";
+  r4 = sol_reason(sig_slip, body_slip);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_VAT_SLIP") == 0) { ^0 };
+  sig_b32 = "function id(bytes32 x) public pure returns (bytes32)";
+  body_b32 = "return x;";
+  r5 = sol_reason(sig_b32, body_b32);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_BYTES32") == 0) { ^0 };
+  sig_auth = "function cage() external auth";
+  body_auth = "live = 0;";
+  r6 = sol_reason(sig_auth, body_auth);
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_AUTH_MODIFIER") == 0) { ^0 };
   ^1;
 }
 
