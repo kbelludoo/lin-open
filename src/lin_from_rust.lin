@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: REJ_RUST_DOG_BARK for ilks[/fn bark; REJ_RUST_WIDE_INT for i128/u128 as host storage"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -50,6 +51,10 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "u128") > 0 || rg_count_lit(body, "u128") > 0) { ^"REJ_RUST_WIDE_INT" };
+  ?(rg_count_lit(sig, "i128") > 0 || rg_count_lit(body, "i128") > 0) { ^"REJ_RUST_WIDE_INT" };
+  ?(rg_count_lit(body, "ilks[") > 0) { ^"REJ_RUST_DOG_BARK" };
+  ?(rg_count_lit(sig, "fn bark(") > 0) { ^"REJ_RUST_DOG_BARK" };
   ^"OK";
 }
 
@@ -66,6 +71,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_bark = "pub fn bark(ink: u64, art: u64) -> u64";
+  body_bark = "ilks[ilk].dirt = dirt + tab";
+  r3 = rs_reason(sig_bark, body_bark);
+  ?(starts_lit(r3, 0, "REJ_RUST_DOG_BARK") == 0) { ^0 };
 
   ^1;
 }

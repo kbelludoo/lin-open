@@ -1,0 +1,262 @@
+@LIN:L1c:0.2
+@MAKER_DOG_BARK{
+  version=1
+  repo="makerdao/dss"
+  source="src/dog.sol bark/min/mul/Hole/Dirt/chop/dust"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  dog_sol_sha256="274f7c5df8a13e535b496236436ebf726228fbe9285d94c542e2c9d2a78671de"
+  dog_sol_blob="d941d80fbf89fe7b3d334cf4931c779e1ac7c0ce"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_sky_dog_bark_liquidation_kick"
+  note="Not mainnet uint256/rad/wad/ray. vat.urns/ilks, vat.grab, vow.fess, ClipperLike.kick, bytes32 ilk and mappings are stripped: live/ink/art/rate/spot/dust/g_hole/g_dirt/i_hole/i_dirt/chop/next_id are arguments. Mul of ink*spot, art*rate, room*WAD, dart*rate, due*chop fail-closes instead of wrapping. Distinct from clipper.take (auction buy) and vat.slip/flux/move. Upstream AGPL is not vendored."
+}
+
+!db_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!db_min(a: int, b: int) -> int {
+  ?(db_u_lt(a, b) == 1) { ^ a; };
+  ^ b;
+}
+
+!db_u_mul_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(a == 0) { ^ 1; };
+  ?(b == 0) { ^ 1; };
+  p = a * b;
+  ?(p < 0) { ^ 0; };
+  ?(p / a != b) { ^ 0; };
+  ^ 1;
+}
+
+!db_u_mul(a: int, b: int) -> int {
+  ?(db_u_mul_ok(a, b) == 0) { ^ 0; };
+  ^ a * b;
+}
+
+!db_u_add_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  s = a + b;
+  ?(s < 0) { ^ 0; };
+  ?(db_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!db_wad() -> int {
+  ^ 1000;
+}
+
+!db_auth_required() -> int {
+  ^ 0;
+}
+
+!db_chip_tip_in_bark() -> int {
+  ^ 0;
+}
+
+!db_uses_clip_kick_arg() -> int {
+  ^ 1;
+}
+
+!db_uses_bytes32_ilk() -> int {
+  ^ 0;
+}
+
+!db_is_take_kernel() -> int {
+  ^ 0;
+}
+
+!db_is_vat_kernel() -> int {
+  ^ 0;
+}
+
+!db_eval(live: int, ink: int, art: int, rate: int, spot: int, dust: int, g_hole: int, g_dirt: int, i_hole: int, i_dirt: int, chop: int, next_id: int, want: int) -> int {
+  ?(live != 1) { ^ 0; };
+  ?(ink < 0) { ^ 0; };
+  ?(art < 1) { ^ 0; };
+  ?(rate < 1) { ^ 0; };
+  ?(spot < 0) { ^ 0; };
+  ?(dust < 0) { ^ 0; };
+  ?(g_hole < 0) { ^ 0; };
+  ?(g_dirt < 0) { ^ 0; };
+  ?(i_hole < 0) { ^ 0; };
+  ?(i_dirt < 0) { ^ 0; };
+  ?(chop < 1) { ^ 0; };
+  ?(next_id < 0) { ^ 0; };
+  ?(db_u_mul_ok(ink, spot) == 0) { ^ 0; };
+  ?(db_u_mul_ok(art, rate) == 0) { ^ 0; };
+  ?(spot < 1) { ^ 0; };
+  ?(db_u_lt(ink * spot, art * rate) == 0) { ^ 0; };
+  ?(db_u_lt(g_dirt, g_hole) == 0) { ^ 0; };
+  ?(db_u_lt(i_dirt, i_hole) == 0) { ^ 0; };
+  room = db_min(g_hole - g_dirt, i_hole - i_dirt);
+  wad = db_wad();
+  ?(db_u_mul_ok(room, wad) == 0) { ^ 0; };
+  dart = db_min(art, (room * wad) / rate / chop);
+  ?(db_u_lt(dart, art) == 1) {
+    ?(db_u_mul_ok(art - dart, rate) == 0) { ^ 0; };
+    ?(db_u_lt((art - dart) * rate, dust) == 1) {
+      dart = art;
+    };
+    ?(dart != art) {
+      ?(db_u_mul_ok(dart, rate) == 0) { ^ 0; };
+      ?(db_u_lt(dart * rate, dust) == 1) { ^ 0; };
+    };
+  };
+  ?(db_u_mul_ok(ink, dart) == 0) { ^ 0; };
+  dink = (ink * dart) / art;
+  ?(dink < 1) { ^ 0; };
+  ?(db_u_mul_ok(dart, rate) == 0) { ^ 0; };
+  due = dart * rate;
+  ?(db_u_mul_ok(due, chop) == 0) { ^ 0; };
+  tab = (due * chop) / wad;
+  ?(db_u_add_ok(g_dirt, tab) == 0) { ^ 0; };
+  ?(db_u_add_ok(i_dirt, tab) == 0) { ^ 0; };
+  left_ink = ink - dink;
+  left_art = art - dart;
+  g2 = g_dirt + tab;
+  i2 = i_dirt + tab;
+  ?(want == 0) { ^ 1; };
+  ?(want == 1) { ^ dart; };
+  ?(want == 2) { ^ dink; };
+  ?(want == 3) { ^ due; };
+  ?(want == 4) { ^ tab; };
+  ?(want == 5) { ^ left_ink; };
+  ?(want == 6) { ^ left_art; };
+  ?(want == 7) { ^ g2; };
+  ?(want == 8) { ^ i2; };
+  ?(want == 9) { ^ next_id; };
+  ?(want == 10) {
+    ?(left_ink == 0) {
+      ?(left_art == 0) { ^ 1; };
+    };
+    ^ 0;
+  };
+  ?(want == 11) {
+    ?(db_u_lt(0, left_art) == 1) { ^ 1; };
+    ^ 0;
+  };
+  ^ 0;
+}
+
+!db_bark_ok(live: int, ink: int, art: int, rate: int, spot: int, dust: int, g_hole: int, g_dirt: int, i_hole: int, i_dirt: int, chop: int, next_id: int) -> int {
+  ^ db_eval(live, ink, art, rate, spot, dust, g_hole, g_dirt, i_hole, i_dirt, chop, next_id, 0);
+}
+
+!db_dart(live: int, ink: int, art: int, rate: int, spot: int, dust: int, g_hole: int, g_dirt: int, i_hole: int, i_dirt: int, chop: int, next_id: int) -> int {
+  ^ db_eval(live, ink, art, rate, spot, dust, g_hole, g_dirt, i_hole, i_dirt, chop, next_id, 1);
+}
+
+!db_dink(live: int, ink: int, art: int, rate: int, spot: int, dust: int, g_hole: int, g_dirt: int, i_hole: int, i_dirt: int, chop: int, next_id: int) -> int {
+  ^ db_eval(live, ink, art, rate, spot, dust, g_hole, g_dirt, i_hole, i_dirt, chop, next_id, 2);
+}
+
+!db_due(live: int, ink: int, art: int, rate: int, spot: int, dust: int, g_hole: int, g_dirt: int, i_hole: int, i_dirt: int, chop: int, next_id: int) -> int {
+  ^ db_eval(live, ink, art, rate, spot, dust, g_hole, g_dirt, i_hole, i_dirt, chop, next_id, 3);
+}
+
+!db_tab(live: int, ink: int, art: int, rate: int, spot: int, dust: int, g_hole: int, g_dirt: int, i_hole: int, i_dirt: int, chop: int, next_id: int) -> int {
+  ^ db_eval(live, ink, art, rate, spot, dust, g_hole, g_dirt, i_hole, i_dirt, chop, next_id, 4);
+}
+
+!db_left_ink(live: int, ink: int, art: int, rate: int, spot: int, dust: int, g_hole: int, g_dirt: int, i_hole: int, i_dirt: int, chop: int, next_id: int) -> int {
+  ^ db_eval(live, ink, art, rate, spot, dust, g_hole, g_dirt, i_hole, i_dirt, chop, next_id, 5);
+}
+
+!db_left_art(live: int, ink: int, art: int, rate: int, spot: int, dust: int, g_hole: int, g_dirt: int, i_hole: int, i_dirt: int, chop: int, next_id: int) -> int {
+  ^ db_eval(live, ink, art, rate, spot, dust, g_hole, g_dirt, i_hole, i_dirt, chop, next_id, 6);
+}
+
+!db_dirt_new(live: int, ink: int, art: int, rate: int, spot: int, dust: int, g_hole: int, g_dirt: int, i_hole: int, i_dirt: int, chop: int, next_id: int) -> int {
+  ^ db_eval(live, ink, art, rate, spot, dust, g_hole, g_dirt, i_hole, i_dirt, chop, next_id, 7);
+}
+
+!db_id(live: int, ink: int, art: int, rate: int, spot: int, dust: int, g_hole: int, g_dirt: int, i_hole: int, i_dirt: int, chop: int, next_id: int) -> int {
+  ^ db_eval(live, ink, art, rate, spot, dust, g_hole, g_dirt, i_hole, i_dirt, chop, next_id, 9);
+}
+
+!db_full(live: int, ink: int, art: int, rate: int, spot: int, dust: int, g_hole: int, g_dirt: int, i_hole: int, i_dirt: int, chop: int, next_id: int) -> int {
+  ^ db_eval(live, ink, art, rate, spot, dust, g_hole, g_dirt, i_hole, i_dirt, chop, next_id, 10);
+}
+
+!db_partial(live: int, ink: int, art: int, rate: int, spot: int, dust: int, g_hole: int, g_dirt: int, i_hole: int, i_dirt: int, chop: int, next_id: int) -> int {
+  ^ db_eval(live, ink, art, rate, spot, dust, g_hole, g_dirt, i_hole, i_dirt, chop, next_id, 11);
+}
+
+!db_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!db_test_suite() -> int {
+  ?(db_auth_required() != 0) { ^ -1; };
+  ?(db_chip_tip_in_bark() != 0) { ^ -2; };
+  ?(db_uses_clip_kick_arg() != 1) { ^ -3; };
+  ?(db_uses_bytes32_ilk() != 0) { ^ -4; };
+  ?(db_is_take_kernel() != 0) { ^ -5; };
+  ?(db_is_vat_kernel() != 0) { ^ -6; };
+  ?(db_wad() != 1000) { ^ -7; };
+  ?(db_bark_ok(1, 1000, 800, 1500, 1000, 100, 1000000000, 0, 1000000000, 0, 1130, 7) != 1) { ^ -8; };
+  ?(db_dart(1, 1000, 800, 1500, 1000, 100, 1000000000, 0, 1000000000, 0, 1130, 7) != 800) { ^ -9; };
+  ?(db_dink(1, 1000, 800, 1500, 1000, 100, 1000000000, 0, 1000000000, 0, 1130, 7) != 1000) { ^ -10; };
+  ?(db_due(1, 1000, 800, 1500, 1000, 100, 1000000000, 0, 1000000000, 0, 1130, 7) != 1200000) { ^ -11; };
+  ?(db_tab(1, 1000, 800, 1500, 1000, 100, 1000000000, 0, 1000000000, 0, 1130, 7) != 1356000) { ^ -12; };
+  ?(db_left_ink(1, 1000, 800, 1500, 1000, 100, 1000000000, 0, 1000000000, 0, 1130, 7) != 0) { ^ -13; };
+  ?(db_full(1, 1000, 800, 1500, 1000, 100, 1000000000, 0, 1000000000, 0, 1130, 7) != 1) { ^ -14; };
+  ?(db_id(1, 1000, 800, 1500, 1000, 100, 1000000000, 0, 1000000000, 0, 1130, 7) != 7) { ^ -15; };
+  ?(db_dart(1, 10000, 8000, 1200, 800, 500000, 1000000000, 0, 2000000, 0, 1130, 3) != 1474) { ^ -16; };
+  ?(db_dink(1, 10000, 8000, 1200, 800, 500000, 1000000000, 0, 2000000, 0, 1130, 3) != 1842) { ^ -17; };
+  ?(db_partial(1, 10000, 8000, 1200, 800, 500000, 1000000000, 0, 2000000, 0, 1130, 3) != 1) { ^ -18; };
+  ?(db_tab(1, 10000, 8000, 1200, 800, 500000, 1000000000, 0, 2000000, 0, 1130, 3) != 1998744) { ^ -19; };
+  ?(db_full(1, 1000, 800, 1000, 700, 200000, 1000000000, 0, 791000, 0, 1130, 1) != 1) { ^ -20; };
+  ?(db_dart(1, 1000, 800, 1000, 700, 200000, 1000000000, 0, 791000, 0, 1130, 1) != 800) { ^ -21; };
+  ?(db_bark_ok(1, 1000, 800, 1000, 700, 500000, 1000000000, 0, 113000, 0, 1130, 1) != 0) { ^ -22; };
+  ?(db_bark_ok(1, 1000, 800, 1000, 1000, 100, 1000000000, 0, 1000000000, 0, 1130, 1) != 0) { ^ -23; };
+  ?(db_bark_ok(0, 1000, 800, 1500, 1000, 100, 1000000000, 0, 1000000000, 0, 1130, 1) != 0) { ^ -24; };
+  ?(db_bark_ok(1, 1000, 800, 1500, 1000, 100, 100, 100, 1000000000, 0, 1130, 1) != 0) { ^ -25; };
+  ?(db_bark_ok(1, 1, 10000, 1000, 100, 1, 1000000000, 0, 113000, 0, 1130, 1) != 0) { ^ -26; };
+  ?(db_bark_ok(1, 1000, 800, 1500, 0, 100, 1000000000, 0, 1000000000, 0, 1130, 1) != 0) { ^ -27; };
+  wrap_a = 7000000000;
+  wrap_b = 3000000000;
+  ?(db_u_mul_ok(wrap_a, wrap_b) != 0) { ^ -28; };
+  ?(db_bark_ok(1, wrap_a, 800, 1500, wrap_b, 100, 1000000000, 0, 1000000000, 0, 1130, 1) != 0) { ^ -29; };
+  ?(db_naive_i64_mul(wrap_a, wrap_b) != 2553255926290448384) { ^ -30; };
+  ?(db_u_mul(800, 1500) != 1200000) { ^ -31; };
+  ^ 1;
+}
+
+=ex{
+  db_u_lt,
+  db_min,
+  db_u_mul_ok,
+  db_u_mul,
+  db_u_add_ok,
+  db_wad,
+  db_auth_required,
+  db_chip_tip_in_bark,
+  db_uses_clip_kick_arg,
+  db_uses_bytes32_ilk,
+  db_is_take_kernel,
+  db_is_vat_kernel,
+  db_eval,
+  db_bark_ok,
+  db_dart,
+  db_dink,
+  db_due,
+  db_tab,
+  db_left_ink,
+  db_left_art,
+  db_dirt_new,
+  db_id,
+  db_full,
+  db_partial,
+  db_naive_i64_mul,
+  db_test_suite
+}
