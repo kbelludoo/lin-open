@@ -1,0 +1,374 @@
+@LIN:L1c:0.2
+@CURVE_TRICRYPTO_NEWTON_Y{
+  version=1
+  repo="curvefi/tricrypto-ng"
+  source="contracts/main/CurveCryptoMathOptimized3.vy _newton_y"
+  license="all_rights_reserved_informational_upstream"
+  commit="ecaa8161c240f21dd7c3712eefc5637e1dac742b"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_curve_crypto_newton_y_128bit"
+  note="Not mainnet uint256. N=3 explicit x0,x1,x2. ANN,gamma,D are arguments. SCALE=1e9. S*mul2 uses 128-bit product. dx=0 and non-convergence fail-close to 0."
+}
+
+!cny_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!cny_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(cny_u_lt(s, a));
+}
+
+!cny_mask32() -> int {
+  ^ 4294967295;
+}
+
+!cny_prec() -> int {
+  ^ 1000000000;
+}
+
+!cny_n() -> int {
+  ^ 3;
+}
+
+!cny_amul() -> int {
+  ^ 10000;
+}
+
+!cny_fee_den() -> int {
+  ^ 10000000000;
+}
+
+!cny_u_max(a: int, b: int) -> int {
+  ?(cny_u_lt(a, b) == 1) { ^ b; };
+  ^ a;
+}
+
+!cny_u_min(a: int, b: int) -> int {
+  ?(cny_u_lt(a, b) == 1) { ^ a; };
+  ^ b;
+}
+
+!cny_prod128(a: int, b: int, want: int) -> int {
+  ?(a < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(b < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  m32 = cny_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = cny_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = cny_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  ?(want == 1) { ^ hi; };
+  ^ lo;
+}
+
+!cny_div128(hi: int, lo: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(d < 0) { ^ 0; };
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(cny_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = cny_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(ov == 1) { ^ 0; };
+  ?(q < 0) { ^ 0; };
+  ^ q;
+}
+
+!cny_muldiv(a: int, b: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  hi = cny_prod128(a, b, 1);
+  lo = cny_prod128(a, b, 0);
+  ^ cny_div128(hi, lo, d);
+}
+
+!cny_add128(h1: int, l1: int, h2: int, l2: int, want: int) -> int {
+  lo = l1 + l2;
+  c = cny_u_add_carry(l1, l2);
+  hi = h1 + h2;
+  ?(cny_u_lt(hi, h1) == 1) { ?(want == 2) { ^ 1; }; ^ 0; };
+  hi = hi + c;
+  ?(c == 1) {
+    ?(cny_u_lt(hi, c) == 1) { ?(want == 2) { ^ 1; }; ^ 0; };
+  };
+  ?(want == 1) { ^ hi; };
+  ?(want == 2) { ^ 0; };
+  ^ lo;
+}
+
+!cny_sub128(h1: int, l1: int, h2: int, l2: int, want: int) -> int {
+  ?(cny_u_lt(l1, l2) == 1) {
+    lo = l1 - l2;
+    hi = h1 - h2 - 1;
+    ?(want == 1) { ^ hi; };
+    ^ lo;
+  };
+  lo = l1 - l2;
+  hi = h1 - h2;
+  ?(want == 1) { ^ hi; };
+  ^ lo;
+}
+
+!cny_lt128(h1: int, l1: int, h2: int, l2: int) -> int {
+  ?(h1 != h2) { ^ cny_u_lt(h1, h2); };
+  ^ cny_u_lt(l1, l2);
+}
+
+!cny_wide_fprime(y: int, S: int, D: int, mul1: int, mul2: int, want: int) -> int {
+  ?(y <= 0) { ^ 0; };
+  P = cny_prec();
+  ph = cny_prod128(P, y, 1);
+  pl = cny_prod128(P, y, 0);
+  sh = cny_prod128(S, mul2, 1);
+  sl = cny_prod128(S, mul2, 0);
+  dh = cny_prod128(D, mul2, 1);
+  dl = cny_prod128(D, mul2, 0);
+  h1 = cny_add128(ph, pl, sh, sl, 1);
+  l1 = cny_add128(ph, pl, sh, sl, 0);
+  ?(cny_add128(ph, pl, sh, sl, 2) == 1) { ^ 0; };
+  h2 = cny_add128(h1, l1, 0, mul1, 1);
+  l2 = cny_add128(h1, l1, 0, mul1, 0);
+  ?(cny_add128(h1, l1, 0, mul1, 2) == 1) { ^ 0; };
+  ?(cny_lt128(h2, l2, dh, dl) == 1) {
+    ?(want == 1) { ^ 1; };
+    ^ 0;
+  };
+  ?(want == 1) { ^ 0; };
+  yh = cny_sub128(h2, l2, dh, dl, 1);
+  yl = cny_sub128(h2, l2, dh, dl, 0);
+  fp = cny_div128(yh, yl, y);
+  ?(want == 0) { ^ fp; };
+  pdh = cny_prod128(P, D, 1);
+  pdl = cny_prod128(P, D, 0);
+  ah = cny_add128(yh, yl, pdh, pdl, 1);
+  al = cny_add128(yh, yl, pdh, pdl, 0);
+  ?(cny_add128(yh, yl, pdh, pdl, 2) == 1) { ^ 0; };
+  ^ cny_div128(ah, al, fp);
+}
+
+!cny_newton_y(ann: int, gamma: int, x0: int, x1: int, x2: int, D: int, i: int) -> int {
+  ?(i < 0) { ^ 0; };
+  ?(i > 2) { ^ 0; };
+  ?(D <= 0) { ^ 0; };
+  ?(ann <= 0) { ^ 0; };
+  ?(gamma <= 0) { ^ 0; };
+  ?(x0 <= 0) { ^ 0; };
+  ?(x1 <= 0) { ^ 0; };
+  ?(x2 <= 0) { ^ 0; };
+  z0 = x0;
+  z1 = x1;
+  z2 = x2;
+  ?(i == 0) { z0 = 0; };
+  ?(i == 1) { z1 = 0; };
+  ?(i == 2) { z2 = 0; };
+  hi = cny_u_max(cny_u_max(z0, z1), z2);
+  lo = cny_u_min(cny_u_min(z0, z1), z2);
+  mid = (z0 + z1) + z2;
+  ?(cny_u_lt(mid, z0) == 1) { ^ 0; };
+  mid = (mid - hi) - lo;
+  n = cny_n();
+  P = cny_prec();
+  y = cny_muldiv(D, 1, n);
+  ?(y <= 0) { ^ 0; };
+  K0_i = P;
+  S_i = 0;
+  q = cny_muldiv(y, D, mid * n);
+  ?(q <= 0) { ^ 0; };
+  y = q;
+  S_i = S_i + mid;
+  q = cny_muldiv(y, D, hi * n);
+  ?(q <= 0) { ^ 0; };
+  y = q;
+  S_i = S_i + hi;
+  ?(cny_u_lt(S_i, hi) == 1) { ^ 0; };
+  K0_i = cny_muldiv(K0_i, hi * n, D);
+  K0_i = cny_muldiv(K0_i, mid * n, D);
+  conv = cny_u_max(cny_u_max(cny_muldiv(hi, 1, 100000), cny_muldiv(D, 1, 100000)), 100);
+  iter = 0;
+  done = 0;
+  outy = 0;
+  while (iter < 255) {
+    ?(done == 0) {
+      y_prev = y;
+      K0 = cny_muldiv(K0_i, y * n, D);
+      ?(K0 <= 0) { done = 1; };
+      ?(done == 0) {
+        S = S_i + y;
+        ?(cny_u_lt(S, S_i) == 1) { done = 1; };
+        ?(done == 0) {
+          orig = gamma + P;
+          g1 = orig;
+          ?(cny_u_lt(orig, K0) == 1) { g1 = (K0 - orig) + 1; };
+          ?(cny_u_lt(orig, K0) == 0) { g1 = (orig - K0) + 1; };
+          t = cny_muldiv(P, D, gamma);
+          t = cny_muldiv(t, g1, gamma);
+          t = cny_muldiv(t, cny_amul(), ann);
+          t = cny_muldiv(t, g1, 1);
+          ?(t <= 0) { done = 1; };
+          ?(done == 0) {
+            mul1 = t;
+            t2 = cny_muldiv(P + P, K0, g1);
+            mul2 = P + t2;
+            ?(cny_u_lt(mul2, P) == 1) { done = 1; };
+            ?(done == 0) {
+              ?(cny_wide_fprime(y, S, D, mul1, mul2, 1) == 1) { y = cny_muldiv(y_prev, 1, 2); };
+              ?(cny_wide_fprime(y_prev, S, D, mul1, mul2, 1) == 0) {
+                fp = cny_wide_fprime(y, S, D, mul1, mul2, 0);
+                ?(fp <= 0) { done = 1; };
+                ?(done == 0) {
+                  y_minus = cny_muldiv(mul1, 1, fp);
+                  yp1 = cny_wide_fprime(y, S, D, mul1, mul2, 2);
+                  extra = cny_muldiv(y_minus, P, K0);
+                  y_plus = yp1 + extra;
+                  ?(cny_u_lt(y_plus, yp1) == 1) { done = 1; };
+                  ?(done == 0) {
+                    extra2 = cny_muldiv(P, S, fp);
+                    y_minus = y_minus + extra2;
+                    ?(cny_u_lt(y_minus, extra2) == 1) { done = 1; };
+                    ?(done == 0) {
+                      ?(cny_u_lt(y_plus, y_minus) == 1) { y = cny_muldiv(y_prev, 1, 2); };
+                      ?(cny_u_lt(y_plus, y_minus) == 0) { y = y_plus - y_minus; };
+                      diff = y - y_prev;
+                      ?(cny_u_lt(y, y_prev) == 1) { diff = y_prev - y; };
+                      lim = cny_u_max(conv, cny_muldiv(y, 1, 100000));
+                      ?(cny_u_lt(diff, lim) == 1) { outy = y; done = 1; };
+                    };
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+    iter = iter + 1;
+  };
+  ^ outy;
+}
+
+!cny_pick(i: int, x0: int, x1: int, x2: int) -> int {
+  ?(i == 0) { ^ x0; };
+  ?(i == 1) { ^ x1; };
+  ?(i == 2) { ^ x2; };
+  ^ 0;
+}
+
+!cny_get_dy(ann: int, gamma: int, x0: int, x1: int, x2: int, D: int, i: int, j: int, dx: int, fee: int) -> int {
+  ?(dx <= 0) { ^ 0; };
+  ?(i == j) { ^ 0; };
+  ?(i < 0) { ^ 0; };
+  ?(j < 0) { ^ 0; };
+  ?(i > 2) { ^ 0; };
+  ?(j > 2) { ^ 0; };
+  ?(cny_u_lt(cny_fee_den(), fee) == 1) { ^ 0; };
+  xi = cny_pick(i, x0, x1, x2);
+  x = xi + dx;
+  ?(cny_u_lt(x, xi) == 1) { ^ 0; };
+  nx0 = x0;
+  nx1 = x1;
+  nx2 = x2;
+  ?(i == 0) { nx0 = x; };
+  ?(i == 1) { nx1 = x; };
+  ?(i == 2) { nx2 = x; };
+  y = cny_newton_y(ann, gamma, nx0, nx1, nx2, D, j);
+  ?(y <= 0) { ^ 0; };
+  xj = cny_pick(j, nx0, nx1, nx2);
+  ?(cny_u_lt(xj, y) == 1) { ^ 0; };
+  raw = xj - y;
+  ?(raw <= 0) { ^ 0; };
+  raw = raw - 1;
+  ?(fee == 0) { ^ raw; };
+  den = cny_fee_den();
+  ^ cny_muldiv(raw, den - fee, den);
+}
+
+!cny_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!cny_test_suite() -> int {
+  e9 = 1000000000;
+  D = 3000000000;
+  ann = 1707629;
+  g = 11809;
+  ?(cny_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(cny_newton_y(ann, g, e9, e9, e9, D, 1) != e9) { ^ -2; };
+  ?(cny_newton_y(ann, g, 1100000000, e9, e9, D, 1) != 909085543) { ^ -3; };
+  ?(cny_get_dy(ann, g, e9, e9, e9, D, 0, 1, 100000000, 0) != 90914456) { ^ -4; };
+  ?(cny_get_dy(ann, g, e9, e9, e9, D, 0, 1, 100000000, 3000000) != 90887181) { ^ -5; };
+  ?(cny_get_dy(ann, g, e9, e9, e9, D, 0, 1, 0, 0) != 0) { ^ -6; };
+  ?(cny_get_dy(2700, g, e9, e9, e9, D, 0, 1, 100000000, 0) != 0) { ^ -7; };
+  ?(cny_newton_y(ann, g, 1200000000, 900000000, e9, D, 1) != 833328413) { ^ -8; };
+  ?(cny_newton_y(ann, 0, e9, e9, e9, D, 1) != 0) { ^ -9; };
+  ?(cny_newton_y(ann, g, e9, e9, e9, D, 3) != 0) { ^ -10; };
+  ?(cny_get_dy(ann, g, e9, e9, e9, D, 0, 0, 100000000, 0) != 0) { ^ -11; };
+  ?(cny_naive_i64_mul(3000000000, 169349010160880) != 5251948605238943744) { ^ -12; };
+  ?(cny_newton_y(ann, g, e9, e9, e9, D, 0) != e9) { ^ -13; };
+  ?(cny_get_dy(ann, g, e9, e9, e9, D, 0, 1, 10000000, 0) != 9906505) { ^ -14; };
+  ^ 1;
+}
+
+=ex{
+  cny_u_lt,
+  cny_u_add_carry,
+  cny_mask32,
+  cny_prec,
+  cny_n,
+  cny_amul,
+  cny_fee_den,
+  cny_u_max,
+  cny_u_min,
+  cny_prod128,
+  cny_div128,
+  cny_muldiv,
+  cny_add128,
+  cny_sub128,
+  cny_lt128,
+  cny_wide_fprime,
+  cny_newton_y,
+  cny_pick,
+  cny_get_dy,
+  cny_naive_i64_mul,
+  cny_test_suite
+}

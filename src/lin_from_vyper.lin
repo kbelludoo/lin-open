@@ -1,0 +1,56 @@
+@LIN:L1c:0.2
+@LIN_FROM_VYPER{
+  version=1
+  purpose="fail_closed_vyper_pure_math_gate"
+  profile="LINVM-1"
+  status="EXPERIMENTAL_V1"
+  changelog="v1: reject newton_y / uint256[ / unsafe_ / self. / raise; do not mechanically emit Curve crypto Newton"
+}
+
+!vy_is_kw(nm: string): int {
+  ?(starts_lit(nm, 0, "def") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "return") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2) { ^1 };
+  ?(starts_lit(nm, 0, "else") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "for") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "assert") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "raise") == 1 && nm.length == 5) { ^1 };
+  ^0;
+}
+
+!vy_reason(sig: string, body: string): string {
+  ?(rg_count_lit(body, "self.") > 0) { ^"REJ_VYPER_STATE" };
+  ?(rg_count_lit(body, "msg.") > 0) { ^"REJ_VYPER_ENV" };
+  ?(rg_count_lit(body, "block.") > 0) { ^"REJ_VYPER_ENV" };
+  ?(rg_count_lit(body, "raise") > 0) { ^"REJ_VYPER_RAISE" };
+  ?(rg_count_lit(body, "unsafe_") > 0) { ^"REJ_VYPER_UNSAFE" };
+  ?(rg_count_lit(sig, "uint256[") > 0) { ^"REJ_VYPER_ARRAY" };
+  ?(rg_count_lit(body, "uint256[") > 0) { ^"REJ_VYPER_ARRAY" };
+  ?(rg_count_lit(sig, "newton_y") > 0) { ^"REJ_VYPER_NEWTON_Y" };
+  ?(rg_count_lit(body, "newton_y") > 0) { ^"REJ_VYPER_NEWTON_Y" };
+  ?(rg_count_lit(body, "convert(") > 0) { ^"REJ_VYPER_CONVERT" };
+  ?(rg_count_lit(body, "range(") > 0) { ^"REJ_VYPER_RANGE" };
+  ^"OK";
+}
+
+!vy_parse_test_gate(): int {
+  sig_ok = "def add(a: uint256, b: uint256) -> uint256";
+  body_ok = "return a + b";
+  r1 = vy_reason(sig_ok, body_ok);
+  ?(r1.length != 2) { ^0 };
+  sig_ny = "def _newton_y(ANN: uint256, gamma: uint256, x: uint256[3], D: uint256, i: uint256) -> uint256";
+  body_ny = "y = D / 3\nfor j in range(255):\n    y = unsafe_mul(y, D)\nraise Did not converge";
+  r2 = vy_reason(sig_ny, body_ny);
+  ?(starts_lit(r2, 0, "REJ_VYPER_UNSAFE") == 0) { ^0 };
+  sig_arr = "def get_y(x: uint256[3], D: uint256) -> uint256";
+  body_arr = "return x[0] + D";
+  r3 = vy_reason(sig_arr, body_arr);
+  ?(starts_lit(r3, 0, "REJ_VYPER_ARRAY") == 0) { ^0 };
+  sig_nm = "def newton_y(ANN: uint256, D: uint256) -> uint256";
+  body_nm = "return ANN + D";
+  r4 = vy_reason(sig_nm, body_nm);
+  ?(starts_lit(r4, 0, "REJ_VYPER_NEWTON_Y") == 0) { ^0 };
+  ^1;
+}
+
+=ex{vy_is_kw, vy_reason, vy_parse_test_gate}

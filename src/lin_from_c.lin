@@ -40,6 +40,9 @@
   ?(rg_count_lit(sig, "float") > 0 || rg_count_lit(body, "float") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(sig, "double") > 0 || rg_count_lit(body, "double") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(body, "goto") > 0){ ^"REJ_C_GOTO" };
+  ?(rg_count_lit(body, "newton_y") > 0){ ^"REJ_C_NEWTON_Y" };
+  ?(rg_count_lit(body, "unsafe_") > 0){ ^"REJ_C_UNSAFE" };
+  ?(rg_count_lit(sig, "uint256") > 0){ ^"REJ_C_U256" };
   ^"OK";
 }
 

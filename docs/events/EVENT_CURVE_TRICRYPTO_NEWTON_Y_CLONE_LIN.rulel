@@ -1,0 +1,67 @@
+@RULEL:CURVE_TRICRYPTO_NEWTON_Y_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-CURVE-TRICRYPTO-NEWTON-Y"
+@TITLE="Clone-lin of Curve tricrypto _newton_y with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-curve-newton-y"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Curve tricrypto Newton y-solver into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for S*mul2 and yfprime; Vyper uint256 is NOT claimed"
+  commercial_hook="tricrypto newton_y is the quote kernel behind Curve crypto pools (USDT/WBTC/ETH historically large TVL); this run proves bit-exact uint64-scale parity against C11+Python, not a TVL or gas-savings number"
+}
+
+.u{
+  repo="https://github.com/curvefi/tricrypto-ng"
+  path="contracts/main/CurveCryptoMathOptimized3.vy"
+  license="all_rights_reserved_informational_only"
+  commit="ecaa8161c240f21dd7c3712eefc5637e1dac742b"
+  git_blob_sha="695c794cb8035e4b2848ad0354d0993dcfb9c7cb"
+  file_sha256="d0d48e5c3fa00e36f841250cbce8665292ba3224bb050c948dc3b12a50f01d6c"
+  vendor="none"
+}
+
+.l{
+  clone="src/lin_curve_newton_y.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-curve-newton-y"
+  transpiler_delta="src/lin_from_vyper.lin v1 fail-closes newton_y / uint256[ / unsafe_ / self. / raise; src/lin_from_solidity.lin v3 fail-closes newton_y / unsafe_ / uint256[ / BPT-out / powUp; C and Rust transpilers gain newton_y reject tokens"
+  improvement_1="ANN, gamma, D, xp are arguments (Vyper reads pool storage / self)"
+  improvement_2="uint256[3] flattened to x0,x1,x2"
+  improvement_3="S*mul2 yfprime uses 128-bit product; naive i64 wrap of 3e9*169349010160880 is 5251948605238943744"
+  improvement_4="dx=0 fail-closes to 0 (uint256 wrap of xp[j]-y-1 would be 2^256-1)"
+  improvement_5="non-convergence fail-closes to 0 instead of raise"
+  improvement_6="quotients that do not fit signed i64 (mul1 at ANN=MIN_A=2700) fail-close to 0 instead of wrapping negative"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/curve_newton_y_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_curve_newton_y.sh"
+}
+
+.p{
+  harness="test/prove_curve_newton_y_external.py"
+  evidence_json="examples/curve_newton_y/curve_newton_y_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-curve-newton-y"
+  named_goldens="identity 1000000000; plus10 y1 909085543; get_dy 10pct 90914456; fee 90887181; dx0 0"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet tricrypto / price_scale parity"
+  not_claimed_2="analytic get_y cubic / cbrt path"
+  not_claimed_3="LIN is faster than the EVM or vyper"
+  not_claimed_4="this clone is a production pool replacement"
+  not_claimed_5="zk / computational soundness of Merkle receipts"
+  not_claimed_6="TVL or dollar savings"
+  not_claimed_7="stableswap get_y / get_dy (distinct kernels)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT"
+  on_fail="do not publish a PASS status"
+}
