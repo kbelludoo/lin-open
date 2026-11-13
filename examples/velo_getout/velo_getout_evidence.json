@@ -1,0 +1,146 @@
+{
+  "schema": "LIN_VELO_GETOUT_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned velodrome-finance/contracts commit matches published sha256",
+      "note": "commit=b3065d8b6702b14b094f9f6046b752cc9f78c43b blob=91412c378bba4d8076271cee52e1397b1520b709"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of contracts/Pool.sol",
+      "note": ""
+    },
+    {
+      "id": "NO-VENDOR",
+      "status": "PASS",
+      "description": "GPL-3.0-or-later Solidity is hash-pinned only (not copied into lin-open)",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb getAmountOut agree on goldens",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_velo_getout.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin fail-closes _get_y / address / IPoolFactory",
+      "note": ""
+    },
+    {
+      "id": "C-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes _get_y",
+      "note": ""
+    },
+    {
+      "id": "RS-GATE",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes _get_y",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "vgo_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "11/11 vectors: C11 i128 == limbs == LIN vm == named goldens",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "11/11 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (4e9*4e9) wraps; 128-bit muldiv fail-closes (quotient > i64)",
+      "note": "i64_wrap=-2446744073709551616 bigint=16000000000000000000 muldiv=0"
+    },
+    {
+      "id": "VS-UNISWAP",
+      "status": "PASS",
+      "description": "10% in on equal 1e9 reserves: Solidly-stable quotes more out than volatile/Uniswap-0.3%",
+      "note": "stable_fee1=99940071 volatile_fee30=90661089"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes reserveA/B, stable, fee as arguments (no factory/token0 storage)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product for (a*b)/d (i64 wraps on 4e9*4e9)",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/velodrome-finance/contracts",
+    "commit": "b3065d8b6702b14b094f9f6046b752cc9f78c43b",
+    "path": "contracts/Pool.sol",
+    "git_blob_sha": "91412c378bba4d8076271cee52e1397b1520b709",
+    "file_sha256": "32d040ff419fa9b1f9113f7e10d587b332a2ab9c6b6099851025cc16a4e986bb",
+    "license": "GPL-3.0-or-later (hash-pinned, not vendored)"
+  },
+  "lin_clone": "src/lin_velo_getout.lin",
+  "lin_clone_sha256": "599cd420395b044db259639ee08c92c2b4480634a8333a821bf73d573a569689",
+  "c11_oracle": "test/oracles/velo_getout_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "k_balanced": 2000000000,
+    "get_y_identity": 1000000000,
+    "vol_10pct_fee0": 90909090,
+    "vol_10pct_fee5": 90867766,
+    "vol_10pct_fee30": 90661089,
+    "stable_10pct_fee0": 99950051,
+    "stable_10pct_fee1": 99940071,
+    "stable_1pct_fee1": 9998994,
+    "dx0_failclosed": 0,
+    "get_y_plus10": 900049949
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-velo-getout",
+  "clone_lin_commit": "3fb05fb262ec4d72c46e690d4ef37374e4f9e192"
+}

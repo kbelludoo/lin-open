@@ -4,7 +4,7 @@
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
   status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  changelog="v2.1: fail-close _get_y / address tokenIn / IPoolFactory.getFee (mechanical emit is not 128-bit Solidly Newton). v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,11 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(sig, "_get_y") > 0) { ^"REJ_SOLIDITY_GET_Y" };
+  ?(rg_count_lit(body, "_get_y") > 0) { ^"REJ_SOLIDITY_GET_Y" };
+  ?(rg_count_lit(sig, "address") > 0) { ^"REJ_SOLIDITY_ADDRESS" };
+  ?(rg_count_lit(body, "IPoolFactory") > 0) { ^"REJ_SOLIDITY_FACTORY" };
+  ?(rg_count_lit(body, "getFee") > 0) { ^"REJ_SOLIDITY_FACTORY" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +69,14 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_gy = "function _get_y(uint256 x0, uint256 xy, uint256 y) internal view returns (uint256)";
+  body_gy = "uint256 k = _f(x0, y); return y;";
+  r4 = sol_reason(sig_gy, body_gy);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_GET_Y") == 0) { ^0 };
+  sig_addr = "function getAmountOut(uint256 amountIn, address tokenIn) external view returns (uint256)";
+  body_addr = "return _getAmountOut(amountIn, tokenIn, reserve0, reserve1);";
+  r5 = sol_reason(sig_addr, body_addr);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_ADDRESS") == 0) { ^0 };
   ^1;
 }
 

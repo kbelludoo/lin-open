@@ -50,6 +50,8 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "_get_y") > 0) { ^"REJ_RUST_GET_Y" };
+  ?(rg_count_lit(body, "_get_y") > 0) { ^"REJ_RUST_GET_Y" };
   ^"OK";
 }
 
@@ -66,6 +68,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_gy = "pub fn _get_y(x0: u64, xy: u64, y: u64) -> u64";
+  body_gy = "let k = _f(x0, y); return y;";
+  r3 = rs_reason(sig_gy, body_gy);
+  ?(starts_lit(r3, 0, "REJ_RUST_GET_Y") == 0) { ^0 };
 
   ^1;
 }
