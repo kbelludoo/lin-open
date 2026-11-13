@@ -1,0 +1,75 @@
+@RULEL:MAKER_VAT_FLUX_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MAKER-VAT-FLUX"
+@TITLE="Clone-lin of Maker/Sky Vat.flux gem transfer with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-maker-vat-flux"
+@CLONE_LIN_HEAD="6232518354a908a8e95b6d4223efd030fbf495bf"
+@CLONE_SHA256="sha256:e7850723af496b62f3970eaa0d02189813cbb762cef209e687744955044cdfc0"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile MakerDAO/Sky vat.flux gem-transfer math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, unsigned wad add/sub; Solidity uint256 gem wad is NOT claimed"
+  commercial_hook="Vat.flux is the unlocked-collateral transfer that moves gem between addresses after src-only wish; making gem/wish explicit, fail-closing unsigned add/sub, proving dst cannot refuse incoming gem, that flux still works after cage, and that gem is conserved is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/makerdao/dss"
+  path="src/vat.sol"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  git_blob_sha="ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+  file_sha256="9016fd94f0f1b014abf184edab86a3f5843042b17e3734407e0f0fabb920f49f"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_maker_vat_flux.lin"
+  clone_sha256="sha256:e7850723af496b62f3970eaa0d02189813cbb762cef209e687744955044cdfc0"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-vat-flux"
+  clone_lin_head="6232518354a908a8e95b6d4223efd030fbf495bf"
+  clone_lin_lin_commit="6232518354a908a8e95b6d4223efd030fbf495bf"
+  clone_lin_lin_blob="eda737a31a3096135ac056464bb9626641eb39e6"
+  clone_lin_c_blob="e8eb4b5cf2cca2e22b26bf1be9dc885e14d031b6"
+  c11_oracle_sha256="sha256:735447490ebfe4473ed0ba19f1885006490656551b231cd5290a482eb43a7b9d"
+  transpiler_delta="src/lin_from_solidity.lin changelog v2.3 + src/lin_from_c.lin v2 + src/lin_from_rust.lin v2: fail-close function flux / gem[ / wish("
+  improvement_1="flux is storage+wish in Solidity; LIN takes src/dst gem balances, wad and src wish as arguments"
+  improvement_2="no live==1 and no wards/auth (unlike frob); src-only wish is explicit. Missing consent fail-closes to 0"
+  improvement_3="dst cannot refuse incoming gem (dst_consent_required=0); distinct from vat.fork dual wish"
+  improvement_4="gem is conserved: leftover_src + leftover_dst = src + dst when flux_ok=1; unsigned add/sub fail-close on overflow/underflow"
+  improvement_5="7e18+3e18 wraps in naive i64 and fail-closes in checked u_add"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/maker_vat_flux_c11.c (gcc -O2 -std=c11, wrap-detect XOR __int128 add)"
+  gate="make maker-vat-flux-proof"
+}
+
+.p{
+  harness="test/prove_maker_vat_flux_external.py"
+  evidence_json="examples/maker_vat_flux/maker_vat_flux_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-vat-flux"
+  clone_lin_head="6232518354a908a8e95b6d4223efd030fbf495bf"
+  result="19_PASS_0_FAIL_1_SKIP_libtcc"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet gem-wad parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production vat/gem replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Maker, Sky, or the EVM"
+  not_claimed_6="TVL or dollar savings from gem transfers"
+  not_claimed_7="vat.move dai-rad (still open on the clone-lin queue)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_WRAP_EQ_I128 && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
