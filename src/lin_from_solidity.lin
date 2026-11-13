@@ -4,7 +4,7 @@
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
   status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit). v2.1: emit OK_VIEW bodies (not only OK); rewrite ||/&& to |/& so view math like StairstepExponentialDecrease.price and wadMul compile as LIN; assembly rpow remains REJ_SOLIDITY_INLINE_ASM"
 }
 
 !sol_is_kw(nm: string): int {
@@ -75,6 +75,34 @@
     k = k + 1;
   };
   ^v;
+}
+
+!sol_rewrite_logic(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) == 34) {
+      out = out + s.charAt(i);
+      i = i + 1;
+      while (i < n && s.charCodeAt(i) != 34) { out = out + s.charAt(i); i = i + 1 };
+      ?(i < n) { out = out + s.charAt(i); i = i + 1 };
+      continue;
+    };
+    ?(i + 1 < n && s.charCodeAt(i) == 124 && s.charCodeAt(i + 1) == 124) {
+      out = out + "|";
+      i = i + 2;
+      continue;
+    };
+    ?(i + 1 < n && s.charCodeAt(i) == 38 && s.charCodeAt(i + 1) == 38) {
+      out = out + "&";
+      i = i + 2;
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
 }
 
 !sol_expand_exp(s: string): string {
@@ -268,7 +296,7 @@
 }
 
 !sol_from_sol(src: string): string {
-  pass = jss_trim(jss_strip_comments(src));
+  pass = jss_trim(sol_rewrite_logic(jss_strip_comments(src)));
   out = "";
   out = jss_ln(out, "@LIN:L1c:0.2");
   out = jss_ln(out, "@FROM_SOLIDITY{source=transpiled scope=pure_integer_math}");
@@ -303,7 +331,7 @@
                 bd = slice2(pass, b + 1, cb);
                 sig = slice2(pass, i, b);
                 reason = sol_reason(sig, bd);
-                ?(starts_lit(reason, 0, "OK") == 1 && reason.length == 2) {
+                ?(starts_lit(reason, 0, "OK") == 1) {
                   out = out + sol_fn(nm, pr, bd);
                   names = rgs_csv_add(names, nm);
                 };
@@ -334,7 +362,19 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  view_src = "function price(uint256 top, uint256 dur) external view returns (uint256) { return rmul(top, rpow(cut, dur / step, RAY)); }";
+  view_out = sol_from_sol(view_src);
+  ?(rg_count_lit(view_out, "price") == 0) { ^0 };
+  asm_src = "function rpow(uint256 x, uint256 n, uint256 b) internal pure returns (uint256 z) { assembly { z := x } }";
+  asm_out = sol_from_sol(asm_src);
+  ?(rg_count_lit(asm_out, "rpow") > 0) { ^0 };
+  asm_r = sol_reason("function rpow(uint256 x) internal pure returns (uint256 z)", "assembly { z := x }");
+  ?(starts_lit(asm_r, 0, "REJ_SOLIDITY_INLINE_ASM") == 0) { ^0 };
+  or_src = "function wadMul(uint a, uint b) internal pure returns (uint) { if (a == 0 || b == 0) { return 0; } return a; }";
+  or_out = sol_from_sol(or_src);
+  ?(rg_count_lit(or_out, "||") > 0) { ^0 };
+  ?(rg_count_lit(or_out, "wadMul") == 0) { ^0 };
   ^1;
 }
 
-=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
+=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_rewrite_logic, sol_expand_exp, sol_from_sol, sol_from_sol_gate}

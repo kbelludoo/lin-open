@@ -1,0 +1,63 @@
+@RULEL:MAKER_ABACUS_STAIR_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MAKER-ABACUS-STAIR"
+@TITLE="Clone-lin of Maker StairstepExponentialDecrease.price with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-maker-abacus-stair"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Maker Dutch-auction stairstep exponential decay into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, RAY'=1e9 (not RAY=1e27); 128-bit half-up rpow product"
+  commercial_hook="StairstepExponentialDecrease is the Clipper abacus used by Maker/Sky collateral auctions (ETH-A and most ilks): price = rmul(top, rpow(cut, dur/step, RAY)). Making cut/step explicit and replacing wrapping i64 multiply plus inline assembly rpow with 128-bit half-up rpow is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/makerdao/dss"
+  path="src/abaci.sol StairstepExponentialDecrease.price"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  git_blob_sha="6cbd666267fc9f534ae52a45926eec5aa44b3bc5"
+  file_sha256="a4c3dc0368d66a5bf84e586f0cf76e2e80fb8b336c00348a97cc0d4ddcb016ca"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_maker_abacus_stair.lin"
+  transpiler_delta="src/lin_from_solidity.lin v2.1: emit OK_VIEW (not only pure OK); rewrite ||/&& to |/&; assembly rpow stays REJ_SOLIDITY_INLINE_ASM. src/lin_sol_view_lift.lin lifts cut/step/RAY from the view price body"
+  improvement_1="price is view-on-storage in Solidity (cut, step, wards); LIN takes top/dur/cut/step as arguments, no msg.sender, no file(), no block.timestamp"
+  improvement_2="upstream rpow is Yul assembly; LIN uses schoolbook 128-bit half-up muldiv matching C11 __int128; quotient that does not fit uint64 fail-closes to 0"
+  improvement_3="step==0 is EVM division-by-zero revert; LIN fail-closes to 0. cut>RAY' (file() reject) also fail-closes"
+  improvement_4="stairstep n=dur/step holds the price until the next step (dur=89 step=90 equals top); this is distinct from LinearDecrease tau and from continuous ExponentialDecrease n=dur"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/maker_abacus_stair_c11.c (gcc -O2 -std=c11, __int128 and wrap-detect)"
+  kernel="test/oracles/maker_abacus_stair_kernel.c (pointer-free, lin_from_c eligible)"
+  gate="test/verify_maker_abacus_stair.sh"
+}
+
+.p{
+  harness="test/prove_maker_abacus_stair_external.py"
+  evidence_json="examples/maker_abacus_stair/maker_abacus_stair_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-abacus-stair"
+}
+
+.n{
+  not_claimed_1="full uint256 / RAY=1e27 / mainnet Clipper.price parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production abacus replacement"
+  not_claimed_4="LinearDecrease.price or continuous ExponentialDecrease"
+  not_claimed_5="LIN replaces Maker, Sky, clipper, or the EVM"
+  not_claimed_6="TVL or dollar savings"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_WRAP && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
