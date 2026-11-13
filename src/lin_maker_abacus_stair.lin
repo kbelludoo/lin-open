@@ -1,0 +1,261 @@
+@LIN:L1c:0.2
+@MAKER_ABACUS_STAIR{
+  version=1
+  repo="makerdao/dss"
+  source="src/abaci.sol StairstepExponentialDecrease.price"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  abaci_sol_sha256="a4c3dc0368d66a5bf84e586f0cf76e2e80fb8b336c00348a97cc0d4ddcb016ca"
+  abaci_sol_blob="6cbd666267fc9f534ae52a45926eec5aa44b3bc5"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_stairstep_exponential_decrease_price"
+  note="Not mainnet uint256/ray=1e27. cut/step/wards/file/events/block.timestamp stripped: cut, step, top, dur are arguments. price=rmul(top, rpow(cut, dur/step, RAY')); step<1 or cut>RAY' fail-closes to 0. Distinct from LinearDecrease (tau) and from continuous ExponentialDecrease (n=dur). Assembly rpow is rejected by lin_from_solidity, not emitted. Upstream AGPL is not vendored."
+}
+
+!st_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!st_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(st_u_lt(s, a));
+}
+
+!st_mask32() -> int {
+  ^ 4294967295;
+}
+
+!st_ray() -> int {
+  ^ 1000000000;
+}
+
+!st_muldiv_part(a: int, b: int, d: int, want: int) -> int {
+  ?(d <= 0) { ^ 0; };
+  m32 = st_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = st_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = st_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  do_round = 0;
+  ?(want == 3) { do_round = 1; };
+  ?(want == 4) { do_round = 1; };
+  ?(do_round == 1) {
+    half = d / 2;
+    nlo = lo + half;
+    add_c = st_u_lt(nlo, lo);
+    lo = nlo;
+    nhi = hi + add_c;
+    ?(add_c == 1) {
+      ?(st_u_lt(nhi, hi) == 1) { ^ 0; };
+    };
+    hi = nhi;
+  };
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(st_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = st_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want == 1) { ^ r_lo; };
+  ?(want == 2) { ^ ov; };
+  ?(want == 4) { ^ ov; };
+  ?(ov == 1) { ^ 0; };
+  ?( _lia_ushr(q, 63) == 1 ) { ^ 0; };
+  ^ q;
+}
+
+!st_muldiv(a: int, b: int, d: int) -> int {
+  ^ st_muldiv_part(a, b, d, 0);
+}
+
+!st_muldiv_round(a: int, b: int, d: int) -> int {
+  ^ st_muldiv_part(a, b, d, 3);
+}
+
+!st_rpow_loop(x: int, n: int, z: int, base: int) -> int {
+  while (n > 0) {
+    ?(st_muldiv_part(x, x, base, 2) == 1) { ^ 0; };
+    x = st_muldiv_round(x, x, base);
+    odd = n - (n / 2) * 2;
+    ?(odd == 1) {
+      z = st_muldiv_round(z, x, base);
+    };
+    n = n / 2;
+  };
+  ^ z;
+}
+
+!st_rpow(x: int, n: int, base: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(n < 0) { ^ 0; };
+  ?(base <= 0) { ^ 0; };
+  ?(x == 0) {
+    ?(n == 0) { ^ base; };
+    ^ 0;
+  };
+  z = x;
+  odd0 = n - (n / 2) * 2;
+  ?(odd0 == 0) { z = base; };
+  ^ st_rpow_loop(x, n / 2, z, base);
+}
+
+!st_rmul(x: int, y: int) -> int {
+  ^ st_muldiv(x, y, st_ray());
+}
+
+!st_steps(dur: int, step: int) -> int {
+  ?(dur < 0) { ^ 0; };
+  ?(step < 1) { ^ 0; };
+  ^ dur / step;
+}
+
+!st_ok(top: int, dur: int, cut: int, step: int) -> int {
+  ?(top < 0) { ^ 0; };
+  ?(dur < 0) { ^ 0; };
+  ?(cut < 0) { ^ 0; };
+  ?(step < 1) { ^ 0; };
+  ?(st_u_lt(st_ray(), cut) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!st_price(top: int, dur: int, cut: int, step: int) -> int {
+  ?(st_ok(top, dur, cut, step) == 0) { ^ 0; };
+  n = st_steps(dur, step);
+  p = st_rpow(cut, n, st_ray());
+  ^ st_rmul(top, p);
+}
+
+!st_auth_required() -> int {
+  ^ 0;
+}
+
+!st_uses_tau() -> int {
+  ^ 0;
+}
+
+!st_uses_rpow() -> int {
+  ^ 1;
+}
+
+!st_uses_cut_step() -> int {
+  ^ 1;
+}
+
+!st_uses_block_time() -> int {
+  ^ 0;
+}
+
+!st_is_linear_kernel() -> int {
+  ^ 0;
+}
+
+!st_is_continuous_exp() -> int {
+  ^ 0;
+}
+
+!st_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!st_test_suite() -> int {
+  r = st_ray();
+  ?(st_auth_required() != 0) { ^ -1; };
+  ?(st_uses_tau() != 0) { ^ -2; };
+  ?(st_uses_rpow() != 1) { ^ -3; };
+  ?(st_uses_cut_step() != 1) { ^ -4; };
+  ?(st_uses_block_time() != 0) { ^ -5; };
+  ?(st_is_linear_kernel() != 0) { ^ -6; };
+  ?(st_is_continuous_exp() != 0) { ^ -7; };
+  ?(st_ray() != 1000000000) { ^ -8; };
+  ?(st_rpow(0, 0, r) != 1000000000) { ^ -9; };
+  ?(st_rpow(0, 5, r) != 0) { ^ -10; };
+  ?(st_rpow(3, 2, 2) != 5) { ^ -11; };
+  ?(st_rpow(990000000, 1, r) != 990000000) { ^ -12; };
+  ?(st_rpow(990000000, 2, r) != 980100000) { ^ -13; };
+  ?(st_rpow(990000000, 3, r) != 970299000) { ^ -14; };
+  ?(st_rpow(r, 11, r) != 1000000000) { ^ -15; };
+  ?(st_price(1000000000, 0, 990000000, 90) != 1000000000) { ^ -16; };
+  ?(st_price(1000000000, 89, 990000000, 90) != 1000000000) { ^ -17; };
+  ?(st_price(1000000000, 90, 990000000, 90) != 990000000) { ^ -18; };
+  ?(st_price(1000000000, 180, 990000000, 90) != 980100000) { ^ -19; };
+  ?(st_price(1000000000, 270, 990000000, 90) != 970299000) { ^ -20; };
+  ?(st_price(1000000000, 1000, r, 90) != 1000000000) { ^ -21; };
+  ?(st_price(0, 90, 990000000, 90) != 0) { ^ -22; };
+  ?(st_price(1000000000, 90, 990000000, 0) != 0) { ^ -23; };
+  ?(st_price(1000000000, 90, 1000000001, 90) != 0) { ^ -24; };
+  ?(st_price(123456789, 90, 990000000, 90) != 122222221) { ^ -25; };
+  ?(st_price(1000000000, 50, 990000000, 100) != 1000000000) { ^ -26; };
+  ?(st_steps(180, 90) != 2) { ^ -27; };
+  ?(st_steps(89, 90) != 0) { ^ -28; };
+  ?(st_ok(1000000000, 0, 990000000, 90) != 1) { ^ -29; };
+  ?(st_ok(1000000000, 0, 990000000, 0) != 0) { ^ -30; };
+  ?(st_muldiv(100, 200, 50) != 400) { ^ -31; };
+  ?(st_naive_i64_mul(10000000000, 1000000000) != -8446744073709551616) { ^ -32; };
+  ?(st_muldiv(1000000000000000000, 1000000000000000000, 1) != 0) { ^ -33; };
+  ?(st_muldiv(10000000000, 1000000000, 1) != 0) { ^ -34; };
+  ^ 1;
+}
+
+=ex{
+  st_u_lt,
+  st_u_add_carry,
+  st_mask32,
+  st_ray,
+  st_muldiv_part,
+  st_muldiv,
+  st_muldiv_round,
+  st_rpow_loop,
+  st_rpow,
+  st_rmul,
+  st_steps,
+  st_ok,
+  st_price,
+  st_auth_required,
+  st_uses_tau,
+  st_uses_rpow,
+  st_uses_cut_step,
+  st_uses_block_time,
+  st_is_linear_kernel,
+  st_is_continuous_exp,
+  st_naive_i64_mul,
+  st_test_suite
+}

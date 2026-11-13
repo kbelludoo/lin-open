@@ -107,6 +107,16 @@
   ?(rg_count_lit(extra, "utilizationRate") > 0) { ^0 };
   ?(rg_count_lit(extra, "util") > 0) { ^0 };
   ?(rg_count_lit(extra, "cash") > 0) { ^0 };
+  stair_params = "uint256 top, uint256 dur";
+  stair_body = "return rmul(top, rpow(cut, dur / step, RAY));";
+  stair_extra = svl_free(stair_params, stair_body);
+  ?(rg_count_lit(stair_extra, "cut") == 0) { ^0 };
+  ?(rg_count_lit(stair_extra, "step") == 0) { ^0 };
+  ?(rg_count_lit(stair_extra, "RAY") == 0) { ^0 };
+  ?(rg_count_lit(stair_extra, "rmul") > 0) { ^0 };
+  ?(rg_count_lit(stair_extra, "rpow") > 0) { ^0 };
+  ?(rg_count_lit(stair_extra, "top") > 0) { ^0 };
+  ?(rg_count_lit(stair_extra, "dur") > 0) { ^0 };
   ^1;
 }
 
