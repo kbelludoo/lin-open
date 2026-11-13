@@ -50,6 +50,8 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "newton_y") > 0) { ^"REJ_RUST_NEWTON_Y" };
+  ?(rg_count_lit(body, "newton_y") > 0) { ^"REJ_RUST_NEWTON_Y" };
   ^"OK";
 }
 
@@ -66,6 +68,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_ny = "pub fn newton_y(ann: u64, gamma: u64) -> u64";
+  body_ny = "return ann + gamma;";
+  r3 = rs_reason(sig_ny, body_ny);
+  ?(starts_lit(r3, 0, "REJ_RUST_NEWTON_Y") == 0) { ^0 };
 
   ^1;
 }

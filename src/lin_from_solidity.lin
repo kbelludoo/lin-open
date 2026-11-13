@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: fail-close newton_y / unsafe_ / uint256[ / uint256[] / TokenOutGivenExactBpt / powUp / LogExpMath (mechanical emit is not 128-bit Newton). v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,15 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(sig, "TokenOutGivenExactBpt") > 0) { ^"REJ_SOLIDITY_BPT_OUT" };
+  ?(rg_count_lit(body, "powUp") > 0) { ^"REJ_SOLIDITY_POWUP" };
+  ?(rg_count_lit(body, "LogExpMath") > 0) { ^"REJ_SOLIDITY_LOGEXP" };
+  ?(rg_count_lit(sig, "uint256[]") > 0) { ^"REJ_SOLIDITY_ARRAY" };
+  ?(rg_count_lit(body, "uint256[]") > 0) { ^"REJ_SOLIDITY_ARRAY" };
+  ?(rg_count_lit(sig, "uint256[") > 0) { ^"REJ_SOLIDITY_ARRAY" };
+  ?(rg_count_lit(sig, "newton_y") > 0) { ^"REJ_SOLIDITY_NEWTON_Y" };
+  ?(rg_count_lit(body, "newton_y") > 0) { ^"REJ_SOLIDITY_NEWTON_Y" };
+  ?(rg_count_lit(body, "unsafe_") > 0) { ^"REJ_SOLIDITY_UNSAFE" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +73,18 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_ny = "function newton_y(uint256 ANN, uint256 gamma) internal pure returns (uint256)";
+  body_ny = "return unsafe_mul(ANN, gamma);";
+  r4 = sol_reason(sig_ny, body_ny);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_NEWTON_Y") == 0) { ^0 };
+  sig_arr = "function get_y(uint256[3] memory x) internal pure returns (uint256)";
+  body_arr = "return x.length;";
+  r5 = sol_reason(sig_arr, body_arr);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_ARRAY") == 0) { ^0 };
+  sig_bpt = "function _calcTokenOutGivenExactBptIn(uint256 balance) internal pure returns (uint256)";
+  body_bpt = "return invariantRatio.powUp(FixedPoint.ONE);";
+  r6 = sol_reason(sig_bpt, body_bpt);
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_BPT_OUT") == 0) { ^0 };
   ^1;
 }
 
