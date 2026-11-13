@@ -1,0 +1,144 @@
+{
+  "schema": "LIN_MAKER_VAT_FROB_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss vat.sol matches hash pin",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 blob=ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+    },
+    {
+      "id": "UPSTREAM-FROB",
+      "status": "PASS",
+      "description": "pinned vat.sol contains frob and signed _mul (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/vat.sol",
+      "note": "ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_vat_frob.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "mfr_test_suite == 1 on Compiler 0 interpreter",
+      "note": "steps from stdout"
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "11/11 vectors: C11 i128 == limbs == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "11/11 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "OPEN lock+draw at 200% collat is safe; 3e9 draw is unsafe; 150% max_art=1.5e9",
+      "note": "open=1 unsafe=0 max_art=1500000000 naive_1to1=1000000000 liq_buffer=500000000"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured CDP buffer vs naive 1:1 (not TVL): 150% spot allows 1.5e9 art on 1e9 ink",
+      "note": "liq_buffer_wad=500000000"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e18*3e18) wraps; 128-bit muldiv fail-closes to 0",
+      "note": "i64_wrap=-5389669316318724096 bigint_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes CDP params as arguments (no hidden urns/wish/msg.sender)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv (naive i64 a*b wraps on 7e18*3e18)",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close vat.frob / wish / urns",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/vat.sol",
+    "git_blob_sha": "ff90bbed5b36e54318bd5461cbf32e4167df2b28",
+    "file_sha256": "9016fd94f0f1b014abf184edab86a3f5843042b17e3734407e0f0fabb920f49f",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_vat_frob.lin",
+  "c11_oracle": "test/oracles/maker_vat_frob_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "open_frob_ok": 1,
+    "unsafe_overdraw_ok": 0,
+    "max_art_150pct": 1500000000,
+    "naive_1to1": 1000000000,
+    "liq_buffer_wad": 500000000
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-vat-frob",
+  "clone_lin_head": "7e219fd71412a851c6f6706b45cf12faf7a89f9c",
+  "clone_lin_lin_commit": "562f9e340b8ebce18d5b7c5980c6b2743badef4f",
+  "clone_lin_lin_blob": "99419e74b6e6be102b99b7daf90ebd82ffb147b5",
+  "clone_lin_c_blob": "aa9750e46c4797d0e90baa2a3d909b2f5694fc7b"
+}

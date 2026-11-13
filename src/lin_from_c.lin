@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN changelog="v2: fail-close frob(/wish(/urns[ so Maker CDP storage cannot be silently emitted"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -33,6 +33,9 @@
 }
 
 !cfs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "frob(") > 0){ ^"REJ_C_VAT_FROB" };
+  ?(rg_count_lit(body, "wish(") > 0){ ^"REJ_C_WISH" };
+  ?(rg_count_lit(body, "urns[") > 0){ ^"REJ_C_URNS" };
   ?(rg_count_lit(sig, "*") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(body, "->") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(sig, "struct") > 0 || rg_count_lit(body, "struct") > 0){ ^"REJ_C_STRUCT" };
@@ -41,6 +44,16 @@
   ?(rg_count_lit(sig, "double") > 0 || rg_count_lit(body, "double") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(body, "goto") > 0){ ^"REJ_C_GOTO" };
   ^"OK";
+}
+
+!cfs_frob_rej_gate(): int {
+  r = cfs_reason("int frob(", "x");
+  ?(starts_lit(r, 0, "REJ_C_VAT_FROB") == 0) { ^0 };
+  r2 = cfs_reason("int x()", "wish(");
+  ?(starts_lit(r2, 0, "REJ_C_WISH") == 0) { ^0 };
+  r3 = cfs_reason("int x()", "urns[");
+  ?(starts_lit(r3, 0, "REJ_C_URNS") == 0) { ^0 };
+  ^1;
 }
 
 !cfs_atom_left(s: string, at: int): int {
@@ -756,4 +769,4 @@
   ^out;
 }
 
-=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type}
+=ex{cfs_from_c, cfs_report, cfs_reason, cfs_frob_rej_gate, cfs_fn, cfs_strip_casts, cfs_all_type}
