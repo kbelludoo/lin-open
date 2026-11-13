@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: fail-close newton_D / unsafe_ / uint256[ (Curve crypto invariant is a LIN clone, not a Solidity emit); v2 emit + 1eN expansion retained"
 }
 
 !sol_is_kw(nm: string): int {
@@ -38,6 +38,11 @@
 }
 
 !sol_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "newton_D") > 0) { ^"REJ_SOLIDITY_NEWTON_D" };
+  ?(rg_count_lit(body, "newton_D") > 0) { ^"REJ_SOLIDITY_NEWTON_D" };
+  ?(rg_count_lit(body, "unsafe_") > 0) { ^"REJ_SOLIDITY_UNSAFE" };
+  ?(rg_count_lit(sig, "uint256[") > 0) { ^"REJ_SOLIDITY_ARRAY" };
+  ?(rg_count_lit(body, "uint256[") > 0) { ^"REJ_SOLIDITY_ARRAY" };
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
@@ -64,6 +69,10 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_nd = "function newton_D(uint256 ANN, uint256 gamma, uint256[3] memory x) internal pure returns (uint256)";
+  body_nd = "return ANN + gamma + x[0];";
+  r4 = sol_reason(sig_nd, body_nd);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_NEWTON_D") == 0) { ^0 };
   ^1;
 }
 

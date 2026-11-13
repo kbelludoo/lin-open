@@ -1,0 +1,153 @@
+{
+  "schema": "LIN_CURVE_NEWTON_D_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned tricrypto-ng commit matches published sha256",
+      "note": "commit=ecaa8161c240f21dd7c3712eefc5637e1dac742b blob=695c794cb8035e4b2848ad0354d0993dcfb9c7cb"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of CurveCryptoMathOptimized3.vy",
+      "note": ""
+    },
+    {
+      "id": "NO-VENDOR",
+      "status": "PASS",
+      "description": "Vyper source is hash-pinned only (not copied into lin-open)",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb newton_D agree on goldens",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_curve_newton_d.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "VY-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_vyper.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "VY-GATE",
+      "status": "PASS",
+      "description": "lin_from_vyper.lin fail-closes newton_D / uint256[ / unsafe_",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 fail-closes newton_D / uint256[",
+      "note": ""
+    },
+    {
+      "id": "RS-GATE",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes newton_D",
+      "note": ""
+    },
+    {
+      "id": "C-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes newton_D / unsafe_ / uint256",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "cnd_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "11/11 vectors: C11 i128 == limbs == LIN vm == named goldens",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "11/11 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (3e9*mul2) wraps; 128-bit newton_D path does not",
+      "note": "i64_wrap=6755845818716831232 bigint=1524132091447923000000000"
+    },
+    {
+      "id": "VS-SUM",
+      "status": "PASS",
+      "description": "10% extra of one coin: invariant D lags the naive sum (gamma curvature)",
+      "note": "D=3096846429 S=3100000000 vp=998982719 balanced_vp=1000000000"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes ANN, gamma, x0,x1,x2 as arguments (no hidden pool storage)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product for S*mul2 / D*D (i64 wraps)",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/curvefi/tricrypto-ng",
+    "commit": "ecaa8161c240f21dd7c3712eefc5637e1dac742b",
+    "path": "contracts/main/CurveCryptoMathOptimized3.vy",
+    "git_blob_sha": "695c794cb8035e4b2848ad0354d0993dcfb9c7cb",
+    "file_sha256": "d0d48e5c3fa00e36f841250cbce8665292ba3224bb050c948dc3b12a50f01d6c",
+    "license": "all-rights-reserved informational-only (not vendored)"
+  },
+  "lin_clone": "src/lin_curve_newton_d.lin",
+  "c11_oracle": "test/oracles/curve_newton_d_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "identity_D": 3000000000,
+    "plus10_D": 3096846429,
+    "plus10_vp": 998982719,
+    "plus1_D": 3009971862,
+    "imbalanced_D": 3077962761,
+    "small_D": 300000000,
+    "k0_prev_failclosed": 0,
+    "ann2700_failclosed": 0,
+    "balanced_vp": 1000000000
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-curve-newton-d",
+  "clone_lin_commit": "588c9340ee7dfbe4502f43eafde9ea1196be5e09",
+  "clone_lin_kernel_blob": "ef3c15cb87a289f27fec83b05674c7574f9d290a",
+  "clone_lin_oracle_blob": "dba5c29b9210d9d627055992abfefbee237ccae4",
+  "lin_sha256": "6dbfd10b2d8d11689d142b0ae5cd838d98b8046f0db5fe95cfaf967ccdfe3949"
+}

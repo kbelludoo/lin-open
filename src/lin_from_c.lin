@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN changelog="v2: fail-close newton_D / unsafe_ / uint256 (Curve crypto invariant is a LIN clone, not a C emit)"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -33,6 +33,11 @@
 }
 
 !cfs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "newton_D") > 0){ ^"REJ_C_NEWTON_D" };
+  ?(rg_count_lit(body, "newton_D") > 0){ ^"REJ_C_NEWTON_D" };
+  ?(rg_count_lit(body, "unsafe_") > 0){ ^"REJ_C_UNSAFE" };
+  ?(rg_count_lit(sig, "uint256") > 0){ ^"REJ_C_UINT256" };
+  ?(rg_count_lit(body, "uint256") > 0){ ^"REJ_C_UINT256" };
   ?(rg_count_lit(sig, "*") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(body, "->") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(sig, "struct") > 0 || rg_count_lit(body, "struct") > 0){ ^"REJ_C_STRUCT" };
