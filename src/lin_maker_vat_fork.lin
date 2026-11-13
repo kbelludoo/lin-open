@@ -1,0 +1,355 @@
+@LIN:L1c:0.2
+@MAKER_VAT_FORK{
+  version=1
+  repo="makerdao/dss"
+  source="src/vat.sol fork/_add/_sub/_mul(uint,int|uint)"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_sky_vat_fork_cdp_split_128bit"
+  note="Not mainnet uint256. RAY=1e27 and wad*ray tab do not fit i64; RAY'=1e9. Storage urns/ilks, signed dink/dart, rate/spot/dust and dual wish are arguments. Dual safety+dust, conservation, fail-closed signed add/sub and 128-bit mul. No live, no wards (wish only). Upstream AGPL is not vendored."
+}
+
+!mf_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!mf_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(mf_u_lt(s, a));
+}
+
+!mf_mask32() -> int {
+  ^ 4294967295;
+}
+
+!mf_ray() -> int {
+  ^ 1000000000;
+}
+
+!mf_mainnet_ray_fits() -> int {
+  ^ 0;
+}
+
+!mf_live_required() -> int {
+  ^ 0;
+}
+
+!mf_auth_required() -> int {
+  ^ 0;
+}
+
+!mf_wish_required() -> int {
+  ^ 1;
+}
+
+!mf_muldiv_part(a: int, b: int, d: int, want: int) -> int {
+  ?(d == 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(a < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(b < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  m32 = mf_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = mf_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = mf_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(mf_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = mf_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(q < 0) { ov = 1; };
+  ?(want == 2) { ^ ov; };
+  ?(want == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!mf_muldiv(a: int, b: int, d: int) -> int {
+  ^ mf_muldiv_part(a, b, d, 0);
+}
+
+!mf_muldiv_rem(a: int, b: int, d: int) -> int {
+  ^ mf_muldiv_part(a, b, d, 1);
+}
+
+!mf_mul_ok(a: int, b: int) -> int {
+  ?(a == 0) { ^ 1; };
+  ?(b == 0) { ^ 1; };
+  ?(mf_muldiv_part(a, b, 1, 2) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!mf_u_sub_ok(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y < 0) { ^ 0; };
+  ?(mf_u_lt(x, y) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!mf_u_sub(x: int, y: int) -> int {
+  ?(mf_u_sub_ok(x, y) == 0) { ^ 0; };
+  ^ x - y;
+}
+
+!mf_u_add_ok(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y < 0) { ^ 0; };
+  s = x + y;
+  ?(s < 0) { ^ 0; };
+  ?(mf_u_lt(s, x) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!mf_u_add(x: int, y: int) -> int {
+  ?(mf_u_add_ok(x, y) == 0) { ^ 0; };
+  ^ x + y;
+}
+
+!mf_neg_ok(y: int) -> int {
+  ?(y >= 0) { ^ 1; };
+  ny = 0 - y;
+  ?(ny < 0) { ^ 0; };
+  ^ 1;
+}
+
+!mf_iadd_ok(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y >= 0) { ^ mf_u_add_ok(x, y); };
+  ?(mf_neg_ok(y) == 0) { ^ 0; };
+  ^ mf_u_sub_ok(x, 0 - y);
+}
+
+!mf_iadd(x: int, y: int) -> int {
+  ?(mf_iadd_ok(x, y) == 0) { ^ 0; };
+  ?(y >= 0) { ^ x + y; };
+  ^ x - (0 - y);
+}
+
+!mf_isub_ok(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y >= 0) { ^ mf_u_sub_ok(x, y); };
+  ?(mf_neg_ok(y) == 0) { ^ 0; };
+  ^ mf_u_add_ok(x, 0 - y);
+}
+
+!mf_isub(x: int, y: int) -> int {
+  ?(mf_isub_ok(x, y) == 0) { ^ 0; };
+  ?(y >= 0) { ^ x - y; };
+  ^ x + (0 - y);
+}
+
+!mf_wish_ok(wish_src: int, wish_dst: int) -> int {
+  ?(wish_src != 1) { ^ 0; };
+  ?(wish_dst != 1) { ^ 0; };
+  ^ 1;
+}
+
+!mf_safe(ink: int, art: int, rate: int, spot: int) -> int {
+  ?(mf_mul_ok(art, rate) == 0) { ^ 0; };
+  ?(mf_mul_ok(ink, spot) == 0) { ^ 0; };
+  tab = mf_muldiv(art, rate, 1);
+  col = mf_muldiv(ink, spot, 1);
+  ?(mf_u_lt(col, tab) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!mf_nondust(art: int, rate: int, dust: int) -> int {
+  ?(art == 0) { ^ 1; };
+  ?(mf_mul_ok(art, rate) == 0) { ^ 0; };
+  tab = mf_muldiv(art, rate, 1);
+  ?(mf_u_lt(tab, dust) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!mf_fork_ok(u_ink: int, u_art: int, v_ink: int, v_art: int, dink: int, dart: int, rate: int, spot: int, dust: int, wish_src: int, wish_dst: int) -> int {
+  ?(u_ink < 0) { ^ 0; };
+  ?(u_art < 0) { ^ 0; };
+  ?(v_ink < 0) { ^ 0; };
+  ?(v_art < 0) { ^ 0; };
+  ?(rate < 0) { ^ 0; };
+  ?(spot < 0) { ^ 0; };
+  ?(dust < 0) { ^ 0; };
+  ?(mf_wish_ok(wish_src, wish_dst) == 0) { ^ 0; };
+  ?(mf_isub_ok(u_ink, dink) == 0) { ^ 0; };
+  ?(mf_isub_ok(u_art, dart) == 0) { ^ 0; };
+  ?(mf_iadd_ok(v_ink, dink) == 0) { ^ 0; };
+  ?(mf_iadd_ok(v_art, dart) == 0) { ^ 0; };
+  nu_ink = mf_isub(u_ink, dink);
+  nu_art = mf_isub(u_art, dart);
+  nv_ink = mf_iadd(v_ink, dink);
+  nv_art = mf_iadd(v_art, dart);
+  ?(mf_safe(nu_ink, nu_art, rate, spot) == 0) { ^ 0; };
+  ?(mf_safe(nv_ink, nv_art, rate, spot) == 0) { ^ 0; };
+  ?(mf_nondust(nu_art, rate, dust) == 0) { ^ 0; };
+  ?(mf_nondust(nv_art, rate, dust) == 0) { ^ 0; };
+  ^ 1;
+}
+
+!mf_new_u_ink(u_ink: int, u_art: int, v_ink: int, v_art: int, dink: int, dart: int, rate: int, spot: int, dust: int, wish_src: int, wish_dst: int) -> int {
+  ?(mf_fork_ok(u_ink, u_art, v_ink, v_art, dink, dart, rate, spot, dust, wish_src, wish_dst) == 0) { ^ 0; };
+  ^ mf_isub(u_ink, dink);
+}
+
+!mf_new_u_art(u_ink: int, u_art: int, v_ink: int, v_art: int, dink: int, dart: int, rate: int, spot: int, dust: int, wish_src: int, wish_dst: int) -> int {
+  ?(mf_fork_ok(u_ink, u_art, v_ink, v_art, dink, dart, rate, spot, dust, wish_src, wish_dst) == 0) { ^ 0; };
+  ^ mf_isub(u_art, dart);
+}
+
+!mf_new_v_ink(u_ink: int, u_art: int, v_ink: int, v_art: int, dink: int, dart: int, rate: int, spot: int, dust: int, wish_src: int, wish_dst: int) -> int {
+  ?(mf_fork_ok(u_ink, u_art, v_ink, v_art, dink, dart, rate, spot, dust, wish_src, wish_dst) == 0) { ^ 0; };
+  ^ mf_iadd(v_ink, dink);
+}
+
+!mf_new_v_art(u_ink: int, u_art: int, v_ink: int, v_art: int, dink: int, dart: int, rate: int, spot: int, dust: int, wish_src: int, wish_dst: int) -> int {
+  ?(mf_fork_ok(u_ink, u_art, v_ink, v_art, dink, dart, rate, spot, dust, wish_src, wish_dst) == 0) { ^ 0; };
+  ^ mf_iadd(v_art, dart);
+}
+
+!mf_ink_conserved(u_ink: int, u_art: int, v_ink: int, v_art: int, dink: int, dart: int, rate: int, spot: int, dust: int, wish_src: int, wish_dst: int) -> int {
+  ?(mf_fork_ok(u_ink, u_art, v_ink, v_art, dink, dart, rate, spot, dust, wish_src, wish_dst) == 0) { ^ 0; };
+  nu = mf_isub(u_ink, dink);
+  nv = mf_iadd(v_ink, dink);
+  ?(mf_u_add(nu, nv) != mf_u_add(u_ink, v_ink)) { ^ 0; };
+  ^ 1;
+}
+
+!mf_art_conserved(u_ink: int, u_art: int, v_ink: int, v_art: int, dink: int, dart: int, rate: int, spot: int, dust: int, wish_src: int, wish_dst: int) -> int {
+  ?(mf_fork_ok(u_ink, u_art, v_ink, v_art, dink, dart, rate, spot, dust, wish_src, wish_dst) == 0) { ^ 0; };
+  nu = mf_isub(u_art, dart);
+  nv = mf_iadd(v_art, dart);
+  ?(mf_u_add(nu, nv) != mf_u_add(u_art, v_art)) { ^ 0; };
+  ^ 1;
+}
+
+!mf_moved_ink(u_ink: int, u_art: int, v_ink: int, v_art: int, dink: int, dart: int, rate: int, spot: int, dust: int, wish_src: int, wish_dst: int) -> int {
+  ?(mf_fork_ok(u_ink, u_art, v_ink, v_art, dink, dart, rate, spot, dust, wish_src, wish_dst) == 0) { ^ 0; };
+  ?(dink >= 0) { ^ dink; };
+  ^ 0 - dink;
+}
+
+!mf_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!mf_naive_i64_add(a: int, b: int) -> int {
+  ^ a + b;
+}
+
+!mf_test_suite() -> int {
+  e9 = 1000000000;
+  e9_2 = 2000000000;
+  e9_3 = 3000000000;
+  e9_4 = 4000000000;
+  e9_5 = 5000000000;
+  e9_12 = 1200000000;
+  e9_15 = 1500000000;
+  half = 500000000;
+  dust = 1000000000000000000;
+  dust2 = 2000000000000000000;
+  ?(mf_mainnet_ray_fits() != 0) { ^ -1; };
+  ?(mf_live_required() != 0) { ^ -2; };
+  ?(mf_auth_required() != 0) { ^ -3; };
+  ?(mf_wish_required() != 1) { ^ -4; };
+  ?(mf_muldiv(100, 200, 50) != 400) { ^ -5; };
+  ?(mf_muldiv_rem(3, 4, 5) != 2) { ^ -6; };
+  ?(mf_fork_ok(e9_5, e9_2, e9_3, e9, e9, half, e9, e9, dust, 1, 1) != 1) { ^ -7; };
+  ?(mf_new_u_ink(e9_5, e9_2, e9_3, e9, e9, half, e9, e9, dust, 1, 1) != e9_4) { ^ -8; };
+  ?(mf_new_u_art(e9_5, e9_2, e9_3, e9, e9, half, e9, e9, dust, 1, 1) != e9_15) { ^ -9; };
+  ?(mf_new_v_ink(e9_5, e9_2, e9_3, e9, e9, half, e9, e9, dust, 1, 1) != e9_4) { ^ -10; };
+  ?(mf_new_v_art(e9_5, e9_2, e9_3, e9, e9, half, e9, e9, dust, 1, 1) != e9_15) { ^ -11; };
+  ?(mf_ink_conserved(e9_5, e9_2, e9_3, e9, e9, half, e9, e9, dust, 1, 1) != 1) { ^ -12; };
+  ?(mf_art_conserved(e9_5, e9_2, e9_3, e9, e9, half, e9, e9, dust, 1, 1) != 1) { ^ -13; };
+  ?(mf_fork_ok(e9_5, e9_2, e9_12, e9, 0, half, e9, e9, dust, 1, 1) != 0) { ^ -14; };
+  ?(mf_fork_ok(e9_5, e9_2, e9_3, e9, e9, half, e9, e9, dust2, 1, 1) != 0) { ^ -15; };
+  ?(mf_fork_ok(e9_5, e9_2, e9_3, e9, e9, half, e9, e9, dust, 0, 1) != 0) { ^ -16; };
+  ?(mf_fork_ok(e9_5, e9_2, e9_3, e9, e9, half, e9, e9, dust, 1, 0) != 0) { ^ -17; };
+  ?(mf_fork_ok(e9_5, e9_2, e9_3, e9, 0, 0, e9, e9, dust, 1, 1) != 1) { ^ -18; };
+  ?(mf_fork_ok(e9_5, e9_2, e9_3, e9, 6000000000, 0, e9, e9, dust, 1, 1) != 0) { ^ -19; };
+  ?(mf_isub(e9_5, 0 - e9) != 6000000000) { ^ -20; };
+  ?(mf_fork_ok(e9_5, e9_2, e9_3, e9, 0 - e9, 0, e9, e9, dust, 1, 1) != 1) { ^ -21; };
+  ?(mf_new_u_ink(e9_5, e9_2, e9_3, e9, 0 - e9, 0, e9, e9, dust, 1, 1) != 6000000000) { ^ -22; };
+  ?(mf_moved_ink(e9_5, e9_2, e9_3, e9, e9, half, e9, e9, dust, 1, 1) != e9) { ^ -23; };
+  ?(mf_muldiv(7000000000000000000, 3000000000000000000, 1) != 0) { ^ -24; };
+  ?(mf_naive_i64_mul(7000000000000000000, 3000000000000000000) != 0 - 5389669316318724096) { ^ -25; };
+  ?(mf_u_add(7000000000000000000, 3000000000000000000) != 0) { ^ -26; };
+  ?(mf_naive_i64_add(7000000000000000000, 3000000000000000000) != 0 - 8446744073709551616) { ^ -27; };
+  ^ 1;
+}
+
+=ex{
+  mf_u_lt,
+  mf_u_add_carry,
+  mf_mask32,
+  mf_ray,
+  mf_mainnet_ray_fits,
+  mf_live_required,
+  mf_auth_required,
+  mf_wish_required,
+  mf_muldiv_part,
+  mf_muldiv,
+  mf_muldiv_rem,
+  mf_mul_ok,
+  mf_u_sub_ok,
+  mf_u_sub,
+  mf_u_add_ok,
+  mf_u_add,
+  mf_neg_ok,
+  mf_iadd_ok,
+  mf_iadd,
+  mf_isub_ok,
+  mf_isub,
+  mf_wish_ok,
+  mf_safe,
+  mf_nondust,
+  mf_fork_ok,
+  mf_new_u_ink,
+  mf_new_u_art,
+  mf_new_v_ink,
+  mf_new_v_art,
+  mf_ink_conserved,
+  mf_art_conserved,
+  mf_moved_ink,
+  mf_naive_i64_mul,
+  mf_naive_i64_add,
+  mf_test_suite
+}

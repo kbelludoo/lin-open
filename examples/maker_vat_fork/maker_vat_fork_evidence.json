@@ -1,0 +1,160 @@
+{
+  "schema": "LIN_MAKER_VAT_FORK_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss vat.sol matches hash pin",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 blob=ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+    },
+    {
+      "id": "UPSTREAM-FORK",
+      "status": "PASS",
+      "description": "pinned vat.sol contains fork, signed _add/_sub, dual safety+dust (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/vat.sol",
+      "note": "ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_vat_fork.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "mf_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "20/20 vectors: C11 i128 == limbs == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "20/20 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "SAFE_SPLIT 1e9 ink+5e8 art ok; dst unsafe=0; dust leftover=0; no-wish=0; no live/auth; dual wish; conservation; signed dink",
+      "note": "safe=1 new_u=4e9/1.5e9 new_v=4e9/1.5e9 unsafe=0 dust=0 nowish=0 live=0 auth=0 wish=1 inkc=1 artc=1 moved=1e9 neg=1"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured CDP split (not TVL): 1e9 collateral + 5e8 normalised debt moved src\u2192dst; both vaults stay art<=ink at rate=spot",
+      "note": "moved_ink=1000000000 moved_art=500000000 leftover_src_ink=4000000000 leftover_src_art=1500000000"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e18+3e18) wraps; checked u_add fail-closes to 0; (7e18*3e18) muldiv fail-closes",
+      "note": "i64_add_wrap=-8446744073709551616 u_add_fail_closed=0 i64_mul_wrap=-5389669316318724096 muldiv_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes both urns, signed dink/dart, rate/spot/dust and dual wish (no hidden urns/ilks/msg.sender)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-ADD",
+      "status": "PASS",
+      "description": "clone uses fail-closed signed add/sub plus 128-bit muldiv",
+      "note": ""
+    },
+    {
+      "id": "DUAL-SAFE",
+      "status": "PASS",
+      "description": "both vaults must stay safe and non-dusty; ink and art are conserved",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close vat.fork / urns / ilks",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/vat.sol",
+    "git_blob_sha": "ff90bbed5b36e54318bd5461cbf32e4167df2b28",
+    "file_sha256": "9016fd94f0f1b014abf184edab86a3f5843042b17e3734407e0f0fabb920f49f",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_vat_fork.lin",
+  "c11_oracle": "test/oracles/maker_vat_fork_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "safe_split_ok": 1,
+    "new_u_ink": 4000000000,
+    "new_u_art": 1500000000,
+    "new_v_ink": 4000000000,
+    "new_v_art": 1500000000,
+    "unsafe_dst": 0,
+    "dust_src": 0,
+    "no_wish": 0,
+    "live_required": 0,
+    "auth_required": 0,
+    "wish_required": 1,
+    "ink_conserved": 1,
+    "art_conserved": 1,
+    "moved_ink": 1000000000,
+    "signed_dink_ok": 1
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-vat-fork",
+  "clone_lin_head": "ea4688430ede84ba6c07ccbe819cb349b6fa9884",
+  "clone_lin_lin_commit": "d1ac461557755b0fd9317347ddd6d3140448ef0b",
+  "clone_lin_lin_blob": "0fdee0df92309dd358a9f7e826ee8300928ed2c6",
+  "clone_lin_c_blob": "db7d22a722c1c5d0e1ebf33ff64bdab58c41e664"
+}
