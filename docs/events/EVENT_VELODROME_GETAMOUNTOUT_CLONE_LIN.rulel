@@ -1,0 +1,63 @@
+@RULEL:VELODROME_GETAMOUNTOUT_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-VELO-GETAMOUNTOUT-V1"
+@TITLE="Clone-lin of Velodrome/Aerodrome Pool.getAmountOut with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-velo-getout"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Velodrome V2 / Solidly getAmountOut (volatile xy and stable x3y+y3x Newton) into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Optimism/Base mainnet"
+  operand_width="uint64 inputs, SCALE=1e9 not 1e18, 128-bit product for (a*b)/d; Solidity uint256 is NOT claimed"
+  commercial_hook="Velodrome V2 and Aerodrome (Base) quote kernel; same 10% trade on equal 1e9 reserves: stable fee-1bp out=99940071 vs volatile/Uniswap-0.3% out=90661089. Audit improvement (explicit args + 128-bit muldiv), not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/velodrome-finance/contracts"
+  path="contracts/Pool.sol"
+  license="GPL-3.0-or-later"
+  commit="b3065d8b6702b14b094f9f6046b752cc9f78c43b"
+  git_blob_sha="91412c378bba4d8076271cee52e1397b1520b709"
+  file_sha256="32d040ff419fa9b1f9113f7e10d587b332a2ab9c6b6099851025cc16a4e986bb"
+  vendor="hash-pin only; Solidity is not copied into lin-open"
+}
+
+.l{
+  clone="src/lin_velo_getout.lin"
+  transpiler_delta="src/lin_from_solidity.lin: REJ_SOLIDITY_GET_Y / REJ_SOLIDITY_ADDRESS / REJ_SOLIDITY_FACTORY; src/lin_from_c.lin REJ_C_GET_Y; src/lin_from_rust.lin REJ_RUST_GET_Y"
+  improvement_1="getAmountOut is view-on-storage (reserve0/1, stable, factory.getFee, token0); LIN takes reserveA, reserveB, stable, fee as arguments"
+  improvement_2="(a*b)/d uses 128-bit product (schoolbook limbs in LIN, __int128 in C11). 4e9*4e9 wraps signed i64; LIN muldiv fail-closes to 0"
+  improvement_3="Solidity _get_y reverts !y on non-convergence; LIN fail-closes to 0. dx=0 and fee>10000 also return 0"
+  improvement_4="SCALE=1e9 explicit; token decimals assumed already normalized (not hidden decimals0/decimals1 storage)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/velo_getout_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_velo_getout.sh"
+}
+
+.p{
+  harness="test/prove_velo_getout_external.py"
+  evidence_json="examples/velo_getout/velo_getout_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-velo-getout"
+  clone_lin_commit="3fb05fb262ec4d72c46e690d4ef37374e4f9e192"
+}
+
+.n{
+  not_claimed_1="full uint256 / 1e18 / token-decimals / Optimism or Base mainnet parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production pool replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Velodrome, Aerodrome, Uniswap, or the EVM"
+  not_claimed_6="Solidly cubic k alone (see clone-lin-solidly-k); this clone is the quote kernel getAmountOut"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

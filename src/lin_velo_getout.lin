@@ -1,0 +1,252 @@
+@LIN:L1c:0.2
+@VELODROME_GETAMOUNTOUT{
+  version=1
+  repo="velodrome-finance/contracts"
+  source="contracts/Pool.sol getAmountOut / _get_y"
+  license="GPL-3.0-or-later_hash_pin_only"
+  commit="b3065d8b6702b14b094f9f6046b752cc9f78c43b"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_velodrome_getAmountOut_128bit"
+  note="Not mainnet uint256. SCALE=1e9 (not 1e18). Reserves already decimal-normalized. stable, fee, reserveA/B are arguments (no factory/token0 storage). (a*b)/d uses 128-bit product; dx=0, fee>10000, non-convergence fail-close to 0."
+}
+
+!vgo_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!vgo_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(vgo_u_lt(s, a));
+}
+
+!vgo_mask32() -> int {
+  ^ 4294967295;
+}
+
+!vgo_scale() -> int {
+  ^ 1000000000;
+}
+
+!vgo_fee_den() -> int {
+  ^ 10000;
+}
+
+!vgo_prod128(a: int, b: int, want: int) -> int {
+  ?(a < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  ?(b < 0) { ?(want == 2) { ^ 1; }; ^ 0; };
+  m32 = vgo_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = vgo_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = vgo_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  ?(want == 1) { ^ hi; };
+  ^ lo;
+}
+
+!vgo_div128(hi: int, lo: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(d < 0) { ^ 0; };
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(vgo_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = vgo_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(ov == 1) { ^ 0; };
+  ?(q < 0) { ^ 0; };
+  ^ q;
+}
+
+!vgo_muldiv(a: int, b: int, d: int) -> int {
+  ?(d == 0) { ^ 0; };
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  hi = vgo_prod128(a, b, 1);
+  lo = vgo_prod128(a, b, 0);
+  ^ vgo_div128(hi, lo, d);
+}
+
+!vgo_f(x0: int, y: int) -> int {
+  ?(x0 <= 0) { ^ 0; };
+  ?(y <= 0) { ^ 0; };
+  P = vgo_scale();
+  a = vgo_muldiv(x0, y, P);
+  xx = vgo_muldiv(x0, x0, P);
+  yy = vgo_muldiv(y, y, P);
+  b = xx + yy;
+  ?(vgo_u_lt(b, xx) == 1) { ^ 0; };
+  ^ vgo_muldiv(a, b, P);
+}
+
+!vgo_d(x0: int, y: int) -> int {
+  ?(x0 <= 0) { ^ 0; };
+  ?(y <= 0) { ^ 0; };
+  P = vgo_scale();
+  yy = vgo_muldiv(y, y, P);
+  t1 = vgo_muldiv(vgo_muldiv(3, x0, 1), yy, P);
+  xx = vgo_muldiv(x0, x0, P);
+  t2 = vgo_muldiv(xx, x0, P);
+  s = t1 + t2;
+  ?(vgo_u_lt(s, t1) == 1) { ^ 0; };
+  ^ s;
+}
+
+!vgo_get_y(x0: int, xy: int, y: int) -> int {
+  ?(x0 <= 0) { ^ 0; };
+  ?(xy <= 0) { ^ 0; };
+  ?(y <= 0) { ^ 0; };
+  iter = 0;
+  done = 0;
+  outy = 0;
+  while (iter < 255) {
+    ?(done == 0) {
+      k = vgo_f(x0, y);
+      den = vgo_d(x0, y);
+      ?(den <= 0) { done = 1; };
+      ?(done == 0) {
+        lt = vgo_u_lt(k, xy);
+        ?(lt == 1) {
+          dy = vgo_muldiv(xy - k, vgo_scale(), den);
+          ?(dy == 0) {
+            ?(k == xy) { outy = y; done = 1; };
+            ?(done == 0) {
+              yp = y + 1;
+              ?(vgo_u_lt(yp, y) == 1) { done = 1; };
+              ?(done == 0) {
+                ?(vgo_u_lt(xy, vgo_f(x0, yp)) == 1) { outy = yp; done = 1; };
+                ?(done == 0) { dy = 1; };
+              };
+            };
+          };
+          ?(done == 0) {
+            ny = y + dy;
+            ?(vgo_u_lt(ny, y) == 1) { done = 1; };
+            ?(done == 0) { y = ny; };
+          };
+        };
+        ?(lt == 0) {
+          dy = vgo_muldiv(k - xy, vgo_scale(), den);
+          ?(dy == 0) {
+            close = 0;
+            ?(k == xy) { close = 1; };
+            ?(y > 0) {
+              ?(vgo_u_lt(vgo_f(x0, y - 1), xy) == 1) { close = 1; };
+            };
+            ?(close == 1) { outy = y; done = 1; };
+            ?(done == 0) { dy = 1; };
+          };
+          ?(done == 0) {
+            ?(vgo_u_lt(y, dy) == 1) { done = 1; };
+            ?(y == dy) { done = 1; };
+            ?(done == 0) { y = y - dy; };
+          };
+        };
+      };
+    };
+    iter = iter + 1;
+  };
+  ^ outy;
+}
+
+!vgo_get_amount_out(amountIn: int, reserveA: int, reserveB: int, stable: int, fee: int) -> int {
+  ?(amountIn <= 0) { ^ 0; };
+  ?(reserveA <= 0) { ^ 0; };
+  ?(reserveB <= 0) { ^ 0; };
+  ?(fee < 0) { ^ 0; };
+  ?(vgo_u_lt(vgo_fee_den(), fee) == 1) { ^ 0; };
+  net = amountIn - vgo_muldiv(amountIn, fee, vgo_fee_den());
+  ?(net <= 0) { ^ 0; };
+  ?(stable == 0) {
+    den = reserveA + net;
+    ?(vgo_u_lt(den, reserveA) == 1) { ^ 0; };
+    ^ vgo_muldiv(net, reserveB, den);
+  };
+  xy = vgo_f(reserveA, reserveB);
+  ?(xy <= 0) { ^ 0; };
+  x0 = reserveA + net;
+  ?(vgo_u_lt(x0, reserveA) == 1) { ^ 0; };
+  y = vgo_get_y(x0, xy, reserveB);
+  ?(y <= 0) { ^ 0; };
+  ?(vgo_u_lt(reserveB, y) == 1) { ^ 0; };
+  ?(reserveB == y) { ^ 0; };
+  ^ reserveB - y;
+}
+
+!vgo_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!vgo_test_suite() -> int {
+  e9 = 1000000000;
+  ?(vgo_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(vgo_f(e9, e9) != 2000000000) { ^ -2; };
+  ?(vgo_get_y(e9, 2000000000, e9) != e9) { ^ -3; };
+  ?(vgo_get_amount_out(100000000, e9, e9, 0, 0) != 90909090) { ^ -4; };
+  ?(vgo_get_amount_out(100000000, e9, e9, 0, 5) != 90867766) { ^ -5; };
+  ?(vgo_get_amount_out(100000000, e9, e9, 0, 30) != 90661089) { ^ -6; };
+  ?(vgo_get_amount_out(100000000, e9, e9, 1, 0) != 99950051) { ^ -7; };
+  ?(vgo_get_amount_out(100000000, e9, e9, 1, 1) != 99940071) { ^ -8; };
+  ?(vgo_get_amount_out(10000000, e9, e9, 1, 1) != 9998994) { ^ -9; };
+  ?(vgo_get_amount_out(0, e9, e9, 0, 5) != 0) { ^ -10; };
+  ?(vgo_get_amount_out(100000000, e9, e9, 0, 10001) != 0) { ^ -11; };
+  ?(vgo_get_y(1100000000, 2000000000, e9) != 900049949) { ^ -12; };
+  ?(vgo_naive_i64_mul(4000000000, 4000000000) != -2446744073709551616) { ^ -13; };
+  ?(vgo_muldiv(4000000000, 4000000000, 1) != 0) { ^ -14; };
+  ^ 1;
+}
+
+=ex{
+  vgo_u_lt,
+  vgo_u_add_carry,
+  vgo_mask32,
+  vgo_scale,
+  vgo_fee_den,
+  vgo_prod128,
+  vgo_div128,
+  vgo_muldiv,
+  vgo_f,
+  vgo_d,
+  vgo_get_y,
+  vgo_get_amount_out,
+  vgo_naive_i64_mul,
+  vgo_test_suite
+}
