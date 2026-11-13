@@ -4,7 +4,7 @@
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
   status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit); v2.4: fail-close vat.move / dai["
 }
 
 !sol_is_kw(nm: string): int {
@@ -38,6 +38,8 @@
 }
 
 !sol_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "function move(") > 0) { ^"REJ_SOLIDITY_VAT_MOVE" };
+  ?(rg_count_lit(body, "dai[") > 0) { ^"REJ_SOLIDITY_VAT_MOVE" };
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
@@ -64,6 +66,10 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_move = "function move(address src, address dst, uint256 rad) external";
+  body_move = "dai[src] = _sub(dai[src], rad); dai[dst] = _add(dai[dst], rad);";
+  r4 = sol_reason(sig_move, body_move);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_VAT_MOVE") == 0) { ^0 };
   ^1;
 }
 

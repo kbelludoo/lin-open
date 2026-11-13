@@ -1,0 +1,177 @@
+{
+  "schema": "LIN_MAKER_VAT_MOVE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 wrap-detect add and __int128 add agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss vat.sol matches hash pin",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 blob=ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+    },
+    {
+      "id": "UPSTREAM-MOVE",
+      "status": "PASS",
+      "description": "pinned vat.sol contains move, unsigned dai _add/_sub, src-only wish (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/vat.sol",
+      "note": "ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_vat_move.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "mv_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "21/21 vectors: C11 wrap-detect == __int128 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "21/21 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "SAFE_XFER 1e9 dai rad src\u2192dst; SELF_MOVE 7e18 identity; no-wish=0; underflow=0; cross overflow=0; sequential vs parallel",
+      "note": "safe=1 src=4e9 dst=4e9 self_ok=1 leftover=7e18 parallel_add_ok=0 unit_rad=1 gem=0"
+    },
+    {
+      "id": "SEQUENTIAL",
+      "status": "PASS",
+      "description": "same-slot self-move is identity under sequential _sub then _add; naive parallel add_ok(7e18,3e18)=0 would reject a valid Solidity move",
+      "note": "self_ok=1 parallel_add_ok=0 leftover_dai=7000000000000000000"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured dai rad transfer (not TVL): 1e9 internal DAI moved src\u2192dst with src-only wish; gem untouched; conserved",
+      "note": "moved_rad=1000000000 leftover_src=4000000000 leftover_dst=4000000000 unit=rad moves_gem=0"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e18+3e18) wraps; checked u_add fail-closes to 0",
+      "note": "i64_add_wrap=-8446744073709551616 u_add_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes src/dst dai balances, rad and src wish (no hidden dai[]/msg.sender)",
+      "note": ""
+    },
+    {
+      "id": "SRC-ONLY-WISH",
+      "status": "PASS",
+      "description": "src-only wish is explicit; dst cannot refuse incoming dai",
+      "note": ""
+    },
+    {
+      "id": "NO-LIVE",
+      "status": "PASS",
+      "description": "move does not require vat.live (works after cage); LIN measures live_required=0",
+      "note": ""
+    },
+    {
+      "id": "NOT-GEM",
+      "status": "PASS",
+      "description": "clone is dai rad, not gem wad (vat.flux)",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close vat.move / dai[",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/vat.sol",
+    "git_blob_sha": "ff90bbed5b36e54318bd5461cbf32e4167df2b28",
+    "file_sha256": "9016fd94f0f1b014abf184edab86a3f5843042b17e3734407e0f0fabb920f49f",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_vat_move.lin",
+  "c11_oracle": "test/oracles/maker_vat_move_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "safe_xfer_ok": 1,
+    "new_src": 4000000000,
+    "new_dst": 4000000000,
+    "conserved": 1,
+    "moved_rad": 1000000000,
+    "no_wish": 0,
+    "underflow": 0,
+    "overflow": 0,
+    "zero_rad": 1,
+    "full_src": 0,
+    "full_dst": 8000000000,
+    "self_move_ok": 1,
+    "self_leftover": 7000000000000000000,
+    "parallel_add_ok": 0,
+    "unit_is_rad": 1,
+    "moves_gem": 0,
+    "live_required": 0,
+    "auth_required": 0,
+    "wish_required": 1,
+    "dst_consent_required": 0
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-vat-move",
+  "clone_lin_head": "c48b1c6867039f33a3b5f78dfa3e7eb2b6c32f97",
+  "clone_lin_lin_commit": "c48b1c6867039f33a3b5f78dfa3e7eb2b6c32f97",
+  "clone_lin_lin_blob": "db40920adfd59b3664b672aaceb701e5661b5816",
+  "clone_lin_c_blob": "1ec529421e91644e5272ce4f048b845a82a69661"
+}

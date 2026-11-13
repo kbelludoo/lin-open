@@ -1,0 +1,199 @@
+@LIN:L1c:0.2
+@MAKER_VAT_MOVE{
+  version=1
+  repo="makerdao/dss"
+  source="src/vat.sol move/unsigned _add/_sub/wish"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_sky_vat_move_dai_rad_transfer"
+  note="Not mainnet uint256. Storage dai[usr] and wish(src,msg.sender) are arguments. Sequential sub-then-add (same-slot self-move is identity). Unsigned rad add/sub fail-closed. Src-only wish. No live. No wards. Distinct from vat.flux (gem wad). Upstream AGPL is not vendored."
+}
+
+!mv_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!mv_live_required() -> int {
+  ^ 0;
+}
+
+!mv_auth_required() -> int {
+  ^ 0;
+}
+
+!mv_wish_required() -> int {
+  ^ 1;
+}
+
+!mv_dst_consent_required() -> int {
+  ^ 0;
+}
+
+!mv_unit_is_rad() -> int {
+  ^ 1;
+}
+
+!mv_moves_gem() -> int {
+  ^ 0;
+}
+
+!mv_u_sub_ok(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y < 0) { ^ 0; };
+  ?(mv_u_lt(x, y) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!mv_u_sub(x: int, y: int) -> int {
+  ?(mv_u_sub_ok(x, y) == 0) { ^ 0; };
+  ^ x - y;
+}
+
+!mv_u_add_ok(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y < 0) { ^ 0; };
+  s = x + y;
+  ?(s < 0) { ^ 0; };
+  ?(mv_u_lt(s, x) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!mv_u_add(x: int, y: int) -> int {
+  ?(mv_u_add_ok(x, y) == 0) { ^ 0; };
+  ^ x + y;
+}
+
+!mv_wish_ok(wish_src: int) -> int {
+  ?(wish_src != 1) { ^ 0; };
+  ^ 1;
+}
+
+!mv_same_slot(src: int, dst: int) -> int {
+  ?(src == dst) { ^ 1; };
+  ^ 0;
+}
+
+!mv_add_base(src: int, dst: int, rad: int) -> int {
+  ?(mv_same_slot(src, dst) == 0) { ^ dst; };
+  ^ mv_u_sub(src, rad);
+}
+
+!mv_move_ok(src: int, dst: int, rad: int, wish_src: int) -> int {
+  ?(src < 0) { ^ 0; };
+  ?(dst < 0) { ^ 0; };
+  ?(rad < 0) { ^ 0; };
+  ?(mv_wish_ok(wish_src) == 0) { ^ 0; };
+  ?(mv_u_sub_ok(src, rad) == 0) { ^ 0; };
+  base = mv_add_base(src, dst, rad);
+  ?(mv_u_add_ok(base, rad) == 0) { ^ 0; };
+  ^ 1;
+}
+
+!mv_new_src(src: int, dst: int, rad: int, wish_src: int) -> int {
+  ?(mv_move_ok(src, dst, rad, wish_src) == 0) { ^ 0; };
+  ?(mv_same_slot(src, dst) == 1) { ^ src; };
+  ^ mv_u_sub(src, rad);
+}
+
+!mv_new_dst(src: int, dst: int, rad: int, wish_src: int) -> int {
+  ?(mv_move_ok(src, dst, rad, wish_src) == 0) { ^ 0; };
+  ?(mv_same_slot(src, dst) == 1) { ^ src; };
+  ^ mv_u_add(dst, rad);
+}
+
+!mv_conserved(src: int, dst: int, rad: int, wish_src: int) -> int {
+  ?(mv_move_ok(src, dst, rad, wish_src) == 0) { ^ 0; };
+  ?(mv_same_slot(src, dst) == 1) { ^ 1; };
+  ns = mv_u_sub(src, rad);
+  nd = mv_u_add(dst, rad);
+  ?(mv_u_add(ns, nd) != mv_u_add(src, dst)) { ^ 0; };
+  ^ 1;
+}
+
+!mv_moved(src: int, dst: int, rad: int, wish_src: int) -> int {
+  ?(mv_move_ok(src, dst, rad, wish_src) == 0) { ^ 0; };
+  ^ rad;
+}
+
+!mv_same_slot4(src: int, dst: int, rad: int, wish_src: int) -> int {
+  ^ mv_same_slot(src, dst);
+}
+
+!mv_parallel_add_ok(src: int, dst: int, rad: int, wish_src: int) -> int {
+  ^ mv_u_add_ok(dst, rad);
+}
+
+!mv_naive_i64_add(a: int, b: int) -> int {
+  ^ a + b;
+}
+
+!mv_test_suite() -> int {
+  e9 = 1000000000;
+  e9_3 = 3000000000;
+  e9_4 = 4000000000;
+  e9_5 = 5000000000;
+  e9_8 = 8000000000;
+  wrap_a = 7000000000000000000;
+  wrap_b = 3000000000000000000;
+  ?(mv_live_required() != 0) { ^ -1; };
+  ?(mv_auth_required() != 0) { ^ -2; };
+  ?(mv_wish_required() != 1) { ^ -3; };
+  ?(mv_dst_consent_required() != 0) { ^ -4; };
+  ?(mv_unit_is_rad() != 1) { ^ -5; };
+  ?(mv_moves_gem() != 0) { ^ -6; };
+  ?(mv_move_ok(e9_5, e9_3, e9, 1) != 1) { ^ -7; };
+  ?(mv_new_src(e9_5, e9_3, e9, 1) != e9_4) { ^ -8; };
+  ?(mv_new_dst(e9_5, e9_3, e9, 1) != e9_4) { ^ -9; };
+  ?(mv_conserved(e9_5, e9_3, e9, 1) != 1) { ^ -10; };
+  ?(mv_moved(e9_5, e9_3, e9, 1) != e9) { ^ -11; };
+  ?(mv_move_ok(e9_5, e9_3, e9, 0) != 0) { ^ -12; };
+  ?(mv_move_ok(e9_5, e9_3, 6000000000, 1) != 0) { ^ -13; };
+  ?(mv_move_ok(wrap_b, wrap_a, wrap_b, 1) != 0) { ^ -14; };
+  ?(mv_move_ok(e9_5, e9_3, 0, 1) != 1) { ^ -15; };
+  ?(mv_new_src(e9_5, e9_3, 0, 1) != e9_5) { ^ -16; };
+  ?(mv_move_ok(e9_5, e9_3, e9_5, 1) != 1) { ^ -17; };
+  ?(mv_new_src(e9_5, e9_3, e9_5, 1) != 0) { ^ -18; };
+  ?(mv_new_dst(e9_5, e9_3, e9_5, 1) != e9_8) { ^ -19; };
+  ?(mv_u_add_ok(wrap_a, wrap_b) != 0) { ^ -20; };
+  ?(mv_move_ok(wrap_a, wrap_a, wrap_b, 1) != 1) { ^ -21; };
+  ?(mv_new_src(wrap_a, wrap_a, wrap_b, 1) != wrap_a) { ^ -22; };
+  ?(mv_new_dst(wrap_a, wrap_a, wrap_b, 1) != wrap_a) { ^ -23; };
+  ?(mv_conserved(wrap_a, wrap_a, wrap_b, 1) != 1) { ^ -24; };
+  ?(mv_same_slot(wrap_a, wrap_a) != 1) { ^ -25; };
+  ?(mv_u_add(wrap_a, wrap_b) != 0) { ^ -26; };
+  ?(mv_naive_i64_add(wrap_a, wrap_b) != 0 - 8446744073709551616) { ^ -27; };
+  ?(mv_u_sub(e9_3, e9) != 2000000000) { ^ -28; };
+  ?(mv_u_add(2000000000, e9) != e9_3) { ^ -29; };
+  ^ 1;
+}
+
+=ex{
+  mv_u_lt,
+  mv_live_required,
+  mv_auth_required,
+  mv_wish_required,
+  mv_dst_consent_required,
+  mv_unit_is_rad,
+  mv_moves_gem,
+  mv_u_sub_ok,
+  mv_u_sub,
+  mv_u_add_ok,
+  mv_u_add,
+  mv_wish_ok,
+  mv_same_slot,
+  mv_same_slot4,
+  mv_parallel_add_ok,
+  mv_add_base,
+  mv_move_ok,
+  mv_new_src,
+  mv_new_dst,
+  mv_conserved,
+  mv_moved,
+  mv_naive_i64_add,
+  mv_test_suite
+}

@@ -1,0 +1,75 @@
+@RULEL:MAKER_VAT_MOVE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MAKER-VAT-MOVE"
+@TITLE="Clone-lin of Maker/Sky Vat.move dai rad transfer with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-maker-vat-move"
+@CLONE_LIN_HEAD="c48b1c6867039f33a3b5f78dfa3e7eb2b6c32f97"
+@CLONE_SHA256="sha256:6bfedd60a10b0a7946b9ebc014f0fdda33e107c0e9a67565daae704188fcd41e"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile MakerDAO/Sky vat.move dai-rad-transfer math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, sequential unsigned rad add/sub; Solidity uint256 dai rad is NOT claimed"
+  commercial_hook="Vat.move is the internal DAI transfer that moves rad between addresses after src-only wish; making dai/wish explicit, sequential sub-then-add (self-move identity), fail-closing unsigned add/sub, proving dst cannot refuse incoming dai, that move still works after cage, and that dai is conserved is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/makerdao/dss"
+  path="src/vat.sol"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  git_blob_sha="ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+  file_sha256="9016fd94f0f1b014abf184edab86a3f5843042b17e3734407e0f0fabb920f49f"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_maker_vat_move.lin"
+  clone_sha256="sha256:6bfedd60a10b0a7946b9ebc014f0fdda33e107c0e9a67565daae704188fcd41e"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-vat-move"
+  clone_lin_head="c48b1c6867039f33a3b5f78dfa3e7eb2b6c32f97"
+  clone_lin_lin_commit="c48b1c6867039f33a3b5f78dfa3e7eb2b6c32f97"
+  clone_lin_lin_blob="db40920adfd59b3664b672aaceb701e5661b5816"
+  clone_lin_c_blob="1ec529421e91644e5272ce4f048b845a82a69661"
+  c11_oracle_sha256="sha256:5e0f80df2568d515034b347a93286bfb90d16c35a9cef49d19fb170d09ddb0b1"
+  transpiler_delta="src/lin_from_solidity.lin changelog v2.4 + src/lin_from_c.lin v2 + src/lin_from_rust.lin v2: fail-close function move( / dai["
+  improvement_1="move is storage+wish in Solidity; LIN takes src/dst dai balances, rad and src wish as arguments"
+  improvement_2="sequential _sub then _add: same-slot self-move (7e18, 3e18) is identity; naive parallel add_ok(7e18,3e18)=0 would reject a valid Solidity move"
+  improvement_3="no live==1 and no wards/auth; src-only wish is explicit. Missing consent fail-closes to 0"
+  improvement_4="unit is rad (not gem wad); moves_gem=0; dai is conserved when move_ok=1"
+  improvement_5="7e18+3e18 wraps in naive i64 and fail-closes in checked u_add"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/maker_vat_move_c11.c (gcc -O2 -std=c11, wrap-detect XOR __int128 add)"
+  gate="make maker-vat-move-proof"
+}
+
+.p{
+  harness="test/prove_maker_vat_move_external.py"
+  evidence_json="examples/maker_vat_move/maker_vat_move_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-vat-move"
+  clone_lin_head="c48b1c6867039f33a3b5f78dfa3e7eb2b6c32f97"
+  result="21_PASS_0_FAIL_1_SKIP_libtcc"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet dai-rad parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production vat/dai replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Maker, Sky, or the EVM"
+  not_claimed_6="TVL or dollar savings from DAI transfers"
+  not_claimed_7="vat.flux gem-wad (already cloned separately)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_WRAP_EQ_I128 && LIN_C0_VM_EQ_C11 && PY_BIGINT && SEQUENTIAL_SELF_MOVE && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
