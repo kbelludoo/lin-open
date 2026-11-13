@@ -1,0 +1,225 @@
+@LIN:L1c:0.2
+@MAKER_CLIPPER_TAKE{
+  version=1
+  repo="makerdao/dss"
+  source="src/clip.sol take/min/mul/chost/owe"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  clip_sol_sha256="1ea897fc0e8e0964a2e5098716d86fdcd93d11e0b2e4f65998eb1b7650d167de"
+  clip_sol_blob="c43d8fff46a4ad225d1fa031b4b1de618345cba7"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_sky_clipper_take_dutch_auction_buy"
+  note="Not mainnet uint256/rad/ray. sales[], lock, clipperCall, vat.flux/move/digs, abacus and chip/tip are stripped: tab/lot/amt/max/price/chost/running/done/stopped are arguments. Mul of slice*price fail-closes instead of wrapping. Distinct from vat.slip/flux/move. Upstream AGPL is not vendored."
+}
+
+!ct_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!ct_min(a: int, b: int) -> int {
+  ?(ct_u_lt(a, b) == 1) { ^ a; };
+  ^ b;
+}
+
+!ct_u_mul_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(a == 0) { ^ 1; };
+  ?(b == 0) { ^ 1; };
+  p = a * b;
+  ?(p < 0) { ^ 0; };
+  ?(p / a != b) { ^ 0; };
+  ^ 1;
+}
+
+!ct_u_mul(a: int, b: int) -> int {
+  ?(ct_u_mul_ok(a, b) == 0) { ^ 0; };
+  ^ a * b;
+}
+
+!ct_auth_required() -> int {
+  ^ 0;
+}
+
+!ct_chip_tip_in_take() -> int {
+  ^ 0;
+}
+
+!ct_breaker_take_level() -> int {
+  ^ 3;
+}
+
+!ct_uses_callback() -> int {
+  ^ 0;
+}
+
+!ct_uses_abacus() -> int {
+  ^ 0;
+}
+
+!ct_is_vat_kernel() -> int {
+  ^ 0;
+}
+
+!ct_lot_is_wad() -> int {
+  ^ 1;
+}
+
+!ct_tab_is_rad() -> int {
+  ^ 1;
+}
+
+!ct_eval(tab: int, lot: int, amt: int, maxp: int, price: int, chost: int, running: int, done: int, stopped: int, want: int) -> int {
+  ?(stopped >= 3) { ^ 0; };
+  ?(running != 1) { ^ 0; };
+  ?(done != 0) { ^ 0; };
+  ?(price < 1) { ^ 0; };
+  ?(tab < 0) { ^ 0; };
+  ?(lot < 0) { ^ 0; };
+  ?(amt < 0) { ^ 0; };
+  ?(chost < 0) { ^ 0; };
+  ?(ct_u_lt(maxp, price) == 1) { ^ 0; };
+  slice = ct_min(lot, amt);
+  ?(ct_u_mul_ok(slice, price) == 0) { ^ 0; };
+  owe = slice * price;
+  tab_cap = 0;
+  ?(ct_u_lt(tab, owe) == 1) { tab_cap = 1; };
+  ?(tab_cap == 1) {
+    owe = tab;
+    slice = owe / price;
+  };
+  partial = 0;
+  ?(tab_cap == 0) {
+    ?(ct_u_lt(owe, tab) == 1) {
+      ?(ct_u_lt(slice, lot) == 1) { partial = 1; };
+    };
+  };
+  ?(partial == 1) {
+    rem = tab - owe;
+    ?(ct_u_lt(rem, chost) == 1) {
+      ?(ct_u_lt(chost, tab) == 0) { ^ 0; };
+      owe = tab - chost;
+      slice = owe / price;
+    };
+  };
+  new_tab = tab - owe;
+  new_lot = lot - slice;
+  ?(want == 0) { ^ 1; };
+  ?(want == 1) { ^ slice; };
+  ?(want == 2) { ^ owe; };
+  ?(want == 3) { ^ new_tab; };
+  ?(want == 4) { ^ new_lot; };
+  ?(want == 5) {
+    ?(new_lot == 0) { ^ 1; };
+    ^ 0;
+  };
+  ?(want == 6) {
+    ?(new_lot == 0) { ^ 0; };
+    ?(new_tab == 0) { ^ 1; };
+    ^ 0;
+  };
+  ^ 0;
+}
+
+!ct_take_ok(tab: int, lot: int, amt: int, maxp: int, price: int, chost: int, running: int, done: int, stopped: int) -> int {
+  ^ ct_eval(tab, lot, amt, maxp, price, chost, running, done, stopped, 0);
+}
+
+!ct_slice(tab: int, lot: int, amt: int, maxp: int, price: int, chost: int, running: int, done: int, stopped: int) -> int {
+  ^ ct_eval(tab, lot, amt, maxp, price, chost, running, done, stopped, 1);
+}
+
+!ct_owe(tab: int, lot: int, amt: int, maxp: int, price: int, chost: int, running: int, done: int, stopped: int) -> int {
+  ^ ct_eval(tab, lot, amt, maxp, price, chost, running, done, stopped, 2);
+}
+
+!ct_new_tab(tab: int, lot: int, amt: int, maxp: int, price: int, chost: int, running: int, done: int, stopped: int) -> int {
+  ^ ct_eval(tab, lot, amt, maxp, price, chost, running, done, stopped, 3);
+}
+
+!ct_new_lot(tab: int, lot: int, amt: int, maxp: int, price: int, chost: int, running: int, done: int, stopped: int) -> int {
+  ^ ct_eval(tab, lot, amt, maxp, price, chost, running, done, stopped, 4);
+}
+
+!ct_clears(tab: int, lot: int, amt: int, maxp: int, price: int, chost: int, running: int, done: int, stopped: int) -> int {
+  ^ ct_eval(tab, lot, amt, maxp, price, chost, running, done, stopped, 5);
+}
+
+!ct_returns_col(tab: int, lot: int, amt: int, maxp: int, price: int, chost: int, running: int, done: int, stopped: int) -> int {
+  ^ ct_eval(tab, lot, amt, maxp, price, chost, running, done, stopped, 6);
+}
+
+!ct_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!ct_test_suite() -> int {
+  ?(ct_auth_required() != 0) { ^ -1; };
+  ?(ct_chip_tip_in_take() != 0) { ^ -2; };
+  ?(ct_breaker_take_level() != 3) { ^ -3; };
+  ?(ct_uses_callback() != 0) { ^ -4; };
+  ?(ct_uses_abacus() != 0) { ^ -5; };
+  ?(ct_is_vat_kernel() != 0) { ^ -6; };
+  ?(ct_lot_is_wad() != 1) { ^ -7; };
+  ?(ct_tab_is_rad() != 1) { ^ -8; };
+  ?(ct_take_ok(200000, 1000, 2000, 100, 100, 1, 1, 0, 0) != 1) { ^ -9; };
+  ?(ct_slice(200000, 1000, 2000, 100, 100, 1, 0, 0, 0) != 0) { ^ -10; };
+  ?(ct_slice(200000, 1000, 2000, 100, 100, 1, 1, 0, 0) != 1000) { ^ -11; };
+  ?(ct_owe(200000, 1000, 2000, 100, 100, 1, 1, 0, 0) != 100000) { ^ -12; };
+  ?(ct_new_tab(200000, 1000, 2000, 100, 100, 1, 1, 0, 0) != 100000) { ^ -13; };
+  ?(ct_new_lot(200000, 1000, 2000, 100, 100, 1, 1, 0, 0) != 0) { ^ -14; };
+  ?(ct_clears(200000, 1000, 2000, 100, 100, 1, 1, 0, 0) != 1) { ^ -15; };
+  ?(ct_slice(100000, 1000, 1000, 200, 200, 1, 1, 0, 0) != 500) { ^ -16; };
+  ?(ct_owe(100000, 1000, 1000, 200, 200, 1, 1, 0, 0) != 100000) { ^ -17; };
+  ?(ct_returns_col(100000, 1000, 1000, 200, 200, 1, 1, 0, 0) != 1) { ^ -18; };
+  ?(ct_slice(100000, 1000, 400, 100, 100, 70000, 1, 0, 0) != 300) { ^ -19; };
+  ?(ct_owe(100000, 1000, 400, 100, 100, 70000, 1, 0, 0) != 30000) { ^ -20; };
+  ?(ct_new_tab(100000, 1000, 400, 100, 100, 70000, 1, 0, 0) != 70000) { ^ -21; };
+  ?(ct_take_ok(50000, 1000, 400, 100, 100, 70000, 1, 0, 0) != 0) { ^ -22; };
+  ?(ct_take_ok(100000, 1000, 1000, 50, 100, 1, 1, 0, 0) != 0) { ^ -23; };
+  ?(ct_take_ok(100000, 1000, 1000, 100, 100, 1, 1, 1, 0) != 0) { ^ -24; };
+  ?(ct_take_ok(100000, 1000, 1000, 100, 100, 1, 1, 0, 3) != 0) { ^ -25; };
+  ?(ct_take_ok(200000, 1000, 2000, 100, 100, 1, 1, 0, 2) != 1) { ^ -26; };
+  ?(ct_take_ok(100000, 1000, 1000, 100, 0, 1, 1, 0, 0) != 0) { ^ -27; };
+  ?(ct_slice(100000, 1000, 1000, 100, 100, 1, 1, 0, 0) != 1000) { ^ -28; };
+  ?(ct_new_tab(100000, 1000, 1000, 100, 100, 1, 1, 0, 0) != 0) { ^ -29; };
+  ?(ct_slice(50000, 400, 400, 100, 100, 70000, 1, 0, 0) != 400) { ^ -30; };
+  ?(ct_take_ok(100000, 1000, 0, 100, 100, 1, 1, 0, 0) != 1) { ^ -31; };
+  ?(ct_new_lot(100000, 1000, 0, 100, 100, 1, 1, 0, 0) != 1000) { ^ -32; };
+  wrap_a = 7000000000;
+  wrap_b = 3000000000;
+  ?(ct_u_mul_ok(wrap_a, wrap_b) != 0) { ^ -33; };
+  ?(ct_take_ok(9223372036854775807, wrap_a, wrap_a, wrap_b, wrap_b, 1, 1, 0, 0) != 0) { ^ -34; };
+  ?(ct_naive_i64_mul(wrap_a, wrap_b) != 2553255926290448384) { ^ -35; };
+  ?(ct_u_mul(1000, 100) != 100000) { ^ -36; };
+  ^ 1;
+}
+
+=ex{
+  ct_u_lt,
+  ct_min,
+  ct_u_mul_ok,
+  ct_u_mul,
+  ct_auth_required,
+  ct_chip_tip_in_take,
+  ct_breaker_take_level,
+  ct_uses_callback,
+  ct_uses_abacus,
+  ct_is_vat_kernel,
+  ct_lot_is_wad,
+  ct_tab_is_rad,
+  ct_eval,
+  ct_take_ok,
+  ct_slice,
+  ct_owe,
+  ct_new_tab,
+  ct_new_lot,
+  ct_clears,
+  ct_returns_col,
+  ct_naive_i64_mul,
+  ct_test_suite
+}

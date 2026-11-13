@@ -1,0 +1,65 @@
+@RULEL:MAKER_CLIPPER_TAKE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MAKER-CLIPPER-TAKE"
+@TITLE="Clone-lin of Maker/Sky Clipper.take with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-maker-clipper-take"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Maker clipper.take (Dutch-auction collateral buy; tab/lot/owe/chost) into deterministic LIN, compile in memory with C11 compiler 0, publish LIN copy in clone-lin-maker-clipper-take and only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64-scale tab/lot/amt/price/chost; Solidity uint256 rad/wad/ray is NOT claimed"
+  commercial_hook="Clipper.take is the Maker/Sky liquidation buy path: min(lot,amt), owe=slice*price, tab cap, chost dust floor, stopped<3. Making sales[]/abacus/callback/chip/tip explicit-or-absent, and fail-closing i64 mul wrap, is an audit improvement, not a TVL claim. Distinct from vat.slip/flux/move."
+}
+
+.u{
+  repo="https://github.com/makerdao/dss"
+  path="src/clip.sol"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  git_blob_sha="c43d8fff46a4ad225d1fa031b4b1de618345cba7"
+  file_sha256="1ea897fc0e8e0964a2e5098716d86fdcd93d11e0b2e4f65998eb1b7650d167de"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_maker_clipper_take.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-clipper-take"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_CLIPPER_TAKE + REJ_SOLIDITY_BYTES_CALLDATA + REJ_SOLIDITY_CLIPPER_CALLEE; src/lin_from_c.lin v2: REJ_C_WIDE_INT + REJ_C_CLIPPER_TAKE; src/lin_from_rust.lin v2: REJ_RUST_CLIPPER_TAKE + REJ_RUST_WIDE_INT"
+  improvement_1="sales[id].tab/lot, calc.price, lock, clipperCall and stopped are arguments; no hidden mapping / modifier / callback"
+  improvement_2="slice*price fail-closes on i64 overflow instead of wrapping; 7e9*3e9 naive i64 wraps, checked mul returns 0"
+  improvement_3="chost dust floor and tab cap are explicit; chip/tip are kick/redo, not take (ct_chip_tip_in_take=0)"
+  improvement_4="bytes calldata / clipperCall are not LIN types; transpiler fail-closes them"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/maker_clipper_take_c11.c (gcc -O2 -std=c11, wrap-detect XOR __int128)"
+  kernel="test/oracles/maker_clipper_take_kernel.c (pointer-free; eligible for lin_from_c)"
+  gate="test/verify_maker_clipper_take.sh"
+}
+
+.p{
+  harness="test/prove_maker_clipper_take_external.py"
+  evidence_json="examples/maker_clipper_take/maker_clipper_take_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-clipper-take"
+  named_goldens="FULL lot=1000 amt=2000 price=100 -> slice=1000 owe=1e5 leftover_lot=0; TAB_CAP owe>tab -> slice=500 leftover_tab=0; CHOST partial -> slice=300 tab=70000; NO_PARTIAL=0; STOPPED>=3=0; 7e9*3e9=0"
+}
+
+.n{
+  not_claimed_1="full uint256 rad/wad/ray / mainnet Clipper.take / Dog.bark parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production clipper replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Maker, Sky, clipper, dog, or the EVM"
+  not_claimed_6="TVL or dollar savings"
+}
+
+.v{
+  method="PINNED_BYTES && C11_WRAP_EQ_I128 && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
