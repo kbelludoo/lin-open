@@ -4,7 +4,7 @@
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
   status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit); v2.1: REJ_SOLIDITY_ADDRESS / REJ_SOLIDITY_GET_X_DOWN / REJ_SOLIDITY_STATICCALL (crvUSD Controller._health is view-on-AMM and must not emit)"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,9 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(sig, "address") > 0) { ^"REJ_SOLIDITY_ADDRESS" };
+  ?(rg_count_lit(body, "get_x_down") > 0) { ^"REJ_SOLIDITY_GET_X_DOWN" };
+  ?(rg_count_lit(body, "staticcall") > 0) { ^"REJ_SOLIDITY_STATICCALL" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +67,18 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_addr = "function health(address user) public view returns (int256)";
+  body_addr = "return AMM.get_x_down(user);";
+  r4 = sol_reason(sig_addr, body_addr);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_ADDRESS") == 0) { ^0 };
+  sig_xd = "function health(uint debt) public view returns (int256)";
+  body_xd = "return get_x_down(user) * health / debt;";
+  r5 = sol_reason(sig_xd, body_xd);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_GET_X_DOWN") == 0) { ^0 };
+  sig_sc = "function oracle() public view returns (uint)";
+  body_sc = "return staticcall AMM.price_oracle();";
+  r6 = sol_reason(sig_sc, body_sc);
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_STATICCALL") == 0) { ^0 };
   ^1;
 }
 
