@@ -1,0 +1,156 @@
+@LIN:L1c:0.2
+@MAKER_ABACUS_LINEAR{
+  version=1
+  repo="makerdao/dss"
+  source="src/abaci.sol LinearDecrease.price"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  abaci_sol_sha256="a4c3dc0368d66a5bf84e586f0cf76e2e80fb8b336c00348a97cc0d4ddcb016ca"
+  abaci_sol_blob="6cbd666267fc9f534ae52a45926eec5aa44b3bc5"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_lineardecrease_price"
+  note="Not mainnet uint256/ray. tau/wards/file/events/rpow/cut/step/block.timestamp are stripped: tau and dur are arguments. price=rmul(top, mul(tau-dur, RAY)/tau); dur>=tau fail-closes to 0. Distinct from StairstepExponentialDecrease rpow and from Clipper.take. Upstream AGPL is not vendored."
+}
+
+!ab_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!ab_u_mul_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(a == 0) { ^ 1; };
+  ?(b == 0) { ^ 1; };
+  p = a * b;
+  ?(p < 0) { ^ 0; };
+  ?(p / a != b) { ^ 0; };
+  ^ 1;
+}
+
+!ab_u_mul(a: int, b: int) -> int {
+  ?(ab_u_mul_ok(a, b) == 0) { ^ 0; };
+  ^ a * b;
+}
+
+!ab_ray() -> int {
+  ^ 1000000000;
+}
+
+!ab_auth_required() -> int {
+  ^ 0;
+}
+
+!ab_uses_tau() -> int {
+  ^ 1;
+}
+
+!ab_uses_rpow() -> int {
+  ^ 0;
+}
+
+!ab_uses_cut_step() -> int {
+  ^ 0;
+}
+
+!ab_uses_block_time() -> int {
+  ^ 0;
+}
+
+!ab_is_take_kernel() -> int {
+  ^ 0;
+}
+
+!ab_is_bark_kernel() -> int {
+  ^ 0;
+}
+
+!ab_factor(dur: int, tau: int) -> int {
+  ?(dur < 0) { ^ 0; };
+  ?(tau < 1) { ^ 0; };
+  ?(ab_u_lt(dur, tau) == 0) { ^ 0; };
+  rem = tau - dur;
+  ray = ab_ray();
+  ?(ab_u_mul_ok(rem, ray) == 0) { ^ 0; };
+  ^ (rem * ray) / tau;
+}
+
+!ab_price(top: int, dur: int, tau: int) -> int {
+  ?(top < 0) { ^ 0; };
+  ?(dur < 0) { ^ 0; };
+  ?(tau < 1) { ^ 0; };
+  ?(ab_u_lt(dur, tau) == 0) { ^ 0; };
+  f = ab_factor(dur, tau);
+  ?(ab_u_mul_ok(top, f) == 0) { ^ 0; };
+  ^ (top * f) / ab_ray();
+}
+
+!ab_ok(top: int, dur: int, tau: int) -> int {
+  ?(top < 0) { ^ 0; };
+  ?(dur < 0) { ^ 0; };
+  ?(tau < 1) { ^ 0; };
+  ?(ab_u_lt(dur, tau) == 0) { ^ 0; };
+  rem = tau - dur;
+  ray = ab_ray();
+  ?(ab_u_mul_ok(rem, ray) == 0) { ^ 0; };
+  f = (rem * ray) / tau;
+  ?(ab_u_mul_ok(top, f) == 0) { ^ 0; };
+  ^ 1;
+}
+
+!ab_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!ab_test_suite() -> int {
+  ?(ab_auth_required() != 0) { ^ -1; };
+  ?(ab_uses_tau() != 1) { ^ -2; };
+  ?(ab_uses_rpow() != 0) { ^ -3; };
+  ?(ab_uses_cut_step() != 0) { ^ -4; };
+  ?(ab_uses_block_time() != 0) { ^ -5; };
+  ?(ab_is_take_kernel() != 0) { ^ -6; };
+  ?(ab_is_bark_kernel() != 0) { ^ -7; };
+  ?(ab_ray() != 1000000000) { ^ -8; };
+  ?(ab_price(1000000000, 0, 100) != 1000000000) { ^ -9; };
+  ?(ab_price(1000000000, 50, 100) != 500000000) { ^ -10; };
+  ?(ab_price(1000000000, 99, 100) != 10000000) { ^ -11; };
+  ?(ab_price(1000000000, 100, 100) != 0) { ^ -12; };
+  ?(ab_price(1000000000, 101, 100) != 0) { ^ -13; };
+  ?(ab_price(7, 2, 5) != 4) { ^ -14; };
+  ?(ab_price(0, 0, 100) != 0) { ^ -15; };
+  ?(ab_price(1000000000, 0, 0) != 0) { ^ -16; };
+  ?(ab_price(123456789, 1, 3600) != 123422495) { ^ -17; };
+  ?(ab_factor(50, 100) != 500000000) { ^ -18; };
+  ?(ab_ok(1000000000, 0, 100) != 1) { ^ -19; };
+  ?(ab_ok(1000000000, 100, 100) != 0) { ^ -20; };
+  ?(ab_ok(1000000000, 0, 0) != 0) { ^ -21; };
+  wrap_a = 10000000000;
+  wrap_b = 1000000000;
+  ?(ab_u_mul_ok(wrap_a, wrap_b) != 0) { ^ -22; };
+  ?(ab_price(wrap_a, 0, 100) != 0) { ^ -23; };
+  ?(ab_naive_i64_mul(wrap_a, wrap_b) != -8446744073709551616) { ^ -24; };
+  ?(ab_u_mul(1000, 1100) != 1100000) { ^ -25; };
+  ^ 1;
+}
+
+=ex{
+  ab_u_lt,
+  ab_u_mul_ok,
+  ab_u_mul,
+  ab_ray,
+  ab_auth_required,
+  ab_uses_tau,
+  ab_uses_rpow,
+  ab_uses_cut_step,
+  ab_uses_block_time,
+  ab_is_take_kernel,
+  ab_is_bark_kernel,
+  ab_factor,
+  ab_price,
+  ab_ok,
+  ab_naive_i64_mul,
+  ab_test_suite
+}
