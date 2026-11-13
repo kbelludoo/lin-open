@@ -1,0 +1,125 @@
+{
+  "schema": "LIN_CURVE_STABLESWAP_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "LIN-PIN",
+      "status": "PASS",
+      "description": "LIN clone header pins curve-contract commit + sha256 + blob",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned curve-contract commit matches advertised sha256",
+      "note": "commit=574f44027d089de0eac765f5a74ea5ae96aba968 blob=04d170189a1b5ddfecfc0af9ea3fe23eb0840423"
+    },
+    {
+      "id": "UPSTREAM-FORMULA",
+      "status": "PASS",
+      "description": "pinned 3pool Vyper still contains get_D Newton formula",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv/get_D/get_dy agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_curve_stableswap.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler v2 (if-else, /=, REJ_C_WIDE_INT)",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3 (require + if-else)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "cs_test_suite == 1 on Compiler 0 interpreter",
+      "note": ".result{ fn=\"cs_test_suite\" value=1 steps=1055924 }"
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "6/6 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "6/6 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (1e10*1e10) wraps; 128-bit muldiv fail-closes quotient 1e20",
+      "note": "i64_wrap=7766279631452241920 lin_muldiv_ov=0"
+    },
+    {
+      "id": "C-EMIT",
+      "status": "PASS",
+      "description": "C transpiler v2: if-else, /=, reject __int128 as REJ_C_WIDE_INT",
+      "note": ""
+    },
+    {
+      "id": "SOL-EMIT",
+      "status": "PASS",
+      "description": "Solidity transpiler v3: require() fail-closed + if/else emit",
+      "note": ""
+    },
+    {
+      "id": "C-KERNEL",
+      "status": "PASS",
+      "description": "pointer-free C kernel (curve_get_d_kernel.c) is eligible for lin_from_c; naive * / is uint64-scale only",
+      "note": ""
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes xp/amp/fee as arguments (no hidden pool storage / block.timestamp ramp)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv/muladd (naive i64 D*D wraps at 1e10)",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/curvefi/curve-contract",
+    "commit": "574f44027d089de0eac765f5a74ea5ae96aba968",
+    "path": "contracts/pools/3pool/StableSwap3Pool.vy",
+    "git_blob_sha": "04d170189a1b5ddfecfc0af9ea3fe23eb0840423",
+    "file_sha256": "03e0bf29ae2fe945a3629b8085062da8f9d9d25957e86001dfc3df68c895f9dc",
+    "license": "Curve.Fi custom: no redistribution grant; LIN clone is original code citing the published algorithm",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_curve_stableswap.lin",
+  "c11_oracle": "test/oracles/curve_stableswap_c11.c",
+  "c_kernel_for_transpiler": "test/oracles/curve_get_d_kernel.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "get_d_balanced_1e10": 30000000000,
+  "get_dy_1e7": 9995996,
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-curve-stableswap",
+  "clone_lin_source": "https://github.com/kbelludoo/clone-lin-curve-stableswap/blob/main/src/lin_curve_stableswap.lin"
+}

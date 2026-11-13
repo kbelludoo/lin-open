@@ -1,0 +1,273 @@
+@LIN:L1c:0.2
+@CURVE_STABLESWAP_3POOL{
+  version=1
+  repo="curvefi/curve-contract"
+  source="contracts/pools/3pool/StableSwap3Pool.vy"
+  license_note="upstream header grants no redistribution license; this file is an original LIN implementation of the published StableSwap invariant, not a copy of the Vyper"
+  commit="574f44027d089de0eac765f5a74ea5ae96aba968"
+  git_blob_sha="04d170189a1b5ddfecfc0af9ea3fe23eb0840423"
+  file_sha256="03e0bf29ae2fe945a3629b8085062da8f9d9d25957e86001dfc3df68c895f9dc"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_curve_get_D_get_y_get_dy_with_128bit_muldiv"
+  note="Not mainnet uint256. Operand scale ~1e10 so Newton c=D^4/(prod x * A n^n) fits uint64 while D*D does not fit i64. Real deltas: amp/fee/balances are arguments (no hidden storage); (a*b+c)/d uses a 128-bit product; quotient overflow fail-closes to 0."
+}
+
+!cs_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!cs_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(cs_u_lt(s, a));
+}
+
+!cs_u_add_ok(a: int, b: int) -> int {
+  s = a + b;
+  ?(cs_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!cs_mask32() -> int {
+  ^ 4294967295;
+}
+
+!cs_n_coins() -> int {
+  ^ 3;
+}
+
+!cs_fee_den() -> int {
+  ^ 10000000000;
+}
+
+!cs_wide_part(a: int, b: int, addend: int, d: int, want_rem: int) -> int {
+  ?(d == 0) { ^ 0; };
+  m32 = cs_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = cs_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = cs_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  t2 = lo + addend;
+  add_carry = cs_u_lt(t2, lo);
+  ?(add_carry == 1) {
+    ?(cs_u_add_ok(hi, 1) == 0) { ^ 0; };
+    hi = hi + 1;
+  };
+  lo = t2;
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(cs_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = cs_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want_rem == 1) { ^ r_lo; };
+  ?(ov == 1) { ^ 0; };
+  ^ q;
+}
+
+!cs_muldiv(a: int, b: int, d: int) -> int {
+  ^ cs_wide_part(a, b, 0, d, 0);
+}
+
+!cs_muldiv_rem(a: int, b: int, d: int) -> int {
+  ^ cs_wide_part(a, b, 0, d, 1);
+}
+
+!cs_muladd_div(a: int, b: int, addend: int, d: int) -> int {
+  ^ cs_wide_part(a, b, addend, d, 0);
+}
+
+!cs_xp(k: int, x0: int, x1: int, x2: int) -> int {
+  ?(k == 0) { ^ x0; };
+  ?(k == 1) { ^ x1; };
+  ?(k == 2) { ^ x2; };
+  ^ 0;
+}
+
+!cs_get_d(x0: int, x1: int, x2: int, amp: int) -> int {
+  n = cs_n_coins();
+  ?(cs_u_lt(x0, 1) == 1) { ^ 0; };
+  ?(cs_u_lt(x1, 1) == 1) { ^ 0; };
+  ?(cs_u_lt(x2, 1) == 1) { ^ 0; };
+  ?(cs_u_lt(amp, 1) == 1) { ^ 0; };
+  ?(cs_u_add_ok(x0, x1) == 0) { ^ 0; };
+  s01 = x0 + x1;
+  ?(cs_u_add_ok(s01, x2) == 0) { ^ 0; };
+  S = s01 + x2;
+  ?(S == 0) { ^ 0; };
+  Ann = cs_muldiv(amp, n, 1);
+  ?(Ann == 0) { ^ 0; };
+  D = S;
+  i = 0;
+  for (i = 0; i < 255; i = i + 1) {
+    D_P = D;
+    xn0 = cs_muldiv(x0, n, 1);
+    xn1 = cs_muldiv(x1, n, 1);
+    xn2 = cs_muldiv(x2, n, 1);
+    ?(xn0 == 0 || xn1 == 0 || xn2 == 0) { ^ 0; };
+    D_P = cs_muldiv(D_P, D, xn0);
+    D_P = cs_muldiv(D_P, D, xn1);
+    D_P = cs_muldiv(D_P, D, xn2);
+    Dprev = D;
+    t = cs_muldiv(Ann, S, 1);
+    u = cs_muldiv(D_P, n, 1);
+    ?(cs_u_add_ok(t, u) == 0) { ^ 0; };
+    num = t + u;
+    a1 = Ann - 1;
+    left = cs_muldiv(a1, D, 1);
+    np1 = n + 1;
+    right = cs_muldiv(np1, D_P, 1);
+    ?(cs_u_add_ok(left, right) == 0) { ^ 0; };
+    den = left + right;
+    ?(den == 0) { ^ 0; };
+    D = cs_muldiv(num, D, den);
+    diff = 0;
+    ?(cs_u_lt(D, Dprev) == 1) { diff = Dprev - D; };
+    ?(cs_u_lt(D, Dprev) == 0) { diff = D - Dprev; };
+    ?(cs_u_lt(1, diff) == 0) { i = 255; };
+  };
+  ^ D;
+}
+
+!cs_get_y(i: int, j: int, x: int, x0: int, x1: int, x2: int, amp: int) -> int {
+  n = cs_n_coins();
+  ?(i == j) { ^ 0; };
+  ?(cs_u_lt(i, 0) == 1 || cs_u_lt(2, i) == 1) { ^ 0; };
+  ?(cs_u_lt(j, 0) == 1 || cs_u_lt(2, j) == 1) { ^ 0; };
+  ?(cs_u_lt(x, 1) == 1) { ^ 0; };
+  D = cs_get_d(x0, x1, x2, amp);
+  ?(D == 0) { ^ 0; };
+  Ann = cs_muldiv(amp, n, 1);
+  ?(Ann == 0) { ^ 0; };
+  c = D;
+  S_ = 0;
+  k = 0;
+  for (k = 0; k < 3; k = k + 1) {
+    skip = 0;
+    ?(k == j) { skip = 1; };
+    _x = cs_xp(k, x0, x1, x2);
+    ?(k == i) { _x = x; };
+    ?(skip == 0) {
+      ?(cs_u_lt(_x, 1) == 1) { ^ 0; };
+      ?(cs_u_add_ok(S_, _x) == 0) { ^ 0; };
+      S_ = S_ + _x;
+      xn = cs_muldiv(_x, n, 1);
+      ?(xn == 0) { ^ 0; };
+      c = cs_muldiv(c, D, xn);
+    };
+  };
+  ann_n = cs_muldiv(Ann, n, 1);
+  ?(ann_n == 0) { ^ 0; };
+  c = cs_muldiv(c, D, ann_n);
+  d_ann = cs_muldiv(D, 1, Ann);
+  ?(cs_u_add_ok(S_, d_ann) == 0) { ^ 0; };
+  b = S_ + d_ann;
+  y = D;
+  it = 0;
+  for (it = 0; it < 255; it = it + 1) {
+    y_prev = y;
+    two_y = cs_muldiv(2, y, 1);
+    ?(cs_u_add_ok(two_y, b) == 0) { ^ 0; };
+    tb = two_y + b;
+    ?(cs_u_lt(tb, D) == 1) { ^ 0; };
+    den = tb - D;
+    ?(den == 0) { ^ 0; };
+    y = cs_muladd_div(y, y, c, den);
+    diff = 0;
+    ?(cs_u_lt(y, y_prev) == 1) { diff = y_prev - y; };
+    ?(cs_u_lt(y, y_prev) == 0) { diff = y - y_prev; };
+    ?(cs_u_lt(1, diff) == 0) { it = 255; };
+  };
+  ^ y;
+}
+
+!cs_get_dy(i: int, j: int, dx: int, x0: int, x1: int, x2: int, amp: int, fee: int) -> int {
+  ?(cs_u_lt(dx, 1) == 1) { ^ 0; };
+  xp_i = cs_xp(i, x0, x1, x2);
+  xp_j = cs_xp(j, x0, x1, x2);
+  ?(cs_u_add_ok(xp_i, dx) == 0) { ^ 0; };
+  x = xp_i + dx;
+  y = cs_get_y(i, j, x, x0, x1, x2, amp);
+  ?(y == 0) { ^ 0; };
+  ?(cs_u_add_ok(y, 1) == 0) { ^ 0; };
+  y1 = y + 1;
+  ?(cs_u_lt(xp_j, y1) == 1) { ^ 0; };
+  dy = xp_j - y1;
+  fee_amt = cs_muldiv(dy, fee, cs_fee_den());
+  ?(cs_u_lt(dy, fee_amt) == 1) { ^ 0; };
+  ^ dy - fee_amt;
+}
+
+!cs_test_suite() -> int {
+  ?(cs_muldiv(100, 200, 50) != 400) { ^ -1; };
+  ?(cs_muldiv(7, 9, 1) != 63) { ^ -2; };
+  ?(cs_muladd_div(7, 9, 1, 2) != 32) { ^ -3; };
+  ?(cs_get_d(1000000, 1000000, 1000000, 100) != 3000000) { ^ -4; };
+  ?(cs_get_d(10000000000, 10000000000, 10000000000, 2000) != 30000000000) { ^ -5; };
+  ?(cs_get_d(10000000000, 9000000000, 11000000000, 2000) != 29999949520) { ^ -6; };
+  ?(cs_get_d(0, 1000000, 1000000, 100) != 0) { ^ -7; };
+  ?(cs_get_d(1000000, 1000000, 1000000, 0) != 0) { ^ -8; };
+  dy = cs_get_dy(0, 1, 10000000, 10000000000, 10000000000, 10000000000, 2000, 4000000);
+  ?(dy != 9995996) { ^ -9; };
+  ?(cs_u_lt(dy, 10000000) == 0) { ^ -10; };
+  ?(cs_muldiv(10000000000, 10000000000, 10000000000) != 10000000000) { ^ -11; };
+  ?(cs_muldiv_rem(7, 9, 2) != 1) { ^ -12; };
+  ?(cs_muldiv(10000000000, 10000000000, 1) != 0) { ^ -13; };
+  ^ 1;
+}
+
+=ex{
+  cs_u_lt,
+  cs_u_add_carry,
+  cs_u_add_ok,
+  cs_mask32,
+  cs_n_coins,
+  cs_fee_den,
+  cs_wide_part,
+  cs_muldiv,
+  cs_muldiv_rem,
+  cs_muladd_div,
+  cs_xp,
+  cs_get_d,
+  cs_get_y,
+  cs_get_dy,
+  cs_test_suite
+}

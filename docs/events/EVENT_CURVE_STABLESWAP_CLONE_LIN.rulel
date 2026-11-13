@@ -1,0 +1,66 @@
+@RULEL:CURVE_STABLESWAP_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-CURVE-STABLESWAP-3POOL"
+@TITLE="Clone-lin of Curve 3pool StableSwap get_D/get_y/get_dy with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-curve-stableswap"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Curve 3pool StableSwap invariant into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs ~1e10; 128-bit product for (a*b+c)/d; Newton accumulator c must fit uint64; Vyper uint256 is NOT claimed"
+  commercial_hook="Curve 3pool is the production DAI/USDC/USDT StableSwap; making A/fee/balances explicit and replacing wrapping i64 multiply with 128-bit muldiv is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/curvefi/curve-contract"
+  path="contracts/pools/3pool/StableSwap3Pool.vy"
+  license="Curve.Fi custom: informational only, no redistribution grant"
+  vendored=false
+  commit="574f44027d089de0eac765f5a74ea5ae96aba968"
+  git_blob_sha="04d170189a1b5ddfecfc0af9ea3fe23eb0840423"
+  file_sha256="03e0bf29ae2fe945a3629b8085062da8f9d9d25957e86001dfc3df68c895f9dc"
+  fetch="test/prove_curve_stableswap_external.py hashes live git; does not store the Vyper in lin-open"
+}
+
+.l{
+  clone="src/lin_curve_stableswap.lin"
+  transpiler_delta="src/lin_from_c.lin v2: C if/else → LIN :{}; /=; REJ_C_WIDE_INT for __int128. src/lin_from_solidity.lin v3: require(cond) fail-closes; if/else emit"
+  improvement_1="get_D/get_y/get_dy are view-on-storage in Vyper; LIN takes xp/amp/fee as arguments (no hidden ramp of A)"
+  improvement_2="D*D at 1e10 overflows i64; LIN uses schoolbook 128-bit muladd_div matching C11 __int128"
+  improvement_3="quotient that does not fit uint64 fail-closes to 0 (no silent wrap); Python bigint is the third oracle"
+  improvement_4="zero coin / zero A / denom 0 fail-closed to 0 (Vyper reverts)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit (SKIP if libtcc absent)"
+  oracle="test/oracles/curve_stableswap_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  kernel_for_c_transpiler="test/oracles/curve_get_d_kernel.c"
+  gate="test/verify_curve_stableswap.sh"
+}
+
+.p{
+  harness="test/prove_curve_stableswap_external.py"
+  evidence_json="examples/curve_stableswap/curve_stableswap_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-curve-stableswap"
+  clone_lin_source="https://github.com/kbelludoo/clone-lin-curve-stableswap/blob/main/src/lin_curve_stableswap.lin"
+  clone_lin_note="standalone clone-lin repo holds the LIN port; lin-open holds proofs + C11 oracle + this event"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet 3pool quote parity"
+  not_claimed_2="LIN is faster than vyper/solc or the EVM"
+  not_claimed_3="this clone is a production AMM replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Curve, Uniswap, or the EVM"
+  not_claimed_6="redistribution of Curve Vyper source"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
