@@ -1,0 +1,74 @@
+@RULEL:MAKER_VAT_FORK_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MAKER-VAT-FORK"
+@TITLE="Clone-lin of Maker/Sky Vat.fork CDP split with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-maker-vat-fork"
+@CLONE_LIN_HEAD="ea4688430ede84ba6c07ccbe819cb349b6fa9884"
+@CLONE_SHA256="sha256:4f3da5dfc644f8977d7566a0e2a78b4f59726996377475a759fd3dfbf9884f53"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile MakerDAO/Sky vat.fork CDP-split math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, signed dink/dart, 128-bit product for tab/spot; Solidity uint256 / RAY=1e27 is NOT claimed"
+  commercial_hook="Vat.fork is the dual-consent CDP split that moves ink/art between urns; making wish/rate/spot/dust explicit, fail-closing signed add/sub and 128-bit mul, and proving both vaults stay safe+non-dusty with ink/art conservation is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/makerdao/dss"
+  path="src/vat.sol"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  git_blob_sha="ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+  file_sha256="9016fd94f0f1b014abf184edab86a3f5843042b17e3734407e0f0fabb920f49f"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_maker_vat_fork.lin"
+  clone_sha256="sha256:4f3da5dfc644f8977d7566a0e2a78b4f59726996377475a759fd3dfbf9884f53"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-vat-fork"
+  clone_lin_head="ea4688430ede84ba6c07ccbe819cb349b6fa9884"
+  clone_lin_lin_commit="d1ac461557755b0fd9317347ddd6d3140448ef0b"
+  clone_lin_lin_blob="0fdee0df92309dd358a9f7e826ee8300928ed2c6"
+  clone_lin_c_blob="db7d22a722c1c5d0e1ebf33ff64bdab58c41e664"
+  c11_oracle_sha256="sha256:868c6f0a963ff74364692b00a133d6ed8845624ef394c09f7ed8e86455e42393"
+  transpiler_delta="src/lin_from_solidity.lin changelog v2.2 + src/lin_from_c.lin v2 + src/lin_from_rust.lin v2: fail-close function fork / urns[ / ilks["
+  improvement_1="fork is storage+wish in Solidity; LIN takes both urns, signed dink/dart, rate/spot/dust and dual wish as arguments"
+  improvement_2="no live==1 and no wards/auth (unlike frob/suck); dual wish is explicit. Missing consent fail-closes to 0"
+  improvement_3="both vaults must remain safe (art*rate <= ink*spot) and non-dusty after the split"
+  improvement_4="ink and art are conserved: Δsrc + Δdst = 0 when fork_ok=1; signed dink/dart fail-close on overflow/underflow"
+  improvement_5="7e18*3e18 wraps in naive i64 and fail-closes in 128-bit muldiv"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/maker_vat_fork_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="make maker-vat-fork-proof"
+}
+
+.p{
+  harness="test/prove_maker_vat_fork_external.py"
+  evidence_json="examples/maker_vat_fork/maker_vat_fork_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-vat-fork"
+  clone_lin_head="ea4688430ede84ba6c07ccbe819cb349b6fa9884"
+  result="19_PASS_0_FAIL_1_SKIP_libtcc"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet RAY=1e27 / wad*ray tab parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production vat/urn replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Maker, Sky, or the EVM"
+  not_claimed_6="TVL or dollar savings from CDP splits"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
