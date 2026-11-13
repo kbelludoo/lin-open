@@ -1,0 +1,155 @@
+{
+  "schema": "LIN_MAKER_VAT_SUCK_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss vat.sol matches hash pin",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 blob=ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+    },
+    {
+      "id": "UPSTREAM-SUCK",
+      "status": "PASS",
+      "description": "pinned vat.sol contains suck, unsigned _add, and auth (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/vat.sol",
+      "note": "ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_vat_suck.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "ms_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "20/20 vectors: C11 i128 == limbs == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "20/20 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "VOW suck 1e18 ok; FULL_MINT vice 2e18->4e18; unauth=0; four deltas=rad; inverse of heal; auth required, no live",
+      "note": "vow=1 full=1 new_vice=3000000000000000000 minted=2000000000000000000 unauth=0 live_required=0 auth_required=1 deltas=1 inverse=1"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured unbacked mint (not TVL): 2e18 vice/dai/sin/debt created under explicit auth; leftover dai=5e18",
+      "note": "minted_vice=2000000000000000000 new_dai=5000000000000000000 new_debt=7000000000000000000 leftover_dai=5000000000000000000"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e18+3e18) wraps; checked u_add fail-closes to 0; (7e18*3e18) muldiv fail-closes",
+      "note": "i64_add_wrap=-8446744073709551616 u_add_fail_closed=0 i64_mul_wrap=-5389669316318724096 muldiv_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes mint params plus explicit auth (no hidden sin/dai/vice/debt/wards/msg.sender)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-ADD",
+      "status": "PASS",
+      "description": "clone uses fail-closed unsigned add/sub plus 128-bit muldiv",
+      "note": ""
+    },
+    {
+      "id": "AUTH-NO-LIVE",
+      "status": "PASS",
+      "description": "suck requires explicit auth and has no live==1 (unlike frob); four deltas equal rad; inverse of heal",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close vat.suck / dai / sin / vice",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/vat.sol",
+    "git_blob_sha": "ff90bbed5b36e54318bd5461cbf32e4167df2b28",
+    "file_sha256": "9016fd94f0f1b014abf184edab86a3f5843042b17e3734407e0f0fabb920f49f",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_vat_suck.lin",
+  "c11_oracle": "test/oracles/maker_vat_suck_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "vow_suck_ok": 1,
+    "full_mint_ok": 1,
+    "full_mint_new_vice": 4000000000000000000,
+    "minted_vice": 2000000000000000000,
+    "unauth_refused": 0,
+    "live_required": 0,
+    "auth_required": 1,
+    "deltas_equal": 1,
+    "inverse_of_heal": 1,
+    "leftover_dai_after_full": 5000000000000000000
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-vat-suck",
+  "clone_lin_head": "92060679532820179adf01e83f703852516c7bcc",
+  "clone_lin_lin_commit": "ab57ae9298156930fb852ec8548a7fac87f407cc",
+  "clone_lin_lin_blob": "4e314df2588d587fd45a74c4e0d79831aff67a8a",
+  "clone_lin_c_blob": "8f63a1440d65f21a19988db5ce493d6355ade554"
+}

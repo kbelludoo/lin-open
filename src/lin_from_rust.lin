@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: fail-close fn suck / dai[ / sin[ / vice so Maker unbacked-mint storage cannot be silently emitted"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -40,6 +41,10 @@
 
 // 3. Critérios fail-closed de rejeição de código Rust não-puro
 !rs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "fn suck") > 0) { ^"REJ_RUST_VAT_SUCK" };
+  ?(rg_count_lit(body, "dai[") > 0) { ^"REJ_RUST_DAI" };
+  ?(rg_count_lit(body, "sin[") > 0) { ^"REJ_RUST_SIN" };
+  ?(rg_count_lit(body, "vice") > 0) { ^"REJ_RUST_VICE" };
   ?(rg_count_lit(sig, "&mut") > 0) { ^"REJ_RUST_MUTABLE_REF" };
   ?(rg_count_lit(sig, "&") > 0) { ^"REJ_RUST_BORROW" };
   ?(rg_count_lit(body, "unsafe") > 0) { ^"REJ_RUST_UNSAFE" };
@@ -70,4 +75,16 @@
   ^1;
 }
 
-=ex{rs_is_kw, rs_is_type, rs_reason, rs_parse_test_gate}
+!rs_suck_rej_gate(): int {
+  r = rs_reason("fn suck(", "x");
+  ?(starts_lit(r, 0, "REJ_RUST_VAT_SUCK") == 0) { ^0 };
+  r2 = rs_reason("fn x()", "dai[");
+  ?(starts_lit(r2, 0, "REJ_RUST_DAI") == 0) { ^0 };
+  r3 = rs_reason("fn x()", "sin[");
+  ?(starts_lit(r3, 0, "REJ_RUST_SIN") == 0) { ^0 };
+  r4 = rs_reason("fn x()", "vice");
+  ?(starts_lit(r4, 0, "REJ_RUST_VICE") == 0) { ^0 };
+  ^1;
+}
+
+=ex{rs_is_kw, rs_is_type, rs_reason, rs_parse_test_gate, rs_suck_rej_gate}
