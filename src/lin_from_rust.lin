@@ -50,6 +50,8 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "get_amount_in") > 0) { ^"REJ_RUST_GET_AMOUNT_IN" };
+  ?(rg_count_lit(body, "get_amount_in") > 0) { ^"REJ_RUST_GET_AMOUNT_IN" };
   ^"OK";
 }
 
@@ -66,6 +68,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_in = "pub fn get_amount_in(amount_out: u64, reserve_in: u64, reserve_out: u64) -> u64";
+  body_in = "let q = (reserve_in * amount_out * 10000) / ((reserve_out - amount_out) * 9970); return q + 1;";
+  r3 = rs_reason(sig_in, body_in);
+  ?(starts_lit(r3, 0, "REJ_RUST_GET_AMOUNT_IN") == 0) { ^0 };
 
   ^1;
 }
