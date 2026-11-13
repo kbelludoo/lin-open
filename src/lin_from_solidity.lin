@@ -4,7 +4,7 @@
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
   status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  changelog="v2.1: fail-close Clipper.kick / vat.suck / sales[] (auction start is host+storage, not LIN emit). v2: emit LIN for eligible pure functions; expand 1eN; OK_VIEW reason (storage lift is src/lin_sol_view_lift.lin)"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,9 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(sig, "function kick(") > 0) { ^"REJ_SOLIDITY_CLIPPER_KICK" };
+  ?(rg_count_lit(body, ".suck(") > 0) { ^"REJ_SOLIDITY_SUCK" };
+  ?(rg_count_lit(body, "sales[") > 0) { ^"REJ_SOLIDITY_SALES_MAP" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +67,13 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_kick = "function kick(uint256 tab, uint256 lot, address usr, address kpr) external auth returns (uint256 id)";
+  body_kick = "id = ++kicks; coin = add(tip, wmul(tab, chip)); vat.suck(vow, kpr, coin); sales[id].tab = tab;";
+  r4 = sol_reason(sig_kick, body_kick);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_CLIPPER_KICK") == 0) { ^0 };
+  body_suck = "vat.suck(vow, kpr, coin); return coin;";
+  r5 = sol_reason("function pay(uint256 coin) internal returns (uint256)", body_suck);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_SUCK") == 0) { ^0 };
   ^1;
 }
 
