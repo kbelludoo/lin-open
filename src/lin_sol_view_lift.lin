@@ -3,7 +3,7 @@
   version=1
   purpose="lift Solidity view storage identifiers to explicit LIN arguments"
   class="EXPERIMENTAL"
-  note="Does not rewrite (a*b)/d to 128-bit muldiv and does not claim uint256/cToken parity. JumpRate clone does muldiv separately."
+  note="Does not rewrite (a*b)/d to 128-bit muldiv and does not claim uint256/cToken parity. JumpRate clone does muldiv separately. ExponentialDecrease.price lifts cut+RAY and must not invent a step ident (that belongs to StairstepExponentialDecrease)."
 }
 
 !svl_is_type(nm: string): int {
@@ -107,6 +107,26 @@
   ?(rg_count_lit(extra, "utilizationRate") > 0) { ^0 };
   ?(rg_count_lit(extra, "util") > 0) { ^0 };
   ?(rg_count_lit(extra, "cash") > 0) { ^0 };
+  stair_params = "uint256 top, uint256 dur";
+  stair_body = "return rmul(top, rpow(cut, dur / step, RAY));";
+  stair_extra = svl_free(stair_params, stair_body);
+  ?(rg_count_lit(stair_extra, "cut") == 0) { ^0 };
+  ?(rg_count_lit(stair_extra, "step") == 0) { ^0 };
+  ?(rg_count_lit(stair_extra, "RAY") == 0) { ^0 };
+  ?(rg_count_lit(stair_extra, "rmul") > 0) { ^0 };
+  ?(rg_count_lit(stair_extra, "rpow") > 0) { ^0 };
+  ?(rg_count_lit(stair_extra, "top") > 0) { ^0 };
+  ?(rg_count_lit(stair_extra, "dur") > 0) { ^0 };
+  exp_params = "uint256 top, uint256 dur";
+  exp_body = "return rmul(top, rpow(cut, dur, RAY));";
+  exp_extra = svl_free(exp_params, exp_body);
+  ?(rg_count_lit(exp_extra, "cut") == 0) { ^0 };
+  ?(rg_count_lit(exp_extra, "RAY") == 0) { ^0 };
+  ?(rg_count_lit(exp_extra, "step") > 0) { ^0 };
+  ?(rg_count_lit(exp_extra, "rmul") > 0) { ^0 };
+  ?(rg_count_lit(exp_extra, "rpow") > 0) { ^0 };
+  ?(rg_count_lit(exp_extra, "top") > 0) { ^0 };
+  ?(rg_count_lit(exp_extra, "dur") > 0) { ^0 };
   ^1;
 }
 

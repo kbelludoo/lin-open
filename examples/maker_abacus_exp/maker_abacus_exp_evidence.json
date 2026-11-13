@@ -1,0 +1,159 @@
+{
+  "schema": "LIN_MAKER_ABACUS_EXP_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "AGPL-NOVENDOR",
+      "status": "PASS",
+      "description": "abaci.sol is hash-pinned, not vendored (AGPL)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss commit matches abaci.sol pin",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 blob=6cbd666267fc9f534ae52a45926eec5aa44b3bc5"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/abaci.sol",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-TEXT",
+      "status": "PASS",
+      "description": "pinned abaci.sol contains ExponentialDecrease.price n=dur",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-ASM",
+      "status": "PASS",
+      "description": "upstream rpow is inline assembly (transpiler must reject)",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 wrap-detect and __int128 rpow/price agree on goldens",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_abacus_exp.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler (OK_VIEW + abacus kind)",
+      "note": ""
+    },
+    {
+      "id": "VIEW-LIFT",
+      "status": "PASS",
+      "description": "Compiler 0 check of view-storage lift",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin emits OK_VIEW, classifies EXP vs STAIR vs LINEAR, rejects assembly rpow",
+      "note": "C0 vm cannot execute string-literal gates (VM_REJ_STRING_LITERAL); vectors are source-pinned"
+    },
+    {
+      "id": "LIFT-GATE",
+      "status": "PASS",
+      "description": "view lift pins cut+RAY extras on exp price and does not invent step",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "ed_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "8/8 vectors: C11 wrap == i128 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "8/8 vectors: Python bigint matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "DISTINCT-STAIR",
+      "status": "PASS",
+      "description": "dur=1 decays (StairstepExponentialDecrease with step=90 would still equal top)",
+      "note": "price=990000000"
+    },
+    {
+      "id": "DISTINCT-HOLD",
+      "status": "PASS",
+      "description": "n=dur (89) is not stairstep n=dur/step=0 hold-at-top",
+      "note": "exp=408820172"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (1e10*1e9) wraps; 128-bit muldiv fail-closes",
+      "note": "i64_wrap=-8446744073709551616 lin=0"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes cut as argument (no hidden storage / wards / file / step)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-RPOW",
+      "status": "PASS",
+      "description": "clone uses 128-bit half-up rpow (assembly rpow is not copied)",
+      "note": ""
+    },
+    {
+      "id": "C-KERNEL",
+      "status": "PASS",
+      "description": "pointer-free C kernel is lin_from_c eligible (no * -> struct goto)",
+      "note": ""
+    },
+    {
+      "id": "SOL-EMIT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin emits OK_VIEW and classifies Maker abaci",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/abaci.sol",
+    "git_blob_sha": "6cbd666267fc9f534ae52a45926eec5aa44b3bc5",
+    "file_sha256": "a4c3dc0368d66a5bf84e586f0cf76e2e80fb8b336c00348a97cc0d4ddcb016ca",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_abacus_exp.lin",
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-abacus-exp",
+  "c11_oracle": "test/oracles/maker_abacus_exp_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "goldens": {
+    "PAR": 1000000000,
+    "SEC1": 990000000,
+    "SEC2": 980100000,
+    "SEC3": 970299000,
+    "NOT_HOLD": 408820172,
+    "ODD": 122222221
+  }
+}
