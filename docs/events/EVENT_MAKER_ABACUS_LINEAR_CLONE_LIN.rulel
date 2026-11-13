@@ -1,0 +1,65 @@
+@RULEL:MAKER_ABACUS_LINEAR_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MAKER-ABACUS-LINEAR"
+@TITLE="Clone-lin of Maker LinearDecrease.price with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-maker-abacus-linear"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Maker/Sky LinearDecrease.price (Dutch-auction linear decay: rmul(top, mul(tau-dur, RAY)/tau)) into deterministic LIN, compile in memory with C11 compiler 0, publish LIN copy in clone-lin-maker-abacus-linear and only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64-scale top/dur/tau; Solidity uint256 ray (1e27) is NOT claimed"
+  commercial_hook="LinearDecrease.price is the Clipper Dutch-auction curve: price = top * (tau-dur)/tau in RAY. Making tau an explicit argument (no hidden wards/file storage) and fail-closing i64 mul wrap plus dur>=tau expired auctions is an audit improvement, not a TVL claim. Distinct from StairstepExponentialDecrease rpow and from Clipper.take / Dog.bark."
+}
+
+.u{
+  repo="https://github.com/makerdao/dss"
+  path="src/abaci.sol"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  git_blob_sha="6cbd666267fc9f534ae52a45926eec5aa44b3bc5"
+  file_sha256="a4c3dc0368d66a5bf84e586f0cf76e2e80fb8b336c00348a97cc0d4ddcb016ca"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_maker_abacus_linear.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-abacus-linear"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_ABACUS_LINEAR + REJ_SOLIDITY_RPOW; src/lin_from_c.lin v2: REJ_C_WIDE_INT + REJ_C_ABACUS_LINEAR; src/lin_from_rust.lin v2: REJ_RUST_ABACUS_LINEAR + REJ_RUST_WIDE_INT"
+  improvement_1="tau/wards/file/events/block.timestamp are arguments-or-absent; price uses explicit tau, not storage"
+  improvement_2="(tau-dur)*RAY and top*factor fail-close on i64 overflow instead of wrapping; 1e10*1e9 naive i64 wraps, checked mul returns 0"
+  improvement_3="dur>=tau and tau=0 fail-close to 0; LinearDecrease vs Stairstep rpow is explicit (uses_rpow=0)"
+  improvement_4="rpow assembly / Clipper.take / Dog.bark are not this kernel; transpiler fail-closes rpow and LinearDecrease.price storage form"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/maker_abacus_linear_c11.c (gcc -O2 -std=c11, wrap-detect XOR __int128)"
+  kernel="test/oracles/maker_abacus_linear_kernel.c (pointer-free; eligible for lin_from_c)"
+  gate="test/verify_maker_abacus_linear.sh"
+}
+
+.p{
+  harness="test/prove_maker_abacus_linear_external.py"
+  evidence_json="examples/maker_abacus_linear/maker_abacus_linear_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-abacus-linear"
+  named_goldens="PAR 1e9@dur0=1e9; HALF 5e8; LAST 1e7; EXPIRED=0; FLOOR 7@2/5=4; ODD=123422495; 1e10*1e9=0"
+}
+
+.n{
+  not_claimed_1="full uint256 ray / mainnet LinearDecrease.price / StairstepExponentialDecrease rpow parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production abacus / clipper replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Maker, Sky, clipper, or the EVM"
+  not_claimed_6="TVL or dollar savings"
+}
+
+.v{
+  method="PINNED_BYTES && C11_WRAP_EQ_I128 && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

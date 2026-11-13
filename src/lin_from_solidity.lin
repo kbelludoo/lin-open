@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: REJ_SOLIDITY_ABACUS_LINEAR / REJ_SOLIDITY_RPOW fail-close Maker LinearDecrease.price (tau storage) and stairstep rpow; v2 emit+1eN+OK_VIEW kept"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,8 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(body, "tau - dur") > 0) { ^"REJ_SOLIDITY_ABACUS_LINEAR" };
+  ?(rg_count_lit(body, "rpow(") > 0) { ^"REJ_SOLIDITY_RPOW" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +66,14 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_abacus = "function price(uint256 top, uint256 dur) external view returns (uint256)";
+  body_abacus = "if (dur >= tau) return 0; return rmul(top, mul(tau - dur, RAY) / tau);";
+  r4 = sol_reason(sig_abacus, body_abacus);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_ABACUS_LINEAR") == 0) { ^0 };
+  sig_rpow = "function nowChi(uint256 chi, uint256 ssr) public pure returns (uint256)";
+  body_rpow = "return rpow(cut, n, RAY);";
+  r5 = sol_reason(sig_rpow, body_rpow);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_RPOW") == 0) { ^0 };
   ^1;
 }
 

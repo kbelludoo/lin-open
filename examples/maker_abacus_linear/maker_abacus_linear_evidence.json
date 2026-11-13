@@ -1,0 +1,191 @@
+{
+  "schema": "LIN_MAKER_ABACUS_LINEAR_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 wrap-detect (tau-dur)*RAY/top*factor and __int128 mul agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss abaci.sol matches hash pin",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 blob=6cbd666267fc9f534ae52a45926eec5aa44b3bc5"
+    },
+    {
+      "id": "UPSTREAM-PRICE",
+      "status": "PASS",
+      "description": "pinned abaci.sol contains LinearDecrease.price, tau, rmul, Stairstep rpow (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/abaci.sol",
+      "note": "6cbd666267fc9f534ae52a45926eec5aa44b3bc5"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_abacus_linear.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "ab_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "15/15 vectors: C11 wrap-detect == __int128 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "15/15 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "PAR 1e9@dur0=1e9; HALF 5e8; LAST 1e7; EXPIRED=0; FLOOR 7@2/5=4; ODD=123422495; 1e10*1e9 fail-closes",
+      "note": "half=500000000 last=10000000 floor=4 odd=123422495 auth=0 rpow=0"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured Dutch-auction decay (not TVL): top=1e9-ray over tau=100s is 5e8 at halfway; expired auctions fail-close to 0",
+      "note": "top=1000000000 tau=100 dur=50 price=500000000 unit=reduced_ray"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (1e10*1e9) wraps; checked top*factor fail-closes to 0",
+      "note": "i64_mul_wrap=-8446744073709551616 u_mul_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-TAU",
+      "status": "PASS",
+      "description": "LIN clone takes top/dur/tau as arguments (no hidden wards/file storage)",
+      "note": ""
+    },
+    {
+      "id": "NO-RPOW",
+      "status": "PASS",
+      "description": "clone is LinearDecrease, not StairstepExponentialDecrease rpow(cut, dur/step)",
+      "note": ""
+    },
+    {
+      "id": "NO-AUTH",
+      "status": "PASS",
+      "description": "price() is public view, not wards auth; LIN measures auth_required=0",
+      "note": ""
+    },
+    {
+      "id": "NOT-TAKE",
+      "status": "PASS",
+      "description": "clone is abacus.price, not Clipper.take / Dog.bark",
+      "note": ""
+    },
+    {
+      "id": "EXPIRED-ZERO",
+      "status": "PASS",
+      "description": "dur>=tau and tau=0 fail-close to 0 (Solidity returns 0 when dur>=tau)",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close LinearDecrease.price / abaci / tau-dur",
+      "note": ""
+    },
+    {
+      "id": "TR-RPOW",
+      "status": "PASS",
+      "description": "Solidity transpiler fail-closes rpow assembly stairstep/exponential decrease",
+      "note": ""
+    },
+    {
+      "id": "TR-WIDE",
+      "status": "PASS",
+      "description": "C/Rust transpilers fail-close __int128 / i128 (oracle width, not LIN emit)",
+      "note": ""
+    },
+    {
+      "id": "C-KERNEL",
+      "status": "PASS",
+      "description": "pointer-free C kernel (maker_abacus_linear_kernel.c) is eligible for lin_from_c; oracle __int128 is not",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/abaci.sol",
+    "git_blob_sha": "6cbd666267fc9f534ae52a45926eec5aa44b3bc5",
+    "file_sha256": "a4c3dc0368d66a5bf84e586f0cf76e2e80fb8b336c00348a97cc0d4ddcb016ca",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_abacus_linear.lin",
+  "c11_oracle": "test/oracles/maker_abacus_linear_c11.c",
+  "c_kernel_for_transpiler": "test/oracles/maker_abacus_linear_kernel.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "par_price": 1000000000,
+    "half_price": 500000000,
+    "last_price": 10000000,
+    "expired": 0,
+    "floor": 4,
+    "odd": 123422495,
+    "overflow": 0,
+    "tau0": 0,
+    "auth_required": 0,
+    "uses_tau": 1,
+    "uses_rpow": 0,
+    "uses_cut_step": 0,
+    "uses_block_time": 0,
+    "is_take_kernel": 0,
+    "is_bark_kernel": 0
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-abacus-linear",
+  "clone_lin_head": "fbf35a23051d11d642631699e152ef817afab5a7",
+  "clone_lin_lin_commit": "fbf35a23051d11d642631699e152ef817afab5a7",
+  "clone_lin_lin_blob": "5e88d4dfacece04272fd32c3f8c5a97abe9c6256",
+  "clone_lin_c_blob": "8e499ad613005962e8849b4c1534e4b6ae71796f"
+}

@@ -172,6 +172,12 @@ python3 examples/run_demos.py --interactive
 
 ---
 
+### Maker LinearDecrease.price ([`maker_abacus_linear/`](./maker_abacus_linear/))
+* **O que faz:** clone experimental uint64-scale de `LinearDecrease.price` (Maker/Sky Dutch-auction decay). Provas em `maker_abacus_linear_evidence.json`. Copy LIN: https://github.com/kbelludoo/clone-lin-maker-abacus-linear
+* **Gate:** `make maker-abacus-linear-proof`
+
+---
+
 
 ## Como Escrever Código LIN (Sintaxe em 3 Minutos)
 
