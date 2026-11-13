@@ -1,0 +1,67 @@
+@RULEL:CRVUSD_F_REMOVE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-CRVUSD-F-REMOVE"
+@TITLE="Clone-lin of crvUSD Controller._get_f_remove with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-crvusd-f-remove"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile crvUSD liquidation collateral-withdraw fraction into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for (WAD+h/2)*(WAD-frac); Vyper uint256 is NOT claimed"
+  commercial_hook="f_remove interpolates how much LLAMMA collateral a partial liquidation withdraws; this run proves bit-exact uint64-scale parity against C11+Python, not a TVL or gas-savings number"
+}
+
+.u{
+  repo="https://github.com/curvefi/curve-stablecoin"
+  path="curve_stablecoin/controller.vy"
+  license="all_rights_reserved_informational_only"
+  commit="81b3bea490e9b45221c82e78387920ccfeb05b33"
+  git_blob_sha="ac5e86ccaefffde86ced8ee4fa4b61cc5242206f"
+  file_sha256="42d82a3c36712cc1397f170d8e6924f7985035be2e54cfcfee1ce3d303a47c6b"
+  vendor="none"
+}
+
+.l{
+  clone="src/lin_crvusd_f_remove.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-crvusd-f-remove"
+  clone_lin_commit="5bebba0726bd3716c4b33775fb40275485b2700d"
+  transpiler_delta="src/lin_from_vyper.lin v1 fail-closes _get_f_remove / unsafe_ / self.; src/lin_from_solidity.lin v3 fail-closes _get_f_remove; C and Rust transpilers gain F_REMOVE reject tokens"
+  improvement_1="frac and health_limit are arguments (Vyper reads liquidation_discounts storage / self)"
+  improvement_2="unsafe_mul / unsafe_div become 128-bit muldiv; naive i64 wrap of 7e18*3e18 is -5389669316318724096"
+  improvement_3="frac>SCALE and overflow fail-close to 0 instead of wrapping"
+  improvement_4="named collateral_out vs naive_frac_out so the interpolation gap is an explicit kernel"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/crvusd_f_remove_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_crvusd_f_remove.sh"
+}
+
+.p{
+  harness="test/prove_crvusd_f_remove_external.py"
+  evidence_json="examples/crvusd_f_remove/crvusd_f_remove_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-crvusd-f-remove"
+  clone_lin_commit="5bebba0726bd3716c4b33775fb40275485b2700d"
+  named_goldens="h=0 half 500000000; half+h10 488636363 gap 11363637; tenth+h5 97857142; almost_full 898269230"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet WAD=1e18 / token-precision parity"
+  not_claimed_2="Controller._health (distinct kernel: clone-lin-crvusd-health)"
+  not_claimed_3="LLAMMA get_x_down / get_y_up (clone-lin-llamma-xy)"
+  not_claimed_4="LIN is faster than the EVM or vyper"
+  not_claimed_5="this clone is a production controller replacement"
+  not_claimed_6="zk / computational soundness of Merkle receipts"
+  not_claimed_7="TVL or dollar savings"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT"
+  on_fail="do not publish a PASS status"
+}

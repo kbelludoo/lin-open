@@ -1,0 +1,56 @@
+@LIN:L1c:0.2
+@LIN_FROM_VYPER{
+  version=1
+  purpose="fail_closed_vyper_pure_math_gate"
+  profile="LINVM-1"
+  status="EXPERIMENTAL_V1"
+  changelog="v1: reject _get_f_remove / unsafe_ / uint256[ / self. / raise; do not mechanically emit crvUSD liquidation fraction"
+}
+
+!vy_is_kw(nm: string): int {
+  ?(starts_lit(nm, 0, "def") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "return") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2) { ^1 };
+  ?(starts_lit(nm, 0, "else") == 1 && nm.length == 4) { ^1 };
+  ?(starts_lit(nm, 0, "for") == 1 && nm.length == 3) { ^1 };
+  ?(starts_lit(nm, 0, "assert") == 1 && nm.length == 6) { ^1 };
+  ?(starts_lit(nm, 0, "raise") == 1 && nm.length == 5) { ^1 };
+  ^0;
+}
+
+!vy_reason(sig: string, body: string): string {
+  ?(rg_count_lit(body, "self.") > 0) { ^"REJ_VYPER_STATE" };
+  ?(rg_count_lit(body, "msg.") > 0) { ^"REJ_VYPER_ENV" };
+  ?(rg_count_lit(body, "block.") > 0) { ^"REJ_VYPER_ENV" };
+  ?(rg_count_lit(body, "raise") > 0) { ^"REJ_VYPER_RAISE" };
+  ?(rg_count_lit(body, "unsafe_") > 0) { ^"REJ_VYPER_UNSAFE" };
+  ?(rg_count_lit(sig, "uint256[") > 0) { ^"REJ_VYPER_ARRAY" };
+  ?(rg_count_lit(body, "uint256[") > 0) { ^"REJ_VYPER_ARRAY" };
+  ?(rg_count_lit(sig, "_get_f_remove") > 0) { ^"REJ_VYPER_F_REMOVE" };
+  ?(rg_count_lit(body, "_get_f_remove") > 0) { ^"REJ_VYPER_F_REMOVE" };
+  ?(rg_count_lit(body, "convert(") > 0) { ^"REJ_VYPER_CONVERT" };
+  ?(rg_count_lit(body, "range(") > 0) { ^"REJ_VYPER_RANGE" };
+  ^"OK";
+}
+
+!vy_parse_test_gate(): int {
+  sig_ok = "def add(a: uint256, b: uint256) -> uint256";
+  body_ok = "return a + b";
+  r1 = vy_reason(sig_ok, body_ok);
+  ?(r1.length != 2) { ^0 };
+  sig_fr = "def _get_f_remove(_frac: uint256, _health_limit: uint256) -> uint256";
+  body_fr = "return unsafe_div(unsafe_mul(_frac, _health_limit), 10 ** 18)";
+  r2 = vy_reason(sig_fr, body_fr);
+  ?(starts_lit(r2, 0, "REJ_VYPER_UNSAFE") == 0) { ^0 };
+  sig_nm = "def _get_f_remove(_frac: uint256) -> uint256";
+  body_nm = "return _frac";
+  r3 = vy_reason(sig_nm, body_nm);
+  ?(starts_lit(r3, 0, "REJ_VYPER_F_REMOVE") == 0) { ^0 };
+  sig_st = "def health(_user: address) -> int256";
+  body_st = "return self._health(_user, True)";
+  r4 = vy_reason(sig_st, body_st);
+  ?(starts_lit(r4, 0, "REJ_VYPER_STATE") == 0) { ^0 };
+  ^1;
+}
+
+=ex{vy_is_kw, vy_reason, vy_parse_test_gate}
