@@ -43,6 +43,18 @@
   ^"OK";
 }
 
+!cfs_div_kind(body: string): string {
+  ?(rg_count_lit(body, "- 1)") > 0){ ^"CEIL_DIV" };
+  ?(rg_count_lit(body, "-1)") > 0){ ^"CEIL_DIV" };
+  ^"FLOOR_DIV";
+}
+
+!cfs_div_kind_gate(): int {
+  ?(starts_lit(cfs_div_kind("return (a + b - 1) / b;"), 0, "CEIL_DIV") == 0){ ^0 };
+  ?(starts_lit(cfs_div_kind("return a / b;"), 0, "FLOOR_DIV") == 0){ ^0 };
+  ^1;
+}
+
 !cfs_atom_left(s: string, at: int): int {
   k = at - 1;
   while (k >= 0 && (s.charCodeAt(k) == 32 || s.charCodeAt(k) == 9)){ k = k - 1 };
@@ -756,4 +768,4 @@
   ^out;
 }
 
-=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type}
+=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type, cfs_div_kind, cfs_div_kind_gate}

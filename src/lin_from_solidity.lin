@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=2.1
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
   status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit); v2.1: subst ONE->1e18, expand 10**N, classify CEIL_DIV vs FLOOR_DIV for Pendle-style (a+b-1)/b"
 }
 
 !sol_is_kw(nm: string): int {
@@ -171,8 +171,77 @@
   ^e;
 }
 
+!sol_subst_one(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  id = "";
+  while (i < n) {
+    id = read_ident(s, i);
+    ?(id.length > 0) {
+      ?(starts_lit(id, 0, "ONE") == 1 && id.length == 3) {
+        out = out + "1e18";
+        i = i + id.length;
+        continue;
+      };
+      out = out + id;
+      i = i + id.length;
+      continue;
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!sol_expand_pow10(s: string): string {
+  out = "";
+  n = s.length;
+  i = 0;
+  j = 0;
+  expn = 0;
+  z = 0;
+  while (i < n) {
+    ?(s.charCodeAt(i) == 49 && i + 1 < n && s.charCodeAt(i + 1) == 48) {
+      ?(i > 0 && (is_ident(s.charCodeAt(i - 1)) == true || (s.charCodeAt(i - 1) >= 48 && s.charCodeAt(i - 1) <= 57))) {
+        out = out + s.charAt(i);
+        i = i + 1;
+        continue;
+      };
+      j = skip_ws(s, i + 2);
+      ?(starts_lit(s, j, "**") == 1) {
+        j = skip_ws(s, j + 2);
+        ?(j < n && s.charCodeAt(j) >= 48 && s.charCodeAt(j) <= 57) {
+          expn = 0;
+          while (j < n && s.charCodeAt(j) >= 48 && s.charCodeAt(j) <= 57) {
+            expn = expn * 10 + (s.charCodeAt(j) - 48);
+            j = j + 1;
+          };
+          out = out + "1";
+          z = 0;
+          while (z < expn) {
+            out = out + "0";
+            z = z + 1;
+          };
+          i = j;
+          continue;
+        };
+      };
+    };
+    out = out + s.charAt(i);
+    i = i + 1;
+  };
+  ^out;
+}
+
+!sol_div_kind(body: string): string {
+  ?(rg_count_lit(body, "- 1)") > 0) { ^"CEIL_DIV" };
+  ?(rg_count_lit(body, "-1)") > 0) { ^"CEIL_DIV" };
+  ^"FLOOR_DIV";
+}
+
 !sol_body(b: string): string {
-  t = jss_trim(sol_strip_types(sol_expand_exp(b)));
+  t = jss_trim(sol_strip_types(sol_expand_exp(sol_expand_pow10(sol_subst_one(b)))));
   out = "";
   n = t.length;
   i = 0;
@@ -334,7 +403,17 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  ?(starts_lit(sol_div_kind("(assetAmount * ONE + exchangeRate - 1) / exchangeRate"), 0, "CEIL_DIV") == 0) { ^0 };
+  ?(starts_lit(sol_div_kind("(assetAmount * ONE) / exchangeRate"), 0, "FLOOR_DIV") == 0) { ^0 };
+  src_one = "function assetToSy(uint exchangeRate, uint assetAmount) public pure returns (uint) { return (assetAmount * ONE) / exchangeRate; }";
+  out_one = sol_from_sol(src_one);
+  ?(rg_count_lit(out_one, "ONE") > 0) { ^0 };
+  ?(rg_count_lit(out_one, "1000000000000000000") == 0) { ^0 };
+  src_pow = "function wad(uint a) public pure returns (uint) { return 10 ** 18; }";
+  out_pow = sol_from_sol(src_pow);
+  ?(rg_count_lit(out_pow, "1000000000000000000") == 0) { ^0 };
+  ?(rg_count_lit(out_pow, "**") > 0) { ^0 };
   ^1;
 }
 
-=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_from_sol, sol_from_sol_gate}
+=ex{sol_is_kw, sol_is_type, sol_reason, sol_parse_test_gate, sol_expand_exp, sol_subst_one, sol_expand_pow10, sol_div_kind, sol_from_sol, sol_from_sol_gate}
