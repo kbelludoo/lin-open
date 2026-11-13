@@ -1,0 +1,65 @@
+@RULEL:MAKER_VAT_SLIP_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MAKER-VAT-SLIP"
+@TITLE="Clone-lin of Maker/Sky Vat.slip with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-maker-vat-slip"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Maker vat.slip (auth gem signed wad) into deterministic LIN, compile in memory with C11 compiler 0, publish LIN copy in clone-lin-maker-vat-slip and only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64-scale gem wad; signed int64 delta; Solidity uint256/int256 is NOT claimed"
+  commercial_hook="Vat.slip is the GemJoin/DaiJoin credit path: wards-only signed gem[ilk][usr] += wad. Making wards and the signed delta explicit, and fail-closing i64 wrap, is an audit improvement, not a TVL claim. Distinct from vat.flux (src-dst unsigned wad + wish)."
+}
+
+.u{
+  repo="https://github.com/makerdao/dss"
+  path="src/vat.sol"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  git_blob_sha="ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+  file_sha256="9016fd94f0f1b014abf184edab86a3f5843042b17e3734407e0f0fabb920f49f"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_maker_vat_slip.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-vat-slip"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_VAT_SLIP + REJ_SOLIDITY_BYTES32 + REJ_SOLIDITY_AUTH_MODIFIER; src/lin_from_c.lin v2: REJ_C_WIDE_INT + REJ_C_VAT_SLIP; src/lin_from_rust.lin v2: REJ_RUST_VAT_SLIP + REJ_RUST_WIDE_INT"
+  improvement_1="gem[ilk][usr] and wards[msg.sender] are arguments; no hidden mapping / modifier auth"
+  improvement_2="signed _add fail-closes on i64 overflow/underflow instead of wrapping; 7e18+3e18 naive i64 wraps, checked add returns 0"
+  improvement_3="slip requires wards and accepts signed wad; flux is a different kernel (wish, unsigned, src-dst)"
+  improvement_4="bytes32 ilk is not a LIN type; transpiler fail-closes bytes32 and external auth"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/maker_vat_slip_c11.c (gcc -O2 -std=c11, wrap-detect XOR __int128)"
+  kernel="test/oracles/maker_vat_slip_kernel.c (pointer-free; eligible for lin_from_c)"
+  gate="test/verify_maker_vat_slip.sh"
+}
+
+.p{
+  harness="test/prove_maker_vat_slip_external.py"
+  evidence_json="examples/maker_vat_slip/maker_vat_slip_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-vat-slip"
+  named_goldens="JOIN gem=5e9 wad=+1e9 wards=1 -> 6e9; EXIT wad=-1e9 -> 4e9; NO_AUTH=0; UNDERFLOW=0; OVERFLOW 7e18+3e18=0"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet vat.slip / GemJoin parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production vat replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Maker, Sky, vat, or the EVM"
+  not_claimed_6="TVL or dollar savings"
+}
+
+.v{
+  method="PINNED_BYTES && C11_WRAP_EQ_I128 && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

@@ -1,0 +1,195 @@
+{
+  "schema": "LIN_MAKER_VAT_SLIP_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 wrap-detect signed add and __int128 add agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss vat.sol matches hash pin",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 blob=ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+    },
+    {
+      "id": "UPSTREAM-SLIP",
+      "status": "PASS",
+      "description": "pinned vat.sol contains slip, signed gem _add, wards auth (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/vat.sol",
+      "note": "ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_vat_slip.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "sl_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "17/17 vectors: C11 wrap-detect == __int128 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "17/17 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "JOIN +1e9 gem; EXIT -1e9 gem; no-auth=0; underflow=0; overflow 7e18+3e18=0; no wish; wards required",
+      "note": "join=6e9 exit=4e9 auth=1 wish=0 live=0 unit_wad=1 dai=0"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured gem wad join/exit (not TVL): GemJoin-style auth credit of 1e9 wad; unsigned flux is a different kernel",
+      "note": "join_wad=1000000000 leftover_gem=6000000000 exit_leftover=4000000000 unit=wad"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e18+3e18) wraps; checked signed _add fail-closes to 0",
+      "note": "i64_add_wrap=-8446744073709551616 s_add_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes gem balance, signed wad and wards (no hidden gem[]/msg.sender)",
+      "note": ""
+    },
+    {
+      "id": "NO-WISH",
+      "status": "PASS",
+      "description": "slip does not consult wish; adapter wards credit/debit usr gem",
+      "note": ""
+    },
+    {
+      "id": "NO-LIVE",
+      "status": "PASS",
+      "description": "slip does not require vat.live; LIN measures live_required=0",
+      "note": ""
+    },
+    {
+      "id": "NOT-FLUX",
+      "status": "PASS",
+      "description": "clone is signed single-slot gem wad, not src-dst flux",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close vat.slip / gem[ / auth / bytes32",
+      "note": ""
+    },
+    {
+      "id": "TR-BYTES32",
+      "status": "PASS",
+      "description": "Solidity transpiler fail-closes bytes32 (ilk is an argument, not a LIN type)",
+      "note": ""
+    },
+    {
+      "id": "TR-AUTH",
+      "status": "PASS",
+      "description": "Solidity transpiler fail-closes external auth / modifier auth",
+      "note": ""
+    },
+    {
+      "id": "TR-WIDE",
+      "status": "PASS",
+      "description": "C/Rust transpilers fail-close __int128 / i128 (oracle width, not LIN emit)",
+      "note": ""
+    },
+    {
+      "id": "C-KERNEL",
+      "status": "PASS",
+      "description": "pointer-free C kernel (maker_vat_slip_kernel.c) is eligible for lin_from_c; oracle __int128 is not",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/vat.sol",
+    "git_blob_sha": "ff90bbed5b36e54318bd5461cbf32e4167df2b28",
+    "file_sha256": "9016fd94f0f1b014abf184edab86a3f5843042b17e3734407e0f0fabb920f49f",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_vat_slip.lin",
+  "c11_oracle": "test/oracles/maker_vat_slip_c11.c",
+  "c_kernel_for_transpiler": "test/oracles/maker_vat_slip_kernel.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "join_ok": 1,
+    "join_gem": 6000000000,
+    "join_amt": 1000000000,
+    "exit_ok": 1,
+    "exit_gem": 4000000000,
+    "exit_amt": 1000000000,
+    "no_auth": 0,
+    "underflow": 0,
+    "overflow": 0,
+    "zero_wad": 1,
+    "full_exit_gem": 0,
+    "from_zero_gem": 1000000000,
+    "live_required": 0,
+    "auth_required": 1,
+    "wish_required": 0,
+    "unit_is_wad": 1,
+    "moves_dai": 0,
+    "signed_delta": 1,
+    "src_dst_transfer": 0
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-vat-slip",
+  "clone_lin_head": "48bc2c89ec1c034e98425cf3a768da25df538b68",
+  "clone_lin_lin_commit": "317baca83e90ffdaeafc4e08dfc33e943d12f957",
+  "clone_lin_lin_blob": "79eb2e7f0b63545dbdc633c6de20c9431ba80ad3",
+  "clone_lin_c_blob": "ff73a7239e5343caed2e3da406f92c61ab833ac8"
+}
