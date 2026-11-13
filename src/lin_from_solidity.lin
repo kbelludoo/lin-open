@@ -4,7 +4,7 @@
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
   status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  changelog="v2.2: fail-close getAmountIn / _getAmountIn (mechanical emit is not 128-bit Solidly inverse + fee gross-up +1). v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,8 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(sig, "getAmountIn") > 0) { ^"REJ_SOLIDITY_GET_AMOUNT_IN" };
+  ?(rg_count_lit(body, "_getAmountIn") > 0) { ^"REJ_SOLIDITY_GET_AMOUNT_IN" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +66,10 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_in = "function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut) internal pure returns (uint amountIn)";
+  body_in = "return (reserveIn * amountOut * 10000) / ((reserveOut - amountOut) * 9970) + 1;";
+  r6 = sol_reason(sig_in, body_in);
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_GET_AMOUNT_IN") == 0) { ^0 };
   ^1;
 }
 

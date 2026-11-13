@@ -1,0 +1,68 @@
+@RULEL:VELO_GETIN_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-VELO-GETAMOUNTIN"
+@TITLE="Clone-lin of Velodrome/Aerodrome getAmountIn (inverse of Pool.getAmountOut) with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-velo-getin"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile the exact-output inverse of Velodrome Pool.getAmountOut into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Optimism/Base mainnet"
+  operand_width="uint64 inputs, 128-bit product for (reserveA*amountOut)*10000; Solidity uint256 is NOT claimed"
+  commercial_hook="exact-output routers need getAmountIn; Velodrome V2 Pool only publishes getAmountOut. This run proves bit-exact uint64-scale parity against C11+Python and a Uniswap V2 0.3% match, not a TVL or gas-savings number"
+}
+
+.u{
+  repo="https://github.com/velodrome-finance/contracts"
+  path="contracts/Pool.sol"
+  license="GPL-3.0-or-later_hash_pin_only"
+  commit="b3065d8b6702b14b094f9f6046b752cc9f78c43b"
+  git_blob_sha="91412c378bba4d8076271cee52e1397b1520b709"
+  file_sha256="32d040ff419fa9b1f9113f7e10d587b332a2ab9c6b6099851025cc16a4e986bb"
+  vendor="none"
+  note="Pool.sol publishes getAmountOut/_get_y; getAmountIn is the LIN inverse of that quote"
+}
+
+.l{
+  clone="src/lin_velo_getin.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-velo-getin"
+  clone_lin_commit="5a1e842e6971f3094184e0b7e0706cded612ba7f"
+  transpiler_delta="src/lin_from_solidity.lin v2.2 fail-closes getAmountIn/_getAmountIn; C and Rust transpilers gain GET_AMOUNT_IN reject tokens"
+  improvement_1="reserveA/B, stable, and fee are arguments (Pool reads factory/token storage)"
+  improvement_2="wrapping i64 multiply becomes 128-bit muldiv; naive i64 wrap of 4e9*4e9 is -2446744073709551616"
+  improvement_3="amountOut>=reserveB, fee>=10000, Newton non-convergence fail-close to 0"
+  improvement_4="explicit +1 ceiling vs naive floor (Uniswap K-guard); round-trip getAmountOut(getAmountIn)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/velo_getin_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_velo_getin.sh"
+}
+
+.p{
+  harness="test/prove_velo_getin_external.py"
+  evidence_json="examples/velo_getin/velo_getin_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-velo-getin"
+  clone_lin_commit="5a1e842e6971f3094184e0b7e0706cded612ba7f"
+  named_goldens="vol fee0 111111112; fee5 111166695; fee30 Uniswap-match 111445448; stable fee1 100060056; ceil_gap 1"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet 1e18 / token-decimals parity"
+  not_claimed_2="Pool.getAmountOut (distinct kernel: clone-lin-velo-getout)"
+  not_claimed_3="Solidly cubic k (clone-lin-solidly-k)"
+  not_claimed_4="LIN is faster than the EVM or solc"
+  not_claimed_5="this clone is a production pool or router replacement"
+  not_claimed_6="zk / computational soundness of Merkle receipts"
+  not_claimed_7="TVL or dollar savings"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT"
+  on_fail="do not publish a PASS status"
+}

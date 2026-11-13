@@ -1,0 +1,169 @@
+{
+  "schema": "LIN_VELO_GETIN_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned velodrome Pool.sol matches published sha256",
+      "note": "commit=b3065d8b6702b14b094f9f6046b752cc9f78c43b blob=91412c378bba4d8076271cee52e1397b1520b709"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of contracts/Pool.sol",
+      "note": ""
+    },
+    {
+      "id": "NO-VENDOR",
+      "status": "PASS",
+      "description": "GPL Solidity is hash-pinned only (not copied into lin-open)",
+      "note": ""
+    },
+    {
+      "id": "NO-GETAMOUNTIN",
+      "status": "PASS",
+      "description": "pinned Pool.sol publishes getAmountOut, not getAmountIn",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb getAmountIn agree on goldens",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_velo_getin.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v2.2 fail-closes getAmountIn",
+      "note": ""
+    },
+    {
+      "id": "C-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes getAmountIn",
+      "note": ""
+    },
+    {
+      "id": "RS-GATE",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes get_amount_in",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "vgi_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "11/11 vectors: C11 i128 == limbs == LIN vm == named goldens",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "11/11 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (4e9*4e9) wraps; 128-bit muldiv fail-closes to 0",
+      "note": "i64_wrap=-2446744073709551616 muldiv=0"
+    },
+    {
+      "id": "VS-NAIVE-FLOOR",
+      "status": "PASS",
+      "description": "volatile 0.3% exact-out of 1e8 on 1e9/1e9 pays +1 vs naive floor (Uniswap K-guard)",
+      "note": "getAmountIn=111445448 floor=111445447 ceil_gap=1 roundtrip_gap=0"
+    },
+    {
+      "id": "VS-UNISWAP-03",
+      "status": "PASS",
+      "description": "volatile fee=30 matches Uniswap V2 getAmountIn 1000/997 on equal 1e9 reserves",
+      "note": "111445448 == (1e9*1e8*1000)/((1e9-1e8)*997)+1"
+    },
+    {
+      "id": "VS-STABLE",
+      "status": "PASS",
+      "description": "stable fee=1 exact-out of 1e8 costs 100060056 vs volatile-0.3% 111445448",
+      "note": "stable/volatile gap=11385400 on aout=1e8 (curve comparison, not TVL)"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes reserves/stable/fee as arguments (no factory storage)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product (wrapping i64 multiply is not claimed)",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate external proof still PASS after transpiler delta",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/velodrome-finance/contracts",
+    "commit": "b3065d8b6702b14b094f9f6046b752cc9f78c43b",
+    "path": "contracts/Pool.sol",
+    "git_blob_sha": "91412c378bba4d8076271cee52e1397b1520b709",
+    "file_sha256": "32d040ff419fa9b1f9113f7e10d587b332a2ab9c6b6099851025cc16a4e986bb",
+    "license": "GPL-3.0-or-later (hash-pinned, not vendored)"
+  },
+  "lin_clone": "src/lin_velo_getin.lin",
+  "c11_oracle": "test/oracles/velo_getin_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "vol_fee0": 111111112,
+    "vol_fee5": 111166695,
+    "vol_fee30_uniswap_match": 111445448,
+    "st_fee0": 100050050,
+    "st_fee1": 100060056,
+    "vol_fee30_floor": 111445447,
+    "vol_fee30_roundtrip_out": 100000000
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-velo-getin",
+  "clone_lin_commit": "5a1e842e6971f3094184e0b7e0706cded612ba7f",
+  "clone_lin_kernel_blob": "7912c170ea6694175852cad174feb95dce0ce328",
+  "clone_lin_oracle_blob": "c24b2dce4bdafe7cf887424c5a2f2af9a92e8de8",
+  "lin_sha256": "d979a4812941f73d72a1ece58dbc39295ce69614d86da9c8f52b118de2c44777"
+}
