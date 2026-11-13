@@ -1,0 +1,67 @@
+@RULEL:MAKER_VAT_FROB_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MAKER-VAT-FROB"
+@TITLE="Clone-lin of Maker/Sky Vat.frob with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-maker-vat-frob"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Maker Vat.frob CDP safety into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, RAY'=1e9, 128-bit product for wad*ray; Solidity uint256 / RAY=1e27 is NOT claimed"
+  commercial_hook="Vat.frob is the lock/draw/wipe/free kernel of Dai and USDS CDPs; making storage and wish explicit and replacing wrapping i64 multiply with 128-bit mul is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/makerdao/dss"
+  path="src/vat.sol"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  git_blob_sha="ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+  file_sha256="9016fd94f0f1b014abf184edab86a3f5843042b17e3734407e0f0fabb920f49f"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_maker_vat_frob.lin"
+  clone_sha256="33c4a7e904b8b5a727b2a624203483cf6dfad3330e729a2b0a3481735b64eece"
+  transpiler_delta="src/lin_from_solidity.lin v2.1 REJ_SOLIDITY_VAT_FROB/WISH/URNS; src/lin_from_c.lin v2 REJ_C_VAT_FROB/WISH/URNS; src/lin_from_rust.lin v2 REJ_RUST_VAT_FROB/WISH/URNS"
+  improvement_1="live, rate, ink, art, Art, spot, line, Line, debt, dust, dink, dart are arguments; no urns/wish/msg.sender"
+  improvement_2="art*rate and ink*spot use 128-bit product; quotient that does not fit i64 fail-closes to 0"
+  improvement_3="signed add underflow and live!=1 / rate==0 / ceiling / dust / unsafe overdraw fail-close to 0 (Solidity require)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/maker_vat_frob_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="make maker-vat-frob-proof"
+}
+
+.p{
+  harness="test/prove_maker_vat_frob_external.py"
+  evidence_json="examples/maker_vat_frob/maker_vat_frob_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-vat-frob"
+  clone_lin_head="7e219fd71412a851c6f6706b45cf12faf7a89f9c"
+  clone_lin_lin_commit="562f9e340b8ebce18d5b7c5980c6b2743badef4f"
+  clone_lin_lin_blob="99419e74b6e6be102b99b7daf90ebd82ffb147b5"
+  clone_lin_c_blob="aa9750e46c4797d0e90baa2a3d909b2f5694fc7b"
+  this_run="18 PASS, 0 FAIL, 1 SKIP (C0-JIT: libtcc missing)"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet RAY=1e27 / wad*ray rad parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production vat replacement"
+  not_claimed_4="wish/wards/gem/dai mapping consent"
+  not_claimed_5="TVL or dollar savings; zk soundness"
+  not_claimed_6="vat.fold (clone-lin-maker-vat-fold is a distinct kernel)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && JUMPRATE_REGRESSION"
+  on_fail="do not publish a PASS status"
+}
