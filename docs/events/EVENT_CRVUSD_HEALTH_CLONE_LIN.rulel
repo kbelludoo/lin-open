@@ -1,0 +1,63 @@
+@RULEL:CRVUSD_HEALTH_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-CRVUSD-HEALTH-V1"
+@TITLE="Clone-lin of crvUSD Controller._health with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-crvusd-health"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile crvUSD Controller._health (LLAMMA x_down * (1-discount)/debt - 1, plus full-oracle extra) into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, SCALE=1e9 not 1e18 SWAD, 128-bit product for (a*b)/d; Vyper uint256 is NOT claimed"
+  commercial_hook="crvUSD loan health is the liquidation trigger; same x_down=debt: disc=0 health=0 (liq line), disc=6% health=-6e7, 2x collateral health=+1e9. Audit improvement (explicit args + 128-bit muldiv), not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/curvefi/curve-stablecoin"
+  path="curve_stablecoin/controller.vy"
+  license="informational-only (Swiss Stake AG; no reproduction right)"
+  commit="81b3bea490e9b45221c82e78387920ccfeb05b33"
+  git_blob_sha="ac5e86ccaefffde86ced8ee4fa4b61cc5242206f"
+  file_sha256="42d82a3c36712cc1397f170d8e6924f7985035be2e54cfcfee1ce3d303a47c6b"
+  vendor="hash-pin only; Vyper is not copied into lin-open"
+}
+
+.l{
+  clone="src/lin_crvusd_health.lin"
+  transpiler_delta="src/lin_from_solidity.lin: REJ_SOLIDITY_ADDRESS / REJ_SOLIDITY_GET_X_DOWN / REJ_SOLIDITY_STATICCALL; src/lin_from_c.lin REJ_C_GET_X_DOWN; src/lin_from_rust.lin REJ_RUST_GET_X_DOWN"
+  improvement_1="_health is view-on-storage (AMM.get_x_down, user ticks, price_oracle); LIN takes x_down, debt, disc, full, ns0, active, p, p_up, y as arguments"
+  improvement_2="Vyper uses unsafe_div / unsafe_mul; LIN (a*b)/d uses 128-bit product. 4e9*4e9 wraps signed i64; LIN muldiv fail-closes to 0"
+  improvement_3="Vyper _check_loan_exists asserts on 0 debt; LIN fail-closes to 0. discount>SCALE and muldiv overflow also return 0"
+  improvement_4="SCALE=1e9 explicit; signed health (negative = liquidatable). Full extra uses signed tick compare (ns0>active_band) so negative LLAMMA ticks work"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/crvusd_health_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="test/verify_crvusd_health.sh"
+}
+
+.p{
+  harness="test/prove_crvusd_health_external.py"
+  evidence_json="examples/crvusd_health/crvusd_health_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-crvusd-health"
+  clone_lin_commit="c6c8710a835854f8a9ee235fb05fb8424eb7a05f"
+}
+
+.n{
+  not_claimed_1="full uint256 / 1e18 SWAD / token-precision / Ethereum mainnet parity"
+  not_claimed_2="LIN is faster than the EVM or vyper"
+  not_claimed_3="this clone is a production controller replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces crvUSD, LLAMMA, Curve, or the EVM"
+  not_claimed_6="LLAMMA get_x_down / get_y_up band math (see clone-lin-llamma-xy); this clone is Controller health given x_down"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

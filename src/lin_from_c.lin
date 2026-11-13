@@ -40,6 +40,7 @@
   ?(rg_count_lit(sig, "float") > 0 || rg_count_lit(body, "float") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(sig, "double") > 0 || rg_count_lit(body, "double") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(body, "goto") > 0){ ^"REJ_C_GOTO" };
+  ?(rg_count_lit(body, "get_x_down") > 0){ ^"REJ_C_GET_X_DOWN" };
   ^"OK";
 }
 

@@ -1,0 +1,145 @@
+{
+  "schema": "LIN_CRVUSD_HEALTH_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned curvefi/curve-stablecoin commit matches published sha256",
+      "note": "commit=81b3bea490e9b45221c82e78387920ccfeb05b33 blob=ac5e86ccaefffde86ced8ee4fa4b61cc5242206f"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of curve_stablecoin/controller.vy",
+      "note": ""
+    },
+    {
+      "id": "NO-VENDOR",
+      "status": "PASS",
+      "description": "informational-only Vyper is hash-pinned only (not copied into lin-open)",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb health agree on goldens",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_crvusd_health.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin fail-closes address / get_x_down / staticcall",
+      "note": ""
+    },
+    {
+      "id": "C-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes get_x_down",
+      "note": ""
+    },
+    {
+      "id": "RS-GATE",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes get_x_down",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "chl_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "10/10 vectors: C11 i128 == limbs == LIN vm == named goldens",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "10/10 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (4e9*4e9) wraps; 128-bit muldiv fail-closes (quotient > i64)",
+      "note": "i64_wrap=-2446744073709551616 bigint=16000000000000000000 muldiv=0"
+    },
+    {
+      "id": "VS-THRESHOLD",
+      "status": "PASS",
+      "description": "equal x_down=debt: disc=0 health=0 (liq line); disc=6% health=-6e7; 2x collateral health=+1e9",
+      "note": "eq_nodisc=0 eq_6pct=-60000000 twice_nodisc=1000000000"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes x_down/debt/disc/full extras as arguments (no AMM/user storage)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product for (a*b)/d (i64 wraps on 4e9*4e9)",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/curvefi/curve-stablecoin",
+    "commit": "81b3bea490e9b45221c82e78387920ccfeb05b33",
+    "path": "curve_stablecoin/controller.vy",
+    "git_blob_sha": "ac5e86ccaefffde86ced8ee4fa4b61cc5242206f",
+    "file_sha256": "42d82a3c36712cc1397f170d8e6924f7985035be2e54cfcfee1ce3d303a47c6b",
+    "license": "informational-only (hash-pinned, not vendored)"
+  },
+  "lin_clone": "src/lin_crvusd_health.lin",
+  "lin_clone_sha256": "632b010ec66d0a30d57adaae56c959272bff614b91bd136bc32427c3155832c8",
+  "c11_oracle": "test/oracles/crvusd_health_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "eq_nodisc": 0,
+    "twice_nodisc": 1000000000,
+    "eq_6pct": -60000000,
+    "ratio12_6pct": 128000000,
+    "debt0_failclosed": 0,
+    "full_oracle_extra": 100000000,
+    "zero_collateral": -1000000000,
+    "ratio105_6pct": -13000000,
+    "overflow_failclosed": 0
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-crvusd-health",
+  "clone_lin_commit": "c6c8710a835854f8a9ee235fb05fb8424eb7a05f"
+}
