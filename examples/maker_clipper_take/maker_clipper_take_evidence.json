@@ -1,0 +1,193 @@
+{
+  "schema": "LIN_MAKER_CLIPPER_TAKE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 wrap-detect slice*price and __int128 mul agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss clip.sol matches hash pin",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 blob=c43d8fff46a4ad225d1fa031b4b1de618345cba7"
+    },
+    {
+      "id": "UPSTREAM-TAKE",
+      "status": "PASS",
+      "description": "pinned clip.sol contains take, slice*price, chost, callback (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/clip.sol",
+      "note": "c43d8fff46a4ad225d1fa031b4b1de618345cba7"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_clipper_take.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "ct_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "26/26 vectors: C11 wrap-detect == __int128 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "26/26 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "FULL slice=1000 owe=1e5; TAB_CAP slice=500; CHOST slice=300 tab=70000; NO_PARTIAL=0; stopped<3",
+      "note": "full_owe=100000 cap_slice=500 chost_tab=70000 auth=0 chip_tip=0 breaker=3"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured Dutch-auction buy (not TVL): 1000 collat units at price 100 raises 100000 tab; chost dust floor explicit",
+      "note": "slice=1000 owe=100000 leftover_tab=100000 leftover_lot=0 unit=reduced_wad_rad"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e9*3e9) wraps; checked slice*price fail-closes to 0",
+      "note": "i64_mul_wrap=2553255926290448384 u_mul_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes tab/lot/amt/max/price/chost/running/done/stopped (no hidden sales[])",
+      "note": ""
+    },
+    {
+      "id": "NO-CHIP-TIP",
+      "status": "PASS",
+      "description": "take does not suck chip/tip; those are kick/redo incentives",
+      "note": ""
+    },
+    {
+      "id": "NO-AUTH",
+      "status": "PASS",
+      "description": "take is public (lock+breaker), not wards auth; LIN measures auth_required=0",
+      "note": ""
+    },
+    {
+      "id": "NOT-VAT",
+      "status": "PASS",
+      "description": "clone is auction settlement, not vat.slip/flux/move accounting",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close clipper.take / sales[ / clipperCall",
+      "note": ""
+    },
+    {
+      "id": "TR-CALLDATA",
+      "status": "PASS",
+      "description": "Solidity transpiler fail-closes bytes calldata (ClipperCallee data)",
+      "note": ""
+    },
+    {
+      "id": "TR-CALLEE",
+      "status": "PASS",
+      "description": "Solidity transpiler fail-closes clipperCall callbacks",
+      "note": ""
+    },
+    {
+      "id": "TR-WIDE",
+      "status": "PASS",
+      "description": "C/Rust transpilers fail-close __int128 / i128 (oracle width, not LIN emit)",
+      "note": ""
+    },
+    {
+      "id": "C-KERNEL",
+      "status": "PASS",
+      "description": "pointer-free C kernel (maker_clipper_take_kernel.c) is eligible for lin_from_c; oracle __int128 is not",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/clip.sol",
+    "git_blob_sha": "c43d8fff46a4ad225d1fa031b4b1de618345cba7",
+    "file_sha256": "1ea897fc0e8e0964a2e5098716d86fdcd93d11e0b2e4f65998eb1b7650d167de",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_clipper_take.lin",
+  "c11_oracle": "test/oracles/maker_clipper_take_c11.c",
+  "c_kernel_for_transpiler": "test/oracles/maker_clipper_take_kernel.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "full_ok": 1,
+    "full_slice": 1000,
+    "full_owe": 100000,
+    "tab_cap_slice": 500,
+    "tab_cap_owe": 100000,
+    "chost_slice": 300,
+    "chost_owe": 30000,
+    "chost_tab": 70000,
+    "no_partial": 0,
+    "too_expensive": 0,
+    "needs_reset": 0,
+    "stopped3": 0,
+    "stopped2": 1,
+    "auth_required": 0,
+    "chip_tip_in_take": 0,
+    "breaker_take_level": 3,
+    "is_vat_kernel": 0
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-clipper-take",
+  "clone_lin_head": "fdbf45ff4a7b614c5f727eb4315d0b55a91917c4",
+  "clone_lin_lin_commit": "a2b18b0b5039d88942a2ae073c234a997dc76806",
+  "clone_lin_lin_blob": "bf1b415de936ad90fb6d182bfd6855d8e4480119",
+  "clone_lin_c_blob": "49026f0a13967b33c1c4b9fca098eb59ec578a37"
+}
