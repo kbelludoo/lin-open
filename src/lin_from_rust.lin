@@ -1,9 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_RUST{
-  version=1
+  version=2
   purpose="extract_pure_math_rust_no_std_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V1"
+  status="EXPERIMENTAL_V2"
+  changelog="v2: fail-close _get_f_remove (crvUSD liquidation fraction is a LIN clone, not a Rust emit)"
 }
 
 // 1. Identificação de palavras-chave Rust (subconjunto puramente determinístico)
@@ -40,6 +41,8 @@
 
 // 3. Critérios fail-closed de rejeição de código Rust não-puro
 !rs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "_get_f_remove") > 0) { ^"REJ_RUST_F_REMOVE" };
+  ?(rg_count_lit(body, "_get_f_remove") > 0) { ^"REJ_RUST_F_REMOVE" };
   ?(rg_count_lit(sig, "&mut") > 0) { ^"REJ_RUST_MUTABLE_REF" };
   ?(rg_count_lit(sig, "&") > 0) { ^"REJ_RUST_BORROW" };
   ?(rg_count_lit(body, "unsafe") > 0) { ^"REJ_RUST_UNSAFE" };
@@ -66,6 +69,11 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_fr = "pub fn _get_f_remove(frac: u64, h: u64) -> u64";
+  body_fr = "return frac + h;";
+  r3 = rs_reason(sig_fr, body_fr);
+  ?(starts_lit(r3, 0, "REJ_RUST_F_REMOVE") == 0) { ^0 };
 
   ^1;
 }

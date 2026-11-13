@@ -5,6 +5,7 @@ Suíte de Conformidade dos Transpiladores Formais LIN:
   1. src/lin_from_c.lin (C99/C11 -> LIN)
   2. src/lin_from_js.lin (JS -> LIN)
   3. src/lin_from_solidity.lin (Solidity pure -> LIN)
+  5. src/lin_from_vyper.lin (Vyper fail-closed gate)
   4. src/lin_from_rust.lin (Rust no_std pure -> LIN)
 
 Verifica se todos os módulos cumprem as regras de conformidade e fail-closed.
@@ -24,11 +25,12 @@ TRANSPILERS = [
     "src/lin_from_js.lin",
     "src/lin_from_solidity.lin",
     "src/lin_from_rust.lin",
+    "src/lin_from_vyper.lin",
 ]
 
 def main():
     print("=" * 80)
-    print("  SUÍTE DE CONFORMIDADE DOS TRANSPILADORES LIN (C, JS, SOLIDITY, RUST)")
+    print("  SUÍTE DE CONFORMIDADE DOS TRANSPILADORES LIN (C, JS, SOLIDITY, RUST, VYPER)")
     print("=" * 80)
 
     for tr in TRANSPILERS:
@@ -49,7 +51,7 @@ def main():
         print(f"  [PASS] Estrutura e sintaxe canônica L1c: {tr} ({len(content.splitlines())} linhas)")
 
     print("=" * 80)
-    print("  TODOS OS 4 TRANSPILADORES FORMAIS APROVADOS (100% CONFORMES)")
+    print("  TODOS OS 5 TRANSPILADORES FORMAIS APROVADOS (100% CONFORMES)")
     print("=" * 80)
     return 0
 

@@ -1,0 +1,151 @@
+{
+  "schema": "LIN_CRVUSD_F_REMOVE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned curve-stablecoin commit matches published sha256",
+      "note": "commit=81b3bea490e9b45221c82e78387920ccfeb05b33 blob=ac5e86ccaefffde86ced8ee4fa4b61cc5242206f"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of controller.vy",
+      "note": ""
+    },
+    {
+      "id": "NO-VENDOR",
+      "status": "PASS",
+      "description": "Vyper source is hash-pinned only (not copied into lin-open)",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb f_remove agree on goldens",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_crvusd_f_remove.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "VY-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_vyper.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "VY-GATE",
+      "status": "PASS",
+      "description": "lin_from_vyper.lin fail-closes _get_f_remove / unsafe_",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 fail-closes _get_f_remove",
+      "note": ""
+    },
+    {
+      "id": "RS-GATE",
+      "status": "PASS",
+      "description": "lin_from_rust.lin fail-closes _get_f_remove",
+      "note": ""
+    },
+    {
+      "id": "C-REJ",
+      "status": "PASS",
+      "description": "lin_from_c.lin fail-closes _get_f_remove / unsafe_",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "cfr_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "11/11 vectors: C11 i128 == limbs == LIN vm == named goldens",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "11/11 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e18*3e18) wraps; 128-bit muldiv fail-closes to 0",
+      "note": "i64_wrap=-5389669316318724096 muldiv=0"
+    },
+    {
+      "id": "VS-NAIVE-FRAC",
+      "status": "PASS",
+      "description": "50% debt frac with 10% health-limit withdraws 1.136% less collateral than naive frac",
+      "note": "f_remove=488636363 naive_frac=500000000 gap=11363637 on y=1e9"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes frac and health_limit as arguments (no AMM storage)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product (unsafe_mul/div is not claimed)",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/curvefi/curve-stablecoin",
+    "commit": "81b3bea490e9b45221c82e78387920ccfeb05b33",
+    "path": "curve_stablecoin/controller.vy",
+    "git_blob_sha": "ac5e86ccaefffde86ced8ee4fa4b61cc5242206f",
+    "file_sha256": "42d82a3c36712cc1397f170d8e6924f7985035be2e54cfcfee1ce3d303a47c6b",
+    "license": "all-rights-reserved informational-only (not vendored)"
+  },
+  "lin_clone": "src/lin_crvusd_f_remove.lin",
+  "c11_oracle": "test/oracles/crvusd_f_remove_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "h0_half": 500000000,
+    "full_frac": 1000000000,
+    "half_h10": 488636363,
+    "tenth_h5": 97857142,
+    "almost_full": 898269230,
+    "small": 9950990,
+    "discount_gap_y1e9": 11363637
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-crvusd-f-remove",
+  "clone_lin_commit": "5bebba0726bd3716c4b33775fb40275485b2700d",
+  "clone_lin_kernel_blob": "a887da6245f8358e361faa3c91ad347a74e99e9b",
+  "clone_lin_oracle_blob": "752aa98d0ddf22447e2179332255f6a250823fb4",
+  "lin_sha256": "f092cd75e19742a61de0ea7b92e48f7e4895d8d451fd160668fc30187e04f00d"
+}

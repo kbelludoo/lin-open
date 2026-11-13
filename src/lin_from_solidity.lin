@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: fail-close _get_f_remove (crvUSD liquidation fraction is a LIN clone, not a Solidity emit); v2 emit + 1eN expansion retained"
 }
 
 !sol_is_kw(nm: string): int {
@@ -38,6 +38,9 @@
 }
 
 !sol_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "_get_f_remove") > 0) { ^"REJ_SOLIDITY_F_REMOVE" };
+  ?(rg_count_lit(body, "_get_f_remove") > 0) { ^"REJ_SOLIDITY_F_REMOVE" };
+  ?(rg_count_lit(body, "unsafe_") > 0) { ^"REJ_SOLIDITY_UNSAFE" };
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
@@ -64,6 +67,10 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_fr = "function _get_f_remove(uint256 frac, uint256 health_limit) internal pure returns (uint256)";
+  body_fr = "return frac + health_limit;";
+  r4 = sol_reason(sig_fr, body_fr);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_F_REMOVE") == 0) { ^0 };
   ^1;
 }
 
