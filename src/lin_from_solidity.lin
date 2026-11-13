@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: REJ_SOLIDITY_DOG_BARK / REJ_SOLIDITY_BYTES32 / REJ_SOLIDITY_CLIPPER_KICK fail-close Maker dog.bark storage+kick; v2 emit+1eN+OK_VIEW kept"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,11 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(sig, "function bark(") > 0) { ^"REJ_SOLIDITY_DOG_BARK" };
+  ?(rg_count_lit(body, "ilks[") > 0) { ^"REJ_SOLIDITY_DOG_BARK" };
+  ?(rg_count_lit(sig, "bytes32") > 0 || rg_count_lit(body, "bytes32") > 0) { ^"REJ_SOLIDITY_BYTES32" };
+  ?(rg_count_lit(body, "ClipperLike") > 0) { ^"REJ_SOLIDITY_CLIPPER_KICK" };
+  ?(rg_count_lit(body, ".kick(") > 0) { ^"REJ_SOLIDITY_CLIPPER_KICK" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +69,18 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_bark = "function bark(bytes32 ilk, address urn, address kpr) external returns (uint256 id)";
+  body_bark = "Ilk memory milk = ilks[ilk]; dart = art;";
+  r4 = sol_reason(sig_bark, body_bark);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_DOG_BARK") == 0) { ^0 };
+  sig_b32 = "function tag(bytes32 ilk) public pure returns (uint256)";
+  body_b32 = "return 1;";
+  r5 = sol_reason(sig_b32, body_b32);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_BYTES32") == 0) { ^0 };
+  sig_kick = "function go(uint256 tab, uint256 lot) public pure";
+  body_kick = "id = ClipperLike(clip).kick(tab, lot, urn, kpr);";
+  r6 = sol_reason(sig_kick, body_kick);
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_CLIPPER_KICK") == 0) { ^0 };
   ^1;
 }
 

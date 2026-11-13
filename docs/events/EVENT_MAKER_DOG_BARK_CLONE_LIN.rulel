@@ -1,0 +1,65 @@
+@RULEL:MAKER_DOG_BARK_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MAKER-DOG-BARK"
+@TITLE="Clone-lin of Maker/Sky Dog.bark with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-maker-dog-bark"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Maker dog.bark (liquidation kick; Hole/Dirt room; chop; dusty leftover vs dusty auction) into deterministic LIN, compile in memory with C11 compiler 0, publish LIN copy in clone-lin-maker-dog-bark and only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64-scale ink/art/rate/spot/dust/Hole/Dirt/chop; Solidity uint256 rad/wad/ray is NOT claimed"
+  commercial_hook="Dog.bark is the Maker/Sky liquidation start path: unsafe vault, min(art, room*WAD/rate/chop), leftover-dusty becomes full, dusty auction from partial fail-closes, tab=due*chop/WAD, clip.kick(tab,dink). Making ilks[]/vat.grab/vow.fess/ClipperLike.kick/bytes32 explicit-or-absent, and fail-closing i64 mul wrap, is an audit improvement, not a TVL claim. Distinct from clipper.take and vat.slip/flux/move."
+}
+
+.u{
+  repo="https://github.com/makerdao/dss"
+  path="src/dog.sol"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  git_blob_sha="d941d80fbf89fe7b3d334cf4931c779e1ac7c0ce"
+  file_sha256="274f7c5df8a13e535b496236436ebf726228fbe9285d94c542e2c9d2a78671de"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_maker_dog_bark.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-dog-bark"
+  transpiler_delta="src/lin_from_solidity.lin v3: REJ_SOLIDITY_DOG_BARK + REJ_SOLIDITY_BYTES32 + REJ_SOLIDITY_CLIPPER_KICK; src/lin_from_c.lin v2: REJ_C_WIDE_INT + REJ_C_DOG_BARK; src/lin_from_rust.lin v2: REJ_RUST_DOG_BARK + REJ_RUST_WIDE_INT"
+  improvement_1="vat.urns/ilks, vat.grab, vow.fess, ClipperLike.kick and bytes32 ilk are arguments; no hidden mapping / modifier / callback"
+  improvement_2="ink*spot, room*WAD, dart*rate, due*chop fail-close on i64 overflow instead of wrapping; 7e9*3e9 naive i64 wraps, checked mul returns 0"
+  improvement_3="Hole/Dirt room, dusty leftover→full, and dusty-auction-from-partial are explicit; chip/tip are clipper.kick/redo, not bark (db_chip_tip_in_bark=0)"
+  improvement_4="bytes32 ilk keys / ClipperLike.kick are not LIN types; transpiler fail-closes them"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/maker_dog_bark_c11.c (gcc -O2 -std=c11, wrap-detect XOR __int128)"
+  kernel="test/oracles/maker_dog_bark_kernel.c (pointer-free; eligible for lin_from_c)"
+  gate="test/verify_maker_dog_bark.sh"
+}
+
+.p{
+  harness="test/prove_maker_dog_bark_external.py"
+  evidence_json="examples/maker_dog_bark/maker_dog_bark_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-dog-bark"
+  named_goldens="FULL dart=800 dink=1000 due=1.2e6 tab=1356000 leftover=0 id=7; PARTIAL dart=1474 dink=1842 tab=1998744; dusty leftover→full dart=800; dusty auction=0; SAFE/DEAD/LIMIT/NULL/spot0=0; 7e9*3e9=0"
+}
+
+.n{
+  not_claimed_1="full uint256 rad/wad/ray / mainnet Dog.bark / Clipper.take parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production dog/clipper replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Maker, Sky, dog, clipper, or the EVM"
+  not_claimed_6="TVL or dollar savings"
+}
+
+.v{
+  method="PINNED_BYTES && C11_WRAP_EQ_I128 && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

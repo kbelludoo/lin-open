@@ -1,0 +1,203 @@
+{
+  "schema": "LIN_MAKER_DOG_BARK_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 wrap-detect ink*spot/room*WAD/due*chop and __int128 mul agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss dog.sol matches hash pin",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 blob=d941d80fbf89fe7b3d334cf4931c779e1ac7c0ce"
+    },
+    {
+      "id": "UPSTREAM-BARK",
+      "status": "PASS",
+      "description": "pinned dog.sol contains bark, Hole/Dirt, chop, clip.kick (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/dog.sol",
+      "note": "d941d80fbf89fe7b3d334cf4931c779e1ac7c0ce"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_dog_bark.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "db_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "22/22 vectors: C11 wrap-detect == __int128 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "22/22 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "FULL dart=800 dink=1000 tab=1356000; PARTIAL dart=1474 dink=1842; dusty leftover\u2192full; dusty auction=0",
+      "note": "full_tab=1356000 part_tab=1998744 auth=0 chip_tip=0 kick_arg=1"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured liquidation kick (not TVL): 1000 collat / 800 debt at rate 1500 chop 1130 raises tab 1356000; Hole/Dirt room explicit",
+      "note": "dink=1000 dart=800 due=1200000 tab=1356000 leftover=0 unit=reduced_wad_rad"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e9*3e9) wraps; checked ink*spot fail-closes to 0",
+      "note": "i64_mul_wrap=2553255926290448384 u_mul_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes live/ink/art/rate/spot/dust/g_hole/g_dirt/i_hole/i_dirt/chop/next_id (no hidden ilks[])",
+      "note": ""
+    },
+    {
+      "id": "NO-CHIP-TIP",
+      "status": "PASS",
+      "description": "bark does not suck chip/tip; those are clipper.kick/redo incentives",
+      "note": ""
+    },
+    {
+      "id": "NO-AUTH",
+      "status": "PASS",
+      "description": "bark is public (live flag), not wards auth; LIN measures auth_required=0",
+      "note": ""
+    },
+    {
+      "id": "NOT-TAKE",
+      "status": "PASS",
+      "description": "clone is liquidation kick, not clipper.take auction buy",
+      "note": ""
+    },
+    {
+      "id": "NOT-VAT",
+      "status": "PASS",
+      "description": "clone is dog.bark, not vat.slip/flux/move accounting",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close dog.bark / ilks[ / vat.grab",
+      "note": ""
+    },
+    {
+      "id": "TR-BYTES32",
+      "status": "PASS",
+      "description": "Solidity transpiler fail-closes bytes32 (ilk keys)",
+      "note": ""
+    },
+    {
+      "id": "TR-KICK",
+      "status": "PASS",
+      "description": "Solidity transpiler fail-closes ClipperLike.kick callbacks",
+      "note": ""
+    },
+    {
+      "id": "TR-WIDE",
+      "status": "PASS",
+      "description": "C/Rust transpilers fail-close __int128 / i128 (oracle width, not LIN emit)",
+      "note": ""
+    },
+    {
+      "id": "C-KERNEL",
+      "status": "PASS",
+      "description": "pointer-free C kernel (maker_dog_bark_kernel.c) is eligible for lin_from_c; oracle __int128 is not",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/dog.sol",
+    "git_blob_sha": "d941d80fbf89fe7b3d334cf4931c779e1ac7c0ce",
+    "file_sha256": "274f7c5df8a13e535b496236436ebf726228fbe9285d94c542e2c9d2a78671de",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_dog_bark.lin",
+  "c11_oracle": "test/oracles/maker_dog_bark_c11.c",
+  "c_kernel_for_transpiler": "test/oracles/maker_dog_bark_kernel.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "full_ok": 1,
+    "full_dart": 800,
+    "full_dink": 1000,
+    "full_due": 1200000,
+    "full_tab": 1356000,
+    "full_id": 7,
+    "part_dart": 1474,
+    "part_dink": 1842,
+    "part_tab": 1998744,
+    "dusty_leftover_full": 1,
+    "dusty_auction": 0,
+    "safe": 0,
+    "not_live": 0,
+    "limit_hit": 0,
+    "null_auction": 0,
+    "auth_required": 0,
+    "chip_tip_in_bark": 0,
+    "is_take_kernel": 0,
+    "is_vat_kernel": 0,
+    "uses_bytes32_ilk": 0,
+    "uses_clip_kick_arg": 1
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-dog-bark",
+  "clone_lin_head": "896c19f8e46bf8174b0d568fa4bcc11684510960",
+  "clone_lin_lin_commit": "896c19f8e46bf8174b0d568fa4bcc11684510960",
+  "clone_lin_lin_blob": "ac17f5a5ad2a6cb646a056aa81ae3b6cfd8c536f",
+  "clone_lin_c_blob": "bd328b3857de49388fc37d4b8c5c099ea0723ec2"
+}
