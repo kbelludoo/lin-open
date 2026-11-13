@@ -1,0 +1,64 @@
+@RULEL:PENDLE_SYUTILS_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-PENDLE-SYUTILS-V1"
+@TITLE="Clone-lin of Pendle SYUtils with C11 Compiler 0 floor/ceil proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-pendle-syutils"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Pendle Standardized Yield SY↔asset conversion into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for floor (a*b)/d and ceil via remainder; Solidity uint256 is NOT claimed"
+  commercial_hook="SYUtils is the SY↔underlying conversion used on every Pendle trade; assetToSyUp/syToAssetUp round against the user so remainder cannot leak value. LIN makes ceil explicit via remainder instead of overflow-prone (a*ONE+rate-1)/rate and fail-closes if the quotient does not fit uint64. This is an audit improvement, not a TVL claim."
+}
+
+.u{
+  repo="https://github.com/pendle-finance/pendle-core-v2-public"
+  path="contracts/core/StandardizedYield/SYUtils.sol"
+  license="GPL-3.0-or-later"
+  commit="87685c89d05087535e9b9647eeda0e3d297d1f06"
+  git_blob_sha="b6a5ed174c6b93c29654254a5ce10aab28178285"
+  file_sha256="25af0a883e174b713a88296b97998bb323ab79356d65cb50f3c7adcef91158c3"
+  fixture="NOT_VENDORED_GPL"
+}
+
+.l{
+  clone="src/lin_pendle_syutils.lin"
+  transpiler_delta="src/lin_from_solidity.lin v2.1: sol_subst_one, sol_expand_pow10, sol_div_kind CEIL_DIV; src/lin_from_c.lin adds cfs_div_kind"
+  improvement_1="ONE and 10**N are expanded to decimal literals before emit"
+  improvement_2="(a*b)/d uses a 128-bit product; ceil is floor+1 iff remainder!=0 (not (prod+d-1)/d add)"
+  improvement_3="exchangeRate==0 fail-closes to 0 (Solidity 0.8 reverts on div-by-zero)"
+  improvement_4="quotient that does not fit uint64 fail-closes to 0 (no silent wrap)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/pendle_syutils_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  kernel="test/oracles/pendle_syutils_kernel.c (pointer-free, ONE'=1000, lin_from_c eligible)"
+  gate="test/verify_pendle_syutils.sh"
+}
+
+.p{
+  harness="test/prove_pendle_syutils_external.py"
+  evidence_json="examples/pendle_syutils/pendle_syutils_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-pendle-syutils"
+  named_goldens="ID syToAsset(1e18,1e18)=1e18; FLOOR assetToSy(3e18,10)=3; CEIL assetToSyUp(3e18,10)=4; syToAsset(3,10)=0; syToAssetUp(3,10)=1"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet Pendle SY / YT / PT parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production SY replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Pendle, Uniswap, or the EVM"
+  not_claimed_6="kernel ONE'=1000 equals LIN ONE=1e18"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

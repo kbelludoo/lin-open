@@ -1,0 +1,136 @@
+{
+  "schema": "LIN_PENDLE_SYUTILS_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "live SYUtils.sol sha256 matches pinned GPL hash (not vendored)",
+      "note": "25af0a883e174b713a88296b97998bb323ab79356d65cb50f3c7adcef91158c3"
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned pendle-core-v2-public commit matches pin",
+      "note": "commit=87685c89d05087535e9b9647eeda0e3d297d1f06 blob=b6a5ed174c6b93c29654254a5ce10aab28178285"
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of SYUtils.sol",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-FNS",
+      "status": "PASS",
+      "description": "pinned SYUtils has syToAsset/assetToSy and *Up ceil variants",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb floor/ceil agree",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_pendle_syutils.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v2.1",
+      "note": ""
+    },
+    {
+      "id": "SOL-GATE",
+      "status": "PASS",
+      "description": "v2.1 helpers typecheck; sol_from_sol_gate holds ONE/10**N/CEIL vectors (C0 vm refuses string literals)",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler (cfs_div_kind)",
+      "note": ""
+    },
+    {
+      "id": "C-CEIL-GATE",
+      "status": "PASS",
+      "description": "lin_from_c classifies (a+b-1)/b as CEIL_DIV (C0 vm refuses string literals)",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "psy_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "9/9 vectors: C11 i128 == limbs == LIN vm == Python",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "9/9 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "CEIL-REM",
+      "status": "PASS",
+      "description": "assetToSy(3e18,10)=3 floor; assetToSyUp=4 ceil (remainder 1e18)",
+      "note": "floor=3 ceil=4"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (10*1e18) wraps; 128-bit floor/ceil does not",
+      "note": "i64_wrap=-8446744073709551616 bigint_floor=3"
+    },
+    {
+      "id": "KERNEL-C",
+      "status": "PASS",
+      "description": "pointer-free C kernel eligible for lin_from_c (ONE'=1000, checked mul)",
+      "note": ""
+    },
+    {
+      "id": "SOL-EMIT",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v2.1: ONE subst, 10**N, CEIL_DIV",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/pendle-finance/pendle-core-v2-public",
+    "commit": "87685c89d05087535e9b9647eeda0e3d297d1f06",
+    "path": "contracts/core/StandardizedYield/SYUtils.sol",
+    "git_blob_sha": "b6a5ed174c6b93c29654254a5ce10aab28178285",
+    "file_sha256": "25af0a883e174b713a88296b97998bb323ab79356d65cb50f3c7adcef91158c3",
+    "license": "GPL-3.0-or-later",
+    "vendored": false,
+    "note": "hash-pinned only; GPL source is not copied into lin-open"
+  },
+  "lin_clone": "src/lin_pendle_syutils.lin",
+  "c11_oracle": "test/oracles/pendle_syutils_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "ID_syToAsset": 1000000000000000000,
+    "ID_assetToSy": 1000000000000000000,
+    "FLOOR_assetToSy_3e18_10": 3,
+    "CEIL_assetToSyUp_3e18_10": 4,
+    "FLOOR_syToAsset_3_10": 0,
+    "CEIL_syToAssetUp_3_10": 1
+  },
+  "clone_lin": "https://github.com/kbelludoo/clone-lin-pendle-syutils"
+}
