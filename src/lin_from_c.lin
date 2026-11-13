@@ -1,5 +1,5 @@
 @LIN:L1c:0.2
-@LIN_FROM_C{version=1 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN}
+@LIN_FROM_C{version=2 purpose=extract_scalar_and_fixed_int_array_c_functions emits=LIN changelog="v2: fail-close grab(/sin[/gem[/vice so Maker CDP confiscation storage cannot be silently emitted"}
 
 !cfs_kw(nm: string): int {
   ?(starts_lit(nm, 0, "if") == 1 && nm.length == 2){ ^1 };
@@ -33,6 +33,10 @@
 }
 
 !cfs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "grab(") > 0){ ^"REJ_C_VAT_GRAB" };
+  ?(rg_count_lit(body, "sin[") > 0){ ^"REJ_C_SIN" };
+  ?(rg_count_lit(body, "gem[") > 0){ ^"REJ_C_GEM" };
+  ?(rg_count_lit(body, "vice") > 0){ ^"REJ_C_VICE" };
   ?(rg_count_lit(sig, "*") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(body, "->") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(sig, "struct") > 0 || rg_count_lit(body, "struct") > 0){ ^"REJ_C_STRUCT" };
@@ -41,6 +45,18 @@
   ?(rg_count_lit(sig, "double") > 0 || rg_count_lit(body, "double") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(body, "goto") > 0){ ^"REJ_C_GOTO" };
   ^"OK";
+}
+
+!cfs_grab_rej_gate(): int {
+  r = cfs_reason("int grab(", "x");
+  ?(starts_lit(r, 0, "REJ_C_VAT_GRAB") == 0) { ^0 };
+  r2 = cfs_reason("int x()", "sin[");
+  ?(starts_lit(r2, 0, "REJ_C_SIN") == 0) { ^0 };
+  r3 = cfs_reason("int x()", "gem[");
+  ?(starts_lit(r3, 0, "REJ_C_GEM") == 0) { ^0 };
+  r4 = cfs_reason("int x()", "vice");
+  ?(starts_lit(r4, 0, "REJ_C_VICE") == 0) { ^0 };
+  ^1;
 }
 
 !cfs_atom_left(s: string, at: int): int {
@@ -756,4 +772,4 @@
   ^out;
 }
 
-=ex{cfs_from_c, cfs_report, cfs_reason, cfs_fn, cfs_strip_casts, cfs_all_type}
+=ex{cfs_from_c, cfs_report, cfs_reason, cfs_grab_rej_gate, cfs_fn, cfs_strip_casts, cfs_all_type}
