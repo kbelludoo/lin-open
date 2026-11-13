@@ -12,6 +12,15 @@ independent proof harness. They are **test fixtures**, not vendored libraries.
 | `tinyexpr.c` | [codeplea/tinyexpr](https://github.com/codeplea/tinyexpr) | zlib |
 | `BaseJumpRateModelV2.sol` | [compound-finance/compound-protocol](https://github.com/compound-finance/compound-protocol) | BSD-3-Clause |
 
+**Fetch-only (not stored in this tree):** Curve 3pool
+`contracts/pools/3pool/StableSwap3Pool.vy` from
+[curvefi/curve-contract](https://github.com/curvefi/curve-contract) commit
+`574f44027d089de0eac765f5a74ea5ae96aba968` (git blob
+`04d170189a1b5ddfecfc0af9ea3fe23eb0840423`, sha256
+`03e0bf29ae2fe945a3629b8085062da8f9d9d25957e86001dfc3df68c895f9dc`).
+Upstream LICENSE grants no redistribution right, so the proof harness fetches
+and hashes the file at runtime instead of vendoring it.
+
 They are only pinned so an auditor can hash the exact bytes and, with `--fetch`,
 re-download them from the GitHub Contents API. No upstream code is compiled or
 linked into this repository.
