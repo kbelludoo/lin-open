@@ -1,0 +1,153 @@
+{
+  "schema": "LIN_MAKER_VAT_HEAL_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss vat.sol matches hash pin",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 blob=ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+    },
+    {
+      "id": "UPSTREAM-HEAL",
+      "status": "PASS",
+      "description": "pinned vat.sol contains heal and unsigned _sub (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/vat.sol",
+      "note": "ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_vat_heal.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "mh_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "20/20 vectors: C11 i128 == limbs == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "20/20 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "VOW heal 1e18 ok; FULL_SETTLE vice 2e18 -> 0; four deltas equal rad; no live/auth",
+      "note": "vow=1 full=1 new_vice=0 settled=2000000000000000000 live_required=0 auth_required=0 deltas=1"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured surplus-buffer settlement (not TVL): 2e18 unbacked vice cancelled by matching dai/sin; leftover dai=1e18",
+      "note": "settled_vice=2000000000000000000 leftover_dai=1000000000000000000 leftover_debt=3000000000000000000"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e18+3e18) wraps; checked u_add fail-closes to 0; (7e18*3e18) muldiv fail-closes",
+      "note": "i64_add_wrap=-8446744073709551616 u_add_fail_closed=0 i64_mul_wrap=-5389669316318724096 muldiv_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes settlement params as arguments (no hidden sin/dai/vice/debt/msg.sender)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-ADD",
+      "status": "PASS",
+      "description": "clone uses fail-closed unsigned sub/add plus 128-bit muldiv",
+      "note": ""
+    },
+    {
+      "id": "NO-LIVE-AUTH",
+      "status": "PASS",
+      "description": "heal has no live==1 and no auth (unlike frob/suck); four deltas equal rad",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close vat.heal / dai / sin / vice",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/vat.sol",
+    "git_blob_sha": "ff90bbed5b36e54318bd5461cbf32e4167df2b28",
+    "file_sha256": "9016fd94f0f1b014abf184edab86a3f5843042b17e3734407e0f0fabb920f49f",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_vat_heal.lin",
+  "c11_oracle": "test/oracles/maker_vat_heal_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "vow_heal_ok": 1,
+    "full_settle_ok": 1,
+    "full_settle_new_vice": 0,
+    "settled_vice": 2000000000000000000,
+    "live_required": 0,
+    "auth_required": 0,
+    "deltas_equal": 1,
+    "leftover_dai_after_full": 1000000000000000000
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-vat-heal",
+  "clone_lin_head": "29fd94e30fad0cce3530034eed71b34153430785",
+  "clone_lin_lin_commit": "311905f92c84db37184cbb3539cf4458a5563c61",
+  "clone_lin_lin_blob": "185cdedcbd2bacd64bed817d8de004ceba77d867",
+  "clone_lin_c_blob": "91cd3e6b2950aafe0e0d2e1213c0673dd361ffaa"
+}

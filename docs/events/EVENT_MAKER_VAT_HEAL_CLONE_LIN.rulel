@@ -1,0 +1,66 @@
+@RULEL:MAKER_VAT_HEAL_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MAKER-VAT-HEAL"
+@TITLE="Clone-lin of Maker/Sky Vat.heal surplus settlement with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-maker-vat-heal"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile MakerDAO/Sky vat.heal surplus-settlement math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for overflow checks; Solidity uint256 / RAY=1e27 is NOT claimed"
+  commercial_hook="Vat.heal is the Vow surplus-buffer valve that cancels unbacked sin against surplus dai; making storage explicit, dropping hidden msg.sender, fail-closing four-way underflow, and proving Δsin=Δdai=Δvice=Δdebt=rad is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/makerdao/dss"
+  path="src/vat.sol"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  git_blob_sha="ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+  file_sha256="9016fd94f0f1b014abf184edab86a3f5843042b17e3734407e0f0fabb920f49f"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_maker_vat_heal.lin"
+  clone_sha256="fd83453bf18d91cd350a64f77e8fe692e59ae7dc9140af9c698c36dcef6e8c1a"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-vat-heal"
+  clone_lin_head="29fd94e30fad0cce3530034eed71b34153430785"
+  transpiler_delta="src/lin_from_solidity.lin v2.1 + src/lin_from_c.lin v2 + src/lin_from_rust.lin v2: fail-close function heal / dai[ / sin[ / vice"
+  improvement_1="heal is msg.sender+storage in Solidity; LIN takes sin/dai/vice/debt/rad as arguments"
+  improvement_2="no live==1 and no auth (documented vs frob/suck); cage does not block settlement math"
+  improvement_3="four-way identity Δsin=Δdai=Δvice=Δdebt=rad when heal_ok=1; healable=min of the four"
+  improvement_4="unsigned _sub of any of the four accounts underflow fail-closes to 0 (no wrap)"
+  improvement_5="restore new+rad uses checked add; 7e18+3e18 wraps in naive i64 and fail-closes in LIN"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/maker_vat_heal_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="make maker-vat-heal-proof"
+}
+
+.p{
+  harness="test/prove_maker_vat_heal_external.py"
+  evidence_json="examples/maker_vat_heal/maker_vat_heal_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-vat-heal"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet RAY=1e27 / wad*ray rad parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production vat/vow replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Maker, Sky, or the EVM"
+  not_claimed_6="TVL or dollar savings from surplus-buffer settlement"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
