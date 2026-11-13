@@ -1,0 +1,152 @@
+{
+  "schema": "LIN_MAKER_VAT_GRAB_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 __int128 and portable limb muldiv agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss vat.sol matches hash pin",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 blob=ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+    },
+    {
+      "id": "UPSTREAM-GRAB",
+      "status": "PASS",
+      "description": "pinned vat.sol contains grab and signed _sub (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/vat.sol",
+      "note": "ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_vat_grab.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "mgr_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "16/16 vectors: C11 i128 == limbs == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "16/16 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "BARK seize 1e9 ink/art ok; underwater 2e9 art still grab_ok; vice=2e18; no live check",
+      "note": "bark=1 underwater=1 grab_under=1 vice=2000000000000000000 live_required=0"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured confiscation vs frob safety (not TVL): underwater urn still seizable; unbacked vice=2e18",
+      "note": "cancelled_art=2000000000 seized_ink=1000000000 unbacked_vice=2000000000000000000"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e18*3e18) wraps; 128-bit muldiv fail-closes to 0",
+      "note": "i64_wrap=-5389669316318724096 bigint_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes confiscation params as arguments (no hidden urns/sin/gem/msg.sender)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-MULDIV",
+      "status": "PASS",
+      "description": "clone uses 128-bit product muldiv (naive i64 a*b wraps on 7e18*3e18)",
+      "note": ""
+    },
+    {
+      "id": "NO-LIVE",
+      "status": "PASS",
+      "description": "grab has no live==1 gate (unlike frob) and uses signed _sub for gem/sin/vice",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close vat.grab / sin / gem / vice",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/vat.sol",
+    "git_blob_sha": "ff90bbed5b36e54318bd5461cbf32e4167df2b28",
+    "file_sha256": "9016fd94f0f1b014abf184edab86a3f5843042b17e3734407e0f0fabb920f49f",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_vat_grab.lin",
+  "c11_oracle": "test/oracles/maker_vat_grab_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "bark_grab_ok": 1,
+    "underwater": 1,
+    "underwater_grab_ok": 1,
+    "unbacked_vice": 2000000000000000000,
+    "live_required": 0,
+    "seized_ink": 1000000000,
+    "cancelled_art": 2000000000
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-vat-grab",
+  "clone_lin_head": "c244ffb6dcc05452577f3ad5f6155888af25508c",
+  "clone_lin_lin_commit": "f0ab73da5980f19a86327514ef75d898cde01191",
+  "clone_lin_lin_blob": "57d6c91c8dee6bfa1c1ecfdda69e09da9ab06958",
+  "clone_lin_c_blob": "a9c1710e82cab50df4a2653215fa1b71b1a35999"
+}

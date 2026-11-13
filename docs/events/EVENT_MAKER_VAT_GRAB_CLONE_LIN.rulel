@@ -1,0 +1,66 @@
+@RULEL:MAKER_VAT_GRAB_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MAKER-VAT-GRAB"
+@TITLE="Clone-lin of Maker/Sky Vat.grab CDP confiscation with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-13"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-maker-vat-grab"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile MakerDAO/Sky vat.grab confiscation math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for (a*b); Solidity uint256 / RAY=1e27 is NOT claimed"
+  commercial_hook="Vat.grab is the liquidation seize used by Dog/Clipper to cancel CDP debt and move collateral; making storage explicit, dropping hidden auth/wish, fail-closing overflow, and proving underwater urns remain seizable (unlike frob) is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/makerdao/dss"
+  path="src/vat.sol"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  git_blob_sha="ff90bbed5b36e54318bd5461cbf32e4167df2b28"
+  file_sha256="9016fd94f0f1b014abf184edab86a3f5843042b17e3734407e0f0fabb920f49f"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_maker_vat_grab.lin"
+  clone_sha256="3df363902f09383d8d9776578512c4620f2eeb873a46a9bdfea744af43aacd9d"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-vat-grab"
+  clone_lin_head="c244ffb6dcc05452577f3ad5f6155888af25508c"
+  transpiler_delta="src/lin_from_solidity.lin v2.1 + src/lin_from_c.lin v2 + src/lin_from_rust.lin v2: fail-close function grab / sin[ / gem[ / vice"
+  improvement_1="grab is auth+storage in Solidity; LIN takes rate/ink/art/Art/dink/dart/gem/sin/vice as arguments"
+  improvement_2="no live==1 gate (documented vs frob); cage does not block confiscation math"
+  improvement_3="underwater urns remain grab_ok=1; frob would reject tab>ink*spot"
+  improvement_4="signed _sub(uint,int) for gem/sin/vice: negative dink/dart credits the clipper and creates vice"
+  improvement_5="rate*dart uses 128-bit product; quotient that does not fit uint64 fail-closes to 0"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/maker_vat_grab_c11.c (gcc -O2 -std=c11, __int128 XOR limb clone)"
+  gate="make maker-vat-grab-proof"
+}
+
+.p{
+  harness="test/prove_maker_vat_grab_external.py"
+  evidence_json="examples/maker_vat_grab/maker_vat_grab_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-vat-grab"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet RAY=1e27 / wad*ray rad parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production vat/dog/clipper replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Maker, Sky, or the EVM"
+  not_claimed_6="TVL or dollar savings from liquidation"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIMBS && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
