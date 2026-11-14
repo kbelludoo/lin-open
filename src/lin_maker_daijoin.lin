@@ -1,0 +1,218 @@
+@LIN:L1c:0.2
+@MAKER_DAIJOIN{
+  version=1
+  repo="makerdao/dss"
+  source="src/join.sol DaiJoin.join/exit/mul(ONE,wad)"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  join_sol_sha256="96fceff4511aa976db5c6b144d83f4dd1bde832dd2f49fd6e54e69343b9583f9"
+  join_sol_blob="42b01c91c8f2a6b776440e16dea2c94497d966b0"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_sky_daijoin_wad_to_rad_join_exit"
+  note="Not mainnet uint256/rad/wad/ray. Addresses, ERC20 host mint/burn, vat.move host and live storage are stripped: live/from_dai/to_dai/token/wad are arguments. rad=mul(RAY,wad) with RAY=1e9. Join does not require live (Maker cage still accepts join); exit requires live==1. Overflow fail-closes. Distinct from vat.move, GemJoin, Clipper. Upstream AGPL is not vendored."
+}
+
+!dj_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!dj_u_mul_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(a == 0) { ^ 1; };
+  ?(b == 0) { ^ 1; };
+  p = a * b;
+  ?(p < 0) { ^ 0; };
+  ?(p / a != b) { ^ 0; };
+  ^ 1;
+}
+
+!dj_u_mul(a: int, b: int) -> int {
+  ?(dj_u_mul_ok(a, b) == 0) { ^ 0; };
+  ^ a * b;
+}
+
+!dj_u_add_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  s = a + b;
+  ?(s < 0) { ^ 0; };
+  ?(dj_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!dj_u_sub_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(dj_u_lt(a, b) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!dj_ray() -> int {
+  ^ 1000000000;
+}
+
+!dj_join_checks_live() -> int {
+  ^ 0;
+}
+
+!dj_exit_checks_live() -> int {
+  ^ 1;
+}
+
+!dj_uses_vat_move() -> int {
+  ^ 1;
+}
+
+!dj_uses_dai_burn() -> int {
+  ^ 1;
+}
+
+!dj_uses_dai_mint() -> int {
+  ^ 1;
+}
+
+!dj_is_gemjoin() -> int {
+  ^ 0;
+}
+
+!dj_eval(op: int, live: int, from_dai: int, to_dai: int, token: int, wad: int, want: int) -> int {
+  ?(op != 0 && op != 1) { ^ 0; };
+  ?(from_dai < 0) { ^ 0; };
+  ?(to_dai < 0) { ^ 0; };
+  ?(token < 0) { ^ 0; };
+  ?(wad < 0) { ^ 0; };
+  ?(op == 1 && live != 1) { ^ 0; };
+  ?(dj_u_mul_ok(dj_ray(), wad) == 0) { ^ 0; };
+  rad = dj_ray() * wad;
+  ?(dj_u_sub_ok(from_dai, rad) == 0) { ^ 0; };
+  ?(dj_u_add_ok(to_dai, rad) == 0) { ^ 0; };
+  new_token = token;
+  ?(op == 0) {
+    ?(dj_u_sub_ok(token, wad) == 0) { ^ 0; };
+    new_token = token - wad;
+  };
+  ?(op == 1) {
+    ?(dj_u_add_ok(token, wad) == 0) { ^ 0; };
+    new_token = token + wad;
+  };
+  new_from = from_dai - rad;
+  new_to = to_dai + rad;
+  ?(want == 0) { ^ 1; };
+  ?(want == 1) { ^ rad; };
+  ?(want == 2) { ^ new_from; };
+  ?(want == 3) { ^ new_to; };
+  ?(want == 4) { ^ new_token; };
+  ^ 0;
+}
+
+!dj_join_ok(from_dai: int, to_dai: int, token: int, wad: int) -> int {
+  ^ dj_eval(0, 1, from_dai, to_dai, token, wad, 0);
+}
+
+!dj_join_rad(from_dai: int, to_dai: int, token: int, wad: int) -> int {
+  ^ dj_eval(0, 1, from_dai, to_dai, token, wad, 1);
+}
+
+!dj_join_from(from_dai: int, to_dai: int, token: int, wad: int) -> int {
+  ^ dj_eval(0, 1, from_dai, to_dai, token, wad, 2);
+}
+
+!dj_join_to(from_dai: int, to_dai: int, token: int, wad: int) -> int {
+  ^ dj_eval(0, 1, from_dai, to_dai, token, wad, 3);
+}
+
+!dj_join_token(from_dai: int, to_dai: int, token: int, wad: int) -> int {
+  ^ dj_eval(0, 1, from_dai, to_dai, token, wad, 4);
+}
+
+!dj_exit_ok(live: int, from_dai: int, to_dai: int, token: int, wad: int) -> int {
+  ^ dj_eval(1, live, from_dai, to_dai, token, wad, 0);
+}
+
+!dj_exit_rad(live: int, from_dai: int, to_dai: int, token: int, wad: int) -> int {
+  ^ dj_eval(1, live, from_dai, to_dai, token, wad, 1);
+}
+
+!dj_exit_from(live: int, from_dai: int, to_dai: int, token: int, wad: int) -> int {
+  ^ dj_eval(1, live, from_dai, to_dai, token, wad, 2);
+}
+
+!dj_exit_to(live: int, from_dai: int, to_dai: int, token: int, wad: int) -> int {
+  ^ dj_eval(1, live, from_dai, to_dai, token, wad, 3);
+}
+
+!dj_exit_token(live: int, from_dai: int, to_dai: int, token: int, wad: int) -> int {
+  ^ dj_eval(1, live, from_dai, to_dai, token, wad, 4);
+}
+
+!dj_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!dj_test_suite() -> int {
+  ?(dj_join_checks_live() != 0) { ^ -1; };
+  ?(dj_exit_checks_live() != 1) { ^ -2; };
+  ?(dj_uses_vat_move() != 1) { ^ -3; };
+  ?(dj_uses_dai_burn() != 1) { ^ -4; };
+  ?(dj_uses_dai_mint() != 1) { ^ -5; };
+  ?(dj_is_gemjoin() != 0) { ^ -6; };
+  ?(dj_ray() != 1000000000) { ^ -7; };
+  ?(dj_join_ok(2000000000000, 5, 1000, 1000) != 1) { ^ -8; };
+  ?(dj_join_rad(2000000000000, 5, 1000, 1000) != 1000000000000) { ^ -9; };
+  ?(dj_join_from(2000000000000, 5, 1000, 1000) != 1000000000000) { ^ -10; };
+  ?(dj_join_to(2000000000000, 5, 1000, 1000) != 1000000000005) { ^ -11; };
+  ?(dj_join_token(2000000000000, 5, 1000, 1000) != 0) { ^ -12; };
+  ?(dj_exit_ok(1, 1000000000000, 0, 7, 1000) != 1) { ^ -13; };
+  ?(dj_exit_rad(1, 1000000000000, 0, 7, 1000) != 1000000000000) { ^ -14; };
+  ?(dj_exit_from(1, 1000000000000, 0, 7, 1000) != 0) { ^ -15; };
+  ?(dj_exit_to(1, 1000000000000, 0, 7, 1000) != 1000000000000) { ^ -16; };
+  ?(dj_exit_token(1, 1000000000000, 0, 7, 1000) != 1007) { ^ -17; };
+  ?(dj_eval(0, 0, 2000000000000, 5, 1000, 1000, 0) != 1) { ^ -18; };
+  ?(dj_exit_ok(0, 1000000000000, 0, 7, 1000) != 0) { ^ -19; };
+  ?(dj_join_ok(2000000000000, 5, 1000, 0) != 1) { ^ -20; };
+  ?(dj_join_rad(2000000000000, 5, 1000, 0) != 0) { ^ -21; };
+  ?(dj_join_ok(1, 5, 1000, 1000) != 0) { ^ -22; };
+  ?(dj_join_ok(2000000000000, 5, 999, 1000) != 0) { ^ -23; };
+  ?(dj_exit_ok(1, 1, 0, 7, 1000) != 0) { ^ -24; };
+  wrap_a = 10000000000;
+  wrap_b = 1000000000;
+  ?(dj_u_mul_ok(wrap_a, wrap_b) != 0) { ^ -25; };
+  ?(dj_join_ok(2000000000000, 5, wrap_a, wrap_a) != 0) { ^ -26; };
+  ?(dj_naive_i64_mul(wrap_a, wrap_b) != -8446744073709551616) { ^ -27; };
+  ?(dj_u_mul(1000, 1000000000) != 1000000000000) { ^ -28; };
+  ?(dj_join_ok(-1, 5, 1000, 1000) != 0) { ^ -29; };
+  ^ 1;
+}
+
+=ex{
+  dj_u_lt,
+  dj_u_mul_ok,
+  dj_u_mul,
+  dj_u_add_ok,
+  dj_u_sub_ok,
+  dj_ray,
+  dj_join_checks_live,
+  dj_exit_checks_live,
+  dj_uses_vat_move,
+  dj_uses_dai_burn,
+  dj_uses_dai_mint,
+  dj_is_gemjoin,
+  dj_eval,
+  dj_join_ok,
+  dj_join_rad,
+  dj_join_from,
+  dj_join_to,
+  dj_join_token,
+  dj_exit_ok,
+  dj_exit_rad,
+  dj_exit_from,
+  dj_exit_to,
+  dj_exit_token,
+  dj_naive_i64_mul,
+  dj_test_suite
+}

@@ -1,0 +1,188 @@
+{
+  "schema": "LIN_MAKER_DAIJOIN_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 wrap-detect wad*RAY and __int128 mul/add/sub agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss join.sol matches hash pin",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 blob=42b01c91c8f2a6b776440e16dea2c94497d966b0"
+    },
+    {
+      "id": "UPSTREAM-JOIN",
+      "status": "PASS",
+      "description": "pinned join.sol: join ignores live, exit cages, mul(ONE,wad) (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/join.sol",
+      "note": "42b01c91c8f2a6b776440e16dea2c94497d966b0"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_daijoin.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "dj_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "19/19 vectors: C11 wrap-detect == __int128 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "19/19 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "JOIN wad=1000 rad=1e12 adapter'=1e12 usr'=1e12+5 token'=0; EXIT token'=1007; cage join=1 exit=0",
+      "note": "join_rad=1000000000000 exit_token=1007 cage_join=1 cage_exit=0"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured DAI adapter conversion (not TVL): wad=1000 * RAY'=1e9 = rad=1e12; join after cage still works",
+      "note": "join_rad=1000000000000 exit_token=1007 unit=reduced_wad_ray"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (1e10*1e9) wraps; checked RAY*wad fail-closes to 0",
+      "note": "i64_mul_wrap=-8446744073709551616 u_mul_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes op/live/from_dai/to_dai/token/wad (no hidden DaiJoin storage)",
+      "note": ""
+    },
+    {
+      "id": "JOIN-NO-LIVE",
+      "status": "PASS",
+      "description": "join does not require live; Maker cage still accepts join",
+      "note": ""
+    },
+    {
+      "id": "EXIT-LIVE",
+      "status": "PASS",
+      "description": "exit requires live==1 (DaiJoin/not-live)",
+      "note": ""
+    },
+    {
+      "id": "NOT-GEMJOIN",
+      "status": "PASS",
+      "description": "clone is DaiJoin wad\u2192rad, not GemJoin ilk slip",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close dai.burn / dai_burn (ERC20 host, not LIN emit)",
+      "note": ""
+    },
+    {
+      "id": "TR-MINT",
+      "status": "PASS",
+      "description": "transpilers fail-close dai.mint / dai_mint (ERC20 host, not LIN emit)",
+      "note": ""
+    },
+    {
+      "id": "TR-WIDE",
+      "status": "PASS",
+      "description": "C/Rust transpilers fail-close __int128 / i128 (oracle width, not LIN emit)",
+      "note": ""
+    },
+    {
+      "id": "TR-LIVE",
+      "status": "PASS",
+      "description": "Solidity transpiler fail-closes DaiJoin/not-live storage cage (explicit live arg in LIN)",
+      "note": ""
+    },
+    {
+      "id": "C-KERNEL",
+      "status": "PASS",
+      "description": "pointer-free C kernel (maker_daijoin_kernel.c) is eligible for lin_from_c; oracle __int128 is not",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/join.sol",
+    "git_blob_sha": "42b01c91c8f2a6b776440e16dea2c94497d966b0",
+    "file_sha256": "96fceff4511aa976db5c6b144d83f4dd1bde832dd2f49fd6e54e69343b9583f9",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_daijoin.lin",
+  "c11_oracle": "test/oracles/maker_daijoin_c11.c",
+  "c_kernel_for_transpiler": "test/oracles/maker_daijoin_kernel.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "join_ok": 1,
+    "join_rad": 1000000000000,
+    "join_from": 1000000000000,
+    "join_to": 1000000000005,
+    "join_token": 0,
+    "exit_ok": 1,
+    "exit_token": 1007,
+    "cage_join_ok": 1,
+    "cage_exit_ok": 0,
+    "join_checks_live": 0,
+    "exit_checks_live": 1,
+    "is_gemjoin": 0
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-daijoin",
+  "clone_lin_head": "baf6051bbb558d64fc189c409dc0684a1286e766",
+  "clone_lin_lin_commit": "7472cd4b6129827f550fd55521491a8409b25d79",
+  "clone_lin_lin_blob": "01da2b710ed09352467c21dc8dc49cb34aa1fb1a",
+  "clone_lin_c_blob": "2467c8e0ef71f3de2917644e0eee7425e09201f8"
+}
