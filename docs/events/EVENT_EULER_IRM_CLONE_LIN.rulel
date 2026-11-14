@@ -1,0 +1,62 @@
+@RULEL:EULER_IRM_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-EULER-IRM-LINEAR-KINK"
+@TITLE="Clone-lin of Euler EVK IRMLinearKink with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-14"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-euler-irm"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Euler Vault Kit IRMLinearKink computeInterestRateInternal into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs; util=borrows*type(uint32).max/total fail-closes if the product does not fit int64; Solidity uint256 is NOT claimed"
+  commercial_hook="Euler V2 vaults quote borrow APY from this kink IRM; making caller==vault, uint32.max scale, and slope1/slope2 explicit, and replacing wrapping i64 multiply with checked mul, is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/euler-xyz/euler-vault-kit"
+  path="src/InterestRateModels/IRMLinearKink.sol"
+  license="GPL-2.0-or-later (file SPDX; repository LICENSE is BUSL-1.1, Change Date 2029-04-24)"
+  commit="93a1de491531e54cbbcf0e5c8cacfe558f924867"
+  git_blob_sha="fb3cab74631e944974111c7ed5a28b757f351ff7"
+  file_sha256="d3b9b7cd3bfc248cdf7cb7dc438661a888fd76f94efbdcf9a781c2eb999e8e82"
+  fixture="live git pin; Solidity source is not vendored"
+}
+
+.l{
+  clone="src/lin_euler_irm.lin"
+  transpiler_delta="src/lin_from_solidity.lin REJ_SOLIDITY_IRMUPDATE/TYPEMAX/UNCHECKED; src/lin_from_c.lin REJ_C_WIDE_INT/TYPEMAX/IRMUPDATE; src/lin_from_rust.lin REJ_RUST_WIDE_INT/TYPEMAX/IRMUPDATE"
+  improvement_1="computeInterestRate is view-on-immutables plus msg.sender==vault in Solidity; LIN takes caller/vault/cash/borrows/base/slope1/slope2/kink as arguments"
+  improvement_2="borrows*type(uint32).max overflows i64; LIN fail-closes utilization instead of wrapping; remainder identity is checked by an independent Python bigint oracle"
+  improvement_3="unchecked { utilization - kink } is an explicit eir_u_sub_ok (no silent underflow)"
+  improvement_4="distinct from Compound JumpRate (1e18 util, reserves, jump multiplier / BASE)"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/euler_irm_c11.c (gcc -O2 -std=c11, wrap-detect XOR __int128)"
+  gate="test/verify_euler_irm.sh"
+}
+
+.p{
+  harness="test/prove_euler_irm_external.py"
+  evidence_json="examples/euler_irm/euler_irm_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-euler-irm"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet Euler vault parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production Euler IRM replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Euler, Compound, or the EVM"
+  not_claimed_6="APY/SPY conversion (ln, 365.2425 days) — only the linear-kink second-rate kernel"
+}
+
+.v{
+  method="PINNED_BYTES && C11_WRAP_EQ_I128 && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

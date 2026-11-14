@@ -1,0 +1,173 @@
+{
+  "schema": "LIN_EULER_IRM_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 wrap-detect IRM mul/add and __int128 agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned euler-xyz IRMLinearKink.sol matches hash pin",
+      "note": "commit=93a1de491531e54cbbcf0e5c8cacfe558f924867 blob=fb3cab74631e944974111c7ed5a28b757f351ff7"
+    },
+    {
+      "id": "UPSTREAM-JOIN",
+      "status": "PASS",
+      "description": "pinned IRMLinearKink.sol: uint32.max util, slope*util, unchecked over-kink, vault auth (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of IRMLinearKink.sol",
+      "note": "fb3cab74631e944974111c7ed5a28b757f351ff7"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_euler_irm.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "eir_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "22/22 vectors: C11 wrap-detect == __int128 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "22/22 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "50% util=2147483647 ir=4294967294; 100% ir=10737418237; unauthorized compute=0",
+      "note": "util50=2147483647 rate50=4294967294 rate100=10737418237 auth_fail=0"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured Euler kink quote (not TVL): slope*uint32-util with explicit caller==vault, no wrapping mul",
+      "note": "kink_ir=4294967294 max_ir=10737418237 unit=uint32.max_scale"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e9*3e9) wraps; checked borrows*uint32.max fail-closes to 0",
+      "note": "i64_mul_wrap=2553255926290448384 u_mul_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes cash/borrows/slopes/kink (no hidden IRM immutables / msg.sender)",
+      "note": ""
+    },
+    {
+      "id": "NOT-JUMPRATE",
+      "status": "PASS",
+      "description": "clone is Euler uint32.max * slope, not Compound JumpRate 1e18/reserves",
+      "note": ""
+    },
+    {
+      "id": "AUTH-EXPLICIT",
+      "status": "PASS",
+      "description": "E_IRMUpdateUnauthorized is an explicit caller==vault check",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close type(uint32).max / __int128 / i128 (host, not LIN emit)",
+      "note": ""
+    },
+    {
+      "id": "TR-IRM",
+      "status": "PASS",
+      "description": "Solidity transpiler fail-closes E_IRMUpdateUnauthorized (explicit caller in LIN)",
+      "note": ""
+    },
+    {
+      "id": "TR-UNCHECKED",
+      "status": "PASS",
+      "description": "Solidity transpiler fail-closes unchecked { util-kink } (explicit sub_ok in LIN)",
+      "note": ""
+    },
+    {
+      "id": "C-KERNEL",
+      "status": "PASS",
+      "description": "pointer-free C kernel (euler_irm_kernel.c) is eligible for lin_from_c; oracle __int128 is not",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/euler-xyz/euler-vault-kit",
+    "commit": "93a1de491531e54cbbcf0e5c8cacfe558f924867",
+    "path": "src/InterestRateModels/IRMLinearKink.sol",
+    "git_blob_sha": "fb3cab74631e944974111c7ed5a28b757f351ff7",
+    "file_sha256": "d3b9b7cd3bfc248cdf7cb7dc438661a888fd76f94efbdcf9a781c2eb999e8e82",
+    "license": "GPL-2.0-or-later (file SPDX; repo BUSL-1.1 until 2029-04-24)",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_euler_irm.lin",
+  "c11_oracle": "test/oracles/euler_irm_c11.c",
+  "c_kernel_for_transpiler": "test/oracles/euler_irm_kernel.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "util_50": 2147483647,
+    "rate_50": 4294967294,
+    "rate_100": 10737418237,
+    "rate_75": 7516192765,
+    "rate_25": 2147483646,
+    "rate_0": 10,
+    "rate_empty": 10,
+    "compute_unauthorized": 0,
+    "compute_authorized": 4294967294
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-euler-irm",
+  "clone_lin_head": "0a94fe10ea1f7d61bfa167425193eb885a19c31c",
+  "clone_lin_lin_commit": "4df2f02b2837cf036076fe42f715f7f11eb347a5",
+  "clone_lin_lin_blob": "5d75127f4d8372c7699f220cb753dc8089150e54",
+  "clone_lin_c_blob": "3edc809c7b03d9c0f5a1b6e57762f837d64ce853"
+}
