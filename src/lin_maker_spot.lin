@@ -1,0 +1,142 @@
+@LIN:L1c:0.2
+@MAKER_DSS_SPOT_POKE{
+  version=1
+  repo="makerdao/dss"
+  source="src/spot.sol poke"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  spot_sol_sha256="f772861927801ca1e32ba818ffc55df6ceffcc530ac3d8b6b223e7411bed118f"
+  spot_sol_blob="2f5b98d9160e6f4f5c7943a964dcc47bb2c2c862"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_sky_spot_poke"
+  note="Not mainnet uint256. WAD'=RAY'=ONE=1e9. pip.peek val/has, par, mat, and wad_ray=10**9-at-scale are arguments. has!=1, par==0, mat==0, and wrapping mul/rdiv fail-close (Solidity reverts or writes 0). vat.file / emit Poke are not executed. Distinct from Clipper.kick OSM top and Vat.frob. Upstream Solidity is not vendored."
+}
+
+!lsp_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!lsp_u_mul_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(a == 0) { ^ 1; };
+  ?(b == 0) { ^ 1; };
+  p = a * b;
+  ?(p < 0) { ^ 0; };
+  ?(p / a != b) { ^ 0; };
+  ^ 1;
+}
+
+!lsp_wad() -> int {
+  ^ 1000000000;
+}
+
+!lsp_ray() -> int {
+  ^ 1000000000;
+}
+
+!lsp_uses_peek() -> int {
+  ^ 0;
+}
+
+!lsp_uses_vatfile() -> int {
+  ^ 0;
+}
+
+!lsp_uses_uint256() -> int {
+  ^ 0;
+}
+
+!lsp_uses_kick() -> int {
+  ^ 0;
+}
+
+!lsp_mul(x: int, y: int) -> int {
+  ?(lsp_u_mul_ok(x, y) == 0) { ^ 0; };
+  ^ x * y;
+}
+
+!lsp_rdiv(x: int, y: int, one: int) -> int {
+  ?(y <= 0) { ^ 0; };
+  ?(x < 0) { ^ 0; };
+  ?(one < 0) { ^ 0; };
+  p = lsp_mul(x, one);
+  ?(x != 0) {
+    ?(one != 0) {
+      ?(p == 0) { ^ 0; };
+    };
+  };
+  ^ p / y;
+}
+
+!lsp_poke(has: int, val: int, wad_ray: int, par: int, mat: int, one: int) -> int {
+  ?(has != 1) { ^ 0; };
+  ?(val < 0) { ^ 0; };
+  ?(wad_ray < 0) { ^ 0; };
+  ?(par <= 0) { ^ 0; };
+  ?(mat <= 0) { ^ 0; };
+  ?(one <= 0) { ^ 0; };
+  scaled = lsp_mul(val, wad_ray);
+  ?(val != 0) {
+    ?(wad_ray != 0) {
+      ?(scaled == 0) { ^ 0; };
+    };
+  };
+  inner = lsp_rdiv(scaled, par, one);
+  ?(scaled != 0) {
+    ?(inner == 0) { ^ 0; };
+  };
+  ^ lsp_rdiv(inner, mat, one);
+}
+
+!lsp_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!lsp_test_suite() -> int {
+  wad = lsp_wad();
+  ray = lsp_ray();
+  ?(lsp_uses_peek() != 0) { ^ -1; };
+  ?(lsp_uses_vatfile() != 0) { ^ -2; };
+  ?(lsp_uses_uint256() != 0) { ^ -3; };
+  ?(lsp_uses_kick() != 0) { ^ -4; };
+  ?(wad != 1000000000) { ^ -5; };
+  ?(ray != 1000000000) { ^ -6; };
+  ?(lsp_poke(1, 3000000000, 1, ray, 1500000000, ray) != 2000000000) { ^ -7; };
+  ?(lsp_poke(0, 3000000000, 1, ray, 1500000000, ray) != 0) { ^ -8; };
+  ?(lsp_poke(1, 4000000000, 1, ray, 2000000000, ray) != 2000000000) { ^ -9; };
+  ?(lsp_poke(1, 4000000000, 1, 2000000000, ray, ray) != 2000000000) { ^ -10; };
+  ?(lsp_poke(1, 0, 1, ray, 1500000000, ray) != 0) { ^ -11; };
+  ?(lsp_poke(1, 3000000000, 1, ray, 0, ray) != 0) { ^ -12; };
+  ?(lsp_poke(1, 3000000, 1000, ray, 1500000000, ray) != 2000000000) { ^ -13; };
+  ?(lsp_poke(1, 6000000000, 1, ray, 1500000000, ray) != 4000000000) { ^ -14; };
+  ?(lsp_poke(1, 3000000000, 1, 1, ray, ray) != 0) { ^ -15; };
+  wrap_a = 7000000000;
+  wrap_b = 3000000000;
+  ?(lsp_u_mul_ok(wrap_a, wrap_b) != 0) { ^ -16; };
+  ?(lsp_naive_i64_mul(wrap_a, wrap_b) != 2553255926290448384) { ^ -17; };
+  ?(lsp_poke(1, wrap_a, wrap_b, ray, 1500000000, ray) != 0) { ^ -18; };
+  ?(lsp_mul(3, 5) != 15) { ^ -19; };
+  ?(lsp_rdiv(3000000000, 1500000000, ray) != 2000000000) { ^ -20; };
+  ^ 1;
+}
+
+=ex{
+  lsp_u_lt,
+  lsp_u_mul_ok,
+  lsp_wad,
+  lsp_ray,
+  lsp_uses_peek,
+  lsp_uses_vatfile,
+  lsp_uses_uint256,
+  lsp_uses_kick,
+  lsp_mul,
+  lsp_rdiv,
+  lsp_poke,
+  lsp_naive_i64_mul,
+  lsp_test_suite
+}

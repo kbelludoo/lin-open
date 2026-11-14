@@ -172,6 +172,14 @@ python3 examples/run_demos.py --interactive
 
 ---
 
+### Maker/Sky Spotter.poke clone ([`maker_spot/`](./maker_spot/))
+* **O que faz:** Provas externas (C11 wrap-detect XOR `__int128`, `lin_c0` VM, Python bigint) do clone uint64-scale de `Spotter.poke`.
+* **Clone-LIN (repo separado):** https://github.com/kbelludoo/clone-lin-maker-spot
+* **Classe:** EXPERIMENTAL. Sem alegação de TVL, uint256, ou substituição do OSM/vat.
+* **Como reproduzir:** `make maker-spot-proof`
+
+---
+
 
 ## Como Escrever Código LIN (Sintaxe em 3 Minutos)
 

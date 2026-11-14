@@ -1,0 +1,169 @@
+{
+  "schema": "LIN_MAKER_SPOT_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 wrap-detect Spotter poke mul and __int128 agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss spot.sol matches hash pin",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 blob=2f5b98d9160e6f4f5c7943a964dcc47bb2c2c862"
+    },
+    {
+      "id": "UPSTREAM-BOOK",
+      "status": "PASS",
+      "description": "pinned spot.sol: poke, pip.peek, rdiv(rdiv(mul(val,10**9),par),mat), vat.file (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/spot.sol",
+      "note": "2f5b98d9160e6f4f5c7943a964dcc47bb2c2c862"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_spot.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "lsp_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "14/14 vectors: C11 wrap-detect == __int128 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "14/14 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "150% of $3=2e9 stale=0 200% of $4=2e9 par=$2 of $4=2e9 wad_ray=1000 of 3e6=2e9",
+      "note": "golden=(2000000000, 0, 2000000000, 2000000000, 2000000000)"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured CDP spot (not TVL): explicit OSM val/has + par + mat, no wrapping rdiv",
+      "note": "spot_150pct_of_3e9=2000000000 unit=RAY_1e9"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e9*3e9) wraps; checked val*wad_ray fail-closes to 0",
+      "note": "i64_mul_wrap=2553255926290448384 u_mul_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes has/val/wad_ray/par/mat/one (no hidden pip.peek or vat SLOADs)",
+      "note": ""
+    },
+    {
+      "id": "NOT-KICK",
+      "status": "PASS",
+      "description": "clone is Spotter.poke, not Clipper.kick OSM top",
+      "note": ""
+    },
+    {
+      "id": "NO-VATFILE",
+      "status": "PASS",
+      "description": "poke returns the spot ray only; vat.file / emit Poke are not executed",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close pip.peek / __int128 / i128 (host, not LIN emit)",
+      "note": ""
+    },
+    {
+      "id": "TR-VATFILE",
+      "status": "PASS",
+      "description": "Solidity/C transpilers fail-close vat.file (explicit spot ray in LIN)",
+      "note": ""
+    },
+    {
+      "id": "TR-PEEK",
+      "status": "PASS",
+      "description": "Solidity/C transpilers fail-close pip.peek (explicit val/has in LIN)",
+      "note": ""
+    },
+    {
+      "id": "C-KERNEL",
+      "status": "PASS",
+      "description": "pointer-free C kernel (maker_spot_kernel.c) is eligible for lin_from_c; oracle __int128 is not",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/spot.sol",
+    "git_blob_sha": "2f5b98d9160e6f4f5c7943a964dcc47bb2c2c862",
+    "file_sha256": "f772861927801ca1e32ba818ffc55df6ceffcc530ac3d8b6b223e7411bed118f",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_spot.lin",
+  "c11_oracle": "test/oracles/maker_spot_c11.c",
+  "c_kernel_for_transpiler": "test/oracles/maker_spot_kernel.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "spot_150pct_of_3e9": 2000000000,
+    "stale_osm": 0,
+    "spot_200pct_of_4e9": 2000000000,
+    "par_2e9_val_4e9": 2000000000,
+    "wad_ray_1000": 2000000000
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-spot",
+  "clone_lin_head": "2fec9be84d1ab2800885deae57d4f62cb645aea6",
+  "clone_lin_lin_commit": "dfd8bb49dbb453060beb9d2a130b00444564b911",
+  "clone_lin_lin_blob": "e19124e5f3b8bd77bcad4f8f508148471a5866ea",
+  "clone_lin_c_blob": "6c25ac83dea59f6c38b098c191d95d86b6b06e2e"
+}
