@@ -1,0 +1,63 @@
+@RULEL:MAKER_END_CAGE_SKIM_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MAKER-END-CAGE-SKIM"
+@TITLE="Clone-lin of Maker End cage(ilk)/skim/flow with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-14"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-maker-end"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile MakerDAO End global-settlement math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, wrap-detect add/mul plus independent __int128; Solidity uint256 is NOT claimed"
+  commercial_hook="End.skim records collateral shortfall (gap) of undercollateralised urns after cage; making pip/par/art/rate/ink arguments and replacing wrapping i64 mul with fail-closed mul is an audit improvement, not a TVL claim. Measured: 100 DAI at pip=2000 needs 0.05 gem; urn with 0.03 gem gaps 0.02; after flow, 100 DAI cashes 0.03 gem."
+}
+
+.u{
+  repo="https://github.com/makerdao/dss"
+  path="src/end.sol"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  git_blob_sha="14e17b195c82bf0266db7bb78252b7b689f8b42f"
+  file_sha256="40eca7c82e6794a4dabfa9b6ae41f177dd3c0bafacefc14f060b88f52667adef"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_maker_end.lin"
+  transpiler_delta="src/lin_from_solidity.lin REJ_SOLIDITY_PIPREAD/VATGRAB/VATILKS; src/lin_from_c.lin REJ_C_WIDE_INT/PIPREAD/VATGRAB/VATILKS; src/lin_from_rust.lin REJ_RUST_WIDE_INT/PIPREAD/VATGRAB"
+  improvement_1="live, tag, par, pip, art, rate, ink, gap, debt are function arguments, not End/Vat/Spot/OSM storage"
+  improvement_2="add/mul use wrap-detect; 7e18+3e18 fail-closes while naive i64 wraps to -8446744073709551616"
+  improvement_3="cage(ilk) while live or with tag already set fail-closes; pip==0 fail-closes (Solidity would revert on div0)"
+  improvement_4="pip.read and vat.grab are not executed; the clone returns tag, wad, gap and fix"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/maker_end_c11.c (gcc -O2 -std=c11, wrap-detect XOR __int128)"
+  kernel="test/oracles/maker_end_kernel.c (pointer-free, eligible for lin_from_c)"
+  gate="make maker-end-proof"
+}
+
+.p{
+  harness="test/prove_maker_end_external.py"
+  evidence_json="examples/maker_end/maker_end_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-end"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet WAD=1e18 / RAY=1e27 parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production End replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Maker, Sky, or the EVM"
+  not_claimed_6="Vow settle / Spotter.poke / Clipper.take (distinct kernels)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_WRAP_EQ_I128 && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

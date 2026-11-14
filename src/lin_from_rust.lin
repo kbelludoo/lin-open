@@ -50,6 +50,9 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "i128") > 0 || rg_count_lit(body, "i128") > 0) { ^"REJ_RUST_WIDE_INT" };
+  ?(rg_count_lit(body, "pip_read") > 0) { ^"REJ_RUST_PIPREAD" };
+  ?(rg_count_lit(body, "vat_grab") > 0) { ^"REJ_RUST_VATGRAB" };
   ^"OK";
 }
 
@@ -66,6 +69,19 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_wide = "pub fn cage_tag(par: i128, pip: u64) -> u64";
+  body_wide = "let z = par / pip;";
+  r3 = rs_reason(sig_wide, body_wide);
+  ?(starts_lit(r3, 0, "REJ_RUST_WIDE_INT") == 0) { ^0 };
+
+  body_pip = "let p = pip_read();";
+  r4 = rs_reason(sig_ok, body_pip);
+  ?(starts_lit(r4, 0, "REJ_RUST_PIPREAD") == 0) { ^0 };
+
+  body_grab = "vat_grab(ilk, urn);";
+  r5 = rs_reason(sig_ok, body_grab);
+  ?(starts_lit(r5, 0, "REJ_RUST_VATGRAB") == 0) { ^0 };
 
   ^1;
 }

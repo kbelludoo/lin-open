@@ -172,6 +172,14 @@ python3 examples/run_demos.py --interactive
 
 ---
 
+### Maker End cage(ilk)/skim/flow clone ([`maker_end/`](./maker_end/))
+* **O que faz:** Provas externas (C11 wrap-detect XOR `__int128`, `lin_c0` VM, Python bigint) do clone uint64-scale de `End` global settlement (`cage` tag, `skim` gap, `flow` fix).
+* **Clone-LIN (repo separado):** https://github.com/kbelludoo/clone-lin-maker-end
+* **Classe:** EXPERIMENTAL. Sem alegação de TVL, uint256, ou substituição do End.
+* **Como reproduzir:** `make maker-end-proof`
+
+---
+
 
 ## Como Escrever Código LIN (Sintaxe em 3 Minutos)
 
