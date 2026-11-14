@@ -1,0 +1,189 @@
+{
+  "schema": "LIN_MAKER_GEMJOIN_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 wrap-detect gem add/sub and __int128 agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss join.sol matches hash pin",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 blob=42b01c91c8f2a6b776440e16dea2c94497d966b0"
+    },
+    {
+      "id": "UPSTREAM-JOIN",
+      "status": "PASS",
+      "description": "pinned join.sol: join cages, exit after cage ok, vat.slip (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/join.sol",
+      "note": "42b01c91c8f2a6b776440e16dea2c94497d966b0"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_gemjoin.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "gj_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "21/21 vectors: C11 wrap-detect == __int128 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "21/21 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "JOIN wad=1000 usr_gem'=5000001000 adapter'=1000 sender_tok'=0; EXIT usr_tok'=1007; cage join=0 exit=1",
+      "note": "join_usr=5000001000 exit_usr_token=1007 cage_join=0 cage_exit=1"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured collateral adapter (not TVL): join cages, exit after cage still works; inverse of DaiJoin",
+      "note": "join_usr_gem=5000001000 exit_usr_token=1007 unit=reduced_wad"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e18+3e18) wraps; checked usr_gem+wad fail-closes to 0",
+      "note": "i64_add_wrap=-8446744073709551616 u_add_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes op/live/usr_gem/sender_gem/adapter/sender_tok/usr_tok/wad (no hidden GemJoin storage)",
+      "note": ""
+    },
+    {
+      "id": "JOIN-LIVE",
+      "status": "PASS",
+      "description": "join requires live==1 (GemJoin/not-live)",
+      "note": ""
+    },
+    {
+      "id": "EXIT-NO-LIVE",
+      "status": "PASS",
+      "description": "exit does not require live; Maker cage still accepts exit",
+      "note": ""
+    },
+    {
+      "id": "NOT-DAIJOIN",
+      "status": "PASS",
+      "description": "clone is GemJoin ilk slip, not DaiJoin wad\u2192rad",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close transferFrom (ERC20 host, not LIN emit)",
+      "note": ""
+    },
+    {
+      "id": "TR-SLIP",
+      "status": "PASS",
+      "description": "transpilers fail-close vat.slip / vat_slip (Vat host, not LIN emit)",
+      "note": ""
+    },
+    {
+      "id": "TR-WIDE",
+      "status": "PASS",
+      "description": "C/Rust transpilers fail-close __int128 / i128 (oracle width, not LIN emit)",
+      "note": ""
+    },
+    {
+      "id": "TR-LIVE",
+      "status": "PASS",
+      "description": "Solidity transpiler fail-closes GemJoin/not-live storage cage (explicit live arg in LIN)",
+      "note": ""
+    },
+    {
+      "id": "C-KERNEL",
+      "status": "PASS",
+      "description": "pointer-free C kernel (maker_gemjoin_kernel.c) is eligible for lin_from_c; oracle __int128 is not",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/join.sol",
+    "git_blob_sha": "42b01c91c8f2a6b776440e16dea2c94497d966b0",
+    "file_sha256": "96fceff4511aa976db5c6b144d83f4dd1bde832dd2f49fd6e54e69343b9583f9",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_gemjoin.lin",
+  "c11_oracle": "test/oracles/maker_gemjoin_c11.c",
+  "c_kernel_for_transpiler": "test/oracles/maker_gemjoin_kernel.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "join_ok": 1,
+    "join_usr_gem": 5000001000,
+    "join_adapter": 1000,
+    "join_sender_token": 0,
+    "exit_ok": 1,
+    "exit_sender_gem": 0,
+    "exit_usr_token": 1007,
+    "cage_join_ok": 0,
+    "cage_exit_ok": 1,
+    "join_checks_live": 1,
+    "exit_checks_live": 0,
+    "is_gemjoin": 1,
+    "is_daijoin": 0
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-gemjoin",
+  "clone_lin_head": "b25385e77f24aacb8ac5ee423380452e04faee4d",
+  "clone_lin_lin_commit": "b25385e77f24aacb8ac5ee423380452e04faee4d",
+  "clone_lin_lin_blob": "5caa2abbf221adc7c704d0c13f3d0a39a660c167",
+  "clone_lin_c_blob": "75a4240a60dbe88fae80b6e28bd30ec26f3b6f8a"
+}

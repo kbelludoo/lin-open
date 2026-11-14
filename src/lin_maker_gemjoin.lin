@@ -1,0 +1,183 @@
+@LIN:L1c:0.2
+@MAKER_GEMJOIN{
+  version=1
+  repo="makerdao/dss"
+  source="src/join.sol GemJoin.join/exit vat.slip+transferFrom"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  join_sol_sha256="96fceff4511aa976db5c6b144d83f4dd1bde832dd2f49fd6e54e69343b9583f9"
+  join_sol_blob="42b01c91c8f2a6b776440e16dea2c94497d966b0"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_sky_gemjoin_ilk_slip_join_exit"
+  note="Not mainnet uint256/wad. Addresses, ERC20 host transfer, vat.slip host, bytes32 ilk and live storage are stripped: live/usr_gem/sender_gem/adapter_token/sender_token/usr_token/wad are arguments. Join requires live==1; exit after cage is accepted (Maker semantic, inverse of DaiJoin). Overflow fail-closes. Distinct from DaiJoin wad-to-rad. Upstream AGPL is not vendored. wad=2**255 exit overflow is not representable at i64 scale."
+}
+
+!gj_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!gj_u_add_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  s = a + b;
+  ?(s < 0) { ^ 0; };
+  ?(gj_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!gj_u_sub_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(gj_u_lt(a, b) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!gj_join_checks_live() -> int {
+  ^ 1;
+}
+
+!gj_exit_checks_live() -> int {
+  ^ 0;
+}
+
+!gj_uses_vat_slip() -> int {
+  ^ 1;
+}
+
+!gj_uses_transfer_from() -> int {
+  ^ 1;
+}
+
+!gj_is_daijoin() -> int {
+  ^ 0;
+}
+
+!gj_is_gemjoin() -> int {
+  ^ 1;
+}
+
+!gj_eval(op: int, live: int, usr_gem: int, sender_gem: int, adapter_token: int, sender_token: int, usr_token: int, wad: int, want: int) -> int {
+  ?(op != 0 && op != 1) { ^ 0; };
+  ?(usr_gem < 0) { ^ 0; };
+  ?(sender_gem < 0) { ^ 0; };
+  ?(adapter_token < 0) { ^ 0; };
+  ?(sender_token < 0) { ^ 0; };
+  ?(usr_token < 0) { ^ 0; };
+  ?(wad < 0) { ^ 0; };
+  ?(op == 0 && live != 1) { ^ 0; };
+  new_usr_gem = usr_gem;
+  new_sender_gem = sender_gem;
+  new_adapter = adapter_token;
+  new_sender_tok = sender_token;
+  new_usr_tok = usr_token;
+  ?(op == 0) {
+    ?(gj_u_add_ok(usr_gem, wad) == 0) { ^ 0; };
+    ?(gj_u_add_ok(adapter_token, wad) == 0) { ^ 0; };
+    ?(gj_u_sub_ok(sender_token, wad) == 0) { ^ 0; };
+    new_usr_gem = usr_gem + wad;
+    new_adapter = adapter_token + wad;
+    new_sender_tok = sender_token - wad;
+  };
+  ?(op == 1) {
+    ?(gj_u_sub_ok(sender_gem, wad) == 0) { ^ 0; };
+    ?(gj_u_sub_ok(adapter_token, wad) == 0) { ^ 0; };
+    ?(gj_u_add_ok(usr_token, wad) == 0) { ^ 0; };
+    new_sender_gem = sender_gem - wad;
+    new_adapter = adapter_token - wad;
+    new_usr_tok = usr_token + wad;
+  };
+  ?(want == 0) { ^ 1; };
+  ?(want == 1) { ^ new_usr_gem; };
+  ?(want == 2) { ^ new_sender_gem; };
+  ?(want == 3) { ^ new_adapter; };
+  ?(want == 4) { ^ new_sender_tok; };
+  ?(want == 5) { ^ new_usr_tok; };
+  ^ 0;
+}
+
+!gj_join_ok(usr_gem: int, sender_gem: int, adapter_token: int, sender_token: int, usr_token: int, wad: int) -> int {
+  ^ gj_eval(0, 1, usr_gem, sender_gem, adapter_token, sender_token, usr_token, wad, 0);
+}
+
+!gj_join_usr_gem(usr_gem: int, sender_gem: int, adapter_token: int, sender_token: int, usr_token: int, wad: int) -> int {
+  ^ gj_eval(0, 1, usr_gem, sender_gem, adapter_token, sender_token, usr_token, wad, 1);
+}
+
+!gj_join_adapter(usr_gem: int, sender_gem: int, adapter_token: int, sender_token: int, usr_token: int, wad: int) -> int {
+  ^ gj_eval(0, 1, usr_gem, sender_gem, adapter_token, sender_token, usr_token, wad, 3);
+}
+
+!gj_join_sender_token(usr_gem: int, sender_gem: int, adapter_token: int, sender_token: int, usr_token: int, wad: int) -> int {
+  ^ gj_eval(0, 1, usr_gem, sender_gem, adapter_token, sender_token, usr_token, wad, 4);
+}
+
+!gj_exit_ok(live: int, usr_gem: int, sender_gem: int, adapter_token: int, sender_token: int, usr_token: int, wad: int) -> int {
+  ^ gj_eval(1, live, usr_gem, sender_gem, adapter_token, sender_token, usr_token, wad, 0);
+}
+
+!gj_exit_sender_gem(live: int, usr_gem: int, sender_gem: int, adapter_token: int, sender_token: int, usr_token: int, wad: int) -> int {
+  ^ gj_eval(1, live, usr_gem, sender_gem, adapter_token, sender_token, usr_token, wad, 2);
+}
+
+!gj_exit_usr_token(live: int, usr_gem: int, sender_gem: int, adapter_token: int, sender_token: int, usr_token: int, wad: int) -> int {
+  ^ gj_eval(1, live, usr_gem, sender_gem, adapter_token, sender_token, usr_token, wad, 5);
+}
+
+!gj_naive_i64_add(a: int, b: int) -> int {
+  ^ a + b;
+}
+
+!gj_test_suite() -> int {
+  ?(gj_join_checks_live() != 1) { ^ -1; };
+  ?(gj_exit_checks_live() != 0) { ^ -2; };
+  ?(gj_uses_vat_slip() != 1) { ^ -3; };
+  ?(gj_uses_transfer_from() != 1) { ^ -4; };
+  ?(gj_is_daijoin() != 0) { ^ -5; };
+  ?(gj_is_gemjoin() != 1) { ^ -6; };
+  ?(gj_join_ok(5000000000, 0, 0, 1000, 7, 1000) != 1) { ^ -7; };
+  ?(gj_join_usr_gem(5000000000, 0, 0, 1000, 7, 1000) != 5000001000) { ^ -8; };
+  ?(gj_join_adapter(5000000000, 0, 0, 1000, 7, 1000) != 1000) { ^ -9; };
+  ?(gj_join_sender_token(5000000000, 0, 0, 1000, 7, 1000) != 0) { ^ -10; };
+  ?(gj_eval(0, 1, 5000000000, 0, 0, 1000, 7, 1000, 5) != 7) { ^ -11; };
+  ?(gj_exit_ok(1, 0, 1000, 1000, 0, 7, 1000) != 1) { ^ -12; };
+  ?(gj_exit_sender_gem(1, 0, 1000, 1000, 0, 7, 1000) != 0) { ^ -13; };
+  ?(gj_exit_usr_token(1, 0, 1000, 1000, 0, 7, 1000) != 1007) { ^ -14; };
+  ?(gj_eval(0, 0, 5000000000, 0, 0, 1000, 7, 1000, 0) != 0) { ^ -15; };
+  ?(gj_exit_ok(0, 0, 1000, 1000, 0, 7, 1000) != 1) { ^ -16; };
+  ?(gj_join_ok(5000000000, 0, 0, 1000, 7, 0) != 1) { ^ -17; };
+  ?(gj_join_ok(5000000000, 0, 0, 999, 7, 1000) != 0) { ^ -18; };
+  ?(gj_exit_ok(1, 0, 1, 1000, 0, 7, 1000) != 0) { ^ -19; };
+  wrap_a = 7000000000000000000;
+  wrap_b = 3000000000000000000;
+  ?(gj_u_add_ok(wrap_a, wrap_b) != 0) { ^ -20; };
+  ?(gj_join_ok(wrap_a, 0, 0, wrap_b, 0, wrap_b) != 0) { ^ -21; };
+  ?(gj_naive_i64_add(wrap_a, wrap_b) != -8446744073709551616) { ^ -22; };
+  ?(gj_join_ok(-1, 0, 0, 1000, 7, 1000) != 0) { ^ -23; };
+  ^ 1;
+}
+
+=ex{
+  gj_u_lt,
+  gj_u_add_ok,
+  gj_u_sub_ok,
+  gj_join_checks_live,
+  gj_exit_checks_live,
+  gj_uses_vat_slip,
+  gj_uses_transfer_from,
+  gj_is_daijoin,
+  gj_is_gemjoin,
+  gj_eval,
+  gj_join_ok,
+  gj_join_usr_gem,
+  gj_join_adapter,
+  gj_join_sender_token,
+  gj_exit_ok,
+  gj_exit_sender_gem,
+  gj_exit_usr_token,
+  gj_naive_i64_add,
+  gj_test_suite
+}
