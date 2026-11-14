@@ -39,6 +39,9 @@
 
 !sol_reason(sig: string, body: string): string {
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
+  ?(rg_count_lit(body, "pip.read") > 0) { ^"REJ_SOLIDITY_PIPREAD" };
+  ?(rg_count_lit(body, "vat.grab") > 0) { ^"REJ_SOLIDITY_VATGRAB" };
+  ?(rg_count_lit(body, "vat.ilks") > 0) { ^"REJ_SOLIDITY_VATILKS" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
@@ -64,6 +67,16 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_end = "function cage(bytes32 ilk) external";
+  body_pip = "tag[ilk] = wdiv(spot.par(), uint256(pip.read()));";
+  r4 = sol_reason(sig_end, body_pip);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_PIPREAD") == 0) { ^0 };
+  body_grab = "vat.grab(ilk, urn, address(this), address(vow), -int256(wad), -int256(art));";
+  r5 = sol_reason(sig_end, body_grab);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_VATGRAB") == 0) { ^0 };
+  body_ilks = "(Art[ilk],,,,) = vat.ilks(ilk);";
+  r6 = sol_reason(sig_end, body_ilks);
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_VATILKS") == 0) { ^0 };
   ^1;
 }
 

@@ -1,0 +1,171 @@
+{
+  "schema": "LIN_MAKER_END_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 wrap-detect End mul/add and __int128 agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss end.sol matches hash pin",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 blob=14e17b195c82bf0266db7bb78252b7b689f8b42f"
+    },
+    {
+      "id": "UPSTREAM-BOOK",
+      "status": "PASS",
+      "description": "pinned end.sol: cage(ilk)/skim/flow, pip.read, vat.grab/ilks (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/end.sol",
+      "note": "14e17b195c82bf0266db7bb78252b7b689f8b42f"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_end.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "len_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "17/17 vectors: C11 wrap-detect == __int128 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "17/17 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "tag=500000 live-blocks=0 full-gap=0 under-gap=20000 flow-fix=300000 cash=30000 no-gap-fix=500000",
+      "note": "golden=(500000, 0, 0, 20000, 300000, 30000, 500000)"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured settlement shortfall (not TVL): 100 DAI at pip=2000 needs 0.05 gem; urn with 0.03 gem gaps 0.02; 100 DAI cash out 0.03 gem after flow",
+      "note": "unit=WAD_1e6 RAY_1e9 gap=20000 cash_out=30000"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e18+3e18) wraps; checked add/mul fail-close to 0",
+      "note": "i64_add_wrap=-8446744073709551616 add_fail_closed=0 mul_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes live/tag/par/pip as arguments (no hidden SLOADs)",
+      "note": ""
+    },
+    {
+      "id": "NOT-PIPREAD",
+      "status": "PASS",
+      "description": "clone is End cage tag / skim gap / flow fix, not pip.read or vat.grab",
+      "note": ""
+    },
+    {
+      "id": "NO-GRAB",
+      "status": "PASS",
+      "description": "skim returns wad/gap only; vat.grab is not executed",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close pip.read / __int128 / i128 (host, not LIN emit)",
+      "note": ""
+    },
+    {
+      "id": "TR-VATGRAB",
+      "status": "PASS",
+      "description": "Solidity/C transpilers fail-close vat.grab (explicit wad/gap in LIN)",
+      "note": ""
+    },
+    {
+      "id": "TR-VATILKS",
+      "status": "PASS",
+      "description": "Solidity/C transpilers fail-close vat.ilks (explicit art/rate in LIN)",
+      "note": ""
+    },
+    {
+      "id": "C-KERNEL",
+      "status": "PASS",
+      "description": "pointer-free C kernel (maker_end_kernel.c) is eligible for lin_from_c; oracle __int128 is not",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/end.sol",
+    "git_blob_sha": "14e17b195c82bf0266db7bb78252b7b689f8b42f",
+    "file_sha256": "40eca7c82e6794a4dabfa9b6ae41f177dd3c0bafacefc14f060b88f52667adef",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_end.lin",
+  "c11_oracle": "test/oracles/maker_end_c11.c",
+  "c_kernel_for_transpiler": "test/oracles/maker_end_kernel.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "cage_tag": 500000,
+    "cage_blocked_while_live": 0,
+    "skim_gap_full": 0,
+    "skim_gap_under": 20000,
+    "flow_fix_under": 300000,
+    "cash_out": 30000,
+    "flow_fix_no_gap": 500000
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-end",
+  "clone_lin_head": "6767b9576ce74c2445a88c05d0e1ca2e2e737d48",
+  "clone_lin_lin_commit": "3ebc7e8af6fb058e31578517d63684ca64294acb",
+  "clone_lin_lin_blob": "1dfb476e9b8047d6994d66e2f8fda2b303d528d3",
+  "clone_lin_c_blob": "fd27963f86c24748c5762e3a5ea5c5710a31b0bf"
+}

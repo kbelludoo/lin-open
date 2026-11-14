@@ -1,0 +1,210 @@
+@LIN:L1c:0.2
+@MAKER_DSS_END_CAGE_SKIM{
+  version=1
+  repo="makerdao/dss"
+  source="src/end.sol cage(ilk) skim flow"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  end_sol_sha256="40eca7c82e6794a4dabfa9b6ae41f177dd3c0bafacefc14f060b88f52667adef"
+  end_sol_blob="14e17b195c82bf0266db7bb78252b7b689f8b42f"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_end_cage_tag_skim_gap_flow_fix"
+  note="Not mainnet uint256. WAD'=1e6 RAY'=1e9. pip.read/spot.par/vat.ilks/vat.urns/vat.grab are arguments or not executed. add/sub/mul wrap fail-closes. Distinct from Vow settle and Spotter.poke. Upstream Solidity is not vendored."
+}
+
+!len_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!len_add_ok(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y < 0) { ^ 0; };
+  z = x + y;
+  ?(z < 0) { ^ 0; };
+  ?(len_u_lt(z, x) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!len_sub_ok(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y < 0) { ^ 0; };
+  ?(len_u_lt(x, y) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!len_mul_ok(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y < 0) { ^ 0; };
+  ?(y == 0) { ^ 1; };
+  ?(x == 0) { ^ 1; };
+  z = x * y;
+  ?(z < 0) { ^ 0; };
+  ?(z / y != x) { ^ 0; };
+  ^ 1;
+}
+
+!len_add(x: int, y: int) -> int {
+  ?(len_add_ok(x, y) == 0) { ^ 0; };
+  ^ x + y;
+}
+
+!len_sub(x: int, y: int) -> int {
+  ?(len_sub_ok(x, y) == 0) { ^ 0; };
+  ^ x - y;
+}
+
+!len_mul(x: int, y: int) -> int {
+  ?(len_mul_ok(x, y) == 0) { ^ 0; };
+  ^ x * y;
+}
+
+!len_rmul(x: int, y: int) -> int {
+  ?(len_mul_ok(x, y) == 0) { ^ 0; };
+  ^ (x * y) / 1000000000;
+}
+
+!len_wdiv(x: int, y: int) -> int {
+  ?(y <= 0) { ^ 0; };
+  ?(len_mul_ok(x, 1000000) == 0) { ^ 0; };
+  ^ (x * 1000000) / y;
+}
+
+!len_min(x: int, y: int) -> int {
+  ?(len_u_lt(x, y) == 1) { ^ x; };
+  ^ y;
+}
+
+!len_uses_pipread() -> int {
+  ^ 0;
+}
+
+!len_uses_vatgrab() -> int {
+  ^ 0;
+}
+
+!len_uses_vatilks() -> int {
+  ^ 0;
+}
+
+!len_uses_uint256() -> int {
+  ^ 0;
+}
+
+!len_cage_tag(live: int, tag_prev: int, par: int, pip: int) -> int {
+  ?(live != 0) { ^ 0; };
+  ?(tag_prev != 0) { ^ 0; };
+  ?(par < 0) { ^ 0; };
+  ?(pip <= 0) { ^ 0; };
+  ^ len_wdiv(par, pip);
+}
+
+!len_skim_owe_ok(art: int, rate: int, tag: int) -> int {
+  ?(art < 0) { ^ 0; };
+  ?(rate < 0) { ^ 0; };
+  ?(tag <= 0) { ^ 0; };
+  ?(len_mul_ok(art, rate) == 0) { ^ 0; };
+  d = (art * rate) / 1000000000;
+  ?(len_mul_ok(d, tag) == 0) { ^ 0; };
+  ^ 1;
+}
+
+!len_skim_owe(art: int, rate: int, tag: int) -> int {
+  ?(len_skim_owe_ok(art, rate, tag) == 0) { ^ 0; };
+  d = (art * rate) / 1000000000;
+  ^ (d * tag) / 1000000000;
+}
+
+!len_skim_wad(ink: int, owe: int) -> int {
+  ?(ink < 0) { ^ 0; };
+  ?(owe < 0) { ^ 0; };
+  ^ len_min(ink, owe);
+}
+
+!len_skim_gap_delta(owe: int, wad: int) -> int {
+  ^ len_sub(owe, wad);
+}
+
+!len_skim_gap_next(gap: int, owe: int, wad: int) -> int {
+  d = len_skim_gap_delta(owe, wad);
+  ^ len_add(gap, d);
+}
+
+!len_flow_fix(art_ilk: int, rate: int, tag: int, gap: int, debt: int) -> int {
+  ?(debt <= 0) { ^ 0; };
+  ?(len_skim_owe_ok(art_ilk, rate, tag) == 0) { ^ 0; };
+  wad = len_skim_owe(art_ilk, rate, tag);
+  ?(len_sub_ok(wad, gap) == 0) { ^ 0; };
+  left = wad - gap;
+  ?(len_mul_ok(left, 1000000000) == 0) { ^ 0; };
+  num = left * 1000000000;
+  den = debt / 1000000000;
+  ?(den <= 0) { ^ 0; };
+  ^ num / den;
+}
+
+!len_cash_out(wad: int, fix: int) -> int {
+  ^ len_rmul(wad, fix);
+}
+
+!len_naive_i64_add(a: int, b: int) -> int {
+  ^ a + b;
+}
+
+!len_test_suite() -> int {
+  ?(len_uses_pipread() != 0) { ^ -1; };
+  ?(len_uses_vatgrab() != 0) { ^ -2; };
+  ?(len_uses_vatilks() != 0) { ^ -3; };
+  ?(len_uses_uint256() != 0) { ^ -4; };
+  ?(len_cage_tag(0, 0, 1000000000, 2000000000) != 500000) { ^ -5; };
+  ?(len_cage_tag(1, 0, 1000000000, 2000000000) != 0) { ^ -6; };
+  ?(len_cage_tag(0, 1, 1000000000, 2000000000) != 0) { ^ -7; };
+  ?(len_cage_tag(0, 0, 1000000000, 0) != 0) { ^ -8; };
+  ?(len_skim_owe(100000000, 1000000000, 500000) != 50000) { ^ -9; };
+  ?(len_skim_wad(100000, 50000) != 50000) { ^ -10; };
+  ?(len_skim_gap_next(0, 50000, 50000) != 0) { ^ -11; };
+  ?(len_skim_wad(30000, 50000) != 30000) { ^ -12; };
+  ?(len_skim_gap_next(0, 50000, 30000) != 20000) { ^ -13; };
+  ?(len_flow_fix(100000000, 1000000000, 500000, 20000, 100000000000000000) != 300000) { ^ -14; };
+  ?(len_cash_out(100000000, 300000) != 30000) { ^ -15; };
+  ?(len_flow_fix(100000000, 1000000000, 500000, 0, 100000000000000000) != 500000) { ^ -16; };
+  wrap_a = 7000000000000000000;
+  wrap_b = 3000000000000000000;
+  ?(len_add_ok(wrap_a, wrap_b) != 0) { ^ -20; };
+  ?(len_naive_i64_add(wrap_a, wrap_b) != -8446744073709551616) { ^ -21; };
+  ?(len_mul_ok(wrap_a, 2) != 0) { ^ -22; };
+  ?(len_add(3, 5) != 8) { ^ -23; };
+  ?(len_sub(9, 4) != 5) { ^ -24; };
+  ?(len_min(4, 9) != 4) { ^ -25; };
+  ^ 1;
+}
+
+=ex{
+  len_u_lt,
+  len_add_ok,
+  len_sub_ok,
+  len_mul_ok,
+  len_add,
+  len_sub,
+  len_mul,
+  len_rmul,
+  len_wdiv,
+  len_min,
+  len_uses_pipread,
+  len_uses_vatgrab,
+  len_uses_vatilks,
+  len_uses_uint256,
+  len_cage_tag,
+  len_skim_owe_ok,
+  len_skim_owe,
+  len_skim_wad,
+  len_skim_gap_delta,
+  len_skim_gap_next,
+  len_flow_fix,
+  len_cash_out,
+  len_naive_i64_add,
+  len_test_suite
+}
