@@ -39,6 +39,9 @@
 
 !sol_reason(sig: string, body: string): string {
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
+  ?(rg_count_lit(body, "vat.dai") > 0) { ^"REJ_SOLIDITY_VATDAI" };
+  ?(rg_count_lit(body, "vat.heal") > 0) { ^"REJ_SOLIDITY_VATHEAL" };
+  ?(rg_count_lit(body, ".kick(") > 0) { ^"REJ_SOLIDITY_KICK" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
@@ -64,6 +67,16 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_vow = "function heal(uint rad) external";
+  body_dai = "require(rad <= vat.dai(address(this)));";
+  r4 = sol_reason(sig_vow, body_dai);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_VATDAI") == 0) { ^0 };
+  body_heal = "vat.heal(rad);";
+  r5 = sol_reason(sig_vow, body_heal);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_VATHEAL") == 0) { ^0 };
+  body_kick = "id = flapper.kick(bump, 0);";
+  r6 = sol_reason(sig_vow, body_kick);
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_KICK") == 0) { ^0 };
   ^1;
 }
 

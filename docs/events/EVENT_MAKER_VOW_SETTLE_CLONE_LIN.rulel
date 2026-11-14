@@ -1,0 +1,63 @@
+@RULEL:MAKER_VOW_SETTLE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MAKER-VOW-SETTLE"
+@TITLE="Clone-lin of Maker/Sky Vow heal/kiss/flop/flap with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-14"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-maker-vow"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile MakerDAO Vow surplus/debt settlement math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, wrap-detect add plus independent __int128; Solidity uint256 is NOT claimed"
+  commercial_hook="Vow.flap requires vat.dai >= vat.sin + bump + hump and unqueued debt == 0; making vat.dai/sin/Sin/Ash explicit and replacing wrapping i64 add with fail-closed add is an audit improvement, not a TVL claim. Measured: hump=2e9 RAD' blocks flap at dai=2e9 while hump=0 allows it; queued Sin=3e9 raises need from 3e9 to 6e9 and blocks flap at dai=5e9."
+}
+
+.u{
+  repo="https://github.com/makerdao/dss"
+  path="src/vow.sol"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  git_blob_sha="f28d699774ef830bcdc281df4530378a64f4071b"
+  file_sha256="609e5da454c0e68ce1c4dc7eb702a015139cd31305727604b777e13ea7bae302"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_maker_vow.lin"
+  transpiler_delta="src/lin_from_solidity.lin REJ_SOLIDITY_VATDAI/VATHEAL/KICK; src/lin_from_c.lin REJ_C_WIDE_INT/VATDAI/VATHEAL/KICK; src/lin_from_rust.lin REJ_RUST_WIDE_INT/VATDAI/KICK"
+  improvement_1="vat.dai, vat.sin, queued Sin, and Ash are function arguments, not vat/vow storage"
+  improvement_2="add/sub use wrap-detect; 7e18+3e18 fail-closes while naive i64 wraps to -8446744073709551616"
+  improvement_3="unqueued underflow (sin < Sin+Ash) fail-closes; flap requires unqueued==0 AND unqueued_ok (does not treat underflow as debt-zero)"
+  improvement_4="vat.heal and flapper/flopper.kick are not executed; the clone returns heal/kiss/flop/flap ok-gates and next Ash"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/maker_vow_c11.c (gcc -O2 -std=c11, wrap-detect XOR __int128)"
+  kernel="test/oracles/maker_vow_kernel.c (pointer-free, eligible for lin_from_c)"
+  gate="make maker-vow-proof"
+}
+
+.p{
+  harness="test/prove_maker_vow_external.py"
+  evidence_json="examples/maker_vow/maker_vow_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-vow"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet rad=wad*ray / RAY=1e27 parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production Vow replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Maker, Sky, or the EVM"
+  not_claimed_6="vat.heal / Clipper.kick / Spotter.poke (distinct kernels)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_WRAP_EQ_I128 && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

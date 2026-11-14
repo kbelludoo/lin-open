@@ -1,0 +1,171 @@
+{
+  "schema": "LIN_MAKER_VOW_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 wrap-detect Vow add and __int128 agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss vow.sol matches hash pin",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 blob=f28d699774ef830bcdc281df4530378a64f4071b"
+    },
+    {
+      "id": "UPSTREAM-BOOK",
+      "status": "PASS",
+      "description": "pinned vow.sol: heal/kiss/flop/flap, vat.dai/sin/heal, flapper/flopper.kick (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/vow.sol",
+      "note": "f28d699774ef830bcdc281df4530378a64f4071b"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_vow.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "lvw_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "19/19 vectors: C11 wrap-detect == __int128 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "19/19 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "heal=1 kiss_ash=0 flop_ash=3e9 flap=1 hump-blocks=0 no-hump=1 queued-sin-blocks=0",
+      "note": "golden=(1, 0, 3000000000, 1, 0, 1, 0)"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured surplus buffer (not TVL): hump=2e9 blocks flap at dai=2e9; hump=0 allows it; queued Sin=3e9 raises need to 6e9",
+      "note": "flap_ok_hump2e9=0 flap_ok_hump0=1 flap_ok_queued_sin=0 unit=RAD_1e9"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e18+3e18) wraps; checked add fail-closes to 0",
+      "note": "i64_add_wrap=-8446744073709551616 add_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes vat.dai/sin/Sin/Ash as arguments (no hidden SLOADs)",
+      "note": ""
+    },
+    {
+      "id": "NOT-VATHEAL",
+      "status": "PASS",
+      "description": "clone is Vow settle gates, not vat.heal and not flapper/flopper.kick",
+      "note": ""
+    },
+    {
+      "id": "NO-KICK",
+      "status": "PASS",
+      "description": "flop/flap return the ok-gate only; kick is not executed",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close vat.dai / __int128 / i128 (host, not LIN emit)",
+      "note": ""
+    },
+    {
+      "id": "TR-VATHEAL",
+      "status": "PASS",
+      "description": "Solidity/C transpilers fail-close vat.heal (explicit rad in LIN)",
+      "note": ""
+    },
+    {
+      "id": "TR-KICK",
+      "status": "PASS",
+      "description": "Solidity/C transpilers fail-close flapper/flopper.kick (explicit ok-gate in LIN)",
+      "note": ""
+    },
+    {
+      "id": "C-KERNEL",
+      "status": "PASS",
+      "description": "pointer-free C kernel (maker_vow_kernel.c) is eligible for lin_from_c; oracle __int128 is not",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/vow.sol",
+    "git_blob_sha": "f28d699774ef830bcdc281df4530378a64f4071b",
+    "file_sha256": "609e5da454c0e68ce1c4dc7eb702a015139cd31305727604b777e13ea7bae302",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_vow.lin",
+  "c11_oracle": "test/oracles/maker_vow_c11.c",
+  "c_kernel_for_transpiler": "test/oracles/maker_vow_kernel.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "heal_ok": 1,
+    "kiss_ash_next": 0,
+    "flop_ash_next": 3000000000,
+    "flap_ok": 1,
+    "flap_blocked_by_hump": 0,
+    "flap_ok_hump0": 1,
+    "flap_blocked_by_queued_sin": 0
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-vow",
+  "clone_lin_head": "7abc3982b029d79b38862e518ae970586a1eaeab",
+  "clone_lin_lin_commit": "b84befa2c21f280231c1992b06f6534c24ac9f94",
+  "clone_lin_lin_blob": "2b4ea96d63dc662d8e6d4891a454047c09d0b53b",
+  "clone_lin_c_blob": "9fce22cfe564381e73f293c55f4831ac88f7c4f1"
+}

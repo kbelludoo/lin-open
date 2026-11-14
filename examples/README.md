@@ -172,6 +172,14 @@ python3 examples/run_demos.py --interactive
 
 ---
 
+### Maker/Sky Vow heal/kiss/flop/flap clone ([`maker_vow/`](./maker_vow/))
+* **O que faz:** Provas externas (C11 wrap-detect XOR `__int128`, `lin_c0` VM, Python bigint) do clone uint64-scale de `Vow` surplus/debt settlement.
+* **Clone-LIN (repo separado):** https://github.com/kbelludoo/clone-lin-maker-vow
+* **Classe:** EXPERIMENTAL. Sem alegação de TVL, uint256, ou substituição do Vow.
+* **Como reproduzir:** `make maker-vow-proof`
+
+---
+
 
 ## Como Escrever Código LIN (Sintaxe em 3 Minutos)
 

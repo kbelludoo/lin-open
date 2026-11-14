@@ -1,0 +1,198 @@
+@LIN:L1c:0.2
+@MAKER_DSS_VOW_SETTLE{
+  version=1
+  repo="makerdao/dss"
+  source="src/vow.sol heal kiss flop flap"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  vow_sol_sha256="609e5da454c0e68ce1c4dc7eb702a015139cd31305727604b777e13ea7bae302"
+  vow_sol_blob="f28d699774ef830bcdc281df4530378a64f4071b"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_sky_vow_heal_kiss_flop_flap"
+  note="Not mainnet uint256. RAD'=ONE=1e9. vat.dai/sin/heal and flapper/flopper.kick are arguments or not executed. add/sub wrap fail-closes (Solidity reverts). Distinct from vat.heal. Upstream Solidity is not vendored."
+}
+
+!lvw_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!lvw_add_ok(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y < 0) { ^ 0; };
+  z = x + y;
+  ?(z < 0) { ^ 0; };
+  ?(lvw_u_lt(z, x) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!lvw_sub_ok(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y < 0) { ^ 0; };
+  ?(lvw_u_lt(x, y) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!lvw_add(x: int, y: int) -> int {
+  ?(lvw_add_ok(x, y) == 0) { ^ 0; };
+  ^ x + y;
+}
+
+!lvw_sub(x: int, y: int) -> int {
+  ?(lvw_sub_ok(x, y) == 0) { ^ 0; };
+  ^ x - y;
+}
+
+!lvw_unqueued_ok(vat_sin: int, queued_sin: int, ash: int) -> int {
+  ?(lvw_sub_ok(vat_sin, queued_sin) == 0) { ^ 0; };
+  t = vat_sin - queued_sin;
+  ^ lvw_sub_ok(t, ash);
+}
+
+!lvw_unqueued(vat_sin: int, queued_sin: int, ash: int) -> int {
+  ?(lvw_unqueued_ok(vat_sin, queued_sin, ash) == 0) { ^ 0; };
+  t = vat_sin - queued_sin;
+  ^ t - ash;
+}
+
+!lvw_uses_vatdai() -> int {
+  ^ 0;
+}
+
+!lvw_uses_vatheal() -> int {
+  ^ 0;
+}
+
+!lvw_uses_kick() -> int {
+  ^ 0;
+}
+
+!lvw_uses_uint256() -> int {
+  ^ 0;
+}
+
+!lvw_heal_ok(vat_dai: int, vat_sin: int, queued_sin: int, ash: int, rad: int) -> int {
+  ?(rad < 0) { ^ 0; };
+  ?(vat_dai < 0) { ^ 0; };
+  ?(lvw_unqueued_ok(vat_sin, queued_sin, ash) == 0) { ^ 0; };
+  ?(lvw_u_lt(vat_dai, rad) == 1) { ^ 0; };
+  uq = lvw_unqueued(vat_sin, queued_sin, ash);
+  ?(lvw_u_lt(uq, rad) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!lvw_kiss_ok(vat_dai: int, ash: int, rad: int) -> int {
+  ?(rad < 0) { ^ 0; };
+  ?(vat_dai < 0) { ^ 0; };
+  ?(ash < 0) { ^ 0; };
+  ?(lvw_u_lt(ash, rad) == 1) { ^ 0; };
+  ?(lvw_u_lt(vat_dai, rad) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!lvw_kiss_ash_next(vat_dai: int, ash: int, rad: int) -> int {
+  ?(lvw_kiss_ok(vat_dai, ash, rad) == 0) { ^ 0; };
+  ^ lvw_sub(ash, rad);
+}
+
+!lvw_flop_ok(vat_dai: int, vat_sin: int, queued_sin: int, ash: int, sump: int) -> int {
+  ?(vat_dai != 0) { ^ 0; };
+  ?(sump < 0) { ^ 0; };
+  ?(lvw_unqueued_ok(vat_sin, queued_sin, ash) == 0) { ^ 0; };
+  uq = lvw_unqueued(vat_sin, queued_sin, ash);
+  ?(lvw_u_lt(uq, sump) == 1) { ^ 0; };
+  ?(lvw_add_ok(ash, sump) == 0) { ^ 0; };
+  ^ 1;
+}
+
+!lvw_flop_ash_next(vat_dai: int, vat_sin: int, queued_sin: int, ash: int, sump: int) -> int {
+  ?(lvw_flop_ok(vat_dai, vat_sin, queued_sin, ash, sump) == 0) { ^ 0; };
+  ^ lvw_add(ash, sump);
+}
+
+!lvw_flap_need(vat_sin: int, bump: int, hump: int) -> int {
+  inner = lvw_add(vat_sin, bump);
+  ?(vat_sin != 0) {
+    ?(bump != 0) {
+      ?(inner == 0) { ^ 0; };
+    };
+  };
+  ^ lvw_add(inner, hump);
+}
+
+!lvw_flap_ok(vat_dai: int, vat_sin: int, queued_sin: int, ash: int, bump: int, hump: int) -> int {
+  ?(vat_dai < 0) { ^ 0; };
+  ?(lvw_unqueued_ok(vat_sin, queued_sin, ash) == 0) { ^ 0; };
+  uq = lvw_unqueued(vat_sin, queued_sin, ash);
+  ?(uq != 0) { ^ 0; };
+  need = lvw_flap_need(vat_sin, bump, hump);
+  ?(need == 0) {
+    ?(vat_sin != 0) { ^ 0; };
+    ?(bump != 0) { ^ 0; };
+    ?(hump != 0) { ^ 0; };
+  };
+  ?(lvw_u_lt(vat_dai, need) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!lvw_naive_i64_add(a: int, b: int) -> int {
+  ^ a + b;
+}
+
+!lvw_test_suite() -> int {
+  ?(lvw_uses_vatdai() != 0) { ^ -1; };
+  ?(lvw_uses_vatheal() != 0) { ^ -2; };
+  ?(lvw_uses_kick() != 0) { ^ -3; };
+  ?(lvw_uses_uint256() != 0) { ^ -4; };
+  ?(lvw_unqueued(10000000000, 3000000000, 1000000000) != 6000000000) { ^ -5; };
+  ?(lvw_heal_ok(5000000000, 10000000000, 3000000000, 1000000000, 5000000000) != 1) { ^ -6; };
+  ?(lvw_heal_ok(5000000000, 10000000000, 3000000000, 1000000000, 6000000000) != 0) { ^ -7; };
+  ?(lvw_heal_ok(8000000000, 10000000000, 3000000000, 1000000000, 7000000000) != 0) { ^ -8; };
+  ?(lvw_kiss_ok(3000000000, 2000000000, 2000000000) != 1) { ^ -9; };
+  ?(lvw_kiss_ash_next(3000000000, 2000000000, 2000000000) != 0) { ^ -10; };
+  ?(lvw_kiss_ok(3000000000, 2000000000, 3000000000) != 0) { ^ -11; };
+  ?(lvw_flop_ok(0, 10000000000, 3000000000, 1000000000, 2000000000) != 1) { ^ -12; };
+  ?(lvw_flop_ash_next(0, 10000000000, 3000000000, 1000000000, 2000000000) != 3000000000) { ^ -13; };
+  ?(lvw_flop_ok(1, 10000000000, 3000000000, 1000000000, 2000000000) != 0) { ^ -14; };
+  ?(lvw_flop_ok(0, 10000000000, 3000000000, 1000000000, 7000000000) != 0) { ^ -15; };
+  ?(lvw_flap_ok(10000000000, 0, 0, 0, 1000000000, 2000000000) != 1) { ^ -16; };
+  ?(lvw_flap_ok(2000000000, 0, 0, 0, 1000000000, 2000000000) != 0) { ^ -17; };
+  ?(lvw_flap_ok(2000000000, 0, 0, 0, 1000000000, 0) != 1) { ^ -18; };
+  ?(lvw_flap_ok(10000000000, 3000000000, 0, 0, 1000000000, 2000000000) != 0) { ^ -19; };
+  ?(lvw_flap_ok(5000000000, 0, 0, 0, 1000000000, 2000000000) != 1) { ^ -25; };
+  ?(lvw_flap_ok(5000000000, 3000000000, 3000000000, 0, 1000000000, 2000000000) != 0) { ^ -26; };
+  wrap_a = 7000000000000000000;
+  wrap_b = 3000000000000000000;
+  ?(lvw_add_ok(wrap_a, wrap_b) != 0) { ^ -20; };
+  ?(lvw_naive_i64_add(wrap_a, wrap_b) != -8446744073709551616) { ^ -21; };
+  ?(lvw_unqueued_ok(5, 6, 0) != 0) { ^ -22; };
+  ?(lvw_add(3, 5) != 8) { ^ -23; };
+  ?(lvw_sub(9, 4) != 5) { ^ -24; };
+  ^ 1;
+}
+
+=ex{
+  lvw_u_lt,
+  lvw_add_ok,
+  lvw_sub_ok,
+  lvw_add,
+  lvw_sub,
+  lvw_unqueued_ok,
+  lvw_unqueued,
+  lvw_uses_vatdai,
+  lvw_uses_vatheal,
+  lvw_uses_kick,
+  lvw_uses_uint256,
+  lvw_heal_ok,
+  lvw_kiss_ok,
+  lvw_kiss_ash_next,
+  lvw_flop_ok,
+  lvw_flop_ash_next,
+  lvw_flap_need,
+  lvw_flap_ok,
+  lvw_naive_i64_add,
+  lvw_test_suite
+}
