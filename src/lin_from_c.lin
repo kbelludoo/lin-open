@@ -40,6 +40,10 @@
   ?(rg_count_lit(sig, "float") > 0 || rg_count_lit(body, "float") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(sig, "double") > 0 || rg_count_lit(body, "double") > 0){ ^"REJ_C_FLOAT" };
   ?(rg_count_lit(body, "goto") > 0){ ^"REJ_C_GOTO" };
+  ?(rg_count_lit(sig, "__int128") > 0 || rg_count_lit(body, "__int128") > 0){ ^"REJ_C_WIDE_INT" };
+  ?(rg_count_lit(body, "vat_dai(") > 0){ ^"REJ_C_VATDAI" };
+  ?(rg_count_lit(body, "vat_heal(") > 0){ ^"REJ_C_VATHEAL" };
+  ?(rg_count_lit(body, "flapper_kick(") > 0 || rg_count_lit(body, "flopper_kick(") > 0){ ^"REJ_C_KICK" };
   ^"OK";
 }
 
