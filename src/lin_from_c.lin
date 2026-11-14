@@ -33,6 +33,9 @@
 }
 
 !cfs_reason(sig: string, body: string): string {
+  ?(rg_count_lit(sig, "__int128") > 0 || rg_count_lit(body, "__int128") > 0){ ^"REJ_C_WIDE_INT" };
+  ?(rg_count_lit(body, "UINT32_MAX") > 0){ ^"REJ_C_TYPEMAX" };
+  ?(rg_count_lit(body, "IRMUpdate") > 0){ ^"REJ_C_IRMUPDATE" };
   ?(rg_count_lit(sig, "*") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(body, "->") > 0){ ^"REJ_C_POINTER" };
   ?(rg_count_lit(sig, "struct") > 0 || rg_count_lit(body, "struct") > 0){ ^"REJ_C_STRUCT" };

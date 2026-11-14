@@ -1,0 +1,203 @@
+@LIN:L1c:0.2
+@EULER_IRM_LINEAR_KINK{
+  version=1
+  repo="euler-xyz/euler-vault-kit"
+  source="src/InterestRateModels/IRMLinearKink.sol computeInterestRateInternal"
+  license="GPL-2.0-or-later (file SPDX; repo LICENSE is BUSL-1.1 Change Date 2029-04-24)"
+  commit="93a1de491531e54cbbcf0e5c8cacfe558f924867"
+  irm_sol_sha256="d3b9b7cd3bfc248cdf7cb7dc438661a888fd76f94efbdcf9a781c2eb999e8e82"
+  irm_sol_blob="fb3cab74631e944974111c7ed5a28b757f351ff7"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_euler_evk_linear_kink_irm"
+  note="Not mainnet uint256. type(uint32).max utilization, immutable slopes, msg.sender vault auth, and unchecked (util-kink) are stripped: caller/vault/cash/borrows/base/slope1/slope2/kink are arguments. Distinct from Compound JumpRate (1e18 util, reserves, jump multiplier / BASE). Upstream Solidity is not vendored."
+}
+
+!eir_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!eir_u_mul_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(a == 0) { ^ 1; };
+  ?(b == 0) { ^ 1; };
+  p = a * b;
+  ?(p < 0) { ^ 0; };
+  ?(p / a != b) { ^ 0; };
+  ^ 1;
+}
+
+!eir_u_add_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  s = a + b;
+  ?(s < 0) { ^ 0; };
+  ?(eir_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!eir_u_sub_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(eir_u_lt(a, b) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!eir_util_scale() -> int {
+  ^ 4294967295;
+}
+
+!eir_kink_half() -> int {
+  ^ 2147483648;
+}
+
+!eir_uses_jumprate() -> int {
+  ^ 0;
+}
+
+!eir_uses_uint32_scale() -> int {
+  ^ 1;
+}
+
+!eir_uses_reserves() -> int {
+  ^ 0;
+}
+
+!eir_uses_msg_sender() -> int {
+  ^ 0;
+}
+
+!eir_uses_unchecked() -> int {
+  ^ 0;
+}
+
+!eir_auth_ok(caller: int, vault: int) -> int {
+  ?(caller < 0) { ^ 0; };
+  ?(vault < 0) { ^ 0; };
+  ?(caller != vault) { ^ 0; };
+  ^ 1;
+}
+
+!eir_params_ok(base: int, slope1: int, slope2: int, kink: int) -> int {
+  ?(base < 0) { ^ 0; };
+  ?(slope1 < 0) { ^ 0; };
+  ?(slope2 < 0) { ^ 0; };
+  ?(kink < 0) { ^ 0; };
+  ?(eir_u_lt(eir_util_scale(), kink) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!eir_util(cash: int, borrows: int) -> int {
+  ?(cash < 0) { ^ 0; };
+  ?(borrows < 0) { ^ 0; };
+  ?(eir_u_add_ok(cash, borrows) == 0) { ^ 0; };
+  total = cash + borrows;
+  ?(total == 0) { ^ 0; };
+  scale = eir_util_scale();
+  ?(eir_u_mul_ok(borrows, scale) == 0) { ^ 0; };
+  u = (borrows * scale) / total;
+  ?(eir_u_lt(scale, u) == 1) { ^ 0; };
+  ^ u;
+}
+
+!eir_rate(cash: int, borrows: int, base: int, slope1: int, slope2: int, kink: int) -> int {
+  ?(eir_params_ok(base, slope1, slope2, kink) == 0) { ^ 0; };
+  ?(cash < 0) { ^ 0; };
+  ?(borrows < 0) { ^ 0; };
+  ?(eir_u_add_ok(cash, borrows) == 0) { ^ 0; };
+  total = cash + borrows;
+  ?(total != 0) {
+    ?(eir_u_mul_ok(borrows, eir_util_scale()) == 0) { ^ 0; };
+  };
+  u = eir_util(cash, borrows);
+  ir = base;
+  ?(eir_u_lt(kink, u) == 0) {
+    ?(eir_u_mul_ok(u, slope1) == 0) { ^ 0; };
+    ?(eir_u_add_ok(ir, u * slope1) == 0) { ^ 0; };
+    ^ ir + (u * slope1);
+  };
+  ?(eir_u_mul_ok(kink, slope1) == 0) { ^ 0; };
+  ?(eir_u_add_ok(ir, kink * slope1) == 0) { ^ 0; };
+  ir = ir + (kink * slope1);
+  ?(eir_u_sub_ok(u, kink) == 0) { ^ 0; };
+  over = u - kink;
+  ?(eir_u_mul_ok(slope2, over) == 0) { ^ 0; };
+  ?(eir_u_add_ok(ir, slope2 * over) == 0) { ^ 0; };
+  ^ ir + (slope2 * over);
+}
+
+!eir_compute(caller: int, vault: int, cash: int, borrows: int, base: int, slope1: int, slope2: int, kink: int) -> int {
+  ?(eir_auth_ok(caller, vault) == 0) { ^ 0; };
+  ^ eir_rate(cash, borrows, base, slope1, slope2, kink);
+}
+
+!eir_view(cash: int, borrows: int, base: int, slope1: int, slope2: int, kink: int) -> int {
+  ^ eir_rate(cash, borrows, base, slope1, slope2, kink);
+}
+
+!eir_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!eir_test_suite() -> int {
+  kink = eir_kink_half();
+  ?(eir_uses_jumprate() != 0) { ^ -1; };
+  ?(eir_uses_uint32_scale() != 1) { ^ -2; };
+  ?(eir_uses_reserves() != 0) { ^ -3; };
+  ?(eir_uses_msg_sender() != 0) { ^ -4; };
+  ?(eir_uses_unchecked() != 0) { ^ -5; };
+  ?(eir_util_scale() != 4294967295) { ^ -6; };
+  ?(kink != 2147483648) { ^ -7; };
+  ?(eir_util(50, 50) != 2147483647) { ^ -8; };
+  ?(eir_util(0, 0) != 0) { ^ -9; };
+  ?(eir_util(100, 0) != 0) { ^ -10; };
+  ?(eir_util(0, 100) != 4294967295) { ^ -11; };
+  ?(eir_util(75, 25) != 1073741823) { ^ -12; };
+  ?(eir_util(25, 75) != 3221225471) { ^ -13; };
+  ?(eir_rate(50, 50, 0, 2, 3, kink) != 4294967294) { ^ -14; };
+  ?(eir_rate(0, 100, 0, 2, 3, kink) != 10737418237) { ^ -15; };
+  ?(eir_rate(25, 75, 0, 2, 3, kink) != 7516192765) { ^ -16; };
+  ?(eir_rate(75, 25, 0, 2, 3, kink) != 2147483646) { ^ -17; };
+  ?(eir_rate(100, 0, 10, 2, 3, kink) != 10) { ^ -18; };
+  ?(eir_rate(0, 0, 10, 2, 3, kink) != 10) { ^ -19; };
+  ?(eir_compute(1, 2, 50, 50, 0, 2, 3, kink) != 0) { ^ -20; };
+  ?(eir_compute(7, 7, 50, 50, 0, 2, 3, kink) != 4294967294) { ^ -21; };
+  ?(eir_view(50, 50, 0, 2, 3, kink) != 4294967294) { ^ -22; };
+  ?(eir_auth_ok(5, 5) != 1) { ^ -23; };
+  ?(eir_auth_ok(5, 6) != 0) { ^ -24; };
+  wrap_a = 7000000000;
+  wrap_b = 3000000000;
+  ?(eir_u_mul_ok(wrap_a, wrap_b) != 0) { ^ -25; };
+  ?(eir_naive_i64_mul(wrap_a, wrap_b) != 2553255926290448384) { ^ -26; };
+  ?(eir_util(wrap_a, wrap_b) != 0) { ^ -27; };
+  ?(eir_rate(wrap_a, wrap_b, 0, 2, 3, kink) != 0) { ^ -28; };
+  ?(eir_rate(-1, 50, 0, 2, 3, kink) != 0) { ^ -29; };
+  ?(eir_params_ok(0, 2, 3, 4294967296) != 0) { ^ -30; };
+  ^ 1;
+}
+
+=ex{
+  eir_u_lt,
+  eir_u_mul_ok,
+  eir_u_add_ok,
+  eir_u_sub_ok,
+  eir_util_scale,
+  eir_kink_half,
+  eir_uses_jumprate,
+  eir_uses_uint32_scale,
+  eir_uses_reserves,
+  eir_uses_msg_sender,
+  eir_uses_unchecked,
+  eir_auth_ok,
+  eir_params_ok,
+  eir_util,
+  eir_rate,
+  eir_compute,
+  eir_view,
+  eir_naive_i64_mul,
+  eir_test_suite
+}
