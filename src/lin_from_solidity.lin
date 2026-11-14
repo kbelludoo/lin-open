@@ -39,6 +39,8 @@
 
 !sol_reason(sig: string, body: string): string {
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
+  ?(rg_count_lit(body, ".peek(") > 0) { ^"REJ_SOLIDITY_PEEK" };
+  ?(rg_count_lit(body, "vat.file") > 0) { ^"REJ_SOLIDITY_VATFILE" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
@@ -64,6 +66,13 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_poke = "function poke(bytes32 ilk) external";
+  body_peek = "(bytes32 val, bool has) = ilks[ilk].pip.peek();";
+  r4 = sol_reason(sig_poke, body_peek);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_PEEK") == 0) { ^0 };
+  body_file = "vat.file(ilk, spot, spot);";
+  r5 = sol_reason(sig_poke, body_file);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_VATFILE") == 0) { ^0 };
   ^1;
 }
 

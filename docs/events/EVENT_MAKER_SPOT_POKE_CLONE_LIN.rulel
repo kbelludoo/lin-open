@@ -1,0 +1,63 @@
+@RULEL:MAKER_SPOT_POKE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MAKER-SPOT-POKE"
+@TITLE="Clone-lin of Maker/Sky Spotter.poke with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-14"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-maker-spot"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile MakerDAO Spotter.poke OSM-to-vat spot math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, wrap-detect mul plus independent __int128; Solidity uint256 is NOT claimed"
+  commercial_hook="Spotter.poke writes vat.ilks.spot used by every Maker CDP safety check; making pip.peek/par/mat explicit and replacing wrapping i64 multiply with fail-closed rdiv is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/makerdao/dss"
+  path="src/spot.sol"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  git_blob_sha="2f5b98d9160e6f4f5c7943a964dcc47bb2c2c862"
+  file_sha256="f772861927801ca1e32ba818ffc55df6ceffcc530ac3d8b6b223e7411bed118f"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_maker_spot.lin"
+  transpiler_delta="src/lin_from_solidity.lin REJ_SOLIDITY_PEEK/VATFILE; src/lin_from_c.lin REJ_C_WIDE_INT/PEEK/VATFILE; src/lin_from_rust.lin REJ_RUST_WIDE_INT/PEEK/VATFILE"
+  improvement_1="pip.peek val/has, par, mat, and wad_ray are function arguments, not OSM/vat storage"
+  improvement_2="val*wad_ray and x*ONE use wrap-detect; 7e9*3e9 fail-closes while naive i64 wraps to 2553255926290448384"
+  improvement_3="has!=1, par<=0, mat<=0 fail-close to 0 (Solidity writes 0 on !has, reverts on div-by-zero)"
+  improvement_4="vat.file and emit Poke are not executed; the clone returns the spot ray only"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/maker_spot_c11.c (gcc -O2 -std=c11, wrap-detect XOR __int128)"
+  kernel="test/oracles/maker_spot_kernel.c (pointer-free, eligible for lin_from_c)"
+  gate="make maker-spot-proof"
+}
+
+.p{
+  harness="test/prove_maker_spot_external.py"
+  evidence_json="examples/maker_spot/maker_spot_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-spot"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet OSM / RAY=1e27 parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production Spotter replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Maker, Sky, or the EVM"
+  not_claimed_6="Clipper.kick OSM top / Vat.frob safety (distinct kernels)"
+}
+
+.v{
+  method="PINNED_BYTES && C11_WRAP_EQ_I128 && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
