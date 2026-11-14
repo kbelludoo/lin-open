@@ -39,6 +39,13 @@
 
 !sol_reason(sig: string, body: string): string {
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
+  ?(rg_count_lit(body, "to18ConversionFactor") > 0) { ^"REJ_SOLIDITY_TO18" };
+  ?(rg_count_lit(body, "HALTED") > 0) { ^"REJ_SOLIDITY_HALTED" };
+  ?(rg_count_lit(body, "type(uint256).max") > 0) { ^"REJ_SOLIDITY_TYPEMAX" };
+  ?(rg_count_lit(body, "unchecked") > 0) { ^"REJ_SOLIDITY_UNCHECKED" };
+  ?(rg_count_lit(body, "vat.frob") > 0) { ^"REJ_SOLIDITY_FROB" };
+  ?(rg_count_lit(body, "daiJoin") > 0) { ^"REJ_SOLIDITY_DAIJOIN" };
+  ?(rg_count_lit(body, "vat.ilks") > 0) { ^"REJ_SOLIDITY_ILKS" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
@@ -64,6 +71,16 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_fill = "function fill() external returns (uint256 wad)";
+  body_frob = "wad = rush(); vat.frob(ilk, address(this), address(0), address(this), 0, _int256(wad));";
+  r4 = sol_reason(sig_fill, body_frob);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_FROB") == 0) { ^0 };
+  body_join = "daiJoin.exit(address(this), wad);";
+  r5 = sol_reason(sig_fill, body_join);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_DAIJOIN") == 0) { ^0 };
+  body_ilks = "(uint256 Art, uint256 rate,, uint256 line,) = vat.ilks(ilk);";
+  r6 = sol_reason(sig_fill, body_ilks);
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_ILKS") == 0) { ^0 };
   ^1;
 }
 

@@ -1,0 +1,63 @@
+@RULEL:MAKER_LITEPSM_FILL_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MAKER-DSS-LITE-PSM-FILL"
+@TITLE="Clone-lin of Maker/Sky DssLitePsm rush/gush/cut with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-14"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-maker-litepsm-fill"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Maker/Sky DssLitePsm rush/gush/cut (fill/trim/chug amounts) into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs; WAD'=RAY'=1e9; gem*to18 and rad/RAY fail-close if a product or quotient does not fit int64; Solidity uint256 is NOT claimed"
+  commercial_hook="LitePSM fill/trim is how Sky stocks the DAI/USDC 1:1 buffer (rush mint vs pocket+buf and debt ceilings; gush burn of excess Art; chug of swap fees to vow). Making vat.ilks/Line/debt, pocket gem, dai cash, buf, and vow explicit, and replacing wrapping i64 multiply plus Solidity reverts with fail-closed amounts, is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/sky-ecosystem/dss-lite-psm"
+  path="src/DssLitePsm.sol"
+  license="AGPL-3.0-or-later"
+  commit="dbf0022225f645f5697e5517d0cf00810471bccf"
+  git_blob_sha="8e18705eed287cfdf7f6b6e0a74b398b792cc243"
+  file_sha256="502eed38778ac29758959cadbb3d2f36aa3af21144e7374483795581a6279ce8"
+  fixture="live git pin; Solidity source is not vendored"
+}
+
+.l{
+  clone="src/lin_maker_litepsm_fill.lin"
+  transpiler_delta="src/lin_from_solidity.lin REJ_SOLIDITY_FROB/DAIJOIN/ILKS plus HALTED/TO18/UNCHECKED; src/lin_from_c.lin REJ_C_WIDE_INT/FROB/DAIJOIN; src/lin_from_rust.lin REJ_RUST_WIDE_INT/FROB/DAIJOIN"
+  improvement_1="rush/gush/cut read vat.ilks, vat.Line, vat.debt, gem.balanceOf(pocket), dai.balanceOf, buf, vow from storage in Solidity; LIN takes them as arguments"
+  improvement_2="gem*to18 overflows i64; LIN fail-closes instead of wrapping"
+  improvement_3="rate!=RAY, wad==0 fill/trim/chug, and missing vow fail-close to 0 (Solidity reverts)"
+  improvement_4="cut underflow cash+gemWad<art fail-closes (Solidity 0.8 Panic); no vat.frob / daiJoin.exit"
+  improvement_5="distinct from sellGem/buyGem tin/tout quotes"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/maker_litepsm_fill_c11.c (gcc -O2 -std=c11, wrap-detect XOR __int128)"
+  gate="test/verify_maker_litepsm_fill.sh"
+}
+
+.p{
+  harness="test/prove_maker_litepsm_fill_external.py"
+  evidence_json="examples/maker_litepsm_fill/maker_litepsm_fill_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-litepsm-fill"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet LitePSM / USDC-6 * 1e12 wad parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production PSM replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Maker, Sky, or the EVM"
+  not_claimed_6="actual vat.frob / daiJoin.exit/join, pocket ERC-20, sellGem/buyGem tin/tout"
+}
+
+.v{
+  method="PINNED_BYTES && C11_WRAP_EQ_I128 && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}
