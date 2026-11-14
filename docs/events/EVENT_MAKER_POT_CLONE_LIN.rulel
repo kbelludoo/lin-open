@@ -1,0 +1,67 @@
+@RULEL:MAKER_POT_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MAKER-POT-DSR-V1"
+@TITLE="Clone-lin of Maker/Sky Pot.drip/join/exit with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-14"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-maker-pot-join"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Maker/Sky Dai Savings Rate (Pot.drip chi accumulator + join/exit pie) into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs, 128-bit product for rpow half-up and rmul floor; Solidity uint256 / RAY=1e27 is NOT claimed"
+  commercial_hook="Pot.drip is the DSR/SSR chi engine behind Sky sUSDS; making dsr/chi/rho/now/Pie explicit and replacing wrapping i64 multiply with 128-bit muldiv is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/makerdao/dss"
+  path="src/pot.sol"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  git_blob_sha="cae58cdafe7b4014fd87dcfb002968f61dc89eee"
+  file_sha256="8b22fb58d37e5eba6c5d1f42c8651a2c5077d39a93edd13082029bc3bfb3edc6"
+  vendored=false
+}
+
+.l{
+  clone="src/lin_maker_pot.lin"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-pot-join"
+  transpiler_delta="src/lin_from_solidity.lin fail-closes vat.suck / Pot/rho-not-updated / Pot/invalid-now; src/lin_from_c.lin adds __int128 and vat_suck; src/lin_from_rust.lin adds i128/u128 and vat_suck"
+  improvement_1="dsr, chi, rho, now, Pie, pie[usr] are function arguments, not hidden Pot storage / block.timestamp"
+  improvement_2="assembly _rpow is a LIN scalar loop with 128-bit half-up muldiv; overflow fail-closes to 0 instead of wrapping i64"
+  improvement_3="join requires now==rho (Maker Pot/rho-not-updated); exit does not — stale-chi exit is explicit and tested"
+  improvement_4="vat.suck(vow, pot, Pie*delta_chi) and vat.move are stripped to suck_rad / rad; ERC20/Vat hosts are not emitted"
+  improvement_5="dsr < RAY' that would make chi decrease fail-closes on unsigned sub(tmp, chi), matching Maker revert"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/maker_pot_c11.c (gcc -O2 -std=c11, wrap-detect XOR __int128)"
+  kernel="test/oracles/maker_pot_kernel.c (pointer-free, eligible for lin_from_c)"
+  gate="test/verify_maker_pot.sh"
+}
+
+.p{
+  harness="test/prove_maker_pot_external.py"
+  evidence_json="examples/maker_pot/maker_pot_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-maker-pot-join"
+  clone_lin_head="0a368d6c149f508b847cee4c56cba01308a1485d"
+  clone_lin_lin_blob="e489f4f510354c5eb54f161ffcc3b9cb8b4cf55a"
+}
+
+.n{
+  not_claimed_1="full uint256 / RAY=1e27 / mainnet Pot / sUSDS parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production DSR replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Maker, Sky, Pot, sUSDS, or the EVM"
+  not_claimed_6="TVL or dollar savings from this clone"
+}
+
+.v{
+  method="PINNED_BYTES && C11_WRAP_XOR_I128 && LIN_C0_VM_EQ_C11 && PY_BIGINT && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

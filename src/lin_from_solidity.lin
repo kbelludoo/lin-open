@@ -46,6 +46,9 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(body, "vat.suck(") > 0) { ^"REJ_SOLIDITY_VAT_SUCK" };
+  ?(rg_count_lit(body, "Pot/rho-not-updated") > 0) { ^"REJ_SOLIDITY_POT_RHO" };
+  ?(rg_count_lit(body, "Pot/invalid-now") > 0) { ^"REJ_SOLIDITY_POT_NOW" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +67,17 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_drip = "function drip() external returns (uint tmp)";
+  body_suck = "vat.suck(vow, address(this), mul(Pie, chi_)); return chi;";
+  r4 = sol_reason(sig_drip, body_suck);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_VAT_SUCK") == 0) { ^0 };
+  sig_join = "function join(uint wad) external";
+  body_rho = "require(now == rho, Pot/rho-not-updated); pie = pie + wad;";
+  r5 = sol_reason(sig_join, body_rho);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_POT_RHO") == 0) { ^0 };
+  body_now = "require(now >= rho, Pot/invalid-now); return chi;";
+  r6 = sol_reason(sig_drip, body_now);
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_POT_NOW") == 0) { ^0 };
   ^1;
 }
 
