@@ -1,0 +1,172 @@
+{
+  "schema": "LIN_ETHENA_SUSDE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 wrap-detect vest/convert mul and __int128 agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned ethena-labs StakedUSDe.sol matches hash pin",
+      "note": "commit=7ffedb8873c2286930804e1c4feee0410fd0f033 blob=0a56a7d18d308329e90b490428b8ee633a54dd70"
+    },
+    {
+      "id": "UPSTREAM-JOIN",
+      "status": "PASS",
+      "description": "pinned StakedUSDe.sol: 8h vest, totalAssets=balance-unvested, MIN_SHARES (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of StakedUSDe.sol",
+      "note": "0a56a7d18d308329e90b490428b8ee633a54dd70"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_ethena_susde.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "es_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "23/23 vectors: C11 wrap-detect == __int128 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "23/23 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "t=2h unvested=600 totalAssets=10200 convertToShares(1020)=1000 previewMint(1)=2",
+      "note": "unvested=600 total=10200 shares=1000 assets=1020 mint=2 deposit=1000 still_vesting=0"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured sUSDe convert (not TVL): 8h linear vest keeps convertToShares from jumping on reward drop",
+      "note": "unvested_t2=600 convert_shares=1000 unit=reduced_wad"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e9*3e9) wraps; checked assets*supply fail-closes to 0",
+      "note": "i64_mul_wrap=2553255926290448384 u_mul_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes now/last_ts/vest_amt (no hidden StakedUSDe storage / block.timestamp)",
+      "note": ""
+    },
+    {
+      "id": "NOT-SUSDS",
+      "status": "PASS",
+      "description": "clone is Ethena 8h vest, not Sky sUSDS chi/RAY",
+      "note": ""
+    },
+    {
+      "id": "MIN-SHARES",
+      "status": "PASS",
+      "description": "MIN_SHARES donation-attack floor is an explicit argument-scale check",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close unvested/safeTransfer/wide-int (host, not LIN emit)",
+      "note": ""
+    },
+    {
+      "id": "TR-VEST",
+      "status": "PASS",
+      "description": "Solidity transpiler fail-closes VESTING_PERIOD storage (explicit period in LIN)",
+      "note": ""
+    },
+    {
+      "id": "TR-WIDE",
+      "status": "PASS",
+      "description": "C/Rust transpilers fail-close __int128 / i128 (oracle width, not LIN emit)",
+      "note": ""
+    },
+    {
+      "id": "C-KERNEL",
+      "status": "PASS",
+      "description": "pointer-free C kernel (ethena_susde_kernel.c) is eligible for lin_from_c; oracle __int128 is not",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/ethena-labs/code4arena-contest",
+    "commit": "7ffedb8873c2286930804e1c4feee0410fd0f033",
+    "path": "protocols/USDe/contracts/StakedUSDe.sol",
+    "git_blob_sha": "0a56a7d18d308329e90b490428b8ee633a54dd70",
+    "file_sha256": "e06068be04cb7fa579a8fe1a8afbea629e1bbb84d426fdace58187282a0af895",
+    "license": "GPL-3.0",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_ethena_susde.lin",
+  "c11_oracle": "test/oracles/ethena_susde_c11.c",
+  "c_kernel_for_transpiler": "test/oracles/ethena_susde_kernel.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "unvested_t2": 600,
+    "total_assets": 10200,
+    "to_shares": 1000,
+    "to_assets": 1020,
+    "preview_mint_1": 2,
+    "deposit_shares": 1000,
+    "rewards_still_vesting": 0,
+    "rewards_after_period": 1
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-ethena-susde",
+  "clone_lin_head": "2dc6c953b53e32ce085d209f2b2062ac64643d0e",
+  "clone_lin_lin_commit": "2dc6c953b53e32ce085d209f2b2062ac64643d0e",
+  "clone_lin_lin_blob": "fd43d7311090daf7d85eede0dcf2b0f52d8f621a",
+  "clone_lin_c_blob": "6b8e650d82bbf00d16ea816e64e5a21e526bbc3d"
+}
