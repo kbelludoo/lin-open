@@ -1,0 +1,66 @@
+@RULEL:MORPHO_ADAPTIVE_CURVE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-MORPHO-ADAPTIVE-CURVE-IRM"
+@TITLE="Clone-lin of Morpho AdaptiveCurveIRM with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_I64_SCALE"
+@DATE="2026-11-14"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-morpho-adaptive"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Morpho Blue AdaptiveCurveIRM math into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="int64 inputs, 128-bit product for signed (a*b)/d; Solidity int256 is NOT claimed"
+  commercial_hook="AdaptiveCurveIRM is Morpho Blue's default borrow-rate model; making rateAtTarget and elapsed explicit and replacing wrapping i64 multiply with signed 128-bit wmul is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/morpho-org/morpho-blue-irm"
+  path="src/adaptive-curve-irm/AdaptiveCurveIrm.sol"
+  libs="src/adaptive-curve-irm/libraries/{ConstantsLib,ExpLib,MathLib,UtilsLib}.sol"
+  license="MIT"
+  commit="58ce91fd04840372443a7080a5b32067b17b3d60"
+  git_blob_sha="34cbf8bc7a2489daf1cd4f789d827f4e41967989"
+  file_sha256="40ee4764e8eebfee290e07314af38fee7e30323a258d27bdb481e6c00187186d"
+  constants_sha256="63abf640bd64295e39b7b32f22159e49927c2156c9445b17fd856f447f634afa"
+  explib_sha256="dfb80c3de40a2a4ab5d814fe00b0b21b5af13f5248785d37d4e97910bb8a9773"
+  fixture="hash-pinned only; Solidity is not vendored"
+}
+
+.l{
+  clone="src/lin_morpho_adaptive_curve.lin"
+  transpiler_delta="src/lin_from_solidity.lin v3: require(cond) fail-closes to ^0; if/else emits LIN ?(c){t}:{e}"
+  improvement_1="rateAtTarget[id] and block.timestamp-lastUpdate are function arguments"
+  improvement_2="(a*b)/d uses signed 128-bit product; quotient that does not fit int64 fail-closes to 0"
+  improvement_3="wExp fail-closes when 2^q would overflow i64 instead of clipping to Solidity WEXP_UPPER_VALUE"
+  improvement_4="bound is explicit min/max, not inline assembly slt/sgt"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/morpho_adaptive_curve_c11.c (gcc -O2 -std=c11, signed __int128)"
+  kernel="test/oracles/morpho_adaptive_curve_kernel.c (pointer-free, lin_from_c eligible)"
+  gate="test/verify_morpho_adaptive_curve.sh"
+}
+
+.p{
+  harness="test/prove_morpho_adaptive_curve_external.py"
+  evidence_json="examples/morpho_adaptive_curve/morpho_adaptive_curve_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-morpho-adaptive"
+}
+
+.n{
+  not_claimed_1="full int256 / mainnet Morpho Blue market parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production IRM replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Morpho, Uniswap, or the EVM"
+  not_claimed_6="TVL or dollar savings"
+}
+
+.v{
+  method="PINNED_BYTES && C11_I128_EQ_LIN && PY_BIGINT_MULDIV && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

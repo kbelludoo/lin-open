@@ -1,10 +1,10 @@
 @LIN:L1c:0.2
 @LIN_FROM_SOLIDITY{
-  version=2
+  version=3
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
-  status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  status="EXPERIMENTAL_V3"
+  changelog="v3: require(cond) fail-closes to ^0; if/else emits LIN ?(c){t}:{e}; v2 emit + 1eN + OK_VIEW"
 }
 
 !sol_is_kw(nm: string): int {
@@ -142,28 +142,84 @@
   ^out;
 }
 
+!sol_require_cond(inner: string): string {
+  t = jss_trim(inner);
+  n = t.length;
+  i = 0;
+  d = 0;
+  c = 0;
+  while (i < n) {
+    c = t.charCodeAt(i);
+    ?(c == 40 || c == 91 || c == 123) { d = d + 1 };
+    ?(c == 41 || c == 93 || c == 125) { d = d - 1 };
+    ?(d == 0 && c == 44) { ^ jss_trim(slice2(t, 0, i)) };
+    i = i + 1;
+  };
+  ^t;
+}
+
 !sol_stmt(st: string): string {
   e = jss_trim(st);
   n = e.length;
   out = "";
   p = 0;
   cl = 0;
+  cb = 0;
+  rest = "";
+  thenb = "";
+  elseb = "";
+  after = "";
+  eb = 0;
   ?(n == 0) { ^out };
   ?(starts_lit(e, 0, "return") == 1 && (n == 6 || is_ident(e.charCodeAt(6)) == false)) {
     out = out + "^";
     out = out + jss_trim(slice2(e, 6, n));
     ^out;
   };
+  ?(starts_lit(e, 0, "require") == 1 && n > 7 && is_ident(e.charCodeAt(7)) == false) {
+    p = skip_ws(e, 7);
+    ?(p < n && e.charCodeAt(p) == 40) {
+      cl = match_paren(e, p);
+      ?(cl > p) {
+        out = out + "?(( ";
+        out = out + sol_require_cond(slice2(e, p + 1, cl));
+        out = out + " ) == 0) { ^ 0 }";
+        ^out;
+      };
+    };
+  };
   ?(starts_lit(e, 0, "if") == 1 && n > 2 && is_ident(e.charCodeAt(2)) == false) {
     p = skip_ws(e, 2);
     ?(p < n && e.charCodeAt(p) == 40) {
       cl = match_paren(e, p);
       ?(cl > p) {
+        rest = jss_trim(slice2(e, cl + 1, n));
+        thenb = rest;
+        elseb = "";
+        ?(rest.length > 0 && rest.charCodeAt(0) == 123) {
+          cb = match_brace(rest, 0);
+          ?(cb > 0) {
+            thenb = slice2(rest, 1, cb);
+            after = jss_trim(slice2(rest, cb + 1, rest.length));
+            ?(starts_lit(after, 0, "else") == 1 && (after.length == 4 || is_ident(after.charCodeAt(4)) == false)) {
+              elseb = jss_trim(slice2(after, 4, after.length));
+              ?(elseb.length > 0 && elseb.charCodeAt(0) == 123) {
+                eb = match_brace(elseb, 0);
+                ?(eb > 0) { elseb = slice2(elseb, 1, eb) };
+              };
+            };
+          };
+        };
         out = out + "?(";
         out = out + slice2(e, p + 1, cl);
         out = out + ") { ";
-        out = out + sol_stmt(jss_trim(slice2(e, cl + 1, n)));
+        out = out + sol_stmt(jss_trim(thenb));
         out = out + " }";
+        ?(elseb.length > 0) {
+          out = out + " : { ";
+          out = out + sol_stmt(jss_trim(elseb));
+          out = out + " }";
+        };
         ^out;
       };
     };
@@ -334,6 +390,11 @@
   exp = sol_expand_exp("1e2");
   ?(starts_lit(exp, 0, "100") == 0) { ^0 };
   ?(exp.length != 3) { ^0 };
+  src2 = "function curve(int256 rateAtTarget, int256 err) public pure returns (int256) { int256 coeff; if (err < 0) { coeff = 750; } else { coeff = 3000; } require(rateAtTarget > 0); return coeff; }";
+  out2 = sol_from_sol(src2);
+  ?(rg_count_lit(out2, "curve") == 0) { ^0 };
+  ?(rg_count_lit(out2, ": {") == 0) { ^0 };
+  ?(rg_count_lit(out2, "^ 0") == 0) { ^0 };
   ^1;
 }
 

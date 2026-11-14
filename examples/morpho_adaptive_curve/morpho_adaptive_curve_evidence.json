@@ -1,0 +1,136 @@
+{
+  "schema": "LIN_MORPHO_ADAPTIVE_CURVE_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "PIN-SHA256",
+      "status": "PASS",
+      "description": "pinned AdaptiveCurveIrm.sol sha256 (hash-pin, not vendored)",
+      "note": "40ee4764e8eebfee290e07314af38fee7e30323a258d27bdb481e6c00187186d"
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned morpho-blue-irm commit matches pin",
+      "note": "commit=58ce91fd04840372443a7080a5b32067b17b3d60 blob=34cbf8bc7a2489daf1cd4f789d827f4e41967989"
+    },
+    {
+      "id": "UPSTREAM-LIBS",
+      "status": "PASS",
+      "description": "ConstantsLib.sol and ExpLib.sol sha256 match pins",
+      "note": ""
+    },
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 signed __int128 AdaptiveCurve selftest",
+      "note": ""
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_morpho_adaptive_curve.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of Solidity transpiler v3",
+      "note": ""
+    },
+    {
+      "id": "SOL-V3-GATE",
+      "status": "PASS",
+      "description": "lin_from_solidity v3 source: require fail-closed + if/else emit",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of C transpiler",
+      "note": ""
+    },
+    {
+      "id": "C-KERNEL",
+      "status": "PASS",
+      "description": "pointer-free AdaptiveCurve kernel eligible for lin_from_c",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "ac_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "7/7 vectors: C11 i128 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "Python towards-zero bigint matches C11/LIN on muldiv vectors",
+      "note": ""
+    },
+    {
+      "id": "AVG-1D",
+      "status": "PASS",
+      "description": "adapted borrow rate at 100% util / 86400s matches C11",
+      "note": "rate=5438922544"
+    },
+    {
+      "id": "END-1D",
+      "status": "PASS",
+      "description": "endRateAtTarget after 1 day matches C11",
+      "note": "rate=1454044805"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (3e18*1e18) wraps; 128-bit wmul does not",
+      "note": "i64_wrap=1865296393912975360 bigint_wmul=3000000000000000000"
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes rateAtTarget and elapsed as arguments (no mapping / block.timestamp)",
+      "note": ""
+    },
+    {
+      "id": "WIDE-WMUL",
+      "status": "PASS",
+      "description": "clone uses signed 128-bit product wmul/wdiv",
+      "note": ""
+    },
+    {
+      "id": "SOL-EMIT-V3",
+      "status": "PASS",
+      "description": "lin_from_solidity.lin v3 require fail-closed + if/else",
+      "note": ""
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/morpho-org/morpho-blue-irm",
+    "commit": "58ce91fd04840372443a7080a5b32067b17b3d60",
+    "path": "src/adaptive-curve-irm/AdaptiveCurveIrm.sol",
+    "git_blob_sha": "34cbf8bc7a2489daf1cd4f789d827f4e41967989",
+    "file_sha256": "40ee4764e8eebfee290e07314af38fee7e30323a258d27bdb481e6c00187186d",
+    "constants_sha256": "63abf640bd64295e39b7b32f22159e49927c2156c9445b17fd856f447f634afa",
+    "explib_sha256": "dfb80c3de40a2a4ab5d814fe00b0b21b5af13f5248785d37d4e97910bb8a9773",
+    "license": "MIT"
+  },
+  "lin_clone": "src/lin_morpho_adaptive_curve.lin",
+  "c11_oracle": "test/oracles/morpho_adaptive_curve_c11.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "avg_rate_100pct_1d": 5438922544,
+  "end_rate_100pct_1d": 1454044805,
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-morpho-adaptive"
+}
