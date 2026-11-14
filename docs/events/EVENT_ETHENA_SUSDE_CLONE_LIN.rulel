@@ -1,0 +1,62 @@
+@RULEL:ETHENA_SUSDE_CLONE_LIN:1.0.0
+@CHALLENGE_ID="LIN-ETHENA-SUSDE-VEST-CONVERT"
+@TITLE="Clone-lin of Ethena StakedUSDe vest+convert with C11 Compiler 0 proofs"
+@STATUS="EXPERIMENTAL_UINT64_SCALE"
+@DATE="2026-11-14"
+@CLONE_LIN="https://github.com/kbelludoo/clone-lin-ethena-susde"
+
+~R{.s=spec .u=upstream .l=lin .c=compiler0 .p=proofs .n=non_goals .v=verdict}
+
+.s{
+  purpose="transpile Ethena sUSDe 8-hour linear vest and ERC4626 convert into deterministic LIN, compile in memory with C11 compiler 0, and publish only auditable results in lin-open"
+  class="EXPERIMENTAL"
+  class_definition="TOY = sized down for teaching | EXPERIMENTAL = real published algorithm on a deliberately reduced operand width | REAL_WORLD = as deployed on Ethereum mainnet"
+  operand_width="uint64 inputs; (a*b)/d fail-closes if the product does not fit int64; Solidity uint256 is NOT claimed"
+  commercial_hook="StakedUSDe vests rewards over 8 hours so convertToShares does not jump when the rewarder drops USDe; making now/last_ts/vest_amt/MIN_SHARES explicit and replacing wrapping i64 multiply with checked mul is an audit improvement, not a TVL claim"
+}
+
+.u{
+  repo="https://github.com/ethena-labs/code4arena-contest"
+  path="protocols/USDe/contracts/StakedUSDe.sol"
+  license="GPL-3.0"
+  commit="7ffedb8873c2286930804e1c4feee0410fd0f033"
+  git_blob_sha="0a56a7d18d308329e90b490428b8ee633a54dd70"
+  file_sha256="e06068be04cb7fa579a8fe1a8afbea629e1bbb84d426fdace58187282a0af895"
+  fixture="live git pin; Solidity source is not vendored"
+}
+
+.l{
+  clone="src/lin_ethena_susde.lin"
+  transpiler_delta="src/lin_from_solidity.lin REJ_SOLIDITY_UNVESTED/VESTING/SAFETRANSFER/BALANCEOF/HASROLE/MULDIV; src/lin_from_c.lin REJ_C_WIDE_INT/BALANCEOF/SAFETRANSFER; src/lin_from_rust.lin REJ_RUST_WIDE_INT/BALANCEOF/SAFETRANSFER"
+  improvement_1="getUnvestedAmount and totalAssets are view-on-storage/block.timestamp in Solidity; LIN takes now/last_ts/vest_amt/balance as arguments"
+  improvement_2="assets*supply overflows i64; LIN fail-closes convertToShares instead of wrapping; remainder identity is checked by an independent Python bigint oracle"
+  improvement_3="MIN_SHARES=1 ether donation-attack floor is an explicit es_min_shares_ok check (scale 1000)"
+  improvement_4="distinct from Sky sUSDS chi/RAY convert and from OZ ERC-4626 virtual offset"
+}
+
+.c{
+  host="transpile/c/bin/lin_c0 (C11, no Zig)"
+  in_memory_jit="libtcc via lin_c0 jit / roundtrip-jit"
+  oracle="test/oracles/ethena_susde_c11.c (gcc -O2 -std=c11, wrap-detect XOR __int128)"
+  gate="test/verify_ethena_susde.sh"
+}
+
+.p{
+  harness="test/prove_ethena_susde_external.py"
+  evidence_json="examples/ethena_susde/ethena_susde_evidence.json"
+  clone_lin_repo="https://github.com/kbelludoo/clone-lin-ethena-susde"
+}
+
+.n{
+  not_claimed_1="full uint256 / mainnet stUSDe parity"
+  not_claimed_2="LIN is faster than the EVM or solc"
+  not_claimed_3="this clone is a production StakedUSDe replacement"
+  not_claimed_4="zk / computational soundness of Merkle receipts"
+  not_claimed_5="LIN replaces Ethena, Sky, or the EVM"
+  not_claimed_6="OZ ERC4626 virtual-offset (+1 / 10**decimalsOffset) parity"
+}
+
+.v{
+  method="PINNED_BYTES && C11_WRAP_EQ_I128 && LIN_C0_VM_EQ_C11 && OPTIONAL_JIT_CONSENSUS"
+  on_fail="do not publish a PASS status"
+}

@@ -39,6 +39,12 @@
 
 !sol_reason(sig: string, body: string): string {
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
+  ?(rg_count_lit(body, "getUnvestedAmount") > 0) { ^"REJ_SOLIDITY_UNVESTED" };
+  ?(rg_count_lit(body, "VESTING_PERIOD") > 0) { ^"REJ_SOLIDITY_VESTING" };
+  ?(rg_count_lit(body, "safeTransferFrom") > 0) { ^"REJ_SOLIDITY_SAFETRANSFER" };
+  ?(rg_count_lit(body, "balanceOf") > 0) { ^"REJ_SOLIDITY_BALANCEOF" };
+  ?(rg_count_lit(body, "hasRole") > 0) { ^"REJ_SOLIDITY_HASROLE" };
+  ?(rg_count_lit(body, "mulDiv") > 0) { ^"REJ_SOLIDITY_MULDIV" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
@@ -64,6 +70,14 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_uv = "function totalAssets() public view returns (uint256)";
+  body_uv = "return IERC20(asset()).balanceOf(address(this)) - getUnvestedAmount();";
+  r4 = sol_reason(sig_uv, body_uv);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_UNVESTED") == 0) { ^0 };
+  sig_tf = "function transferInRewards(uint256 amount) external";
+  body_tf = "IERC20(asset()).safeTransferFrom(msg.sender, address(this), amount);";
+  r5 = sol_reason(sig_tf, body_tf);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_SAFETRANSFER") == 0) { ^0 };
   ^1;
 }
 
