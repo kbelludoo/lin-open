@@ -1,0 +1,372 @@
+@LIN:L1c:0.2
+@MAKER_POT_DSR{
+  version=1
+  repo="makerdao/dss"
+  source="src/pot.sol Pot.drip/join/exit"
+  license="AGPL-3.0-or-later"
+  commit="fa4f6630afb0624d04a003e920b0d71a00331d98"
+  pot_sol_sha256="8b22fb58d37e5eba6c5d1f42c8651a2c5077d39a93edd13082029bc3bfb3edc6"
+  pot_sol_blob="cae58cdafe7b4014fd87dcfb002968f61dc89eee"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_sky_pot_dsr_chi_drip_join_exit"
+  note="Not mainnet uint256/ray=1e27. dsr/chi/rho/now/Pie/pie are arguments (no hidden storage, no now/block.timestamp). drip chi'=rmul(rpow(dsr,now-rho,RAY'),chi) floor; join requires now==rho; exit does not (stale chi). vat.suck/move are stripped to suck_rad=Pie*delta_chi and rad=chi*wad. Assembly rpow is LIN loop + 128-bit half-up. Upstream AGPL is not vendored. Distinct from sUSDS convertToAssets and from ExponentialDecrease.price."
+}
+
+!pot_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!pot_u_add_carry(a: int, b: int) -> int {
+  s = a + b;
+  ^(pot_u_lt(s, a));
+}
+
+!pot_mask32() -> int {
+  ^ 4294967295;
+}
+
+!pot_ray() -> int {
+  ^ 1000000000;
+}
+
+!pot_muldiv_part(a: int, b: int, d: int, want: int) -> int {
+  ?(d <= 0) { ^ 0; };
+  m32 = pot_mask32();
+  a0 = a & m32;
+  a1 = _lia_ushr(a, 32);
+  b0 = b & m32;
+  b1 = _lia_ushr(b, 32);
+  p0 = a0 * b0;
+  p1 = a0 * b1;
+  p2 = a1 * b0;
+  p3 = a1 * b1;
+  mid = p1 + p2;
+  mid_carry = pot_u_add_carry(p1, p2);
+  mid_lo = mid & m32;
+  mid_hi = _lia_ushr(mid, 32);
+  t = _lia_shl(mid_lo, 32);
+  lo = p0 + t;
+  lo_carry = pot_u_add_carry(p0, t);
+  hi = p3 + mid_hi;
+  hi = hi + _lia_shl(mid_carry, 32);
+  hi = hi + lo_carry;
+  do_round = 0;
+  ?(want == 3) { do_round = 1; };
+  ?(want == 4) { do_round = 1; };
+  ?(do_round == 1) {
+    half = d / 2;
+    nlo = lo + half;
+    add_c = pot_u_lt(nlo, lo);
+    lo = nlo;
+    nhi = hi + add_c;
+    ?(add_c == 1) {
+      ?(pot_u_lt(nhi, hi) == 1) { ^ 0; };
+    };
+    hi = nhi;
+  };
+  r_hi = 0;
+  r_lo = 0;
+  q = 0;
+  ov = 0;
+  i = 127;
+  while (i >= 0) {
+    bit = 0;
+    ?(i >= 64) { bit = _lia_ushr(hi, i - 64) & 1; };
+    ?(i < 64) { bit = _lia_ushr(lo, i) & 1; };
+    new_hi = _lia_shl(r_hi, 1) | _lia_ushr(r_lo, 63);
+    new_lo = _lia_shl(r_lo, 1) | bit;
+    r_hi = new_hi;
+    r_lo = new_lo;
+    ge = 0;
+    ?(r_hi != 0) { ge = 1; };
+    ?(r_hi == 0) {
+      ?(pot_u_lt(r_lo, d) == 0) { ge = 1; };
+    };
+    ?(ge == 1) {
+      need_borrow = pot_u_lt(r_lo, d);
+      r_lo = r_lo - d;
+      ?(need_borrow == 1) { r_hi = r_hi - 1; };
+      ?(i >= 64) { ov = 1; };
+      ?(i < 64) { q = q | _lia_shl(1, i); };
+    };
+    i = i - 1;
+  };
+  ?(want == 1) { ^ r_lo; };
+  ?(want == 2) { ^ ov; };
+  ?(want == 4) { ^ ov; };
+  ?(ov == 1) { ^ 0; };
+  ?( _lia_ushr(q, 63) == 1 ) { ^ 0; };
+  ^ q;
+}
+
+!pot_muldiv(a: int, b: int, d: int) -> int {
+  ^ pot_muldiv_part(a, b, d, 0);
+}
+
+!pot_muldiv_round(a: int, b: int, d: int) -> int {
+  ^ pot_muldiv_part(a, b, d, 3);
+}
+
+!pot_u_mul_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(a == 0) { ^ 1; };
+  ?(b == 0) { ^ 1; };
+  p = a * b;
+  ?(p < 0) { ^ 0; };
+  ?(p / a != b) { ^ 0; };
+  ^ 1;
+}
+
+!pot_u_add_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  s = a + b;
+  ?(s < 0) { ^ 0; };
+  ?(pot_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!pot_u_sub_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(pot_u_lt(a, b) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!pot_u_mul(a: int, b: int) -> int {
+  ?(pot_u_mul_ok(a, b) == 0) { ^ 0; };
+  ^ a * b;
+}
+
+!pot_rpow_loop(x: int, n: int, z: int, base: int) -> int {
+  while (n > 0) {
+    ?(pot_muldiv_part(x, x, base, 2) == 1) { ^ 0; };
+    x = pot_muldiv_round(x, x, base);
+    odd = n - (n / 2) * 2;
+    ?(odd == 1) {
+      z = pot_muldiv_round(z, x, base);
+    };
+    n = n / 2;
+  };
+  ^ z;
+}
+
+!pot_rpow(x: int, n: int, base: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(n < 0) { ^ 0; };
+  ?(base <= 0) { ^ 0; };
+  ?(x == 0) {
+    ?(n == 0) { ^ base; };
+    ^ 0;
+  };
+  z = x;
+  odd0 = n - (n / 2) * 2;
+  ?(odd0 == 0) { z = base; };
+  ^ pot_rpow_loop(x, n / 2, z, base);
+}
+
+!pot_rmul(x: int, y: int) -> int {
+  ^ pot_muldiv(x, y, pot_ray());
+}
+
+!pot_drip_eval(dsr: int, chi: int, rho: int, now_ts: int, pie_total: int, want: int) -> int {
+  ?(dsr < 0) { ^ 0; };
+  ?(chi < 0) { ^ 0; };
+  ?(rho < 0) { ^ 0; };
+  ?(now_ts < 0) { ^ 0; };
+  ?(pie_total < 0) { ^ 0; };
+  ?(pot_u_lt(now_ts, rho) == 1) { ^ 0; };
+  rp = pot_rpow(dsr, now_ts - rho, pot_ray());
+  tmp = pot_rmul(rp, chi);
+  ?(pot_u_sub_ok(tmp, chi) == 0) { ^ 0; };
+  delta = tmp - chi;
+  ?(pot_u_mul_ok(pie_total, delta) == 0) { ^ 0; };
+  suck = pie_total * delta;
+  ?(want == 0) { ^ 1; };
+  ?(want == 1) { ^ tmp; };
+  ?(want == 2) { ^ delta; };
+  ?(want == 3) { ^ suck; };
+  ^ 0;
+}
+
+!pot_join_eval(now_ts: int, rho: int, chi: int, pie_user: int, pie_total: int, wad: int, want: int) -> int {
+  ?(now_ts < 0) { ^ 0; };
+  ?(rho < 0) { ^ 0; };
+  ?(chi < 0) { ^ 0; };
+  ?(pie_user < 0) { ^ 0; };
+  ?(pie_total < 0) { ^ 0; };
+  ?(wad < 0) { ^ 0; };
+  ?(now_ts != rho) { ^ 0; };
+  ?(pot_u_mul_ok(chi, wad) == 0) { ^ 0; };
+  ?(pot_u_add_ok(pie_user, wad) == 0) { ^ 0; };
+  ?(pot_u_add_ok(pie_total, wad) == 0) { ^ 0; };
+  rad = chi * wad;
+  ?(want == 0) { ^ 1; };
+  ?(want == 1) { ^ rad; };
+  ?(want == 2) { ^ pie_user + wad; };
+  ?(want == 3) { ^ pie_total + wad; };
+  ^ 0;
+}
+
+!pot_exit_eval(chi: int, pie_user: int, pie_total: int, wad: int, want: int) -> int {
+  ?(chi < 0) { ^ 0; };
+  ?(pie_user < 0) { ^ 0; };
+  ?(pie_total < 0) { ^ 0; };
+  ?(wad < 0) { ^ 0; };
+  ?(pot_u_mul_ok(chi, wad) == 0) { ^ 0; };
+  ?(pot_u_sub_ok(pie_user, wad) == 0) { ^ 0; };
+  ?(pot_u_sub_ok(pie_total, wad) == 0) { ^ 0; };
+  rad = chi * wad;
+  ?(want == 0) { ^ 1; };
+  ?(want == 1) { ^ rad; };
+  ?(want == 2) { ^ pie_user - wad; };
+  ?(want == 3) { ^ pie_total - wad; };
+  ^ 0;
+}
+
+!pot_drip_ok(dsr: int, chi: int, rho: int, now_ts: int, pie_total: int) -> int {
+  ^ pot_drip_eval(dsr, chi, rho, now_ts, pie_total, 0);
+}
+
+!pot_drip_chi(dsr: int, chi: int, rho: int, now_ts: int, pie_total: int) -> int {
+  ^ pot_drip_eval(dsr, chi, rho, now_ts, pie_total, 1);
+}
+
+!pot_drip_delta(dsr: int, chi: int, rho: int, now_ts: int, pie_total: int) -> int {
+  ^ pot_drip_eval(dsr, chi, rho, now_ts, pie_total, 2);
+}
+
+!pot_drip_suck(dsr: int, chi: int, rho: int, now_ts: int, pie_total: int) -> int {
+  ^ pot_drip_eval(dsr, chi, rho, now_ts, pie_total, 3);
+}
+
+!pot_join_ok(now_ts: int, rho: int, chi: int, pie_user: int, pie_total: int, wad: int) -> int {
+  ^ pot_join_eval(now_ts, rho, chi, pie_user, pie_total, wad, 0);
+}
+
+!pot_join_rad(now_ts: int, rho: int, chi: int, pie_user: int, pie_total: int, wad: int) -> int {
+  ^ pot_join_eval(now_ts, rho, chi, pie_user, pie_total, wad, 1);
+}
+
+!pot_exit_ok(chi: int, pie_user: int, pie_total: int, wad: int) -> int {
+  ^ pot_exit_eval(chi, pie_user, pie_total, wad, 0);
+}
+
+!pot_exit_rad(chi: int, pie_user: int, pie_total: int, wad: int) -> int {
+  ^ pot_exit_eval(chi, pie_user, pie_total, wad, 1);
+}
+
+!pot_join_requires_rho() -> int {
+  ^ 1;
+}
+
+!pot_exit_requires_rho() -> int {
+  ^ 0;
+}
+
+!pot_drip_uses_rpow() -> int {
+  ^ 1;
+}
+
+!pot_drip_uses_suck() -> int {
+  ^ 1;
+}
+
+!pot_rmul_is_floor() -> int {
+  ^ 1;
+}
+
+!pot_is_susds() -> int {
+  ^ 0;
+}
+
+!pot_is_abacus_exp() -> int {
+  ^ 0;
+}
+
+!pot_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!pot_test_suite() -> int {
+  r = pot_ray();
+  ?(pot_join_requires_rho() != 1) { ^ -1; };
+  ?(pot_exit_requires_rho() != 0) { ^ -2; };
+  ?(pot_drip_uses_rpow() != 1) { ^ -3; };
+  ?(pot_drip_uses_suck() != 1) { ^ -4; };
+  ?(pot_rmul_is_floor() != 1) { ^ -5; };
+  ?(pot_is_susds() != 0) { ^ -6; };
+  ?(pot_is_abacus_exp() != 0) { ^ -7; };
+  ?(pot_ray() != 1000000000) { ^ -8; };
+  ?(pot_rpow(0, 0, r) != 1000000000) { ^ -9; };
+  ?(pot_rpow(0, 5, r) != 0) { ^ -10; };
+  ?(pot_rpow(3, 2, 2) != 5) { ^ -11; };
+  ?(pot_rpow(1010000000, 1, r) != 1010000000) { ^ -12; };
+  ?(pot_rpow(1010000000, 2, r) != 1020100000) { ^ -13; };
+  ?(pot_rpow(1010000000, 3, r) != 1030301000) { ^ -14; };
+  ?(pot_rpow(r, 11, r) != 1000000000) { ^ -15; };
+  ?(pot_drip_ok(r, r, 10, 10, 1000) != 1) { ^ -16; };
+  ?(pot_drip_chi(r, r, 10, 10, 1000) != 1000000000) { ^ -17; };
+  ?(pot_drip_suck(r, r, 10, 10, 1000) != 0) { ^ -18; };
+  ?(pot_drip_ok(1010000000, r, 0, 1, 1000) != 1) { ^ -19; };
+  ?(pot_drip_chi(1010000000, r, 0, 1, 1000) != 1010000000) { ^ -20; };
+  ?(pot_drip_delta(1010000000, r, 0, 1, 1000) != 10000000) { ^ -21; };
+  ?(pot_drip_suck(1010000000, r, 0, 1, 1000) != 10000000000) { ^ -22; };
+  ?(pot_drip_chi(1010000000, r, 0, 2, 1000) != 1020100000) { ^ -23; };
+  ?(pot_drip_suck(1010000000, r, 0, 2, 1000) != 20100000000) { ^ -24; };
+  ?(pot_drip_ok(1010000000, r, 10, 9, 1000) != 0) { ^ -25; };
+  ?(pot_join_ok(10, 10, r, 0, 0, 1000) != 1) { ^ -26; };
+  ?(pot_join_rad(10, 10, r, 0, 0, 1000) != 1000000000000) { ^ -27; };
+  ?(pot_join_ok(11, 10, r, 0, 0, 1000) != 0) { ^ -28; };
+  ?(pot_exit_ok(r, 1000, 1000, 400) != 1) { ^ -29; };
+  ?(pot_exit_rad(r, 1000, 1000, 400) != 400000000000) { ^ -30; };
+  ?(pot_exit_ok(r, 100, 1000, 400) != 0) { ^ -31; };
+  ?(pot_exit_ok(r, 1000, 1000, 1000) != 1) { ^ -32; };
+  ?(pot_u_mul_ok(10000000000, 1000000000) != 0) { ^ -33; };
+  ?(pot_join_ok(10, 10, 10000000000, 0, 0, 1000000000) != 0) { ^ -34; };
+  ?(pot_naive_i64_mul(10000000000, 1000000000) != -8446744073709551616) { ^ -35; };
+  ?(pot_muldiv(100, 200, 50) != 400) { ^ -36; };
+  ^ 1;
+}
+
+=ex{
+  pot_u_lt,
+  pot_u_add_carry,
+  pot_mask32,
+  pot_ray,
+  pot_muldiv_part,
+  pot_muldiv,
+  pot_muldiv_round,
+  pot_u_mul_ok,
+  pot_u_add_ok,
+  pot_u_sub_ok,
+  pot_u_mul,
+  pot_rpow_loop,
+  pot_rpow,
+  pot_rmul,
+  pot_drip_eval,
+  pot_join_eval,
+  pot_exit_eval,
+  pot_drip_ok,
+  pot_drip_chi,
+  pot_drip_delta,
+  pot_drip_suck,
+  pot_join_ok,
+  pot_join_rad,
+  pot_exit_ok,
+  pot_exit_rad,
+  pot_join_requires_rho,
+  pot_exit_requires_rho,
+  pot_drip_uses_rpow,
+  pot_drip_uses_suck,
+  pot_rmul_is_floor,
+  pot_is_susds,
+  pot_is_abacus_exp,
+  pot_naive_i64_mul,
+  pot_test_suite
+}

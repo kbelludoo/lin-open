@@ -1,0 +1,196 @@
+{
+  "schema": "LIN_MAKER_POT_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 wrap-detect rpow/rmul/mul and __int128 agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned makerdao/dss pot.sol matches hash pin",
+      "note": "commit=fa4f6630afb0624d04a003e920b0d71a00331d98 blob=cae58cdafe7b4014fd87dcfb002968f61dc89eee"
+    },
+    {
+      "id": "UPSTREAM-POT",
+      "status": "PASS",
+      "description": "pinned pot.sol: drip now>=rho, join now==rho, exit no rho, suck (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of src/pot.sol",
+      "note": "cae58cdafe7b4014fd87dcfb002968f61dc89eee"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_pot.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "pot_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "22/22 vectors: C11 wrap-detect == __int128 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "22/22 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "DRIP dt=1 chi'=1.01e9 suck=1e10; dt=2 chi'=1.0201e9 suck=2.01e10; JOIN rad=1e12; stale join=0 exit=1",
+      "note": "drip1_suck=10000000000 join_rad=1000000000000 stale_join=0 stale_exit=1"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured DSR chi step (not TVL): 1% / step on Pie=1000 yields suck_rad=1e10 then 2.01e10; join needs drip first",
+      "note": "unit=reduced_ray pie=1000 dsr=1010000000"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (1e10*1e9) wraps; checked chi*wad fail-closes to 0",
+      "note": "i64_mul_wrap=-8446744073709551616 u_mul_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes dsr/chi/rho/now/Pie (no hidden Pot storage)",
+      "note": ""
+    },
+    {
+      "id": "JOIN-RHO",
+      "status": "PASS",
+      "description": "join requires now==rho (Pot/rho-not-updated)",
+      "note": ""
+    },
+    {
+      "id": "EXIT-NO-RHO",
+      "status": "PASS",
+      "description": "exit does not require drip; stale-chi exit is explicit",
+      "note": ""
+    },
+    {
+      "id": "NOT-SUSDS",
+      "status": "PASS",
+      "description": "clone is Pot chi drip, not sUSDS convertToAssets",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close vat.suck / vat_suck (Vat host, not LIN emit)",
+      "note": ""
+    },
+    {
+      "id": "TR-RHO",
+      "status": "PASS",
+      "description": "Solidity transpiler fail-closes Pot/rho-not-updated (explicit now/rho args in LIN)",
+      "note": ""
+    },
+    {
+      "id": "TR-NOW",
+      "status": "PASS",
+      "description": "Solidity transpiler fail-closes Pot/invalid-now (explicit now arg in LIN)",
+      "note": ""
+    },
+    {
+      "id": "TR-WIDE",
+      "status": "PASS",
+      "description": "C/Rust transpilers fail-close __int128 / i128 (oracle width, not LIN emit)",
+      "note": ""
+    },
+    {
+      "id": "TR-ASM",
+      "status": "PASS",
+      "description": "Solidity transpiler already fail-closes assembly _rpow (LIN loop instead)",
+      "note": ""
+    },
+    {
+      "id": "C-KERNEL",
+      "status": "PASS",
+      "description": "pointer-free C kernel (maker_pot_kernel.c) is eligible for lin_from_c; oracle __int128 is not",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/makerdao/dss",
+    "commit": "fa4f6630afb0624d04a003e920b0d71a00331d98",
+    "path": "src/pot.sol",
+    "git_blob_sha": "cae58cdafe7b4014fd87dcfb002968f61dc89eee",
+    "file_sha256": "8b22fb58d37e5eba6c5d1f42c8651a2c5077d39a93edd13082029bc3bfb3edc6",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_pot.lin",
+  "c11_oracle": "test/oracles/maker_pot_c11.c",
+  "c_kernel_for_transpiler": "test/oracles/maker_pot_kernel.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "drip0_ok": 1,
+    "drip1_chi": 1010000000,
+    "drip1_suck": 10000000000,
+    "drip2_chi": 1020100000,
+    "drip2_suck": 20100000000,
+    "join_ok": 1,
+    "join_rad": 1000000000000,
+    "join_stale_ok": 0,
+    "exit_ok": 1,
+    "exit_rad": 400000000000,
+    "exit_full_ok": 1,
+    "join_requires_rho": 1,
+    "exit_requires_rho": 0,
+    "is_susds": 0
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-pot-join",
+  "clone_lin_head": "0a368d6c149f508b847cee4c56cba01308a1485d",
+  "clone_lin_lin_commit": "0de2dd9aeefbf870bf2a20e0e8a4b771353a16a1",
+  "clone_lin_lin_blob": "e489f4f510354c5eb54f161ffcc3b9cb8b4cf55a",
+  "clone_lin_c_blob": "4c71843da82b2e9e24afa748c982b4473ca1147f"
+}
