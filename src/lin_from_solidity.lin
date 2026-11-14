@@ -39,6 +39,10 @@
 
 !sol_reason(sig: string, body: string): string {
   ?(rg_count_lit(sig, "payable") > 0) { ^"REJ_SOLIDITY_PAYABLE" };
+  ?(rg_count_lit(body, "to18ConversionFactor") > 0) { ^"REJ_SOLIDITY_TO18" };
+  ?(rg_count_lit(body, "HALTED") > 0) { ^"REJ_SOLIDITY_HALTED" };
+  ?(rg_count_lit(body, "type(uint256).max") > 0) { ^"REJ_SOLIDITY_TYPEMAX" };
+  ?(rg_count_lit(body, "unchecked") > 0) { ^"REJ_SOLIDITY_UNCHECKED" };
   ?(rg_count_lit(body, "msg.value") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "msg.sender") > 0) { ^"REJ_SOLIDITY_STATE" };
   ?(rg_count_lit(body, "block.timestamp") > 0) { ^"REJ_SOLIDITY_ENV" };
@@ -64,6 +68,16 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_psm = "function _sellGem(address usr, uint256 gemAmt, uint256 tin_) internal returns (uint256 daiOutWad)";
+  body_psm = "daiOutWad = gemAmt * to18ConversionFactor; require(tin_ != HALTED);";
+  r4 = sol_reason(sig_psm, body_psm);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_TO18") == 0) { ^0 };
+  body_halt = "require(tin_ != HALTED, \"DssLitePsm/sell-gem-halted\");";
+  r5 = sol_reason(sig_psm, body_halt);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_HALTED") == 0) { ^0 };
+  body_uc = "unchecked { daiOutWad -= fee; }";
+  r6 = sol_reason(sig_psm, body_uc);
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_UNCHECKED") == 0) { ^0 };
   ^1;
 }
 
