@@ -50,6 +50,9 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "i128") > 0 || rg_count_lit(body, "i128") > 0) { ^"REJ_RUST_WIDE_INT" };
+  ?(rg_count_lit(body, "HALTED") > 0) { ^"REJ_RUST_HALTED" };
+  ?(rg_count_lit(body, "to18ConversionFactor") > 0) { ^"REJ_RUST_TO18" };
   ^"OK";
 }
 
@@ -66,6 +69,15 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_wide = "pub fn wide_fee(a: i128, b: i128) -> i128";
+  body_wide = "a.wrapping_mul(b)";
+  r3 = rs_reason(sig_wide, body_wide);
+  ?(starts_lit(r3, 0, "REJ_RUST_WIDE_INT") == 0) { ^0 };
+
+  body_halt = "if tin == HALTED { return 0; }";
+  r4 = rs_reason(sig_ok, body_halt);
+  ?(starts_lit(r4, 0, "REJ_RUST_HALTED") == 0) { ^0 };
 
   ^1;
 }

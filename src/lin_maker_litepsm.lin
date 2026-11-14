@@ -1,0 +1,240 @@
+@LIN:L1c:0.2
+@MAKER_DSS_LITE_PSM{
+  version=1
+  repo="sky-ecosystem/dss-lite-psm"
+  source="src/DssLitePsm.sol _sellGem/_buyGem"
+  license="AGPL-3.0-or-later"
+  commit="dbf0022225f645f5697e5517d0cf00810471bccf"
+  psm_sol_sha256="502eed38778ac29758959cadbb3d2f36aa3af21144e7374483795581a6279ce8"
+  psm_sol_blob="8e18705eed287cfdf7f6b6e0a74b398b792cc243"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_sky_litepsm_sell_buy_gem"
+  note="Not mainnet uint256. WAD'=1e9 (not 1e18). type(uint256).max HALTED, to18ConversionFactor, tin/tout storage, pocket transfers, and unchecked daiOut-=fee are stripped: gem/to18/tin/tout/wad/kissed are arguments. Fee is (dai/wad)*tin+(dai%wad)*tin/wad so the wide product does not wrap. Distinct from DaiJoin wad→rad and GemJoin slip. Upstream Solidity is not vendored."
+}
+
+!psm_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!psm_u_mul_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(a == 0) { ^ 1; };
+  ?(b == 0) { ^ 1; };
+  p = a * b;
+  ?(p < 0) { ^ 0; };
+  ?(p / a != b) { ^ 0; };
+  ^ 1;
+}
+
+!psm_u_add_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  s = a + b;
+  ?(s < 0) { ^ 0; };
+  ?(psm_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!psm_u_sub_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(psm_u_lt(a, b) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!psm_wad() -> int {
+  ^ 1000000000;
+}
+
+!psm_halted() -> int {
+  ^ -1;
+}
+
+!psm_uses_uint256_max() -> int {
+  ^ 0;
+}
+
+!psm_uses_vat() -> int {
+  ^ 0;
+}
+
+!psm_uses_unchecked() -> int {
+  ^ 0;
+}
+
+!psm_uses_daijoin() -> int {
+  ^ 0;
+}
+
+!psm_min(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y < 0) { ^ 0; };
+  ?(psm_u_lt(x, y) == 1) { ^ x; };
+  ^ y;
+}
+
+!psm_max(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y < 0) { ^ 0; };
+  ?(psm_u_lt(x, y) == 1) { ^ y; };
+  ^ x;
+}
+
+!psm_subcap(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y < 0) { ^ 0; };
+  ?(psm_u_lt(x, y) == 1) { ^ 0; };
+  ^ x - y;
+}
+
+!psm_pow10(n: int) -> int {
+  ?(n < 0) { ^ 0; };
+  ?(n > 9) { ^ 0; };
+  p = 1;
+  i = 0;
+  while (i < n) {
+    ?(psm_u_mul_ok(p, 10) == 0) { ^ 0; };
+    p = p * 10;
+    i = i + 1;
+  };
+  ^ p;
+}
+
+!psm_to18(scale_dec: int, gem_dec: int) -> int {
+  ?(scale_dec < 0) { ^ 0; };
+  ?(gem_dec < 0) { ^ 0; };
+  ?(psm_u_lt(scale_dec, gem_dec) == 1) { ^ 0; };
+  ^ psm_pow10(scale_dec - gem_dec);
+}
+
+!psm_gem_wad(gem: int, to18: int) -> int {
+  ?(gem < 0) { ^ 0; };
+  ?(to18 < 0) { ^ 0; };
+  ?(psm_u_mul_ok(gem, to18) == 0) { ^ 0; };
+  ^ gem * to18;
+}
+
+!psm_fee(dai: int, tin: int, wad: int) -> int {
+  ?(dai < 0) { ^ 0; };
+  ?(tin < 0) { ^ 0; };
+  ?(wad <= 0) { ^ 0; };
+  ?(psm_u_lt(wad, tin) == 1) { ^ 0; };
+  ?(tin == 0) { ^ 0; };
+  q = dai / wad;
+  r = dai - (q * wad);
+  ?(psm_u_mul_ok(q, tin) == 0) { ^ 0; };
+  ?(psm_u_mul_ok(r, tin) == 0) { ^ 0; };
+  hi = q * tin;
+  lo = (r * tin) / wad;
+  ?(psm_u_add_ok(hi, lo) == 0) { ^ 0; };
+  ^ hi + lo;
+}
+
+!psm_sell(gem: int, to18: int, tin: int, wad: int) -> int {
+  ?(tin == psm_halted()) { ^ 0; };
+  ?(wad <= 0) { ^ 0; };
+  dai = psm_gem_wad(gem, to18);
+  ?(dai == 0) {
+    ?(gem == 0) { ^ 0; };
+    ^ 0;
+  };
+  ?(tin == 0) { ^ dai; };
+  fee = psm_fee(dai, tin, wad);
+  ?(psm_u_sub_ok(dai, fee) == 0) { ^ 0; };
+  ^ dai - fee;
+}
+
+!psm_buy(gem: int, to18: int, tout: int, wad: int) -> int {
+  ?(tout == psm_halted()) { ^ 0; };
+  ?(wad <= 0) { ^ 0; };
+  dai = psm_gem_wad(gem, to18);
+  ?(dai == 0) {
+    ?(gem == 0) { ^ 0; };
+    ^ 0;
+  };
+  ?(tout == 0) { ^ dai; };
+  fee = psm_fee(dai, tout, wad);
+  ?(psm_u_add_ok(dai, fee) == 0) { ^ 0; };
+  ^ dai + fee;
+}
+
+!psm_sell_nofee(kissed: int, gem: int, to18: int, wad: int) -> int {
+  ?(kissed != 1) { ^ 0; };
+  ^ psm_sell(gem, to18, 0, wad);
+}
+
+!psm_buy_nofee(kissed: int, gem: int, to18: int, wad: int) -> int {
+  ?(kissed != 1) { ^ 0; };
+  ^ psm_buy(gem, to18, 0, wad);
+}
+
+!psm_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!psm_test_suite() -> int {
+  wad = psm_wad();
+  to18 = psm_to18(9, 6);
+  ?(psm_uses_uint256_max() != 0) { ^ -1; };
+  ?(psm_uses_vat() != 0) { ^ -2; };
+  ?(psm_uses_unchecked() != 0) { ^ -3; };
+  ?(psm_uses_daijoin() != 0) { ^ -4; };
+  ?(wad != 1000000000) { ^ -5; };
+  ?(to18 != 1000) { ^ -6; };
+  ?(psm_to18(9, 9) != 1) { ^ -7; };
+  ?(psm_to18(9, 18) != 0) { ^ -8; };
+  ?(psm_gem_wad(1000000, 1000) != 1000000000) { ^ -9; };
+  ?(psm_sell(1000000, 1000, 0, wad) != 1000000000) { ^ -10; };
+  ?(psm_sell(1000000, 1000, 1000000, wad) != 999000000) { ^ -11; };
+  ?(psm_buy(1000000, 1000, 1000000, wad) != 1001000000) { ^ -12; };
+  ?(psm_sell(1000000, 1000, wad, wad) != 0) { ^ -13; };
+  ?(psm_sell(1000000, 1000, psm_halted(), wad) != 0) { ^ -14; };
+  ?(psm_buy(1000000, 1000, psm_halted(), wad) != 0) { ^ -15; };
+  ?(psm_sell_nofee(0, 1000000, 1000, wad) != 0) { ^ -16; };
+  ?(psm_sell_nofee(1, 1000000, 1000, wad) != 1000000000) { ^ -17; };
+  ?(psm_buy_nofee(1, 1000000, 1000, wad) != 1000000000) { ^ -18; };
+  ?(psm_min(3, 5) != 3) { ^ -19; };
+  ?(psm_max(3, 5) != 5) { ^ -20; };
+  ?(psm_subcap(5, 3) != 2) { ^ -21; };
+  ?(psm_subcap(3, 5) != 0) { ^ -22; };
+  wrap_a = 7000000000;
+  wrap_b = 3000000000;
+  ?(psm_u_mul_ok(wrap_a, wrap_b) != 0) { ^ -23; };
+  ?(psm_naive_i64_mul(wrap_a, wrap_b) != 2553255926290448384) { ^ -24; };
+  ?(psm_gem_wad(wrap_a, wrap_b) != 0) { ^ -25; };
+  ?(psm_sell(wrap_a, wrap_b, 0, wad) != 0) { ^ -26; };
+  ?(psm_sell(-1, 1000, 0, wad) != 0) { ^ -27; };
+  ?(psm_fee(1000000000, 1000000, wad) != 1000000) { ^ -28; };
+  ^ 1;
+}
+
+=ex{
+  psm_u_lt,
+  psm_u_mul_ok,
+  psm_u_add_ok,
+  psm_u_sub_ok,
+  psm_wad,
+  psm_halted,
+  psm_uses_uint256_max,
+  psm_uses_vat,
+  psm_uses_unchecked,
+  psm_uses_daijoin,
+  psm_min,
+  psm_max,
+  psm_subcap,
+  psm_pow10,
+  psm_to18,
+  psm_gem_wad,
+  psm_fee,
+  psm_sell,
+  psm_buy,
+  psm_sell_nofee,
+  psm_buy_nofee,
+  psm_naive_i64_mul,
+  psm_test_suite
+}
