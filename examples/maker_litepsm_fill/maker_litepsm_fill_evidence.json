@@ -1,0 +1,172 @@
+{
+  "schema": "LIN_MAKER_LITEPSM_FILL_EVIDENCE_1.0",
+  "claims": [
+    {
+      "id": "C11-SELFTEST",
+      "status": "PASS",
+      "description": "C11 wrap-detect LitePSM fill mul and __int128 agree",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-SHA",
+      "status": "PASS",
+      "description": "git fetch of pinned sky-ecosystem DssLitePsm.sol matches hash pin",
+      "note": "commit=dbf0022225f645f5697e5517d0cf00810471bccf blob=8e18705eed287cfdf7f6b6e0a74b398b792cc243"
+    },
+    {
+      "id": "UPSTREAM-BOOK",
+      "status": "PASS",
+      "description": "pinned DssLitePsm.sol: rush/gush/cut, vat.frob fill/trim, daiJoin, vat.ilks (not vendored)",
+      "note": ""
+    },
+    {
+      "id": "UPSTREAM-BLOB",
+      "status": "PASS",
+      "description": "git blob sha of DssLitePsm.sol",
+      "note": "8e18705eed287cfdf7f6b6e0a74b398b792cc243"
+    },
+    {
+      "id": "LIN-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 typecheck of src/lin_maker_litepsm_fill.lin",
+      "note": ""
+    },
+    {
+      "id": "SOL-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_solidity.lin",
+      "note": ""
+    },
+    {
+      "id": "C-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_c.lin",
+      "note": ""
+    },
+    {
+      "id": "RS-TR-CHECK",
+      "status": "PASS",
+      "description": "Compiler 0 check of lin_from_rust.lin",
+      "note": ""
+    },
+    {
+      "id": "LIN-SUITE",
+      "status": "PASS",
+      "description": "lpf_test_suite == 1 on Compiler 0 interpreter",
+      "note": ""
+    },
+    {
+      "id": "VEC-CONSENSUS",
+      "status": "PASS",
+      "description": "21/21 vectors: C11 wrap-detect == __int128 == LIN vm",
+      "note": ""
+    },
+    {
+      "id": "PY-BIGINT",
+      "status": "PASS",
+      "description": "21/21 vectors: Python arbitrary-precision int matches C11 and LIN",
+      "note": ""
+    },
+    {
+      "id": "NAMED-GOLDEN",
+      "status": "PASS",
+      "description": "rush pocket=1e9 Art-cap=4e8 line=3e8 global=1e8 gush=6e8 cut=3e8 no-vow=0 fill-none=0",
+      "note": "golden=(1000000000, 400000000, 300000000, 100000000, 600000000, 300000000, 0, 0)"
+    },
+    {
+      "id": "COMMERCIAL",
+      "status": "PASS",
+      "description": "measured LitePSM buffer quote (not TVL): explicit Art/line/Line vs pocket+buf, no wrapping mul",
+      "note": "rush_pocket=1000000000 cut_fees=300000000 unit=WAD_1e9"
+    },
+    {
+      "id": "I64-WRAP",
+      "status": "PASS",
+      "description": "naive signed-i64 (7e9*3e9) wraps; checked gem*to18 fail-closes to 0",
+      "note": "i64_mul_wrap=2553255926290448384 u_mul_fail_closed=0"
+    },
+    {
+      "id": "EXPLICIT-ARGS",
+      "status": "PASS",
+      "description": "LIN clone takes gem/to18/buf/Art/rate/line/Line/debt (no hidden vat SLOADs)",
+      "note": ""
+    },
+    {
+      "id": "NOT-SELLBUY",
+      "status": "PASS",
+      "description": "clone is LitePSM rush/gush/cut, not sellGem/buyGem tin/tout",
+      "note": ""
+    },
+    {
+      "id": "NO-FROB",
+      "status": "PASS",
+      "description": "fill/trim return the wad only; vat.frob / daiJoin.exit are not executed",
+      "note": ""
+    },
+    {
+      "id": "TR-FAILCLOSE",
+      "status": "PASS",
+      "description": "Solidity/C/Rust transpilers fail-close vat.frob / __int128 / i128 (host, not LIN emit)",
+      "note": ""
+    },
+    {
+      "id": "TR-DAIJOIN",
+      "status": "PASS",
+      "description": "Solidity/C transpilers fail-close daiJoin (explicit wad in LIN)",
+      "note": ""
+    },
+    {
+      "id": "TR-ILKS",
+      "status": "PASS",
+      "description": "Solidity transpiler fail-closes vat.ilks (explicit Art/rate/line in LIN)",
+      "note": ""
+    },
+    {
+      "id": "C-KERNEL",
+      "status": "PASS",
+      "description": "pointer-free C kernel (maker_litepsm_fill_kernel.c) is eligible for lin_from_c; oracle __int128 is not",
+      "note": ""
+    },
+    {
+      "id": "JUMPRATE-REG",
+      "status": "PASS",
+      "description": "Compound JumpRate still PASS after the transpiler delta",
+      "note": ""
+    },
+    {
+      "id": "C0-JIT",
+      "status": "SKIP",
+      "description": "in-memory JIT not exercised",
+      "note": "libtcc missing or JIT rejected the module"
+    }
+  ],
+  "upstream": {
+    "repo": "https://github.com/sky-ecosystem/dss-lite-psm",
+    "commit": "dbf0022225f645f5697e5517d0cf00810471bccf",
+    "path": "src/DssLitePsm.sol",
+    "git_blob_sha": "8e18705eed287cfdf7f6b6e0a74b398b792cc243",
+    "file_sha256": "502eed38778ac29758959cadbb3d2f36aa3af21144e7374483795581a6279ce8",
+    "license": "AGPL-3.0-or-later",
+    "vendored": false
+  },
+  "lin_clone": "src/lin_maker_litepsm_fill.lin",
+  "c11_oracle": "test/oracles/maker_litepsm_fill_c11.c",
+  "c_kernel_for_transpiler": "test/oracles/maker_litepsm_fill_kernel.c",
+  "compiler0": "transpile/c/bin/lin_c0",
+  "class": "EXPERIMENTAL",
+  "named_goldens": {
+    "rush_pocket": 1000000000,
+    "rush_art_cap": 400000000,
+    "rush_line": 300000000,
+    "rush_global": 100000000,
+    "gush_art": 600000000,
+    "cut_fees": 300000000,
+    "chug_no_vow": 0,
+    "fill_nothing": 0
+  },
+  "clone_lin_repo": "https://github.com/kbelludoo/clone-lin-maker-litepsm-fill",
+  "clone_lin_head": "c38c621ff78f7df35bd5f6ec37b021292f27561d",
+  "clone_lin_lin_commit": "933fcda7af6ff2b2ecd1038b2ac3d0faca2bf716",
+  "clone_lin_lin_blob": "f8309ad0e02b5d806081f20cff9b61bfddd8499e",
+  "clone_lin_c_blob": "dbd4fd1bee79de616c571145939084eff38f2aa6"
+}

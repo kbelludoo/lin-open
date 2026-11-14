@@ -1,0 +1,278 @@
+@LIN:L1c:0.2
+@MAKER_DSS_LITE_PSM_FILL{
+  version=1
+  repo="sky-ecosystem/dss-lite-psm"
+  source="src/DssLitePsm.sol rush/gush/cut fill/trim/chug"
+  license="AGPL-3.0-or-later"
+  commit="dbf0022225f645f5697e5517d0cf00810471bccf"
+  psm_sol_sha256="502eed38778ac29758959cadbb3d2f36aa3af21144e7374483795581a6279ce8"
+  psm_sol_blob="8e18705eed287cfdf7f6b6e0a74b398b792cc243"
+  profile="LINVM-1"
+  class="EXPERIMENTAL"
+  purpose="uint64_scale_maker_sky_litepsm_rush_gush_cut"
+  note="Not mainnet uint256. WAD'=RAY'=1e9. vat.ilks/Line/debt, pocket gem, dai cash, buf, and vow are arguments. rate!=RAY, wad==0, missing vow, gem*to18 overflow, and cut underflow fail-close (Solidity reverts). No vat.frob / daiJoin.exit. Distinct from sellGem/buyGem tin/tout. Upstream Solidity is not vendored."
+}
+
+!lpf_u_lt(a: int, b: int) -> int {
+  ?(a < 0 && b >= 0) { ^ 0; };
+  ?(a >= 0 && b < 0) { ^ 1; };
+  ?(a < b) { ^ 1; };
+  ^ 0;
+}
+
+!lpf_u_mul_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(a == 0) { ^ 1; };
+  ?(b == 0) { ^ 1; };
+  p = a * b;
+  ?(p < 0) { ^ 0; };
+  ?(p / a != b) { ^ 0; };
+  ^ 1;
+}
+
+!lpf_u_add_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  s = a + b;
+  ?(s < 0) { ^ 0; };
+  ?(lpf_u_lt(s, a) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!lpf_u_sub_ok(a: int, b: int) -> int {
+  ?(a < 0) { ^ 0; };
+  ?(b < 0) { ^ 0; };
+  ?(lpf_u_lt(a, b) == 1) { ^ 0; };
+  ^ 1;
+}
+
+!lpf_wad() -> int {
+  ^ 1000000000;
+}
+
+!lpf_ray() -> int {
+  ^ 1000000000;
+}
+
+!lpf_uses_frob() -> int {
+  ^ 0;
+}
+
+!lpf_uses_daijoin() -> int {
+  ^ 0;
+}
+
+!lpf_uses_uint256() -> int {
+  ^ 0;
+}
+
+!lpf_uses_tin() -> int {
+  ^ 0;
+}
+
+!lpf_min(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y < 0) { ^ 0; };
+  ?(lpf_u_lt(x, y) == 1) { ^ x; };
+  ^ y;
+}
+
+!lpf_max(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y < 0) { ^ 0; };
+  ?(lpf_u_lt(x, y) == 1) { ^ y; };
+  ^ x;
+}
+
+!lpf_subcap(x: int, y: int) -> int {
+  ?(x < 0) { ^ 0; };
+  ?(y < 0) { ^ 0; };
+  ?(lpf_u_lt(x, y) == 1) { ^ 0; };
+  ^ x - y;
+}
+
+!lpf_pow10(n: int) -> int {
+  ?(n < 0) { ^ 0; };
+  ?(n > 9) { ^ 0; };
+  p = 1;
+  i = 0;
+  while (i < n) {
+    ?(lpf_u_mul_ok(p, 10) == 0) { ^ 0; };
+    p = p * 10;
+    i = i + 1;
+  };
+  ^ p;
+}
+
+!lpf_to18(scale_dec: int, gem_dec: int) -> int {
+  ?(scale_dec < 0) { ^ 0; };
+  ?(gem_dec < 0) { ^ 0; };
+  ?(lpf_u_lt(scale_dec, gem_dec) == 1) { ^ 0; };
+  ^ lpf_pow10(scale_dec - gem_dec);
+}
+
+!lpf_gem_wad(gem: int, to18: int) -> int {
+  ?(gem < 0) { ^ 0; };
+  ?(to18 < 0) { ^ 0; };
+  ?(lpf_u_mul_ok(gem, to18) == 0) { ^ 0; };
+  ^ gem * to18;
+}
+
+!lpf_t_art(gem: int, to18: int, buf: int) -> int {
+  ?(buf < 0) { ^ 0; };
+  gw = lpf_gem_wad(gem, to18);
+  ?(gem != 0) {
+    ?(gw == 0) { ^ 0; };
+  };
+  ?(lpf_u_add_ok(gw, buf) == 0) { ^ 0; };
+  ^ gw + buf;
+}
+
+!lpf_div_ray(rad: int, ray: int) -> int {
+  ?(ray <= 0) { ^ 0; };
+  ?(rad < 0) { ^ 0; };
+  ^ rad / ray;
+}
+
+!lpf_rush(gem: int, to18: int, buf: int, art: int, rate: int, line: int, gline: int, debt: int, ray: int) -> int {
+  ?(rate != ray) { ^ 0; };
+  ?(ray <= 0) { ^ 0; };
+  ?(art < 0) { ^ 0; };
+  tArt = lpf_t_art(gem, to18, buf);
+  ?(gem != 0) {
+    ?(tArt == 0) {
+      ?(buf == 0) { ^ 0; };
+    };
+  };
+  line_wad = lpf_div_ray(line, ray);
+  room_art = lpf_subcap(tArt, art);
+  room_ilk = lpf_subcap(line_wad, art);
+  room_glo = lpf_div_ray(lpf_subcap(gline, debt), ray);
+  ^ lpf_min(lpf_min(room_art, room_ilk), room_glo);
+}
+
+!lpf_gush(gem: int, to18: int, buf: int, art: int, rate: int, line: int, cash: int, ray: int) -> int {
+  ?(rate != ray) { ^ 0; };
+  ?(ray <= 0) { ^ 0; };
+  ?(art < 0) { ^ 0; };
+  ?(cash < 0) { ^ 0; };
+  tArt = lpf_t_art(gem, to18, buf);
+  ?(gem != 0) {
+    ?(tArt == 0) {
+      ?(buf == 0) { ^ 0; };
+    };
+  };
+  line_wad = lpf_div_ray(line, ray);
+  over_buf = lpf_subcap(art, tArt);
+  over_line = lpf_subcap(art, line_wad);
+  ^ lpf_min(lpf_max(over_buf, over_line), cash);
+}
+
+!lpf_cut(gem: int, to18: int, art: int, cash: int) -> int {
+  ?(art < 0) { ^ 0; };
+  ?(cash < 0) { ^ 0; };
+  gw = lpf_gem_wad(gem, to18);
+  ?(gem != 0) {
+    ?(gw == 0) { ^ 0; };
+  };
+  ?(lpf_u_add_ok(cash, gw) == 0) { ^ 0; };
+  sum = cash + gw;
+  ?(lpf_u_sub_ok(sum, art) == 0) { ^ 0; };
+  avail = sum - art;
+  ^ lpf_min(cash, avail);
+}
+
+!lpf_fill(gem: int, to18: int, buf: int, art: int, rate: int, line: int, gline: int, debt: int, ray: int) -> int {
+  w = lpf_rush(gem, to18, buf, art, rate, line, gline, debt, ray);
+  ?(w <= 0) { ^ 0; };
+  ^ w;
+}
+
+!lpf_trim(gem: int, to18: int, buf: int, art: int, rate: int, line: int, cash: int, ray: int) -> int {
+  w = lpf_gush(gem, to18, buf, art, rate, line, cash, ray);
+  ?(w <= 0) { ^ 0; };
+  ^ w;
+}
+
+!lpf_chug(vow: int, gem: int, to18: int, art: int, cash: int) -> int {
+  ?(vow != 1) { ^ 0; };
+  w = lpf_cut(gem, to18, art, cash);
+  ?(w <= 0) { ^ 0; };
+  ^ w;
+}
+
+!lpf_naive_i64_mul(a: int, b: int) -> int {
+  ^ a * b;
+}
+
+!lpf_test_suite() -> int {
+  wad = lpf_wad();
+  ray = lpf_ray();
+  to18 = lpf_to18(9, 6);
+  line2 = 2000000000000000000;
+  ?(lpf_uses_frob() != 0) { ^ -1; };
+  ?(lpf_uses_daijoin() != 0) { ^ -2; };
+  ?(lpf_uses_uint256() != 0) { ^ -3; };
+  ?(lpf_uses_tin() != 0) { ^ -4; };
+  ?(wad != 1000000000) { ^ -5; };
+  ?(ray != 1000000000) { ^ -6; };
+  ?(to18 != 1000) { ^ -7; };
+  ?(lpf_gem_wad(1000000, 1000) != wad) { ^ -8; };
+  ?(lpf_t_art(1000000, 1000, 0) != wad) { ^ -9; };
+  ?(lpf_rush(1000000, 1000, 0, 0, ray, line2, line2, 0, ray) != wad) { ^ -10; };
+  ?(lpf_rush(1000000, 1000, 0, 600000000, ray, line2, line2, 0, ray) != 400000000) { ^ -11; };
+  ?(lpf_rush(1000000, 1000, 0, 0, ray, 300000000000000000, line2, 0, ray) != 300000000) { ^ -12; };
+  ?(lpf_rush(1000000, 1000, 0, 0, ray, line2, 100000000000000000, 0, ray) != 100000000) { ^ -13; };
+  ?(lpf_rush(1000000, 1000, 0, 0, 0, line2, line2, 0, ray) != 0) { ^ -14; };
+  ?(lpf_gush(400000, 1000, 0, wad, ray, line2, wad, ray) != 600000000) { ^ -15; };
+  ?(lpf_gush(0, 1000, 0, wad, ray, line2, 100000000, ray) != 100000000) { ^ -16; };
+  ?(lpf_gush(1000000, 1000, 0, wad, ray, 300000000000000000, wad, ray) != 700000000) { ^ -17; };
+  ?(lpf_cut(1000000, 1000, 1200000000, 500000000) != 300000000) { ^ -18; };
+  ?(lpf_cut(100000, 1000, 500000000, 100000000) != 0) { ^ -19; };
+  ?(lpf_fill(1000000, 1000, 0, wad, ray, line2, line2, 0, ray) != 0) { ^ -20; };
+  ?(lpf_fill(1000000, 1000, 0, 0, ray, line2, line2, 0, ray) != wad) { ^ -21; };
+  ?(lpf_chug(0, 1000000, 1000, 1200000000, 500000000) != 0) { ^ -22; };
+  ?(lpf_chug(1, 1000000, 1000, 1200000000, 500000000) != 300000000) { ^ -23; };
+  ?(lpf_trim(400000, 1000, 0, wad, ray, line2, wad, ray) != 600000000) { ^ -24; };
+  ?(lpf_rush(0, 1000, 500000000, 0, ray, line2, line2, 0, ray) != 500000000) { ^ -25; };
+  wrap_a = 7000000000;
+  wrap_b = 3000000000;
+  ?(lpf_u_mul_ok(wrap_a, wrap_b) != 0) { ^ -26; };
+  ?(lpf_naive_i64_mul(wrap_a, wrap_b) != 2553255926290448384) { ^ -27; };
+  ?(lpf_rush(wrap_a, wrap_b, 0, 0, ray, line2, line2, 0, ray) != 0) { ^ -28; };
+  ?(lpf_min(3, 5) != 3) { ^ -29; };
+  ?(lpf_max(3, 5) != 5) { ^ -30; };
+  ?(lpf_subcap(5, 3) != 2) { ^ -31; };
+  ?(lpf_subcap(3, 5) != 0) { ^ -32; };
+  ^ 1;
+}
+
+=ex{
+  lpf_u_lt,
+  lpf_u_mul_ok,
+  lpf_u_add_ok,
+  lpf_u_sub_ok,
+  lpf_wad,
+  lpf_ray,
+  lpf_uses_frob,
+  lpf_uses_daijoin,
+  lpf_uses_uint256,
+  lpf_uses_tin,
+  lpf_min,
+  lpf_max,
+  lpf_subcap,
+  lpf_pow10,
+  lpf_to18,
+  lpf_gem_wad,
+  lpf_t_art,
+  lpf_div_ray,
+  lpf_rush,
+  lpf_gush,
+  lpf_cut,
+  lpf_fill,
+  lpf_trim,
+  lpf_chug,
+  lpf_naive_i64_mul,
+  lpf_test_suite
+}
