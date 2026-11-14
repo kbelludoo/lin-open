@@ -50,6 +50,10 @@
   ?(rg_count_lit(sig, "f64") > 0 || rg_count_lit(body, "f64") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(sig, "f32") > 0 || rg_count_lit(body, "f32") > 0) { ^"REJ_RUST_FLOAT" };
   ?(rg_count_lit(body, "std::") > 0) { ^"REJ_RUST_STD_DEPENDENCY" };
+  ?(rg_count_lit(sig, "i128") > 0 || rg_count_lit(body, "i128") > 0) { ^"REJ_RUST_WIDE_INT" };
+  ?(rg_count_lit(sig, "u128") > 0 || rg_count_lit(body, "u128") > 0) { ^"REJ_RUST_WIDE_INT" };
+  ?(rg_count_lit(body, "transfer_from(") > 0) { ^"REJ_RUST_TRANSFERFROM" };
+  ?(rg_count_lit(body, "vat_slip(") > 0) { ^"REJ_RUST_VAT_SLIP" };
   ^"OK";
 }
 
@@ -66,6 +70,19 @@
 
   r2 = rs_reason(sig_bad, body_bad);
   ?(starts_lit(r2, 0, "REJ_") == 0) { ^0 }; // "REJ_"
+
+  sig_join = "pub fn join(wad: u64) -> u64";
+  body_join = "transfer_from(from, to, wad); wad";
+  r3 = rs_reason(sig_join, body_join);
+  ?(starts_lit(r3, 0, "REJ_RUST_TRANSFERFROM") == 0) { ^0 };
+  sig_wide = "pub fn wide(x: u128) -> u128";
+  body_wide = "x";
+  r4 = rs_reason(sig_wide, body_wide);
+  ?(starts_lit(r4, 0, "REJ_RUST_WIDE_INT") == 0) { ^0 };
+  sig_slip = "pub fn slip(wad: u64) -> u64";
+  body_slip = "vat_slip(ilk, usr, wad); wad";
+  r5 = rs_reason(sig_slip, body_slip);
+  ?(starts_lit(r5, 0, "REJ_RUST_VAT_SLIP") == 0) { ^0 };
 
   ^1;
 }

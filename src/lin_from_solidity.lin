@@ -4,7 +4,7 @@
   purpose="extract_pure_math_solidity_functions_to_lin"
   profile="LINVM-1"
   status="EXPERIMENTAL_V2"
-  changelog="v2: emit LIN for eligible pure functions; expand 1eN integer literals; view without msg.sender is OK_VIEW (storage lift is src/lin_sol_view_lift.lin, not uint256 emit)"
+  changelog="v2.2: fail-close GemJoin transferFrom/vat.slip/GemJoin-not-live (ERC20 collateral adapter is host+storage, not LIN emit). v2: emit LIN for eligible pure functions; expand 1eN; OK_VIEW reason (storage lift is src/lin_sol_view_lift.lin)"
 }
 
 !sol_is_kw(nm: string): int {
@@ -46,6 +46,9 @@
   ?(rg_count_lit(body, "mapping") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(sig, "storage") > 0) { ^"REJ_SOLIDITY_STORAGE" };
   ?(rg_count_lit(body, "emit ") > 0) { ^"REJ_SOLIDITY_EVENT" };
+  ?(rg_count_lit(body, "transferFrom(") > 0) { ^"REJ_SOLIDITY_TRANSFERFROM" };
+  ?(rg_count_lit(body, "vat.slip(") > 0) { ^"REJ_SOLIDITY_VAT_SLIP" };
+  ?(rg_count_lit(body, "GemJoin/not-live") > 0) { ^"REJ_SOLIDITY_GEMJOIN_LIVE" };
   ?(rg_count_lit(sig, "pure") > 0) { ^"OK" };
   ?(rg_count_lit(sig, "view") > 0) { ^"OK_VIEW" };
   ^"REJ_SOLIDITY_NON_PURE";
@@ -64,6 +67,16 @@
   body_view = "return ((cash * multiplierPerBlock) / BASE) + baseRatePerBlock;";
   r3 = sol_reason(sig_view, body_view);
   ?(starts_lit(r3, 0, "OK_VIEW") == 0) { ^0 };
+  sig_join = "function join(address usr, uint wad) external";
+  body_tf = "gem.transferFrom(from, to, wad); return wad;";
+  r4 = sol_reason(sig_join, body_tf);
+  ?(starts_lit(r4, 0, "REJ_SOLIDITY_TRANSFERFROM") == 0) { ^0 };
+  body_slip = "vat.slip(ilk, usr, wad); return wad;";
+  r5 = sol_reason(sig_join, body_slip);
+  ?(starts_lit(r5, 0, "REJ_SOLIDITY_VAT_SLIP") == 0) { ^0 };
+  body_cage = "require(live == 1, GemJoin/not-live); return wad;";
+  r6 = sol_reason(sig_join, body_cage);
+  ?(starts_lit(r6, 0, "REJ_SOLIDITY_GEMJOIN_LIVE") == 0) { ^0 };
   ^1;
 }
 
